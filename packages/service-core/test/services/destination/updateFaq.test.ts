@@ -10,7 +10,7 @@ import type { DestinationModel } from '@repo/db';
 import * as db from '@repo/db';
 import type { DestinationFaqUpdateInput } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/destination/destination.permission';
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import { ServiceError } from '../../../src/types';
@@ -56,9 +56,9 @@ describe('DestinationService.updateFaq', () => {
                 answer: 'Por la Ruta Nacional 14, aproximadamente 4 horas de viaje.'
             }
         };
-        vi.spyOn(db, 'DestinationFaqModel').mockImplementation(
-            () => faqModelMock as unknown as db.DestinationFaqModel
-        );
+        vi.spyOn(db, 'DestinationFaqModel').mockImplementation(function () {
+            return faqModelMock as unknown as db.DestinationFaqModel;
+        });
     });
 
     it('should update a FAQ successfully', async () => {

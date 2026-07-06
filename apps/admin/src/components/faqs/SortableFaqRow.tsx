@@ -12,6 +12,11 @@
  *  - keyboard sensor wired in parent FaqManager
  */
 
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { CheckIcon, CloseIcon, DeleteIcon, GripVerticalIcon, LoaderIcon } from '@repo/icons';
+import { FaqUpdatePayloadSchema } from '@repo/schemas';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,11 +24,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { AiTextImprovePanel } from '@/features/accommodations/components/AiTextImprovePanel';
 import type { FaqItem } from '@/features/faqs/hooks/useFaqs';
 import { cn } from '@/lib/utils';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { CheckIcon, CloseIcon, DeleteIcon, GripVerticalIcon, LoaderIcon } from '@repo/icons';
-import { FaqUpdatePayloadSchema } from '@repo/schemas';
-import * as React from 'react';
 import { FaqCategoryCombobox } from './FaqCategoryCombobox';
 
 /**

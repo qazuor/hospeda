@@ -201,9 +201,7 @@ export class ProductModel extends BaseModel<Product> {
      * console.log(activeProducts.length); // e.g., 42
      * ```
      */
-    async findActive(input: {
-        tx?: NodePgDatabase<typeof schema>;
-    }): Promise<Product[]> {
+    async findActive(input: { tx?: NodePgDatabase<typeof schema> }): Promise<Product[]> {
         const { tx } = input;
         const db = this.getClient(tx);
 

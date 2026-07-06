@@ -156,10 +156,10 @@ export interface ResolveSystemPromptResult {
  * ```
  */
 export function invalidatePromptCache(feature?: AiFeature): void {
-    if (feature !== undefined) {
-        _promptCache.delete(feature);
-    } else {
+    if (feature === undefined) {
         _promptCache.clear();
+    } else {
+        _promptCache.delete(feature);
     }
 }
 

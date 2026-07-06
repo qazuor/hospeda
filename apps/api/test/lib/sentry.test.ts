@@ -56,8 +56,8 @@ vi.mock('@sentry/profiling-node', () => ({
     nodeProfilingIntegration: vi.fn(() => ({}))
 }));
 
-import { BEFORE_SEND_NOISE_PATTERNS, applyBeforeSend } from '../../src/lib/sentry';
 import * as SentryModule from '../../src/lib/sentry';
+import { applyBeforeSend, BEFORE_SEND_NOISE_PATTERNS } from '../../src/lib/sentry';
 
 describe('Sentry Configuration', () => {
     let originalSentryDsn: string | undefined;
@@ -131,7 +131,7 @@ describe('Sentry Configuration', () => {
         it('should return false when init throws', () => {
             (envModule.env as unknown as Record<string, unknown>).HOSPEDA_SENTRY_DSN =
                 'https://test@sentry.io/123';
-            mockInit.mockImplementationOnce(() => {
+            mockInit.mockImplementationOnce(function () {
                 throw new Error('Init failed');
             });
 

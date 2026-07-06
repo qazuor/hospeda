@@ -9,14 +9,17 @@
  * Mirrors the gastronomy view page pattern (SPEC-240 T-028).
  */
 
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { FaqManager } from '@/components/faqs/FaqManager';
 import { OwnerSelect } from '@/components/selects/OwnerSelect';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
 import {
     useAssignExperienceOwnerMutation,
     useDeleteExperienceMutation,
@@ -26,9 +29,6 @@ import {
 } from '@/features/experience';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
 
 /** Route configuration for the experience view page. */
 export const Route = createFileRoute('/_authed/experiences/$id')({
@@ -57,7 +57,9 @@ interface PendingReview {
  */
 function ExperienceReviewsPanel({
     experienceId: _experienceId
-}: { readonly experienceId: string }) {
+}: {
+    readonly experienceId: string;
+}) {
     const { t } = useTranslations();
     const { data: reviewsData, isLoading } = useExperiencePendingReviewsQuery({
         page: 1,

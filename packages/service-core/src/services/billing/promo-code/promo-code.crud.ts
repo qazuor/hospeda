@@ -9,13 +9,11 @@
  */
 
 import {
-    type DrizzleClient,
-    type QZPayBillingPromoCode,
-    type QueryContext,
     and,
     billingAuditLogs,
     billingPromoCodes,
     count,
+    type DrizzleClient,
     desc,
     eq,
     getDb,
@@ -23,6 +21,8 @@ import {
     isNull,
     lte,
     or,
+    type QueryContext,
+    type QZPayBillingPromoCode,
     safeIlike,
     sql,
     withTransaction
@@ -145,7 +145,7 @@ export function mapDbToPromoCode(dbPromoCode: QZPayBillingPromoCode): PromoCode 
         createdAt: dbPromoCode.createdAt.toISOString(),
         updatedAt: dbPromoCode.createdAt.toISOString(), // QZPay schema doesn't have updatedAt
         // SPEC-262: populate only when effect columns are present and well-formed
-        ...(effect !== undefined ? { effect } : {})
+        ...(effect === undefined ? {} : { effect })
     };
 }
 

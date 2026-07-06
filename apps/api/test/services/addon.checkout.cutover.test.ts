@@ -34,13 +34,21 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        AddonCatalogService: vi.fn().mockImplementation(() => ({
-            getBySlug: mockAddonCatalogGetBySlug
-        })),
-        PlanService: vi.fn().mockImplementation(() => ({
-            getById: vi.fn().mockResolvedValue({ success: false, error: { code: 'NOT_FOUND' } }),
-            getBySlug: vi.fn().mockResolvedValue({ success: false, error: { code: 'NOT_FOUND' } })
-        }))
+        AddonCatalogService: vi.fn().mockImplementation(function () {
+            return {
+                getBySlug: mockAddonCatalogGetBySlug
+            };
+        }),
+        PlanService: vi.fn().mockImplementation(function () {
+            return {
+                getById: vi
+                    .fn()
+                    .mockResolvedValue({ success: false, error: { code: 'NOT_FOUND' } }),
+                getBySlug: vi
+                    .fn()
+                    .mockResolvedValue({ success: false, error: { code: 'NOT_FOUND' } })
+            };
+        })
     };
 });
 
@@ -117,17 +125,19 @@ vi.mock('../../src/utils/logger', () => ({
 }));
 
 vi.mock('../../src/services/promo-code.service', () => ({
-    PromoCodeService: vi.fn().mockImplementation(() => ({
-        validate: vi.fn().mockResolvedValue({ valid: true, discountAmount: 0 }),
-        getByCode: vi.fn().mockResolvedValue({ success: true, data: { id: 'promo_uuid' } })
-    }))
+    PromoCodeService: vi.fn().mockImplementation(function () {
+        return {
+            validate: vi.fn().mockResolvedValue({ valid: true, discountAmount: 0 }),
+            getByCode: vi.fn().mockResolvedValue({ success: true, data: { id: 'promo_uuid' } })
+        };
+    })
 }));
 
 // Import after all mocks
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import type { ConfirmPurchaseInput, PurchaseAddonInput } from '@repo/service-core';
-import type { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 import { confirmAddonPurchase, createAddonCheckout } from '../../src/services/addon.checkout';
+import type { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 
 // ─── Stubs ────────────────────────────────────────────────────────────────────
 

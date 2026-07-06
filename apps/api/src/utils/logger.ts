@@ -18,8 +18,11 @@ import { config } from 'dotenv';
 // Per-app env strategy (SPEC-035): read from apps/api/.env.local, not the monorepo root.
 const _loggerDirname = dirname(fileURLToPath(import.meta.url));
 const _appDir = resolve(_loggerDirname, '../../..');
+// Skip .env.local under test: it carries real dev/staging secrets that would
+// leak into the test environment (CI has no .env.local), altering test behavior.
+// Tests rely on .env.test + test/setup.ts defaults instead. (HOS-28)
 const _envLocal = resolve(_appDir, '.env.local');
-if (existsSync(_envLocal)) {
+if (process.env.NODE_ENV !== 'test' && existsSync(_envLocal)) {
     config({ path: _envLocal });
 }
 
@@ -102,5 +105,5 @@ const addonLogger = logger.registerCategory('ADDON-LIFECYCLE', 'ADDON_LIFECYCLE'
     stringifyObj: safeGetEnvBoolean('ADDON_LIFECYCLE_LOG_STRINGIFY', false)
 });
 
-export { typedApiLogger as apiLogger, addonLogger };
 export type { ApiLogger };
+export { addonLogger, typedApiLogger as apiLogger };

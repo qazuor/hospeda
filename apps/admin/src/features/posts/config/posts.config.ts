@@ -1,7 +1,7 @@
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { BadgeColor, EntityType } from '@/components/table/DataTable';
-import type { z } from 'zod';
 import { type Post, PostListItemWithComputedFieldsSchema } from '../schemas/posts.schemas';
 import { createPostsColumns } from './posts.columns';
 
@@ -257,4 +257,5 @@ export const postsConfig: EntityConfig<Post> = {
 };
 
 const { component, route } = createEntityListPage(postsConfig);
+
 export { component as PostsPageComponent, route as PostsRoute };

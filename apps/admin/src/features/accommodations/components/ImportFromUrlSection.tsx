@@ -25,12 +25,12 @@
  * @module ImportFromUrlSection
  */
 
+import { AlertCircleIcon, ImportIcon, InfoIcon, LoaderIcon } from '@repo/icons';
+import type { AccommodationImportResponse, ImportFailureCode } from '@repo/schemas';
+import { AccommodationImportRequestSchema } from '@repo/schemas';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useEntityFormContext } from '@/components/entity-form/context/EntityFormContext';
 import { useTranslations } from '@/hooks/use-translations';
-import { AlertCircleIcon, ImportIcon, InfoIcon, LoaderIcon } from '@repo/icons';
-import { AccommodationImportRequestSchema } from '@repo/schemas';
-import type { AccommodationImportResponse, ImportFailureCode } from '@repo/schemas';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     isAsyncImportStart,
     useAccommodationImportMutation

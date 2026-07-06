@@ -19,19 +19,15 @@
  * @module env
  */
 import Constants from 'expo-constants';
-import { z } from 'zod';
+import { EnvSchema } from './env-schema';
 
 /** Supported app environments, injected via `EXPO_PUBLIC_APP_ENV` (eas.json). */
 export type AppEnv = 'development' | 'staging' | 'production';
 
-/**
- * Shape of the mobile env. Both vars are optional at the schema level; the
- * production requirement is enforced as a cross-field check in {@link validateEnv}.
- */
-const EnvSchema = z.object({
-    EXPO_PUBLIC_API_URL: z.string().url().optional(),
-    EXPO_PUBLIC_APP_ENV: z.enum(['development', 'staging', 'production']).optional()
-});
+// `EnvSchema` (both vars optional at the schema level; the production
+// requirement is enforced as a cross-field check in {@link validateEnv} below)
+// now lives in the pure `env-schema.ts` sibling file (no `expo-constants`
+// import) — see its module docblock for why.
 
 /** Local dev server, used only when no explicit API URL is configured. */
 const FALLBACK_API_URL = 'http://localhost:3001';

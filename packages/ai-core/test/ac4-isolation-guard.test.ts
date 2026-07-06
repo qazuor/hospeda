@@ -22,7 +22,7 @@
  * on every `pnpm --filter @repo/ai-core test` run and in CI.
  */
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -160,6 +160,47 @@ describe('AC-4 static isolation guard (T-036)', () => {
 
         // Assert
         expect(offenders).toEqual([]);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// list-models.ts SDK-free guard (HOS-94) — rule 3 exempts src/providers/, but
+// this file's whole design premise is being SDK-free, so it needs its own
+// dedicated assertion rather than relying on the package-wide rule 3 scan.
+// ---------------------------------------------------------------------------
+
+describe('HOS-94 list-models.ts stays SDK-free', () => {
+    const files = scanAllSources();
+    const listModelsFile = files.find((f) => f.relPath === 'providers/list-models.ts');
+
+    it('should find providers/list-models.ts in the scan (sanity)', () => {
+        // Assert — if this file is renamed/moved, the guard below must not
+        // vacuously pass by finding `undefined`.
+        expect(listModelsFile).toBeDefined();
+    });
+
+    it('should import NO ai / @ai-sdk specifier in list-models.ts', () => {
+        // Act
+        const hasAiSdkImport = listModelsFile?.importSpecifiers.some(isAiSdkImport) ?? true;
+
+        // Assert
+        expect(hasAiSdkImport).toBe(false);
+    });
+
+    it('should access NO process.env in list-models.ts', () => {
+        // Act
+        const hasEnvAccess = listModelsFile ? hasProcessEnvAccess(listModelsFile.code) : true;
+
+        // Assert
+        expect(hasEnvAccess).toBe(false);
+    });
+
+    it('should import NO @repo/db in list-models.ts', () => {
+        // Act
+        const hasDbImport = listModelsFile?.importSpecifiers.some(isDbImport) ?? true;
+
+        // Assert
+        expect(hasDbImport).toBe(false);
     });
 });
 

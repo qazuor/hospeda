@@ -24,12 +24,12 @@ process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = 'TEST-fake-access-token-for-dlq'
 process.env.HOSPEDA_MERCADO_PAGO_SANDBOX = 'true';
 
 import {
-    type QZPayBillingWebhookDeadLetter,
-    type QZPayBillingWebhookEvent,
     billingWebhookDeadLetter,
     billingWebhookEvents,
     eq,
-    isNull
+    isNull,
+    type QZPayBillingWebhookDeadLetter,
+    type QZPayBillingWebhookEvent
 } from '@repo/db';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';

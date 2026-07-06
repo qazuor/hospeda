@@ -3,8 +3,8 @@
  * @description TipTap WYSIWYG editor for the web app, persisting content as Markdown.
  *
  * Adapted from admin's RichTextField with simplified props for the web
- * accommodation editor. Uses TipTap StarterKit (h2/h3), Underline, Link,
- * and Markdown extensions.
+ * accommodation editor. Uses TipTap v3 StarterKit (h2/h3, with Underline and
+ * Link bundled) and the Markdown extension.
  *
  * SSR safety: This component MUST be rendered with `client:only="react"` or
  * wrapped in `React.lazy` because TipTap accesses `window` during init.
@@ -21,13 +21,46 @@ import {
     QuotesIcon,
     UnderlineIcon
 } from '@repo/icons';
-import Link from '@tiptap/extension-link';
-import Underline from '@tiptap/extension-underline';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useCallback, useEffect } from 'react';
 import { Markdown } from 'tiptap-markdown';
 import styles from './RichTextEditor.module.css';
+
+/**
+ * Reads the Markdown serialization from a TipTap editor.
+ *
+ * `tiptap-markdown@0.9.0` ships no Tiptap v3 `Storage` type augmentation, so
+ * `editor.storage.markdown` is untyped under v3. Narrow it here (once) instead
+ * of casting at every call site. Exported so the compatibility test reads the
+ * value the same way the component does.
+ */
+export function readMarkdown(editor: { storage: unknown }): string {
+    const storage = editor.storage as { markdown?: { getMarkdown?: () => string } };
+    return storage.markdown?.getMarkdown?.() ?? '';
+}
+
+/**
+ * TipTap extension set for the web host editor.
+ *
+ * Exported so the v3 compatibility test mounts the exact configuration the
+ * component ships. v3 bundles Link and Underline into StarterKit; the bundled
+ * Link keeps the previous `openOnClick: false` behavior.
+ */
+export const HOST_EDITOR_EXTENSIONS = [
+    StarterKit.configure({
+        heading: { levels: [2, 3] },
+        link: {
+            openOnClick: false
+        }
+    }),
+    Markdown.configure({
+        html: false,
+        linkify: true,
+        breaks: false,
+        transformPastedText: true
+    })
+];
 
 // ---------------------------------------------------------------------------
 // Types
@@ -78,21 +111,7 @@ export function RichTextEditor({
         immediatelyRender: false,
         editable: !disabled,
         content: value,
-        extensions: [
-            StarterKit.configure({
-                heading: { levels: [2, 3] }
-            }),
-            Underline,
-            Link.configure({
-                openOnClick: false
-            }),
-            Markdown.configure({
-                html: false,
-                linkify: true,
-                breaks: false,
-                transformPastedText: true
-            })
-        ],
+        extensions: HOST_EDITOR_EXTENSIONS,
         editorProps: {
             attributes: {
                 role: 'textbox',
@@ -102,7 +121,7 @@ export function RichTextEditor({
             }
         },
         onUpdate({ editor: ed }) {
-            const md = ed.storage.markdown?.getMarkdown?.() ?? '';
+            const md = readMarkdown(ed);
             onChange(md);
         }
     });
@@ -110,9 +129,9 @@ export function RichTextEditor({
     // Keep the editor in sync when the controlled `value` changes externally
     useEffect(() => {
         if (!editor) return;
-        const currentMd: string = editor.storage.markdown?.getMarkdown?.() ?? '';
+        const currentMd: string = readMarkdown(editor);
         if ((value ?? '') !== currentMd) {
-            editor.commands.setContent(value ?? '', false);
+            editor.commands.setContent(value ?? '', { emitUpdate: false });
         }
     }, [editor, value]);
 

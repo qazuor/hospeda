@@ -1,3 +1,6 @@
+import { DownloadIcon, ExternalLinkIcon, ImageIcon } from '@repo/icons';
+import { getMediaUrl } from '@repo/media';
+import * as React from 'react';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
 import type {
@@ -8,10 +11,6 @@ import { Badge, Label } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
-
-import { DownloadIcon, ExternalLinkIcon, ImageIcon } from '@repo/icons';
-import { getMediaUrl } from '@repo/media';
-import * as React from 'react';
 
 /**
  * Props for ImageViewField component

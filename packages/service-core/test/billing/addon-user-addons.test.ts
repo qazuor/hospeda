@@ -92,7 +92,7 @@ function buildBillingClient(customerId: string | null = 'cust-1') {
             getByExternalId: vi
                 .fn()
                 .mockResolvedValue(
-                    customerId !== null ? { id: customerId, email: 'test@example.com' } : null
+                    customerId === null ? null : { id: customerId, email: 'test@example.com' }
                 )
         },
         subscriptions: {

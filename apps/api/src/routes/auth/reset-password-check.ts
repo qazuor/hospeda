@@ -78,7 +78,10 @@ export const resetPasswordCheckRoute = createPublicRoute({
 export const checkResetPasswordToken = async ({
     token,
     db
-}: { token: string; db: ReturnType<typeof getDb> }): Promise<ResetPasswordCheckResponse> => {
+}: {
+    token: string;
+    db: ReturnType<typeof getDb>;
+}): Promise<ResetPasswordCheckResponse> => {
     try {
         const rows = await db
             .select({

@@ -16,7 +16,7 @@ import type { DestinationModel } from '@repo/db';
 import * as db from '@repo/db';
 import type { DestinationFaqAddInput, DestinationFaqReorderInput } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/destination/destination.permission';
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import { ServiceError } from '../../../src/types';
@@ -62,9 +62,9 @@ describe('DestinationService.reorderFaqs', () => {
             ]
         };
 
-        vi.spyOn(db, 'DestinationFaqModel').mockImplementation(
-            () => faqModelMock as unknown as db.DestinationFaqModel
-        );
+        vi.spyOn(db, 'DestinationFaqModel').mockImplementation(function () {
+            return faqModelMock as unknown as db.DestinationFaqModel;
+        });
         // withTransaction: execute callback immediately with a no-op tx
         vi.spyOn(db, 'withTransaction').mockImplementation(((
             fn: (tx: unknown) => Promise<unknown>
@@ -167,9 +167,9 @@ describe('DestinationService.addFaq – displayOrder assignment', () => {
         entity = createDestination();
         actor = createActor({ permissions: [PermissionEnum.DESTINATION_UPDATE] });
 
-        vi.spyOn(db, 'DestinationFaqModel').mockImplementation(
-            () => faqModelMock as unknown as db.DestinationFaqModel
-        );
+        vi.spyOn(db, 'DestinationFaqModel').mockImplementation(function () {
+            return faqModelMock as unknown as db.DestinationFaqModel;
+        });
     });
 
     it('should assign displayOrder = max+1 when existing FAQs are present', async () => {

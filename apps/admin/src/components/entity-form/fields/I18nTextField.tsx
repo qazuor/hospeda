@@ -1,9 +1,9 @@
+import type { I18nText } from '@repo/schemas';
+import * as React from 'react';
 import { FieldWrapper } from '@/components/entity-form/components/FieldWrapper';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
 import { Input, Textarea } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-import type { I18nText } from '@repo/schemas';
-import * as React from 'react';
 
 /**
  * Supported locales for i18n text fields.

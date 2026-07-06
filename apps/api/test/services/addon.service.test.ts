@@ -14,7 +14,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { AddonService } from '../../src/services/addon.service';
 
 // Hoisted mock functions for service-core query functions (addon-user-addons).
@@ -101,30 +101,28 @@ const {
     ];
 
     // Catalog service mocks — filter MOCK_ADDONS like the real service would.
-    const mockCatalogList = vi.fn().mockImplementation(
-        async (
-            input: {
-                billingType?: string;
-                targetCategory?: string;
-                active?: boolean;
-            } = {}
-        ) => {
-            let filtered = [...MOCK_ADDONS];
-            if (input.billingType !== undefined) {
-                filtered = filtered.filter((a) => a.billingType === input.billingType);
+    const mockCatalogList = vi
+        .fn()
+        .mockImplementation(
+            async (
+                input: { billingType?: string; targetCategory?: string; active?: boolean } = {}
+            ) => {
+                let filtered = [...MOCK_ADDONS];
+                if (input.billingType !== undefined) {
+                    filtered = filtered.filter((a) => a.billingType === input.billingType);
+                }
+                if (input.targetCategory !== undefined) {
+                    filtered = filtered.filter((a) =>
+                        (a.targetCategories as readonly string[]).includes(input.targetCategory!)
+                    );
+                }
+                if (input.active !== undefined) {
+                    filtered = filtered.filter((a) => a.isActive === input.active);
+                }
+                filtered.sort((a, b) => a.sortOrder - b.sortOrder);
+                return { success: true, data: filtered };
             }
-            if (input.targetCategory !== undefined) {
-                filtered = filtered.filter((a) =>
-                    (a.targetCategories as readonly string[]).includes(input.targetCategory!)
-                );
-            }
-            if (input.active !== undefined) {
-                filtered = filtered.filter((a) => a.isActive === input.active);
-            }
-            filtered.sort((a, b) => a.sortOrder - b.sortOrder);
-            return { success: true, data: filtered };
-        }
-    );
+        );
 
     const mockCatalogGetBySlug = vi.fn().mockImplementation(async (slug: string) => {
         const addon = MOCK_ADDONS.find((a) => a.slug === slug);
@@ -166,10 +164,12 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         listAvailableAddons: mockCatalogList,
         getAddonCatalogEntry: mockCatalogGetBySlug,
         // DB-backed catalog service used by addon.user-addons.ts (SPEC-192 T-011 cutover)
-        AddonCatalogService: vi.fn().mockImplementation(() => ({
-            getBySlug: mockCatalogGetBySlug,
-            list: mockCatalogList
-        })),
+        AddonCatalogService: vi.fn().mockImplementation(function () {
+            return {
+                getBySlug: mockCatalogGetBySlug,
+                list: mockCatalogList
+            };
+        }),
         // cancelAddonPurchaseRecord from the path-specific mock takes precedence for the
         // actual runtime path, but keeping it here ensures correct typing for consumers.
         cancelAddonPurchaseRecord: mockCancelAddonPurchaseRecord,
@@ -353,10 +353,12 @@ const {
 
 // Mock addon-entitlement service
 vi.mock('../../src/services/addon-entitlement.service', () => ({
-    AddonEntitlementService: vi.fn().mockImplementation(() => ({
-        applyAddonEntitlements: mockApplyAddonEntitlements,
-        removeAddonEntitlements: mockRemoveAddonEntitlements
-    }))
+    AddonEntitlementService: vi.fn().mockImplementation(function () {
+        return {
+            applyAddonEntitlements: mockApplyAddonEntitlements,
+            removeAddonEntitlements: mockRemoveAddonEntitlements
+        };
+    })
 }));
 
 // Mock addon-limit-recalculation service — default to success so cancelAddon tests
@@ -453,33 +455,29 @@ describe('AddonService', () => {
         const txUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
         const txUpdateSet = vi.fn(() => ({ where: txUpdateWhere }));
         const txUpdate = vi.fn(() => ({ set: txUpdateSet }));
-        mockDbTransaction.mockImplementation(
-            async (
-                callback: (tx: {
-                    insert: typeof mockDbInsert;
-                    update: typeof txUpdate;
-                }) => Promise<unknown>
-            ) => {
-                return callback({ insert: mockDbInsert, update: txUpdate });
-            }
-        );
+        mockDbTransaction.mockImplementation(async function (
+            callback: (tx: {
+                insert: typeof mockDbInsert;
+                update: typeof txUpdate;
+            }) => Promise<unknown>
+        ) {
+            return callback({ insert: mockDbInsert, update: txUpdate });
+        });
 
         // Restore mockWithTransaction (SPEC-064) after clearAllMocks wipes it.
-        mockWithTransaction.mockImplementation(
-            async (
-                callback: (tx: {
-                    insert: typeof mockDbInsert;
-                    update: typeof txUpdate;
-                }) => Promise<unknown>,
-                existingTx?: unknown
-            ) => {
-                if (existingTx)
-                    return callback(
-                        existingTx as { insert: typeof mockDbInsert; update: typeof txUpdate }
-                    );
-                return mockDbTransaction(callback);
-            }
-        );
+        mockWithTransaction.mockImplementation(async function (
+            callback: (tx: {
+                insert: typeof mockDbInsert;
+                update: typeof txUpdate;
+            }) => Promise<unknown>,
+            existingTx?: unknown
+        ) {
+            if (existingTx)
+                return callback(
+                    existingTx as { insert: typeof mockDbInsert; update: typeof txUpdate }
+                );
+            return mockDbTransaction(callback);
+        });
     });
 
     describe('listAvailable', () => {
@@ -1245,7 +1243,9 @@ describe('AddonService', () => {
             const mockLimit = vi.fn().mockResolvedValue(records);
             const mockWhere = vi.fn(() => ({ limit: mockLimit }));
             const mockFrom = vi.fn(() => ({ where: mockWhere }));
-            mockDbSelect.mockImplementationOnce(() => ({ from: mockFrom }));
+            mockDbSelect.mockImplementationOnce(function () {
+                return { from: mockFrom };
+            });
         }
 
         const PURCHASE_ID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
@@ -1390,7 +1390,7 @@ describe('AddonService', () => {
 
         it('should handle DB exceptions gracefully and return INTERNAL_ERROR', async () => {
             // Arrange: the select chain itself throws
-            mockDbSelect.mockImplementationOnce(() => {
+            mockDbSelect.mockImplementationOnce(function () {
                 throw new Error('Database connection error');
             });
 

@@ -20,7 +20,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { handlePlanChangeAddonRecalculation } from '../../src/services/addon-plan-change.service';
 import { createMockBilling } from '../helpers/mock-factories';
 
@@ -83,14 +83,18 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         ...actual,
         withServiceTransaction: (...args: unknown[]) =>
             mockWithServiceTransaction(...(args as Parameters<typeof mockWithServiceTransaction>)),
-        AddonCatalogService: vi.fn().mockImplementation(() => ({
-            getBySlug: mockAddonCatalogGetBySlug,
-            list: vi.fn().mockResolvedValue({ success: true, data: [] })
-        })),
-        PlanService: vi.fn().mockImplementation(() => ({
-            getById: mockPlanServiceGetById,
-            getBySlug: mockPlanServiceGetBySlug
-        }))
+        AddonCatalogService: vi.fn().mockImplementation(function () {
+            return {
+                getBySlug: mockAddonCatalogGetBySlug,
+                list: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+        }),
+        PlanService: vi.fn().mockImplementation(function () {
+            return {
+                getById: mockPlanServiceGetById,
+                getBySlug: mockPlanServiceGetBySlug
+            };
+        })
     };
 });
 
@@ -323,7 +327,7 @@ describe('DEDUP_WINDOW_MS behavioral constant (SPEC-064)', () => {
             success: false,
             error: { code: 'NOT_FOUND', message: 'Plan not found' }
         });
-        mockPlanServiceGetBySlug.mockImplementation((slug: string) => {
+        mockPlanServiceGetBySlug.mockImplementation(function (slug: string) {
             if (slug === OLD_PLAN_SLUG)
                 return Promise.resolve({ success: true, data: mockOldPlan });
             if (slug === NEW_PLAN_SLUG)
@@ -335,7 +339,7 @@ describe('DEDUP_WINDOW_MS behavioral constant (SPEC-064)', () => {
         });
 
         // DB-backed addon catalog (SPEC-192 T-013 cutover).
-        mockAddonCatalogGetBySlug.mockImplementation((slug: string) => {
+        mockAddonCatalogGetBySlug.mockImplementation(function (slug: string) {
             if (slug === 'extra-accommodations-5')
                 return Promise.resolve({ success: true, data: mockAddonDef });
             return Promise.resolve({
@@ -358,11 +362,11 @@ describe('DEDUP_WINDOW_MS behavioral constant (SPEC-064)', () => {
         const customerId = 'cus_dedup_const_boundary_below';
         const purchase = { ...activePurchaseRow, customerId };
 
-        mockWithServiceTransaction.mockImplementation(
-            async (cb: (ctx: unknown) => Promise<unknown>) => {
-                return cb({ tx: buildTxMock({ purchaseRows: [purchase] }), hookState: {} });
-            }
-        );
+        mockWithServiceTransaction.mockImplementation(async function (
+            cb: (ctx: unknown) => Promise<unknown>
+        ) {
+            return cb({ tx: buildTxMock({ purchaseRows: [purchase] }), hookState: {} });
+        });
 
         const db = { select: vi.fn(), execute: vi.fn().mockResolvedValue([]) };
         const baseTs = 1_000_000_000_000;
@@ -401,11 +405,11 @@ describe('DEDUP_WINDOW_MS behavioral constant (SPEC-064)', () => {
         const customerId = 'cus_dedup_const_boundary_above';
         const purchase = { ...activePurchaseRow, customerId };
 
-        mockWithServiceTransaction.mockImplementation(
-            async (cb: (ctx: unknown) => Promise<unknown>) => {
-                return cb({ tx: buildTxMock({ purchaseRows: [purchase] }), hookState: {} });
-            }
-        );
+        mockWithServiceTransaction.mockImplementation(async function (
+            cb: (ctx: unknown) => Promise<unknown>
+        ) {
+            return cb({ tx: buildTxMock({ purchaseRows: [purchase] }), hookState: {} });
+        });
 
         const db = { select: vi.fn(), execute: vi.fn().mockResolvedValue([]) };
         const baseTs = 2_000_000_000_000;

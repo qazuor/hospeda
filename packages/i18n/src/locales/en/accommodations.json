@@ -5,7 +5,21 @@
             "remove": "Remove from comparison",
             "addAriaLabel": "Add {{name}} to comparison",
             "removeAriaLabel": "Remove {{name}} from comparison",
-            "inListLabel": "In comparison"
+            "inListLabel": "In comparison",
+            "contextualAdd": "Add",
+            "contextualAdded": "Added"
+        },
+        "mode": {
+            "toggleLabel": "Compare accommodations",
+            "activeLabel": "Comparing",
+            "on": "Comparison mode on",
+            "off": "Comparison mode off",
+            "bannerHint": "Choose the accommodations you want to compare"
+        },
+        "gate": {
+            "authMessage": "Sign in to compare accommodations.",
+            "upsellMessage": "Your plan does not include accommodation comparison.",
+            "upsellCta": "View plans"
         },
         "toast": {
             "added": "Added to comparison",
@@ -29,13 +43,22 @@
             "compareNow": "Compare now",
             "clear": "Clear",
             "removeItemAriaLabel": "Remove {{name}} from comparison",
-            "minRequired": "Pick at least {{min}} to compare"
+            "minRequired": "Pick at least {{min}} to compare",
+            "counter": "Comparing {{current}} of {{max}}",
+            "emptySlot": "Empty",
+            "guidance": "Add at least one more to compare",
+            "viewComparison": "View comparison"
         },
         "page": {
             "metaTitle": "Compare accommodations",
             "metaDescription": "Compare accommodations side by side: price, location, rating and more.",
+            "tagline": "Compare better",
             "heading": "Accommodation comparison",
-            "backToListing": "Back to accommodations"
+            "subtitle": "We highlight the differences so you can decide more easily",
+            "breadcrumbLabel": "Compare",
+            "backToListing": "Back to accommodations",
+            "count_one": "Comparing {{count}} accommodation",
+            "count_other": "Comparing {{count}} accommodations"
         },
         "empty": {
             "title": "No accommodations to compare",
@@ -59,7 +82,17 @@
             "featured": "Featured",
             "summary": "Description",
             "viewDetails": "View details",
-            "notAvailable": "N/A"
+            "notAvailable": "N/A",
+            "highlightDifferences": "Highlight differences",
+            "bestValue": "Best value",
+            "bestValueAriaLabel": "Best value for {{attribute}}",
+            "scrollHint": "Swipe to see more →"
+        },
+        "detail": {
+            "add": "Add to comparison",
+            "added": "In comparison",
+            "addAriaLabel": "Add {{name}} to comparison",
+            "removeAriaLabel": "Remove {{name}} from comparison"
         }
     },
     "title": "Accommodations",
@@ -88,7 +121,17 @@
         "price.desc": "Price: High to low",
         "rating": "Top rated",
         "recent": "Most recent",
-        "name": "Name"
+        "name": "Name",
+        "mostSaved": "Most saved",
+        "ratingDesc": "Highest rated",
+        "mostReviewed": "Most reviewed",
+        "newest": "Newest",
+        "nameAsc": "Name A-Z",
+        "nameDesc": "Name Z-A",
+        "priceAsc": "Price: low to high",
+        "priceDesc": "Price: high to low",
+        "distance": "Distance",
+        "relevance": "Relevance"
     },
     "search": {
         "placeholder": "Search accommodations...",
@@ -200,7 +243,29 @@
         "dates": "Dates",
         "checkInPlaceholder": "Check-in",
         "checkOutPlaceholder": "Check-out",
-        "minCapacity": "Minimum capacity"
+        "minCapacity": "Minimum capacity",
+        "search": "Search by text",
+        "searchPlaceholder": "Search by name or description...",
+        "features": "Features",
+        "includeNoPrice": "Include without price",
+        "includeNoReviews": "Include without rating",
+        "children.helper": "(under 5 years old)",
+        "dates.helper": "Informational for now: real-time availability is under development and does not yet affect results.",
+        "geoRadius": "Near",
+        "geoRadius.browserCta": "Use my location",
+        "geoRadius.browserMode": "My location",
+        "geoRadius.browserPending": "Detecting…",
+        "geoRadius.browserError": "We couldn't detect your location. Check your browser permissions.",
+        "geoRadius.destinationMode": "One destination",
+        "geoRadius.destinationPlaceholder": "Choose a destination",
+        "geoRadius.radiusUnit": "km",
+        "section": {
+            "location": "Location",
+            "type": "Type and features",
+            "dates": "Dates",
+            "capacity": "Capacity",
+            "priceAndQuality": "Price and quality"
+        }
     },
     "faqs": "Frequently asked questions",
     "contactTitle": "Contact",
@@ -750,6 +815,27 @@
         "viewMap": "View on map",
         "popular": "Most saved",
         "allDestinations": "Explore destinations"
+    },
+    "typeChips": {
+        "ariaLabel": "Filter by accommodation type"
+    },
+    "header": {
+        "ariaLabel": "Listing controls"
+    },
+    "viewToggle": {
+        "ariaLabel": "View",
+        "list": "List",
+        "map": "Map"
+    },
+    "contextBar": {
+        "checkIn": "Check-in",
+        "checkOut": "Check-out"
+    },
+    "quickAmenity": {
+        "wifi": "WiFi",
+        "pool": "Pool",
+        "parking": "Parking",
+        "pets": "Pet-friendly"
     },
     "aiChat": {
         "fabLabel": "Ask AI about this accommodation",

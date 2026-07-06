@@ -11,16 +11,15 @@
  *    progress indicator with "Uploading X MB..." text.
  */
 
+import { ModerationStatusEnum } from '@repo/schemas';
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import * as React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { GalleryField } from '@/components/entity-form/fields/GalleryField';
 import { ImageField, type ImageValue } from '@/components/entity-form/fields/ImageField';
 import { useGalleryUploads } from '@/components/entity-form/fields/use-gallery-uploads';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
-import { ModerationStatusEnum } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Helpers

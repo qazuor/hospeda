@@ -32,7 +32,9 @@ const { _mockDb, mockGetDb } = vi.hoisted(() => {
 vi.mock('@repo/db', () => ({
     getDb: mockGetDb,
     // EntityViewService singleton (service-core barrel) dereferences these at import.
-    AccommodationModel: vi.fn(() => ({ findIdsByOwnerId: vi.fn(async () => []) })),
+    AccommodationModel: vi.fn(function () {
+        return { findIdsByOwnerId: vi.fn(async () => []) };
+    }),
     entityViewModel: {
         insertView: vi.fn(),
         getStatsForEntities: vi.fn(async () => []),

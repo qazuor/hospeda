@@ -39,19 +39,23 @@ describe('AuditLogEntryFilterSchema', () => {
         expect(AuditLogEntryFilterSchema.safeParse({ actorId: 'anonymous' }).success).toBe(false);
     });
 
-    it.each(['loggedAt:asc', 'loggedAt:desc', 'severity:asc', 'severity:desc'])(
-        'accepts whitelisted sort %s',
-        (sort) => {
-            expect(AuditLogEntryFilterSchema.safeParse({ sort }).success).toBe(true);
-        }
-    );
+    it.each([
+        'loggedAt:asc',
+        'loggedAt:desc',
+        'severity:asc',
+        'severity:desc'
+    ])('accepts whitelisted sort %s', (sort) => {
+        expect(AuditLogEntryFilterSchema.safeParse({ sort }).success).toBe(true);
+    });
 
-    it.each(['message:desc', 'loggedAt:random', 'eventType:asc', 'loggedAt'])(
-        'rejects invalid sort %s',
-        (sort) => {
-            expect(AuditLogEntryFilterSchema.safeParse({ sort }).success).toBe(false);
-        }
-    );
+    it.each([
+        'message:desc',
+        'loggedAt:random',
+        'eventType:asc',
+        'loggedAt'
+    ])('rejects invalid sort %s', (sort) => {
+        expect(AuditLogEntryFilterSchema.safeParse({ sort }).success).toBe(false);
+    });
 
     it('does not expose a logType filter (route-injected, not client-supplied)', () => {
         // logType is intentionally absent from the client filter schema; unknown

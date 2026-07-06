@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { BaseAuditFields } from '../../common/audit.schema.js';
-import { UserIdSchema } from '../../common/id.schema.js';
-import { DestinationIdSchema } from '../../common/id.schema.js';
+import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
 
 // ---------------------------------------------------------------------------
 // Commerce Lead Schema

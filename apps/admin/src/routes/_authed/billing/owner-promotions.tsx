@@ -3,15 +3,27 @@
  *
  * Manages special promotions offered by accommodation owners
  */
+
+import { EntitlementKey, LimitKey } from '@repo/billing';
+import { AddIcon } from '@repo/icons';
+import { LifecycleStatusEnum } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { BadgeColor, ColumnType, type DataTableColumn } from '@/components/table/DataTable';
-import { DataTable } from '@/components/table/DataTable';
+import {
+    BadgeColor,
+    ColumnType,
+    DataTable,
+    type DataTableColumn
+} from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PlanEntitlementGate } from '@/features/billing/PlanEntitlementGate';
 import { PlanLimitGate } from '@/features/billing/PlanLimitGate';
 import { useActiveOwnerPromotionCount } from '@/features/billing/use-limit-counts';
+import { PromotionDetailDialog } from '@/features/owner-promotions/components/PromotionDetailDialog';
+import { PromotionFormDialog } from '@/features/owner-promotions/components/PromotionFormDialog';
 import {
     useDeleteOwnerPromotionMutation,
     useOwnerPromotionsQuery,
@@ -20,14 +32,6 @@ import {
 import type { OwnerPromotion } from '@/features/owner-promotions/types';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
-import { EntitlementKey, LimitKey } from '@repo/billing';
-import { AddIcon } from '@repo/icons';
-import { LifecycleStatusEnum } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
-
-import { PromotionDetailDialog } from '@/features/owner-promotions/components/PromotionDetailDialog';
-import { PromotionFormDialog } from '@/features/owner-promotions/components/PromotionFormDialog';
 
 export const Route = createFileRoute('/_authed/billing/owner-promotions')({
     beforeLoad: ({ context }) => requireBillingAccess(context),

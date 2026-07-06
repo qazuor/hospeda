@@ -20,7 +20,8 @@ export interface FormatPriceInput {
     readonly locale: SummaryLocale;
     /**
      * ISO 4217 currency code override.
-     * Defaults to ARS for 'es' and USD for 'en'.
+     * Defaults to ARS for 'es' and 'pt' (accommodations are always priced in
+     * Argentine pesos regardless of viewer locale), and USD for 'en'.
      */
     readonly currency?: string;
 }
@@ -28,7 +29,8 @@ export interface FormatPriceInput {
 /** Maps summary locales to their default ISO 4217 currency codes. */
 const DEFAULT_CURRENCY: Readonly<Record<SummaryLocale, string>> = {
     es: 'ARS',
-    en: 'USD'
+    en: 'USD',
+    pt: 'ARS'
 } as const;
 
 /**

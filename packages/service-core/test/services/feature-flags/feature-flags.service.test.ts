@@ -2,8 +2,8 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type vi } from 'vitest';
 import { FeatureFlagService } from '../../../src/services/feature-flags/feature-flags.service';
 import type { Actor } from '../../../src/types';
-import { createModelMock } from '../../utils/modelMockFactory';
 import type { StandardModelMock } from '../../utils/modelMockFactory';
+import { createModelMock } from '../../utils/modelMockFactory';
 
 type FeatureFlagModelMock = StandardModelMock & {
     findActiveFlags: ReturnType<typeof vi.fn>;

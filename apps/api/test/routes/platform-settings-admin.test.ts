@@ -26,10 +26,12 @@ vi.mock('@repo/service-core', async () => {
     const actual = await vi.importActual<typeof import('@repo/service-core')>('@repo/service-core');
     return {
         ...actual,
-        PlatformSettingsService: vi.fn().mockImplementation(() => ({
-            get: mockGet,
-            upsert: mockUpsert
-        }))
+        PlatformSettingsService: vi.fn().mockImplementation(function () {
+            return {
+                get: mockGet,
+                upsert: mockUpsert
+            };
+        })
     };
 });
 

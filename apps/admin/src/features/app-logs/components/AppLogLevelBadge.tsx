@@ -4,8 +4,9 @@
  * Renders a styled badge for an app log level value.
  * WARN → amber/yellow styling, ERROR → destructive (red).
  */
-import { Badge } from '@/components/ui/badge';
+
 import type { AppLogEntryLevel } from '@repo/schemas';
+import { Badge } from '@/components/ui/badge';
 
 /** Props for AppLogLevelBadge */
 export interface AppLogLevelBadgeProps {

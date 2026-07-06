@@ -15,12 +15,12 @@
  * @module routes/billing/subscription-status
  */
 
+import type { SubscriptionStatusResponse } from '@repo/schemas';
 import {
     SubscriptionStatusEnum,
     SubscriptionStatusParamsSchema,
     SubscriptionStatusResponseSchema
 } from '@repo/schemas';
-import type { SubscriptionStatusResponse } from '@repo/schemas';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { getQZPayBilling } from '../../middlewares/billing';

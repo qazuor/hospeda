@@ -56,7 +56,9 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        TagService: vi.fn().mockImplementation(() => mockTagService)
+        TagService: vi.fn().mockImplementation(function () {
+            return mockTagService;
+        })
     };
 });
 

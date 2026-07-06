@@ -1,11 +1,11 @@
+import { formatDate } from '@repo/i18n';
+import { createFileRoute } from '@tanstack/react-router';
+import { useCallback, useEffect, useState } from 'react';
 import { MainPageLayout } from '@/components/layout/MainPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
-import { formatDate } from '@repo/i18n';
-import { createFileRoute } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_authed/notifications')({
     component: NotificationsPage

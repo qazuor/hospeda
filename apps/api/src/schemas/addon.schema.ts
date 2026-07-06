@@ -7,6 +7,14 @@
  * @module schemas/addon
  */
 
+export type {
+    AddonResponse,
+    CancelAddon,
+    ListAddonsQuery,
+    PurchaseAddon,
+    PurchaseAddonResponse,
+    UserAddonResponse
+} from '@repo/schemas';
 export {
     AddonBillingTypeSchema,
     AddonResponseSchema,
@@ -16,13 +24,4 @@ export {
     PurchaseAddonResponseSchema,
     PurchaseAddonSchema,
     UserAddonResponseSchema
-} from '@repo/schemas';
-
-export type {
-    AddonResponse,
-    CancelAddon,
-    ListAddonsQuery,
-    PurchaseAddon,
-    PurchaseAddonResponse,
-    UserAddonResponse
 } from '@repo/schemas';

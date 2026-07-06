@@ -32,8 +32,8 @@ import { restoreFullPriceMutation } from '../../../services/promo-renewal-mp.ser
 import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger.js';
 import {
-    type MPAuthorizedPaymentDetails,
-    fetchAuthorizedPaymentDetails
+    fetchAuthorizedPaymentDetails,
+    type MPAuthorizedPaymentDetails
 } from '../../../utils/mp-authorized-payment.js';
 import { cleanupRequestProviderEventId } from './event-handler.js';
 import { markEventFailedByProviderId, markEventProcessedByProviderId } from './utils.js';
@@ -514,8 +514,6 @@ export const _internals = {
  * @param preapprovalId - The MercadoPago preapproval (subscription) ID.
  * @returns The local subscription's `id` and `customerId`, or `null` if not found.
  */
-export { findLocalSubscriptionByPreapprovalId };
-
 /**
  * Check whether a `billing_payments` row already exists for a given
  * MercadoPago payment ID. Used by both the live handler and the dead-letter
@@ -524,4 +522,4 @@ export { findLocalSubscriptionByPreapprovalId };
  * @param providerPaymentId - The MercadoPago payment ID to check.
  * @returns `true` if a record already exists.
  */
-export { paymentAlreadyRecorded };
+export { findLocalSubscriptionByPreapprovalId, paymentAlreadyRecorded };

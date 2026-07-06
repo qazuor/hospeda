@@ -13,11 +13,11 @@
  * generic system cannot be used (e.g. embedded modals, custom workflows).
  */
 
-import { Button } from '@/components/ui-wrapped/Button';
 import { GastronomyCreateHttpSchema, GastronomyTypeEnum, PriceRangeEnum } from '@repo/schemas';
 import { useForm } from '@tanstack/react-form';
 import * as React from 'react';
 import type { z } from 'zod';
+import { Button } from '@/components/ui-wrapped/Button';
 
 // ---------------------------------------------------------------------------
 // Types

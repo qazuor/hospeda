@@ -1,7 +1,7 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useTranslations } from '@/hooks/use-translations';
 import { formatNumber } from '@repo/i18n';
 import { AlertCircleIcon, CheckCircleIcon, InfoIcon } from '@repo/icons';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
 import type { CustomerUsageSummary } from '../types';
 
 interface UsageDisplayProps {

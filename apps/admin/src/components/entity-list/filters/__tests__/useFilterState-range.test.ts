@@ -14,7 +14,7 @@
  */
 
 import { act, renderHook } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, type Mock, vi } from 'vitest';
 import type { FilterBarConfig } from '../filter-types';
 import { useFilterState } from '../useFilterState';
 
@@ -81,7 +81,7 @@ const mixedConfig: FilterBarConfig = {
 function makeOnUpdateSearch() {
     const spy = vi.fn((updater: (prev: Record<string, unknown>) => Record<string, unknown>) => {
         spy.lastResult = updater({});
-    }) as ReturnType<typeof vi.fn> & { lastResult: Record<string, unknown> };
+    }) as Mock & { lastResult: Record<string, unknown> };
     spy.lastResult = {};
     return spy;
 }

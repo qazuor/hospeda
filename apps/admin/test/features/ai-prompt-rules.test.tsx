@@ -14,8 +14,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
+import { HttpResponse, http } from 'msw';
+import { describe, expect, it, type Mock, vi } from 'vitest';
 import { server } from '../mocks/server';
 
 // ---------------------------------------------------------------------------
@@ -37,8 +37,8 @@ import { server } from '../mocks/server';
 // the real hooks and the real API call shape.
 // ---------------------------------------------------------------------------
 
-import { useAiPromptsQuery, useCreateAiPromptMutation } from '@/features/ai-settings';
 import { useEffect, useState } from 'react';
+import { useAiPromptsQuery, useCreateAiPromptMutation } from '@/features/ai-settings';
 
 // ---------------------------------------------------------------------------
 // Harness component (mirrors FeaturePromptEditor logic)
@@ -157,7 +157,7 @@ function makePromptHandler(items: PromptFixture[], feature: string) {
     });
 }
 
-function makeCreateHandler(spy: ReturnType<typeof vi.fn>) {
+function makeCreateHandler(spy: Mock) {
     return http.post('http://localhost:3001/api/v1/admin/ai/prompts', async ({ request }) => {
         const body = await request.json();
         spy(body);

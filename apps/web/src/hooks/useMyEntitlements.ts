@@ -13,8 +13,8 @@
  * @module hooks/useMyEntitlements
  */
 
-import { getApiUrl } from '@/lib/env';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getApiUrl } from '@/lib/env';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -134,8 +134,16 @@ async function fetchEntitlements(): Promise<EntitlementsData> {
  * ```
  */
 export function useMyEntitlements(): UseMyEntitlementsReturn {
-    const [data, setData] = useState<EntitlementsData | null>(() => getCachedData());
-    const [isLoading, setIsLoading] = useState<boolean>(() => !getCachedData());
+    // Initial state is deliberately hydration-safe: it must NOT depend on the
+    // module-level cache. During SSR the cache is always empty (isLoading=true),
+    // but on the client another island may have already populated it, so a lazy
+    // `() => getCachedData()` initializer would yield a DIFFERENT first render on
+    // the client (isLoading=false) and trip React's hydration mismatch on
+    // `aria-busy` (HOS-85). Both server and the first client render therefore
+    // start from `null`/`true`; the cache is read in the effect below, one tick
+    // later, once hydration has already matched.
+    const [data, setData] = useState<EntitlementsData | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<Error | null>(null);
     const mountedRef = useRef(true);
 

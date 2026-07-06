@@ -19,8 +19,8 @@
  * @see SPEC-086 D-001, D-011, D-013, D-014, AC-F05-02, AC-F13
  */
 
-import { PostTagModel, RPostPostTagModel } from '@repo/db';
 import type { PostTagWithCount } from '@repo/db';
+import { PostTagModel, RPostPostTagModel } from '@repo/db';
 import type { PostTag } from '@repo/schemas';
 import {
     CreatePostTagSchema,

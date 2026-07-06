@@ -14,16 +14,23 @@
  * The {@link useCompareGuard} hook owns the entitlement + limit logic; the
  * server re-validates the same cap when the comparison page hydrates.
  *
+ * HOS-85 adds a `contextual` variant: a labeled add/remove control rendered in
+ * the card body instead of the always-visible actions-column icon. It reads
+ * {@link useCompareMode} and renders nothing (`null`) while compare mode is
+ * off — including during SSR, since the server snapshot for compare mode is
+ * always `false` — so it never shows in the default browsing experience.
+ *
  * @module components/shared/compare/CompareButton
  */
 
-import { useCompareGuard } from '@/hooks/useCompareGuard';
-import { cn } from '@/lib/cn';
-import { createT } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { addToast } from '@/store/toast-store';
 import { ColumnIcon } from '@repo/icons';
 import type { FC, MouseEvent } from 'react';
+import { useCompareGuard } from '@/hooks/useCompareGuard';
+import { cn } from '@/lib/cn';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+import { useCompareMode } from '@/store/compare-store';
+import { addToast } from '@/store/toast-store';
 import styles from './CompareButton.module.css';
 
 /**
@@ -31,8 +38,10 @@ import styles from './CompareButton.module.css';
  *
  * - `standalone` (default): circular icon-only button for listing cards.
  * - `compact`: smaller circular button for dense contexts (map popups).
+ * - `contextual` (HOS-85): labeled add/remove control rendered in the card
+ *   body, shown ONLY while compare mode ({@link useCompareMode}) is active.
  */
-export type CompareButtonVariant = 'standalone' | 'compact';
+export type CompareButtonVariant = 'standalone' | 'compact' | 'contextual';
 
 /** Props for the CompareButton island. */
 export interface CompareButtonProps {
@@ -81,8 +90,10 @@ export const CompareButton: FC<CompareButtonProps> = ({
 }) => {
     const t = createT(locale);
     const { isInList, isLoading, maxItems, toggle } = useCompareGuard();
+    const compareMode = useCompareMode();
 
     const selected = isInList(accommodationId);
+    const isContextual = variant === 'contextual';
 
     const comparePageHref = `/${locale}/alojamientos/comparar/`;
     const pricingHref = `/${locale}/suscriptores/planes/`;
@@ -157,6 +168,13 @@ export const CompareButton: FC<CompareButtonProps> = ({
         });
     };
 
+    // The contextual variant only exists while compare mode is active. It
+    // renders nothing during SSR (compare mode's server snapshot is always
+    // `false`) and while browsing outside compare mode.
+    if (isContextual && !compareMode) {
+        return null;
+    }
+
     return (
         <button
             type="button"
@@ -165,14 +183,29 @@ export const CompareButton: FC<CompareButtonProps> = ({
             aria-busy={isLoading}
             data-variant={variant}
             data-selected={selected ? 'true' : undefined}
-            className={cn(styles.button, className)}
+            className={cn(isContextual ? styles.contextualButton : styles.button, className)}
             onClick={handleClick}
         >
-            <ColumnIcon
-                size={variant === 'compact' ? 18 : 22}
-                weight={selected ? 'fill' : 'regular'}
-                aria-hidden="true"
-            />
+            {isContextual ? (
+                <>
+                    <ColumnIcon
+                        size={16}
+                        weight={selected ? 'fill' : 'regular'}
+                        aria-hidden="true"
+                    />
+                    <span>
+                        {selected
+                            ? t('accommodations.comparison.button.contextualAdded', 'Agregado')
+                            : t('accommodations.comparison.button.contextualAdd', 'Agregar')}
+                    </span>
+                </>
+            ) : (
+                <ColumnIcon
+                    size={variant === 'compact' ? 18 : 22}
+                    weight={selected ? 'fill' : 'regular'}
+                    aria-hidden="true"
+                />
+            )}
         </button>
     );
 };

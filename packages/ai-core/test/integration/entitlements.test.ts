@@ -28,8 +28,8 @@
 
 import type { AiFeatureConfig } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AiCeilingHitError, createAiEngine } from '../../src/engine/index.js';
 import type { AiEngineEvent } from '../../src/engine/index.js';
+import { AiCeilingHitError, createAiEngine } from '../../src/engine/index.js';
 import type { AiProvider } from '../../src/providers/ai-provider.interface.js';
 import { StubProvider } from '../../src/providers/index.js';
 import { calculateCostMicroUsd } from '../../src/usage/cost-calculator.js';
@@ -122,12 +122,18 @@ beforeEach(() => {
 
     mockResolveConfig.mockResolvedValue({ providers: {}, features: {} });
     mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_ENABLED);
-    mockIsFeatureKillSwitched.mockImplementation((cfg: AiFeatureConfig) => !cfg.enabled);
-    mockGetProviderOrder.mockImplementation(
-        ({ featureConfig }: { featureConfig: AiFeatureConfig }) => ({
+    mockIsFeatureKillSwitched.mockImplementation(function (cfg: AiFeatureConfig) {
+        return !cfg.enabled;
+    });
+    mockGetProviderOrder.mockImplementation(function ({
+        featureConfig
+    }: {
+        featureConfig: AiFeatureConfig;
+    }) {
+        return {
             providers: [featureConfig.primaryProvider, ...featureConfig.fallbackChain]
-        })
-    );
+        };
+    });
 
     // Default: storage insert succeeds
     mockInsertAiUsage.mockResolvedValue(STUB_USAGE_ROW);

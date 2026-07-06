@@ -56,9 +56,11 @@ vi.mock('../../../../src/utils/actor', () => ({
 }));
 
 vi.mock('@repo/service-core', () => ({
-    SocialPostService: vi.fn(() => ({
-        getDashboard: mockGetDashboard
-    }))
+    SocialPostService: vi.fn(function () {
+        return {
+            getDashboard: mockGetDashboard
+        };
+    })
 }));
 
 const { mockGetDecryptedSocialCredential } = vi.hoisted(() => ({

@@ -4,9 +4,9 @@
  * Verifies rendering, toolbar buttons, content typing, and Markdown round-trip.
  */
 
-import { RichTextEditor } from '@/components/host/editor/RichTextEditor.client';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { RichTextEditor } from '@/components/host/editor/RichTextEditor.client';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -24,7 +24,9 @@ vi.mock('@/lib/i18n', () => ({
 vi.mock('prosemirror-view', () => ({
     EditorView: class MockEditorView {
         static scrollIntoView = vi.fn();
-        static domAtPos = vi.fn(() => ({ node: null, offset: 0 }));
+        static domAtPos = vi.fn(function () {
+            return { node: null, offset: 0 };
+        });
         dispatch = vi.fn();
         state = { doc: { textContent: '' } };
         focus = vi.fn();

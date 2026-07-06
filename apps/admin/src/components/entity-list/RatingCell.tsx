@@ -11,6 +11,9 @@
  * cells), so the component stays decoupled from any specific entity.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { StarIcon } from '@repo/icons';
+import { useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -19,9 +22,6 @@ import {
     DialogTitle
 } from '@/components/ui/dialog';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import { StarIcon } from '@repo/icons';
-import { useState } from 'react';
 
 /** A rating dimension: the key in the rating record + its localized label. */
 export interface RatingDimension {

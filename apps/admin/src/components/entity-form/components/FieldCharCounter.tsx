@@ -41,6 +41,7 @@ export function FieldCharCounter({ current, max, className }: FieldCharCounterPr
                 isOverLimit ? 'text-destructive' : 'text-muted-foreground',
                 className
             )}
+            role="status"
             aria-live="polite"
             aria-label={`${current} de ${max} caracteres`}
         >

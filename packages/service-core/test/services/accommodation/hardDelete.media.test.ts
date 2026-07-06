@@ -18,7 +18,7 @@ import type { AccommodationModel } from '@repo/db';
 import { resolveEnvironment } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
 import { PermissionEnum } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { createAccommodationWithMockIds } from '../../factories/accommodationFactory';
 import { createActor } from '../../factories/actorFactory';
@@ -83,11 +83,9 @@ describe('AccommodationService.hardDelete — media cleanup (T-065)', () => {
         // Arrange — spy on the concrete `_afterHardDelete` to inspect the ctx it received.
         const afterSpy = vi.spyOn(
             service as unknown as {
-                _afterHardDelete: AccommodationService['_afterHardDelete' extends never
-                    ? never
-                    : never];
+                _afterHardDelete: AccommodationService['_afterHardDelete'];
             },
-            '_afterHardDelete' as never
+            '_afterHardDelete'
         );
         const deleteSpy = vi.spyOn(provider, 'deleteByPrefix');
 

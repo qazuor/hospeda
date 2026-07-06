@@ -97,9 +97,9 @@ vi.mock('@/components/ui/label', () => ({
     )
 }));
 
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { SocialCredentialMasked } from '@/features/social-credentials';
 import { useUpdateSocialCredentialMutation } from '@/features/social-credentials';
-import { fireEvent, render, screen } from '@testing-library/react';
 import { EditCredentialDialog } from '../-components/EditCredentialDialog';
 
 const mockUseUpdateSocialCredentialMutation = vi.mocked(useUpdateSocialCredentialMutation);

@@ -7,7 +7,7 @@
  */
 
 import { redactSensitiveData } from './redact.js';
-import type { LogLevel, LogLevelType, LoggerOptions } from './types.js';
+import type { LoggerOptions, LogLevel, LogLevelType } from './types.js';
 
 /**
  * A serialization-ready, structured log entry. Any sensitive data in `data` (or
@@ -63,8 +63,8 @@ export function buildLogEntry(
     return {
         ts: new Date().toISOString(),
         level: level as LogLevelType,
-        ...(category !== undefined ? { category } : {}),
-        ...(label !== undefined ? { label } : {}),
+        ...(category === undefined ? {} : { category }),
+        ...(label === undefined ? {} : { label }),
         message: isStringValue ? (redacted as string) : (label ?? ''),
         ...(isStringValue ? {} : { data: redacted })
     };

@@ -296,9 +296,9 @@ vi.mock('@repo/db', async (importOriginal) => {
         and: mockAnd,
         isNull: mockIsNull,
         getDb: mockGetDb,
-        AccommodationModel: vi
-            .fn()
-            .mockImplementation(() => ({ findById: mockAccommodationFindById }))
+        AccommodationModel: vi.fn().mockImplementation(function () {
+            return { findById: mockAccommodationFindById };
+        })
     };
 });
 
@@ -355,13 +355,15 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        AddonCatalogService: vi
-            .fn()
-            .mockImplementation(() => ({ getBySlug: mockAddonCatalogGetBySlug })),
-        PlanService: vi.fn().mockImplementation(() => ({
-            getById: mockPlanGetById,
-            getBySlug: mockPlanGetBySlug
-        })),
+        AddonCatalogService: vi.fn().mockImplementation(function () {
+            return { getBySlug: mockAddonCatalogGetBySlug };
+        }),
+        PlanService: vi.fn().mockImplementation(function () {
+            return {
+                getById: mockPlanGetById,
+                getBySlug: mockPlanGetBySlug
+            };
+        }),
         isAccommodationSubscription: () => true
     };
 });
@@ -394,11 +396,11 @@ vi.mock('../../src/utils/env', () => ({
     }
 }));
 
+import { confirmAddonPurchase, createAddonCheckout } from '../../src/services/addon.checkout';
 // ---------------------------------------------------------------------------
 // Imports AFTER mocks are in place
 // ---------------------------------------------------------------------------
 import { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
-import { confirmAddonPurchase, createAddonCheckout } from '../../src/services/addon.checkout';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -465,7 +467,7 @@ describe('addon checkout → accommodation-scoped featuring (SPEC-309 T-025 inte
             }
         ]);
 
-        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockAddonCatalogGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === 'visibility-boost-7d') {
                 return {
                     success: true,

@@ -1,5 +1,5 @@
-import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 import type {
     AiCredentialDeleteResponse,
     AiCredentialMasked,
@@ -7,6 +7,7 @@ import type {
     AiPromptVersion,
     AiSettingsResponse,
     AiSettingsValue,
+    AiSyncModelsResult,
     CreateAiCredentialPayload,
     CreateAiPromptPayload,
     RotateAiCredentialPayload,
@@ -143,6 +144,24 @@ async function updateAiCredential(
     return result.data.data;
 }
 
+/**
+ * Triggers a live "sync models" call for a provider's active credential
+ * (HOS-94). Decrypts the stored key, calls the provider's list-models
+ * endpoint, filters to chat-capable models, and merges with the curated
+ * `KNOWN_PROVIDERS` catalog — annotated by source (`detected` | `curated` |
+ * `both`).
+ *
+ * @param providerId - The provider whose models to sync.
+ * @returns The `AiSyncModelsResult` — ephemeral, never persisted server-side.
+ */
+async function syncAiCredentialModels(providerId: string): Promise<AiSyncModelsResult> {
+    const result = await fetchApi<{ success: boolean; data: AiSyncModelsResult }>({
+        path: `/api/v1/admin/ai/credentials/${providerId}/sync-models`,
+        method: 'POST'
+    });
+    return result.data.data;
+}
+
 // ---------------------------------------------------------------------------
 // Hooks — Settings
 // ---------------------------------------------------------------------------
@@ -271,6 +290,22 @@ export const useUpdateAiCredentialMutation = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: aiSettingsQueryKeys.credentials });
         }
+    });
+};
+
+/**
+ * Hook to sync the suggested model catalog for a provider (HOS-94).
+ *
+ * Ephemeral by design (OQ-3): the result lives in the mutation's own `data`
+ * state, held by the caller (the credentials UI keeps it in component
+ * state). Unlike the other credential mutations, this does NOT invalidate
+ * `aiSettingsQueryKeys.credentials` — a sync call never writes
+ * `metadata.models` itself; only the operator-confirmed selection persists,
+ * via the existing `useUpdateAiCredentialMutation`.
+ */
+export const useSyncModelsMutation = () => {
+    return useMutation({
+        mutationFn: (providerId: string) => syncAiCredentialModels(providerId)
     });
 };
 

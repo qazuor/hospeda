@@ -27,10 +27,12 @@ const { mockGetBySlug, mockGetDb } = vi.hoisted(() => ({
 
 // Mock AddonCatalogService — DB-backed catalog used after the cutover
 vi.mock('../../src/services/billing/addon/addon-catalog.service.js', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockGetBySlug,
-        list: vi.fn()
-    }))
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockGetBySlug,
+            list: vi.fn()
+        };
+    })
 }));
 
 // Mock @repo/db — no real database
@@ -212,43 +214,42 @@ describe('addon-user-addons cutover parity (SPEC-192 T-007)', () => {
     });
 
     describe('for each of the 5 seeded addon slugs', () => {
-        it.each(ALL_STUBS)(
-            'should resolve addonName, billingType, priceArs from DB catalog for slug "%s"',
-            async (stub) => {
-                // Arrange
-                const purchaseRow = buildPurchaseRow(stub.slug);
-                const billing = buildBillingStub();
-                const mockDb = buildMockDb([purchaseRow]);
-                mockGetDb.mockReturnValue(mockDb);
+        it.each(
+            ALL_STUBS
+        )('should resolve addonName, billingType, priceArs from DB catalog for slug "%s"', async (stub) => {
+            // Arrange
+            const purchaseRow = buildPurchaseRow(stub.slug);
+            const billing = buildBillingStub();
+            const mockDb = buildMockDb([purchaseRow]);
+            mockGetDb.mockReturnValue(mockDb);
 
-                // Catalog service returns the DB-backed stub
-                mockGetBySlug.mockResolvedValue({ success: true, data: stub });
+            // Catalog service returns the DB-backed stub
+            mockGetBySlug.mockResolvedValue({ success: true, data: stub });
 
-                // Act
-                const result = await queryUserAddons({ billing, userId: 'user-123' });
+            // Act
+            const result = await queryUserAddons({ billing, userId: 'user-123' });
 
-                // Assert — result shape
-                expect(result.success).toBe(true);
-                if (!result.success) return;
+            // Assert — result shape
+            expect(result.success).toBe(true);
+            if (!result.success) return;
 
-                const userAddon = result.data[0];
-                expect(userAddon).toBeDefined();
-                if (!userAddon) return;
+            const userAddon = result.data[0];
+            expect(userAddon).toBeDefined();
+            if (!userAddon) return;
 
-                // Parity: name matches config
-                expect(userAddon.addonSlug).toBe(stub.slug);
-                expect(userAddon.addonName).toBe(stub.name);
+            // Parity: name matches config
+            expect(userAddon.addonSlug).toBe(stub.slug);
+            expect(userAddon.addonName).toBe(stub.name);
 
-                // Parity: billingType matches config
-                expect(userAddon.billingType).toBe(stub.billingType);
+            // Parity: billingType matches config
+            expect(userAddon.billingType).toBe(stub.billingType);
 
-                // Parity: priceArs matches config
-                expect(userAddon.priceArs).toBe(stub.priceArs);
+            // Parity: priceArs matches config
+            expect(userAddon.priceArs).toBe(stub.priceArs);
 
-                // Catalog service was called once for this slug
-                expect(mockGetBySlug).toHaveBeenCalledWith(stub.slug, undefined);
-            }
-        );
+            // Catalog service was called once for this slug
+            expect(mockGetBySlug).toHaveBeenCalledWith(stub.slug, undefined);
+        });
     });
 
     describe('when catalog returns NOT_FOUND for a slug', () => {

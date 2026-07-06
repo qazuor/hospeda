@@ -44,10 +44,14 @@ const { capturedHandlers } = vi.hoisted(() => ({
 const { mockIngestDraft, IngestionServiceMock, ImagePipelineMock, mockGetMediaProvider } =
     vi.hoisted(() => ({
         mockIngestDraft: vi.fn(),
-        IngestionServiceMock: vi.fn().mockImplementation(() => ({
-            ingestDraft: mockIngestDraft
-        })),
-        ImagePipelineMock: vi.fn().mockImplementation(() => ({ kind: 'image-pipeline' })),
+        IngestionServiceMock: vi.fn().mockImplementation(function () {
+            return {
+                ingestDraft: mockIngestDraft
+            };
+        }),
+        ImagePipelineMock: vi.fn().mockImplementation(function () {
+            return { kind: 'image-pipeline' };
+        }),
         mockGetMediaProvider: vi.fn()
     }));
 

@@ -132,7 +132,7 @@ export const auditMiddleware = (config: AuditMiddlewareConfig = {}): MiddlewareH
             method,
             path,
             statusCode,
-            ...(requestBody !== undefined ? { requestBody } : {})
+            ...(requestBody === undefined ? {} : { requestBody })
         });
     };
 };

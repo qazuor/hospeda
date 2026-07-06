@@ -16,15 +16,15 @@
  * - clicking a card → no-op (the link inside the card handles navigation)
  * - hovering a marker → highlights the matching card (`hoveredItemId` prop)
  */
+
+import type { IconProps } from '@repo/icons';
+import { GalleryIcon, LocationIcon, StarIcon } from '@repo/icons';
 import type { ComponentType } from 'react';
 import { useEffect, useState } from 'react';
-
 import { CompareButton } from '@/components/shared/compare/CompareButton.client';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import type { SupportedLocale } from '@/lib/i18n';
-import type { IconProps } from '@repo/icons';
-import { GalleryIcon, LocationIcon, StarIcon } from '@repo/icons';
 import sidebarStyles from './MapCardsSidebar.module.css';
 
 export interface MapSidebarAmenity {
@@ -300,6 +300,7 @@ export function MapCardsSidebar({
 
                                     {/* Actions: favorite + photo count */}
                                     {/* biome-ignore lint/a11y/useKeyWithClickEvents: this wrapper only stops mouse propagation so clicks on the inner FavoriteButton/photo count don't trigger the card's navigation; it isn't itself focusable or actionable */}
+                                    {/* biome-ignore lint/a11y/noStaticElementInteractions: purely a mouse-event-propagation stopper around real interactive children (FavoriteButton, photo count); it has no behavior of its own and isn't focusable or actionable */}
                                     <div
                                         className={sidebarStyles.cardActions}
                                         onClick={(e) => e.stopPropagation()}
@@ -315,13 +316,6 @@ export function MapCardsSidebar({
                                             showCount={true}
                                             locale={locale}
                                             isAuthenticated={isAuthenticated}
-                                        />
-                                        <CompareButton
-                                            accommodationId={item.id}
-                                            accommodationName={item.name}
-                                            accommodationThumbnailUrl={item.thumbnailUrl}
-                                            variant="standalone"
-                                            locale={locale}
                                         />
                                         {photos > 0 && item.photosLabel ? (
                                             <div
@@ -381,8 +375,10 @@ export function MapCardsSidebar({
 
                                     {/* Amenities row */}
                                     {item.amenities && item.amenities.length > 0 ? (
+                                        // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups decorative amenity icons; a real <fieldset> would inherit user-agent border/padding/margin that fight this inline card layout
                                         <div
                                             className={sidebarStyles.cardAmenities}
+                                            role="group"
                                             aria-label={item.amenitiesLabel}
                                         >
                                             {item.amenities.map((amenity) => {
@@ -444,6 +440,27 @@ export function MapCardsSidebar({
 
                                     {/* Divider */}
                                     <div className={sidebarStyles.cardDivider} />
+
+                                    {/* Contextual compare control (HOS-85): a labeled
+                                        add/remove button, only rendered while compare
+                                        mode is active — mirrors the placement in
+                                        AccommodationCard.astro so the map sidebar cards
+                                        behave identically to the listing cards. Unlike
+                                        the Astro island version, no `display: contents`
+                                        wrapper trick is needed here: this is a plain
+                                        React child, so it emits no DOM node at all when
+                                        it renders `null` (compare mode off), leaving the
+                                        `gap` layout of `.cardContent` unaffected. The
+                                        button's own `handleClick` already stops event
+                                        propagation, so it won't trigger the card's
+                                        hover-select/navigation handlers. */}
+                                    <CompareButton
+                                        accommodationId={item.id}
+                                        accommodationName={item.name}
+                                        accommodationThumbnailUrl={item.thumbnailUrl}
+                                        variant="contextual"
+                                        locale={locale}
+                                    />
 
                                     {/* Price + CTA */}
                                     <div className={sidebarStyles.cardPriceRow}>

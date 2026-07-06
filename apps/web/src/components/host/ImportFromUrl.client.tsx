@@ -16,15 +16,15 @@
  * `onImported`, a classified failure renders the same i18n error banner.
  */
 
+import type { AccommodationImportResponse } from '@repo/schemas';
+import { AccommodationImportRequestSchema } from '@repo/schemas';
+import { useEffect, useId, useRef, useState } from 'react';
 import { type ImportRunHandle, useImportStatus } from '@/hooks/use-import-status';
 import { accommodationsImportApi, isAsyncImportStart } from '@/lib/api/endpoints-protected';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
-import { AccommodationImportRequestSchema } from '@repo/schemas';
-import type { AccommodationImportResponse } from '@repo/schemas';
-import { useEffect, useId, useRef, useState } from 'react';
 import styles from './ImportFromUrl.module.css';
 
 /** Platforms shown in the URL-acquisition help panel (US-7), in display order. */

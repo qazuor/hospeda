@@ -14,11 +14,11 @@
  * - Section title / description always rendered
  */
 
-import { PhotoSection } from '@/components/host/editor/PhotoSection.client';
-import type { PhotoSectionProps } from '@/components/host/editor/PhotoSection.client';
 import { ENTITY_GALLERY_CAPS } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PhotoSectionProps } from '@/components/host/editor/PhotoSection.client';
+import { PhotoSection } from '@/components/host/editor/PhotoSection.client';
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks (vi.hoisted executes before vi.mock factories)
@@ -42,9 +42,25 @@ const {
 // Module mocks
 // ---------------------------------------------------------------------------
 
+// Minimal translation map for keys whose interpolation behavior is under test
+// (BETA-98 regression: galleryAlt must interpolate {{index}} via params, not
+// via a pre-interpolated fallback string).
+const MOCK_TRANSLATIONS: Record<string, string> = {
+    'host.properties.editor.photo.galleryAlt': 'Foto {{index}}'
+};
+
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key,
+        t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
+            const raw = MOCK_TRANSLATIONS[key] ?? fallback ?? key;
+            if (!params) {
+                return raw;
+            }
+            return Object.keys(params).reduce(
+                (acc, k) => acc.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(params[k])),
+                raw
+            );
+        },
         tPlural: (_key: string, _count: number, fallback?: string) => fallback ?? _key
     })
 }));
@@ -239,6 +255,19 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                 const imgs = screen.getAllByRole('img');
                 expect(imgs).toHaveLength(3);
             });
+        });
+
+        it('interpolates the gallery alt text index instead of rendering it literally (BETA-98)', async () => {
+            mockListMedia.mockReturnValue(makeListOk([FEATURED_ROW, GALLERY_ROW_1, GALLERY_ROW_2]));
+            render(<PhotoSection {...defaultProps} />);
+
+            await waitFor(() => {
+                expect(screen.getByAltText('Foto 1')).toBeInTheDocument();
+                expect(screen.getByAltText('Foto 2')).toBeInTheDocument();
+            });
+
+            // Regression guard: the literal placeholder must never leak into the DOM
+            expect(screen.queryByAltText(/\{\{index\}\}/)).not.toBeInTheDocument();
         });
 
         it('uses SSR initialFeaturedImage for display before listMedia resolves', () => {

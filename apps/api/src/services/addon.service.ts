@@ -14,7 +14,6 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import type { AddonDefinition } from '@repo/billing';
-import { getAddonCatalogEntry, listAvailableAddons } from '@repo/service-core';
 import type {
     CancelAddonInput,
     ConfirmPurchaseInput,
@@ -24,9 +23,10 @@ import type {
     ServiceResult,
     UserAddon
 } from '@repo/service-core';
-import { AddonEntitlementService } from './addon-entitlement.service';
+import { getAddonCatalogEntry, listAvailableAddons } from '@repo/service-core';
 import { confirmAddonPurchase, createAddonCheckout } from './addon.checkout';
 import { cancelUserAddon, checkAddonActive, getUserAddons } from './addon.user-addons';
+import { AddonEntitlementService } from './addon-entitlement.service';
 
 // Re-export types so existing consumers that import from this module keep working
 export type {

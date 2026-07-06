@@ -99,9 +99,9 @@ class CoolifyClient {
             headers: {
                 Authorization: `Bearer ${this.token}`,
                 Accept: 'application/json',
-                ...(init.body !== undefined ? { 'Content-Type': 'application/json' } : {})
+                ...(init.body === undefined ? {} : { 'Content-Type': 'application/json' })
             },
-            body: init.body !== undefined ? JSON.stringify(init.body) : undefined
+            body: init.body === undefined ? undefined : JSON.stringify(init.body)
         });
 
         const text = await response.text();

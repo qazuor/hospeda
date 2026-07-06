@@ -4,6 +4,24 @@
  * @description Detail page header for a gastronomy listing (SPEC-239 T-054).
  * Shows name, type badge, price-range badge, average rating, and a featured star.
  * The FavoriteButton island lives in a right-side column (mirrors EventDetailHeader).
+ *
+ * Layout (HOS-84): a vertical stack — a back-button row on top, then a 2-column
+ * `.gastro-detail-header__body` row where `.gastro-detail-header__main` holds
+ * badges + name + location + rating and `.gastro-detail-header__fav` anchors the
+ * favorite button on the right.
+ *
+ * Compact behavior comes from the shared `.wh-compact-*` utility classes
+ * (contract defined once in WaveHeader.astro): `wh-compact-row` collapses the
+ * main stack to one line, `wh-compact-title` shrinks the H1, `wh-compact-hide`
+ * drops the back-button row + rating, `wh-compact-demote` inlines the location,
+ * `wh-compact-badge` shrinks the type/price-range/new badges. Only the badges
+ * gap remains as a genuinely local override below.
+ *
+ * DIVERGENCE from the accommodation reference (`DetailHeader.astro`): the
+ * `.gastro-detail-header__body` row does NOT set `align-items: center` in
+ * compact mode — that alignment is intentionally left out here. The
+ * FavoriteButton also passes `count`/`showCount={true}` (not the accommodation
+ * header's separate bookmark-count pill) — kept unchanged.
  */
 
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
@@ -11,6 +29,7 @@ import { StarIcon, LocationIcon } from '@repo/icons';
 import type { GastronomyDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
 
 interface Props {
     readonly gastronomy: GastronomyDetailData;
@@ -49,86 +68,110 @@ const isNew = gastronomy.createdAt
 ---
 
 <header class="gastro-detail-header">
-    <!-- Main column: badges, title, location, rating -->
-    <div class="gastro-detail-header__main">
-        <div class="gastro-detail-header__badges">
-            <span class="gastro-detail-header__type-badge">{typeLabel}</span>
-            {priceRangeLabel && (
-                <span class="gastro-detail-header__price-badge">{priceRangeLabel}</span>
-            )}
-            {gastronomy.isFeatured && (
-                <span class="featured-badge">
-                    <StarIcon size={12} weight="fill" aria-hidden="true" />
-                    <span>{t('gastronomy.card.featured', 'Destacado')}</span>
-                </span>
-            )}
-            {isNew && (
-                <span class="gastro-detail-header__new-badge">
-                    {t('home.accommodations.badge.new', 'Nuevo')}
-                </span>
-            )}
-        </div>
+    <div class="gastro-detail-header__back-row wh-compact-hide">
+        <HeaderBackButton href={`/${locale}/gastronomia/`} locale={locale} />
+    </div>
 
-        <h1 class="gastro-detail-header__name">{gastronomy.name}</h1>
-
-        {gastronomy.destinationName && (
-            <div class="gastro-detail-header__location">
-                <LocationIcon size={16} weight="fill" aria-hidden="true" />
-                <span>{gastronomy.destinationName}</span>
-            </div>
-        )}
-
-        {gastronomy.averageRating > 0 && (
-            <div class="gastro-detail-header__rating">
-                <div class="gastro-detail-header__stars" aria-hidden="true">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                        <span
-                            class={
-                                i < fullStars
-                                    ? 'gastro-detail-header__star--filled'
-                                    : 'gastro-detail-header__star--empty'
-                            }
-                        >
-                            <StarIcon
-                                size={16}
-                                weight={i < fullStars ? 'fill' : 'regular'}
-                                aria-hidden="true"
-                            />
-                        </span>
-                    ))}
-                </div>
-                <span class="gastro-detail-header__rating-value">
-                    {gastronomy.averageRating.toFixed(1)}
-                </span>
-                {gastronomy.reviewsCount > 0 && (
-                    <span class="gastro-detail-header__reviews-count">
-                        · {tPlural('review.list.totalReviews', gastronomy.reviewsCount, { count: gastronomy.reviewsCount })}
+    <div class="gastro-detail-header__body">
+        <!-- Main column: badges, title, location, rating -->
+        <div class="gastro-detail-header__main wh-compact-row">
+            <div class="gastro-detail-header__badges">
+                <span class="gastro-detail-header__type-badge wh-compact-badge">{typeLabel}</span>
+                {priceRangeLabel && (
+                    <span class="gastro-detail-header__price-badge wh-compact-badge">{priceRangeLabel}</span>
+                )}
+                {gastronomy.isFeatured && (
+                    <span class="featured-badge">
+                        <StarIcon size={12} weight="fill" aria-hidden="true" />
+                        <span>{t('gastronomy.card.featured', 'Destacado')}</span>
+                    </span>
+                )}
+                {isNew && (
+                    <span class="gastro-detail-header__new-badge wh-compact-badge">
+                        {t('home.accommodations.badge.new', 'Nuevo')}
                     </span>
                 )}
             </div>
-        )}
-    </div>
 
-    <!-- Favorite column -->
-    <div class="gastro-detail-header__fav">
-        <FavoriteButton
-            client:load
-            entityId={gastronomy.id}
-            entityType="GASTRONOMY"
-            initialIsFavorited={initialIsFavorited}
-            initialBookmarkId={initialBookmarkId}
-            count={bookmarkCount}
-            variant="standalone"
-            showCount={true}
-            locale={locale}
-            isAuthenticated={isAuthenticated}
-        />
+            <h1 class="gastro-detail-header__name wh-compact-title">{gastronomy.name}</h1>
+
+            {gastronomy.destinationName && (
+                <div class="gastro-detail-header__location wh-compact-demote">
+                    <LocationIcon size={16} weight="fill" aria-hidden="true" />
+                    <span>{gastronomy.destinationName}</span>
+                </div>
+            )}
+
+            {gastronomy.averageRating > 0 && (
+                <div class="gastro-detail-header__rating wh-compact-hide">
+                    <div class="gastro-detail-header__stars" aria-hidden="true">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                            <span
+                                class={
+                                    i < fullStars
+                                        ? 'gastro-detail-header__star--filled'
+                                        : 'gastro-detail-header__star--empty'
+                                }
+                            >
+                                <StarIcon
+                                    size={16}
+                                    weight={i < fullStars ? 'fill' : 'regular'}
+                                    aria-hidden="true"
+                                />
+                            </span>
+                        ))}
+                    </div>
+                    <span class="gastro-detail-header__rating-value">
+                        {gastronomy.averageRating.toFixed(1)}
+                    </span>
+                    {gastronomy.reviewsCount > 0 && (
+                        <span class="gastro-detail-header__reviews-count">
+                            · {tPlural('review.list.totalReviews', gastronomy.reviewsCount, { count: gastronomy.reviewsCount })}
+                        </span>
+                    )}
+                </div>
+            )}
+        </div>
+
+        <!-- Favorite column -->
+        <div class="gastro-detail-header__fav">
+            <FavoriteButton
+                client:load
+                entityId={gastronomy.id}
+                entityType="GASTRONOMY"
+                initialIsFavorited={initialIsFavorited}
+                initialBookmarkId={initialBookmarkId}
+                count={bookmarkCount}
+                variant="standalone"
+                showCount={true}
+                locale={locale}
+                isAuthenticated={isAuthenticated}
+            />
+        </div>
     </div>
 </header>
 
 <style>
-    /* Outer row: main column (flex:1) + fav column (shrink:0) */
+    /* Vertical stack: back-button row on top, then the body row. */
     .gastro-detail-header {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 8px);
+    }
+
+    /* Back-button row — collapses out via `wh-compact-hide` in compact mode, so
+       it needs its own max-height/opacity transition to animate. */
+    .gastro-detail-header__back-row {
+        overflow: hidden;
+        max-height: 3em;
+        opacity: 1;
+        transition:
+            max-height 0.3s ease,
+            opacity 0.2s ease;
+    }
+
+    /* Body: main column (flex:1) + fav column (shrink:0) */
+    .gastro-detail-header__body {
         display: flex;
         flex-direction: row;
         align-items: flex-start;
@@ -168,6 +211,7 @@ const isNew = gastronomy.createdAt
         font-size: 13px;
         font-weight: 600;
         line-height: 1.4;
+        transition: padding 0.3s ease, font-size 0.3s ease;
     }
 
     .gastro-detail-header__price-badge {
@@ -182,6 +226,7 @@ const isNew = gastronomy.createdAt
         font-size: 13px;
         font-weight: 600;
         line-height: 1.4;
+        transition: padding 0.3s ease, font-size 0.3s ease;
     }
 
     .gastro-detail-header__new-badge {
@@ -197,6 +242,7 @@ const isNew = gastronomy.createdAt
         font-size: 13px;
         font-weight: 600;
         line-height: 1.4;
+        transition: padding 0.3s ease, font-size 0.3s ease;
     }
 
     .gastro-detail-header__name {
@@ -216,6 +262,7 @@ const isNew = gastronomy.createdAt
         color: var(--core-muted-foreground);
         font-family: var(--font-sans);
         font-size: 0.95rem;
+        transition: font-size 0.3s ease;
     }
 
     .gastro-detail-header__rating {
@@ -223,6 +270,8 @@ const isNew = gastronomy.createdAt
         align-items: center;
         gap: 8px;
         overflow: hidden;
+        max-height: 3em;
+        opacity: 1;
         transition: max-height 0.3s ease, opacity 0.3s ease;
     }
 
@@ -256,50 +305,26 @@ const isNew = gastronomy.createdAt
         color: var(--core-muted-foreground);
     }
 
-    /* Compact state: triggered by the `.wave-header--compact` ancestor.
-       Collapse badges + title + location onto one row inside __main. */
-    :global(.wave-header--compact) .gastro-detail-header__main {
-        flex-direction: row;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: var(--space-2, 8px);
-    }
-
+    /* =========================================================
+     * Compact state — only the genuinely gastronomy-specific override
+     * (badges gap) remains here; the row collapse, title shrink, location
+     * demote, rating/back hide, and badge shrink all come from the shared
+     * `.wh-compact-*` utilities applied in the markup (contract in
+     * WaveHeader.astro). DIVERGENCE from the accommodation reference: no
+     * outer `align-items: center` override on `.gastro-detail-header__body`.
+     * ========================================================= */
     :global(.wave-header--compact) .gastro-detail-header__badges {
         gap: 4px;
     }
 
-    :global(.wave-header--compact) .gastro-detail-header__type-badge,
-    :global(.wave-header--compact) .gastro-detail-header__price-badge,
-    :global(.wave-header--compact) .gastro-detail-header__new-badge {
-        font-size: 0.6rem;
-        padding: 2px 10px;
-    }
-
-    :global(.wave-header--compact) .gastro-detail-header__name {
-        font-size: clamp(1rem, 2vw, 1.25rem);
-    }
-
-    :global(.wave-header--compact) .gastro-detail-header__location::before {
-        content: '\00B7';
-        margin-right: 0.35em;
-        color: var(--core-muted-foreground);
-        font-weight: 700;
-    }
-
-    :global(.wave-header--compact) .gastro-detail-header__location {
-        font-size: 0.85rem;
-    }
-
-    :global(.wave-header--compact) .gastro-detail-header__rating {
-        max-height: 0;
-        opacity: 0;
-        pointer-events: none;
-    }
-
     @media (prefers-reduced-motion: reduce) {
+        .gastro-detail-header__back-row,
         .gastro-detail-header__main,
+        .gastro-detail-header__type-badge,
+        .gastro-detail-header__price-badge,
+        .gastro-detail-header__new-badge,
         .gastro-detail-header__name,
+        .gastro-detail-header__location,
         .gastro-detail-header__rating {
             transition: none;
         }

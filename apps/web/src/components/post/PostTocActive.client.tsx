@@ -8,8 +8,8 @@
  * only adds the active-state behaviour without re-rendering the navigation tree.
  */
 
-import type { TocHeading } from '@/lib/extract-toc';
 import { useEffect } from 'react';
+import type { TocHeading } from '@/lib/extract-toc';
 
 interface PostTocActiveProps {
     readonly headings: readonly TocHeading[];

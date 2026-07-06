@@ -16,6 +16,10 @@
  * location in the cleanup phase.
  */
 
+import { ChatIcon, CompassIcon, MapIcon } from '@repo/icons';
+import { getMediaUrl } from '@repo/media';
+import { useLocation, useRouter } from '@tanstack/react-router';
+import { useEffect, useRef, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { TourRole } from '@/config/ia/tour.schema';
 import { useTour } from '@/contexts/tour-context';
@@ -24,10 +28,6 @@ import { useContextualTourForRoute, useWelcomeTourForRole } from '@/hooks/use-to
 import { useTranslations } from '@/hooks/use-translations';
 import { signOut } from '@/lib/auth-client';
 import { getInitialsFromName } from '@/lib/avatar-utils';
-import { ChatIcon, CompassIcon, MapIcon } from '@repo/icons';
-import { getMediaUrl } from '@repo/media';
-import { useLocation, useRouter } from '@tanstack/react-router';
-import { useEffect, useRef, useState } from 'react';
 
 /**
  * HeaderUser renders a user avatar button with a dropdown menu

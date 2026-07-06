@@ -165,11 +165,7 @@ function buildSelectOnlyDb(selectRows: unknown[] = []) {
  * `countValue` - value returned by count queries (for hardDelete guard).
  */
 function buildUpdateDb(
-    options: {
-        selectRow?: unknown;
-        updateRow?: unknown;
-        countValue?: number;
-    } = {}
+    options: { selectRow?: unknown; updateRow?: unknown; countValue?: number } = {}
 ) {
     const { selectRow, updateRow, countValue = 0 } = options;
 
@@ -186,7 +182,7 @@ function buildUpdateDb(
             return {
                 from: vi.fn().mockReturnValue({
                     where: vi.fn().mockReturnValue({
-                        limit: vi.fn().mockResolvedValue(selectRow !== undefined ? [selectRow] : [])
+                        limit: vi.fn().mockResolvedValue(selectRow === undefined ? [] : [selectRow])
                     })
                 })
             };
@@ -197,7 +193,7 @@ function buildUpdateDb(
         update: vi.fn().mockReturnValue({
             set: vi.fn().mockReturnValue({
                 where: vi.fn().mockReturnValue({
-                    returning: vi.fn().mockResolvedValue(updateRow !== undefined ? [updateRow] : [])
+                    returning: vi.fn().mockResolvedValue(updateRow === undefined ? [] : [updateRow])
                 })
             })
         }),
@@ -216,7 +212,7 @@ function buildSoftDeleteDb(selectRow?: unknown) {
         select: vi.fn().mockReturnValue({
             from: vi.fn().mockReturnValue({
                 where: vi.fn().mockReturnValue({
-                    limit: vi.fn().mockResolvedValue(selectRow !== undefined ? [selectRow] : [])
+                    limit: vi.fn().mockResolvedValue(selectRow === undefined ? [] : [selectRow])
                 })
             })
         }),
@@ -243,11 +239,7 @@ function buildSoftDeleteDb(selectRow?: unknown) {
  * count to return, mirroring the two sequential referential guards.
  */
 function buildHardDeleteDb(
-    options: {
-        selectRow?: unknown;
-        subscriptionAddonCount?: number;
-        purchaseCount?: number;
-    } = {}
+    options: { selectRow?: unknown; subscriptionAddonCount?: number; purchaseCount?: number } = {}
 ) {
     const { selectRow, subscriptionAddonCount = 0, purchaseCount = 0 } = options;
     return {
@@ -269,7 +261,7 @@ function buildHardDeleteDb(
             return {
                 from: vi.fn().mockReturnValue({
                     where: vi.fn().mockReturnValue({
-                        limit: vi.fn().mockResolvedValue(selectRow !== undefined ? [selectRow] : [])
+                        limit: vi.fn().mockResolvedValue(selectRow === undefined ? [] : [selectRow])
                     })
                 })
             };
@@ -290,9 +282,9 @@ describe('AddonCatalogService — write methods (T-018)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Default: withTransaction calls the provided function with an empty select-only DB
-        mockWithTransaction.mockImplementation((fn: (db: unknown) => Promise<unknown>) =>
-            fn(buildSelectOnlyDb())
-        );
+        mockWithTransaction.mockImplementation(function (fn: (db: unknown) => Promise<unknown>) {
+            return fn(buildSelectOnlyDb());
+        });
     });
 
     // ── create() ───────────────────────────────────────────────────────────
@@ -331,38 +323,38 @@ describe('AddonCatalogService — write methods (T-018)', () => {
                 // 1. select().from().where().limit(1) → [] (no duplicate)
                 // 2. insert().values().returning() → [inserted] (new row)
                 // 3. insert().values() → (audit log, no .returning())
-                mockWithTransaction.mockImplementation(
-                    async (fn: (db: unknown) => Promise<unknown>) => {
-                        let insertCallIdx = 0;
-                        const db = {
-                            select: vi.fn().mockReturnValue({
-                                from: vi.fn().mockReturnValue({
-                                    where: vi.fn().mockReturnValue({
-                                        limit: vi.fn().mockResolvedValue([]) // no duplicate
-                                    })
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (db: unknown) => Promise<unknown>
+                ) {
+                    let insertCallIdx = 0;
+                    const db = {
+                        select: vi.fn().mockReturnValue({
+                            from: vi.fn().mockReturnValue({
+                                where: vi.fn().mockReturnValue({
+                                    limit: vi.fn().mockResolvedValue([]) // no duplicate
                                 })
-                            }),
-                            insert: vi.fn().mockImplementation(() => {
-                                const idx = insertCallIdx++;
-                                if (idx === 0) {
-                                    // Main insert → returning()
-                                    return {
-                                        values: vi.fn().mockReturnValue({
-                                            returning: vi.fn().mockResolvedValue([inserted])
-                                        })
-                                    };
-                                }
-                                // Audit log insert → no returning
+                            })
+                        }),
+                        insert: vi.fn().mockImplementation(() => {
+                            const idx = insertCallIdx++;
+                            if (idx === 0) {
+                                // Main insert → returning()
                                 return {
-                                    values: vi.fn().mockResolvedValue(undefined)
+                                    values: vi.fn().mockReturnValue({
+                                        returning: vi.fn().mockResolvedValue([inserted])
+                                    })
                                 };
-                            }),
-                            update: vi.fn(),
-                            delete: vi.fn()
-                        };
-                        return fn(db);
-                    }
-                );
+                            }
+                            // Audit log insert → no returning
+                            return {
+                                values: vi.fn().mockResolvedValue(undefined)
+                            };
+                        }),
+                        update: vi.fn(),
+                        delete: vi.fn()
+                    };
+                    return fn(db);
+                });
 
                 // Act
                 const result = await createAddon(createInput, { actorId: 'admin-uuid' });
@@ -380,23 +372,23 @@ describe('AddonCatalogService — write methods (T-018)', () => {
             it('should return ALREADY_EXISTS error', async () => {
                 // Arrange
                 const existingRow = buildAddonRow({ id: 'existing-uuid-001' });
-                mockWithTransaction.mockImplementation(
-                    async (fn: (db: unknown) => Promise<unknown>) => {
-                        const db = {
-                            select: vi.fn().mockReturnValue({
-                                from: vi.fn().mockReturnValue({
-                                    where: vi.fn().mockReturnValue({
-                                        limit: vi.fn().mockResolvedValue([existingRow]) // duplicate found
-                                    })
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (db: unknown) => Promise<unknown>
+                ) {
+                    const db = {
+                        select: vi.fn().mockReturnValue({
+                            from: vi.fn().mockReturnValue({
+                                where: vi.fn().mockReturnValue({
+                                    limit: vi.fn().mockResolvedValue([existingRow]) // duplicate found
                                 })
-                            }),
-                            insert: vi.fn(),
-                            update: vi.fn(),
-                            delete: vi.fn()
-                        };
-                        return fn(db);
-                    }
-                );
+                            })
+                        }),
+                        insert: vi.fn(),
+                        update: vi.fn(),
+                        delete: vi.fn()
+                    };
+                    return fn(db);
+                });
 
                 // Act
                 const result = await createAddon(createInput, {});
@@ -434,11 +426,11 @@ describe('AddonCatalogService — write methods (T-018)', () => {
                 const existingRow = buildAddonRow({ id: 'update-uuid-001' });
                 const updatedRow = buildAddonRow({ id: 'update-uuid-001', name: 'Updated Name' });
 
-                mockWithTransaction.mockImplementation(
-                    async (fn: (db: unknown) => Promise<unknown>) => {
-                        return fn(buildUpdateDb({ selectRow: existingRow, updateRow: updatedRow }));
-                    }
-                );
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (db: unknown) => Promise<unknown>
+                ) {
+                    return fn(buildUpdateDb({ selectRow: existingRow, updateRow: updatedRow }));
+                });
 
                 // Act
                 const result = await updateAddon(
@@ -457,11 +449,11 @@ describe('AddonCatalogService — write methods (T-018)', () => {
         describe('when addon does not exist', () => {
             it('should return NOT_FOUND', async () => {
                 // Arrange
-                mockWithTransaction.mockImplementation(
-                    async (fn: (db: unknown) => Promise<unknown>) => {
-                        return fn(buildUpdateDb({ selectRow: undefined }));
-                    }
-                );
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (db: unknown) => Promise<unknown>
+                ) {
+                    return fn(buildUpdateDb({ selectRow: undefined }));
+                });
 
                 // Act
                 const result = await updateAddon('missing-uuid-001', { name: 'X' }, {});
@@ -498,11 +490,11 @@ describe('AddonCatalogService — write methods (T-018)', () => {
                 const existingRow = buildAddonRow({ id: 'toggle-uuid-001', active: true });
                 const updatedRow = buildAddonRow({ id: 'toggle-uuid-001', active: false });
 
-                mockWithTransaction.mockImplementation(
-                    async (fn: (db: unknown) => Promise<unknown>) => {
-                        return fn(buildUpdateDb({ selectRow: existingRow, updateRow: updatedRow }));
-                    }
-                );
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (db: unknown) => Promise<unknown>
+                ) {
+                    return fn(buildUpdateDb({ selectRow: existingRow, updateRow: updatedRow }));
+                });
 
                 // Act
                 const result = await toggleAddonActive('toggle-uuid-001', false, {});
@@ -518,11 +510,11 @@ describe('AddonCatalogService — write methods (T-018)', () => {
                 const existingRow = buildAddonRow({ id: 'toggle-uuid-002', active: false });
                 const updatedRow = buildAddonRow({ id: 'toggle-uuid-002', active: true });
 
-                mockWithTransaction.mockImplementation(
-                    async (fn: (db: unknown) => Promise<unknown>) => {
-                        return fn(buildUpdateDb({ selectRow: existingRow, updateRow: updatedRow }));
-                    }
-                );
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (db: unknown) => Promise<unknown>
+                ) {
+                    return fn(buildUpdateDb({ selectRow: existingRow, updateRow: updatedRow }));
+                });
 
                 // Act
                 const result = await toggleAddonActive('toggle-uuid-002', true, {});
@@ -537,11 +529,11 @@ describe('AddonCatalogService — write methods (T-018)', () => {
         describe('when addon does not exist', () => {
             it('should return NOT_FOUND', async () => {
                 // Arrange
-                mockWithTransaction.mockImplementation(
-                    async (fn: (db: unknown) => Promise<unknown>) => {
-                        return fn(buildUpdateDb({ selectRow: undefined }));
-                    }
-                );
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (db: unknown) => Promise<unknown>
+                ) {
+                    return fn(buildUpdateDb({ selectRow: undefined }));
+                });
 
                 // Act
                 const result = await toggleAddonActive('missing-uuid-002', true, {});
@@ -562,11 +554,11 @@ describe('AddonCatalogService — write methods (T-018)', () => {
                 // Arrange
                 const existingRow = buildAddonRow({ id: 'soft-delete-uuid-001', active: true });
 
-                mockWithTransaction.mockImplementation(
-                    async (fn: (db: unknown) => Promise<unknown>) => {
-                        return fn(buildSoftDeleteDb(existingRow));
-                    }
-                );
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (db: unknown) => Promise<unknown>
+                ) {
+                    return fn(buildSoftDeleteDb(existingRow));
+                });
 
                 // Act
                 const result = await softDeleteAddon('soft-delete-uuid-001', {
@@ -583,11 +575,11 @@ describe('AddonCatalogService — write methods (T-018)', () => {
         describe('when addon does not exist', () => {
             it('should return NOT_FOUND', async () => {
                 // Arrange
-                mockWithTransaction.mockImplementation(
-                    async (fn: (db: unknown) => Promise<unknown>) => {
-                        return fn(buildSoftDeleteDb(undefined));
-                    }
-                );
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (db: unknown) => Promise<unknown>
+                ) {
+                    return fn(buildSoftDeleteDb(undefined));
+                });
 
                 // Act
                 const result = await softDeleteAddon('missing-uuid-003', {});
@@ -617,11 +609,11 @@ describe('AddonCatalogService — write methods (T-018)', () => {
                     deletedAt: null
                 });
 
-                mockWithTransaction.mockImplementation(
-                    async (fn: (db: unknown) => Promise<unknown>) => {
-                        return fn(buildUpdateDb({ selectRow: deletedRow, updateRow: restoredRow }));
-                    }
-                );
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (db: unknown) => Promise<unknown>
+                ) {
+                    return fn(buildUpdateDb({ selectRow: deletedRow, updateRow: restoredRow }));
+                });
 
                 // Act
                 const result = await restoreAddon('restore-uuid-001', { actorId: 'admin-uuid' });
@@ -639,11 +631,11 @@ describe('AddonCatalogService — write methods (T-018)', () => {
                 // Arrange — row exists but deletedAt is null
                 const activeRow = buildAddonRow({ id: 'restore-uuid-002', deletedAt: null });
 
-                mockWithTransaction.mockImplementation(
-                    async (fn: (db: unknown) => Promise<unknown>) => {
-                        return fn(buildUpdateDb({ selectRow: activeRow }));
-                    }
-                );
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (db: unknown) => Promise<unknown>
+                ) {
+                    return fn(buildUpdateDb({ selectRow: activeRow }));
+                });
 
                 // Act
                 const result = await restoreAddon('restore-uuid-002', {});
@@ -659,11 +651,11 @@ describe('AddonCatalogService — write methods (T-018)', () => {
         describe('when addon does not exist', () => {
             it('should return NOT_FOUND', async () => {
                 // Arrange
-                mockWithTransaction.mockImplementation(
-                    async (fn: (db: unknown) => Promise<unknown>) => {
-                        return fn(buildUpdateDb({ selectRow: undefined }));
-                    }
-                );
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (db: unknown) => Promise<unknown>
+                ) {
+                    return fn(buildUpdateDb({ selectRow: undefined }));
+                });
 
                 // Act
                 const result = await restoreAddon('missing-uuid-004', {});
@@ -684,11 +676,11 @@ describe('AddonCatalogService — write methods (T-018)', () => {
                 // Arrange
                 const existingRow = buildAddonRow({ id: 'hard-delete-uuid-001' });
 
-                mockWithTransaction.mockImplementation(
-                    async (fn: (db: unknown) => Promise<unknown>) => {
-                        return fn(buildHardDeleteDb({ selectRow: existingRow }));
-                    }
-                );
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (db: unknown) => Promise<unknown>
+                ) {
+                    return fn(buildHardDeleteDb({ selectRow: existingRow }));
+                });
 
                 // Act
                 const result = await hardDeleteAddon('hard-delete-uuid-001', {
@@ -707,11 +699,11 @@ describe('AddonCatalogService — write methods (T-018)', () => {
                 // Arrange
                 const existingRow = buildAddonRow({ id: 'hard-delete-uuid-002' });
 
-                mockWithTransaction.mockImplementation(
-                    async (fn: (db: unknown) => Promise<unknown>) => {
-                        return fn(buildHardDeleteDb({ selectRow: existingRow, purchaseCount: 3 }));
-                    }
-                );
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (db: unknown) => Promise<unknown>
+                ) {
+                    return fn(buildHardDeleteDb({ selectRow: existingRow, purchaseCount: 3 }));
+                });
 
                 // Act
                 const result = await hardDeleteAddon('hard-delete-uuid-002', {});
@@ -731,13 +723,13 @@ describe('AddonCatalogService — write methods (T-018)', () => {
                 // ON DELETE RESTRICT, so this guard must block the delete
                 const existingRow = buildAddonRow({ id: 'hard-delete-uuid-003' });
 
-                mockWithTransaction.mockImplementation(
-                    async (fn: (db: unknown) => Promise<unknown>) => {
-                        return fn(
-                            buildHardDeleteDb({ selectRow: existingRow, subscriptionAddonCount: 2 })
-                        );
-                    }
-                );
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (db: unknown) => Promise<unknown>
+                ) {
+                    return fn(
+                        buildHardDeleteDb({ selectRow: existingRow, subscriptionAddonCount: 2 })
+                    );
+                });
 
                 // Act
                 const result = await hardDeleteAddon('hard-delete-uuid-003', {});
@@ -754,11 +746,11 @@ describe('AddonCatalogService — write methods (T-018)', () => {
         describe('when addon does not exist', () => {
             it('should return NOT_FOUND', async () => {
                 // Arrange
-                mockWithTransaction.mockImplementation(
-                    async (fn: (db: unknown) => Promise<unknown>) => {
-                        return fn(buildHardDeleteDb({ selectRow: undefined }));
-                    }
-                );
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (db: unknown) => Promise<unknown>
+                ) {
+                    return fn(buildHardDeleteDb({ selectRow: undefined }));
+                });
 
                 // Act
                 const result = await hardDeleteAddon('missing-uuid-005', {});

@@ -11,14 +11,14 @@
  * (SUPER_ADMIN-only). Lower roles redirect to /auth/forbidden.
  */
 
+import { type AnnouncementItem, type AnnouncementsValue, PermissionEnum } from '@repo/schemas';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import { AnnouncementForm } from '@/features/announcements/AnnouncementForm';
 import { useFlashyToast } from '@/hooks/use-flashy-toast';
 import { usePlatformSetting, useUpdatePlatformSetting } from '@/hooks/use-platform-setting';
 import { useTranslations } from '@/hooks/use-translations';
 import type { AuthState } from '@/lib/auth-session';
-import { type AnnouncementItem, type AnnouncementsValue, PermissionEnum } from '@repo/schemas';
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
-import { useMemo } from 'react';
 
 export const Route = createFileRoute('/_authed/platform/critical/announcements/new')({
     beforeLoad: ({ context }) => {

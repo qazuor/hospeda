@@ -6,6 +6,7 @@ import { useTranslations } from '@repo/i18n';
  */
 export const useAuthTranslations = () => {
     try {
+        // biome-ignore lint/correctness/useHookAtTopLevel: intentional graceful-degradation fallback — @repo/i18n's useTranslations() never actually throws in practice (pure useMemo, no context dependency), so hook order stays stable; this try/catch is the documented, tested fallback path for when i18n is unavailable (see test/hooks/use-auth-translations.test.ts "when i18n is NOT available" suite).
         const { t } = useTranslations();
         return {
             t: (key: string, params?: Record<string, string | number>) => {

@@ -31,8 +31,7 @@
 
 import { z } from '@hono/zod-openapi';
 import type { SelectNewsletterCampaign } from '@repo/db';
-import { getDb, newsletterCampaigns } from '@repo/db';
-import { safeIlike } from '@repo/db';
+import { getDb, newsletterCampaigns, safeIlike } from '@repo/db';
 import {
     CreateNewsletterCampaignSchema,
     NewsletterCampaignAdminSearchSchema,

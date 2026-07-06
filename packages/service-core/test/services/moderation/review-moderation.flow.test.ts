@@ -210,39 +210,51 @@ vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
     return {
         ...actual,
-        AccommodationReviewModel: vi.fn(() => mockAccReviewModel),
-        AccommodationModel: vi.fn(() => ({
-            findById: vi.fn().mockResolvedValue(null),
-            findOne: vi.fn().mockResolvedValue(null),
-            create: vi.fn(),
-            update: vi.fn(),
-            count: vi.fn().mockResolvedValue(0),
-            findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
-        })),
-        DestinationReviewModel: vi.fn(() => mockDestReviewModel),
-        DestinationModel: vi.fn(() => ({
-            findById: vi.fn().mockResolvedValue(null),
-            findOne: vi.fn().mockResolvedValue(null),
-            create: vi.fn(),
-            update: vi.fn(),
-            count: vi.fn().mockResolvedValue(0),
-            findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
-        }))
+        AccommodationReviewModel: vi.fn(function () {
+            return mockAccReviewModel;
+        }),
+        AccommodationModel: vi.fn(function () {
+            return {
+                findById: vi.fn().mockResolvedValue(null),
+                findOne: vi.fn().mockResolvedValue(null),
+                create: vi.fn(),
+                update: vi.fn(),
+                count: vi.fn().mockResolvedValue(0),
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
+            };
+        }),
+        DestinationReviewModel: vi.fn(function () {
+            return mockDestReviewModel;
+        }),
+        DestinationModel: vi.fn(function () {
+            return {
+                findById: vi.fn().mockResolvedValue(null),
+                findOne: vi.fn().mockResolvedValue(null),
+                create: vi.fn(),
+                update: vi.fn(),
+                count: vi.fn().mockResolvedValue(0),
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
+            };
+        })
     };
 });
 
 vi.mock('../../../src/services/accommodation/accommodation.service.js', () => ({
-    AccommodationService: vi.fn(() => ({
-        updateStatsFromReview: vi.fn().mockResolvedValue(undefined),
-        getById: vi.fn().mockResolvedValue({ data: null })
-    }))
+    AccommodationService: vi.fn(function () {
+        return {
+            updateStatsFromReview: vi.fn().mockResolvedValue(undefined),
+            getById: vi.fn().mockResolvedValue({ data: null })
+        };
+    })
 }));
 
 vi.mock('../../../src/services/destination/destination.service.js', () => ({
-    DestinationService: vi.fn(() => ({
-        updateStatsFromReview: vi.fn().mockResolvedValue(undefined),
-        getById: vi.fn().mockResolvedValue({ data: null })
-    }))
+    DestinationService: vi.fn(function () {
+        return {
+            updateStatsFromReview: vi.fn().mockResolvedValue(undefined),
+            getById: vi.fn().mockResolvedValue({ data: null })
+        };
+    })
 }));
 
 vi.mock('../../../src/utils/transaction.js', () => ({
@@ -260,6 +272,7 @@ vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
 // ---------------------------------------------------------------------------
 
 import * as contentModeration from '@repo/content-moderation';
+import type { AccommodationReview, DestinationReview } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
@@ -267,7 +280,6 @@ import {
     RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import type { AccommodationReview, DestinationReview } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationReviewService } from '../../../src/services/accommodationReview/accommodationReview.service.js';
 import { DestinationReviewService } from '../../../src/services/destinationReview/destinationReview.service.js';

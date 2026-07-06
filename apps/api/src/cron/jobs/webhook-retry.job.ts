@@ -18,6 +18,7 @@
 
 import type { QZPayWebhookEvent } from '@qazuor/qzpay-core';
 import { createMercadoPagoAdapter } from '@repo/billing';
+import type { DrizzleClient } from '@repo/db';
 import {
     and,
     billingWebhookDeadLetter,
@@ -29,7 +30,6 @@ import {
     sql,
     withTransaction
 } from '@repo/db';
-import type { DrizzleClient } from '@repo/db';
 import * as Sentry from '@sentry/node';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';

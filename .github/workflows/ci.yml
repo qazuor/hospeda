@@ -239,6 +239,11 @@ jobs:
         run: pnpm env:check:registry
       - name: Env examples drift guard (SPEC-235)
         run: pnpm env:check:examples
+      # Scans source for process.env.X reads with no registry entry (both
+      # directions). Only the usage check runs in CI: env:check:local and
+      # env:check:rules need a real .env.local, which CI does not have (HOS-79 OQ-2).
+      - name: Env usage-vs-registry parity (HOS-79)
+        run: pnpm env:check:usage
 
   # ------------------------------------------------------------------
   # Build all packages and apps. Required by typecheck and tests.
@@ -574,6 +579,32 @@ jobs:
           fi
 
   # ------------------------------------------------------------------
+  # Over-the-wire CSP header check (HOS-74). Boots the built web
+  # `@astrojs/node` standalone server and asserts, via real HTTP, that
+  # every former-prerender content route emits the Content-Security-Policy
+  # header on a direct navigation — the exact property source-string unit
+  # tests cannot prove (see apps/web csp-middleware.test.ts JSDoc). Guards
+  # the HOS-74 regression: a `prerender = true` route is served off-disk by
+  # the standalone server WITHOUT running middleware, so the CSP header set
+  # in src/middleware.ts never reaches it. Dedicated job (not the unit
+  # suite) because it needs a real build + a booted Node server. ~2 min.
+  # ------------------------------------------------------------------
+  csp-headers:
+    name: CSP Headers
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Download build outputs
+        uses: actions/download-artifact@v8
+        with:
+          name: build-outputs
+      - name: Verify CSP header on former-prerender routes
+        run: pnpm --filter=hospeda-web verify:csp
+
+  # ------------------------------------------------------------------
   # Aggregator job. Reports a single PASS/FAIL after every CI leaf job
   # completes. Originally also gated a CD workflow (cd-production.yml)
   # that was retired when deploys moved off Vercel to Coolify (VPS) in
@@ -596,6 +627,7 @@ jobs:
       - test-unit
       - test-integration
       - coverage-check
+      - csp-headers
     steps:
       - name: Aggregate result
         # coverage-check is intentionally skipped on PRs and staging
@@ -610,6 +642,7 @@ jobs:
             || [ "${{ needs.typecheck.result }}" != "success" ] \
             || [ "${{ needs.test-unit.result }}" != "success" ] \
             || [ "${{ needs.test-integration.result }}" != "success" ] \
+            || [ "${{ needs.csp-headers.result }}" != "success" ] \
             || ( [ "${{ needs.coverage-check.result }}" != "success" ] \
                  && [ "${{ needs.coverage-check.result }}" != "skipped" ] ); then
             echo "❌ One or more checks failed"

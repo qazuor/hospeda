@@ -6,8 +6,8 @@ import {
     type EventLocationCreateHttp,
     EventLocationCreateHttpSchema,
     EventLocationProtectedSchema,
-    PermissionEnum,
-    httpToDomainEventLocationCreate
+    httpToDomainEventLocationCreate,
+    PermissionEnum
 } from '@repo/schemas';
 import { EventLocationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';

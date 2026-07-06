@@ -12,12 +12,12 @@
  * @module RoutePermissionGuard.test
  */
 
-import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { PermissionEnum } from '@repo/schemas';
 import { useNavigate } from '@tanstack/react-router';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
 
 // Undo the global mock from test/setup.tsx so we test the real component
 vi.unmock('@/components/auth/RoutePermissionGuard');

@@ -37,10 +37,10 @@
  * @see SPEC-174 §7.9
  */
 
-import { TourProvider, useTour } from '@/contexts/tour-context';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TourProvider, useTour } from '@/contexts/tour-context';
 
 // ---------------------------------------------------------------------------
 // Mock driver.js
@@ -69,6 +69,7 @@ vi.mock('@/lib/analytics/posthog-client', () => ({
 }));
 
 import { trackEvent } from '@/lib/analytics/posthog-client';
+
 const mockedTrackEvent = vi.mocked(trackEvent);
 
 // ---------------------------------------------------------------------------
@@ -249,7 +250,7 @@ describe('Tour system — a11y regression (SPEC-174 T-015)', () => {
             mockHasNextStep.mockReturnValue(true);
 
             let onDestroyStarted: (() => void) | undefined;
-            mockDriverFactory.mockImplementation((config: Record<string, unknown>) => {
+            mockDriverFactory.mockImplementation(function (config: Record<string, unknown>) {
                 onDestroyStarted = config.onDestroyStarted as (() => void) | undefined;
                 return mockDriverInstance;
             });
@@ -292,7 +293,7 @@ describe('Tour system — a11y regression (SPEC-174 T-015)', () => {
             mockHasNextStep.mockReturnValue(false);
 
             let onDestroyStarted: (() => void) | undefined;
-            mockDriverFactory.mockImplementation((config: Record<string, unknown>) => {
+            mockDriverFactory.mockImplementation(function (config: Record<string, unknown>) {
                 onDestroyStarted = config.onDestroyStarted as (() => void) | undefined;
                 return mockDriverInstance;
             });

@@ -23,10 +23,10 @@
  *  follow-up: export it from @repo/schemas to remove this duplication).
  */
 
-import { validatedConfig } from '@/config/ia/validate';
-import { hasSidebarAccessibleItem, isPermissionGateGranted } from '@/lib/nav/permission-visibility';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { validatedConfig } from '@/config/ia/validate';
+import { hasSidebarAccessibleItem, isPermissionGateGranted } from '@/lib/nav/permission-visibility';
 
 // ---------------------------------------------------------------------------
 // SUPER_ADMIN permission bundle

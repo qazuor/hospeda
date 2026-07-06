@@ -533,9 +533,9 @@ function normaliseHttpMedia(httpMedia: HttpMedia): NormalisedMediaObject | null 
     ): NormalisedMediaObject['gallery'] extends Array<infer T> ? T : never =>
         ({
             url: img.url,
-            ...(img.caption !== undefined ? { caption: img.caption } : {}),
-            ...(img.description !== undefined ? { description: img.description } : {}),
-            ...(img.alt !== undefined ? { alt: img.alt } : {}),
+            ...(img.caption === undefined ? {} : { caption: img.caption }),
+            ...(img.description === undefined ? {} : { description: img.description }),
+            ...(img.alt === undefined ? {} : { alt: img.alt }),
             // Cast is safe: the schema accepts the string enum value; the domain
             // type is ModerationStatusEnum which is a string enum with the same values.
             moderationState: (img.moderationState ??
@@ -550,8 +550,8 @@ function normaliseHttpMedia(httpMedia: HttpMedia): NormalisedMediaObject | null 
     }): NormalisedMediaObject['videos'] extends Array<infer T> ? T : never =>
         ({
             url: v.url,
-            ...(v.caption !== undefined ? { caption: v.caption } : {}),
-            ...(v.description !== undefined ? { description: v.description } : {}),
+            ...(v.caption === undefined ? {} : { caption: v.caption }),
+            ...(v.description === undefined ? {} : { description: v.description }),
             moderationState: (v.moderationState ??
                 ModerationStatusEnum.APPROVED) as ModerationStatusEnum
         }) as NormalisedMediaObject['videos'] extends Array<infer T> ? T : never;
@@ -662,19 +662,19 @@ export const httpToDomainAccommodationCreate = (
     },
 
     // Junction sync (SPEC-172 / SPEC-208 additive): pass through when provided
-    ...(httpData.amenityIds !== undefined ? { amenityIds: httpData.amenityIds } : {}),
-    ...(httpData.featureIds !== undefined ? { featureIds: httpData.featureIds } : {}),
+    ...(httpData.amenityIds === undefined ? {} : { amenityIds: httpData.amenityIds }),
+    ...(httpData.featureIds === undefined ? {} : { featureIds: httpData.featureIds }),
 
     // Media (SPEC-208 additive): normalise images to domain shape with APPROVED default.
     // Cast is safe: the domain JSONB column accepts null for featuredImage at runtime;
     // `null` here is the clear-signal (host removed the image). The Zod type models
     // featuredImage as `Image | undefined` — the null-as-clear convention is a
     // service-layer protocol not reflected in the static schema type.
-    ...(httpData.media !== undefined
-        ? {
+    ...(httpData.media === undefined
+        ? {}
+        : {
               media: normaliseHttpMedia(httpData.media) as AccommodationCreateInput['media']
-          }
-        : {})
+          })
 });
 
 /**
@@ -749,8 +749,8 @@ export const httpToDomainAccommodationCreateDraft = (
                             }
                         }
                       : {}),
-                  ...(httpData.street !== undefined ? { street: httpData.street } : {}),
-                  ...(httpData.number !== undefined ? { number: httpData.number } : {})
+                  ...(httpData.street === undefined ? {} : { street: httpData.street }),
+                  ...(httpData.number === undefined ? {} : { number: httpData.number })
               }
           }
         : {}),
@@ -759,8 +759,8 @@ export const httpToDomainAccommodationCreateDraft = (
     ...(httpData.basePrice !== undefined || httpData.currency !== undefined
         ? {
               price: {
-                  ...(httpData.basePrice !== undefined ? { price: httpData.basePrice } : {}),
-                  ...(httpData.currency !== undefined ? { currency: httpData.currency } : {})
+                  ...(httpData.basePrice === undefined ? {} : { price: httpData.basePrice }),
+                  ...(httpData.currency === undefined ? {} : { currency: httpData.currency })
               }
           }
         : {}),
@@ -773,8 +773,8 @@ export const httpToDomainAccommodationCreateDraft = (
     ...(httpData.phone !== undefined || httpData.website !== undefined
         ? {
               contactInfo: {
-                  ...(httpData.phone !== undefined ? { mobilePhone: httpData.phone } : {}),
-                  ...(httpData.website !== undefined ? { website: httpData.website } : {})
+                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
+                  ...(httpData.website === undefined ? {} : { website: httpData.website })
               } as AccommodationCreateInput['contactInfo']
           }
         : {}),
@@ -794,10 +794,10 @@ export const httpToDomainAccommodationCreateDraft = (
     httpData.beds !== undefined
         ? {
               extraInfo: {
-                  ...(httpData.maxGuests !== undefined ? { capacity: httpData.maxGuests } : {}),
-                  ...(httpData.bedrooms !== undefined ? { bedrooms: httpData.bedrooms } : {}),
-                  ...(httpData.bathrooms !== undefined ? { bathrooms: httpData.bathrooms } : {}),
-                  ...(httpData.beds !== undefined ? { beds: httpData.beds } : {})
+                  ...(httpData.maxGuests === undefined ? {} : { capacity: httpData.maxGuests }),
+                  ...(httpData.bedrooms === undefined ? {} : { bedrooms: httpData.bedrooms }),
+                  ...(httpData.bathrooms === undefined ? {} : { bathrooms: httpData.bathrooms }),
+                  ...(httpData.beds === undefined ? {} : { beds: httpData.beds })
               } as AccommodationCreateInput['extraInfo']
           }
         : {}),
@@ -805,7 +805,7 @@ export const httpToDomainAccommodationCreateDraft = (
     // --- Optional: amenity junction sync (SPEC-172 / SPEC-258) ---
     // Pass amenityIds through to the domain input so _beforeCreate captures them
     // in hookState and _afterCreate can run syncAmenityJunction transactionally.
-    ...(httpData.amenityIds !== undefined ? { amenityIds: httpData.amenityIds } : {})
+    ...(httpData.amenityIds === undefined ? {} : { amenityIds: httpData.amenityIds })
 });
 
 /**
@@ -847,8 +847,8 @@ export const httpToDomainAccommodationUpdate = (
     ...(httpData.basePrice !== undefined || httpData.currency !== undefined
         ? {
               price: {
-                  ...(httpData.basePrice !== undefined ? { price: httpData.basePrice } : {}),
-                  ...(httpData.currency !== undefined ? { currency: httpData.currency } : {})
+                  ...(httpData.basePrice === undefined ? {} : { price: httpData.basePrice }),
+                  ...(httpData.currency === undefined ? {} : { currency: httpData.currency })
               }
           }
         : {}),
@@ -861,9 +861,9 @@ export const httpToDomainAccommodationUpdate = (
     httpData.website !== undefined
         ? {
               contactInfo: {
-                  ...(httpData.phone !== undefined ? { mobilePhone: httpData.phone } : {}),
-                  ...(httpData.email !== undefined ? { personalEmail: httpData.email } : {}),
-                  ...(httpData.website !== undefined ? { website: httpData.website } : {})
+                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
+                  ...(httpData.email === undefined ? {} : { personalEmail: httpData.email }),
+                  ...(httpData.website === undefined ? {} : { website: httpData.website })
               }
           }
         : {}),
@@ -878,12 +878,12 @@ export const httpToDomainAccommodationUpdate = (
     httpData.youtube !== undefined
         ? {
               socialNetworks: {
-                  ...(httpData.twitter !== undefined ? { twitter: httpData.twitter } : {}),
-                  ...(httpData.facebook !== undefined ? { facebook: httpData.facebook } : {}),
-                  ...(httpData.instagram !== undefined ? { instagram: httpData.instagram } : {}),
-                  ...(httpData.linkedin !== undefined ? { linkedIn: httpData.linkedin } : {}),
-                  ...(httpData.tiktok !== undefined ? { tiktok: httpData.tiktok } : {}),
-                  ...(httpData.youtube !== undefined ? { youtube: httpData.youtube } : {})
+                  ...(httpData.twitter === undefined ? {} : { twitter: httpData.twitter }),
+                  ...(httpData.facebook === undefined ? {} : { facebook: httpData.facebook }),
+                  ...(httpData.instagram === undefined ? {} : { instagram: httpData.instagram }),
+                  ...(httpData.linkedin === undefined ? {} : { linkedIn: httpData.linkedin }),
+                  ...(httpData.tiktok === undefined ? {} : { tiktok: httpData.tiktok }),
+                  ...(httpData.youtube === undefined ? {} : { youtube: httpData.youtube })
               }
           }
         : {}),
@@ -898,24 +898,24 @@ export const httpToDomainAccommodationUpdate = (
     httpData.bathrooms !== undefined
         ? {
               extraInfo: {
-                  ...(httpData.maxGuests !== undefined ? { capacity: httpData.maxGuests } : {}),
-                  ...(httpData.bedrooms !== undefined ? { bedrooms: httpData.bedrooms } : {}),
-                  ...(httpData.bathrooms !== undefined ? { bathrooms: httpData.bathrooms } : {})
+                  ...(httpData.maxGuests === undefined ? {} : { capacity: httpData.maxGuests }),
+                  ...(httpData.bedrooms === undefined ? {} : { bedrooms: httpData.bedrooms }),
+                  ...(httpData.bathrooms === undefined ? {} : { bathrooms: httpData.bathrooms })
               }
           }
         : {}),
 
     // Junction sync (SPEC-172 / SPEC-208 additive): pass through when provided
-    ...(httpData.amenityIds !== undefined ? { amenityIds: httpData.amenityIds } : {}),
-    ...(httpData.featureIds !== undefined ? { featureIds: httpData.featureIds } : {}),
+    ...(httpData.amenityIds === undefined ? {} : { amenityIds: httpData.amenityIds }),
+    ...(httpData.featureIds === undefined ? {} : { featureIds: httpData.featureIds }),
 
     // Media (SPEC-208 additive): normalise images to domain shape with APPROVED default.
     // Cast is safe: see create converter comment above for the null-as-clear rationale.
-    ...(httpData.media !== undefined
-        ? {
+    ...(httpData.media === undefined
+        ? {}
+        : {
               media: normaliseHttpMedia(httpData.media ?? null) as AccommodationUpdateInput['media']
-          }
-        : {})
+          })
 });
 
 // ============================================================================

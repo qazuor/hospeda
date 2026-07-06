@@ -22,7 +22,10 @@ export { buildSentryReportUri };
 export function buildCspDirectives({
     nonce,
     sentryDsn
-}: { nonce: string; sentryDsn: string }): string {
+}: {
+    nonce: string;
+    sentryDsn: string;
+}): string {
     const sentryReportUri = sentryDsn ? buildSentryReportUri({ dsn: sentryDsn }) : null;
 
     const directives = [

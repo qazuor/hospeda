@@ -14,7 +14,7 @@
 
 import { EntityViewModel } from '@repo/db';
 import { EntityTypeEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     EntityViewService,
     type GetAdminBatchInput,
@@ -70,6 +70,12 @@ describe('EntityViewService — admin methods (SPEC-197)', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
 
     beforeEach(() => {
+        // Pin the clock so the getDailySeries gap-fill window (last N UTC days from
+        // "today") deterministically includes the hard-coded 2026-06-0x fixture
+        // dates. Without this the test decays: once real "today" drifts past the
+        // 30-day window the fixture rows fall outside it (unrelated to HOS-28 /
+        // Vitest 4 — it would fail on v3 run today too).
+        vi.setSystemTime(new Date('2026-06-20T12:00:00Z'));
         // EntityViewModel has no constructor params; createTypedModelMock handles it.
         // List all new admin model methods so they are definitely present as vi.fn().
         modelMock = createTypedModelMock(EntityViewModel, [
@@ -83,6 +89,10 @@ describe('EntityViewService — admin methods (SPEC-197)', () => {
         loggerMock = createLoggerMock();
         // Pass undefined for accommodationModel — admin methods never use it.
         service = new EntityViewService({ logger: loggerMock }, modelMock, undefined);
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     // =========================================================================
@@ -633,9 +643,18 @@ describe('EntityViewService — admin methods (SPEC-197)', () => {
             });
 
             it('should set total=0 for missing (date, entityType) combinations', async () => {
-                // Arrange — model returns only one row; 89 others must be zero-filled
+                // Arrange — model returns only one row; 89 others must be zero-filled.
+                // The mocked date must fall inside the [today-29 .. today] UTC window that
+                // gapFillDailySeries generates, so derive it from today (today-5) instead of
+                // hard-coding a calendar date that drifts out of the window as time passes.
+                const nowUtc = new Date();
+                const inWindowUtc = new Date(
+                    Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate()) -
+                        5 * 24 * 60 * 60 * 1000
+                );
+                const inWindowDate = `${inWindowUtc.getUTCFullYear()}-${String(inWindowUtc.getUTCMonth() + 1).padStart(2, '0')}-${String(inWindowUtc.getUTCDate()).padStart(2, '0')}`;
                 asMock(modelMock.getDailySeries).mockResolvedValue([
-                    { date: '2026-06-05', entityType: EntityTypeEnum.ACCOMMODATION, total: 42 }
+                    { date: inWindowDate, entityType: EntityTypeEnum.ACCOMMODATION, total: 42 }
                 ]);
                 const input: GetAdminDailySeriesInput = {
                     actor: makeAnalyticsActor(),
@@ -648,10 +667,10 @@ describe('EntityViewService — admin methods (SPEC-197)', () => {
                 // Assert
                 expect(result.data).toHaveLength(90);
 
-                // All rows that are NOT (2026-06-05, ACCOMMODATION) must have total: 0
+                // All rows that are NOT (inWindowDate, ACCOMMODATION) must have total: 0
                 const zeroRows = (result.data ?? []).filter(
                     (r) =>
-                        !(r.date === '2026-06-05' && r.entityType === EntityTypeEnum.ACCOMMODATION)
+                        !(r.date === inWindowDate && r.entityType === EntityTypeEnum.ACCOMMODATION)
                 );
                 expect(zeroRows).toHaveLength(89);
                 for (const row of zeroRows) {

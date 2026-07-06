@@ -3,15 +3,16 @@
  *
  * Re-exports for the SearchHistoryService (SPEC-289).
  */
-export {
-    SearchHistoryService,
-    RecordSearchHistoryInputSchema,
-    ListSearchHistoryInputSchema,
-    DeleteOneSearchHistoryInputSchema
-} from './userSearchHistory.service.js';
+
 export type {
-    RecordSearchHistoryInput,
+    DeleteOneSearchHistoryInput,
     ListSearchHistoryInput,
     ListSearchHistoryOutput,
-    DeleteOneSearchHistoryInput
+    RecordSearchHistoryInput
+} from './userSearchHistory.service.js';
+export {
+    DeleteOneSearchHistoryInputSchema,
+    ListSearchHistoryInputSchema,
+    RecordSearchHistoryInputSchema,
+    SearchHistoryService
 } from './userSearchHistory.service.js';

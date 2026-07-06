@@ -73,21 +73,31 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        ImageImportService: vi.fn().mockImplementation(() => ({
-            import: mockImport
-        })),
-        AccommodationService: vi.fn().mockImplementation(() => ({
-            getById: mockGetById
-        })),
-        DestinationService: vi.fn().mockImplementation(() => ({
-            getById: mockGetById
-        })),
-        EventService: vi.fn().mockImplementation(() => ({
-            getById: mockGetById
-        })),
-        PostService: vi.fn().mockImplementation(() => ({
-            getById: mockGetById
-        }))
+        ImageImportService: vi.fn().mockImplementation(function () {
+            return {
+                import: mockImport
+            };
+        }),
+        AccommodationService: vi.fn().mockImplementation(function () {
+            return {
+                getById: mockGetById
+            };
+        }),
+        DestinationService: vi.fn().mockImplementation(function () {
+            return {
+                getById: mockGetById
+            };
+        }),
+        EventService: vi.fn().mockImplementation(function () {
+            return {
+                getById: mockGetById
+            };
+        }),
+        PostService: vi.fn().mockImplementation(function () {
+            return {
+                getById: mockGetById
+            };
+        })
     };
 });
 

@@ -12,7 +12,7 @@
  * - SPEC-086 D-021 (quota enforcement)
  *
  * Uses vi.mock + vi.spyOn to mock the DB client.
- * Uses @ts-ignore on Drizzle mocks — the RelationalQueryBuilder interface
+ * Uses @ts-expect-error on Drizzle mocks — the RelationalQueryBuilder interface
  * cannot be fully replicated in tests; only the used methods are mocked.
  */
 import { TagTypeEnum } from '@repo/schemas';

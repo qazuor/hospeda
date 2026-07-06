@@ -15,9 +15,9 @@
  * @module Views30dCell
  */
 
-import { useHasPermission } from '@/hooks/use-user-permissions';
-import { type ViewsBatchEntityType, useViewsBatch } from '@/hooks/use-views-batch';
 import { PermissionEnum } from '@repo/schemas';
+import { useHasPermission } from '@/hooks/use-user-permissions';
+import { useViewsBatch, type ViewsBatchEntityType } from '@/hooks/use-views-batch';
 
 /** Props for {@link Views30dCell}. RO-RO pattern. */
 export interface Views30dCellProps {

@@ -82,17 +82,19 @@ vi.mock('../../../../src/utils/actor', () => ({
 }));
 
 vi.mock('@repo/service-core', () => ({
-    SocialPostService: vi.fn(() => ({
-        approve: mockApprove,
-        reject: mockReject,
-        requestChanges: mockRequestChanges,
-        schedule: mockSchedule,
-        markReady: mockMarkReady,
-        pause: mockPause,
-        unpause: mockUnpause,
-        archive: mockArchive,
-        promoteHashtag: mockPromoteHashtag
-    })),
+    SocialPostService: vi.fn(function () {
+        return {
+            approve: mockApprove,
+            reject: mockReject,
+            requestChanges: mockRequestChanges,
+            schedule: mockSchedule,
+            markReady: mockMarkReady,
+            pause: mockPause,
+            unpause: mockUnpause,
+            archive: mockArchive,
+            promoteHashtag: mockPromoteHashtag
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         public code: string;
         public reason?: string;
@@ -122,8 +124,8 @@ vi.mock('../../../../src/utils/logger', () => ({
 // ---------------------------------------------------------------------------
 
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
-import { ServiceError } from '@repo/service-core';
 import type { Actor } from '@repo/service-core';
+import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../src/utils/actor';
 

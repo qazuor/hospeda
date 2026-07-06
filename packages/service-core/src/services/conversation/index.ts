@@ -9,11 +9,12 @@
  *
  * Additional services (T-007, T-008, …) will be appended to this barrel as they are implemented.
  */
-export * from './access-token.service';
+
 export type { GenerateTokenResult } from './access-token.service';
-export * from './notification-schedule.service';
-export type { AdvanceScheduleResult } from './notification-schedule.service';
-export * from './message.service.js';
-export type { GetMessagesResult } from './message.service.js';
-export * from './conversation.service.js';
+export * from './access-token.service';
 export * from './conversation.permissions.js';
+export * from './conversation.service.js';
+export type { GetMessagesResult } from './message.service.js';
+export * from './message.service.js';
+export type { AdvanceScheduleResult } from './notification-schedule.service';
+export * from './notification-schedule.service';

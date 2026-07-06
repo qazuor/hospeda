@@ -22,22 +22,22 @@
  */
 
 import {
-    type DrizzleClient,
-    type QZPayBillingAddon,
-    type QueryContext,
     billingAddons,
     billingSubscriptionAddons,
     count,
+    type DrizzleClient,
     eq,
+    type QueryContext,
+    type QZPayBillingAddon,
     sql,
     withTransaction
 } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
-import { ServiceErrorCode } from '@repo/schemas';
 import type { AdminAddonResponse } from '@repo/schemas';
-import { mapRowToAddonDefinition } from './addon-catalog.mapper.js';
+import { ServiceErrorCode } from '@repo/schemas';
 import { diffAddonFields, insertAddonAuditLog } from './addon.audit.js';
 import type { CreateAddonInput, UpdateAddonInput } from './addon.write-types.js';
+import { mapRowToAddonDefinition } from './addon-catalog.mapper.js';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -164,7 +164,7 @@ export async function createAddon(
                     : {};
 
             const entitlements: string[] =
-                input.grantsEntitlement !== null ? [input.grantsEntitlement] : [];
+                input.grantsEntitlement === null ? [] : [input.grantsEntitlement];
 
             const [inserted] = await db
                 .insert(billingAddons)
@@ -272,7 +272,7 @@ export async function updateAddon(
                 const newLimitKey = input.affectsLimitKey ?? Object.keys(existingLimits)[0] ?? null;
                 const newLimitIncrease =
                     input.limitIncrease ??
-                    (newLimitKey !== null ? (existingLimits[newLimitKey] ?? null) : null);
+                    (newLimitKey === null ? null : (existingLimits[newLimitKey] ?? null));
 
                 addonUpdateData.limits =
                     newLimitKey !== null && newLimitIncrease !== null
@@ -283,7 +283,7 @@ export async function updateAddon(
             // Reconcile entitlements
             if (input.grantsEntitlement !== undefined) {
                 addonUpdateData.entitlements =
-                    input.grantsEntitlement !== null ? [input.grantsEntitlement] : [];
+                    input.grantsEntitlement === null ? [] : [input.grantsEntitlement];
             }
 
             const [updated] = await db

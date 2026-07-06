@@ -68,8 +68,8 @@ vi.mock('drizzle-orm', () => ({
     )
 }));
 
-import * as dbModule from '@repo/db';
 import type { QueryContext } from '@repo/db';
+import * as dbModule from '@repo/db';
 import {
     NotificationRetentionService,
     type RetentionSummary
@@ -295,7 +295,7 @@ describe('NotificationRetentionService', () => {
         it('should return a summary combining marked and purged counts', async () => {
             // Arrange — two sequential calls: update then delete
             let callCount = 0;
-            mockGetDb.mockImplementation(() => {
+            mockGetDb.mockImplementation(function () {
                 callCount += 1;
                 if (callCount === 1) return { update: makeUpdateMock(10) };
                 return { delete: makeDeleteMock(3) };
@@ -330,7 +330,7 @@ describe('NotificationRetentionService', () => {
         it('should fall back to getDb() for both operations when no ctx is provided', async () => {
             // Arrange
             let callCount = 0;
-            mockGetDb.mockImplementation(() => {
+            mockGetDb.mockImplementation(function () {
                 callCount += 1;
                 if (callCount === 1) return { update: makeUpdateMock(0) };
                 return { delete: makeDeleteMock(0) };

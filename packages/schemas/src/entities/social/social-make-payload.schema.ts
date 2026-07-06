@@ -124,7 +124,13 @@ export const MakeWebhookResponseSchema = z.discriminatedUnion('status', [
          * Public URL of the published post on the social network.
          * May be absent if the platform does not return it immediately.
          */
-        externalPostUrl: z.string().optional()
+        externalPostUrl: z.string().optional(),
+        /**
+         * Make.com scenario run ID (`{{executionId}}`) echoed back for
+         * traceability. Optional — the dispatch service does not require it,
+         * but the Make.com "Webhook Response" module typically includes it.
+         */
+        makeRunId: z.string().optional()
     }),
     z.object({
         /** Indicates Make.com failed to publish the post. */
@@ -133,7 +139,13 @@ export const MakeWebhookResponseSchema = z.discriminatedUnion('status', [
          * Human-readable description of the failure from Make.com.
          * May be absent; the service falls back to a generic message.
          */
-        errorMessage: z.string().optional()
+        errorMessage: z.string().optional(),
+        /**
+         * Make.com scenario run ID (`{{executionId}}`) echoed back for
+         * traceability. Optional — the dispatch service does not require it,
+         * but the Make.com "Webhook Response" module typically includes it.
+         */
+        makeRunId: z.string().optional()
     })
 ]);
 

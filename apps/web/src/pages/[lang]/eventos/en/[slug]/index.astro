@@ -51,9 +51,9 @@ const cards = items.map((item: (typeof items)[number]) => toEventCardProps({ ite
 const baseUrl = buildUrl({ locale, path: `eventos/en/${slug}` });
 ---
 
-<ListingLayout locale={locale} title={`${locationName} - ${t('events.title', 'Eventos')}`} showFilters={false}>
+<ListingLayout locale={locale} title={`${locationName} - ${t('events.title', 'Eventos')}`} showFilters={false} totalCount={total}>
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('events.title', 'Eventos'), path: 'eventos' }, { label: locationName }]} />
-	<ListingPageHeader slot="page-header" locale={locale} tagline={t('events.byLocation.tagline', 'Lugar')} title={locationName} totalCount={total} />
+	<ListingPageHeader slot="page-header" locale={locale} tagline={t('events.byLocation.tagline', 'Lugar')} title={locationName} />
 	{hasError && result && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="eventos" />}
 	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'eventos' })} />}
 	{!hasError && cards.length > 0 && (

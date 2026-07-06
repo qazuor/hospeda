@@ -28,15 +28,13 @@
  * @module test/integration/models
  */
 
-import { AiFeatureSchema, AiProviderIdSchema } from '@repo/schemas';
 import type { AiFeatureConfig } from '@repo/schemas';
+import { AiFeatureSchema, AiProviderIdSchema } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createAiEngine } from '../../src/engine/index.js';
 import type { AiEngineEvent } from '../../src/engine/index.js';
+import { createAiEngine } from '../../src/engine/index.js';
 import type { AiProvider } from '../../src/providers/ai-provider.interface.js';
-import { AnthropicAdapter } from '../../src/providers/index.js';
-import { OpenAiAdapter } from '../../src/providers/index.js';
-import { StubProvider } from '../../src/providers/index.js';
+import { AnthropicAdapter, OpenAiAdapter, StubProvider } from '../../src/providers/index.js';
 import { calculateCostMicroUsd } from '../../src/usage/cost-calculator.js';
 import { MODEL_RATES } from '../../src/usage/model-rates.js';
 
@@ -99,12 +97,18 @@ beforeEach(() => {
 
     mockResolveConfig.mockResolvedValue({ providers: {}, features: {} });
     mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_OPENAI_PRIMARY);
-    mockIsFeatureKillSwitched.mockImplementation((cfg: AiFeatureConfig) => !cfg.enabled);
-    mockGetProviderOrder.mockImplementation(
-        ({ featureConfig }: { featureConfig: AiFeatureConfig }) => ({
+    mockIsFeatureKillSwitched.mockImplementation(function (cfg: AiFeatureConfig) {
+        return !cfg.enabled;
+    });
+    mockGetProviderOrder.mockImplementation(function ({
+        featureConfig
+    }: {
+        featureConfig: AiFeatureConfig;
+    }) {
+        return {
             providers: [featureConfig.primaryProvider, ...featureConfig.fallbackChain]
-        })
-    );
+        };
+    });
 });
 
 // ---------------------------------------------------------------------------

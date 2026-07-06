@@ -27,11 +27,13 @@ const { mockExpireAddon, mockActivateAddon, mockListCustomerAddons, mockCreateAd
 
 // Mock the AdminAddonService
 vi.mock('../../../../src/services/addon.admin', () => ({
-    AdminAddonService: vi.fn().mockImplementation(() => ({
-        listCustomerAddons: mockListCustomerAddons,
-        expireAddon: mockExpireAddon,
-        activateAddon: mockActivateAddon
-    }))
+    AdminAddonService: vi.fn().mockImplementation(function () {
+        return {
+            listCustomerAddons: mockListCustomerAddons,
+            expireAddon: mockExpireAddon,
+            activateAddon: mockActivateAddon
+        };
+    })
 }));
 
 // Mock @repo/schemas — import actual schemas for validation, override PermissionEnum

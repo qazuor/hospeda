@@ -1,7 +1,7 @@
 /**
  * Admin hard delete moderation term endpoint
  */
-import { DeleteResultSchema, PermissionEnum, contentModerationTermSchema } from '@repo/schemas';
+import { contentModerationTermSchema, DeleteResultSchema, PermissionEnum } from '@repo/schemas';
 import { ContentModerationTermService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';

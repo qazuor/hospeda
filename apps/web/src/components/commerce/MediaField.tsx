@@ -11,12 +11,13 @@
  * full `media` object — gastronomy/experience do NOT merge the media JSONB, so
  * the parent always sends the complete media state on save).
  */
+
+import { getGalleryCap, type Image } from '@repo/schemas';
+import { type JSX, useCallback, useRef, useState } from 'react';
 import { protectedMediaApi } from '@/lib/api/endpoints-protected';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { getApiUrl } from '@/lib/env';
 import { webLogger } from '@/lib/logger';
-import { type Image, getGalleryCap } from '@repo/schemas';
-import { type JSX, useCallback, useRef, useState } from 'react';
 
 /** Translator function shape (matches the editor's `createTranslations().t`). */
 type Translate = (key: string, fallback?: string) => string;

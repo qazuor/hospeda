@@ -97,6 +97,44 @@ describe('GastronomyCard.astro', () => {
         it('uses gastronomy.card.closedNow i18n key', () => {
             expect(src).toContain('gastronomy.card.closedNow');
         });
+
+        // BETA-117: the badge was illegible over photos because it used
+        // near-transparent alpha tints. It must use solid/opaque fills.
+        it('uses the green brand fill for the open state', () => {
+            expect(src).toContain(
+                '.gastro-card__open-badge--open {\n' +
+                    '        background-color: var(--hospeda-forest);'
+            );
+        });
+
+        it('darkens the red fill for the closed state (dark-mode contrast)', () => {
+            expect(src).toContain('.gastro-card__open-badge--closed {\n');
+            expect(src).toContain(
+                'background-color: color-mix(in oklab, var(--destructive) 85%, black);'
+            );
+        });
+
+        // BETA-117 dark-mode a11y: both badges need a theme-CONSTANT light
+        // foreground, because the per-theme `*-foreground` tokens flip to
+        // near-black in dark and fail WCAG AA (< 4.5:1) on the badge fills.
+        it('uses a theme-constant white foreground on the badge base', () => {
+            expect(src).toMatch(
+                /\.gastro-card__open-badge \{[\s\S]*?color: var\(--destructive-foreground\);[\s\S]*?\}/
+            );
+        });
+
+        it('does not use the theme-flipping --primary-foreground on the badges', () => {
+            expect(src).not.toContain(
+                '.gastro-card__open-badge--open {\n' +
+                    '        background-color: var(--hospeda-forest);\n' +
+                    '        color: var(--primary-foreground);'
+            );
+        });
+
+        it('does not use low-alpha accent tints for the badge (regression guard)', () => {
+            expect(src).not.toContain('--brand-accent-a15');
+            expect(src).not.toContain('--brand-accent-a05');
+        });
     });
 
     describe('eager image loading', () => {
@@ -143,8 +181,8 @@ describe('GastronomyCard.astro', () => {
             expect(src).toContain('var(--radius-md');
         });
 
-        it('uses --brand-accent for the CTA / price range color', () => {
-            expect(src).toContain('var(--brand-accent)');
+        it('uses --brand-accent-text for the price range color', () => {
+            expect(src).toContain('var(--brand-accent-text)');
         });
 
         it('does not contain Tailwind utility class patterns', () => {

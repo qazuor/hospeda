@@ -4,11 +4,11 @@
  * Supports both protected (authenticated) and public (anonymous token-based) endpoints.
  */
 
+import { useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useState } from 'react';
 import styles from './ConversationReply.module.css';
 
 /** Mode A: authenticated user replying via protected endpoint */

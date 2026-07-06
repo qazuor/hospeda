@@ -33,8 +33,8 @@ import type {
 } from '@repo/db';
 import {
     AccommodationModel,
-    DestinationModel,
     accommodations,
+    DestinationModel,
     destinations,
     safeIlike
 } from '@repo/db';
@@ -47,8 +47,8 @@ import {
     VisibilityEnum
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
-import { ServiceError } from '../../types';
 import type { ServiceOutput } from '../../types';
+import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils/service-logger';
 
 // ---------------------------------------------------------------------------

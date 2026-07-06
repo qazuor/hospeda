@@ -20,8 +20,13 @@
 import type { getDb } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import type { ReactElement } from 'react';
-import type { Resend } from 'resend';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Minimal stand-in for the Resend SDK client type. The `resend` SDK was removed
+// (email sending uses Brevo via ResendEmailTransport → EmailClient); this local
+// shape is all these mock-based tests need to type `emails.send`.
+type Resend = { emails: { send: Mock } };
+
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import {
     NotificationService,
     type NotificationServiceDeps

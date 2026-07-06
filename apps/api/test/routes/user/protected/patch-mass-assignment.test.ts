@@ -19,6 +19,7 @@
  */
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import type { Mock } from 'vitest';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
@@ -26,7 +27,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
  * factory above outer const declarations, so the factory reads through this
  * ref instead of closing over a `const` directly.
  */
-const userServiceRef: { update: ReturnType<typeof vi.fn> } = {
+const userServiceRef: { update: Mock } = {
     update: vi.fn()
 };
 
@@ -34,9 +35,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        UserService: vi.fn().mockImplementation(() => ({
-            update: (...args: unknown[]) => userServiceRef.update(...args)
-        }))
+        UserService: vi.fn().mockImplementation(function () {
+            return {
+                update: (...args: unknown[]) => userServiceRef.update(...args)
+            };
+        })
     };
 });
 
@@ -114,7 +117,7 @@ describe('PATCH /protected/users/:id — system-flag mass-assignment guard', () 
         expect(input).toHaveProperty('firstName', 'Carlos');
         for (const flag of SYSTEM_FLAGS) {
             expect(
-                Object.prototype.hasOwnProperty.call(input, flag),
+                Object.hasOwn(input, flag),
                 `system flag '${flag}' must not be injected into the service input`
             ).toBe(false);
         }
@@ -142,7 +145,7 @@ describe('PATCH /protected/users/:id — system-flag mass-assignment guard', () 
         expect(input).toHaveProperty('firstName', 'Carlos');
         for (const flag of SYSTEM_FLAGS) {
             expect(
-                Object.prototype.hasOwnProperty.call(input, flag),
+                Object.hasOwn(input, flag),
                 `explicit system flag '${flag}' must be stripped before the service`
             ).toBe(false);
         }

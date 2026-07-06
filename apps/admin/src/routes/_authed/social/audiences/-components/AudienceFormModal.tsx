@@ -5,6 +5,9 @@
  * Uses SocialAudienceCreateSchema.safeParse() inside submit handler per convention.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { type SocialAudience, SocialAudienceCreateSchema } from '@repo/schemas';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -19,9 +22,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateSocialAudience, useUpdateSocialAudience } from '@/hooks/use-social-catalog';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import { type SocialAudience, SocialAudienceCreateSchema } from '@repo/schemas';
-import { useState } from 'react';
 
 /** Props for {@link AudienceFormModal}. */
 export interface AudienceFormModalProps {

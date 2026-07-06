@@ -20,7 +20,7 @@ import type { DestinationModel } from '@repo/db';
 import { resolveEnvironment } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
 import { PermissionEnum } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import { createActor } from '../../factories/actorFactory';
 import { createDestination } from '../../factories/destinationFactory';
@@ -75,11 +75,9 @@ describe('DestinationService.hardDelete — media cleanup (T-065)', () => {
     it('captures deletedEntityId on hookState during _beforeHardDelete and consumes it in _afterHardDelete', async () => {
         const afterSpy = vi.spyOn(
             service as unknown as {
-                _afterHardDelete: DestinationService['_afterHardDelete' extends never
-                    ? never
-                    : never];
+                _afterHardDelete: DestinationService['_afterHardDelete'];
             },
-            '_afterHardDelete' as never
+            '_afterHardDelete'
         );
         const deleteSpy = vi.spyOn(provider, 'deleteByPrefix');
 

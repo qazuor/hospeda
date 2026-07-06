@@ -4,10 +4,10 @@
  * and active-state dot indicator. Renders its children as the group body.
  */
 
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { ReactNode } from 'react';
 import styles from './FilterGroup.module.css';
 
 /** Props for the FilterGroup component. */
@@ -84,6 +84,7 @@ export function FilterGroup({
                         {showCountBadge && (
                             <span
                                 className={styles.groupCountBadge}
+                                role="img"
                                 aria-label={t(
                                     'ui.filter.activeSelections',
                                     `${activeCount} selecciones activas`

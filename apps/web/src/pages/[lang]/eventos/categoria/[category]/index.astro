@@ -31,10 +31,14 @@ import Pagination from '@/components/shared/feedback/Pagination.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import CollectionPageJsonLd from '@/components/seo/CollectionPageJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
-import EventDateFilterChips from '@/components/event/EventDateFilterChips.astro';
-import type { EventDateFilter } from '@/components/event/EventDateFilterChips.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
+import {
+	computeWhenQueryBounds,
+	EVENT_DATE_FILTER_VALUES,
+	resolveWhenAliasParams,
+	type EventDateFilter
+} from '@/lib/filters/event-date-presets';
 import { destinationsApi, eventsApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toEventCardProps } from '@/lib/api/transforms';
@@ -92,10 +96,14 @@ const DEFAULT_SORT_KEY = 'upcoming';
 const sortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
 const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
 
-/** Parse the temporal quick-filter from the `when` query param. */
+/**
+ * Parse the (legacy, back-compat-only) `when` query param. BETA-115 folded
+ * the standalone date chip row into the sidebar's `date` filter group as
+ * preset pills — `when` is still accepted on read so old shared/indexed
+ * links keep working, but the UI no longer writes it.
+ */
 const rawWhen = url.searchParams.get('when');
-const VALID_WHEN_VALUES: ReadonlyArray<EventDateFilter> = ['today', 'week', 'month', 'next60', 'past'];
-const when: EventDateFilter = VALID_WHEN_VALUES.includes(rawWhen as EventDateFilter)
+const when: EventDateFilter = EVENT_DATE_FILTER_VALUES.includes(rawWhen as EventDateFilter)
 	? (rawWhen as EventDateFilter)
 	: 'all';
 
@@ -119,33 +127,8 @@ const destinationId = url.searchParams.get('destinationId') ?? undefined;
 const startDateAfterFilter = url.searchParams.get('startDateAfter') ?? undefined;
 const startDateBeforeFilter = url.searchParams.get('startDateBefore') ?? undefined;
 
-/** Compute date range from the `when` temporal filter. */
+/** Reference instant for resolving `when` and the sidebar's date presets. */
 const now = new Date();
-
-/** Returns a copy of `now` at 00:00:00.000 local time. */
-function startOfToday(): Date {
-	const d = new Date(now);
-	d.setHours(0, 0, 0, 0);
-	return d;
-}
-
-/** Returns a copy of `now` at 23:59:59.999 local time. */
-function endOfToday(): Date {
-	const d = new Date(now);
-	d.setHours(23, 59, 59, 999);
-	return d;
-}
-
-/** Returns a date N days ahead of `startOfToday()` at 23:59:59.999. */
-function daysAhead(n: number): Date {
-	const d = startOfToday();
-	d.setDate(d.getDate() + n);
-	d.setHours(23, 59, 59, 999);
-	return d;
-}
-
-let startDateAfter: string | undefined;
-let startDateBefore: string | undefined;
 
 /**
  * Fetch destinations once for the sidebar's location filter. Filter to CITY
@@ -157,27 +140,9 @@ const destinationsResult = await destinationsApi.list({
 });
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 
-switch (when) {
-	case 'today':
-		startDateAfter = startOfToday().toISOString();
-		startDateBefore = endOfToday().toISOString();
-		break;
-	case 'week':
-		startDateAfter = startOfToday().toISOString();
-		startDateBefore = daysAhead(7).toISOString();
-		break;
-	case 'month':
-		startDateAfter = startOfToday().toISOString();
-		startDateBefore = daysAhead(30).toISOString();
-		break;
-	case 'next60':
-		startDateAfter = startOfToday().toISOString();
-		startDateBefore = daysAhead(60).toISOString();
-		break;
-	case 'past':
-		startDateBefore = startOfToday().toISOString();
-		break;
-}
+const whenQueryBounds = computeWhenQueryBounds({ when, now });
+let startDateAfter: string | undefined = whenQueryBounds.startDateAfter;
+let startDateBefore: string | undefined = whenQueryBounds.startDateBefore;
 
 /** Sidebar date-range filter takes precedence over the temporal chips when present. */
 if (startDateAfterFilter) startDateAfter = `${startDateAfterFilter}T00:00:00`;
@@ -210,7 +175,7 @@ const cards = items.map((item) => toEventCardProps({ item: item as unknown as Re
  * `filterGroups` for FilterSidebar — the same config as `/eventos/`, minus
  * the `category` checkbox group (fixed by the URL path here).
  */
-const filterGroups = buildEventsFilterGroups({ t, destinations, excludeCategory: true });
+const filterGroups = buildEventsFilterGroups({ t, destinations, excludeCategory: true, now });
 
 const sortOptions = [
 	{ value: 'upcoming', label: t('events.sort.upcoming', 'Próximos primero') },
@@ -273,6 +238,18 @@ if (isFeaturedParam === 'true') sidebarInitialParams.isFeatured = 'true';
 if (destinationId) sidebarInitialParams.destinationId = destinationId;
 if (startDateAfterFilter) sidebarInitialParams.startDateAfter = startDateAfterFilter;
 if (startDateBeforeFilter) sidebarInitialParams.startDateBefore = startDateBeforeFilter;
+// BETA-115 back-compat: a bare `?when=X` (no explicit sidebar dates) is
+// translated into the sidebar's own `startDateAfter`/`startDateBefore` state
+// so old shared/indexed links land with the matching date preset pill
+// already highlighted, instead of a dateless sidebar next to a filtered grid.
+Object.assign(
+	sidebarInitialParams,
+	resolveWhenAliasParams({
+		when,
+		now,
+		hasExplicitBounds: Boolean(startDateAfterFilter || startDateBeforeFilter)
+	})
+);
 if (isFreeParam) sidebarInitialParams.isFree = isFreeParam;
 if (priceMinParam) sidebarInitialParams.minPrice = priceMinParam;
 if (priceMaxParam) sidebarInitialParams.maxPrice = priceMaxParam;
@@ -280,8 +257,8 @@ if (includeUnpricedParam === 'false') sidebarInitialParams.includeUnpriced = 'fa
 sidebarInitialParams.sortBy = sortKey;
 
 /**
- * Build URLSearchParams to pass to Pagination/EventDateFilterChips so they
- * preserve all active filters across page navigations.
+ * Build URLSearchParams to pass to Pagination so it preserves all active
+ * filters across page navigations.
  */
 const paginationParams = new URLSearchParams(url.searchParams);
 paginationParams.delete('page');
@@ -313,6 +290,7 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 	canonicalPath={canonicalPath}
 	showFilters={true}
 	filterPosition="left"
+	totalCount={total}
 >
 	<CollectionPageJsonLd
 		slot="head-extra"
@@ -345,7 +323,6 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 		locale={locale}
 		tagline={t('events.categoryPage.tagline', 'Categoría')}
 		title={categoryName}
-		totalCount={total}
 	/>
 
 	<FilterSidebar
@@ -358,13 +335,12 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 		initialParams={sidebarInitialParams}
 	/>
 
-	<!-- Temporal quick-filter chips (category is fixed by the URL, so no category chips here). -->
-	<EventDateFilterChips
-		locale={locale}
-		current={when}
-		baseUrl={baseUrl.slice(0, -1)}
-		searchParams={paginationParams}
-	/>
+	<!--
+	  BETA-115: the standalone temporal quick-filter chip row was removed —
+	  the "when" presets now live inside the sidebar's `date` filter group
+	  (see `buildEventsFilterGroups`'s `date` group `presets`). Category is
+	  fixed by the URL here, so there is no category chip row either.
+	-->
 
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="eventos" />}
 

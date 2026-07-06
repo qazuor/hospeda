@@ -7,6 +7,7 @@
  * - Additional functionality and customization
  */
 
+import { forwardRef } from 'react';
 import {
     Card as ShadcnCard,
     CardContent as ShadcnCardContent,
@@ -16,7 +17,6 @@ import {
     CardTitle as ShadcnCardTitle
 } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { forwardRef } from 'react';
 
 /**
  * Enhanced Card Props

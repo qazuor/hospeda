@@ -69,10 +69,12 @@ vi.mock('../../src/utils/route-factory', () => ({
 }));
 
 vi.mock('../../src/services/trial.service', () => ({
-    TrialService: vi.fn().mockImplementation(() => ({
-        reactivateFromTrial: vi.fn(),
-        reactivateSubscription: mockReactivateSubscription
-    }))
+    TrialService: vi.fn().mockImplementation(function () {
+        return {
+            reactivateFromTrial: vi.fn(),
+            reactivateSubscription: mockReactivateSubscription
+        };
+    })
 }));
 
 vi.mock('../../src/utils/logger', () => ({
@@ -105,11 +107,7 @@ import '../../src/routes/billing/trial';
  * Creates a minimal mock Hono context for the handler.
  */
 function createMockContext(
-    options: {
-        billingEnabled?: boolean;
-        billingCustomerId?: string | null;
-        body?: unknown;
-    } = {}
+    options: { billingEnabled?: boolean; billingCustomerId?: string | null; body?: unknown } = {}
 ) {
     const {
         billingEnabled = true,

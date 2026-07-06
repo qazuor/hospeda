@@ -1,0 +1,139 @@
+---
+/**
+ * @file HeaderBackButton.astro
+ * @description Shared, history-aware "back" button for reworked entity page
+ * headers (HOS-84 T-006). Sits left of the breadcrumb row in the header.
+ *
+ * The anchor's `href` (a parent-listing URL composed by the caller — e.g. the
+ * accommodation listing page for a detail header) is the no-JS and
+ * direct-entry fallback. When the visitor arrived from somewhere else on the
+ * site, the hoisted script intercepts the click and calls `history.back()`
+ * instead, returning them to wherever they actually came from (a filtered
+ * listing, a search results page, a destination page, etc.) rather than
+ * always resetting to the unfiltered parent listing.
+ *
+ * Detection mirrors `ContributionBackLink.astro`: the site uses Astro's
+ * ClientRouter (view transitions), whose pushState navigations do NOT update
+ * `document.referrer` — so the script checks the router's
+ * `history.state.index` (> 0 means in-app history exists) first, and falls
+ * back to a same-origin `document.referrer` check for the first full-page
+ * load.
+ *
+ * NG-3-safe: no new data is fetched — `href` is composed by the caller from
+ * routing already available on the page (e.g. `buildUrl()`), and `locale` is
+ * only used to resolve the default i18n label.
+ */
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { ArrowLeftIcon } from '@repo/icons';
+
+interface Props {
+    /**
+     * Fallback destination URL — used directly with no JS, and as the target
+     * when there is no in-app history to go back to. Composed by the caller
+     * (e.g. the parent listing URL for a detail page header).
+     */
+    readonly href: string;
+    /** Locale used to resolve the default i18n label. */
+    readonly locale: SupportedLocale;
+    /** Optional label override. Defaults to the shared `ui.actions.goBack` string. */
+    readonly label?: string;
+    /** Additional CSS classes to merge onto the root element. */
+    readonly class?: string;
+}
+
+const { href, locale, label, class: extraClass } = Astro.props;
+const { t } = createTranslations(locale);
+
+const resolvedLabel = label ?? t('ui.actions.goBack', 'Volver');
+---
+
+<a
+    href={href}
+    class:list={['header-back-button', extraClass]}
+    data-header-back-button
+>
+    <ArrowLeftIcon
+        size="sm"
+        weight="bold"
+        aria-hidden="true"
+    />
+    <span class="header-back-button__label">{resolvedLabel}</span>
+</a>
+
+<script>
+    /**
+     * Progressive enhancement: go back to the page the visitor came from when
+     * there is somewhere to go back to; otherwise the anchor's `href` wins.
+     *
+     * Hoisted module scripts execute ONCE per session — after a view
+     * transitions swap the link element is brand new and would have no
+     * listener, so binding happens on `astro:page-load`, which fires on the
+     * initial load AND after every VT navigation.
+     */
+    function hasInAppHistory(): boolean {
+        // Astro's view-transitions router keeps an incrementing index in
+        // history.state — > 0 means a previous in-app entry exists.
+        const state = window.history.state as { index?: number } | null;
+        if (state && typeof state.index === 'number' && state.index > 0) {
+            return true;
+        }
+        // First full-page load: fall back to a same-origin referrer check.
+        if (!document.referrer) return false;
+        try {
+            const ref = new URL(document.referrer);
+            return (
+                ref.origin === window.location.origin &&
+                ref.pathname !== window.location.pathname
+            );
+        } catch {
+            return false;
+        }
+    }
+
+    function bindHeaderBackButtons(): void {
+        document
+            .querySelectorAll<HTMLAnchorElement>('[data-header-back-button]')
+            .forEach((link) => {
+                if (link.dataset.bound === 'true') return;
+                link.dataset.bound = 'true';
+                link.addEventListener('click', (event) => {
+                    if (hasInAppHistory()) {
+                        event.preventDefault();
+                        window.history.back();
+                    }
+                });
+            });
+    }
+
+    document.addEventListener('astro:page-load', bindHeaderBackButtons);
+</script>
+
+<style>
+    .header-back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2, 0.5rem);
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        font-weight: 600;
+        color: var(--core-muted-foreground);
+        text-decoration: none;
+        transition: color var(--duration-fast, 0.2s) ease;
+    }
+
+    .header-back-button:hover,
+    .header-back-button:focus-visible {
+        color: var(--brand-primary);
+    }
+
+    .header-back-button__label {
+        white-space: nowrap;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .header-back-button {
+            transition: none;
+        }
+    }
+</style>

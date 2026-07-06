@@ -31,13 +31,13 @@
 import type { AiFeatureConfig } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { executeStreamText } from '../src/capabilities/stream-text.capability.js';
+import type { AiEngine, AiEngineEvent, AiService } from '../src/engine/index.js';
 import {
     AiCeilingHitError,
     AiModerationBlockedError,
     createAiEngine,
     createAiService
 } from '../src/engine/index.js';
-import type { AiEngine, AiEngineEvent, AiService } from '../src/engine/index.js';
 import type { AiProvider, StreamTextResult } from '../src/providers/ai-provider.interface.js';
 import { StubProvider } from '../src/providers/index.js';
 
@@ -180,12 +180,18 @@ beforeEach(() => {
     vi.clearAllMocks();
     mockResolveConfig.mockResolvedValue({ providers: {}, features: {} });
     mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_ENABLED);
-    mockIsFeatureKillSwitched.mockImplementation((cfg: AiFeatureConfig) => !cfg.enabled);
-    mockGetProviderOrder.mockImplementation(
-        ({ featureConfig }: { featureConfig: AiFeatureConfig }) => ({
+    mockIsFeatureKillSwitched.mockImplementation(function (cfg: AiFeatureConfig) {
+        return !cfg.enabled;
+    });
+    mockGetProviderOrder.mockImplementation(function ({
+        featureConfig
+    }: {
+        featureConfig: AiFeatureConfig;
+    }) {
+        return {
             providers: [featureConfig.primaryProvider, ...featureConfig.fallbackChain]
-        })
-    );
+        };
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -549,11 +555,15 @@ describe('when the primary provider streamText rejects with a retryable error', 
             params: {}
         };
         mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_WITH_FALLBACK);
-        mockGetProviderOrder.mockImplementation(
-            ({ featureConfig }: { featureConfig: AiFeatureConfig }) => ({
+        mockGetProviderOrder.mockImplementation(function ({
+            featureConfig
+        }: {
+            featureConfig: AiFeatureConfig;
+        }) {
+            return {
                 providers: [featureConfig.primaryProvider, ...featureConfig.fallbackChain]
-            })
-        );
+            };
+        });
 
         // Primary provider always rejects with a retryable error (rate-limit-style)
         const primaryStreamTextSpy = vi

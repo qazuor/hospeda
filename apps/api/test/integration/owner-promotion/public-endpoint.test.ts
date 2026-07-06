@@ -17,6 +17,7 @@
  *   GET /api/v1/public/owner-promotions
  */
 
+import type { Mock } from 'vitest';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
@@ -24,7 +25,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
  * hoisted above outer `const` declarations, so we store the mock on `mockRef`
  * and read it from tests (same pattern as admin-list.test.ts).
  */
-const mockRef: { search: ReturnType<typeof vi.fn> } = {
+const mockRef: { search: Mock } = {
     search: vi.fn()
 };
 
@@ -32,9 +33,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        OwnerPromotionService: vi.fn().mockImplementation(() => ({
-            search: (...args: unknown[]) => mockRef.search(...args)
-        })),
+        OwnerPromotionService: vi.fn().mockImplementation(function () {
+            return {
+                search: (...args: unknown[]) => mockRef.search(...args)
+            };
+        }),
         ServiceError: class ServiceError extends Error {
             constructor(
                 public readonly code: string,

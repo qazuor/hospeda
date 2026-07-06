@@ -12,48 +12,6 @@
  */
 
 import { describe, expect, expectTypeOf, it } from 'vitest';
-
-import {
-    PACKAGE_NAME,
-    PACKAGE_VERSION,
-    SHADES,
-    SPEC_REF,
-    accent,
-    adminDark,
-    adminLight,
-    avatarGradients,
-    brandPalettes,
-    chartColors,
-    deriveShades,
-    fontFamily,
-    fontSize,
-    fontWeight,
-    formatOKLCH,
-    layoutChrome,
-    layoutContainer,
-    layoutMediaOverrides,
-    lineHeight,
-    motionDuration,
-    motionEasing,
-    neutral,
-    palettes,
-    radiusBase,
-    radiusScale,
-    radiusSemantic,
-    river,
-    semanticPalettes,
-    semanticSpacing,
-    semanticTypography,
-    shadowScale,
-    shadowSemantic,
-    spacing,
-    surfaces,
-    webDark,
-    webDuration,
-    webEasing,
-    webLight,
-    zIndex
-} from './index.ts';
 import type {
     BrandPaletteName,
     FontFamilyName,
@@ -76,6 +34,47 @@ import type {
     ThemeValue,
     WebDurationKey,
     ZIndexName
+} from './index.ts';
+import {
+    accent,
+    adminDark,
+    adminLight,
+    avatarGradients,
+    brandPalettes,
+    chartColors,
+    deriveShades,
+    fontFamily,
+    fontSize,
+    fontWeight,
+    formatOKLCH,
+    layoutChrome,
+    layoutContainer,
+    layoutMediaOverrides,
+    lineHeight,
+    motionDuration,
+    motionEasing,
+    neutral,
+    PACKAGE_NAME,
+    PACKAGE_VERSION,
+    palettes,
+    radiusBase,
+    radiusScale,
+    radiusSemantic,
+    river,
+    SHADES,
+    SPEC_REF,
+    semanticPalettes,
+    semanticSpacing,
+    semanticTypography,
+    shadowScale,
+    shadowSemantic,
+    spacing,
+    surfaces,
+    webDark,
+    webDuration,
+    webEasing,
+    webLight,
+    zIndex
 } from './index.ts';
 
 describe('package metadata', () => {
@@ -169,8 +168,8 @@ describe('theme exports', () => {
         // 155 was the prior count; grew to 208 after SSOT icon+color passes added
         // event-category (8), post-category (18), user-role (7), auth-provider (5),
         // amenity-type (12) and sponsor-type (3) token families.
-        expect(Object.keys(webLight)).toHaveLength(213); // + dark-refresh + SPEC-308 tokens
-        expect(Object.keys(webDark)).toHaveLength(63);
+        expect(Object.keys(webLight)).toHaveLength(215); // + dark-refresh + SPEC-308 + HOS-84 header tokens
+        expect(Object.keys(webDark)).toHaveLength(65);
         // Admin: 39 was prior count (17 core + 12 brand + 10 per-accommodation-type).
         // Grew to 92 after the same SSOT passes added event-category/post-category/
         // user-role/auth-provider/amenity-type/sponsor-type families to admin-light.

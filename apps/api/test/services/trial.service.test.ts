@@ -10,7 +10,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Module mocks (hoisted — must appear before any imports that depend on them)
@@ -722,22 +722,20 @@ describe('TrialService', () => {
                 } as never;
             });
 
-            mockWithServiceTransaction.mockImplementationOnce(
-                async <T>(
-                    callback: (ctx: { tx: { execute: ReturnType<typeof vi.fn> } }) => Promise<T>
-                ) => {
-                    txCallbackActive = true;
-                    const result = await callback({
-                        tx: {
-                            execute: vi.fn().mockResolvedValue({
-                                rows: [{ pg_try_advisory_xact_lock: true }]
-                            })
-                        }
-                    });
-                    txCallbackActive = false;
-                    return result;
-                }
-            );
+            mockWithServiceTransaction.mockImplementationOnce(async function (
+                callback: (ctx: { tx: { execute: Mock } }) => Promise<unknown>
+            ) {
+                txCallbackActive = true;
+                const result = await callback({
+                    tx: {
+                        execute: vi.fn().mockResolvedValue({
+                            rows: [{ pg_try_advisory_xact_lock: true }]
+                        })
+                    }
+                });
+                txCallbackActive = false;
+                return result;
+            });
 
             vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
             vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
@@ -764,18 +762,17 @@ describe('TrialService', () => {
             // pg_try_advisory_xact_lock returns false → the invocation must return 0
             // and must NOT call subscriptions.list, subscriptions.cancel, or customers.get.
 
-            mockWithServiceTransaction.mockImplementationOnce(
-                async <T>(
-                    callback: (ctx: { tx: { execute: ReturnType<typeof vi.fn> } }) => Promise<T>
-                ) =>
-                    callback({
-                        tx: {
-                            execute: vi.fn().mockResolvedValue({
-                                rows: [{ pg_try_advisory_xact_lock: false }]
-                            })
-                        }
-                    })
-            );
+            mockWithServiceTransaction.mockImplementationOnce(async function (
+                callback: (ctx: { tx: { execute: Mock } }) => Promise<unknown>
+            ) {
+                return callback({
+                    tx: {
+                        execute: vi.fn().mockResolvedValue({
+                            rows: [{ pg_try_advisory_xact_lock: false }]
+                        })
+                    }
+                });
+            });
 
             const now = new Date();
             const expiredEnd = new Date(now);

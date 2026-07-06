@@ -18,8 +18,8 @@ import * as Sentry from '@sentry/node';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as notificationsModule from '../../src/routes/webhooks/mercadopago/notifications.js';
 import {
-    QZPAY_TO_HOSPEDA_STATUS,
     processSubscriptionUpdated,
+    QZPAY_TO_HOSPEDA_STATUS,
     shouldSendAdminAlert,
     shouldSendCancelledEmail,
     shouldSendPausedEmail,
@@ -480,6 +480,17 @@ describe('processSubscriptionUpdated', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+
+        // Vitest 4: `vi.restoreAllMocks()` (afterEach) only restores `vi.spyOn`
+        // mocks now — it no longer resets the implementation of standalone
+        // `vi.fn()` mocks. These two hoisted mocks carry a hoist-time default
+        // (`mockResolvedValue(undefined)`), but individual tests override them
+        // with persistent `mockRejectedValue` / hanging-promise implementations
+        // (e.g. the "DB connection lost" test). Without restoring the default
+        // here, that override leaks into every later test. `mockReset()` drains
+        // the leaked implementation; the clean default is re-applied immediately.
+        mockHandleCancellationAddons.mockReset().mockResolvedValue(undefined);
+        mockHandlePlanChangeRecalculation.mockReset().mockResolvedValue(undefined);
 
         // Spy on notificationsModule exports to ensure they return Promises even if the
         // vi.mock for the module doesn't intercept the import inside subscription-logic.ts.

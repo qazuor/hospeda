@@ -64,18 +64,21 @@ const MOCK_UPLOAD_RESPONSE = {
  * synchronous mock would mask race conditions where the production code
  * accidentally relies on the callback firing before `end()` returns.
  */
-function setupUploadStream(error: Error | null, result: typeof MOCK_UPLOAD_RESPONSE | null) {
-    mockUploadStream.mockImplementation(
-        (
-            _options: Record<string, unknown>,
-            callback: (err: Error | null, result: unknown) => void
-        ) => ({
+function setupUploadStream(
+    error: Error | null,
+    result: (typeof MOCK_UPLOAD_RESPONSE & { duration?: number }) | null
+) {
+    mockUploadStream.mockImplementation(function (
+        _options: Record<string, unknown>,
+        callback: (err: Error | null, result: unknown) => void
+    ) {
+        return {
             on: vi.fn(),
             end: vi.fn(() => {
                 setImmediate(callback, error, result);
             })
-        })
-    );
+        };
+    });
 }
 
 /**
@@ -84,7 +87,7 @@ function setupUploadStream(error: Error | null, result: typeof MOCK_UPLOAD_RESPO
  * handler. Mirrors the silent-hang scenario GAP-078-027 protects against.
  */
 function setupUploadStreamWithTransportError(error: Error) {
-    mockUploadStream.mockImplementation(() => {
+    mockUploadStream.mockImplementation(function () {
         const listeners = new Map<string, (err: Error) => void>();
         return {
             on: vi.fn((event: string, handler: (err: Error) => void) => {
@@ -404,6 +407,37 @@ describe('CloudinaryProvider', () => {
             expect(callOptions.tags).toEqual(['accommodation', 'gallery']);
         });
 
+        // HOS-65 T-016: optional transformation preset forwarded to the SDK
+        it('should forward transformation to the Cloudinary upload options when provided', async () => {
+            setupUploadStream(null, MOCK_UPLOAD_RESPONSE);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+            const transformation = { width: 1080, height: 1920, crop: 'fill' as const };
+
+            await provider.upload({
+                file: Buffer.from('fake-image'),
+                folder: 'hospeda/prod/accommodations/abc-123',
+                transformation
+            });
+
+            const callOptions = mockUploadStream.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(callOptions).toBeDefined();
+            expect(callOptions.transformation).toEqual(transformation);
+        });
+
+        it('should NOT include a transformation key in the upload options when omitted (backward compat)', async () => {
+            setupUploadStream(null, MOCK_UPLOAD_RESPONSE);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            await provider.upload({
+                file: Buffer.from('fake-image'),
+                folder: 'hospeda/prod/accommodations/abc-123'
+            });
+
+            const callOptions = mockUploadStream.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(callOptions).toBeDefined();
+            expect(callOptions.transformation).toBeUndefined();
+        });
+
         it('should reject with the error when upload_stream callback fires with an error', async () => {
             const uploadError = new Error('Network timeout');
             setupUploadStream(uploadError, null);
@@ -419,17 +453,17 @@ describe('CloudinaryProvider', () => {
 
         it('should reject with error when Cloudinary returns no result', async () => {
             // GAP-078-210: setImmediate to mirror real SDK async callback timing.
-            mockUploadStream.mockImplementation(
-                (
-                    _options: Record<string, unknown>,
-                    callback: (err: null, result: undefined) => void
-                ) => ({
+            mockUploadStream.mockImplementation(function (
+                _options: Record<string, unknown>,
+                callback: (err: null, result: undefined) => void
+            ) {
+                return {
                     on: vi.fn(),
                     end: vi.fn(() => {
                         setImmediate(callback, null, undefined);
                     })
-                })
-            );
+                };
+            });
             const provider = new CloudinaryProvider(VALID_CONFIG);
 
             await expect(
@@ -543,18 +577,18 @@ describe('CloudinaryProvider', () => {
             const buffer = Buffer.from(dataUri.slice(commaIndex + 1), 'base64');
 
             let endedWith: Buffer | undefined;
-            mockUploadStream.mockImplementation(
-                (
-                    _options: Record<string, unknown>,
-                    callback: (err: Error | null, result: unknown) => void
-                ) => ({
+            mockUploadStream.mockImplementation(function (
+                _options: Record<string, unknown>,
+                callback: (err: Error | null, result: unknown) => void
+            ) {
+                return {
                     on: vi.fn(),
                     end: vi.fn((chunk: Buffer) => {
                         endedWith = chunk;
                         setImmediate(callback, null, MOCK_UPLOAD_RESPONSE);
                     })
-                })
-            );
+                };
+            });
             const provider = new CloudinaryProvider(VALID_CONFIG);
 
             // Act
@@ -583,18 +617,18 @@ describe('CloudinaryProvider', () => {
             const buffer = Buffer.from(remoteBytes);
 
             let endedWith: Buffer | undefined;
-            mockUploadStream.mockImplementation(
-                (
-                    _options: Record<string, unknown>,
-                    callback: (err: Error | null, result: unknown) => void
-                ) => ({
+            mockUploadStream.mockImplementation(function (
+                _options: Record<string, unknown>,
+                callback: (err: Error | null, result: unknown) => void
+            ) {
+                return {
                     on: vi.fn(),
                     end: vi.fn((chunk: Buffer) => {
                         endedWith = chunk;
                         setImmediate(callback, null, MOCK_UPLOAD_RESPONSE);
                     })
-                })
-            );
+                };
+            });
             const provider = new CloudinaryProvider(VALID_CONFIG);
 
             // Act
@@ -628,6 +662,77 @@ describe('CloudinaryProvider', () => {
             const callOptions = mockUploadStream.mock.calls[0]?.[0] as Record<string, unknown>;
             expect(callOptions).toBeDefined();
             expect(callOptions.resource_type).toBe('image');
+        });
+
+        // HOS-65: default resource_type stays 'image' when resourceType is omitted.
+        it("should default resource_type to 'image' when resourceType is not provided", async () => {
+            // Arrange
+            setupUploadStream(null, MOCK_UPLOAD_RESPONSE);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            await provider.upload({
+                file: Buffer.from('fake-image'),
+                folder: 'hospeda/prod/accommodations/abc-123'
+            });
+
+            // Assert
+            const callOptions = mockUploadStream.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(callOptions).toBeDefined();
+            expect(callOptions.resource_type).toBe('image');
+        });
+
+        // HOS-65: video callers pass resourceType 'video' so Cloudinary
+        // processes the file as a video (and reports duration).
+        it("should forward resource_type: 'video' when resourceType is 'video'", async () => {
+            // Arrange
+            setupUploadStream(null, MOCK_UPLOAD_RESPONSE);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            await provider.upload({
+                file: Buffer.from('fake-video'),
+                folder: 'hospeda/prod/accommodations/abc-123',
+                resourceType: 'video'
+            });
+
+            // Assert
+            const callOptions = mockUploadStream.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(callOptions).toBeDefined();
+            expect(callOptions.resource_type).toBe('video');
+        });
+
+        // HOS-65: the SDK's video `duration` must be surfaced as
+        // UploadResult.durationSeconds so the VIDEO_POST duration limit works.
+        it('should return durationSeconds from the SDK duration field for a video upload', async () => {
+            // Arrange
+            setupUploadStream(null, { ...MOCK_UPLOAD_RESPONSE, duration: 42.5 });
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            const result = await provider.upload({
+                file: Buffer.from('fake-video'),
+                folder: 'hospeda/prod/accommodations/abc-123',
+                resourceType: 'video'
+            });
+
+            // Assert
+            expect(result.durationSeconds).toBe(42.5);
+        });
+
+        it('should leave durationSeconds undefined for an image upload (no duration reported)', async () => {
+            // Arrange — MOCK_UPLOAD_RESPONSE has no `duration` field (image).
+            setupUploadStream(null, MOCK_UPLOAD_RESPONSE);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            const result = await provider.upload({
+                file: Buffer.from('fake-image'),
+                folder: 'hospeda/prod/accommodations/abc-123'
+            });
+
+            // Assert
+            expect(result.durationSeconds).toBeUndefined();
         });
 
         // GAP-078-219: empty tags array must not be forwarded to the SDK and

@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { type FeaturedImageResult, extractFeaturedImage } from '../../src/lib/media';
+import { extractFeaturedImage, type FeaturedImageResult } from '../../src/lib/media';
 
 describe('extractFeaturedImage with attribution (SPEC-274)', () => {
     describe('Attribution extraction', () => {

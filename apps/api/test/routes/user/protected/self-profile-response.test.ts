@@ -66,7 +66,9 @@ vi.mock('../../../../src/utils/logger', () => ({
 }));
 
 vi.mock('@repo/service-core', () => ({
-    UserService: vi.fn(() => ({})),
+    UserService: vi.fn(function () {
+        return {};
+    }),
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,
@@ -133,34 +135,35 @@ const routeConfig = (method: string) => {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe.each(['get', 'put', 'patch'])(
-    'Self-profile %s /{id} response contract',
-    (method: string) => {
-        it('preserves contactInfo, location and socialNetworks through the response strip', () => {
-            const { responseSchema } = routeConfig(method);
+describe.each([
+    'get',
+    'put',
+    'patch'
+])('Self-profile %s /{id} response contract', (method: string) => {
+    it('preserves contactInfo, location and socialNetworks through the response strip', () => {
+        const { responseSchema } = routeConfig(method);
 
-            const result = responseSchema.safeParse(DB_USER_ROW);
+        const result = responseSchema.safeParse(DB_USER_ROW);
 
-            expect(result.success).toBe(true);
-            const data = result.data as UserSelf;
-            expect(data.contactInfo?.mobilePhone).toBe('+5493442123456');
-            expect(data.location).toEqual({
-                country: 'AR',
-                region: 'Entre Ríos',
-                city: 'Concepción del Uruguay'
-            });
-            expect(data.socialNetworks?.facebook).toBe('https://facebook.com/mariaperez');
+        expect(result.success).toBe(true);
+        const data = result.data as UserSelf;
+        expect(data.contactInfo?.mobilePhone).toBe('+5493442123456');
+        expect(data.location).toEqual({
+            country: 'AR',
+            region: 'Entre Ríos',
+            city: 'Concepción del Uruguay'
+        });
+        expect(data.socialNetworks?.facebook).toBe('https://facebook.com/mariaperez');
+    });
+
+    it('does not 500 on a row whose contactInfo lacks mobilePhone (read-side tolerance)', () => {
+        const { responseSchema } = routeConfig(method);
+
+        const result = responseSchema.safeParse({
+            ...DB_USER_ROW,
+            contactInfo: { personalEmail: 'maria@example.com' }
         });
 
-        it('does not 500 on a row whose contactInfo lacks mobilePhone (read-side tolerance)', () => {
-            const { responseSchema } = routeConfig(method);
-
-            const result = responseSchema.safeParse({
-                ...DB_USER_ROW,
-                contactInfo: { personalEmail: 'maria@example.com' }
-            });
-
-            expect(result.success).toBe(true);
-        });
-    }
-);
+        expect(result.success).toBe(true);
+    });
+});

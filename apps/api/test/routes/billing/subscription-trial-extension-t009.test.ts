@@ -94,16 +94,18 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         extendExistingSubscriptionTrial: mockExtendExistingSubscriptionTrial,
         assertSubscriptionOwnership: mockAssertSubscriptionOwnership,
         // Other PromoCodeService methods needed by sibling routes in the same app
-        PromoCodeService: vi.fn().mockImplementation(() => ({
-            create: vi.fn(),
-            getByCode: vi.fn(),
-            apply: vi.fn(),
-            validate: vi.fn().mockResolvedValue({ valid: true }),
-            update: vi.fn(),
-            getById: vi.fn(),
-            list: vi.fn(),
-            delete: vi.fn()
-        }))
+        PromoCodeService: vi.fn().mockImplementation(function () {
+            return {
+                create: vi.fn(),
+                getByCode: vi.fn(),
+                apply: vi.fn(),
+                validate: vi.fn().mockResolvedValue({ valid: true }),
+                update: vi.fn(),
+                getById: vi.fn(),
+                list: vi.fn(),
+                delete: vi.fn()
+            };
+        })
     };
 });
 
@@ -192,32 +194,20 @@ vi.mock('@qazuor/qzpay-hono', () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { OpenAPIHono } = require('@hono/zod-openapi');
     return {
-        createAdminRoutes: vi.fn(
-            ({
-                authMiddleware
-            }: {
-                authMiddleware?: unknown;
-            }) => {
-                const router = new OpenAPIHono({ strict: false });
-                if (authMiddleware) {
-                    router.use('*', authMiddleware);
-                }
-                return router;
+        createAdminRoutes: vi.fn(({ authMiddleware }: { authMiddleware?: unknown }) => {
+            const router = new OpenAPIHono({ strict: false });
+            if (authMiddleware) {
+                router.use('*', authMiddleware);
             }
-        ),
-        createBillingRoutes: vi.fn(
-            ({
-                authMiddleware
-            }: {
-                authMiddleware?: unknown;
-            }) => {
-                const router = new OpenAPIHono({ strict: false });
-                if (authMiddleware) {
-                    router.use('*', authMiddleware);
-                }
-                return router;
+            return router;
+        }),
+        createBillingRoutes: vi.fn(({ authMiddleware }: { authMiddleware?: unknown }) => {
+            const router = new OpenAPIHono({ strict: false });
+            if (authMiddleware) {
+                router.use('*', authMiddleware);
             }
-        )
+            return router;
+        })
     };
 });
 

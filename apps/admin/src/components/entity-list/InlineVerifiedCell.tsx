@@ -14,14 +14,14 @@
  * hook is imported directly rather than injected.
  */
 
+import type { PermissionEnum } from '@repo/schemas';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import { BooleanCell } from '@/components/table/cells/BooleanCell';
-import { useToast } from '@/components/ui/ToastProvider';
 import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useVerifyAccommodationMutation } from '@/features/accommodations/hooks/useAccommodationQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { adminLogger } from '@/utils/logger';
-import type { PermissionEnum } from '@repo/schemas';
 
 /**
  * Props for {@link InlineVerifiedCell}. RO-RO pattern.

@@ -21,6 +21,10 @@ import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
+import {
+    buildExperienceListingSummary,
+    DEFAULT_EXPERIENCE_TYPES
+} from '@/lib/commerce-listing-summary';
 import { experiencesApi, destinationsApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toExperienceCardProps } from '@/lib/api/transforms';
@@ -47,6 +51,25 @@ const minRating = url.searchParams.get('minRating')
     ? Number(url.searchParams.get('minRating'))
     : undefined;
 
+/**
+ * Maps the URL's user-friendly sort key (matching the `sortOptions` below) to
+ * the backend `(sortBy, sortOrder)` pair. BETA-119: previously the actual API
+ * call ignored `sortBy` entirely (always sorted `isFeatured desc`), while the
+ * sidebar still offered a sort selector — this reads and applies the real
+ * selection, same as the accommodations/events/posts listings.
+ */
+const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
+    featured:   { sortBy: 'isFeatured',    sortOrder: 'desc' },
+    ratingDesc: { sortBy: 'averageRating', sortOrder: 'desc' },
+    newest:     { sortBy: 'createdAt',     sortOrder: 'desc' },
+    nameAsc:    { sortBy: 'name',          sortOrder: 'asc'  }
+};
+/** Default sort key — used when the URL has no `sortBy`. Matches the previous hardcoded behavior. */
+const DEFAULT_SORT_KEY = 'featured';
+
+const sortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
+const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
+
 // --- Fetch destinations (CITY) for filter dropdown ---
 const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
@@ -60,8 +83,8 @@ const result = await experiencesApi.list({
     type,
     isFeatured,
     minRating,
-    sortBy: 'isFeatured',
-    sortOrder: 'desc'
+    sortBy: sortResolved.sortBy,
+    sortOrder: sortResolved.sortOrder
 });
 
 const hasError = !result.ok;
@@ -176,7 +199,36 @@ if (destinationId) initialParams.destinationId = destinationId;
 if (type) initialParams.type = type;
 if (isFeatured) initialParams.isFeatured = 'true';
 if (minRating !== undefined) initialParams.minRating = String(minRating);
-initialParams.sortBy = 'featured';
+initialParams.sortBy = sortKey;
+
+/**
+ * Build a human-readable summary like "Mostrando 3 de 4 experiencias..." to
+ * replace the generic "N resultados encontrados" line (BETA-119). Mirrors
+ * the accommodations/events/posts pattern via the shared
+ * `commerce-listing-summary` module. `pt` maps to `es` because the builder
+ * only ships es/en phrase dictionaries, same as the other listing pages.
+ */
+const summaryLocale: 'es' | 'en' = locale === 'pt' ? 'es' : locale;
+const destinationCatalog = destinations.map((d) => ({
+    key: d.id,
+    label: { es: d.name, en: d.name } as const
+}));
+const filterSummary = buildExperienceListingSummary({
+    locale: summaryLocale,
+    filters: {
+        text: q,
+        type,
+        destinationId,
+        isFeatured,
+        minRating
+    },
+    counts: { shown: cards.length, total },
+    sort: { sortKey },
+    catalogs: {
+        destinations: destinationCatalog,
+        types: DEFAULT_EXPERIENCE_TYPES
+    }
+});
 
 const baseUrl = buildUrl({ locale, path: 'experiencias' });
 const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
@@ -199,6 +251,8 @@ const itemListEntries = cards.map((card) => ({
     showFilters={true}
     filterPosition="left"
     ogTagline={t('experience.listing.subtitle', 'Descubrí las mejores experiencias')}
+    totalCount={total}
+    filterSummary={filterSummary}
 >
     <ItemListJsonLd
         slot="head-extra"
@@ -219,7 +273,6 @@ const itemListEntries = cards.map((card) => ({
         locale={locale}
         tagline={t('experience.listing.subtitle', 'Descubrí las mejores experiencias')}
         title={t('experience.listing.title', 'Experiencias')}
-        totalCount={total}
     />
 
     <FilterSidebar

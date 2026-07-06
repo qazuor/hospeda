@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type {
     CurrencyFieldConfig,
@@ -14,8 +15,6 @@ import {
     SelectValue
 } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-
-import * as React from 'react';
 
 /**
  * Currency value type

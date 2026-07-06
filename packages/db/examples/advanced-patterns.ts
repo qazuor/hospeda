@@ -698,9 +698,7 @@ export class PostModel extends BaseModel<Post> {
      * console.log(`Approximately ${estimate} posts`);
      * ```
      */
-    async countEstimate(input: {
-        tx?: NodePgDatabase<typeof schema>;
-    }): Promise<number> {
+    async countEstimate(input: { tx?: NodePgDatabase<typeof schema> }): Promise<number> {
         const { tx } = input;
         const db = this.getClient(tx);
 

@@ -1,3 +1,5 @@
+import { PermissionEnum } from '@repo/schemas';
+import { createElement } from 'react';
 import { AttractionBadgesCell } from '@/components/entity-list/AttractionBadgesCell';
 import { InlineFeaturedCell } from '@/components/entity-list/InlineFeaturedCell';
 import {
@@ -8,8 +10,6 @@ import { RatingCell, type RatingDimension } from '@/components/entity-list/Ratin
 import { ReviewsCell } from '@/components/entity-list/ReviewsCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
-import { PermissionEnum } from '@repo/schemas';
-import { createElement } from 'react';
 import { useDestinationQuery, useUpdateDestinationMutation } from '../hooks/useDestinationQuery';
 import type { Destination } from '../schemas/destinations.schemas';
 

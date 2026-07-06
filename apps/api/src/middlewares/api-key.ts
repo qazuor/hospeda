@@ -2,7 +2,7 @@
  * @file api-key.ts
  *
  * Inbound API-key authentication middleware for machine callers
- * (Custom GPT via x-hospeda-ai-key, Make.com via x-hospeda-make-key).
+ * (e.g. the Custom GPT via x-hospeda-ai-key).
  *
  * Security design
  * ---------------
@@ -52,7 +52,7 @@ const HASH_SALT = '__hospeda_apikey_hash__';
  */
 export interface ApiKeyActorIdentity {
     /**
-     * Stable machine identifier, e.g. 'gpt-action' or 'make-integration'.
+     * Stable machine identifier, e.g. 'gpt-action'.
      * Used as Actor.id and must be a non-empty string (not a UUID — machine
      * actors are never in the users table).
      */
@@ -67,7 +67,7 @@ export interface ApiKeyActorIdentity {
 export interface ApiKeyMiddlewareConfig {
     /**
      * HTTP header name to read the caller's key from.
-     * e.g. 'x-hospeda-ai-key' or 'x-hospeda-make-key'.
+     * e.g. 'x-hospeda-ai-key'.
      */
     readonly headerName: string;
     /**

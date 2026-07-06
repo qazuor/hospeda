@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-    LOCATION_OBFUSCATION_CONSTANTS,
     haversineDistanceMeters,
+    LOCATION_OBFUSCATION_CONSTANTS,
     obfuscateCoordinates
 } from '../../src/utils/location-obfuscation';
 

@@ -1,5 +1,5 @@
-import { BasePageLayout } from '@/components/layout/BasePageLayout';
 import type { ReactNode } from 'react';
+import { BasePageLayout } from '@/components/layout/BasePageLayout';
 
 export type MainPageLayoutProps = {
     readonly title: string;

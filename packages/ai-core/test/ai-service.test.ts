@@ -28,8 +28,8 @@ import type { AiFeatureConfig } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { AiFeatureNotConfiguredError } from '../src/config/index.js';
-import { createAiService } from '../src/engine/ai-service.js';
 import type { AiService } from '../src/engine/ai-service.js';
+import { createAiService } from '../src/engine/ai-service.js';
 import { AiCeilingHitError } from '../src/engine/errors.js';
 import { NotImplementedError } from '../src/providers/ai-provider.interface.js';
 import { StubProvider } from '../src/providers/index.js';
@@ -86,12 +86,18 @@ beforeEach(() => {
     // are active — preserving all existing test expectations.
     mockResolveConfig.mockResolvedValue({ providers: {}, features: {} });
     mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_ENABLED);
-    mockIsFeatureKillSwitched.mockImplementation((cfg: AiFeatureConfig) => !cfg.enabled);
-    mockGetProviderOrder.mockImplementation(
-        ({ featureConfig }: { featureConfig: AiFeatureConfig }) => ({
+    mockIsFeatureKillSwitched.mockImplementation(function (cfg: AiFeatureConfig) {
+        return !cfg.enabled;
+    });
+    mockGetProviderOrder.mockImplementation(function ({
+        featureConfig
+    }: {
+        featureConfig: AiFeatureConfig;
+    }) {
+        return {
             providers: [featureConfig.primaryProvider, ...featureConfig.fallbackChain]
-        })
-    );
+        };
+    });
 });
 
 // ---------------------------------------------------------------------------

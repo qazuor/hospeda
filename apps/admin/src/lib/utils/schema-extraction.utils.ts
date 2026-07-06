@@ -1,5 +1,5 @@
-import { adminLogger } from '@/utils/logger';
 import type { ZodObject, ZodRawShape, ZodSchema } from 'zod';
+import { adminLogger } from '@/utils/logger';
 
 /**
  * Extract a field schema from a Zod object schema using dot notation path

@@ -22,13 +22,11 @@
 
 // Main builder
 export { buildAccommodationListingSummary } from './summary.builder';
-
-// Legacy adapter
-export { mapLegacyFiltersToSummaryFilters } from './summary.legacy';
-export type { LegacyFilter, MapLegacyFiltersInput } from './summary.legacy';
-
 // Catalog defaults (consumers may extend these)
 export { DEFAULT_SORT_KEYS, DEFAULT_TYPE_GRAMMAR } from './summary.catalogs';
+export type { LegacyFilter, MapLegacyFiltersInput } from './summary.legacy';
+// Legacy adapter
+export { mapLegacyFiltersToSummaryFilters } from './summary.legacy';
 
 // Subject resolution (exported for advanced use)
 export type { ResolvedSubject, ResolveSubjectInput } from './summary.subject';

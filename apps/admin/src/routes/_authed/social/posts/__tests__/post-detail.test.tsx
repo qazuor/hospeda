@@ -61,13 +61,7 @@ vi.mock('@/components/auth/RoutePermissionGuard', () => ({
 
 vi.mock('@tanstack/react-router', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@tanstack/react-router')>()),
-    Link: ({
-        children,
-        to
-    }: {
-        children: ReactNode;
-        to: string;
-    }) => <a href={to}>{children}</a>,
+    Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
     createFileRoute: () => () => ({})
 }));
 
@@ -88,6 +82,8 @@ vi.mock('@/lib/api/client', () => ({
 // Imports AFTER mocks
 // ---------------------------------------------------------------------------
 
+import { PermissionEnum, SocialPostStatusEnum } from '@repo/schemas';
+import type { SocialPostDetail } from '@repo/service-core';
 import {
     useApproveSocialPost,
     useArchiveSocialPost,
@@ -102,8 +98,6 @@ import {
     useUnpauseSocialPost
 } from '@/hooks/use-social-posts';
 import { useHasPermission } from '@/hooks/use-user-permissions';
-import { PermissionEnum, SocialPostStatusEnum } from '@repo/schemas';
-import type { SocialPostDetail } from '@repo/service-core';
 
 // ---------------------------------------------------------------------------
 // We cannot render the full route component (it uses Route.useParams() which
@@ -400,9 +394,9 @@ describe('SocialPostDetailPage — action bar visibility', () => {
     });
 
     it('hides approve when user lacks SOCIAL_POST_APPROVE permission', () => {
-        mockUseHasPermission.mockImplementation(
-            (perm: PermissionEnum) => perm !== PermissionEnum.SOCIAL_POST_APPROVE
-        );
+        mockUseHasPermission.mockImplementation(function (perm: PermissionEnum) {
+            return perm !== PermissionEnum.SOCIAL_POST_APPROVE;
+        });
         const post = makePost({ status: SocialPostStatusEnum.NEEDS_REVIEW });
         render(
             <TestWrapper>
@@ -437,9 +431,9 @@ describe('SocialPostDetailPage — action bar visibility', () => {
     });
 
     it('hides promote buttons when user lacks SOCIAL_HASHTAG_MANAGE', () => {
-        mockUseHasPermission.mockImplementation(
-            (perm: PermissionEnum) => perm !== PermissionEnum.SOCIAL_HASHTAG_MANAGE
-        );
+        mockUseHasPermission.mockImplementation(function (perm: PermissionEnum) {
+            return perm !== PermissionEnum.SOCIAL_HASHTAG_MANAGE;
+        });
         const post = makePost({
             gptHashtagPayloadJson: ['#travel']
         });
@@ -589,9 +583,9 @@ describe('SocialPostDetailPage — delete/archive button visibility', () => {
     });
 
     it('shows archive button (delete) when user has SOCIAL_POST_ARCHIVE', () => {
-        mockUseHasPermission.mockImplementation(
-            (perm: PermissionEnum) => perm === PermissionEnum.SOCIAL_POST_ARCHIVE
-        );
+        mockUseHasPermission.mockImplementation(function (perm: PermissionEnum) {
+            return perm === PermissionEnum.SOCIAL_POST_ARCHIVE;
+        });
 
         function DeleteButtonHarness() {
             const canArchive = useHasPermission(PermissionEnum.SOCIAL_POST_ARCHIVE);

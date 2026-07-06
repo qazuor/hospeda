@@ -60,6 +60,7 @@ vi.mock('@/lib/analytics/posthog-client', () => ({
 }));
 
 import { trackEvent } from '@/lib/analytics/posthog-client';
+
 const mockedTrackEvent = vi.mocked(trackEvent);
 
 // ---------------------------------------------------------------------------
@@ -388,7 +389,7 @@ describe('TourProvider / useTour', () => {
 
             // Capture the onDestroyStarted callback from the driver config.
             let onDestroyStarted: (() => void) | undefined;
-            mockDriverFactory.mockImplementation((config: Record<string, unknown>) => {
+            mockDriverFactory.mockImplementation(function (config: Record<string, unknown>) {
                 onDestroyStarted = config.onDestroyStarted as (() => void) | undefined;
                 return mockDriverInstance;
             });

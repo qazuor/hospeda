@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { AssignmentResultSchema, RemovalResultSchema } from '../../api/result.schema.js';
 import { UserIdSchema } from '../../common/id.schema.js';
-import { PermissionEffectEnum } from '../../enums/permission-effect.enum.js';
 import { PermissionEnumSchema } from '../../enums/permission.schema.js';
+import { PermissionEffectEnum } from '../../enums/permission-effect.enum.js';
 import { RoleEnumSchema } from '../../enums/role.schema.js';
 
 // ============================================================================

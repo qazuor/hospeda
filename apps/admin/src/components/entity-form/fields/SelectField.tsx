@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type {
     FieldConfig,
@@ -14,8 +15,6 @@ import {
 } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-
-import * as React from 'react';
 
 /**
  * Props for SelectField component

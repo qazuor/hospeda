@@ -99,29 +99,27 @@ describe('POST /api/v1/protected/media/upload — integration (T-066)', () => {
         it('returns 200 with a publicId keyed on the actor id and forwards overwrite:true to the provider', async () => {
             // Arrange: provider echoes back a realistic Cloudinary shape.
             const expectedPublicId = `hospeda/test/avatars/${USER_ACTOR_ID}`;
-            mockUpload.mockImplementationOnce(
-                async ({
-                    folder,
-                    publicId,
-                    overwrite
-                }: {
-                    folder: string;
-                    publicId: string;
-                    overwrite: boolean;
-                }) => {
-                    // Self-check: the route must be passing the avatar folder
-                    // and the actor's own id as the publicId, with
-                    // overwrite=true. Capturing here so the assertion below
-                    // can inspect it regardless of mock-ordering.
-                    return {
-                        url: `https://res.cloudinary.com/hospeda/image/upload/v1/${folder}/${publicId}.png`,
-                        publicId: `${folder}/${publicId}`,
-                        width: 800,
-                        height: 800,
-                        _meta: { overwrite }
-                    };
-                }
-            );
+            mockUpload.mockImplementationOnce(async function ({
+                folder,
+                publicId,
+                overwrite
+            }: {
+                folder: string;
+                publicId: string;
+                overwrite: boolean;
+            }) {
+                // Self-check: the route must be passing the avatar folder
+                // and the actor's own id as the publicId, with
+                // overwrite=true. Capturing here so the assertion below
+                // can inspect it regardless of mock-ordering.
+                return {
+                    url: `https://res.cloudinary.com/hospeda/image/upload/v1/${folder}/${publicId}.png`,
+                    publicId: `${folder}/${publicId}`,
+                    width: 800,
+                    height: 800,
+                    _meta: { overwrite }
+                };
+            });
 
             const actor = createMockUserActor({ id: USER_ACTOR_ID });
 
@@ -174,14 +172,20 @@ describe('POST /api/v1/protected/media/upload — integration (T-066)', () => {
             // Arrange: two independent user actors in sequence verify the
             // avatar-scoping invariant. Both calls use their respective ids
             // as the publicId.
-            mockUpload.mockImplementation(
-                async ({ publicId, folder }: { publicId: string; folder: string }) => ({
+            mockUpload.mockImplementation(async function ({
+                publicId,
+                folder
+            }: {
+                publicId: string;
+                folder: string;
+            }) {
+                return {
                     url: `https://res.cloudinary.com/hospeda/image/upload/v1/${folder}/${publicId}.png`,
                     publicId: `${folder}/${publicId}`,
                     width: 400,
                     height: 400
-                })
-            );
+                };
+            });
 
             const userA = createMockUserActor({ id: '00000000-0000-4000-8000-0000000000aa' });
             const userB = createMockUserActor({ id: '00000000-0000-4000-8000-0000000000bb' });

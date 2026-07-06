@@ -3,8 +3,17 @@
  *
  * Displays and manages sponsorship levels in a data table.
  */
-import { BadgeColor, ColumnType, type DataTableColumn } from '@/components/table/DataTable';
-import { DataTable } from '@/components/table/DataTable';
+
+import type { ApiErrorShape } from '@repo/i18n';
+import { formatCurrency } from '@repo/i18n';
+import { AddIcon } from '@repo/icons';
+import { useState } from 'react';
+import {
+    BadgeColor,
+    ColumnType,
+    DataTable,
+    type DataTableColumn
+} from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,10 +24,6 @@ import {
 import type { SponsorshipLevel } from '@/features/sponsorships/types';
 import { useTranslations } from '@/hooks/use-translations';
 import { translateAdminApiError } from '@/lib/errors';
-import { formatCurrency } from '@repo/i18n';
-import type { ApiErrorShape } from '@repo/i18n';
-import { AddIcon } from '@repo/icons';
-import { useState } from 'react';
 
 /**
  * Sponsorship Levels Tab

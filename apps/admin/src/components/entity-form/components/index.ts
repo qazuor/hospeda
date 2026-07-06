@@ -4,14 +4,12 @@
  * These are internal building blocks — not intended for direct use outside
  * the entity-form module.
  */
-export { FieldAffix } from './FieldAffix';
+
 export type { FieldAffixProps } from './FieldAffix';
-
-export { FieldCharCounter } from './FieldCharCounter';
+export { FieldAffix } from './FieldAffix';
 export type { FieldCharCounterProps } from './FieldCharCounter';
-
-export { FieldHelpIcon } from './FieldHelpIcon';
+export { FieldCharCounter } from './FieldCharCounter';
 export type { FieldHelpIconProps } from './FieldHelpIcon';
-
-export { FieldWrapper } from './FieldWrapper';
+export { FieldHelpIcon } from './FieldHelpIcon';
 export type { FieldWrapperMode, FieldWrapperProps } from './FieldWrapper';
+export { FieldWrapper } from './FieldWrapper';

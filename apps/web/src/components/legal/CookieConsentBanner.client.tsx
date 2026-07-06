@@ -16,10 +16,10 @@
  * - Keyboard navigable via native focus order
  */
 
+import { useEffect, useId, useRef, useState } from 'react';
 import { getConsent, saveConsent } from '@/lib/cookie-consent';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useEffect, useId, useRef, useState } from 'react';
 import styles from './CookieConsentBanner.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -248,6 +248,7 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
                                         </span>
                                         <span
                                             className={styles.alwaysOn}
+                                            role="img"
                                             aria-label="always active"
                                         >
                                             {/* Lock icon via CSS pseudo */}

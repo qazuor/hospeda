@@ -309,7 +309,7 @@ const closedNowLabel = t('gastronomy.card.closedNow', 'Cerrado ahora');
     /* Open/closed badge */
     .gastro-card__open-badge {
         position: absolute;
-        top: 12px;
+        bottom: 48px;
         left: 12px;
         padding: 4px 10px;
         border-radius: var(--radius-pill, 9999px);
@@ -317,16 +317,26 @@ const closedNowLabel = t('gastronomy.card.closedNow', 'Cerrado ahora');
         font-size: 11px;
         font-weight: 600;
         line-height: 1.4;
+        /* BETA-117 dark-mode a11y: the badge fills are brand green / red at
+         * ~L0.5-0.6, so the text must be a CONSTANT light color in both themes.
+         * The per-theme `*-foreground` tokens flip to near-black in dark and
+         * drop the contrast below 4.5:1 (WCAG AA). `--destructive-foreground`
+         * is the system's only theme-constant white (oklch(0.98) in both),
+         * so it doubles as the shared foreground for both status badges. */
+        color: var(--destructive-foreground);
     }
 
+    /* BETA-117: solid, opaque fills (not low-alpha tints) so the badge reads
+     * over any photo, in both light and dark themes. */
     .gastro-card__open-badge--open {
-        background-color: var(--brand-accent-a15);
-        color: var(--brand-accent);
+        background-color: var(--hospeda-forest);
     }
 
     .gastro-card__open-badge--closed {
-        background-color: var(--brand-accent-a05);
-        color: var(--core-muted-foreground);
+        /* Darken the red fill (mix toward black, keeping the token so dark mode
+         * still adapts) so white text clears 4.5:1 in both themes — the raw
+         * `--destructive` fill only reaches ~4.2:1 against white. */
+        background-color: color-mix(in oklab, var(--destructive) 85%, black);
     }
 
     /* Top-right actions overlay (FavoriteButton) */
@@ -547,6 +557,13 @@ const closedNowLabel = t('gastronomy.card.closedNow', 'Cerrado ahora');
             left: 12px;
             right: auto;
             top: auto;
+        }
+
+        /* On mobile the featured badge takes bottom-left, so the open/closed
+           badge moves to bottom-right to stay opposite it (BETA-117). */
+        .gastro-card__open-badge {
+            left: auto;
+            right: 12px;
         }
     }
 </style>

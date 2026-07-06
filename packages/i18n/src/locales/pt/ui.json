@@ -173,6 +173,7 @@
         "clearAll": "Limpar filtros",
         "remove": "Remover filtro",
         "sortBy": "Ordenar por",
+        "sort": "Ordenar",
         "searchPlaceholder": "Buscar...",
         "min": "mínimo",
         "max": "máximo",
@@ -187,10 +188,25 @@
         "closeFilters": "Fechar filtros",
         "activeCount": "{{count}} filtro ativo",
         "activeCountPlural": "{{count}} filtros ativos",
+        "activeSelections": "{{count}} seleções ativas",
+        "featuredOption": "Destaque",
+        "close": "Fechar",
+        "noResults": "Nenhum resultado",
+        "reset": "Limpar",
+        "expand": "Expandir",
+        "collapse": "Recolher",
         "dateRange": {
             "placeholder": "Escolha suas datas",
             "choose": "escolher",
-            "clear": "Limpar datas"
+            "clear": "Limpar datas",
+            "from": "De",
+            "to": "Até",
+            "clearFrom": "Limpar \"{{value}}\"",
+            "clearTo": "Limpar \"{{value}}\""
+        },
+        "dualRange": {
+            "noMin": "Sem mínimo",
+            "noMax": "Sem máximo"
         }
     },
     "sort": {

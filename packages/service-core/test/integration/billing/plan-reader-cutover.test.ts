@@ -365,56 +365,56 @@ describe('plan reader cutover — PlanService.getBySlug() (T-033)', () => {
         planService = new PlanService();
     });
 
-    describe.each(OLD_PLANS.map((p, i) => ({ plan: p, idx: String(i + 1) })))(
-        'plan $plan.slug',
-        ({ plan, idx }) => {
-            it('should return consistent slug, prices, entitlements, limits vs config shape', async () => {
-                // Arrange
-                const { planRow, priceRows } = buildFixtureFromConfig(plan, idx);
-                mockGetDb.mockReturnValue(buildGetBySlugDb(planRow, priceRows));
+    describe.each(OLD_PLANS.map((p, i) => ({ plan: p, idx: String(i + 1) })))('plan $plan.slug', ({
+        plan,
+        idx
+    }) => {
+        it('should return consistent slug, prices, entitlements, limits vs config shape', async () => {
+            // Arrange
+            const { planRow, priceRows } = buildFixtureFromConfig(plan, idx);
+            mockGetDb.mockReturnValue(buildGetBySlugDb(planRow, priceRows));
 
-                // Act
-                const result = await planService.getBySlug(plan.slug);
+            // Act
+            const result = await planService.getBySlug(plan.slug);
 
-                // Assert
-                expect(result.success).toBe(true);
-                if (!result.success) return;
+            // Assert
+            expect(result.success).toBe(true);
+            if (!result.success) return;
 
-                const data = result.data;
+            const data = result.data;
 
-                // Slug must match
-                expect(data.slug).toBe(plan.slug);
+            // Slug must match
+            expect(data.slug).toBe(plan.slug);
 
-                // Category must match
-                expect(data.category).toBe(plan.category);
+            // Category must match
+            expect(data.category).toBe(plan.category);
 
-                // Monthly price from DB row
-                expect(data.monthlyPriceArs).toBe(plan.monthlyPriceArs);
+            // Monthly price from DB row
+            expect(data.monthlyPriceArs).toBe(plan.monthlyPriceArs);
 
-                // Annual price: null when not present, or the config value
-                if (plan.annualPriceArs === null || plan.annualPriceArs === 0) {
-                    expect(data.annualPriceArs).toBeNull();
-                } else {
-                    expect(data.annualPriceArs).toBe(plan.annualPriceArs);
-                }
+            // Annual price: null when not present, or the config value
+            if (plan.annualPriceArs === null || plan.annualPriceArs === 0) {
+                expect(data.annualPriceArs).toBeNull();
+            } else {
+                expect(data.annualPriceArs).toBe(plan.annualPriceArs);
+            }
 
-                // Entitlements must be string[] matching config
-                expect(Array.isArray(data.entitlements)).toBe(true);
-                expect(data.entitlements).toEqual(plan.entitlements);
+            // Entitlements must be string[] matching config
+            expect(Array.isArray(data.entitlements)).toBe(true);
+            expect(data.entitlements).toEqual(plan.entitlements);
 
-                // Limits must be Record<string,number> (not LimitDefinition[])
-                // This is the T-025 mapper parity assertion
-                expect(typeof data.limits).toBe('object');
-                expect(Array.isArray(data.limits)).toBe(false);
-                for (const [key, val] of Object.entries(plan.limits)) {
-                    expect((data.limits as Record<string, number>)[key]).toBe(val);
-                }
+            // Limits must be Record<string,number> (not LimitDefinition[])
+            // This is the T-025 mapper parity assertion
+            expect(typeof data.limits).toBe('object');
+            expect(Array.isArray(data.limits)).toBe(false);
+            for (const [key, val] of Object.entries(plan.limits)) {
+                expect((data.limits as Record<string, number>)[key]).toBe(val);
+            }
 
-                // isActive must be true (from fixture)
-                expect(data.isActive).toBe(true);
-            });
-        }
-    );
+            // isActive must be true (from fixture)
+            expect(data.isActive).toBe(true);
+        });
+    });
 });
 
 // ─── Tests: T-025 regression — dual-resolve when planId is a UUID ──────────
@@ -492,7 +492,7 @@ describe('plan reader cutover — T-025 regression: dual-resolve (T-033)', () =>
 
         // First call (getById) returns nothing, second call (getBySlug) returns the plan
         let dbCallCount = 0;
-        mockGetDb.mockImplementation(() => {
+        mockGetDb.mockImplementation(function () {
             return dbCallCount++ === 0 ? idMissDb : slugFoundDb;
         });
 

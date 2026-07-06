@@ -15,8 +15,8 @@ import 'leaflet/dist/leaflet.css';
 
 import { StarIcon } from '@repo/icons';
 import L from 'leaflet';
-import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import iconShadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import { type ReactElement, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
@@ -584,6 +584,7 @@ function AccommodationPopupContent({
                 {hasRating ? (
                     <span
                         className={styles.popupRating}
+                        role="img"
                         aria-label={`${item.averageRating?.toFixed(1)} estrellas`}
                     >
                         <span aria-hidden="true">★</span>

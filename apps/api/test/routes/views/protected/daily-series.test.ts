@@ -63,10 +63,12 @@ vi.mock('../../../../src/utils/actor', () => ({
 
 // Mock PlanService to avoid module-load-time DB access from entitlement middleware.
 vi.mock('../../../../src/services/plan.service', () => ({
-    PlanService: vi.fn().mockImplementation(() => ({
-        list: vi.fn(),
-        getBySlug: vi.fn()
-    }))
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            list: vi.fn(),
+            getBySlug: vi.fn()
+        };
+    })
 }));
 
 // Mock entityViewService — no real DB calls.

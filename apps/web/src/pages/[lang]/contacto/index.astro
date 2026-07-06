@@ -3,7 +3,7 @@
  * @file contacto/index.astro
  * @description Contact page: hero with form, channels, location & hours, FAQ.
  * @route /{lang}/contacto/
- * @rendering SSG (prerender)
+ * @rendering SSR + Cloudflare cache (HOS-74 — see [lang]/index.astro)
  */
 
 import { getSiteUrl } from '@/lib/env';
@@ -26,16 +26,8 @@ import {
 	InstagramIcon,
 	FacebookIcon
 } from '@repo/icons';
-import type { GetStaticPaths } from 'astro';
 
-export const prerender = true;
-
-export const getStaticPaths = (() => {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}) satisfies GetStaticPaths;
-
-const { lang } = Astro.params;
-const locale = lang as SupportedLocale;
+const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
 // ─── Contact data (from i18n, with hardcoded coords) ──────────────────────────

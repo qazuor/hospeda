@@ -115,7 +115,7 @@ export const getWhatsNewHandler = async (
         highlight: entry.highlight,
         title: resolveEntryLocale({ field: entry.title, locale }),
         body: resolveEntryLocale({ field: entry.body, locale }),
-        ...(entry.image !== undefined ? { image: entry.image } : {}),
+        ...(entry.image === undefined ? {} : { image: entry.image }),
         seen: computeSeen({ entry, seenIds, baselineAt })
     }));
 

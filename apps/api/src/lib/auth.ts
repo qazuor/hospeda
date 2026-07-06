@@ -12,11 +12,24 @@
  */
 
 import { expo } from '@better-auth/expo';
-import { and, asc, conversations, eq, getDb, isNull } from '@repo/db';
-import { accounts, sessions, users, verifications } from '@repo/db';
-import { createEmailClient, sendEmail } from '@repo/email';
-import { ResetPasswordTemplate } from '@repo/email';
-import { VerifyEmailTemplate } from '@repo/email';
+import {
+    accounts,
+    and,
+    asc,
+    conversations,
+    eq,
+    getDb,
+    isNull,
+    sessions,
+    users,
+    verifications
+} from '@repo/db';
+import {
+    createEmailClient,
+    ResetPasswordTemplate,
+    sendEmail,
+    VerifyEmailTemplate
+} from '@repo/email';
 import { createLogger } from '@repo/logger';
 import { RoleEnum } from '@repo/schemas';
 import { compare, hash } from 'bcryptjs';
@@ -111,8 +124,19 @@ const DEFAULT_USER_SETTINGS = {
     }
 } as const;
 
+/**
+ * Concrete type of the configured Better Auth instance.
+ *
+ * Derived from {@link buildAuth} (not `ReturnType<typeof betterAuth>`) so it
+ * preserves the admin + expo plugin surface and the user `additionalFields`.
+ * Better Auth 1.6 made `Auth` invariant over its options object, so the
+ * generic `Auth<BetterAuthOptions>` no longer accepts a concrete instance
+ * (TS2322 on `api.signInSocial`, "Property 'banned' is missing").
+ */
+type AuthInstance = ReturnType<typeof buildAuth>;
+
 /** Lazy-initialized Better Auth instance */
-let authInstance: ReturnType<typeof betterAuth> | null = null;
+let authInstance: AuthInstance | null = null;
 
 /**
  * Returns the Better Auth instance, creating it on first call.
@@ -134,11 +158,25 @@ let authInstance: ReturnType<typeof betterAuth> | null = null;
  * });
  * ```
  */
-export function getAuth(): ReturnType<typeof betterAuth> {
-    if (authInstance) {
-        return authInstance;
+export function getAuth(): AuthInstance {
+    if (!authInstance) {
+        authInstance = buildAuth();
     }
 
+    return authInstance;
+}
+
+/**
+ * Builds the configured Better Auth instance.
+ *
+ * Extracted from {@link getAuth} so its concrete return type is captured by
+ * {@link AuthInstance} (with the admin + expo plugins and user
+ * `additionalFields`) instead of being widened to the generic
+ * `Auth<BetterAuthOptions>`. Called once, lazily, by `getAuth`.
+ *
+ * @throws Error if HOSPEDA_BETTER_AUTH_SECRET is not set
+ */
+function buildAuth() {
     const secret = env.HOSPEDA_BETTER_AUTH_SECRET;
     if (!secret) {
         throw new Error(
@@ -149,7 +187,7 @@ export function getAuth(): ReturnType<typeof betterAuth> {
 
     const baseURL = env.HOSPEDA_API_URL;
 
-    authInstance = betterAuth({
+    return betterAuth({
         secret,
         baseURL,
         basePath: '/api/auth',
@@ -226,7 +264,10 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                 verify: async ({
                     hash: storedHash,
                     password
-                }: { hash: string; password: string }) => compare(password, storedHash)
+                }: {
+                    hash: string;
+                    password: string;
+                }) => compare(password, storedHash)
             },
             sendResetPassword: async ({ user, token }) => {
                 // Fire-and-forget to prevent timing attacks (BA recommendation)
@@ -760,8 +801,6 @@ export function getAuth(): ReturnType<typeof betterAuth> {
          */
         trustedOrigins: [...parseTrustedOrigins(), 'hospeda://']
     });
-
-    return authInstance;
 }
 
 /**

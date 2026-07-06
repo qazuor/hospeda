@@ -19,11 +19,6 @@ import type {
 } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SocialAudienceService } from '../../../src/services/social/social-audience.service';
-import { SocialCampaignService } from '../../../src/services/social/social-campaign.service';
-import { SocialContentBatchService } from '../../../src/services/social/social-content-batch.service';
-import { SocialHashtagSetService } from '../../../src/services/social/social-hashtag-set.service';
-import { SocialPostFooterService } from '../../../src/services/social/social-post-footer.service';
 import {
     generateAudienceSlug,
     generateCampaignSlug,
@@ -31,6 +26,11 @@ import {
     generateHashtagSetSlug,
     generatePostFooterSlug
 } from '../../../src/services/social/social.helpers';
+import { SocialAudienceService } from '../../../src/services/social/social-audience.service';
+import { SocialCampaignService } from '../../../src/services/social/social-campaign.service';
+import { SocialContentBatchService } from '../../../src/services/social/social-content-batch.service';
+import { SocialHashtagSetService } from '../../../src/services/social/social-hashtag-set.service';
+import { SocialPostFooterService } from '../../../src/services/social/social-post-footer.service';
 import { createActor } from '../../factories/actorFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 

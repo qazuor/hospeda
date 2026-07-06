@@ -656,7 +656,7 @@ Create `biome.json` in package root:
 ### Disable Rule Temporarily
 
 ```typescript
-// biome-ignore lint/suspicious/noConsoleLog: Debugging production issue
+// biome-ignore lint/suspicious/noConsole: Debugging production issue
 console.log('Debug:', data);
 ```
 

@@ -20,7 +20,7 @@
  */
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { applyTestControl, isSubscriptionLive } from '@repo/billing';
-import { UserModel, billingCustomers, billingSubscriptions, desc, eq, getDb } from '@repo/db';
+import { billingCustomers, billingSubscriptions, desc, eq, getDb, UserModel } from '@repo/db';
 import type { AccommodationPublishDeps, PublishEligibility } from '@repo/service-core';
 import { addPublishLinkageContext } from '../lib/sentry';
 import { clearEntitlementCache } from '../middlewares/entitlement';
@@ -102,7 +102,10 @@ export function buildAccommodationPublishDeps(
         startTrial: async ({
             ownerId,
             accommodationId
-        }: { ownerId: string; accommodationId: string }) =>
+        }: {
+            ownerId: string;
+            accommodationId: string;
+        }) =>
             applyTestControl('startTrial', { ownerId, accommodationId }, async () => {
                 const billing = getBilling();
                 const customerSync = new BillingCustomerSyncService(billing);

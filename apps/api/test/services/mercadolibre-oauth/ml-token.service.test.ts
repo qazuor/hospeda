@@ -118,15 +118,9 @@ const buildTokenResponse = (overrides?: Partial<MLTokenResponse>): MLTokenRespon
 });
 
 describe('ml-token.service', () => {
-    let getValidMercadoLibreToken: typeof import(
-        '../../../src/services/mercadolibre-oauth/ml-token.service.js'
-    ).getValidMercadoLibreToken;
-    let needsRefresh: typeof import(
-        '../../../src/services/mercadolibre-oauth/ml-token.service.js'
-    ).needsRefresh;
-    let MLTokenRefreshError: typeof import(
-        '../../../src/services/mercadolibre-oauth/ml-token.errors.js'
-    ).MLTokenRefreshError;
+    let getValidMercadoLibreToken: typeof import('../../../src/services/mercadolibre-oauth/ml-token.service.js').getValidMercadoLibreToken;
+    let needsRefresh: typeof import('../../../src/services/mercadolibre-oauth/ml-token.service.js').needsRefresh;
+    let MLTokenRefreshError: typeof import('../../../src/services/mercadolibre-oauth/ml-token.errors.js').MLTokenRefreshError;
 
     beforeEach(async () => {
         vi.clearAllMocks();
@@ -317,12 +311,11 @@ describe('ml-token.service', () => {
             // Arrange
             const expiresAt = new Date(Date.now() - 1000);
             mockGetActiveMLCredential.mockResolvedValue(buildCredential(expiresAt));
-            mockRefreshAccessToken.mockImplementation(
-                () =>
-                    new Promise<MLTokenResponse>((resolve) => {
-                        setTimeout(() => resolve(buildTokenResponse()), 0);
-                    })
-            );
+            mockRefreshAccessToken.mockImplementation(function () {
+                return new Promise<MLTokenResponse>((resolve) => {
+                    setTimeout(() => resolve(buildTokenResponse()), 0);
+                });
+            });
 
             // Act
             const [tokenA, tokenB] = await Promise.all([
@@ -370,7 +363,7 @@ describe('ml-token.service', () => {
             // write, proving the fix re-reads rather than trusting B's stale
             // outer snapshot).
             let callCount = 0;
-            mockGetActiveMLCredential.mockImplementation(() => {
+            mockGetActiveMLCredential.mockImplementation(function () {
                 callCount += 1;
                 if (callCount === 1 || callCount === 2) {
                     return Promise.resolve(staleCredential);

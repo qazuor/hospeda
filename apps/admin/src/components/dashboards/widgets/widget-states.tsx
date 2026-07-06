@@ -184,15 +184,15 @@ export function WidgetCard({
     const Icon = resolveDashboardIcon(icon);
 
     return (
-        <div
-            className="group hover:-translate-y-0.5 relative flex h-full flex-col gap-4 overflow-hidden rounded-2xl bg-card p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_16px_-8px_rgba(15,23,42,0.08)] ring-1 ring-border/30 transition-all duration-300 hover:shadow-[0_2px_4px_rgba(15,23,42,0.05),0_16px_32px_-12px_rgba(15,23,42,0.12)] hover:ring-border/50"
+        <section
+            className="group relative flex h-full flex-col gap-4 overflow-hidden rounded-2xl bg-card p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_16px_-8px_rgba(15,23,42,0.08)] ring-1 ring-border/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(15,23,42,0.05),0_16px_32px_-12px_rgba(15,23,42,0.12)] hover:ring-border/50"
             data-testid={testId}
             aria-label={ariaLabel ?? label}
         >
             {/* Subtle accent rail on the top edge — only when the card has an accent */}
             {(accent || Icon) && (
                 <span
-                    className="-translate-x-1/2 pointer-events-none absolute top-0 left-1/2 h-1 w-16 rounded-b-full opacity-70 transition-all duration-300 group-hover:w-24 group-hover:opacity-100"
+                    className="pointer-events-none absolute top-0 left-1/2 h-1 w-16 -translate-x-1/2 rounded-b-full opacity-70 transition-all duration-300 group-hover:w-24 group-hover:opacity-100"
                     style={{ backgroundColor: vars.solid }}
                     aria-hidden="true"
                 />
@@ -235,7 +235,7 @@ export function WidgetCard({
 
             {/* State or data content */}
             {children}
-        </div>
+        </section>
     );
 }
 
@@ -359,6 +359,7 @@ export function WidgetSkeletonBody({ variant }: WidgetSkeletonBodyProps) {
         <div
             className="animate-pulse"
             data-testid={`${variant}-widget-skeleton`}
+            role="status"
             aria-busy="true"
             aria-label="Loading"
         >
@@ -400,6 +401,7 @@ export function WidgetSkeleton({ variant }: WidgetSkeletonProps) {
         <div
             className="animate-pulse rounded-lg border bg-card p-4"
             data-testid={`${variant}-widget-skeleton`}
+            role="status"
             aria-busy="true"
             aria-label="Loading"
         >
@@ -708,6 +710,7 @@ export function WidgetUnavailable({ variant, label }: WidgetUnavailableProps) {
         <div
             className="flex items-center justify-center rounded-lg border border-dashed bg-card p-4 text-muted-foreground"
             data-testid={`${variant}-widget-unavailable`}
+            role="status"
             aria-label={`${label} — data source unavailable`}
         >
             <span className="text-xs">Sin fuente de datos</span>

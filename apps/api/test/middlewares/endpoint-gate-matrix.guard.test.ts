@@ -50,7 +50,7 @@
  * @module test/middlewares/endpoint-gate-matrix.guard
  */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -232,7 +232,8 @@ const MULTI_ROUTE_INDEX_FILES: ReadonlySet<string> = new Set([
     'revalidation/index.ts', // Revalidation admin routes
     'exchange-rates/admin/index.ts', // Exchange-rate admin routes
     'metrics/index.ts', // Ops metrics admin
-    'auth/index.ts' // Admin auth monitoring (Better Auth passthrough)
+    'auth/index.ts', // Admin auth monitoring (Better Auth passthrough)
+    'ai/credentials/index.ts' // Admin AI-credential CRUD + rotate + sync-models (HOS-94)
 ]);
 
 /**
@@ -457,16 +458,15 @@ describe('endpoint-gate-matrix snapshot guard (SPEC-145 T-022)', () => {
             expect(matrixFiles.size).toBeGreaterThan(50);
         });
 
-        it.each([...matrixFiles].map((f) => [f] as const))(
-            'matrix handler file exists: %s',
-            (handlerFile: string) => {
-                const absPath = join(ROUTES_ROOT, handlerFile);
-                expect(
-                    existsSync(absPath),
-                    `Matrix references a handler file that does NOT exist on disk:\n  File: ${handlerFile}\n  Full path: ${absPath}\n\nFix: either restore the file, rename the matrix row to the new path,\nor remove the matrix row if the route was intentionally deleted.\nMatrix location: docs/billing/endpoint-gate-matrix.md`
-                ).toBe(true);
-            }
-        );
+        it.each(
+            [...matrixFiles].map((f) => [f] as const)
+        )('matrix handler file exists: %s', (handlerFile: string) => {
+            const absPath = join(ROUTES_ROOT, handlerFile);
+            expect(
+                existsSync(absPath),
+                `Matrix references a handler file that does NOT exist on disk:\n  File: ${handlerFile}\n  Full path: ${absPath}\n\nFix: either restore the file, rename the matrix row to the new path,\nor remove the matrix row if the route was intentionally deleted.\nMatrix location: docs/billing/endpoint-gate-matrix.md`
+            ).toBe(true);
+        });
     });
 
     // -------------------------------------------------------------------------
@@ -481,15 +481,14 @@ describe('endpoint-gate-matrix snapshot guard (SPEC-145 T-022)', () => {
             expect(fsFiles.length).toBeGreaterThan(50);
         });
 
-        it.each(fsFiles.map((f) => [f] as const))(
-            'route file has a matrix row: %s',
-            (fsFile: string) => {
-                expect(
-                    matrixFiles.has(fsFile),
-                    `Route handler file on disk has NO entry in the endpoint-gate-matrix:\n  File: ${fsFile}\n\nFix: add a row to docs/billing/endpoint-gate-matrix.md with the correct\n"Decision" value for this route:\n  - "none"       if the route needs auth only (no entitlement gate)\n  - "gate"       if requireEntitlement() should be applied\n  - "limit"      if enforceXxxLimit() should be applied\n  - "gate+limit" if both should be applied\n\nSee docs/billing/adding-an-entitlement.md for the full wiring procedure.\nMatrix location: docs/billing/endpoint-gate-matrix.md`
-                ).toBe(true);
-            }
-        );
+        it.each(
+            fsFiles.map((f) => [f] as const)
+        )('route file has a matrix row: %s', (fsFile: string) => {
+            expect(
+                matrixFiles.has(fsFile),
+                `Route handler file on disk has NO entry in the endpoint-gate-matrix:\n  File: ${fsFile}\n\nFix: add a row to docs/billing/endpoint-gate-matrix.md with the correct\n"Decision" value for this route:\n  - "none"       if the route needs auth only (no entitlement gate)\n  - "gate"       if requireEntitlement() should be applied\n  - "limit"      if enforceXxxLimit() should be applied\n  - "gate+limit" if both should be applied\n\nSee docs/billing/adding-an-entitlement.md for the full wiring procedure.\nMatrix location: docs/billing/endpoint-gate-matrix.md`
+            ).toBe(true);
+        });
     });
 
     // -------------------------------------------------------------------------

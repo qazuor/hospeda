@@ -6,7 +6,7 @@
 import type { Context, Next } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { z } from 'zod';
-import { type ValidationConfig, getValidationConfig } from '../types/validation-config';
+import { getValidationConfig, type ValidationConfig } from '../types/validation-config';
 import { ValidationErrorCode } from '../types/validation-errors.enum';
 import { ValidationError, validationMessages } from '../types/validation-messages';
 import { transformZodError } from '../utils/zod-error-transformer';

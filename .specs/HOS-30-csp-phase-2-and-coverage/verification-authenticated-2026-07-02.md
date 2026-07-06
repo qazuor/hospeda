@@ -149,6 +149,23 @@ Filed as **[HOS-74](https://linear.app/hospeda-beta/issue/HOS-74/csp-header-enti
 
 48h soak clock starts at the deploy-verification timestamp above (~2026-07-02 20:40 UTC), ends ~2026-07-04 20:40 UTC. Monitoring: Sentry CSP block events on the SSR routes, any user/manual reports of broken UX on auth/checkout/owner forms. Requires a follow-up session (or scheduled check) after the 48h window elapses — cannot be completed synchronously.
 
+### 7.3 Automated 48h header check (cron, 2026-07-04)
+
+At the end of the 48h soak window, a scheduled automated run attempted the intended header check:
+
+```
+curl -s -D - -o /dev/null https://staging.hospeda.com.ar/es/
+curl -s -D - -o /dev/null https://staging.hospeda.com.ar/es/alojamientos/
+```
+
+**Result: could not verify — blocked by this session's own network egress policy, not a finding about the site.** Both requests failed with `HTTP/1.1 403 Forbidden` (36-byte body) at the local outbound proxy, before ever reaching `staging.hospeda.com.ar`. The proxy's status endpoint confirmed this as a policy-level `connect_rejected` denial on the CONNECT to `staging.hospeda.com.ar:443` for both attempts, not a transient network error. A follow-up `WebFetch` attempt against the same URL returned the identical `HTTP 403 Forbidden`. Per this environment's own operating guidance, a 403 from the proxy means the destination host is not allowed by this session's egress policy and should be reported rather than retried or routed around — which is what this note does.
+
+**Consequence**: this automated run has **no direct evidence** of the live `content-security-policy` (or `-report-only`) header value on either route at the end of the soak window. It is neither a PASS nor a FAIL on the header check itself — it is an inconclusive/blocked check. CSP enforce mode was **not** touched, reverted, or otherwise modified by this run under any circumstances, regardless of this result.
+
+**Also outstanding**: this scheduled run had no Sentry MCP access, so it could not execute the Sentry-side half of the T-021 gate (querying `org qazuor` / project `hospeda-web` for `event.type:csp` over the trailing 48h and checking for any violation type beyond the already-accepted `GAP-046-10`, `GAP-30-01`, `GAP-30-02`).
+
+**T-021 remains `in_progress`.** Before it can be marked `completed`, a human or a future Claude Code session with (a) real network access to `staging.hospeda.com.ar` and (b) Sentry MCP access needs to: directly curl/verify the live CSP header on `/es/` and `/es/alojamientos/`, and run the Sentry CSP violation-type query described above.
+
 ## 8. Correction (2026-07-03) — GAP-30-01 severity was undercounted; real page styling broke, not just the transition animation
 
 **How this was found**: during the T-021 soak window, the owner manually browsed staging and reported: pages render correctly on a full page load, but after any client-side navigation (clicking a header/footer link) most of the page's styling disappears — dark/unstyled fallback, missing header wave, unstyled nav and filter panels. A full reload always fixed it. This is exactly the `<ClientRouter />`-soft-nav-under-CSP-enforce mechanism §6.1 already identified, but §6.1's empirical test (one navigation, checked only for JS exceptions and URL/title correctness) concluded the only casualty was "the CSS-driven animation flourish" — it did not visually inspect the resulting page layout, so it missed that the *page's own component styling* was breaking, not just Astro's transition-router animation styles.

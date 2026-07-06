@@ -27,17 +27,6 @@
  * @module content-moderation
  */
 
-export type {
-    ModerationCategory,
-    ModerationResult,
-    ModerateTextInput,
-    ModerateText
-} from './types.js';
-
-export { moderateTextInputSchema } from './types.js';
-
-export { moderateText } from './moderate-text.js';
-
 /**
  * Cache-invalidation hooks for consumers that manage the editable moderation
  * term list (e.g. service-core's term admin service). These let a term
@@ -52,6 +41,14 @@ export {
     invalidateModerationCache,
     invalidateModerationCacheByTermPattern
 } from './engine/cache.js';
+export { moderateText } from './moderate-text.js';
+export type {
+    ModerateText,
+    ModerateTextInput,
+    ModerationCategory,
+    ModerationResult
+} from './types.js';
+export { moderateTextInputSchema } from './types.js';
 
 /**
  * Public moderation threshold constant frozen by SPEC-166.

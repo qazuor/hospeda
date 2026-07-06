@@ -1,5 +1,5 @@
-import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 import { type TranslationKey, useTranslations } from '@repo/i18n';
+import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 
 /**
  * Helper to create a dynamic translation key.

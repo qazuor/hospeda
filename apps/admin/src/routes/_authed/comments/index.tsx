@@ -10,15 +10,15 @@
  * RoutePermissionGuard; requireAll defaults false).
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { Button } from '@/components/ui/button';
 import { useCommentsList } from '@/hooks/use-comment-moderation';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import type { TranslationKey } from '@repo/i18n';
-import { PermissionEnum } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 import { CommentsFilters, type CommentsFiltersValue } from './-components/CommentsFilters';
 import { CommentsTable } from './-components/CommentsTable';
 

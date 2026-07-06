@@ -44,15 +44,15 @@
  * @see SPEC-197 T-013, T-014, T-015
  */
 
+import { LockIcon } from '@repo/icons';
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
 import { ApiError } from '@/lib/errors';
-import { LockIcon } from '@repo/icons';
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
 import { type TimeWindow, WindowToggle } from '../../views/WindowToggle';
 import {
     WidgetCard,
@@ -218,11 +218,7 @@ function LockedStateBody() {
 /**
  * Renders the per-accommodation list of unique + total views for the HOST variant.
  */
-function HostViewsList({
-    items
-}: {
-    readonly items: ReadonlyArray<ViewsEntityRow>;
-}) {
+function HostViewsList({ items }: { readonly items: ReadonlyArray<ViewsEntityRow> }) {
     return (
         <ul
             className="divide-y divide-border"
@@ -252,11 +248,7 @@ function HostViewsList({
 /**
  * Renders the per-post or per-event list of unique + total views for the EDITOR variant.
  */
-function EditorViewsList({
-    items
-}: {
-    readonly items: ReadonlyArray<ViewsEntityRow>;
-}) {
+function EditorViewsList({ items }: { readonly items: ReadonlyArray<ViewsEntityRow> }) {
     return (
         <ul
             className="divide-y divide-border"
@@ -294,11 +286,7 @@ const ENTITY_TYPE_LABELS_ES: Readonly<Record<string, string>> = {
  * Renders the platform-wide views summary for the ADMIN variant.
  * Three rows (ACCOMMODATION, POST, EVENT) each showing unique + total.
  */
-function AdminViewsSummary({
-    kpis
-}: {
-    readonly kpis: ReadonlyArray<AdminViewKpi>;
-}) {
+function AdminViewsSummary({ kpis }: { readonly kpis: ReadonlyArray<AdminViewKpi> }) {
     return (
         <ul
             className="divide-y divide-border"

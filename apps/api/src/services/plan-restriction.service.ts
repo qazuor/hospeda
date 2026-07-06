@@ -29,7 +29,7 @@
  * @module services/plan-restriction
  */
 
-import { type DrizzleClient, accommodations, getDb, ownerPromotions } from '@repo/db';
+import { accommodations, type DrizzleClient, getDb, ownerPromotions } from '@repo/db';
 import { and, inArray, isNull } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 

@@ -20,9 +20,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const original = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...original,
-        NewsletterTrackingService: vi.fn().mockImplementation(() => ({
-            processBrevoWebhookEvent: mockProcessEvent
-        }))
+        NewsletterTrackingService: vi.fn().mockImplementation(function () {
+            return {
+                processBrevoWebhookEvent: mockProcessEvent
+            };
+        })
     };
 });
 

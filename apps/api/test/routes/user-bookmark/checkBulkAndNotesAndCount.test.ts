@@ -35,7 +35,9 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        UserBookmarkService: vi.fn().mockImplementation(() => mockBookmarkService)
+        UserBookmarkService: vi.fn().mockImplementation(function () {
+            return mockBookmarkService;
+        })
     };
 });
 

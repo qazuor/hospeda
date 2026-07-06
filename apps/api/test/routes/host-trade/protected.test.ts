@@ -32,9 +32,11 @@ vi.mock('@repo/service-core', async (importActual) => {
     const actual = await importActual<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        HostTradeService: vi.fn().mockImplementation(() => ({
-            listForHost: mockListForHost
-        }))
+        HostTradeService: vi.fn().mockImplementation(function () {
+            return {
+                listForHost: mockListForHost
+            };
+        })
     };
 });
 

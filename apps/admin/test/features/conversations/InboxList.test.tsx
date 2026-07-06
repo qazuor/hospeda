@@ -8,10 +8,10 @@
  * - Empty state renders the i18n key
  */
 
-import { InboxList } from '@/features/conversations/components/InboxList';
-import type { ConversationListItem } from '@/features/conversations/types';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { InboxList } from '@/features/conversations/components/InboxList';
+import type { ConversationListItem } from '@/features/conversations/types';
 
 // Mock useNavigate
 const mockNavigate = vi.fn();

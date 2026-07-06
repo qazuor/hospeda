@@ -92,20 +92,24 @@ vi.mock('@repo/db', () => ({
 const mockRemoveAddonEntitlements = vi.fn();
 
 vi.mock('../../src/services/addon-expiration.service', () => ({
-    AddonExpirationService: vi.fn().mockImplementation(() => ({
-        findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
-        findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
-        processExpiredAddons: vi.fn().mockResolvedValue({
-            success: true,
-            data: { processed: 0, failed: 0, errors: [] }
-        })
-    }))
+    AddonExpirationService: vi.fn().mockImplementation(function () {
+        return {
+            findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
+            findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
+            processExpiredAddons: vi.fn().mockResolvedValue({
+                success: true,
+                data: { processed: 0, failed: 0, errors: [] }
+            })
+        };
+    })
 }));
 
 vi.mock('../../src/services/addon-entitlement.service', () => ({
-    AddonEntitlementService: vi.fn().mockImplementation(() => ({
-        removeAddonEntitlements: mockRemoveAddonEntitlements
-    }))
+    AddonEntitlementService: vi.fn().mockImplementation(function () {
+        return {
+            removeAddonEntitlements: mockRemoveAddonEntitlements
+        };
+    })
 }));
 
 vi.mock('../../src/services/addon-lifecycle.service', () => ({

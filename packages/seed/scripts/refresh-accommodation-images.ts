@@ -19,7 +19,7 @@
  *   pnpm --filter @repo/seed exec tsx scripts/refresh-accommodation-images.ts \
  *     --type CAMPING [--type APARTMENT ...] [--dry-run]
  */
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { AccommodationTypeEnum } from '@repo/schemas';

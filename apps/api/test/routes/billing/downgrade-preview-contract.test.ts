@@ -185,30 +185,22 @@ vi.mock('@qazuor/qzpay-hono', () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { OpenAPIHono } = require('@hono/zod-openapi');
     return {
-        createBillingRoutes: vi.fn(
-            ({
-                authMiddleware
-            }: {
-                authMiddleware: unknown;
-            }) => {
-                const router = new OpenAPIHono({ strict: false });
-                if (authMiddleware) {
-                    router.use('*', authMiddleware);
-                }
-                // Stub the subscriptions/:id route so qzpay-hono doesn't intercept
-                // /subscriptions/downgrade-preview. This must come AFTER our custom
-                // downgradePreviewRouter in mount order (Hono first-match routing
-                // ensures ours wins).
-                router.get(
-                    '/subscriptions/:id',
-                    (c: {
-                        json: (d: unknown) => Response;
-                        req: { param: (n: string) => string };
-                    }) => c.json({ id: c.req.param('id'), status: 'active' })
-                );
-                return router;
+        createBillingRoutes: vi.fn(({ authMiddleware }: { authMiddleware: unknown }) => {
+            const router = new OpenAPIHono({ strict: false });
+            if (authMiddleware) {
+                router.use('*', authMiddleware);
             }
-        )
+            // Stub the subscriptions/:id route so qzpay-hono doesn't intercept
+            // /subscriptions/downgrade-preview. This must come AFTER our custom
+            // downgradePreviewRouter in mount order (Hono first-match routing
+            // ensures ours wins).
+            router.get(
+                '/subscriptions/:id',
+                (c: { json: (d: unknown) => Response; req: { param: (n: string) => string } }) =>
+                    c.json({ id: c.req.param('id'), status: 'active' })
+            );
+            return router;
+        })
     };
 });
 

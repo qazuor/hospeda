@@ -19,7 +19,7 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { LimitKey } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { UsageTrackingService } from '../../src/services/usage-tracking.service';
 
 /**
@@ -36,7 +36,9 @@ vi.mock('@repo/db', () => ({
         select: mockSelect
     }),
     // EntityViewService singleton (service-core barrel) dereferences these at import.
-    AccommodationModel: vi.fn(() => ({ findIdsByOwnerId: vi.fn(async () => []) })),
+    AccommodationModel: vi.fn(function () {
+        return { findIdsByOwnerId: vi.fn(async () => []) };
+    }),
     entityViewModel: {
         insertView: vi.fn(),
         getStatsForEntities: vi.fn(async () => []),

@@ -7,9 +7,9 @@
 import { describe, expect, it } from 'vitest';
 import {
     DOWNLOAD_TIMEOUT_MS_FALLBACK,
-    SOCIAL_ASSETS_FOLDER_FALLBACK,
     resolveNumericSettingWithFallback,
-    resolveStringSettingWithFallback
+    resolveStringSettingWithFallback,
+    SOCIAL_ASSETS_FOLDER_FALLBACK
 } from '../../../src/services/social/social-image-pipeline-config.util';
 
 describe('resolveNumericSettingWithFallback', () => {

@@ -38,16 +38,20 @@ const { mockGetBySlug, mockGetAddonBySlug } = vi.hoisted(() => ({
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
 vi.mock('@repo/service-core', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockGetBySlug,
-        list: vi.fn()
-    })),
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockGetBySlug,
+            list: vi.fn()
+        };
+    }),
     // PlanService required by addon-plan-change.service.ts (imported transitively via
     // addon-lifecycle.service.ts — SPEC-192 T-025 plan reads cutover)
-    PlanService: vi.fn().mockImplementation(() => ({
-        getById: vi.fn(),
-        getBySlug: vi.fn()
-    })),
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            getById: vi.fn(),
+            getBySlug: vi.fn()
+        };
+    }),
     BILLING_EVENT_TYPES: {
         ADDON_REVOCATION_FAILED: 'ADDON_REVOCATION_FAILED'
     }

@@ -26,7 +26,6 @@
  * Exhaustion threshold (from service source):
  *   `MAX_RETRY_COUNT = 3` (line 382 of social-publish-dispatch.service.ts).
  *   `dispatchTarget` exhausts when `currentRetryCount >= 3` at failure time.
- *   `handleMakeCallbackResult` exhausts when `newRetryCount >= 3` after increment.
  *
  * SPEC-254 T-051.
  */
@@ -37,6 +36,7 @@ import type {
     SocialPostFooterModel,
     SocialPostMediaModel,
     SocialPostModel,
+    SocialPostTargetMediaModel,
     SocialPostTargetModel,
     SocialPublishLogModel,
     SocialSettingModel
@@ -46,8 +46,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SocialAuditLogService } from '../../../src/services/social/social-audit-log.service';
 import { SocialAuditEvent } from '../../../src/services/social/social-audit-log.service';
 import { SocialPublishDispatchService } from '../../../src/services/social/social-publish-dispatch.service';
-import { createModelMock } from '../../utils/modelMockFactory';
 import type { StandardModelMock } from '../../utils/modelMockFactory';
+import { createModelMock } from '../../utils/modelMockFactory';
 
 // ---------------------------------------------------------------------------
 // UUID fixtures
@@ -160,6 +160,7 @@ type Mocks = {
     publishLogModel: StandardModelMock;
     settingModel: StandardModelMock;
     auditLogMock: SocialAuditLogService;
+    postTargetMediaModel: StandardModelMock;
 };
 
 // ---------------------------------------------------------------------------
@@ -175,6 +176,11 @@ function buildService(): { service: SocialPublishDispatchService; mocks: Mocks }
     const assetModel = createModelMock();
     const publishLogModel = createModelMock();
     const settingModel = createModelMock();
+    const postTargetMediaModel = createModelMock();
+    // HOS-65 T-019: default to zero target-scoped link rows so buildMakePayload
+    // (called internally by dispatchTarget) falls back to the post-level
+    // social_post_media query already mocked by every test in this file.
+    postTargetMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
 
     const auditLogMock = {
         log: vi.fn().mockResolvedValue({ logged: true }),
@@ -191,7 +197,8 @@ function buildService(): { service: SocialPublishDispatchService; mocks: Mocks }
         assetModel as unknown as SocialAssetModel,
         publishLogModel as unknown as SocialPublishLogModel,
         settingModel as unknown as SocialSettingModel,
-        auditLogMock
+        auditLogMock,
+        postTargetMediaModel as unknown as SocialPostTargetMediaModel
     );
 
     return {
@@ -205,7 +212,8 @@ function buildService(): { service: SocialPublishDispatchService; mocks: Mocks }
             assetModel,
             publishLogModel,
             settingModel,
-            auditLogMock
+            auditLogMock,
+            postTargetMediaModel
         }
     };
 }

@@ -27,10 +27,10 @@
  * @see SPEC-154
  */
 
-import type { SidebarItem } from '@/config/ia/schema';
-import { hasSidebarAccessibleItem, isPermissionGateGranted } from '@/lib/nav/permission-visibility';
 import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import type { SidebarItem } from '@/config/ia/schema';
+import { hasSidebarAccessibleItem, isPermissionGateGranted } from '@/lib/nav/permission-visibility';
 
 // ---------------------------------------------------------------------------
 // Helpers / fixtures

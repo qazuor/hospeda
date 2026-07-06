@@ -7,7 +7,7 @@
  * that can view the listing can read its FAQs (open public).
  */
 import { GastronomyFaqPublicListOutputSchema } from '@repo/schemas';
-import { GastronomyService, ServiceError, listGastronomyFaqs } from '@repo/service-core';
+import { GastronomyService, listGastronomyFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';

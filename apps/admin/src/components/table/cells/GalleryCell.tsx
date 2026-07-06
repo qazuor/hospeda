@@ -1,6 +1,6 @@
-import { useTranslations } from '@/hooks/use-translations';
 import { getMediaUrl } from '@repo/media';
 import type { ReactNode } from 'react';
+import { useTranslations } from '@/hooks/use-translations';
 
 type GalleryCellProps = {
     readonly value: unknown;

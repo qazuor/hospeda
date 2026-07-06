@@ -9,8 +9,8 @@
  * @module lib/qzpay-theme
  */
 
-import { qzpayMergeTheme } from '@qazuor/qzpay-react';
 import type { QZPayTheme } from '@qazuor/qzpay-react';
+import { qzpayMergeTheme } from '@qazuor/qzpay-react';
 
 /**
  * Convert oklch color string to rgb hex for qzpay-react

@@ -10,14 +10,14 @@
  * Hook-factory pattern mirrors {@link DeleteRowButton} / {@link InlineStateSelectCell}.
  */
 
-import { PermissionGate } from '@/components/auth/PermissionGate';
-import { BooleanCell } from '@/components/table/cells/BooleanCell';
-import { useToast } from '@/components/ui/ToastProvider';
-import { Switch } from '@/components/ui/switch';
-import { useTranslations } from '@/hooks/use-translations';
-import { adminLogger } from '@/utils/logger';
 import type { TranslationKey } from '@repo/i18n';
 import type { PermissionEnum } from '@repo/schemas';
+import { PermissionGate } from '@/components/auth/PermissionGate';
+import { BooleanCell } from '@/components/table/cells/BooleanCell';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/components/ui/ToastProvider';
+import { useTranslations } from '@/hooks/use-translations';
+import { adminLogger } from '@/utils/logger';
 import type { InlineUpdateMutationLike } from './InlineStateSelectCell';
 
 /**

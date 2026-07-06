@@ -15,9 +15,9 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { type AddonDefinition, EntitlementKey, LimitKey } from '@repo/billing';
 import type { CancelAddonInput } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cancelUserAddon } from '../../src/services/addon.user-addons';
 import type { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 import type { RecalculationResult } from '../../src/services/addon-limit-recalculation.service';
-import { cancelUserAddon } from '../../src/services/addon.user-addons';
 import { createMockBilling } from '../helpers/mock-factories';
 
 // ─── Hoisted mock setup ───────────────────────────────────────────────────────
@@ -138,20 +138,22 @@ vi.mock('@repo/service-core', () => ({
     cancelAddonPurchaseRecord: vi.fn().mockResolvedValue(1),
     queryUserAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
     queryAddonActive: vi.fn().mockResolvedValue({ success: true, data: false }),
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        // Wire through mockGetAddonBySlug so tests that configure it continue to work.
-        // Returns { success: true, data: addonDef } when mockGetAddonBySlug returns a value,
-        // or { success: false, NOT_FOUND } when it returns null/undefined.
-        getBySlug: async (slug: string) => {
-            const def = mockGetAddonBySlug(slug);
-            if (def) return { success: true, data: def };
-            return {
-                success: false,
-                error: { code: 'NOT_FOUND', message: `Add-on not found: ${slug}` }
-            };
-        },
-        list: vi.fn().mockResolvedValue({ success: true, data: [] })
-    }))
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            // Wire through mockGetAddonBySlug so tests that configure it continue to work.
+            // Returns { success: true, data: addonDef } when mockGetAddonBySlug returns a value,
+            // or { success: false, NOT_FOUND } when it returns null/undefined.
+            getBySlug: async (slug: string) => {
+                const def = mockGetAddonBySlug(slug);
+                if (def) return { success: true, data: def };
+                return {
+                    success: false,
+                    error: { code: 'NOT_FOUND', message: `Add-on not found: ${slug}` }
+                };
+            },
+            list: vi.fn().mockResolvedValue({ success: true, data: [] })
+        };
+    })
 }));
 
 vi.mock('@repo/db/schemas/billing', () => ({
@@ -293,20 +295,25 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
         mockDbSelectLimit.mockResolvedValue([]);
         const mockDbSelectWhere = vi.fn(() => ({ limit: mockDbSelectLimit }));
         const mockDbSelectFrom = vi.fn(() => ({ where: mockDbSelectWhere }));
-        mockDbSelect.mockImplementation(() => ({ from: mockDbSelectFrom }));
+        mockDbSelect.mockImplementation(function () {
+            return { from: mockDbSelectFrom };
+        });
 
         // Restore update chain after clearAllMocks
         const mockDbUpdateSet = vi.fn(() => ({ where: mockDbUpdateWhere }));
-        mockDbUpdate.mockImplementation(() => ({ set: mockDbUpdateSet }));
+        mockDbUpdate.mockImplementation(function () {
+            return { set: mockDbUpdateSet };
+        });
 
         // Restore withTransaction after clearAllMocks (SPEC-064)
-        mockWithTransaction.mockImplementation(
-            async (cb: (tx: unknown) => Promise<unknown>, existingTx?: unknown) => {
-                if (existingTx) return cb(existingTx);
-                const tx = { select: mockDbSelect, update: mockDbUpdate };
-                return cb(tx);
-            }
-        );
+        mockWithTransaction.mockImplementation(async function (
+            cb: (tx: unknown) => Promise<unknown>,
+            existingTx?: unknown
+        ) {
+            if (existingTx) return cb(existingTx);
+            const tx = { select: mockDbSelect, update: mockDbUpdate };
+            return cb(tx);
+        });
     });
 
     afterEach(() => {

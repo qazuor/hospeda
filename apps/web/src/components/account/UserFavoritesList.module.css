@@ -32,8 +32,9 @@
     font-weight: 500;
     color: var(--core-muted-foreground);
     cursor: pointer;
-    transition: color var(--duration-normal, 0.4s) ease, border-color var(--duration-normal, 0.4s)
-        ease;
+    transition:
+        color var(--duration-normal, 0.4s) ease,
+        border-color var(--duration-normal, 0.4s) ease;
     white-space: nowrap;
 }
 
@@ -146,8 +147,9 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: box-shadow var(--duration-normal, 0.4s) ease, transform var(--duration-normal, 0.4s)
-        ease;
+    transition:
+        box-shadow var(--duration-normal, 0.4s) ease,
+        transform var(--duration-normal, 0.4s) ease;
 }
 
 .card:hover {
@@ -240,8 +242,9 @@
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color var(--duration-normal, 0.4s) ease, opacity
-        var(--duration-normal, 0.4s) ease;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        opacity var(--duration-normal, 0.4s) ease;
 }
 
 .moveBtn:hover:not(:disabled) {
@@ -268,8 +271,9 @@
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color var(--duration-normal, 0.4s) ease, opacity
-        var(--duration-normal, 0.4s) ease;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        opacity var(--duration-normal, 0.4s) ease;
 }
 
 .removeBtn:hover:not(:disabled) {
@@ -363,8 +367,9 @@
     border-radius: var(--radius-card);
     overflow: hidden;
     text-decoration: none;
-    transition: box-shadow var(--duration-normal, 0.4s) ease, transform var(--duration-normal, 0.4s)
-        ease;
+    transition:
+        box-shadow var(--duration-normal, 0.4s) ease,
+        transform var(--duration-normal, 0.4s) ease;
 }
 
 .collectionCardLink:hover {
@@ -462,8 +467,9 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     cursor: pointer;
-    transition: background-color var(--duration-normal, 0.4s) ease, border-color
-        var(--duration-normal, 0.4s) ease;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        border-color var(--duration-normal, 0.4s) ease;
 }
 
 .pageBtn:hover:not(:disabled) {

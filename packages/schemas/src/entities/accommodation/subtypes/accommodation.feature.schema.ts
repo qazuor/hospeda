@@ -2,9 +2,9 @@ import { z } from 'zod';
 import { BaseAuditFields } from '../../../common/audit.schema.js';
 import { AccommodationIdSchema, FeatureIdSchema } from '../../../common/id.schema.js';
 
+export type { Feature } from '../../feature/feature.schema.js';
 // Re-export the main FeatureSchema for convenience
 export { FeatureSchema } from '../../feature/feature.schema.js';
-export type { Feature } from '../../feature/feature.schema.js';
 
 /**
  * Accommodation-Feature association schema

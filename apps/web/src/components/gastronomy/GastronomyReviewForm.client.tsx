@@ -17,11 +17,11 @@
  * Hydration: caller MUST use `client:visible`.
  */
 
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import styles from './GastronomyReviewForm.module.css';
 
 const TITLE_MAX = 120;
@@ -384,10 +384,10 @@ export function GastronomyReviewForm({
                                             )}
                                         >
                                             {STAR_POSITIONS.map((star) => (
+                                                // biome-ignore lint/a11y/useSemanticElements: button+role=radio is the ARIA APG pattern for star ratings; <input type=radio> can't host the star glyph.
                                                 <button
                                                     key={star}
                                                     type="button"
-                                                    // biome-ignore lint/a11y/useSemanticElements: button+role=radio is the ARIA APG pattern for star ratings; <input type=radio> can't host the star glyph.
                                                     role="radio"
                                                     aria-checked={overall === star}
                                                     aria-label={`${star}`}

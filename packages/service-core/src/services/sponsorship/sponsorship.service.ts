@@ -10,8 +10,8 @@ import {
 } from '@repo/schemas';
 import { toSlug } from '@repo/utils';
 import { BaseCrudService } from '../../base/base.crud.service';
-import { ServiceError } from '../../types';
 import type { Actor, ServiceConfig, ServiceContext } from '../../types';
+import { ServiceError } from '../../types';
 import {
     checkCanAdminList,
     checkCanCount,

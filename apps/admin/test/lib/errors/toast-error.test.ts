@@ -8,7 +8,7 @@
  * - Multiple errors stack correctly
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { ApiError } from '../../../src/lib/errors/api-error';
 import {
     setToastFunction,
@@ -23,7 +23,7 @@ vi.mock('../../../src/lib/errors/error-reporter', () => ({
 }));
 
 describe('Toast Error Utility', () => {
-    let mockToast: ReturnType<typeof vi.fn>;
+    let mockToast: Mock;
     let toastCalls: Array<{
         title?: string;
         description?: string;

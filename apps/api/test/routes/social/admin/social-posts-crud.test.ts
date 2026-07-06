@@ -115,18 +115,24 @@ vi.mock('../../../../src/utils/actor', () => ({
 }));
 
 vi.mock('@repo/service-core', () => ({
-    SocialPostService: vi.fn(() => ({
-        getPostDetail: mockGetPostDetail,
-        listPosts: mockListPosts,
-        updatePost: mockUpdatePost,
-        getDashboard: mockGetDashboard
-    })),
-    SocialPublishLogService: vi.fn(() => ({
-        list: mockListPublishLogs
-    })),
-    SocialAuditLogService: vi.fn(() => ({
-        list: mockListAuditLogs
-    })),
+    SocialPostService: vi.fn(function () {
+        return {
+            getPostDetail: mockGetPostDetail,
+            listPosts: mockListPosts,
+            updatePost: mockUpdatePost,
+            getDashboard: mockGetDashboard
+        };
+    }),
+    SocialPublishLogService: vi.fn(function () {
+        return {
+            list: mockListPublishLogs
+        };
+    }),
+    SocialAuditLogService: vi.fn(function () {
+        return {
+            list: mockListAuditLogs
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         public code: string;
         public reason?: string;
@@ -166,8 +172,8 @@ vi.mock('../../../../src/utils/pagination', () => ({
 // ---------------------------------------------------------------------------
 
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
-import { ServiceError } from '@repo/service-core';
 import type { Actor } from '@repo/service-core';
+import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../src/utils/actor';
 

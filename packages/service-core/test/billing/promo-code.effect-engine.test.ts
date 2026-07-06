@@ -17,7 +17,7 @@
 
 import type { PromoEffect } from '@repo/schemas';
 import { PromoEffectKindEnum, ValueKindEnum } from '@repo/schemas';
-import { type MockInstance, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { calculatePromoCodeEffect } from '../../src/services/billing/promo-code/effect-reducer.js';
 
 // Mock @repo/db BEFORE any imports that use it.
@@ -56,9 +56,7 @@ let mapDbToPromoCode: (row: any) => unknown;
 
 beforeAll(async () => {
     const crudModule = await vi.importActual<{
-        mapDbToPromoCode: typeof import(
-            '../../src/services/billing/promo-code/promo-code.crud.js'
-        )['mapDbToPromoCode'];
+        mapDbToPromoCode: typeof import('../../src/services/billing/promo-code/promo-code.crud.js')['mapDbToPromoCode'];
     }>('../../src/services/billing/promo-code/promo-code.crud.js');
     mapDbToPromoCode = crudModule.mapDbToPromoCode;
 });
@@ -329,17 +327,17 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             });
             mockGetPromoCodeByCode.mockResolvedValue({ success: true, data: promoCode });
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({
-                        id: 'pc-1',
-                        usedCount: 0,
-                        maxUses: null,
-                        expiresAt: null
-                    });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({
+                    id: 'pc-1',
+                    usedCount: 0,
+                    maxUses: null,
+                    expiresAt: null
+                });
+                return fn(tx);
+            });
 
             // Act
             const result = await applyPromoCode('BIENVENIDO30', 'cust-1', 10000);
@@ -371,18 +369,18 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
 
             let capturedUpdateSetSpy: ReturnType<typeof vi.fn> | null = null;
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({
-                        id: 'pc-1',
-                        usedCount: 0,
-                        maxUses: null,
-                        expiresAt: null
-                    });
-                    capturedUpdateSetSpy = tx.updateSetSpy;
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({
+                    id: 'pc-1',
+                    usedCount: 0,
+                    maxUses: null,
+                    expiresAt: null
+                });
+                capturedUpdateSetSpy = tx.updateSetSpy;
+                return fn(tx);
+            });
 
             // Act
             const result = await applyPromoCode('BIENVENIDO30', 'cust-1', 10000, {
@@ -432,18 +430,18 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
 
             let capturedUpdateSetSpy: ReturnType<typeof vi.fn> | null = null;
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({
-                        id: 'pc-1',
-                        usedCount: 0,
-                        maxUses: null,
-                        expiresAt: null
-                    });
-                    capturedUpdateSetSpy = tx.updateSetSpy;
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({
+                    id: 'pc-1',
+                    usedCount: 0,
+                    maxUses: null,
+                    expiresAt: null
+                });
+                capturedUpdateSetSpy = tx.updateSetSpy;
+                return fn(tx);
+            });
 
             // Act
             const result = await applyPromoCode('LANZAMIENTO50', 'cust-1', 10000, {
@@ -486,18 +484,18 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
 
             let capturedUpdateSetSpy: ReturnType<typeof vi.fn> | null = null;
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({
-                        id: 'pc-1',
-                        usedCount: 0,
-                        maxUses: null,
-                        expiresAt: null
-                    });
-                    capturedUpdateSetSpy = tx.updateSetSpy;
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({
+                    id: 'pc-1',
+                    usedCount: 0,
+                    maxUses: null,
+                    expiresAt: null
+                });
+                capturedUpdateSetSpy = tx.updateSetSpy;
+                return fn(tx);
+            });
 
             // Act
             const result = await applyPromoCode('FOREVER100', 'cust-1', 10000, {
@@ -538,18 +536,18 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
 
             let capturedUpdateSetSpy: ReturnType<typeof vi.fn> | null = null;
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({
-                        id: 'pc-1',
-                        usedCount: 0,
-                        maxUses: null,
-                        expiresAt: null
-                    });
-                    capturedUpdateSetSpy = tx.updateSetSpy;
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({
+                    id: 'pc-1',
+                    usedCount: 0,
+                    maxUses: null,
+                    expiresAt: null
+                });
+                capturedUpdateSetSpy = tx.updateSetSpy;
+                return fn(tx);
+            });
 
             // Act — no subscriptionId
             const result = await applyPromoCode('LANZAMIENTO50', 'cust-1', 10000);
@@ -594,18 +592,18 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             // transaction (atomic with the redeem — S-1 fix).
             let capturedTxExecute: ReturnType<typeof vi.fn> | null = null;
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({
-                        id: 'pc-1',
-                        usedCount: 0,
-                        maxUses: null,
-                        expiresAt: null
-                    });
-                    capturedTxExecute = tx.execute;
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({
+                    id: 'pc-1',
+                    usedCount: 0,
+                    maxUses: null,
+                    expiresAt: null
+                });
+                capturedTxExecute = tx.execute;
+                return fn(tx);
+            });
 
             // Act
             const result = await applyPromoCode('HOSPEDA_FREE', 'cust-1', 5000, {
@@ -659,17 +657,17 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             const mockDbExecute = vi.fn().mockResolvedValue(undefined);
             mockGetDb.mockReturnValue({ execute: mockDbExecute });
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({
-                        id: 'pc-1',
-                        usedCount: 0,
-                        maxUses: null,
-                        expiresAt: null
-                    });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({
+                    id: 'pc-1',
+                    usedCount: 0,
+                    maxUses: null,
+                    expiresAt: null
+                });
+                return fn(tx);
+            });
 
             // Act — no subscriptionId
             const result = await applyPromoCode('HOSPEDA_FREE', 'cust-1', 5000);
@@ -703,17 +701,17 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             });
             mockGetPromoCodeByCode.mockResolvedValue({ success: true, data: promoCode });
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({
-                        id: 'pc-1',
-                        usedCount: 0,
-                        maxUses: null,
-                        expiresAt: null
-                    });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({
+                    id: 'pc-1',
+                    usedCount: 0,
+                    maxUses: null,
+                    expiresAt: null
+                });
+                return fn(tx);
+            });
 
             // Act
             const result = await applyPromoCode('FREEMONTH', 'cust-1', 0);
@@ -768,17 +766,17 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             });
             mockGetPromoCodeByCode.mockResolvedValue({ success: true, data: promoCode });
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({
-                        id: 'pc-1',
-                        usedCount: 0,
-                        maxUses: null,
-                        expiresAt: null
-                    });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({
+                    id: 'pc-1',
+                    usedCount: 0,
+                    maxUses: null,
+                    expiresAt: null
+                });
+                return fn(tx);
+            });
 
             // Act
             const result = await applyPromoCode('SUMMER60', 'cust-1', 0);
@@ -800,17 +798,17 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             });
             mockGetPromoCodeByCode.mockResolvedValue({ success: true, data: promoCode });
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({
-                        id: 'pc-1',
-                        usedCount: 0,
-                        maxUses: null,
-                        expiresAt: null
-                    });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({
+                    id: 'pc-1',
+                    usedCount: 0,
+                    maxUses: null,
+                    expiresAt: null
+                });
+                return fn(tx);
+            });
 
             // Act
             await applyPromoCode('FREEMONTH', 'cust-1', 0, { subscriptionId: 'sub-abc' });
@@ -1119,17 +1117,17 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             const mockDbExecute = vi.fn().mockResolvedValue(undefined);
             mockGetDb.mockReturnValue({ execute: mockDbExecute });
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({
-                        id: 'pc-1',
-                        usedCount: 0,
-                        maxUses: null,
-                        expiresAt: null
-                    });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({
+                    id: 'pc-1',
+                    usedCount: 0,
+                    maxUses: null,
+                    expiresAt: null
+                });
+                return fn(tx);
+            });
 
             return applyPromoCode('TEST', 'cust-1', 10000, {
                 subscriptionId: 'sub-1',
@@ -1255,17 +1253,17 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             });
             mockGetPromoCodeByCode.mockResolvedValue({ success: true, data: promoCode });
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({
-                        id: 'pc-1',
-                        usedCount: 0,
-                        maxUses: null,
-                        expiresAt: null
-                    });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({
+                    id: 'pc-1',
+                    usedCount: 0,
+                    maxUses: null,
+                    expiresAt: null
+                });
+                return fn(tx);
+            });
 
             const result = await applyPromoCode('HOSPEDA_FREE', 'cust-1', 5000, {
                 subscriptionId: 'sub-active',

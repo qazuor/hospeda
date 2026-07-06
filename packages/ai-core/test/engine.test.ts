@@ -30,10 +30,10 @@ import {
     type AiEngineEvent,
     AiEngineExhaustedError,
     AiFeatureDisabledError,
-    MAX_ATTEMPTS_PER_PROVIDER,
     createAiEngine,
     defaultProviderOrderStrategy,
-    isRetryableError
+    isRetryableError,
+    MAX_ATTEMPTS_PER_PROVIDER
 } from '../src/engine/index.js';
 import type { AiProvider } from '../src/providers/ai-provider.interface.js';
 import { StubProvider } from '../src/providers/index.js';
@@ -165,12 +165,18 @@ beforeEach(() => {
     // are active — preserving all existing test expectations.
     mockResolveConfig.mockResolvedValue({ providers: {}, features: {} });
     mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_ENABLED);
-    mockIsFeatureKillSwitched.mockImplementation((cfg: AiFeatureConfig) => !cfg.enabled);
-    mockGetProviderOrder.mockImplementation(
-        ({ featureConfig }: { featureConfig: AiFeatureConfig }) => ({
+    mockIsFeatureKillSwitched.mockImplementation(function (cfg: AiFeatureConfig) {
+        return !cfg.enabled;
+    });
+    mockGetProviderOrder.mockImplementation(function ({
+        featureConfig
+    }: {
+        featureConfig: AiFeatureConfig;
+    }) {
+        return {
             providers: [featureConfig.primaryProvider, ...featureConfig.fallbackChain]
-        })
-    );
+        };
+    });
 });
 
 // ---------------------------------------------------------------------------

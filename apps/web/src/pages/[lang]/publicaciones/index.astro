@@ -40,6 +40,7 @@ import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import TagChips from '@/components/TagChips.astro';
+import { getPostCategoryIcon } from '@repo/icons';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import {
     buildPostListingSummary,
@@ -289,16 +290,20 @@ const itemListEntries = cards.map((card) => ({
 }));
 
 /** Quick-filter chips: top post categories. Hrefs use lowercase slugs consistent
- * with the [category] route which normalises incoming slugs via resolvePostCategorySlug. */
+ * with the [category] route which normalises incoming slugs via resolvePostCategorySlug.
+ * BETA-113 (icon parity): each chip's icon is resolved via `@repo/icons`'
+ * `getPostCategoryIcon`, the same canonical post-category → icon mapping used
+ * elsewhere in the platform (no local mapping needed — every category slug
+ * below already exists in `POST_CATEGORY_VISUALS`). */
 const postCategoryChips = [
-    { label: t('blog.categories.culture',    'Cultura'),     href: buildUrl({ locale, path: '/publicaciones/categoria/culture/' }) },
-    { label: t('blog.categories.gastronomy', 'Gastronomía'), href: buildUrl({ locale, path: '/publicaciones/categoria/gastronomy/' }) },
-    { label: t('blog.categories.nature',     'Naturaleza'),  href: buildUrl({ locale, path: '/publicaciones/categoria/nature/' }) },
-    { label: t('blog.categories.tourism',    'Turismo'),     href: buildUrl({ locale, path: '/publicaciones/categoria/tourism/' }) },
-    { label: t('blog.categories.history',    'Historia'),    href: buildUrl({ locale, path: '/publicaciones/categoria/history/' }) },
-    { label: t('blog.categories.events',     'Eventos'),     href: buildUrl({ locale, path: '/publicaciones/categoria/events/' }) },
-    { label: t('blog.categories.carnival',   'Carnaval'),    href: buildUrl({ locale, path: '/publicaciones/categoria/carnival/' }) },
-    { label: t('blog.categories.tips',       'Consejos'),    href: buildUrl({ locale, path: '/publicaciones/categoria/tips/' }) }
+    { label: t('blog.categories.culture',    'Cultura'),     href: buildUrl({ locale, path: '/publicaciones/categoria/culture/' }),    icon: getPostCategoryIcon({ category: 'culture' }) },
+    { label: t('blog.categories.gastronomy', 'Gastronomía'), href: buildUrl({ locale, path: '/publicaciones/categoria/gastronomy/' }), icon: getPostCategoryIcon({ category: 'gastronomy' }) },
+    { label: t('blog.categories.nature',     'Naturaleza'),  href: buildUrl({ locale, path: '/publicaciones/categoria/nature/' }),     icon: getPostCategoryIcon({ category: 'nature' }) },
+    { label: t('blog.categories.tourism',    'Turismo'),     href: buildUrl({ locale, path: '/publicaciones/categoria/tourism/' }),    icon: getPostCategoryIcon({ category: 'tourism' }) },
+    { label: t('blog.categories.history',    'Historia'),    href: buildUrl({ locale, path: '/publicaciones/categoria/history/' }),    icon: getPostCategoryIcon({ category: 'history' }) },
+    { label: t('blog.categories.events',     'Eventos'),     href: buildUrl({ locale, path: '/publicaciones/categoria/events/' }),     icon: getPostCategoryIcon({ category: 'events' }) },
+    { label: t('blog.categories.carnival',   'Carnaval'),    href: buildUrl({ locale, path: '/publicaciones/categoria/carnival/' }),   icon: getPostCategoryIcon({ category: 'carnival' }) },
+    { label: t('blog.categories.tips',       'Consejos'),    href: buildUrl({ locale, path: '/publicaciones/categoria/tips/' }),       icon: getPostCategoryIcon({ category: 'tips' }) }
 ] as const;
 ---
 
@@ -309,6 +314,8 @@ const postCategoryChips = [
     canonicalPath={canonicalPath}
     showFilters={true}
     filterPosition="left"
+    totalCount={total}
+    filterSummary={filterSummary}
 >
     {/* RSS feed-discovery hints — one per supported locale (SPEC-157 REQ-6) */}
     <link
@@ -338,8 +345,6 @@ const postCategoryChips = [
         locale={locale}
         tagline={t('blog.tagline', 'Descubrí historias')}
         title={t('blog.title', 'Publicaciones')}
-        totalCount={total}
-        filterSummary={filterSummary}
     />
 
     <FilterSidebar

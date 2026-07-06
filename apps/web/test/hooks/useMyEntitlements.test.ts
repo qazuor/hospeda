@@ -4,9 +4,9 @@
  * Verifies fetching, caching, has()/limit() logic, error handling, and fail-closed behavior.
  */
 
-import { clearEntitlementsCache, useMyEntitlements } from '@/hooks/useMyEntitlements';
 import { renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { clearEntitlementsCache, useMyEntitlements } from '@/hooks/useMyEntitlements';
 
 // ---------------------------------------------------------------------------
 // Mocks

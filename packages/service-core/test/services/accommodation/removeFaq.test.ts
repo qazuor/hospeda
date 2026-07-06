@@ -70,9 +70,9 @@ describe('AccommodationService.removeFaq', () => {
             accommodationId: accommodation.id as any,
             faqId: getMockFaqId(faq.id) as any
         };
-        vi.spyOn(db, 'AccommodationFaqModel').mockImplementation(
-            () => faqModelMock as unknown as db.AccommodationFaqModel
-        );
+        vi.spyOn(db, 'AccommodationFaqModel').mockImplementation(function () {
+            return faqModelMock as unknown as db.AccommodationFaqModel;
+        });
     });
 
     it('should remove a FAQ successfully', async () => {

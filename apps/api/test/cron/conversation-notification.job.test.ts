@@ -16,8 +16,8 @@
  * @module test/cron/conversation-notification
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks
@@ -32,10 +32,12 @@ const { mockWithTransaction, mockFindDue, mockAdvanceSchedule, mockSendEmail } =
 });
 
 vi.mock('@repo/service-core', () => ({
-    NotificationScheduleService: vi.fn().mockImplementation(() => ({
-        findDue: mockFindDue,
-        advanceSchedule: mockAdvanceSchedule
-    }))
+    NotificationScheduleService: vi.fn().mockImplementation(function () {
+        return {
+            findDue: mockFindDue,
+            advanceSchedule: mockAdvanceSchedule
+        };
+    })
 }));
 
 vi.mock('@repo/email', () => ({
@@ -62,12 +64,16 @@ vi.mock('@repo/db', () => ({
     sql: vi.fn((strings: TemplateStringsArray) => ({ sql: strings.join('') })),
     conversations: { id: 'id', deletedAt: 'deletedAt' },
     messages: { conversationId: 'conversationId', createdAt: 'createdAt', body: 'body' },
-    AccommodationModel: vi.fn().mockImplementation(() => ({
-        findById: vi.fn().mockResolvedValue(null)
-    })),
-    UserModel: vi.fn().mockImplementation(() => ({
-        findById: vi.fn().mockResolvedValue(null)
-    }))
+    AccommodationModel: vi.fn().mockImplementation(function () {
+        return {
+            findById: vi.fn().mockResolvedValue(null)
+        };
+    }),
+    UserModel: vi.fn().mockImplementation(function () {
+        return {
+            findById: vi.fn().mockResolvedValue(null)
+        };
+    })
 }));
 
 vi.mock('drizzle-orm', () => ({
@@ -179,14 +185,14 @@ describe('Conversation Notification Cron Job', () => {
 
     describe('Advisory lock', () => {
         it('skips execution when advisory lock is not acquired', async () => {
-            mockWithTransaction.mockImplementation(
-                async (callback: (tx: unknown) => Promise<unknown>) => {
-                    const fakeTx = {
-                        execute: vi.fn().mockResolvedValue({ rows: [{ acquired: false }] })
-                    };
-                    return callback(fakeTx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                callback: (tx: unknown) => Promise<unknown>
+            ) {
+                const fakeTx = {
+                    execute: vi.fn().mockResolvedValue({ rows: [{ acquired: false }] })
+                };
+                return callback(fakeTx);
+            });
 
             const result = await conversationNotificationJob.handler(mockContext);
 

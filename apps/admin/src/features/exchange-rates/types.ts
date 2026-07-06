@@ -12,14 +12,14 @@ import { ExchangeRateSourceEnum, ExchangeRateTypeEnum, PriceCurrencyEnum } from 
 export type {
     ExchangeRate,
     ExchangeRateConfig,
-    ExchangeRateCreateInput,
-    ExchangeRateConfigUpdateInput
+    ExchangeRateConfigUpdateInput,
+    ExchangeRateCreateInput
 };
 
 /**
  * Re-export enums for convenience
  */
-export { ExchangeRateTypeEnum, ExchangeRateSourceEnum, PriceCurrencyEnum };
+export { ExchangeRateSourceEnum, ExchangeRateTypeEnum, PriceCurrencyEnum };
 
 /**
  * Filter interface for exchange rates list

@@ -1,6 +1,6 @@
-import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import { getEventCategoryColorScheme, getEventCategoryIcon } from '@repo/icons';
+import { useTranslations } from '@/hooks/use-translations';
 import type { Event } from '../schemas/events.schemas';
 
 /**

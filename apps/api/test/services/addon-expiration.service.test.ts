@@ -168,9 +168,9 @@ describe('AddonExpirationService', () => {
             removeAddonEntitlements: vi.fn().mockResolvedValue({ success: true, data: undefined })
         };
 
-        vi.mocked(AddonEntitlementService).mockImplementation(
-            () => mockEntitlementService as unknown as AddonEntitlementService
-        );
+        vi.mocked(AddonEntitlementService).mockImplementation(function () {
+            return mockEntitlementService as unknown as AddonEntitlementService;
+        });
 
         // Create service instance
         service = new AddonExpirationService(null);

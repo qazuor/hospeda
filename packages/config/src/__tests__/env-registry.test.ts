@@ -157,8 +157,30 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * reads exclusively from the vault. Landed ahead of the staging/prod
  * migration-and-verify steps (T-033/T-034/T-038/T-039) by explicit decision
  * — see docs/guides/environment-variables.md (248 - 4 = 244).
+ *
+ * 247 (2026-07-04, HOS-79 T-002): +3 vars that shared packages read directly
+ * via process.env and were never registered, so env:check:registry (schema-based)
+ * could not catch them: HOSPEDA_TAG_USER_QUOTA_PER_USER (service-core, features),
+ * HOSPEDA_DEPLOY_ENV (media, core), HOSPEDA_QZPAY_TEST_CONTROL_ENABLED (billing,
+ * testing). All three are added to the API's KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA
+ * (read by packages, not by ApiEnvBaseSchema); 244 + 3 = 247.
+ *
+ * 250 (2026-07-04, HOS-79 T-007): +3 more real gaps surfaced by the new
+ * env:check:usage scanner (the very tool this spec builds), not previously
+ * known: CLOUDFLARE_ZONE_ID and CLOUDFLARE_API_TOKEN (secret) read by the web
+ * ISR revalidation endpoint (apps: ['web'], integrations), and
+ * HOSPEDA_SEED_SUPER_ADMIN_EMAIL read by the seed super-admin loader (apps:
+ * ['seed'], database — mirrors the already-registered _PASSWORD). The two
+ * CLOUDFLARE_* vars are added to the WEB app's KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA
+ * (read via process.env in the revalidate route, not the web Zod schema);
+ * 247 + 3 = 250.
+ *
+ * 249 (2026-07-06, HOS-67 R-6): -1. HOSPEDA_MAKE_INBOUND_KEY (social-automation)
+ * removed alongside the dead Make.com inbound callback routes it gated — those
+ * routes were superseded by the synchronous "Webhook Response" model and only
+ * that env var read them; 250 - 1 = 249.
  */
-const EXPECTED_VAR_COUNT = 244;
+const EXPECTED_VAR_COUNT = 249;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -196,6 +218,58 @@ describe('ENV_REGISTRY', () => {
 
             // Assert
             expect(count).toBe(EXPECTED_VAR_COUNT);
+        });
+    });
+
+    // HOS-79 T-002: three vars were read directly via process.env by shared
+    // packages (service-core, media, billing) and never registered, so
+    // env:check:registry (schema-based) could not catch them. Register them
+    // with metadata matching their real usage sites.
+    describe('HOS-79 previously-missing vars', () => {
+        const byName = (name: string) => REGISTRY.find((entry) => entry.name === name);
+
+        it('registers HOSPEDA_TAG_USER_QUOTA_PER_USER (service-core tag quota)', () => {
+            const entry = byName('HOSPEDA_TAG_USER_QUOTA_PER_USER');
+            expect(entry, 'HOSPEDA_TAG_USER_QUOTA_PER_USER missing from registry').toBeDefined();
+            expect(entry?.type).toBe('number');
+            expect(entry?.apps).toContain('api');
+        });
+
+        it('registers HOSPEDA_DEPLOY_ENV (media environment resolution)', () => {
+            const entry = byName('HOSPEDA_DEPLOY_ENV');
+            expect(entry, 'HOSPEDA_DEPLOY_ENV missing from registry').toBeDefined();
+            expect(entry?.type).toBe('enum');
+            expect(entry?.enumValues).toEqual(['dev', 'test', 'preview', 'prod']);
+        });
+
+        it('registers HOSPEDA_QZPAY_TEST_CONTROL_ENABLED (billing test-control gate)', () => {
+            const entry = byName('HOSPEDA_QZPAY_TEST_CONTROL_ENABLED');
+            expect(entry, 'HOSPEDA_QZPAY_TEST_CONTROL_ENABLED missing from registry').toBeDefined();
+            expect(entry?.type).toBe('boolean');
+            expect(entry?.apps).toContain('api');
+        });
+
+        // HOS-79 T-007: three MORE gaps the new env:check:usage scanner found
+        // (real process.env reads with no registry entry), registered per the
+        // owner's decision to close them rather than defer.
+        it('registers CLOUDFLARE_ZONE_ID (web ISR revalidation)', () => {
+            const entry = byName('CLOUDFLARE_ZONE_ID');
+            expect(entry, 'CLOUDFLARE_ZONE_ID missing from registry').toBeDefined();
+            expect(entry?.apps).toContain('web');
+            expect(entry?.requiredScope).toBe('production');
+        });
+
+        it('registers CLOUDFLARE_API_TOKEN (web ISR revalidation, secret)', () => {
+            const entry = byName('CLOUDFLARE_API_TOKEN');
+            expect(entry, 'CLOUDFLARE_API_TOKEN missing from registry').toBeDefined();
+            expect(entry?.apps).toContain('web');
+            expect(entry?.secret).toBe(true);
+        });
+
+        it('registers HOSPEDA_SEED_SUPER_ADMIN_EMAIL (seed super-admin loader)', () => {
+            const entry = byName('HOSPEDA_SEED_SUPER_ADMIN_EMAIL');
+            expect(entry, 'HOSPEDA_SEED_SUPER_ADMIN_EMAIL missing from registry').toBeDefined();
+            expect(entry?.apps).toContain('seed');
         });
     });
 

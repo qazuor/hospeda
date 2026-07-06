@@ -12,14 +12,14 @@
  * Stores ISO `YYYY-MM-DD` strings (local-day, no TZ shift).
  */
 
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { DateRange } from 'react-day-picker';
+import { DayPicker, getDefaultClassNames } from 'react-day-picker';
+import { enUS as enLocale, es as esLocale, ptBR as ptLocale } from 'react-day-picker/locale';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { DayPicker, getDefaultClassNames } from 'react-day-picker';
-import type { DateRange } from 'react-day-picker';
-import { enUS as enLocale, es as esLocale, ptBR as ptLocale } from 'react-day-picker/locale';
-import { createPortal } from 'react-dom';
 import 'react-day-picker/style.css';
 import { CalendarDotsIcon } from '@repo/icons';
 import styles from './DateRangeFilter.module.css';
@@ -64,6 +64,23 @@ export interface DateRangeFilterConfig {
      * dates here don't filter the result set").
      */
     readonly description?: string;
+    /**
+     * Optional preset pills rendered above the picker(s) in `mode='bounds'`
+     * (mirrors `GeoRadiusFilterConfig.radiusPresets` — see
+     * `GeoRadiusFilter.tsx`). Each preset carries its already-resolved
+     * `{ from, to }` bounds (ISO `YYYY-MM-DD`, empty string = unbounded)
+     * rather than a compute function: `DateRangeFilterConfig` flows through
+     * an Astro `client:*` prop boundary where functions do not survive
+     * serialization, so the caller resolves every preset's bounds once at
+     * build time (see `buildEventsFilterGroups` in
+     * `@/lib/filters/events-filter-groups`).
+     */
+    readonly presets?: readonly {
+        readonly value: string;
+        readonly label: string;
+        readonly from: string;
+        readonly to: string;
+    }[];
 }
 
 interface DateRangeFilterProps {
@@ -313,6 +330,30 @@ export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFi
     const today = new Date();
     const beforeToday = config.allowPastDates ? undefined : { before: today };
 
+    // ----- Range mode hooks (called unconditionally so hook order stays
+    // stable across renders; unused when `mode === 'bounds'`) -------------
+    const [isOpen, setIsOpen] = useState(false);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const popoverRef = useRef<HTMLDivElement>(null);
+    const pos = usePopoverPosition(isOpen, triggerRef);
+    useDismiss(isOpen, () => setIsOpen(false), triggerRef, popoverRef);
+    const classNames = useCalendarClassNames();
+    const calendarLocale = CALENDAR_LOCALE_MAP[locale] ?? esLocale;
+
+    const handleSelect = useCallback(
+        (next: DateRange | undefined) => {
+            onChange({
+                from: next?.from ? toIsoDay(next.from) : '',
+                to: next?.to ? toIsoDay(next.to) : ''
+            });
+        },
+        [onChange]
+    );
+
+    const handleClear = useCallback(() => {
+        onChange({ from: '', to: '' });
+    }, [onChange]);
+
     // ----- Bounds mode: two independent triggers + popovers ---------------
     if (mode === 'bounds') {
         const fromPickerDisabled = (() => {
@@ -334,9 +375,34 @@ export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFi
         const toPlaceholder = config.checkOutPlaceholder ?? t('ui.filter.dateRange.to', 'Hasta');
         return (
             <>
+                {config.presets && config.presets.length > 0 && (
+                    // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups the date preset toggle buttons; a real <fieldset> would inherit user-agent border/padding/margin that fight this row layout
+                    <div
+                        className={styles.presetRow}
+                        role="group"
+                        aria-label={config.label}
+                    >
+                        {config.presets.map((preset) => {
+                            const isActive = value.from === preset.from && value.to === preset.to;
+                            return (
+                                <button
+                                    key={preset.value}
+                                    type="button"
+                                    aria-pressed={isActive}
+                                    className={`${styles.presetChip} ${
+                                        isActive ? styles.presetChipActive : ''
+                                    }`}
+                                    onClick={() => onChange({ from: preset.from, to: preset.to })}
+                                >
+                                    {preset.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
                 <div className={styles.boundsRoot}>
                     <SingleBoundPicker
-                        label={`${config.label} desde`}
+                        label={`${config.label} ${t('ui.filter.dateRange.from', 'Desde').toLowerCase()}`}
                         placeholder={fromPlaceholder}
                         selected={fromDate}
                         onSelect={(date) =>
@@ -350,11 +416,12 @@ export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFi
                         defaultMonth={fromDate ?? toDate ?? today}
                         clearLabel={t(
                             'ui.filter.dateRange.clearFrom',
-                            `Limpiar "${fromPlaceholder}"`
+                            `Limpiar "${fromPlaceholder}"`,
+                            { value: fromPlaceholder }
                         )}
                     />
                     <SingleBoundPicker
-                        label={`${config.label} hasta`}
+                        label={`${config.label} ${t('ui.filter.dateRange.to', 'Hasta').toLowerCase()}`}
                         placeholder={toPlaceholder}
                         selected={toDate}
                         onSelect={(date) =>
@@ -366,7 +433,9 @@ export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFi
                         locale={locale}
                         disabledMatcher={toPickerDisabled}
                         defaultMonth={toDate ?? fromDate ?? today}
-                        clearLabel={t('ui.filter.dateRange.clearTo', `Limpiar "${toPlaceholder}"`)}
+                        clearLabel={t('ui.filter.dateRange.clearTo', `Limpiar "${toPlaceholder}"`, {
+                            value: toPlaceholder
+                        })}
                     />
                 </div>
                 {config.description && <p className={styles.description}>{config.description}</p>}
@@ -375,30 +444,8 @@ export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFi
     }
 
     // ----- Range mode (default): single trigger with DayPicker range -----
-    const [isOpen, setIsOpen] = useState(false);
-    const triggerRef = useRef<HTMLButtonElement>(null);
-    const popoverRef = useRef<HTMLDivElement>(null);
-    const pos = usePopoverPosition(isOpen, triggerRef);
-    useDismiss(isOpen, () => setIsOpen(false), triggerRef, popoverRef);
-    const classNames = useCalendarClassNames();
-    const calendarLocale = CALENDAR_LOCALE_MAP[locale] ?? esLocale;
-
     const range: DateRange | undefined =
         fromDate || toDate ? { from: fromDate, to: toDate } : undefined;
-
-    const handleSelect = useCallback(
-        (next: DateRange | undefined) => {
-            onChange({
-                from: next?.from ? toIsoDay(next.from) : '',
-                to: next?.to ? toIsoDay(next.to) : ''
-            });
-        },
-        [onChange]
-    );
-
-    const handleClear = useCallback(() => {
-        onChange({ from: '', to: '' });
-    }, [onChange]);
 
     const triggerLabel = (() => {
         if (fromDate && toDate) return `${fmtShort(fromDate)} – ${fmtShort(toDate)}`;

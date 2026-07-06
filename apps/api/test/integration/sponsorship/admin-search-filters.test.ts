@@ -15,6 +15,7 @@
  */
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import type { Mock } from 'vitest';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
@@ -24,7 +25,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
  * initialized, so we cannot reference a `const adminListMock` from inside
  * the factory.  Instead, we store the mock on `mockRef` and read it in tests.
  */
-const mockRef: { adminList: ReturnType<typeof vi.fn> } = {
+const mockRef: { adminList: Mock } = {
     adminList: vi.fn()
 };
 
@@ -32,9 +33,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        SponsorshipService: vi.fn().mockImplementation(() => ({
-            adminList: (...args: unknown[]) => mockRef.adminList(...args)
-        })),
+        SponsorshipService: vi.fn().mockImplementation(function () {
+            return {
+                adminList: (...args: unknown[]) => mockRef.adminList(...args)
+            };
+        }),
         ServiceError: class ServiceError extends Error {
             constructor(
                 public readonly code: string,

@@ -28,17 +28,17 @@
  * @see SPEC-155 T-038
  */
 
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import type { ResolverContext } from '@/lib/dashboard-sources';
 import {
-    DASHBOARD_QUERY_KEY_ROOT,
-    DASHBOARD_STALE_TIME_MS,
     _clearRegistryForTesting,
     buildDashboardQueryKey,
+    DASHBOARD_QUERY_KEY_ROOT,
+    DASHBOARD_STALE_TIME_MS,
     isSourceRegistered,
     registerDataSource,
     resolveDataSource
 } from '@/lib/dashboard-sources';
-import type { ResolverContext } from '@/lib/dashboard-sources';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 // ============================================================================
 // CONSTANTS
@@ -143,20 +143,19 @@ describe('T-038 HOST scope isolation — userId presence', () => {
         expect(options.queryKey[USER_ID_KEY_INDEX]).toBe(userId);
     });
 
-    it.each(HOST_SOURCE_IDS)(
-        '%s — queryKey structure: [root, sourceId, role, scope, userId]',
-        (sourceId) => {
-            const userId = 'usr_struct_check';
-            const ctx = makeHostCtx(userId);
-            const { options } = resolveDataSource(sourceId, ctx);
+    it.each(
+        HOST_SOURCE_IDS
+    )('%s — queryKey structure: [root, sourceId, role, scope, userId]', (sourceId) => {
+        const userId = 'usr_struct_check';
+        const ctx = makeHostCtx(userId);
+        const { options } = resolveDataSource(sourceId, ctx);
 
-            expect(options.queryKey[0]).toBe(DASHBOARD_QUERY_KEY_ROOT);
-            expect(options.queryKey[1]).toBe(sourceId);
-            expect(options.queryKey[2]).toBe('HOST');
-            expect(options.queryKey[3]).toBe('own');
-            expect(options.queryKey[4]).toBe(userId);
-        }
-    );
+        expect(options.queryKey[0]).toBe(DASHBOARD_QUERY_KEY_ROOT);
+        expect(options.queryKey[1]).toBe(sourceId);
+        expect(options.queryKey[2]).toBe('HOST');
+        expect(options.queryKey[3]).toBe('own');
+        expect(options.queryKey[4]).toBe(userId);
+    });
 });
 
 // ============================================================================
@@ -252,14 +251,13 @@ describe('T-038 HOST scope isolation — contrast: all-scope NEVER includes user
 // ============================================================================
 
 describe('T-038 HOST scope isolation — key builder consistency', () => {
-    it.each(HOST_SOURCE_IDS)(
-        '%s — resolver queryKey matches buildDashboardQueryKey output exactly',
-        (sourceId) => {
-            const ctx = makeHostCtx('usr_consistency_check');
-            const expected = buildDashboardQueryKey(sourceId, ctx);
-            const { options } = resolveDataSource(sourceId, ctx);
+    it.each(
+        HOST_SOURCE_IDS
+    )('%s — resolver queryKey matches buildDashboardQueryKey output exactly', (sourceId) => {
+        const ctx = makeHostCtx('usr_consistency_check');
+        const expected = buildDashboardQueryKey(sourceId, ctx);
+        const { options } = resolveDataSource(sourceId, ctx);
 
-            expect(options.queryKey).toEqual(expected);
-        }
-    );
+        expect(options.queryKey).toEqual(expected);
+    });
 });

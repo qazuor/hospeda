@@ -48,13 +48,17 @@ const mockFindLastCronEntry = vi.fn();
 const mockDeleteOlderThan = vi.fn();
 
 vi.mock('@repo/db', () => ({
-    RevalidationConfigModel: vi.fn().mockImplementation(() => ({
-        findAllEnabled: mockFindAllEnabled
-    })),
-    RevalidationLogModel: vi.fn().mockImplementation(() => ({
-        findLastCronEntry: mockFindLastCronEntry,
-        deleteOlderThan: mockDeleteOlderThan
-    }))
+    RevalidationConfigModel: vi.fn().mockImplementation(function () {
+        return {
+            findAllEnabled: mockFindAllEnabled
+        };
+    }),
+    RevalidationLogModel: vi.fn().mockImplementation(function () {
+        return {
+            findLastCronEntry: mockFindLastCronEntry,
+            deleteOlderThan: mockDeleteOlderThan
+        };
+    })
 }));
 
 import { getRevalidationService } from '@repo/service-core';

@@ -237,6 +237,7 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 	title={t('destinations.title', 'Destinos')}
 	description={t('destinations.description', 'Explorá los destinos turísticos del Litoral Entrerriano.')}
 	showFilters={false}
+	totalCount={total}
 >
 	<ItemListJsonLd
 		slot="head-extra"
@@ -252,7 +253,6 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 		locale={locale}
 		tagline={t('destinations.tagline', 'Explorá la región')}
 		title={t('destinations.title', 'Destinos')}
-		totalCount={total}
 	/>
 
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="destinos" />}
@@ -463,15 +463,23 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 		display: none;
 	}
 
+	/* BETA-113 canonical quick-filter chip: same shape/size/tokens as
+	 * `tag-chips__chip` (TagChips.astro) and the interactive
+	 * `AccommodationTypeBadge` anchor variant — neutral --core-card surface at
+	 * rest, solid --brand-accent on hover/active. The "Ver más" disclosure
+	 * toggle shares the same pill shape/size for row consistency, but keeps
+	 * its own neutral dashed-border treatment below (it is not a filter chip,
+	 * just a "show more" control). */
 	.dest-attractions-filter__badge,
 	.dest-attractions-filter__more-toggle {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.375rem;
 		font-family: var(--font-sans);
-		font-size: 0.75rem;
-		line-height: 1;
-		padding: 0.3125rem 0.625rem;
+		font-size: var(--text-body-sm);
+		font-weight: 500;
+		line-height: 1.4;
+		padding: 6px 16px;
 		border-radius: var(--radius-pill);
 		text-decoration: none;
 		transition:
@@ -481,20 +489,22 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 	}
 
 	.dest-attractions-filter__badge {
-		background-color: var(--surface-warm);
+		background-color: var(--core-card);
 		color: var(--core-foreground);
-		border: 1px solid transparent;
+		border: 1px solid var(--border, var(--brand-primary-a25));
 	}
 
 	.dest-attractions-filter__badge:hover {
-		background-color: var(--brand-accent-a12);
-		color: var(--brand-accent);
+		background-color: var(--brand-accent);
+		color: var(--accent-foreground);
+		border-color: var(--brand-accent);
 	}
 
 	.dest-attractions-filter__badge--active,
 	.dest-attractions-filter__badge--active:hover {
 		background-color: var(--brand-accent);
 		color: var(--accent-foreground);
+		border-color: var(--brand-accent);
 		font-weight: 500;
 	}
 

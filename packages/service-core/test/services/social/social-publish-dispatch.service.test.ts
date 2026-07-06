@@ -47,6 +47,7 @@ import type {
     SocialPostFooterModel,
     SocialPostMediaModel,
     SocialPostModel,
+    SocialPostTargetMediaModel,
     SocialPostTargetModel,
     SocialPublishLogModel,
     SocialSettingModel
@@ -66,8 +67,8 @@ import type {
     RearmRecurrenceResult
 } from '../../../src/services/social/social-publish-dispatch.service';
 import { SocialPublishDispatchService } from '../../../src/services/social/social-publish-dispatch.service';
-import { createModelMock } from '../../utils/modelMockFactory';
 import type { StandardModelMock } from '../../utils/modelMockFactory';
+import { createModelMock } from '../../utils/modelMockFactory';
 
 // ---------------------------------------------------------------------------
 // UUID fixtures
@@ -82,6 +83,10 @@ const ASSET_ID_1 = '00000000-0000-4000-8000-000000000005';
 const ASSET_ID_2 = '00000000-0000-4000-8000-000000000006';
 const WEBHOOK_URL = 'https://hook.make.com/abc123';
 const MAKE_API_KEY = 'test-make-api-key';
+const MEDIA_ROW_ID_1 = '00000000-0000-4000-8000-000000000010';
+const MEDIA_ROW_ID_2 = '00000000-0000-4000-8000-000000000011';
+const MEDIA_ROW_ID_3 = '00000000-0000-4000-8000-000000000012';
+const ASSET_ID_3 = '00000000-0000-4000-8000-000000000013';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -162,13 +167,34 @@ function buildMediaRow(assetId: string, position: number): Record<string, unknow
 /**
  * Builds a minimal asset row with a cloudinaryUrl.
  */
-function buildAsset(id: string, cloudinaryUrl: string): Record<string, unknown> {
+function buildAsset(
+    id: string,
+    cloudinaryUrl: string,
+    mediaType = 'IMAGE'
+): Record<string, unknown> {
     return {
         id,
         cloudinaryUrl,
         cloudinaryPublicId: `public-id-${id}`,
-        mediaType: 'IMAGE',
+        mediaType,
         source: 'CLOUDINARY',
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+        updatedAt: new Date('2024-01-01T00:00:00Z')
+    };
+}
+
+/**
+ * Builds a minimal `social_post_target_media` link row (HOS-65 T-011/T-019).
+ */
+function buildTargetMediaLinkRow(
+    socialPostMediaId: string,
+    position: number
+): Record<string, unknown> {
+    return {
+        id: `link-${position}`,
+        socialPostTargetId: TARGET_ID,
+        socialPostMediaId,
+        position,
         createdAt: new Date('2024-01-01T00:00:00Z'),
         updatedAt: new Date('2024-01-01T00:00:00Z')
     };
@@ -239,6 +265,7 @@ type Mocks = {
     publishLogModel: StandardModelMock;
     settingModel: StandardModelMock;
     auditLogMock: SocialAuditLogService;
+    postTargetMediaModel: StandardModelMock;
 };
 
 // ---------------------------------------------------------------------------
@@ -254,6 +281,11 @@ function buildService(): { service: SocialPublishDispatchService; mocks: Mocks }
     const assetModel = createModelMock();
     const publishLogModel = createModelMock();
     const settingModel = createModelMock();
+    const postTargetMediaModel = createModelMock();
+    // Default: zero target-scoped link rows, so every pre-existing test (which
+    // never mocks this model) transparently falls back to the post-level
+    // social_post_media query — same as pre-HOS-65 T-019 behavior.
+    postTargetMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
 
     const auditLogMock = {
         log: vi.fn().mockResolvedValue({ logged: true }),
@@ -270,7 +302,8 @@ function buildService(): { service: SocialPublishDispatchService; mocks: Mocks }
         assetModel as unknown as SocialAssetModel,
         publishLogModel as unknown as SocialPublishLogModel,
         settingModel as unknown as SocialSettingModel,
-        auditLogMock
+        auditLogMock,
+        postTargetMediaModel as unknown as SocialPostTargetMediaModel
     );
 
     return {
@@ -284,7 +317,8 @@ function buildService(): { service: SocialPublishDispatchService; mocks: Mocks }
             assetModel,
             publishLogModel,
             settingModel,
-            auditLogMock
+            auditLogMock,
+            postTargetMediaModel
         }
     };
 }
@@ -834,6 +868,469 @@ describe('SocialPublishDispatchService.buildMakePayload — SPEC-254 T-044', () 
 
             // Assert
             expect(payload.mediaUrls).toEqual([]);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Per-target, format-aware media resolution via link table (HOS-65 T-019)
+    // -------------------------------------------------------------------------
+
+    describe('per-target media resolution via social_post_target_media (HOS-65 T-019)', () => {
+        /**
+         * Wires postMediaModel.findOne + assetModel.findOne so a target-scoped
+         * link row resolves through media-row -> asset, exactly as buildMakePayload
+         * must join them.
+         */
+        function wireTargetScopedJoin(
+            entries: Array<{ mediaRowId: string; assetId: string; url: string; mediaType?: string }>
+        ) {
+            mocks.postMediaModel.findOne.mockImplementation(
+                async (where: Record<string, unknown>) => {
+                    const match = entries.find((e) => e.mediaRowId === where.id);
+                    return match ? { id: match.mediaRowId, assetId: match.assetId } : null;
+                }
+            );
+            mocks.assetModel.findOne.mockImplementation(async (where: Record<string, unknown>) => {
+                const match = entries.find((e) => e.assetId === where.id);
+                return match
+                    ? buildAsset(match.assetId, match.url, match.mediaType ?? 'IMAGE')
+                    : null;
+            });
+        }
+
+        it('resolves a single URL for STORY via target-scoped link rows (first by link position)', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postTargetMediaModel.findAll.mockResolvedValue({
+                items: [
+                    buildTargetMediaLinkRow(MEDIA_ROW_ID_2, 1),
+                    buildTargetMediaLinkRow(MEDIA_ROW_ID_1, 0)
+                ],
+                total: 2
+            });
+            wireTargetScopedJoin([
+                {
+                    mediaRowId: MEDIA_ROW_ID_1,
+                    assetId: ASSET_ID_1,
+                    url: 'https://res.cloudinary.com/demo/first.jpg'
+                },
+                {
+                    mediaRowId: MEDIA_ROW_ID_2,
+                    assetId: ASSET_ID_2,
+                    url: 'https://res.cloudinary.com/demo/second.jpg'
+                }
+            ]);
+
+            // Act
+            const input = buildMinimalInput({ publishFormat: 'STORY' });
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.mediaUrls).toEqual(['https://res.cloudinary.com/demo/first.jpg']);
+            expect(mocks.postTargetMediaModel.findAll).toHaveBeenCalledWith(
+                { socialPostTargetId: TARGET_ID },
+                expect.objectContaining({ sortBy: 'position', sortOrder: 'asc' })
+            );
+        });
+
+        it('resolves a single VIDEO url for VIDEO_POST via target-scoped link rows (skips images)', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postTargetMediaModel.findAll.mockResolvedValue({
+                items: [
+                    buildTargetMediaLinkRow(MEDIA_ROW_ID_1, 0),
+                    buildTargetMediaLinkRow(MEDIA_ROW_ID_2, 1)
+                ],
+                total: 2
+            });
+            wireTargetScopedJoin([
+                {
+                    mediaRowId: MEDIA_ROW_ID_1,
+                    assetId: ASSET_ID_1,
+                    url: 'https://res.cloudinary.com/demo/image.jpg',
+                    mediaType: 'IMAGE'
+                },
+                {
+                    mediaRowId: MEDIA_ROW_ID_2,
+                    assetId: ASSET_ID_2,
+                    url: 'https://res.cloudinary.com/demo/video.mp4',
+                    mediaType: 'VIDEO'
+                }
+            ]);
+
+            // Act
+            const input = buildMinimalInput({ publishFormat: 'VIDEO_POST' });
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.mediaUrls).toEqual(['https://res.cloudinary.com/demo/video.mp4']);
+        });
+
+        it('resolves all URLs ordered by link position for CAROUSEL via target-scoped link rows', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postTargetMediaModel.findAll.mockResolvedValue({
+                items: [
+                    buildTargetMediaLinkRow(MEDIA_ROW_ID_3, 2),
+                    buildTargetMediaLinkRow(MEDIA_ROW_ID_1, 0),
+                    buildTargetMediaLinkRow(MEDIA_ROW_ID_2, 1)
+                ],
+                total: 3
+            });
+            wireTargetScopedJoin([
+                {
+                    mediaRowId: MEDIA_ROW_ID_1,
+                    assetId: ASSET_ID_1,
+                    url: 'https://res.cloudinary.com/demo/a.jpg'
+                },
+                {
+                    mediaRowId: MEDIA_ROW_ID_2,
+                    assetId: ASSET_ID_2,
+                    url: 'https://res.cloudinary.com/demo/b.jpg'
+                },
+                {
+                    mediaRowId: MEDIA_ROW_ID_3,
+                    assetId: ASSET_ID_3,
+                    url: 'https://res.cloudinary.com/demo/c.jpg'
+                }
+            ]);
+
+            // Act
+            const input = buildMinimalInput({ publishFormat: 'CAROUSEL' });
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.mediaUrls).toEqual([
+                'https://res.cloudinary.com/demo/a.jpg',
+                'https://res.cloudinary.com/demo/b.jpg',
+                'https://res.cloudinary.com/demo/c.jpg'
+            ]);
+        });
+
+        it('resolves zero URLs for TEXT_POST even when target-scoped link rows exist', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postTargetMediaModel.findAll.mockResolvedValue({
+                items: [buildTargetMediaLinkRow(MEDIA_ROW_ID_1, 0)],
+                total: 1
+            });
+            wireTargetScopedJoin([
+                {
+                    mediaRowId: MEDIA_ROW_ID_1,
+                    assetId: ASSET_ID_1,
+                    url: 'https://res.cloudinary.com/demo/ignored.jpg'
+                }
+            ]);
+
+            // Act
+            const input = buildMinimalInput({ publishFormat: 'TEXT_POST' });
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.mediaUrls).toEqual([]);
+        });
+
+        it('falls back to the post-level social_post_media query when the target has zero link rows', async () => {
+            // Arrange — postTargetMediaModel.findAll defaults to empty (buildService())
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({
+                items: [buildMediaRow(ASSET_ID_1, 0), buildMediaRow(ASSET_ID_2, 1)],
+                total: 2
+            });
+            mocks.assetModel.findOne
+                .mockResolvedValueOnce(
+                    buildAsset(ASSET_ID_1, 'https://res.cloudinary.com/demo/post-a.jpg')
+                )
+                .mockResolvedValueOnce(
+                    buildAsset(ASSET_ID_2, 'https://res.cloudinary.com/demo/post-b.jpg')
+                );
+
+            // Act
+            const input = buildMinimalInput({ publishFormat: 'CAROUSEL' });
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(mocks.postTargetMediaModel.findAll).toHaveBeenCalledWith(
+                { socialPostTargetId: TARGET_ID },
+                expect.objectContaining({ sortBy: 'position', sortOrder: 'asc' })
+            );
+            expect(payload.mediaUrls).toEqual([
+                'https://res.cloudinary.com/demo/post-a.jpg',
+                'https://res.cloudinary.com/demo/post-b.jpg'
+            ]);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // HOS-65 FIX 6 — post-level fallback gated on POST-level (not per-target)
+    // link rows
+    // -------------------------------------------------------------------------
+    //
+    // Uses STATEFUL mock implementations (keyed by the actual `where` filter
+    // passed to each call) rather than a single static `mockResolvedValue`,
+    // because a static mock cannot distinguish "target A's own link rows" from
+    // "target B's own link rows" from "does media row X have ANY link
+    // anywhere" — and the whole point of these tests is to prove the
+    // link-row-count query is actually consulted per distinct filter.
+
+    describe('HOS-65 FIX 6 — post-level fallback gated on POST-level link rows', () => {
+        it('does NOT leak a sibling target’s media into a co-target that itself has zero link rows, once the post is migrated', async () => {
+            // Arrange — the post has exactly ONE `social_post_media` row
+            // ("media-0"), already linked to target A. Co-target B is a valid,
+            // media-capable FEED_POST target that simply has no assets of its
+            // own — a legitimate per-target config, not an error state.
+            const OWN_MEDIA_ROW_ID = 'media-0';
+            const TARGET_A_URL = 'https://res.cloudinary.com/demo/target-a-own.jpg';
+
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({
+                items: [buildMediaRow(ASSET_ID_1, 0)],
+                total: 1
+            });
+            mocks.postMediaModel.findOne.mockImplementation(
+                async (where: Record<string, unknown>) =>
+                    where.id === OWN_MEDIA_ROW_ID ? buildMediaRow(ASSET_ID_1, 0) : null
+            );
+            mocks.assetModel.findOne.mockResolvedValue(buildAsset(ASSET_ID_1, TARGET_A_URL));
+
+            mocks.postTargetMediaModel.findAll.mockImplementation(
+                async (where: Record<string, unknown>) => {
+                    if (where.socialPostTargetId === TARGET_ID) {
+                        // Target A has its OWN link row to the post's only media row.
+                        return {
+                            items: [buildTargetMediaLinkRow(OWN_MEDIA_ROW_ID, 0)],
+                            total: 1
+                        };
+                    }
+                    if (where.socialPostTargetId === TARGET_ID_2) {
+                        // Co-target B has NO link rows of its own.
+                        return { items: [], total: 0 };
+                    }
+                    if (where.socialPostMediaId === OWN_MEDIA_ROW_ID) {
+                        // Post-level migration check: media row "media-0" DOES
+                        // have a link row (target A's) — the post IS migrated.
+                        return {
+                            items: [buildTargetMediaLinkRow(OWN_MEDIA_ROW_ID, 0)],
+                            total: 1
+                        };
+                    }
+                    return { items: [], total: 0 };
+                }
+            );
+
+            const post = buildPost();
+            const targetA = buildTarget({ id: TARGET_ID, publishFormat: 'FEED_POST' });
+            const targetB = buildTarget({ id: TARGET_ID_2, publishFormat: 'FEED_POST' });
+
+            // Act
+            const { payload: payloadA } = await service.buildMakePayload({ target: targetA, post });
+            const { payload: payloadB } = await service.buildMakePayload({ target: targetB, post });
+
+            // Assert — target A resolves its own media via its own link row.
+            expect(payloadA.mediaUrls).toEqual([TARGET_A_URL]);
+
+            // Assert — co-target B publishes [] — NOT target A's media. Before
+            // the fix, B's zero own link rows fired the post-level fallback
+            // and leaked A's media into B's payload.
+            expect(payloadB.mediaUrls).toEqual([]);
+            expect(payloadB.mediaUrls).not.toContain(TARGET_A_URL);
+        });
+
+        it('still falls back to the post-level social_post_media pool for a genuinely legacy post (zero link rows anywhere)', async () => {
+            // Arrange — NO target, anywhere, has EVER linked to any of the
+            // post's media rows, whether queried by this target's own rows
+            // (`socialPostTargetId`) or the post-level migration check
+            // (`socialPostMediaId`) — a truly pre-HOS-65-G-3 (legacy) post.
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({
+                items: [buildMediaRow(ASSET_ID_1, 0), buildMediaRow(ASSET_ID_2, 1)],
+                total: 2
+            });
+            mocks.assetModel.findOne.mockImplementation(async (where: Record<string, unknown>) => {
+                if (where.id === ASSET_ID_1) {
+                    return buildAsset(ASSET_ID_1, 'https://res.cloudinary.com/demo/legacy-a.jpg');
+                }
+                if (where.id === ASSET_ID_2) {
+                    return buildAsset(ASSET_ID_2, 'https://res.cloudinary.com/demo/legacy-b.jpg');
+                }
+                return null;
+            });
+            mocks.postTargetMediaModel.findAll.mockImplementation(async () => ({
+                items: [],
+                total: 0
+            }));
+
+            const input = buildMinimalInput({ publishFormat: 'CAROUSEL' });
+
+            // Act
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert — the post-level migration check was actually consulted
+            // (not skipped) and correctly found no link rows anywhere.
+            expect(mocks.postTargetMediaModel.findAll).toHaveBeenCalledWith(
+                { socialPostMediaId: 'media-0' },
+                expect.objectContaining({ pageSize: 1 })
+            );
+
+            // Assert — T-019 legacy fallback behavior is preserved.
+            expect(payload.mediaUrls).toEqual([
+                'https://res.cloudinary.com/demo/legacy-a.jpg',
+                'https://res.cloudinary.com/demo/legacy-b.jpg'
+            ]);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Per-target caption/hashtags/footer overrides (HOS-65 T-020)
+    // -------------------------------------------------------------------------
+
+    describe('per-target caption/hashtags/footer overrides (HOS-65 T-020)', () => {
+        it('uses all 3 overrides when set on the target', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+
+            const input = buildMinimalInput(
+                {
+                    captionOverride: 'Target-specific caption',
+                    hashtagsOverrideText: '#target #override',
+                    footerOverride: 'Target-specific footer'
+                },
+                { finalCaption: 'Post caption', finalHashtagsText: '#post', footerId: FOOTER_ID }
+            );
+
+            // Act
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.captionFinal).toBe('Target-specific caption');
+            expect(payload.hashtagsFinal).toBe('#target #override');
+            expect(payload.footerFinal).toBe('Target-specific footer');
+            // The footer row lookup is skipped entirely when an override is set
+            expect(mocks.footerModel.findOne).not.toHaveBeenCalled();
+        });
+
+        it('inherits post-level values when all 3 overrides are null', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            mocks.footerModel.findOne.mockResolvedValue({
+                id: FOOTER_ID,
+                content: 'Inherited footer content',
+                active: true
+            });
+
+            const input = buildMinimalInput(
+                { captionOverride: null, hashtagsOverrideText: null, footerOverride: null },
+                {
+                    finalCaption: 'Post caption',
+                    finalHashtagsText: '#post #hashtags',
+                    footerId: FOOTER_ID
+                }
+            );
+
+            // Act
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.captionFinal).toBe('Post caption');
+            expect(payload.hashtagsFinal).toBe('#post #hashtags');
+            expect(payload.footerFinal).toBe('Inherited footer content');
+            expect(mocks.footerModel.findOne).toHaveBeenCalledWith({ id: FOOTER_ID });
+        });
+
+        it('applies a partial override (caption only) while hashtags/footer inherit', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            mocks.footerModel.findOne.mockResolvedValue({
+                id: FOOTER_ID,
+                content: 'Inherited footer content',
+                active: true
+            });
+
+            const input = buildMinimalInput(
+                {
+                    captionOverride: 'Only caption is overridden',
+                    hashtagsOverrideText: null,
+                    footerOverride: null
+                },
+                {
+                    finalCaption: 'Post caption (should NOT be used)',
+                    finalHashtagsText: '#inherited',
+                    footerId: FOOTER_ID
+                }
+            );
+
+            // Act
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.captionFinal).toBe('Only caption is overridden');
+            expect(payload.hashtagsFinal).toBe('#inherited');
+            expect(payload.footerFinal).toBe('Inherited footer content');
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // AC-4: override inheritance across sibling targets (HOS-65 T-025)
+    // -------------------------------------------------------------------------
+
+    describe('AC-4: override inheritance across sibling targets (HOS-65 T-025)', () => {
+        it('resolves each sibling target independently — overrides for one, inheritance for the other — with no cross-contamination', async () => {
+            // Arrange — two sibling targets on the SAME post: one carries all 3
+            // overrides, the other carries all 3 as null (inherit).
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            mocks.footerModel.findOne.mockResolvedValue({
+                id: FOOTER_ID,
+                content: 'Inherited footer content',
+                active: true
+            });
+
+            const post = buildPost({
+                finalCaption: 'Post-level caption',
+                finalHashtagsText: '#post #level',
+                footerId: FOOTER_ID
+            });
+
+            const overriddenTarget = buildTarget({
+                id: TARGET_ID,
+                captionOverride: 'Overridden caption',
+                hashtagsOverrideText: '#overridden',
+                footerOverride: 'Overridden footer'
+            });
+            const inheritingTarget = buildTarget({
+                id: TARGET_ID_2,
+                captionOverride: null,
+                hashtagsOverrideText: null,
+                footerOverride: null
+            });
+
+            // Act — build both payloads via the SAME service instance
+            const { payload: overriddenPayload } = await service.buildMakePayload({
+                target: overriddenTarget,
+                post
+            });
+            const { payload: inheritingPayload } = await service.buildMakePayload({
+                target: inheritingTarget,
+                post
+            });
+
+            // Assert — the overridden target used its own values
+            expect(overriddenPayload.captionFinal).toBe('Overridden caption');
+            expect(overriddenPayload.hashtagsFinal).toBe('#overridden');
+            expect(overriddenPayload.footerFinal).toBe('Overridden footer');
+
+            // Assert — the inheriting sibling used the parent post's values —
+            // NEVER the overridden sibling's values (no cross-contamination
+            // between the two buildMakePayload calls)
+            expect(inheritingPayload.captionFinal).toBe('Post-level caption');
+            expect(inheritingPayload.hashtagsFinal).toBe('#post #level');
+            expect(inheritingPayload.footerFinal).toBe('Inherited footer content');
+            expect(inheritingPayload.captionFinal).not.toBe(overriddenPayload.captionFinal);
+            expect(inheritingPayload.hashtagsFinal).not.toBe(overriddenPayload.hashtagsFinal);
+            expect(inheritingPayload.footerFinal).not.toBe(overriddenPayload.footerFinal);
         });
     });
 
@@ -1570,6 +2067,131 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                     socialPostTargetId: TARGET_ID
                 })
             );
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // AC-3: cross-target isolation (HOS-65 T-022)
+    // -------------------------------------------------------------------------
+
+    describe('AC-3: cross-target isolation (HOS-65 T-022)', () => {
+        it('leaves each sibling target independently correct after one PUBLISHES and the other FAILS (no cross-contamination)', async () => {
+            // Arrange — two sibling targets on the same post. TARGET_ID dispatches
+            // successfully; TARGET_ID_2 is already at the exhaustion threshold and
+            // fails on this attempt.
+            const successBody = {
+                status: 'SUCCESS',
+                externalPostId: 'ext-id-published',
+                externalPostUrl: 'https://instagram.com/p/published'
+            };
+            let fetchCallCount = 0;
+            vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+                fetchCallCount += 1;
+                return fetchCallCount === 1
+                    ? buildFetchResponse(200, true, successBody)
+                    : buildFetchResponse(503, false);
+            });
+
+            const targetA = buildTarget({ id: TARGET_ID, retryCount: 0 });
+            const targetB = buildTarget({ id: TARGET_ID_2, retryCount: 3 });
+            const post = buildPost();
+
+            // cascadePostStatus (targetA's success path) needs postModel.findOne +
+            // targetModel.findAll. checkAndCascadePostFailure (targetB's exhaustion
+            // path) also calls targetModel.findAll — mock each dispatch's call in order.
+            mocks.postModel.findOne.mockResolvedValue(
+                buildPost({ status: SocialPostStatusEnum.PUBLISHED })
+            );
+            mocks.targetModel.findAll
+                .mockResolvedValueOnce({
+                    items: [
+                        {
+                            id: TARGET_ID,
+                            socialPostId: POST_ID,
+                            status: SocialPostStatusEnum.PUBLISHED
+                        }
+                    ],
+                    total: 1
+                })
+                .mockResolvedValueOnce({
+                    items: [
+                        {
+                            id: TARGET_ID,
+                            socialPostId: POST_ID,
+                            status: SocialPostStatusEnum.PUBLISHED
+                        },
+                        {
+                            id: TARGET_ID_2,
+                            socialPostId: POST_ID,
+                            status: SocialPostStatusEnum.FAILED
+                        }
+                    ],
+                    total: 2
+                });
+
+            // Act — dispatch each target independently (never concurrently)
+            const resultA = await service.dispatchTarget({
+                target: targetA,
+                post,
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+            const resultB = await service.dispatchTarget({
+                target: targetB,
+                post,
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+
+            // Assert — outcomes
+            expect(resultA.outcome).toBe('published');
+            expect(resultB.outcome).toBe('exhausted');
+
+            // Assert — TARGET_ID was updated to PUBLISHED and NEVER to FAILED
+            const updateCalls = (mocks.targetModel.update as ReturnType<typeof vi.fn>).mock.calls;
+            const targetAUpdates = updateCalls.filter(
+                (call) => (call[0] as Record<string, unknown>).id === TARGET_ID
+            );
+            expect(
+                targetAUpdates.some(
+                    (call) =>
+                        (call[1] as Record<string, unknown>).status ===
+                        SocialPostStatusEnum.PUBLISHED
+                )
+            ).toBe(true);
+            expect(
+                targetAUpdates.some(
+                    (call) =>
+                        (call[1] as Record<string, unknown>).status === SocialPostStatusEnum.FAILED
+                )
+            ).toBe(false);
+
+            // Assert — TARGET_ID_2 was updated to FAILED and NEVER to PUBLISHED
+            const targetBUpdates = updateCalls.filter(
+                (call) => (call[0] as Record<string, unknown>).id === TARGET_ID_2
+            );
+            expect(
+                targetBUpdates.some(
+                    (call) =>
+                        (call[1] as Record<string, unknown>).status === SocialPostStatusEnum.FAILED
+                )
+            ).toBe(true);
+            expect(
+                targetBUpdates.some(
+                    (call) =>
+                        (call[1] as Record<string, unknown>).status ===
+                        SocialPostStatusEnum.PUBLISHED
+                )
+            ).toBe(false);
+
+            // Assert — TARGET_ID's publishedAt/externalPostId never leaked into TARGET_ID_2's updates
+            expect(
+                targetBUpdates.some(
+                    (call) =>
+                        (call[1] as Record<string, unknown>).externalPostId ===
+                        successBody.externalPostId
+                )
+            ).toBe(false);
         });
     });
 
@@ -2523,618 +3145,6 @@ describe('SocialPublishDispatchService.rearmRecurrence — SPEC-254 T-046', () =
             expect(result.nextRunAt).toEqual(expectedWednesday);
             // Verify it is indeed a Wednesday (UTC day = 3)
             expect(result.nextRunAt?.getUTCDay()).toBe(3);
-        });
-    });
-});
-
-// ---------------------------------------------------------------------------
-// Additional imports needed for T-047 tests
-// ---------------------------------------------------------------------------
-
-import { ServiceErrorCode } from '@repo/schemas';
-import { SocialAuditEvent as AuditEvent } from '../../../src/services/social/social-audit-log.service';
-import type {
-    HandleMakeCallbackClaimResult,
-    HandleMakeCallbackResultResult
-} from '../../../src/services/social/social-publish-dispatch.service';
-import { ServiceError } from '../../../src/types';
-
-// ---------------------------------------------------------------------------
-// handleMakeCallbackClaim — SPEC-254 T-047
-// ---------------------------------------------------------------------------
-
-describe('SocialPublishDispatchService.handleMakeCallbackClaim — SPEC-254 T-047', () => {
-    let service: SocialPublishDispatchService;
-    let mocks: Mocks;
-
-    const MAKE_RUN_ID = 'make-run-abc-123';
-
-    beforeEach(() => {
-        vi.clearAllMocks();
-        const built = buildService();
-        service = built.service;
-        mocks = built.mocks;
-
-        mocks.targetModel.update.mockResolvedValue({ rowCount: 1 });
-    });
-
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
-    // -------------------------------------------------------------------------
-    // not found
-    // -------------------------------------------------------------------------
-
-    describe('not found', () => {
-        it('throws NOT_FOUND when targetId does not exist', async () => {
-            // Arrange
-            mocks.targetModel.findOne.mockResolvedValue(null);
-
-            // Act + Assert
-            await expect(
-                service.handleMakeCallbackClaim({ targetId: TARGET_ID, makeRunId: MAKE_RUN_ID })
-            ).rejects.toThrow(ServiceError);
-
-            await expect(
-                service.handleMakeCallbackClaim({ targetId: TARGET_ID, makeRunId: MAKE_RUN_ID })
-            ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
-        });
-    });
-
-    // -------------------------------------------------------------------------
-    // already published
-    // -------------------------------------------------------------------------
-
-    describe('already published (409)', () => {
-        it('throws ALREADY_EXISTS with reason ALREADY_PUBLISHED when target is PUBLISHED', async () => {
-            // Arrange
-            mocks.targetModel.findOne.mockResolvedValue(
-                buildTarget({ status: SocialPostStatusEnum.PUBLISHED })
-            );
-
-            // Act + Assert
-            await expect(
-                service.handleMakeCallbackClaim({ targetId: TARGET_ID, makeRunId: MAKE_RUN_ID })
-            ).rejects.toMatchObject({
-                code: ServiceErrorCode.ALREADY_EXISTS,
-                reason: 'ALREADY_PUBLISHED',
-                message: 'Target already published'
-            });
-        });
-
-        it('does NOT update the target when already PUBLISHED', async () => {
-            // Arrange
-            mocks.targetModel.findOne.mockResolvedValue(
-                buildTarget({ status: SocialPostStatusEnum.PUBLISHED })
-            );
-
-            // Act
-            await expect(
-                service.handleMakeCallbackClaim({ targetId: TARGET_ID, makeRunId: MAKE_RUN_ID })
-            ).rejects.toBeInstanceOf(ServiceError);
-
-            // Assert
-            expect(mocks.targetModel.update).not.toHaveBeenCalled();
-        });
-    });
-
-    // -------------------------------------------------------------------------
-    // happy path
-    // -------------------------------------------------------------------------
-
-    describe('happy path — target moves to PUBLISHING', () => {
-        it('returns { targetId, status: PUBLISHING } when target is APPROVED', async () => {
-            // Arrange
-            mocks.targetModel.findOne.mockResolvedValue(
-                buildTarget({ status: SocialPostStatusEnum.APPROVED })
-            );
-
-            // Act
-            const result: HandleMakeCallbackClaimResult = await service.handleMakeCallbackClaim({
-                targetId: TARGET_ID,
-                makeRunId: MAKE_RUN_ID
-            });
-
-            // Assert
-            expect(result.targetId).toBe(TARGET_ID);
-            expect(result.status).toBe('PUBLISHING');
-        });
-
-        it('updates target status to PUBLISHING and sets makeLastRunId', async () => {
-            // Arrange
-            mocks.targetModel.findOne.mockResolvedValue(
-                buildTarget({ status: SocialPostStatusEnum.APPROVED })
-            );
-
-            // Act
-            await service.handleMakeCallbackClaim({
-                targetId: TARGET_ID,
-                makeRunId: MAKE_RUN_ID
-            });
-
-            // Assert
-            expect(mocks.targetModel.update).toHaveBeenCalledWith(
-                { id: TARGET_ID },
-                { status: SocialPostStatusEnum.PUBLISHING, makeLastRunId: MAKE_RUN_ID }
-            );
-        });
-
-        it('allows claim when target is in APPROVED state', async () => {
-            // Arrange
-            mocks.targetModel.findOne.mockResolvedValue(
-                buildTarget({ status: SocialPostStatusEnum.APPROVED })
-            );
-
-            // Act + Assert — should not throw
-            await expect(
-                service.handleMakeCallbackClaim({ targetId: TARGET_ID, makeRunId: MAKE_RUN_ID })
-            ).resolves.toMatchObject({ status: 'PUBLISHING' });
-        });
-
-        it('allows claim when target is in PUBLISHING state (re-claim after crash)', async () => {
-            // Arrange
-            mocks.targetModel.findOne.mockResolvedValue(
-                buildTarget({ status: SocialPostStatusEnum.PUBLISHING })
-            );
-
-            // Act + Assert — PUBLISHING is NOT PUBLISHED so no 409
-            await expect(
-                service.handleMakeCallbackClaim({ targetId: TARGET_ID, makeRunId: MAKE_RUN_ID })
-            ).resolves.toMatchObject({ status: 'PUBLISHING' });
-        });
-    });
-});
-
-// ---------------------------------------------------------------------------
-// handleMakeCallbackResult — SPEC-254 T-047
-// ---------------------------------------------------------------------------
-
-describe('SocialPublishDispatchService.handleMakeCallbackResult — SPEC-254 T-047', () => {
-    let service: SocialPublishDispatchService;
-    let mocks: Mocks;
-
-    const MAKE_RUN_ID = 'make-run-xyz-999';
-    const EXTERNAL_POST_ID = 'ig-post-abc123';
-    const EXTERNAL_POST_URL = 'https://instagram.com/p/abc123';
-
-    beforeEach(() => {
-        vi.clearAllMocks();
-        const built = buildService();
-        service = built.service;
-        mocks = built.mocks;
-
-        mocks.targetModel.update.mockResolvedValue({ rowCount: 1 });
-        mocks.postModel.update.mockResolvedValue({ rowCount: 1 });
-        mocks.publishLogModel.create.mockResolvedValue({ id: 'log-id' });
-        // Default post for cascadePostStatus reload
-        mocks.postModel.findOne.mockResolvedValue(
-            buildPost({ recurrenceType: SocialRecurrenceTypeEnum.ONCE })
-        );
-    });
-
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
-    // -------------------------------------------------------------------------
-    // Validation
-    // -------------------------------------------------------------------------
-
-    describe('invalid status → VALIDATION_ERROR', () => {
-        it('throws VALIDATION_ERROR when status is not SUCCESS or FAILED', async () => {
-            // Arrange
-            mocks.targetModel.findOne.mockResolvedValue(
-                buildTarget({ status: SocialPostStatusEnum.PUBLISHING })
-            );
-
-            // Act + Assert
-            await expect(
-                service.handleMakeCallbackResult({
-                    targetId: TARGET_ID,
-                    // @ts-expect-error — intentionally passing invalid value
-                    status: 'UNKNOWN'
-                })
-            ).rejects.toMatchObject({ code: ServiceErrorCode.VALIDATION_ERROR });
-        });
-
-        it('validates status before loading the target (early exit)', async () => {
-            // Arrange — no mock needed since validation fires first
-
-            // Act + Assert
-            await expect(
-                service.handleMakeCallbackResult({
-                    targetId: TARGET_ID,
-                    // @ts-expect-error — intentionally passing invalid value
-                    status: 'RETRYING'
-                })
-            ).rejects.toBeInstanceOf(ServiceError);
-        });
-    });
-
-    // -------------------------------------------------------------------------
-    // Not found
-    // -------------------------------------------------------------------------
-
-    describe('not found → NOT_FOUND', () => {
-        it('throws NOT_FOUND when targetId does not exist (SUCCESS path)', async () => {
-            // Arrange
-            mocks.targetModel.findOne.mockResolvedValue(null);
-
-            // Act + Assert
-            await expect(
-                service.handleMakeCallbackResult({
-                    targetId: TARGET_ID,
-                    status: 'SUCCESS'
-                })
-            ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
-        });
-
-        it('throws NOT_FOUND when targetId does not exist (FAILED path)', async () => {
-            // Arrange
-            mocks.targetModel.findOne.mockResolvedValue(null);
-
-            // Act + Assert
-            await expect(
-                service.handleMakeCallbackResult({
-                    targetId: TARGET_ID,
-                    status: 'FAILED'
-                })
-            ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
-        });
-    });
-
-    // -------------------------------------------------------------------------
-    // SUCCESS path
-    // -------------------------------------------------------------------------
-
-    describe('SUCCESS path', () => {
-        beforeEach(() => {
-            // Default: one target PUBLISHED (all terminal after this update)
-            mocks.targetModel.findOne.mockResolvedValue(
-                buildTarget({ status: SocialPostStatusEnum.PUBLISHING, retryCount: 0 })
-            );
-            // cascadePostStatus uses targetModel.findAll
-            mocks.targetModel.findAll.mockResolvedValue({
-                items: [buildTarget({ status: SocialPostStatusEnum.PUBLISHED })],
-                total: 1
-            });
-        });
-
-        it('returns { targetId, status: PUBLISHED } on SUCCESS', async () => {
-            // Arrange
-            const result: HandleMakeCallbackResultResult = await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'SUCCESS',
-                externalPostId: EXTERNAL_POST_ID,
-                externalPostUrl: EXTERNAL_POST_URL,
-                makeRunId: MAKE_RUN_ID
-            });
-
-            // Assert
-            expect(result.targetId).toBe(TARGET_ID);
-            expect(result.status).toBe('PUBLISHED');
-        });
-
-        it('updates target to PUBLISHED with publishedAt and external identifiers', async () => {
-            // Act
-            await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'SUCCESS',
-                externalPostId: EXTERNAL_POST_ID,
-                externalPostUrl: EXTERNAL_POST_URL,
-                makeRunId: MAKE_RUN_ID
-            });
-
-            // Assert
-            expect(mocks.targetModel.update).toHaveBeenCalledWith(
-                { id: TARGET_ID },
-                expect.objectContaining({
-                    status: SocialPostStatusEnum.PUBLISHED,
-                    publishedAt: expect.any(Date),
-                    externalPostId: EXTERNAL_POST_ID,
-                    externalPostUrl: EXTERNAL_POST_URL,
-                    makeLastRunId: MAKE_RUN_ID
-                })
-            );
-        });
-
-        it('inserts publish_log with status SUCCESS', async () => {
-            // Act
-            await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'SUCCESS',
-                externalPostId: EXTERNAL_POST_ID,
-                externalPostUrl: EXTERNAL_POST_URL,
-                makeRunId: MAKE_RUN_ID
-            });
-
-            // Assert
-            expect(mocks.publishLogModel.create).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    status: SocialPublishResultStatusEnum.SUCCESS,
-                    socialPostId: POST_ID,
-                    socialPostTargetId: TARGET_ID,
-                    externalPostId: EXTERNAL_POST_ID,
-                    externalPostUrl: EXTERNAL_POST_URL,
-                    makeRunId: MAKE_RUN_ID,
-                    message: 'Published via Make'
-                })
-            );
-        });
-
-        it('logs audit TARGET_PUBLISHED with correct metadata', async () => {
-            // Act
-            await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'SUCCESS',
-                externalPostId: EXTERNAL_POST_ID,
-                externalPostUrl: EXTERNAL_POST_URL
-            });
-
-            // Assert
-            expect(mocks.auditLogMock.log).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    eventType: AuditEvent.TARGET_PUBLISHED,
-                    entityType: 'social_post_target',
-                    entityId: TARGET_ID,
-                    metadata: expect.objectContaining({
-                        postId: POST_ID,
-                        externalPostId: EXTERNAL_POST_ID
-                    })
-                })
-            );
-        });
-
-        it('calls cascadePostStatus after TARGET_PUBLISHED', async () => {
-            // Arrange — spy on cascadePostStatus
-            const cascadeSpy = vi.spyOn(service, 'cascadePostStatus');
-            cascadeSpy.mockResolvedValue({ outcome: 'post_published', nextRunAt: null });
-
-            // Act
-            await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'SUCCESS'
-            });
-
-            // Assert
-            expect(cascadeSpy).toHaveBeenCalledWith({ postId: POST_ID });
-        });
-    });
-
-    // -------------------------------------------------------------------------
-    // FAILED path — retry branch (newRetryCount < MAX_RETRY_COUNT)
-    // -------------------------------------------------------------------------
-
-    describe('FAILED path — retry (newRetryCount < 3 after increment)', () => {
-        beforeEach(() => {
-            // Target with retryCount=1 → after increment newRetryCount=2 < 3 → retry
-            mocks.targetModel.findOne.mockResolvedValue(
-                buildTarget({ status: SocialPostStatusEnum.PUBLISHING, retryCount: 1 })
-            );
-        });
-
-        it('returns { status: APPROVED } when newRetryCount < MAX_RETRY_COUNT', async () => {
-            // Act
-            const result: HandleMakeCallbackResultResult = await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'FAILED',
-                errorMessage: 'Platform rate limit'
-            });
-
-            // Assert
-            expect(result.status).toBe('APPROVED');
-            expect(result.targetId).toBe(TARGET_ID);
-        });
-
-        it('resets target status to APPROVED with incremented retryCount', async () => {
-            // Act
-            await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'FAILED',
-                errorMessage: 'Platform rate limit'
-            });
-
-            // Assert
-            expect(mocks.targetModel.update).toHaveBeenCalledWith(
-                { id: TARGET_ID },
-                expect.objectContaining({
-                    status: SocialPostStatusEnum.APPROVED,
-                    retryCount: 2,
-                    lastErrorMessage: 'Platform rate limit'
-                })
-            );
-        });
-
-        it('inserts publish_log with status FAILED on retry', async () => {
-            // Act
-            await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'FAILED',
-                errorMessage: 'Platform rate limit'
-            });
-
-            // Assert
-            expect(mocks.publishLogModel.create).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    status: SocialPublishResultStatusEnum.FAILED,
-                    socialPostId: POST_ID,
-                    socialPostTargetId: TARGET_ID,
-                    message: 'Platform rate limit'
-                })
-            );
-        });
-
-        it('logs audit TARGET_PUBLISH_FAILED on retry', async () => {
-            // Act
-            await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'FAILED',
-                errorMessage: 'Platform rate limit'
-            });
-
-            // Assert
-            expect(mocks.auditLogMock.log).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    eventType: AuditEvent.TARGET_PUBLISH_FAILED,
-                    entityType: 'social_post_target',
-                    entityId: TARGET_ID
-                })
-            );
-        });
-
-        it('does NOT call cascadePostStatus on retry (target is non-terminal)', async () => {
-            // Arrange
-            const cascadeSpy = vi.spyOn(service, 'cascadePostStatus');
-            cascadeSpy.mockResolvedValue({ outcome: 'not_all_terminal' });
-
-            // Act
-            await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'FAILED',
-                errorMessage: 'Platform rate limit'
-            });
-
-            // Assert
-            expect(cascadeSpy).not.toHaveBeenCalled();
-        });
-
-        it('also retries when retryCount=0 (first failure: newRetryCount=1 < 3)', async () => {
-            // Arrange — retryCount=0 → newRetryCount=1
-            mocks.targetModel.findOne.mockResolvedValue(
-                buildTarget({ status: SocialPostStatusEnum.PUBLISHING, retryCount: 0 })
-            );
-
-            // Act
-            const result = await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'FAILED'
-            });
-
-            // Assert
-            expect(result.status).toBe('APPROVED');
-            expect(mocks.targetModel.update).toHaveBeenCalledWith(
-                { id: TARGET_ID },
-                expect.objectContaining({ status: SocialPostStatusEnum.APPROVED, retryCount: 1 })
-            );
-        });
-    });
-
-    // -------------------------------------------------------------------------
-    // FAILED path — exhaustion (newRetryCount >= MAX_RETRY_COUNT)
-    // -------------------------------------------------------------------------
-
-    describe('FAILED path — exhaustion (newRetryCount >= 3)', () => {
-        beforeEach(() => {
-            // retryCount=2 → after increment newRetryCount=3 >= 3 → exhaustion
-            mocks.targetModel.findOne.mockResolvedValue(
-                buildTarget({ status: SocialPostStatusEnum.PUBLISHING, retryCount: 2 })
-            );
-            // All siblings terminal so cascade finalizes post
-            mocks.targetModel.findAll.mockResolvedValue({
-                items: [buildTarget({ status: SocialPostStatusEnum.FAILED })],
-                total: 1
-            });
-        });
-
-        it('returns { status: FAILED } when newRetryCount reaches MAX_RETRY_COUNT', async () => {
-            // Act
-            const result: HandleMakeCallbackResultResult = await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'FAILED',
-                errorMessage: 'Permanent platform error'
-            });
-
-            // Assert
-            expect(result.status).toBe('FAILED');
-        });
-
-        it('sets target to FAILED with incremented retryCount (=3)', async () => {
-            // Act
-            await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'FAILED',
-                errorMessage: 'Permanent platform error'
-            });
-
-            // Assert
-            expect(mocks.targetModel.update).toHaveBeenCalledWith(
-                { id: TARGET_ID },
-                expect.objectContaining({
-                    status: SocialPostStatusEnum.FAILED,
-                    retryCount: 3,
-                    lastErrorMessage: 'Permanent platform error'
-                })
-            );
-        });
-
-        it('inserts publish_log FAILED on exhaustion', async () => {
-            // Act
-            await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'FAILED',
-                errorMessage: 'Permanent platform error'
-            });
-
-            // Assert
-            expect(mocks.publishLogModel.create).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    status: SocialPublishResultStatusEnum.FAILED,
-                    socialPostId: POST_ID,
-                    socialPostTargetId: TARGET_ID
-                })
-            );
-        });
-
-        it('logs audit TARGET_PUBLISH_FAILED on exhaustion', async () => {
-            // Act
-            await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'FAILED',
-                errorMessage: 'Permanent platform error'
-            });
-
-            // Assert
-            expect(mocks.auditLogMock.log).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    eventType: AuditEvent.TARGET_PUBLISH_FAILED,
-                    entityType: 'social_post_target',
-                    entityId: TARGET_ID,
-                    metadata: expect.objectContaining({ retryCount: 3 })
-                })
-            );
-        });
-
-        it('calls cascadePostStatus on exhaustion (target is terminal)', async () => {
-            // Arrange
-            const cascadeSpy = vi.spyOn(service, 'cascadePostStatus');
-            cascadeSpy.mockResolvedValue({ outcome: 'post_failed' });
-
-            // Act
-            await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'FAILED',
-                errorMessage: 'Permanent platform error'
-            });
-
-            // Assert
-            expect(cascadeSpy).toHaveBeenCalledWith({ postId: POST_ID });
-        });
-
-        it('boundary: retryCount=1 → newRetryCount=2 is still retry (not exhaustion)', async () => {
-            // Arrange
-            mocks.targetModel.findOne.mockResolvedValue(
-                buildTarget({ status: SocialPostStatusEnum.PUBLISHING, retryCount: 1 })
-            );
-
-            // Act
-            const result = await service.handleMakeCallbackResult({
-                targetId: TARGET_ID,
-                status: 'FAILED'
-            });
-
-            // Assert — still retrying (newRetryCount=2 < 3)
-            expect(result.status).toBe('APPROVED');
         });
     });
 });

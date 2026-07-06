@@ -33,11 +33,13 @@ vi.mock('../../../src/utils/route-factory', () => ({
 vi.mock('../../../src/utils/actor', () => ({ getActorFromContext: () => mockActor }));
 
 vi.mock('@repo/service-core', () => ({
-    CronRunService: vi.fn(() => ({
-        listRuns: mockListRuns,
-        getById: mockGetById,
-        getSummary: mockGetSummary
-    })),
+    CronRunService: vi.fn(function () {
+        return {
+            listRuns: mockListRuns,
+            getById: mockGetById,
+            getSummary: mockGetSummary
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,

@@ -45,12 +45,16 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        AccommodationService: vi.fn().mockImplementation(() => ({
-            search: mockSearch
-        })),
-        SearchHistoryService: vi.fn().mockImplementation(() => ({
-            record: vi.fn().mockResolvedValue(undefined)
-        })),
+        AccommodationService: vi.fn().mockImplementation(function () {
+            return {
+                search: mockSearch
+            };
+        }),
+        SearchHistoryService: vi.fn().mockImplementation(function () {
+            return {
+                record: vi.fn().mockResolvedValue(undefined)
+            };
+        }),
         ServiceError: class ServiceError extends Error {
             public readonly code: string;
             constructor(code: string, message: string) {

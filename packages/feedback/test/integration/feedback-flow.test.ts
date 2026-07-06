@@ -10,15 +10,15 @@ import * as exports from '../../src/index';
 
 import {
     APP_SOURCE_IDS,
+    collectEnvironmentData,
     FEEDBACK_CONFIG,
     FEEDBACK_STRINGS,
-    REPORT_TYPES,
-    REPORT_TYPE_IDS,
-    SEVERITY_IDS,
-    SEVERITY_LEVELS,
-    collectEnvironmentData,
     feedbackEnvironmentSchema,
     parseFeedbackParams,
+    REPORT_TYPE_IDS,
+    REPORT_TYPES,
+    SEVERITY_IDS,
+    SEVERITY_LEVELS,
     serializeFeedbackParams
 } from '../../src/index';
 

@@ -49,11 +49,11 @@
  * @see apps/admin/src/config/ia/schema.ts
  */
 
+import { ArrowRightIcon, CalendarIcon, CheckIcon, ClockIcon } from '@repo/icons';
+import { useQuery } from '@tanstack/react-query';
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
-import { ArrowRightIcon, CalendarIcon, CheckIcon, ClockIcon } from '@repo/icons';
-import { useQuery } from '@tanstack/react-query';
 import { accentVars } from '../dashboard-accents';
 import {
     WidgetCard,
@@ -678,6 +678,7 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                     )}
                     data-testid="status-badge"
                     data-variant={statusVariant}
+                    role="status"
                     aria-label={`Status: ${statusText}`}
                 >
                     <span

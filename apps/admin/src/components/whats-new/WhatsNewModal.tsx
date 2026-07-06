@@ -30,6 +30,9 @@
  * @see SPEC-175 §7.2, §12.4, AC-13
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import type { WhatsNewItem } from '@repo/schemas';
+import { useCallback, useEffect, useMemo } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -42,9 +45,6 @@ import { useTranslations } from '@/hooks/use-translations';
 import { useWhatsNew } from '@/hooks/use-whats-new';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { renderMarkdownToHtml } from '@/lib/whats-new/render-markdown';
-import type { TranslationKey } from '@repo/i18n';
-import type { WhatsNewItem } from '@repo/schemas';
-import { useCallback, useEffect, useMemo } from 'react';
 
 // ---------------------------------------------------------------------------
 // Props

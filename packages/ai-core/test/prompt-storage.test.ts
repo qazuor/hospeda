@@ -145,9 +145,11 @@ describe('createPromptVersion', () => {
             const insertFn = buildInsertChain([{ ...PROMPT_ROW_V1, version: 1 }]);
 
             const fakeTx = { select: selectMaxFn, update: updateFn, insert: insertFn };
-            mockWithTransaction.mockImplementation((cb: (tx: unknown) => Promise<unknown>) =>
-                cb(fakeTx)
-            );
+            mockWithTransaction.mockImplementation(function (
+                cb: (tx: unknown) => Promise<unknown>
+            ) {
+                return cb(fakeTx);
+            });
 
             // Act
             const row = await createPromptVersion({
@@ -171,9 +173,11 @@ describe('createPromptVersion', () => {
             const insertFn = buildInsertChain([{ ...PROMPT_ROW_V1, version: 4 }]);
 
             const fakeTx = { select: selectMaxFn, update: updateFn, insert: insertFn };
-            mockWithTransaction.mockImplementation((cb: (tx: unknown) => Promise<unknown>) =>
-                cb(fakeTx)
-            );
+            mockWithTransaction.mockImplementation(function (
+                cb: (tx: unknown) => Promise<unknown>
+            ) {
+                return cb(fakeTx);
+            });
 
             // Act
             const row = await createPromptVersion({
@@ -194,9 +198,11 @@ describe('createPromptVersion', () => {
             const insertFn = buildInsertChain([{ ...PROMPT_ROW_V1, version: 2 }]);
 
             const fakeTx = { select: selectMaxFn, update: updateFn, insert: insertFn };
-            mockWithTransaction.mockImplementation((cb: (tx: unknown) => Promise<unknown>) =>
-                cb(fakeTx)
-            );
+            mockWithTransaction.mockImplementation(function (
+                cb: (tx: unknown) => Promise<unknown>
+            ) {
+                return cb(fakeTx);
+            });
 
             // Act
             await createPromptVersion({
@@ -217,9 +223,11 @@ describe('createPromptVersion', () => {
             const insertFn = buildInsertChain([{ ...PROMPT_ROW_V1, version: 2, isActive: false }]);
 
             const fakeTx = { select: selectMaxFn, update: updateFn, insert: insertFn };
-            mockWithTransaction.mockImplementation((cb: (tx: unknown) => Promise<unknown>) =>
-                cb(fakeTx)
-            );
+            mockWithTransaction.mockImplementation(function (
+                cb: (tx: unknown) => Promise<unknown>
+            ) {
+                return cb(fakeTx);
+            });
 
             // Act
             const row = await createPromptVersion({
@@ -267,9 +275,11 @@ describe('createPromptVersion', () => {
             const insertFn = buildInsertChain([]); // empty returning
 
             const fakeTx = { select: selectMaxFn, update: updateFn, insert: insertFn };
-            mockWithTransaction.mockImplementation((cb: (tx: unknown) => Promise<unknown>) =>
-                cb(fakeTx)
-            );
+            mockWithTransaction.mockImplementation(function (
+                cb: (tx: unknown) => Promise<unknown>
+            ) {
+                return cb(fakeTx);
+            });
 
             // Act + Assert
             await expect(
@@ -293,9 +303,11 @@ describe('createPromptVersion', () => {
             const insertFn = buildInsertChain([{ ...PROMPT_ROW_V1, version: 1 }]);
 
             const fakeTx = { select: selectMaxFn, update: updateFn, insert: insertFn };
-            mockWithTransaction.mockImplementation((cb: (tx: unknown) => Promise<unknown>) =>
-                cb(fakeTx)
-            );
+            mockWithTransaction.mockImplementation(function (
+                cb: (tx: unknown) => Promise<unknown>
+            ) {
+                return cb(fakeTx);
+            });
 
             // Act
             const row = await createPromptVersion({
@@ -346,9 +358,11 @@ describe('activatePromptVersion', () => {
             });
 
             const fakeTx = { select: selectFn, update: updateFn };
-            mockWithTransaction.mockImplementation((cb: (tx: unknown) => Promise<unknown>) =>
-                cb(fakeTx)
-            );
+            mockWithTransaction.mockImplementation(function (
+                cb: (tx: unknown) => Promise<unknown>
+            ) {
+                return cb(fakeTx);
+            });
 
             // Act
             const row = await activatePromptVersion({ id: PROMPT_ROW_V1.id });
@@ -362,9 +376,11 @@ describe('activatePromptVersion', () => {
             // Arrange
             const selectFn = buildSelectNoOrderChain([]); // not found
             const fakeTx = { select: selectFn, update: vi.fn() };
-            mockWithTransaction.mockImplementation((cb: (tx: unknown) => Promise<unknown>) =>
-                cb(fakeTx)
-            );
+            mockWithTransaction.mockImplementation(function (
+                cb: (tx: unknown) => Promise<unknown>
+            ) {
+                return cb(fakeTx);
+            });
 
             // Act
             const row = await activatePromptVersion({ id: 'nonexistent-uuid' });
@@ -398,9 +414,11 @@ describe('activatePromptVersion', () => {
             });
 
             const fakeTx = { select: selectFn, update: updateFn };
-            mockWithTransaction.mockImplementation((cb: (tx: unknown) => Promise<unknown>) =>
-                cb(fakeTx)
-            );
+            mockWithTransaction.mockImplementation(function (
+                cb: (tx: unknown) => Promise<unknown>
+            ) {
+                return cb(fakeTx);
+            });
 
             // Act
             const row = await activatePromptVersion({ id: PROMPT_ROW_V1.id });

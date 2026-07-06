@@ -74,9 +74,11 @@ vi.mock('../../src/utils/route-factory', () => ({
 }));
 
 vi.mock('../../src/services/trial.service', () => ({
-    TrialService: vi.fn().mockImplementation(() => ({
-        reactivateFromTrial: mockReactivateFromTrial
-    }))
+    TrialService: vi.fn().mockImplementation(function () {
+        return {
+            reactivateFromTrial: mockReactivateFromTrial
+        };
+    })
 }));
 
 vi.mock('../../src/utils/logger', () => ({
@@ -113,11 +115,7 @@ import '../../src/routes/billing/trial';
  * @returns A mock context object compatible with the handler signature
  */
 function createMockContext(
-    options: {
-        billingEnabled?: boolean;
-        billingCustomerId?: string | null;
-        body?: unknown;
-    } = {}
+    options: { billingEnabled?: boolean; billingCustomerId?: string | null; body?: unknown } = {}
 ) {
     const {
         billingEnabled = true,

@@ -11,6 +11,7 @@
  * this file zooms in on the wiring that is easy to silently regress.
  */
 
+import { describe, expect, it } from 'vitest';
 import {
     buildParamsFromState,
     filterReducer,
@@ -21,7 +22,6 @@ import type {
     FilterState,
     GeoRadiusFilterConfig
 } from '@/components/shared/filters/filter-types/filter.types';
-import { describe, expect, it } from 'vitest';
 
 function makeState(overrides: Partial<FilterState> = {}): FilterState {
     return {

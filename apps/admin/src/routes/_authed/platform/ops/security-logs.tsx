@@ -7,13 +7,14 @@
  * `requireAdminApiAccess` is the client-side route guard (the API enforces the
  * permission).
  */
+
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
 import {
     SecurityLogsPageComponent,
     SecurityLogsRoute
 } from '@/features/audit-logs/config/audit-logs.config';
 import { requireAdminPermission } from '@/lib/admin-api-access';
-import { PermissionEnum } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/platform/ops/security-logs')({
     validateSearch: SecurityLogsRoute.options.validateSearch,

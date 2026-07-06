@@ -29,7 +29,14 @@ const KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA = new Set<string>([
     // Build-time only — consumed by @sentry/astro during the web build to
     // upload source maps. Not read by the runtime, so it is deliberately
     // absent from serverEnvSchema.
-    'SENTRY_AUTH_TOKEN'
+    'SENTRY_AUTH_TOKEN',
+
+    // HOS-79 — read directly via process.env inside the ISR revalidation route
+    // (apps/web/src/pages/api/revalidate.ts), NOT through serverEnvBaseSchema.
+    // Registered so env:check:usage recognizes them; they deliberately stay out
+    // of the web Zod schema, so they belong here. Production-scoped, optional.
+    'CLOUDFLARE_ZONE_ID',
+    'CLOUDFLARE_API_TOKEN'
 ]);
 
 /**

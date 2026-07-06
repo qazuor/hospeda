@@ -1,3 +1,6 @@
+import type { Tag, TagUpdateInput } from '@repo/schemas';
+import type { ReactNode } from 'react';
+import { useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -7,9 +10,6 @@ import {
     DialogTrigger
 } from '@/components/ui/dialog';
 import { useUpdateOwnTag } from '@/hooks/use-own-tags';
-import type { Tag, TagUpdateInput } from '@repo/schemas';
-import type { ReactNode } from 'react';
-import { useState } from 'react';
 import { OwnTagForm } from './OwnTagForm';
 
 interface EditOwnTagDialogProps {

@@ -40,9 +40,11 @@ vi.mock('../../src/utils/logger.js', () => ({
 
 vi.mock('@repo/service-core', () => ({
     OpenMeteoClient: vi.fn(),
-    WeatherFetcher: vi.fn().mockImplementation(() => ({
-        fetchAndStoreAll: mockFetchAndStoreAll
-    }))
+    WeatherFetcher: vi.fn().mockImplementation(function () {
+        return {
+            fetchAndStoreAll: mockFetchAndStoreAll
+        };
+    })
 }));
 
 describe('Destination Weather Fetch Cron Job', () => {

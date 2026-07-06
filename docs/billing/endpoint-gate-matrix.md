@@ -148,6 +148,7 @@
 | `POST /api/v1/admin/ai/translate/batch` | `ai/admin/translate.ts` | none | - | n/a | Admin batch translation; gated by adminAuthMiddleware([AI_SETTINGS_MANAGE]). Staff bypass entitlements (INV-6) so there is no billing gate. Mounted at /api/v1/admin/ai/translate via routes/index.ts (SPEC-212 T-009). |
 | `PUT /api/v1/admin/ai/translate/override` | `ai/admin/translate.ts` | none | - | n/a | Admin manual translation override; gated by adminAuthMiddleware([AI_SETTINGS_MANAGE]); no billing gate (SPEC-212 T-010). |
 | `POST /api/v1/admin/ai/post-generate` | `ai/admin/post-generate.ts` | none | - | n/a | Admin write; gated by adminAuthMiddleware([POST_CREATE]). Generates AI post draft (title, summary, content) from topic + key points. No billing entitlement gate (staff bypass INV-6); cost ceiling enforced inside AI engine (SPEC-223 T-005). |
+| `POST /api/v1/admin/ai/credentials/{providerId}/sync-models` | `ai/credentials/index.ts` | none | - | n/a | Admin action-POST; gated by adminAuthMiddleware([AI_SETTINGS_MANAGE]). Decrypts the provider's stored credential, calls its live list-models endpoint, filters to chat-capable models, merges with the curated KNOWN_PROVIDERS catalog; ephemeral, never persists metadata.models. Staff bypass entitlements (INV-6) so there is no billing gate (HOS-94 T-009). |
 | **AUTH — PROTECTED / PUBLIC** | | | | | |
 | `GET /api/v1/public/auth/me` | `auth/me.ts` | none | - | n/a | Session identity read; no entitlement needed |
 | `POST /api/v1/protected/auth/change-password` | `auth/change-password.ts` | none | - | n/a | Account management; auth-only sufficient |
@@ -769,6 +770,7 @@
 | `PATCH /api/v1/admin/social/footers/{id}` | `social/admin/footers/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `DELETE /api/v1/admin/social/footers/{id}` | `social/admin/footers/delete.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `GET /api/v1/admin/social/gpt-action-schema` | `social/admin/gpt-action-schema.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated (SOCIAL_SETTINGS_MANAGE), no entitlement gate |
+| `GET /api/v1/admin/social/make-webhook-schema` | `social/admin/make-webhook-schema.ts` | none | - | n/a | Admin-only social automation route (HOS-67); auth + PermissionEnum gated (SOCIAL_SETTINGS_MANAGE), no entitlement gate |
 | `GET /api/v1/admin/social/hashtag-sets` | `social/admin/hashtag-sets/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `GET /api/v1/admin/social/hashtag-sets/{id}` | `social/admin/hashtag-sets/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `POST /api/v1/admin/social/hashtag-sets` | `social/admin/hashtag-sets/create.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |

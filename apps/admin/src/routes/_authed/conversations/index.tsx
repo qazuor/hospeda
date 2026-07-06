@@ -8,6 +8,9 @@
  * beforeLoad: requires CONVERSATION_VIEW_OWN or CONVERSATION_VIEW_ALL.
  */
 
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, redirect } from '@tanstack/react-router';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -22,9 +25,6 @@ import { useConversations } from '@/features/conversations/hooks/useConversation
 import type { ConversationListFilters, ConversationStatus } from '@/features/conversations/types';
 import { useTranslations } from '@/hooks/use-translations';
 import type { AuthState } from '@/lib/auth-session';
-import { PermissionEnum } from '@repo/schemas';
-import { createFileRoute, redirect } from '@tanstack/react-router';
-import { z } from 'zod';
 
 const searchSchema = z.object({
     page: z.coerce.number().int().positive().default(1).catch(1),

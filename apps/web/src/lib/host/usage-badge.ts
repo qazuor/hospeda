@@ -94,11 +94,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * }
  * ```
  */
-export function parseUsageResponse({
-    json
-}: {
-    readonly json: unknown;
-}): UsageBadgeData | null {
+export function parseUsageResponse({ json }: { readonly json: unknown }): UsageBadgeData | null {
     if (!isRecord(json)) {
         return null;
     }

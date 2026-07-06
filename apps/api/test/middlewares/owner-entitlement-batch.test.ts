@@ -47,9 +47,11 @@ vi.mock('@repo/db', () => ({
 // Mock PlanService (used by resolveOwnerLimitsForOwnerId, which is in the same
 // module — we need it not to throw on import).
 vi.mock('../../src/services/plan.service', () => ({
-    PlanService: vi.fn().mockImplementation(() => ({
-        getBySlug: vi.fn()
-    }))
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: vi.fn()
+        };
+    })
 }));
 
 vi.mock('../../src/utils/logger', () => ({

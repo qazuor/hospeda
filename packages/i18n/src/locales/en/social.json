@@ -697,5 +697,35 @@
             "saveEdit": "Save",
             "saveError": "Error saving setting"
         }
+    },
+    "integrationConfig": {
+        "title": "Integration Config Export",
+        "description": "Copy the configuration needed to connect the Custom GPT and the Make.com scenario without having to rebuild it by hand.",
+        "copyButton": "Copy",
+        "copySuccessTitle": "Copied",
+        "copySuccessDescription": "The content was copied to the clipboard.",
+        "copyErrorTitle": "Copy failed",
+        "copyErrorDescription": "Could not access the clipboard.",
+        "revealSecret": "Show value",
+        "hideSecret": "Hide value",
+        "gptAction": {
+            "title": "GPT Action",
+            "description": "OpenAPI 3.1 document to paste directly into the Custom GPT's \"Actions\" configuration.",
+            "copyButton": "Copy JSON",
+            "downloadButton": "Download .json",
+            "error": "Error loading the GPT Action config"
+        },
+        "makeWebhook": {
+            "title": "Make.com Webhook",
+            "description": "Webhook URL, auth header and API key, plus the JSON Schemas of the payload and response expected by the Make.com scenario.",
+            "webhookUrlLabel": "Webhook URL",
+            "headerNameLabel": "Header name",
+            "apiKeyLabel": "API key",
+            "notConfigured": "Not configured",
+            "credentialError": "Could not read the credential from the vault. Check the vault master key configuration.",
+            "payloadSchemaLabel": "Payload JSON Schema",
+            "responseSchemaLabel": "Response JSON Schema",
+            "error": "Error loading the Make.com webhook config"
+        }
     }
 }

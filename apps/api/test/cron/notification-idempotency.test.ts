@@ -180,21 +180,20 @@ describe('Notification Idempotency Key Persistence', () => {
             vi.mocked(getQZPayBilling).mockReturnValue(
                 mockBilling as unknown as ReturnType<typeof getQZPayBilling>
             );
-            vi.mocked(TrialService).mockImplementation(
-                () => mockTrialService as unknown as InstanceType<typeof TrialService>
-            );
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as unknown as InstanceType<typeof TrialService>;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as unknown as InstanceType<typeof RetryService>
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as unknown as InstanceType<typeof RetryService>;
+            });
 
             // Act
             await notificationScheduleJob.handler(ctx);
@@ -249,20 +248,19 @@ describe('Notification Idempotency Key Persistence', () => {
             vi.mocked(getQZPayBilling).mockReturnValue(
                 mockBilling as unknown as ReturnType<typeof getQZPayBilling>
             );
-            vi.mocked(TrialService).mockImplementation(
-                () => mockTrialService as unknown as InstanceType<typeof TrialService>
-            );
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as unknown as InstanceType<typeof RetryService>
-            );
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as unknown as InstanceType<typeof TrialService>;
+            });
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as unknown as InstanceType<typeof RetryService>;
+            });
 
             // Act
             await notificationScheduleJob.handler(ctx);
@@ -310,21 +308,20 @@ describe('Notification Idempotency Key Persistence', () => {
             vi.mocked(getQZPayBilling).mockReturnValue(
                 mockBilling as unknown as ReturnType<typeof getQZPayBilling>
             );
-            vi.mocked(TrialService).mockImplementation(
-                () => mockTrialService as unknown as InstanceType<typeof TrialService>
-            );
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as unknown as InstanceType<typeof TrialService>;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as unknown as InstanceType<typeof RetryService>
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as unknown as InstanceType<typeof RetryService>;
+            });
 
             // Act
             await notificationScheduleJob.handler(ctx);
@@ -371,21 +368,20 @@ describe('Notification Idempotency Key Persistence', () => {
             vi.mocked(getQZPayBilling).mockReturnValue(
                 mockBilling as unknown as ReturnType<typeof getQZPayBilling>
             );
-            vi.mocked(TrialService).mockImplementation(
-                () => mockTrialService as unknown as InstanceType<typeof TrialService>
-            );
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as unknown as InstanceType<typeof TrialService>;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as unknown as InstanceType<typeof RetryService>
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as unknown as InstanceType<typeof RetryService>;
+            });
 
             // Act - first run
             const ctx1 = createMockContext();
@@ -436,21 +432,20 @@ describe('Notification Idempotency Key Persistence', () => {
             vi.mocked(getQZPayBilling).mockReturnValue(
                 mockBilling as unknown as ReturnType<typeof getQZPayBilling>
             );
-            vi.mocked(TrialService).mockImplementation(
-                () => mockTrialService as unknown as InstanceType<typeof TrialService>
-            );
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as unknown as InstanceType<typeof TrialService>;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as unknown as InstanceType<typeof RetryService>
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as unknown as InstanceType<typeof RetryService>;
+            });
 
             // Act
             await notificationScheduleJob.handler(ctx);

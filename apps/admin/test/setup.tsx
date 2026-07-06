@@ -59,6 +59,24 @@ window.HTMLElement.prototype.scrollIntoView = vi.fn();
 window.HTMLElement.prototype.hasPointerCapture = vi.fn();
 window.HTMLElement.prototype.releasePointerCapture = vi.fn();
 
+// Tiptap v3 measures selection coordinates via getClientRects when an editor
+// command calls focus()/scrollIntoView. JSDOM implements getBoundingClientRect
+// (a zero rect) but not getClientRects, so real editor dispatches throw
+// `target.getClientRects is not a function`. Returning an empty list makes
+// ProseMirror fall back to getBoundingClientRect, which JSDOM supports.
+const emptyDomRectList = () => ({ length: 0, item: () => null }) as unknown as DOMRectList;
+if (!window.HTMLElement.prototype.getClientRects) {
+    window.HTMLElement.prototype.getClientRects = emptyDomRectList;
+}
+if (typeof Range !== 'undefined') {
+    if (!Range.prototype.getClientRects) {
+        Range.prototype.getClientRects = emptyDomRectList;
+    }
+    if (!Range.prototype.getBoundingClientRect) {
+        Range.prototype.getBoundingClientRect = () => new DOMRect();
+    }
+}
+
 // ResizeObserver polyfill for JSDOM (required by Radix UI Switch, Popover, etc.)
 global.ResizeObserver = class ResizeObserver {
     observe() {}

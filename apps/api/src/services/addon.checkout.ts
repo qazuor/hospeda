@@ -9,8 +9,8 @@
 
 import { randomUUID } from 'node:crypto';
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { AccommodationModel } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
+import { AccommodationModel } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import type { BillingPlanResponse } from '@repo/schemas';
 import type {
@@ -425,7 +425,7 @@ export async function createAddonCheckout(
             cancelUrl: `${webUrl}/mi-cuenta/addons?status=failure&addon=${addon.slug}`,
             customerId: input.customerId,
             customerEmail: customer.email,
-            ...(customerName !== undefined ? { customerName } : {}),
+            ...(customerName === undefined ? {} : { customerName }),
             notificationUrl: `${apiUrl}/api/v1/webhooks/mercadopago`,
             idempotencyKey: checkoutUuid,
             ...(env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR

@@ -7,9 +7,9 @@
  * @module use-user-permissions
  */
 
-import { useAuthContext } from '@/hooks/use-auth-context';
 import type { PermissionEnum } from '@repo/schemas';
 import { useMemo } from 'react';
+import { useAuthContext } from '@/hooks/use-auth-context';
 
 /**
  * Returns the current user's permissions from AuthContext.

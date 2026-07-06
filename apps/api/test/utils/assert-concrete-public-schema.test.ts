@@ -42,12 +42,16 @@ vi.mock('@repo/db', async (importOriginal) => {
     const original = await importOriginal<typeof import('@repo/db')>();
     return {
         ...original,
-        AccommodationModel: vi.fn().mockImplementation(() => ({
-            findById: vi.fn().mockResolvedValue(null)
-        })),
-        UserModel: vi.fn().mockImplementation(() => ({
-            findById: vi.fn().mockResolvedValue(null)
-        }))
+        AccommodationModel: vi.fn().mockImplementation(function () {
+            return {
+                findById: vi.fn().mockResolvedValue(null)
+            };
+        }),
+        UserModel: vi.fn().mockImplementation(function () {
+            return {
+                findById: vi.fn().mockResolvedValue(null)
+            };
+        })
     };
 });
 
@@ -56,17 +60,23 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const original = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...original,
-        AccessTokenService: vi.fn().mockImplementation(() => ({
-            validateToken: vi.fn()
-        })),
-        ConversationService: vi.fn().mockImplementation(() => ({
-            getThread: vi.fn(),
-            initiateAnonymous: vi.fn(),
-            requestAccessByEmail: vi.fn()
-        })),
-        MessageService: vi.fn().mockImplementation(() => ({
-            createMessage: vi.fn()
-        }))
+        AccessTokenService: vi.fn().mockImplementation(function () {
+            return {
+                validateToken: vi.fn()
+            };
+        }),
+        ConversationService: vi.fn().mockImplementation(function () {
+            return {
+                getThread: vi.fn(),
+                initiateAnonymous: vi.fn(),
+                requestAccessByEmail: vi.fn()
+            };
+        }),
+        MessageService: vi.fn().mockImplementation(function () {
+            return {
+                createMessage: vi.fn()
+            };
+        })
     };
 });
 

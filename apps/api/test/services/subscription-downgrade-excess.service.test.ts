@@ -33,7 +33,7 @@
  */
 
 import { EntitlementKey, LimitKey } from '@repo/billing';
-import { type MockedFunction, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type MockedFunction, vi } from 'vitest';
 import {
     type ComputeDowngradeExcessDeps,
     computeDowngradeExcess

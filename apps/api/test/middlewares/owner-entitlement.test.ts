@@ -23,9 +23,9 @@
  */
 import {
     EntitlementKey,
-    LimitKey,
     getDefaultEntitlements,
-    getUnlimitedEntitlements
+    getUnlimitedEntitlements,
+    LimitKey
 } from '@repo/billing';
 import { RoleEnum } from '@repo/service-core';
 import { Hono } from 'hono';
@@ -70,9 +70,11 @@ const { mockGetBySlug } = vi.hoisted(() => {
     return { mockGetBySlug: vi.fn() };
 });
 vi.mock('../../src/services/plan.service', () => ({
-    PlanService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockGetBySlug
-    }))
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockGetBySlug
+        };
+    })
 }));
 
 // Mock logger
@@ -121,7 +123,7 @@ function mockAccommodationLookup(row: { ownerId: string; ownerRole?: RoleEnum | 
 function mockUserRoleLookup(role: RoleEnum | null) {
     const whereChain = {
         where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue(role !== null ? [{ role }] : [])
+        limit: vi.fn().mockResolvedValue(role === null ? [] : [{ role }])
     };
     const fromChain = {
         from: vi.fn().mockReturnValue(whereChain)

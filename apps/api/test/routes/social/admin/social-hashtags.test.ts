@@ -80,13 +80,15 @@ vi.mock('../../../../src/utils/actor', () => ({
 }));
 
 vi.mock('@repo/service-core', () => ({
-    SocialHashtagService: vi.fn(() => ({
-        adminList: mockAdminList,
-        create: mockCreate,
-        getById: mockGetById,
-        update: mockUpdate,
-        softDelete: mockSoftDelete
-    })),
+    SocialHashtagService: vi.fn(function () {
+        return {
+            adminList: mockAdminList,
+            create: mockCreate,
+            getById: mockGetById,
+            update: mockUpdate,
+            softDelete: mockSoftDelete
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,

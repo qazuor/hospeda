@@ -21,8 +21,8 @@
  * @module _authed.guard
  */
 
-import type { AuthState } from '@/lib/auth-session';
 import { PermissionEnum } from '@repo/schemas';
+import type { AuthState } from '@/lib/auth-session';
 
 /**
  * Reason variants the forbidden page knows how to render.

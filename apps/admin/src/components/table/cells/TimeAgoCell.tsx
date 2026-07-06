@@ -1,6 +1,6 @@
-import { useTranslations } from '@/hooks/use-translations';
 import { defaultIntlLocale, formatDate } from '@repo/i18n';
 import type { ReactNode } from 'react';
+import { useTranslations } from '@/hooks/use-translations';
 
 type TimeAgoCellProps = {
     readonly value: unknown;
@@ -10,9 +10,7 @@ type TimeAgoCellProps = {
 /**
  * TimeAgoCell component for rendering relative time values in table cells.
  * Displays relative time (e.g., "2 days ago") on top and the actual formatted date below in smaller text.
- * Uses GitHub's relative-time-element for consistent time formatting.
- *
- * Based on: https://github.com/github/relative-time-element#readme
+ * Uses `@repo/i18n` `formatDate` for consistent, locale-aware time formatting.
  */
 export const TimeAgoCell = ({ value, locale = defaultIntlLocale }: TimeAgoCellProps): ReactNode => {
     const { t } = useTranslations();

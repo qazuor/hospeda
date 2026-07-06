@@ -15,8 +15,8 @@
  * @module services/billing-settings
  */
 
-import { billingAuditLogs, billingSettings, eq, getDb, withTransaction } from '@repo/db';
 import type { DrizzleClient, QueryContext } from '@repo/db';
+import { billingAuditLogs, billingSettings, eq, getDb, withTransaction } from '@repo/db';
 
 /**
  * Billing settings configuration

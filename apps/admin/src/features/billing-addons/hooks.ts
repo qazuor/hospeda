@@ -1,8 +1,8 @@
-import { fetchApi } from '@/lib/api/client';
-import { ApiError, reportError } from '@/lib/errors';
 import { AdminAddonResponseSchema } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
+import { fetchApi } from '@/lib/api/client';
+import { ApiError, reportError } from '@/lib/errors';
 import type {
     AddonCatalogFilters,
     CreateAddonPayload,

@@ -1,0 +1,413 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-67",
+    "title": "Social Posts \u2014 GPT/MAKE Config Export",
+    "created": "2026-07-06T04:15:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Remove dead Make.com inbound callback routes and their mounting",
+            "description": "Delete apps/api/src/routes/integrations/make/social/jobs/{claim,result,index}.ts and remove their wiring in apps/api/src/routes/index.ts (import L110, the socialFeatureTagMiddleware mount at L585 for '/api/v1/integrations/make/social/*', and the two app.route calls L603-604). Before deleting the L585 middleware line, confirm nothing else mounts under '/api/v1/integrations/make/social/*' (grep the routes dir). Update or delete apps/api/test/routes/integrations/make/social/jobs/make-callbacks.test.ts accordingly. Verify apps/api typechecks after removal.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [
+                {
+                    "title": "Delete claim.ts, result.ts, jobs/index.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Remove import + middleware + 2 route mounts in routes/index.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm no other route under the same integrations/make/social path",
+                    "completed": true
+                },
+                {
+                    "title": "Delete/rework make-callbacks.test.ts",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "cleanup", "R-6"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-06T04:15:00.000Z",
+                "started": "2026-07-06T04:49:50.000Z",
+                "completed": "2026-07-06T04:49:50.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Remove handleMakeCallbackClaim/Result handlers and their types from dispatch service",
+            "description": "Delete SocialPublishDispatchService.handleMakeCallbackClaim (~L1527) and handleMakeCallbackResult (~L1628) plus their input/result type blocks (L270-325) and related JSDoc references (L29-32) in packages/service-core/src/services/social/social-publish-dispatch.service.ts. Confirm dispatchTarget keeps its OWN retry/exhaust logic intact (L1197/1246/1277) \u2014 these paths are parallel, dispatchTarget is the live one. Remove the now-dead unit test blocks (SPEC-254 T-047, ~L3165-3760) in social-publish-dispatch.service.test.ts, the '(legacy)' scenarios in test/integration/services/social/full-pipeline.integration.test.ts, and check dispatch-edge-cases.test.ts:29 (comment-only vs real usage). Ensure @repo/service-core typechecks and its social suite passes.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-004"],
+            "subtasks": [
+                {
+                    "title": "Delete both handler methods + their type blocks + JSDoc",
+                    "completed": true
+                },
+                {
+                    "title": "Verify dispatchTarget retry/exhaust logic untouched",
+                    "completed": true
+                },
+                {
+                    "title": "Remove T-047 unit test blocks in service.test.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Remove/rework '(legacy)' scenarios in full-pipeline.integration.test.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Audit dispatch-edge-cases.test.ts reference",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "cleanup", "R-6"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-06T04:15:00.000Z",
+                "started": "2026-07-06T04:49:50.000Z",
+                "completed": "2026-07-06T04:49:50.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Remove HOSPEDA_MAKE_INBOUND_KEY from env registry, env schema and .env.example",
+            "description": "Delete the HOSPEDA_MAKE_INBOUND_KEY entry from packages/config/src/env-registry.hospeda.ts (~L1968) AND apps/api/src/utils/env-schema.ts (the spec only names the registry but it lives in both) AND any apps/api/.env.example placeholder. Run pnpm env:check:registry to confirm the app schema still matches the registry after removal. Note in the PR/closeout that the value must be unset/deprecated in Coolify (AC-4) \u2014 operator action, not code.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Remove from env-registry.hospeda.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Remove from apps/api/src/utils/env-schema.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Remove from .env.example",
+                    "completed": true
+                },
+                {
+                    "title": "pnpm env:check:registry passes",
+                    "completed": true
+                }
+            ],
+            "tags": ["config", "cleanup", "R-6"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-06T04:15:00.000Z",
+                "started": "2026-07-06T04:49:50.000Z",
+                "completed": "2026-07-06T04:49:50.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Remove social-make-callback.schema.ts if orphaned after handler deletion",
+            "description": "After T-002, check whether packages/schemas/src/entities/social/social-make-callback.schema.ts is referenced anywhere outside the now-deleted callback path (grep for its exported symbols across apps + packages). If it is only used by the dead callback routes/handlers/tests, delete it and its barrel export. If it is still referenced by the live synchronous path (e.g. MakeWebhookResponseSchema lives in social-make-payload.schema.ts, not here \u2014 confirm), leave it. Document the decision in the PR.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Grep all references to the callback schema's exports",
+                    "completed": true
+                },
+                {
+                    "title": "Delete + de-barrel if orphaned, else leave with a note",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "cleanup", "R-6"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-06T04:15:00.000Z",
+                "started": "2026-07-06T04:49:50.000Z",
+                "completed": "2026-07-06T04:49:50.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add GET /api/v1/admin/social/make-webhook-schema endpoint",
+            "description": "New admin route mirroring apps/api/src/routes/social/admin/gpt-action-schema.ts (~291 LOC pattern, uses @hono/zod-openapi getOpenAPI31Document \u2014 prefer the same generator over adding zod-to-json-schema, for consistency). Programmatically emit JSON Schema of SocialMakePayloadSchema + MakeWebhookResponseSchema from packages/schemas/src/entities/social/social-make-payload.schema.ts. Response: { payloadSchema, responseSchema, webhookUrl, makeApiKeyConfigured }. webhookUrl comes from SocialSettingService (make_webhook_url), makeApiKeyConfigured is a boolean derived from HOSPEDA_MAKE_API_KEY presence \u2014 NEVER return the raw secret. Gate with SOCIAL_SETTINGS_MANAGE permission, same as the GPT endpoint. Mount it next to gpt-action-schema in the admin social router.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Create make-webhook-schema.ts mirroring gpt-action-schema pattern",
+                    "completed": true
+                },
+                {
+                    "title": "Generate JSON Schema from the two Zod schemas programmatically",
+                    "completed": true
+                },
+                {
+                    "title": "Wire webhookUrl via SocialSettingService + makeApiKeyConfigured boolean",
+                    "completed": true
+                },
+                {
+                    "title": "Gate SOCIAL_SETTINGS_MANAGE and mount the route",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "endpoint", "G-6"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-06T04:15:00.000Z",
+                "started": "2026-07-06T05:57:22.000Z",
+                "completed": "2026-07-06T05:57:22.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Test make-webhook-schema is generated, not hand-written (AC-1)",
+            "description": "Route test in apps/api/test/... asserting the endpoint returns a valid JSON Schema matching SocialMakePayloadSchema's current shape, gated by SOCIAL_SETTINGS_MANAGE (401/403 without it), and that webhookUrl/makeApiKeyConfigured are surfaced correctly (secret never leaked). AC-1 proof: a test that mutates/adds a field on the Zod schema (or asserts a known field is present because it exists in the Zod schema) and confirms the endpoint output reflects it \u2014 proving programmatic generation. Follow the existing gpt-action-schema route test as a template if one exists.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Auth-gate test (no perm \u2192 403)",
+                    "completed": true
+                },
+                {
+                    "title": "Schema-shape assertion tied to the Zod source",
+                    "completed": true
+                },
+                {
+                    "title": "Assert makeApiKeyConfigured boolean + no raw secret in body",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "testing", "G-6"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-06T04:15:00.000Z",
+                "started": "2026-07-06T05:57:22.000Z",
+                "completed": "2026-07-06T05:57:22.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add admin hook + types to consume make-webhook-schema (and reuse GPT schema fetch)",
+            "description": "TanStack Query hook in apps/admin (e.g. use-social-integration-config.ts) fetching /api/v1/admin/social/make-webhook-schema, plus whatever is needed to fetch/expose the existing gpt-action-schema for Panel 1. Types sourced from @repo/schemas where possible. Follow existing admin social hooks (use-social-platform-settings.ts) for the fetch/error pattern.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Hook fetching make-webhook-schema",
+                    "completed": true
+                },
+                {
+                    "title": "Fetch path for the GPT action schema (Panel 1)",
+                    "completed": true
+                },
+                {
+                    "title": "Typed responses, error handling per existing pattern",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "hook", "G-6"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-06T04:15:00.000Z",
+                "started": "2026-07-06T06:37:10.000Z",
+                "completed": "2026-07-06T06:37:10.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Build Integration Config Export admin page with GPT + Make panels",
+            "description": "New route apps/admin/src/routes/_authed/social/integration-config/index.tsx rendering two components: GptActionExportPanel (copy-to-clipboard/download of the GPT OpenAPI schema, Panel 1) and MakeWebhookExportPanel (webhook URL, outbound headers with x-make-apikey masked + reveal-on-click, and the live JSON Schema block, Panel 2). Reuse the existing admin copy-to-clipboard pattern and the secret-masking pattern from SettingsTable. Tailwind utilities (admin styling), Shadcn UI, @repo/icons only (no inline SVG). Uses the T-007 hook.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-009", "T-010", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Route index.tsx with beforeLoad guard",
+                    "completed": true
+                },
+                {
+                    "title": "GptActionExportPanel (copy/download)",
+                    "completed": true
+                },
+                {
+                    "title": "MakeWebhookExportPanel (URL, masked header reveal, JSON Schema block)",
+                    "completed": true
+                },
+                {
+                    "title": "Reuse copy-to-clipboard + masking patterns, @repo/icons",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "ui", "G-6"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-06T04:15:00.000Z",
+                "started": "2026-07-06T06:37:10.000Z",
+                "completed": "2026-07-06T06:37:10.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Add i18n keys for the Integration Config Export page (es/en/pt)",
+            "description": "Add all user-facing strings (page title, panel titles, copy/download/reveal button labels, helper text) to @repo/i18n locale files for es, en and pt. Run the i18n generate-types step. No hard-coded strings in the components.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-008"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "es/en/pt keys added",
+                    "completed": true
+                },
+                {
+                    "title": "generate-types run, components use keys",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "G-6"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-06T04:15:00.000Z",
+                "started": "2026-07-06T06:37:10.000Z",
+                "completed": "2026-07-06T06:37:10.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Register the Integration Config Export route in admin nav",
+            "description": "Add the new page to the admin Marketing/social sidebar config (apps/admin/src/config/ia/sidebars.ts or equivalent) so operators can reach it. Use @repo/icons for the nav icon. Confirm the route is guarded like other _authed/social routes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-008"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add sidebar/nav entry",
+                    "completed": true
+                },
+                {
+                    "title": "Icon via @repo/icons, guard confirmed",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "nav", "G-6"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-06T04:15:00.000Z",
+                "started": "2026-07-06T06:37:10.000Z",
+                "completed": "2026-07-06T06:37:10.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Component tests for the export panels (AC-2)",
+            "description": "testing-library tests for GptActionExportPanel + MakeWebhookExportPanel: both panels render given mocked hook data, and each copy-to-clipboard button copies the expected content (mock clipboard), and the masked API-key indicator reveals on click without exposing a real secret. AC-2 coverage.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Render tests for both panels with mocked data",
+                    "completed": true
+                },
+                {
+                    "title": "Copy-to-clipboard copies expected content",
+                    "completed": true
+                },
+                {
+                    "title": "Masked key reveal behavior",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "testing", "G-6"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-06T04:15:00.000Z",
+                "started": "2026-07-06T06:37:10.000Z",
+                "completed": "2026-07-06T06:37:10.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 11,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 11,
+        "blocked": 0,
+        "averageComplexity": 1.9
+    }
+}

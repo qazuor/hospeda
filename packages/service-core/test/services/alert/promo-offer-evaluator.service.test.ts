@@ -16,8 +16,8 @@ import type { Accommodation, OwnerPromotion, PriceAlert } from '@repo/schemas';
 import { LifecycleStatusEnum, OwnerPromotionDiscountTypeEnum } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import {
-    PromoOfferEvaluatorService,
-    isPromotionQualifying
+    isPromotionQualifying,
+    PromoOfferEvaluatorService
 } from '../../../src/services/alert/promo-offer-evaluator.service';
 import { getMockId } from '../../factories/utilsFactory';
 

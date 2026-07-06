@@ -48,24 +48,30 @@ vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
     return {
         ...actual,
-        AccommodationReviewModel: vi.fn(() => mockModel),
-        AccommodationModel: vi.fn(() => ({
-            findById: vi.fn(),
-            findOne: vi.fn(),
-            create: vi.fn(),
-            update: vi.fn(),
-            count: vi.fn(),
-            findAll: vi.fn()
-        }))
+        AccommodationReviewModel: vi.fn(function () {
+            return mockModel;
+        }),
+        AccommodationModel: vi.fn(function () {
+            return {
+                findById: vi.fn(),
+                findOne: vi.fn(),
+                create: vi.fn(),
+                update: vi.fn(),
+                count: vi.fn(),
+                findAll: vi.fn()
+            };
+        })
     };
 });
 
 // Also mock AccommodationService to avoid DB calls in _afterCreate
 vi.mock('../../../src/services/accommodation/accommodation.service.js', () => ({
-    AccommodationService: vi.fn(() => ({
-        updateStatsFromReview: vi.fn().mockResolvedValue(undefined),
-        getById: vi.fn()
-    }))
+    AccommodationService: vi.fn(function () {
+        return {
+            updateStatsFromReview: vi.fn().mockResolvedValue(undefined),
+            getById: vi.fn()
+        };
+    })
 }));
 
 vi.mock('../../../src/utils/transaction.js', () => ({
@@ -83,8 +89,8 @@ vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
 // ---------------------------------------------------------------------------
 
 import * as contentModeration from '@repo/content-moderation';
-import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { AccommodationReview } from '@repo/schemas';
+import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationReviewService } from '../../../src/services/accommodationReview/accommodationReview.service';
 import * as getThresholdModule from '../../../src/services/contentModeration/get-threshold-for-context.js';

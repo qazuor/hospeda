@@ -1,6 +1,6 @@
+import { describe, expect, it } from 'vitest';
 import { computeScore } from '@/components/quality-score/compute-score';
 import type { SignalConfig } from '@/components/quality-score/types';
-import { describe, expect, it } from 'vitest';
 
 /**
  * Tests for the quality-score engine. The engine is pure so all tests use

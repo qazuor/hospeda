@@ -1,13 +1,13 @@
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { fetchApi } from '@/lib/api/client';
 import type { FeatureFlag } from '@repo/schemas';
 import { useSuspenseQuery } from '@tanstack/react-query';
 /**
  * View Feature Flag page — admin panel.
  */
 import { createFileRoute } from '@tanstack/react-router';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { fetchApi } from '@/lib/api/client';
 
 export const Route = createFileRoute('/_authed/platform/feature-flags/$id')({
     component: ViewFeatureFlag,

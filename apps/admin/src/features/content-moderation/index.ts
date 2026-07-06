@@ -1,16 +1,16 @@
 export { createModerationTermColumns } from './config/moderation-terms.columns';
-export { moderationTermsConfig, ModerationTermsRoute } from './config/moderation-terms.config';
+export { ModerationTermsRoute, moderationTermsConfig } from './config/moderation-terms.config';
 export {
-    moderationThresholdsConfig,
-    MODERATION_EXAMPLE_CONTEXTS
+    MODERATION_EXAMPLE_CONTEXTS,
+    moderationThresholdsConfig
 } from './config/moderation-thresholds.config';
 export {
-    useModerationTermsList,
-    useModerationTermDetail,
     useCreateModerationTerm,
-    useUpdateModerationTerm,
     useDeleteModerationTerm,
-    useModerationThresholdsList,
+    useModerationTermDetail,
+    useModerationTermsList,
     useModerationThresholdDetail,
+    useModerationThresholdsList,
+    useUpdateModerationTerm,
     useUpdateModerationThreshold
 } from './hooks';

@@ -9,7 +9,7 @@ import { getCategoryByKey, getMaxCategoryNameLength } from './categories.js';
 import { getConfig } from './config.js';
 import { buildLogEntry } from './log-entry.js';
 import { redactSensitiveData } from './redact.js';
-import { LogFormat, LogLevel, type LoggerColorType, type LoggerOptions } from './types.js';
+import { LogFormat, type LoggerColorType, type LoggerOptions, LogLevel } from './types.js';
 
 // `redactSensitiveData` now lives in ./redact.js (leaf module, no import cycle).
 // Re-exported here for backward compatibility with existing imports.
@@ -322,11 +322,11 @@ export function formatLogMessage(
 
     // Determine expand levels
     const expandLevels =
-        options?.expandObjectLevels !== undefined
-            ? options.expandObjectLevels
-            : category.options.expandObjectLevels !== undefined
-              ? category.options.expandObjectLevels
-              : config.EXPAND_OBJECT_LEVELS;
+        options?.expandObjectLevels === undefined
+            ? category.options.expandObjectLevels === undefined
+                ? config.EXPAND_OBJECT_LEVELS
+                : category.options.expandObjectLevels
+            : options.expandObjectLevels;
 
     // Determine truncation settings based on log level
     let truncateText: boolean;
@@ -337,34 +337,34 @@ export function formatLogMessage(
     } else if (level === LogLevel.ERROR) {
         // Error messages use truncateLongTextOnError configuration
         truncateText =
-            options?.truncateLongTextOnError !== undefined
-                ? options.truncateLongTextOnError
-                : category.options.truncateLongTextOnError !== undefined
-                  ? category.options.truncateLongTextOnError
-                  : config.TRUNCATE_LONG_TEXT_ON_ERROR;
+            options?.truncateLongTextOnError === undefined
+                ? category.options.truncateLongTextOnError === undefined
+                    ? config.TRUNCATE_LONG_TEXT_ON_ERROR
+                    : category.options.truncateLongTextOnError
+                : options.truncateLongTextOnError;
     } else {
         // Other levels use regular truncateLongText configuration
         truncateText =
-            options?.truncateLongText !== undefined
-                ? options.truncateLongText
-                : category.options.truncateLongText !== undefined
-                  ? category.options.truncateLongText
-                  : config.TRUNCATE_LONG_TEXT;
+            options?.truncateLongText === undefined
+                ? category.options.truncateLongText === undefined
+                    ? config.TRUNCATE_LONG_TEXT
+                    : category.options.truncateLongText
+                : options.truncateLongText;
     }
 
     const truncateAt =
-        options?.truncateLongTextAt !== undefined
-            ? options.truncateLongTextAt
-            : category.options.truncateLongTextAt !== undefined
-              ? category.options.truncateLongTextAt
-              : config.TRUNCATE_LONG_TEXT_AT;
+        options?.truncateLongTextAt === undefined
+            ? category.options.truncateLongTextAt === undefined
+                ? config.TRUNCATE_LONG_TEXT_AT
+                : category.options.truncateLongTextAt
+            : options.truncateLongTextAt;
 
     const stringifyObj =
-        options?.stringifyObj !== undefined
-            ? options.stringifyObj
-            : category.options.stringifyObj !== undefined
-              ? category.options.stringifyObj
-              : config.STRINGIFY_OBJECTS;
+        options?.stringifyObj === undefined
+            ? category.options.stringifyObj === undefined
+                ? config.STRINGIFY_OBJECTS
+                : category.options.stringifyObj
+            : options.stringifyObj;
 
     // Format the value
     const formattedValue = formatValue(value, expandLevels, truncateText, truncateAt, stringifyObj);

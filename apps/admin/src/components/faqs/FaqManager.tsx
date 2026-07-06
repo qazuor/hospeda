@@ -18,21 +18,7 @@
  *  - screen-reader announcements via dnd-kit Announcements API
  */
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { AiTextImprovePanel } from '@/features/accommodations/components/AiTextImprovePanel';
-import {
-    useFaqCreate,
-    useFaqDelete,
-    useFaqList,
-    useFaqReorder,
-    useFaqUpdate
-} from '@/features/faqs/hooks/useFaqs';
-import type { FaqEntityType, FaqItem } from '@/features/faqs/hooks/useFaqs';
-import { useTranslations } from '@/hooks/use-translations';
-import { cn } from '@/lib/utils';
+import type { Announcements, ScreenReaderInstructions } from '@dnd-kit/core';
 import {
     DndContext,
     type DragEndEvent,
@@ -42,16 +28,30 @@ import {
     useSensor,
     useSensors
 } from '@dnd-kit/core';
-import type { Announcements, ScreenReaderInstructions } from '@dnd-kit/core';
 import {
-    SortableContext,
     arrayMove,
+    SortableContext,
     sortableKeyboardCoordinates,
     verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 import { AddIcon, LoaderIcon } from '@repo/icons';
 import { FaqCreatePayloadSchema } from '@repo/schemas';
 import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { AiTextImprovePanel } from '@/features/accommodations/components/AiTextImprovePanel';
+import type { FaqEntityType, FaqItem } from '@/features/faqs/hooks/useFaqs';
+import {
+    useFaqCreate,
+    useFaqDelete,
+    useFaqList,
+    useFaqReorder,
+    useFaqUpdate
+} from '@/features/faqs/hooks/useFaqs';
+import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 import { FaqCategoryCombobox } from './FaqCategoryCombobox';
 import { SortableFaqRow } from './SortableFaqRow';
 

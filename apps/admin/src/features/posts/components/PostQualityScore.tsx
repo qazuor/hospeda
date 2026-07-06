@@ -1,10 +1,10 @@
+import { EntitlementKey } from '@repo/billing';
+import { useStore } from '@tanstack/react-form';
+import * as React from 'react';
 import { useEntityFormContext } from '@/components/entity-form/context/EntityFormContext';
 import { computeScore } from '@/components/quality-score';
 import { QualityScore } from '@/components/quality-score/QualityScore';
 import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
-import { EntitlementKey } from '@repo/billing';
-import { useStore } from '@tanstack/react-form';
-import * as React from 'react';
 import { createPostSignals } from '../config/score-signals';
 
 // Same workaround as Accommodation/EventQualityScore — `ReactFormApi`

@@ -41,9 +41,9 @@ import type {
     UserBookmarkCollectionModel as UBCModelType,
     UserBookmarkModel as UBModelType
 } from '@repo/db';
-import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
 import type { UserBookmark, UserBookmarkCollection } from '@repo/schemas';
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Chainable Drizzle stub
@@ -113,8 +113,12 @@ vi.mock('@repo/db', async () => {
         }),
         // Override constructors so `new UserBookmarkModel()` inside the service
         // returns our test-controlled mock instance.
-        UserBookmarkCollectionModel: vi.fn(() => collectionModelMock),
-        UserBookmarkModel: vi.fn(() => bookmarkModelMock)
+        UserBookmarkCollectionModel: vi.fn(function () {
+            return collectionModelMock;
+        }),
+        UserBookmarkModel: vi.fn(function () {
+            return bookmarkModelMock;
+        })
     };
 });
 

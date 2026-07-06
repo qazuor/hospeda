@@ -11,10 +11,10 @@
  * ROLE_PERMISSIONS source: packages/seed/src/required/rolePermissions.seed.ts
  */
 
-import { validatedConfig } from '@/config/ia/validate';
-import { hasSidebarAccessibleItem } from '@/lib/nav/permission-visibility';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { validatedConfig } from '@/config/ia/validate';
+import { hasSidebarAccessibleItem } from '@/lib/nav/permission-visibility';
 
 // ---------------------------------------------------------------------------
 // EDITOR real permission bundle

@@ -1,0 +1,218 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-74",
+    "title": "CSP header missing on prerendered (SSG) routes — move remaining routes off prerender",
+    "created": "2026-07-04T15:20:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Convert legal routes (terminos, privacidad, cookies) to SSR",
+            "description": "Remove `export const prerender = true` and `getStaticPaths` from apps/web/src/pages/[lang]/legal/{terminos,privacidad,cookies}/index.astro. Switch locale read from `Astro.params.lang` to `Astro.locals.locale as SupportedLocale` (per web CLAUDE.md gotcha; matches the home-page SSR pattern in pages/[lang]/index.astro). Verify each still renders identically. Tests: covered by the generalized guard in T-007 + over-the-wire test in T-008; no per-route unit test (Astro pages have no Vitest DOM renderer).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-008", "T-009"],
+            "subtasks": [
+                { "title": "terminos/index.astro", "completed": false },
+                { "title": "privacidad/index.astro", "completed": false },
+                { "title": "cookies/index.astro", "completed": false }
+            ],
+            "tags": ["web", "csp", "ssr"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T15:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Convert nosotros, preguntas-frecuentes, contacto to SSR",
+            "description": "Remove prerender + getStaticPaths from apps/web/src/pages/[lang]/{nosotros,preguntas-frecuentes,contacto}/index.astro; switch to Astro.locals.locale. Same pattern as T-001. Verify render parity.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-008", "T-009"],
+            "subtasks": [
+                { "title": "nosotros/index.astro", "completed": false },
+                { "title": "preguntas-frecuentes/index.astro", "completed": false },
+                { "title": "contacto/index.astro", "completed": false }
+            ],
+            "tags": ["web", "csp", "ssr"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T15:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Convert colaborar routes (index, editores, reportar, fotos) to SSR",
+            "description": "Remove prerender + getStaticPaths from apps/web/src/pages/[lang]/colaborar/{index,editores/index,reportar/index,fotos/index}.astro; switch to Astro.locals.locale. Same pattern as T-001.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-008", "T-009"],
+            "subtasks": [
+                { "title": "colaborar/index.astro", "completed": false },
+                { "title": "colaborar/editores/index.astro", "completed": false },
+                { "title": "colaborar/reportar/index.astro", "completed": false },
+                { "title": "colaborar/fotos/index.astro", "completed": false }
+            ],
+            "tags": ["web", "csp", "ssr"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T15:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Convert beneficios, suscriptores/propietarios, guest/messages/verify-expired to SSR",
+            "description": "Remove prerender + getStaticPaths from apps/web/src/pages/[lang]/{beneficios/index,suscriptores/propietarios/index,guest/messages/verify-expired}.astro; switch to Astro.locals.locale. verify-expired may read a token from the URL — confirm it still works as SSR (it likely benefits from SSR anyway). Same base pattern as T-001.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-008", "T-009"],
+            "subtasks": [
+                { "title": "beneficios/index.astro", "completed": false },
+                { "title": "suscriptores/propietarios/index.astro", "completed": false },
+                { "title": "guest/messages/verify-expired.astro", "completed": false }
+            ],
+            "tags": ["web", "csp", "ssr"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T15:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Document beta/[...slug] as the intentional prerender exception",
+            "description": "OWNER DECISION (2026-07-04): beta/[...slug].astro STAYS prerendered — it is private, noindex/nofollow beta docs kept prerendered for resilience, accepted to ship WITHOUT CSP. Do NOT convert it. This task = record the exception: update the file's JSDoc to state it is the deliberate CSP exception (ref HOS-74), and ensure the spec + Linear issue note it. The T-007 no-prerender guard must allowlist exactly this one file. No code behavior change to the route itself.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Add JSDoc note: intentional CSP exception (HOS-74)",
+                    "completed": false
+                },
+                { "title": "Ensure spec + Linear record the exception", "completed": false }
+            ],
+            "tags": ["web", "csp", "docs"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T15:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Correct the misleading CSP prerender comment in middleware.ts",
+            "description": "apps/web/src/middleware.ts ~L294-305: the comment claims context.isPrerendered makes the CSP header reach static pages. That is false — middleware does not run per-request for prerendered routes; the header is discarded. Rewrite the comment to state the real mechanism (staticHeaders only captures native security.csp output; prerendered routes bypass middleware at runtime) so no future reader re-introduces prerender expecting CSP. The `context.isPrerendered` branch itself becomes dead for these routes once converted — decide whether to keep it as defensive or note why it stays.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-009"],
+            "subtasks": [{ "title": "Rewrite comment block", "completed": false }],
+            "tags": ["web", "csp", "docs"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T15:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Generalize the no-prerender test guard to all web pages (allowlist beta)",
+            "description": "apps/web/src/lib/__tests__/csp-middleware.test.ts currently locks in only that pages/[lang]/index.astro has no prerender. Replace with a guard that asserts NO page under apps/web/src/pages declares `export const prerender = true` EXCEPT the explicit allowlist { 'beta/[...slug].astro' } (the intentional CSP exception, T-005), so a regression on any of the 13 converted routes fails CI while beta staying prerendered does not. Keep it fast (source scan). Document why beta is allowlisted in the test.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002", "T-003", "T-004", "T-005"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                { "title": "Write glob-based no-prerender assertion", "completed": false }
+            ],
+            "tags": ["web", "csp", "test"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T15:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Add over-the-wire CSP regression test",
+            "description": "The existing suite only string-matches middleware source (its own JSDoc flags this gap). Add a test that BUILDS apps/web, starts the @astrojs/node standalone server, fetches a former-prerender route (e.g. /es/legal/terminos/), and asserts the response carries a non-empty `content-security-policy` header matching the enforce-mode policy. Decide (OQ-2) whether it runs in normal CI or a dedicated job given the build+server cost. This is the test class that would have caught HOS-74.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002", "T-003", "T-004", "T-005"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Harness: build + start standalone server + teardown",
+                    "completed": false
+                },
+                {
+                    "title": "Fetch a former-prerender route, assert CSP header present",
+                    "completed": false
+                },
+                { "title": "Decide CI placement (OQ-2)", "completed": false }
+            ],
+            "tags": ["web", "csp", "test", "e2e"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T15:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Local verification + perf/cache sign-off",
+            "description": "Build apps/web, run the standalone server, curl all 14 former-prerender routes: assert HTTP 200 + content-security-policy header present, unknown lang still 404s, and cache-control headers still allow edge caching (perf sign-off, AC-5). Record the sign-off note on the Linear issue. Add status-needs-smoke-staging label for the post-deploy live curl gate (AC-7).",
+            "status": "in-progress",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002", "T-003", "T-004", "T-005", "T-006", "T-007", "T-008"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "curl all 14 routes: 200 + CSP header", "completed": false },
+                { "title": "unknown lang 404 check", "completed": false },
+                { "title": "cache-control / perf sign-off note on Linear", "completed": false },
+                { "title": "apply status-needs-smoke-staging label", "completed": false }
+            ],
+            "tags": ["web", "csp", "verification"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T15:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 9,
+        "pending": 0,
+        "inProgress": 1,
+        "completed": 8,
+        "blocked": 0,
+        "averageComplexity": 1.9
+    }
+}

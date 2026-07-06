@@ -20,11 +20,11 @@ export { createStubMercadoPagoAdapter } from './mercadopago-stub.js';
 // Gated by HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true; no-op otherwise.
 export {
     applyTestControl,
+    type ControllableOperation,
     delayNext,
     failNext,
     getRecordedCalls,
     getTestControlSnapshot,
     isTestControlEnabled,
-    resetTestControl,
-    type ControllableOperation
+    resetTestControl
 } from './qzpay-test-control.js';

@@ -8,11 +8,11 @@
  * scroll. Closes on outside click, Escape key, or option selection.
  */
 
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import styles from './SortPopover.module.css';
 
 /** A single sort option entry. */
@@ -148,7 +148,13 @@ export function SortPopover({ options, value, onChange, locale }: SortPopoverPro
                 aria-label={`${t('ui.filter.sortBy', 'Ordenar por')}: ${selectedLabel}`}
                 title={`${t('ui.filter.sortBy', 'Ordenar por')}: ${selectedLabel}`}
             >
-                ⇅
+                <span
+                    className={styles.sortPopoverIcon}
+                    aria-hidden="true"
+                >
+                    ⇅
+                </span>
+                <span className={styles.sortPopoverLabel}>{t('ui.filter.sort', 'Ordenar')}</span>
             </button>
 
             {isOpen &&

@@ -1,6 +1,6 @@
 import { ALL_PLANS, getAddonBySlug } from '@repo/billing';
+import type { DrizzleClient } from '@repo/db';
 import {
-    UserModel,
     accounts,
     and,
     billingAddonPurchases,
@@ -9,9 +9,9 @@ import {
     billingSubscriptions,
     eq,
     getDb,
-    sql
+    sql,
+    UserModel
 } from '@repo/db';
-import type { DrizzleClient } from '@repo/db';
 import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { ADDON_RECALC_SOURCE_ID } from '@repo/service-core';
 import { hash } from 'bcryptjs';
@@ -20,6 +20,7 @@ import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
 import { ensureHostAccommodation } from './hostAccommodation.js';
+import { ensureHostPromotion } from './hostPromotion.js';
 import { markUserReady } from './markUserReady.js';
 
 /**
@@ -481,6 +482,11 @@ async function ensureAddonPurchase(
  *   `accommodation` vertical, a full curated image gallery, a rich Tier-3
  *   price block, and FAQs. See {@link ensureHostAccommodation}. Idempotent:
  *   skipped entirely if the user already owns an accommodation.
+ * - (For HOST-role users, BETA-89) Two owner promotions attached to that
+ *   accommodation — one currently active, one expired/archived — so the
+ *   "Mis promociones" list/CRUD flows have data to exercise locally. See
+ *   {@link ensureHostPromotion}. Idempotent: skipped entirely if the user
+ *   already owns a promotion.
  *
  * Idempotent: users that already exist (matched by email) are skipped entirely.
  * If a user exists but is missing their account row or billing rows, those gaps
@@ -489,7 +495,7 @@ async function ensureAddonPurchase(
  * Tables touched: users, account, billing_customers, billing_subscriptions,
  * billing_addon_purchases, billing_customer_limits, accommodations,
  * accommodation_media, r_accommodation_amenity, r_accommodation_feature,
- * accommodation_faqs (HOST users only).
+ * accommodation_faqs, owner_promotions (HOST users only).
  *
  * @param _context - Seed context (unused; kept for the runExampleSeeds contract)
  *
@@ -649,6 +655,11 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
             // allows at least 1 accommodation, so this never exceeds the plan limit.
             if (spec.role === RoleEnum.HOST) {
                 await ensureHostAccommodation({ userId, spec, db });
+
+                // ── Ensure 2 owner promotions (1 active, 1 archived) for HOST users (BETA-89) ──
+                // Idempotent: skips if the user already owns one. Depends on the
+                // accommodation created just above (re-resolved internally by id).
+                await ensureHostPromotion({ userId, spec });
             }
 
             summaryTracker.trackSuccess(ENTITY_NAME);

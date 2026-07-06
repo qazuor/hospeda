@@ -99,16 +99,78 @@ export const GptImagePayloadSchema = GptImagePayloadBaseSchema.superRefine((val,
     }
 });
 
+/** Inferred type for {@link GptImagePayloadSchema}. */
+export type GptImagePayloadInput = z.infer<typeof GptImagePayloadSchema>;
+
+// ---------------------------------------------------------------------------
+// Video payload schema (G-3 multi-format publishing — HOS-65)
+// ---------------------------------------------------------------------------
+
+/**
+ * Base object shape for a GPT-supplied video payload.
+ *
+ * Mirrors {@link GptImagePayloadBaseSchema} but supports `public_url` mode ONLY:
+ * video files are too large for OpenAI's `openai_file_refs` injection path, so
+ * phase 1 requires a direct HTTPS URL. `mode` stays a single-variant enum (not a
+ * bare literal) so a future mode can be added without a breaking change.
+ */
+export const GptVideoPayloadBaseSchema = z.object({
+    mode: z.enum(['public_url']),
+    /**
+     * Used when `mode === 'public_url'`.
+     * Direct HTTPS URL of the video to download and re-upload to Cloudinary.
+     */
+    url: z.string().url({ message: 'zodError.socialDraft.video.url.invalid' }).optional(),
+    /** Optional alt text for accessibility. */
+    altText: z.string().optional(),
+    /** Optional MIME type hint (e.g., "video/mp4"). Used for media type inference. */
+    mimeType: z.string().optional()
+});
+
+/**
+ * GPT video payload schema with cross-field validation.
+ *
+ * Uses `superRefine` (mirroring {@link GptImagePayloadSchema}) so the shape stays
+ * a flat `ZodObject` at the JSON Schema level and `url` is enforced present when
+ * `mode === 'public_url'`.
+ */
+export const GptVideoPayloadSchema = GptVideoPayloadBaseSchema.superRefine((val, ctx) => {
+    if (val.mode === 'public_url' && !val.url) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['url'],
+            message: 'zodError.socialDraft.video.url.invalid'
+        });
+    }
+});
+
+/** Inferred type for {@link GptVideoPayloadSchema}. */
+export type GptVideoPayloadInput = z.infer<typeof GptVideoPayloadSchema>;
+
 // ---------------------------------------------------------------------------
 // Per-target schema
 // ---------------------------------------------------------------------------
 
 /**
  * A single publish target (platform × format pair) requested by the GPT.
+ *
+ * `assets` (optional) lets a target carry its OWN media, independent of the other
+ * targets on the same post — this is what makes per-target/per-format publishing
+ * possible (HOS-65 G-3). Each entry may hold an image and/or a video payload. When
+ * `assets` is omitted, the target falls back to the post-level root `image` field
+ * (legacy behavior), so existing GPT Action callers keep working unchanged.
  */
 export const SocialDraftTargetSchema = z.object({
     platform: SocialPlatformEnumSchema,
-    publishFormat: SocialPublishFormatEnumSchema
+    publishFormat: SocialPublishFormatEnumSchema,
+    assets: z
+        .array(
+            z.object({
+                image: GptImagePayloadSchema.optional(),
+                video: GptVideoPayloadSchema.optional()
+            })
+        )
+        .optional()
 });
 
 // ---------------------------------------------------------------------------

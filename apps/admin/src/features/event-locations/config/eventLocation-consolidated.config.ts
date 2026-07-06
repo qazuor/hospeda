@@ -1,5 +1,5 @@
-import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
 import type { useTranslations } from '@repo/i18n';
+import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
 import {
     createAddressConsolidatedSection,
     createBasicInfoConsolidatedSection,

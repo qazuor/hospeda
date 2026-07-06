@@ -87,6 +87,8 @@ export function senderTypeToI18nKey(senderType: SenderType): string {
 export interface TextSegment {
     type: 'text';
     value: string;
+    /** Character offset where this segment starts in the source text. Stable, content-derived — safe to use as a React key. */
+    start: number;
 }
 
 /** A URL link segment extracted from message text */
@@ -94,6 +96,8 @@ export interface LinkSegment {
     type: 'link';
     href: string;
     value: string;
+    /** Character offset where this segment starts in the source text. Stable, content-derived — safe to use as a React key. */
+    start: number;
 }
 
 /** Union of parsed content segment types */
@@ -117,15 +121,19 @@ export function parseTextSegments(text: string): ParsedSegment[] {
     match = re.exec(text);
     while (match !== null) {
         if (match.index > lastIndex) {
-            segments.push({ type: 'text', value: text.slice(lastIndex, match.index) });
+            segments.push({
+                type: 'text',
+                value: text.slice(lastIndex, match.index),
+                start: lastIndex
+            });
         }
-        segments.push({ type: 'link', href: match[0], value: match[0] });
+        segments.push({ type: 'link', href: match[0], value: match[0], start: match.index });
         lastIndex = match.index + match[0].length;
         match = re.exec(text);
     }
 
     if (lastIndex < text.length) {
-        segments.push({ type: 'text', value: text.slice(lastIndex) });
+        segments.push({ type: 'text', value: text.slice(lastIndex), start: lastIndex });
     }
 
     return segments;

@@ -34,10 +34,12 @@ const { mockGetBySlug, mockWithTransaction, mockCancelAddonPurchaseRecord, mockR
 
 // Mock AddonCatalogService (DB-backed after cutover)
 vi.mock('@repo/service-core', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockGetBySlug,
-        list: vi.fn()
-    })),
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockGetBySlug,
+            list: vi.fn()
+        };
+    }),
     cancelAddonPurchaseRecord: mockCancelAddonPurchaseRecord,
     queryAddonActive: vi.fn(),
     queryUserAddons: vi.fn(),
@@ -244,52 +246,47 @@ describe('addon.user-addons cutover parity (SPEC-192 T-011)', () => {
                     sortOrder: 3
                 }
             ]
-        ])(
-            'slug "%s": catalog resolves affectsLimitKey=%s → recalculation is called',
-            async (slug, limitKey, stub) => {
-                // Arrange — DB returns purchase with this slug
-                const { getDb } = await import('@repo/db');
-                (getDb as ReturnType<typeof vi.fn>).mockReturnValue(buildPurchaseSelectDb(slug));
+        ])('slug "%s": catalog resolves affectsLimitKey=%s → recalculation is called', async (slug, limitKey, stub) => {
+            // Arrange — DB returns purchase with this slug
+            const { getDb } = await import('@repo/db');
+            (getDb as ReturnType<typeof vi.fn>).mockReturnValue(buildPurchaseSelectDb(slug));
 
-                const { getDb: getDbClient } = await import('@repo/db/client');
-                (getDbClient as ReturnType<typeof vi.fn>).mockReturnValue(
-                    buildPurchaseSelectDb(slug)
-                );
+            const { getDb: getDbClient } = await import('@repo/db/client');
+            (getDbClient as ReturnType<typeof vi.fn>).mockReturnValue(buildPurchaseSelectDb(slug));
 
-                // withTransaction commits DB cancel then exits
-                mockWithTransaction.mockImplementation(
-                    async (callback: (tx: unknown) => Promise<unknown>) => {
-                        const fakeTx = {
-                            update: vi.fn().mockReturnValue({
-                                set: vi.fn().mockReturnValue({
-                                    where: vi.fn().mockResolvedValue({ rowCount: 1 })
-                                })
-                            })
-                        };
-                        return callback(fakeTx);
-                    }
-                );
+            // withTransaction commits DB cancel then exits
+            mockWithTransaction.mockImplementation(async function (
+                callback: (tx: unknown) => Promise<unknown>
+            ) {
+                const fakeTx = {
+                    update: vi.fn().mockReturnValue({
+                        set: vi.fn().mockReturnValue({
+                            where: vi.fn().mockResolvedValue({ rowCount: 1 })
+                        })
+                    })
+                };
+                return callback(fakeTx);
+            });
 
-                // Catalog resolves the stub
-                mockGetBySlug.mockResolvedValue({ success: true, data: stub });
+            // Catalog resolves the stub
+            mockGetBySlug.mockResolvedValue({ success: true, data: stub });
 
-                // Act
-                const result = await cancelUserAddon(
-                    buildBilling(slug),
-                    buildEntitlementService(),
-                    { customerId: 'cust-uuid', purchaseId: `purchase-${slug}`, userId: 'user-uuid' }
-                );
+            // Act
+            const result = await cancelUserAddon(buildBilling(slug), buildEntitlementService(), {
+                customerId: 'cust-uuid',
+                purchaseId: `purchase-${slug}`,
+                userId: 'user-uuid'
+            });
 
-                // Assert
-                expect(result.success).toBe(true);
-                // Catalog was consulted
-                expect(mockGetBySlug).toHaveBeenCalledWith(slug);
-                // Recalculation was triggered with the correct limitKey
-                expect(mockRecalculate).toHaveBeenCalledWith(
-                    expect.objectContaining({ limitKey, customerId: 'cust-uuid' })
-                );
-            }
-        );
+            // Assert
+            expect(result.success).toBe(true);
+            // Catalog was consulted
+            expect(mockGetBySlug).toHaveBeenCalledWith(slug);
+            // Recalculation was triggered with the correct limitKey
+            expect(mockRecalculate).toHaveBeenCalledWith(
+                expect.objectContaining({ limitKey, customerId: 'cust-uuid' })
+            );
+        });
     });
 
     describe('entitlement-only addons — no limit recalculation', () => {

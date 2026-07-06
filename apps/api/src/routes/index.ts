@@ -5,87 +5,22 @@
  *   - Protected: /api/v1/protected/* (auth required, own resources)
  *   - Admin:     /api/v1/admin/*     (admin role + permissions)
  */
+
+import { ApiInfoSchema } from '@repo/schemas';
+import { mustChangePasswordGate } from '../middlewares/must-change-password';
+import { pastDueGraceMiddleware } from '../middlewares/past-due-grace.middleware';
+import { createSlidingWindowPerUserRateLimit } from '../middlewares/rate-limit';
+import { socialFeatureTagMiddleware } from '../middlewares/social-feature-tag';
 import type { AppOpenAPI } from '../types';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
-
+import { createSimpleRoute } from '../utils/route-factory';
 // ─── Entity route imports (from entity barrels) ───────────────────────────────
 import {
     adminAccommodationRoutes,
     protectedAccommodationRoutes,
     publicAccommodationRoutes
 } from './accommodation';
-import { adminAmenityRoutes, protectedAmenityRoutes, publicAmenityRoutes } from './amenity';
-import {
-    adminAttractionRoutes,
-    protectedAttractionRoutes,
-    publicAttractionRoutes
-} from './attraction';
-import { adminCommentRoutes, protectedCommentRoutes } from './comment';
-import { adminCommerceRoutes, publicCommerceRoutes } from './commerce';
-import {
-    adminDestinationRoutes,
-    protectedDestinationRoutes,
-    publicDestinationRoutes
-} from './destination';
-import { adminEventRoutes, protectedEventRoutes, publicEventRoutes } from './event';
-import {
-    adminEventLocationRoutes,
-    protectedEventLocationRoutes,
-    publicEventLocationRoutes
-} from './event-location';
-import {
-    adminEventOrganizerRoutes,
-    protectedEventOrganizerRoutes,
-    publicEventOrganizerRoutes
-} from './event-organizer';
-import {
-    adminExperienceRoutes,
-    protectedExperienceRoutes,
-    publicExperienceRoutes
-} from './experience';
-import { adminFeatureRoutes, protectedFeatureRoutes, publicFeatureRoutes } from './feature';
-import {
-    adminGastronomyRoutes,
-    protectedGastronomyRoutes,
-    publicGastronomyRoutes
-} from './gastronomy';
-import { protectedHostRoutes } from './host';
-import { protectedHostOnboardingRoutes } from './host-onboarding';
-import { adminHostTradeRoutes, protectedHostTradeRoutes } from './host-trade';
-import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
-import {
-    adminPostTagAssignmentRoutes,
-    adminPostTagCrudRoutes,
-    publicPostTagRoutes
-} from './tag/post-tag/index.js';
-import {
-    adminEntityTagRoutes,
-    adminInternalTagRoutes,
-    adminOwnTagRoutes,
-    adminSystemTagRoutes,
-    adminUserTagModerationRoutes
-} from './tag/user-tag/index.js';
-
-import {
-    adminOwnerPromotionRoutes,
-    protectedOwnerPromotionRoutes,
-    publicOwnerPromotionRoutes
-} from './owner-promotion';
-import {
-    adminCreatePartnerRoute,
-    adminDeletePartnerRoute,
-    adminGetPartnerRoute,
-    adminListPartnerPlansRoute,
-    adminListPartnersRoute,
-    adminManualPaymentRoute,
-    adminSendPaymentLinkRoute,
-    adminUpdatePartnerRoute,
-    publicPartnersRoutes
-} from './partners';
-// ─── Entities with admin-only or specialized tiers ──────────────────────────
-import { adminPostSponsorRoutes } from './postSponsor';
-
 import { adminExternalReputationRoutes } from './accommodation-external-reputation/admin/index.js';
 import { protectedExternalReputationRoutes } from './accommodation-external-reputation/protected/index.js';
 import { publicExternalReputationRoutes } from './accommodation-external-reputation/public/index.js';
@@ -103,7 +38,13 @@ import {
     aiSocialDraftsRoute,
     aiSocialPublicDataRoute
 } from './ai/social/index.js';
+import { adminAmenityRoutes, protectedAmenityRoutes, publicAmenityRoutes } from './amenity';
 import { adminAppLogRoutes } from './app-logs';
+import {
+    adminAttractionRoutes,
+    protectedAttractionRoutes,
+    publicAttractionRoutes
+} from './attraction';
 import { adminAuditLogRoutes, adminSecurityLogRoutes } from './audit-logs';
 // ─── Non-entity route imports ─────────────────────────────────────────────────
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
@@ -111,25 +52,58 @@ import { betterAuthHandler } from './auth/handler';
 import { createBillingRoutesHandler } from './billing';
 import { adminBillingRoutes } from './billing/admin';
 import { publicBillingRoutes } from './billing/public';
+import { adminCommentRoutes, protectedCommentRoutes } from './comment';
+import { adminCommerceRoutes, publicCommerceRoutes } from './commerce';
 import { contactRoutes } from './contact';
 import { adminContentModerationRoutes } from './content-moderation/admin';
+import {
+    adminConversationsRouter,
+    protectedConversationRoutes,
+    publicConversationsRouter
+} from './conversations';
 import { adminCronRoutes } from './cron-admin';
+import {
+    adminDestinationRoutes,
+    protectedDestinationRoutes,
+    publicDestinationRoutes
+} from './destination';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
+import { adminEventRoutes, protectedEventRoutes, publicEventRoutes } from './event';
+import {
+    adminEventLocationRoutes,
+    protectedEventLocationRoutes,
+    publicEventLocationRoutes
+} from './event-location';
+import {
+    adminEventOrganizerRoutes,
+    protectedEventOrganizerRoutes,
+    publicEventOrganizerRoutes
+} from './event-organizer';
 import { adminExchangeRateRoutes } from './exchange-rates/admin/index.js';
 import { publicExchangeRateRoutes } from './exchange-rates/public/index.js';
+import {
+    adminExperienceRoutes,
+    protectedExperienceRoutes,
+    publicExperienceRoutes
+} from './experience';
+import { adminFeatureRoutes, protectedFeatureRoutes, publicFeatureRoutes } from './feature';
 import {
     adminFeatureFlagRoutes,
     protectedFeatureFlagRoutes,
     publicFeatureFlagRoutes
 } from './feature-flags';
 import { publicFeedbackRoutes } from './feedback';
+import {
+    adminGastronomyRoutes,
+    protectedGastronomyRoutes,
+    publicGastronomyRoutes
+} from './gastronomy';
 import { adminGeocodingRoutes, protectedGeocodingRoutes } from './geocoding';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
 import { mediaHealthRoutes } from './health/media';
-import {
-    makeClaimCallbackRoute,
-    makeResultCallbackRoute
-} from './integrations/make/social/jobs/index.js';
+import { protectedHostRoutes } from './host';
+import { protectedHostOnboardingRoutes } from './host-onboarding';
+import { adminHostTradeRoutes, protectedHostTradeRoutes } from './host-trade';
 import {
     mercadoLibreAuthorizeRoute,
     mercadoLibreCallbackRoute
@@ -143,16 +117,36 @@ import {
     newsletterProtectedRoutes,
     newsletterPublicRoutes
 } from './newsletter';
+import {
+    adminOwnerPromotionRoutes,
+    protectedOwnerPromotionRoutes,
+    publicOwnerPromotionRoutes
+} from './owner-promotion';
+import {
+    adminCreatePartnerRoute,
+    adminDeletePartnerRoute,
+    adminGetPartnerRoute,
+    adminListPartnerPlansRoute,
+    adminListPartnersRoute,
+    adminManualPaymentRoute,
+    adminSendPaymentLinkRoute,
+    adminUpdatePartnerRoute,
+    publicPartnersRoutes
+} from './partners';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
 import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
+import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
+// ─── Entities with admin-only or specialized tiers ──────────────────────────
+import { adminPostSponsorRoutes } from './postSponsor';
 import { protectedPriceAlertRoutes } from './price-alert';
 import { protectedProfileRoutes } from './profile';
 import { protectedRecommendationsRoutes } from './recommendations';
 import { revalidationRouter } from './revalidation';
-import { protectedSearchHistoryRoutes } from './search-history';
 import { publicSearchRoutes } from './search/public';
+import { protectedSearchHistoryRoutes } from './search-history';
 import {
     adminGetGptActionSchemaRoute,
+    adminGetMakeWebhookSchemaRoute,
     adminSocialAudienceRoutes,
     adminSocialAuditLogRoutes,
     adminSocialBatchRoutes,
@@ -172,6 +166,18 @@ import { adminSponsorshipLevelRoutes } from './sponsorship-level';
 import { adminSponsorshipPackageRoutes } from './sponsorship-package';
 import { publicStatsRoutes } from './stats/public';
 import { adminSystemRoutes } from './system/admin';
+import {
+    adminPostTagAssignmentRoutes,
+    adminPostTagCrudRoutes,
+    publicPostTagRoutes
+} from './tag/post-tag/index.js';
+import {
+    adminEntityTagRoutes,
+    adminInternalTagRoutes,
+    adminOwnTagRoutes,
+    adminSystemTagRoutes,
+    adminUserTagModerationRoutes
+} from './tag/user-tag/index.js';
 // SPEC-217: static import (NOT require) so tsup inlines qzpay-control once and it
 // shares the single @repo/billing test-control `state` singleton with applyTestControl.
 // A dynamic require() here produced a second module instance under the ESM bundle,
@@ -190,18 +196,6 @@ import {
 } from './webhooks';
 import { adminWebhookRouter } from './webhooks/admin';
 import { protectedWhatsNewRoutes } from './whats-new';
-
-import { ApiInfoSchema } from '@repo/schemas';
-import { mustChangePasswordGate } from '../middlewares/must-change-password';
-import { pastDueGraceMiddleware } from '../middlewares/past-due-grace.middleware';
-import { createSlidingWindowPerUserRateLimit } from '../middlewares/rate-limit';
-import { socialFeatureTagMiddleware } from '../middlewares/social-feature-tag';
-import { createSimpleRoute } from '../utils/route-factory';
-import {
-    adminConversationsRouter,
-    protectedConversationRoutes,
-    publicConversationsRouter
-} from './conversations';
 
 const rootRoute = createSimpleRoute({
     method: 'get',
@@ -585,7 +579,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // `feature: 'social-automation'` tag is set in ONE place, not on each of
         // the 60+ social route files.
         app.use('/api/v1/ai/social/*', socialFeatureTagMiddleware());
-        app.use('/api/v1/integrations/make/social/*', socialFeatureTagMiddleware());
         app.use('/api/v1/admin/social/*', socialFeatureTagMiddleware());
 
         // AI social catalog (SPEC-254 T-026): machine-authenticated (x-hospeda-ai-key), no session.
@@ -599,12 +592,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // AI social public-data pull (HOS-66 T-023): API-key gated, read-only.
         // Custom GPT pulls public accommodations/destinations to enrich a draft.
         app.route('/api/v1/ai/social/public-data', aiSocialPublicDataRoute);
-
-        // Make.com inbound callbacks (SPEC-254 T-048): authenticated via x-hospeda-make-key.
-        // POST /claim — Make picks up a dispatched job and records its run ID (US-12).
-        // POST /result — Make reports the publish outcome SUCCESS/FAILED (US-13).
-        app.route('/api/v1/integrations/make/social/jobs', makeClaimCallbackRoute);
-        app.route('/api/v1/integrations/make/social/jobs', makeResultCallbackRoute);
 
         // Feature flags admin (FEATURE_FLAG_MANAGE permission — SUPER_ADMIN only)
         app.route('/api/v1/admin/flags', adminFeatureFlagRoutes);
@@ -646,6 +633,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // GPT Action schema export (SPEC-254 T-030)
         // Returns the OpenAPI 3.1 document the operator pastes into the Custom GPT Actions config.
         app.route('/api/v1/admin/social/gpt-action-schema', adminGetGptActionSchemaRoute);
+
+        // Make.com webhook config export (HOS-67 G-6)
+        // Returns the dispatch payload/response JSON Schemas + webhook URL + API key.
+        app.route('/api/v1/admin/social/make-webhook-schema', adminGetMakeWebhookSchemaRoute);
 
         apiLogger.debug('✅ Admin routes registered successfully');
 
@@ -689,11 +680,11 @@ export const setupRoutes = (app: AppOpenAPI) => {
     }
 
     // Documentation routes (disabled in production for security)
-    if (env.NODE_ENV !== 'production') {
+    if (env.NODE_ENV === 'production') {
+        apiLogger.info('Documentation routes disabled in production');
+    } else {
         app.route('/docs', docsIndexRoutes);
         app.route('/docs', swaggerRoutes);
         app.route('/docs', scalarRoutes);
-    } else {
-        apiLogger.info('Documentation routes disabled in production');
     }
 };

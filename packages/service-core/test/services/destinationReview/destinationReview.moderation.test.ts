@@ -43,23 +43,29 @@ vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
     return {
         ...actual,
-        DestinationReviewModel: vi.fn(() => mockModel),
-        DestinationModel: vi.fn(() => ({
-            findById: vi.fn(),
-            findOne: vi.fn(),
-            create: vi.fn(),
-            update: vi.fn(),
-            count: vi.fn(),
-            findAll: vi.fn()
-        }))
+        DestinationReviewModel: vi.fn(function () {
+            return mockModel;
+        }),
+        DestinationModel: vi.fn(function () {
+            return {
+                findById: vi.fn(),
+                findOne: vi.fn(),
+                create: vi.fn(),
+                update: vi.fn(),
+                count: vi.fn(),
+                findAll: vi.fn()
+            };
+        })
     };
 });
 
 vi.mock('../../../src/services/destination/destination.service.js', () => ({
-    DestinationService: vi.fn(() => ({
-        updateStatsFromReview: vi.fn().mockResolvedValue(undefined),
-        getById: vi.fn()
-    }))
+    DestinationService: vi.fn(function () {
+        return {
+            updateStatsFromReview: vi.fn().mockResolvedValue(undefined),
+            getById: vi.fn()
+        };
+    })
 }));
 
 vi.mock('../../../src/utils/transaction.js', () => ({
@@ -77,8 +83,8 @@ vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
 // ---------------------------------------------------------------------------
 
 import * as contentModeration from '@repo/content-moderation';
-import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { DestinationReview } from '@repo/schemas';
+import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as getThresholdModule from '../../../src/services/contentModeration/get-threshold-for-context.js';
 import { DestinationReviewService } from '../../../src/services/destinationReview/destinationReview.service';

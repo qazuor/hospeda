@@ -1,6 +1,7 @@
 import { relations } from 'drizzle-orm';
 import { index, integer, pgTable, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { socialAssets } from './social_assets.dbschema.ts';
+import { socialPostTargetMedia } from './social_post_target_media.dbschema.ts';
 import { socialPosts } from './social_posts.dbschema.ts';
 
 /**
@@ -34,7 +35,7 @@ export const socialPostMedia = pgTable(
     })
 );
 
-export const socialPostMediaRelations = relations(socialPostMedia, ({ one }) => ({
+export const socialPostMediaRelations = relations(socialPostMedia, ({ one, many }) => ({
     post: one(socialPosts, {
         fields: [socialPostMedia.socialPostId],
         references: [socialPosts.id]
@@ -42,7 +43,8 @@ export const socialPostMediaRelations = relations(socialPostMedia, ({ one }) => 
     asset: one(socialAssets, {
         fields: [socialPostMedia.assetId],
         references: [socialAssets.id]
-    })
+    }),
+    targetMedia: many(socialPostTargetMedia)
 }));
 
 export type InsertSocialPostMedia = typeof socialPostMedia.$inferInsert;

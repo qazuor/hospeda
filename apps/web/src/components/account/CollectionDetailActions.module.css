@@ -27,9 +27,11 @@
     border: 1px solid transparent;
     cursor: pointer;
     white-space: nowrap;
-    transition: background-color var(--duration-fast, 0.15s) ease, color var(--duration-fast, 0.15s)
-        ease, border-color var(--duration-fast, 0.15s) ease, opacity var(--duration-fast, 0.15s)
-        ease;
+    transition:
+        background-color var(--duration-fast, 0.15s) ease,
+        color var(--duration-fast, 0.15s) ease,
+        border-color var(--duration-fast, 0.15s) ease,
+        opacity var(--duration-fast, 0.15s) ease;
 }
 
 .btn:focus-visible {

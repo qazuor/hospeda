@@ -20,15 +20,25 @@
  * SPEC-254 T-027.
  */
 
-import type { SocialAssetModel, SocialPostMediaModel, SocialSettingModel } from '@repo/db';
+import type {
+    SocialAssetModel,
+    SocialPostMediaModel,
+    SocialPostTargetMediaModel,
+    SocialSettingModel
+} from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
-import { SocialAssetSourceEnum, SocialMediaTypeEnum } from '@repo/schemas';
+import { SocialAssetSourceEnum, SocialMediaTypeEnum, SocialPublishFormatEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     type GptImagePayload,
+    type GptVideoPayload,
     SocialImagePipelineService
 } from '../../../src/services/social/social-image-pipeline.service';
+import {
+    STORY_ASPECT_RATIO_TRANSFORM,
+    VIDEO_POST_LIMITS
+} from '../../../src/services/social/social-video-pipeline-config.util';
 import { createModelMock } from '../../utils/modelMockFactory';
 
 // ---------------------------------------------------------------------------
@@ -38,6 +48,8 @@ import { createModelMock } from '../../utils/modelMockFactory';
 const MOCK_ASSET_UUID = '00000000-0000-4000-8000-000000000001';
 const MOCK_POST_UUID = '00000000-0000-4000-8000-000000000002';
 const MOCK_ACTOR_UUID = '00000000-0000-4000-8000-000000000003';
+const MOCK_TARGET_UUID = '00000000-0000-4000-8000-000000000004';
+const MOCK_TARGET_MEDIA_UUID = '00000000-0000-4000-8000-000000000005';
 
 const FAKE_IMAGE_URL = 'https://files.oaiusercontent.com/fake-image.jpg';
 const FAKE_CLOUDINARY_URL =
@@ -73,14 +85,27 @@ function buildMockAssetRow(overrides: Record<string, unknown> = {}) {
     };
 }
 
-function buildMockPostMediaRow() {
+function buildMockPostMediaRow(overrides: Record<string, unknown> = {}) {
     return {
         id: '00000000-0000-4000-8000-000000000099',
         socialPostId: MOCK_POST_UUID,
         assetId: MOCK_ASSET_UUID,
         position: 0,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        ...overrides
+    };
+}
+
+function buildMockTargetMediaRow(overrides: Record<string, unknown> = {}) {
+    return {
+        id: MOCK_TARGET_MEDIA_UUID,
+        socialPostTargetId: MOCK_TARGET_UUID,
+        socialPostMediaId: '00000000-0000-4000-8000-000000000099',
+        position: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ...overrides
     };
 }
 
@@ -112,6 +137,7 @@ describe('SocialImagePipelineService', () => {
     let assetModelMock: ReturnType<typeof createModelMock>;
     let postMediaModelMock: ReturnType<typeof createModelMock>;
     let settingModelMock: ReturnType<typeof createModelMock>;
+    let postTargetMediaModelMock: ReturnType<typeof createModelMock>;
     let service: SocialImagePipelineService;
 
     beforeEach(() => {
@@ -125,13 +151,15 @@ describe('SocialImagePipelineService', () => {
         assetModelMock = createModelMock();
         postMediaModelMock = createModelMock();
         settingModelMock = createModelMock();
+        postTargetMediaModelMock = createModelMock();
 
         service = new SocialImagePipelineService(
             {},
             mediaProvider as unknown as ImageProvider,
             assetModelMock as unknown as SocialAssetModel,
             postMediaModelMock as unknown as SocialPostMediaModel,
-            settingModelMock as unknown as SocialSettingModel
+            settingModelMock as unknown as SocialSettingModel,
+            postTargetMediaModelMock as unknown as SocialPostTargetMediaModel
         );
 
         // Default: asset create succeeds
@@ -140,6 +168,8 @@ describe('SocialImagePipelineService', () => {
         postMediaModelMock.create.mockResolvedValue(buildMockPostMediaRow());
         // Default: no social_settings rows configured — every getter falls back
         settingModelMock.findOne.mockResolvedValue(undefined);
+        // Default: target-media link create succeeds
+        postTargetMediaModelMock.create.mockResolvedValue(buildMockTargetMediaRow());
     });
 
     afterEach(() => {
@@ -473,12 +503,16 @@ describe('SocialImagePipelineService', () => {
     });
 
     // -------------------------------------------------------------------------
-    // Non-fatal: social_post_media create failure
+    // social_post_media create failure — SURFACED (HOS-65)
     // -------------------------------------------------------------------------
 
     describe('processImage — social_post_media create failure', () => {
-        it('should still return assetId and cloudinaryUrl when post media link fails', async () => {
-            // Arrange
+        it('should surface a warning and null out the result when the post media link fails (HOS-65)', async () => {
+            // Arrange — a social_post_media insert failure (e.g. a
+            // UNIQUE(social_post_id, position) collision) must NOT be silently
+            // swallowed; if it were, the caller would report a green
+            // assetStatus with no backing media row and the dispatch would leak
+            // another target's media.
             const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
             vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
             postMediaModelMock.create.mockRejectedValue(new Error('unique constraint violation'));
@@ -486,11 +520,12 @@ describe('SocialImagePipelineService', () => {
             // Act
             const result = await service.processImage({ image, socialPostId: MOCK_POST_UUID });
 
-            // Assert — link failure is non-fatal
-            expect(result.assetId).toBe(MOCK_ASSET_UUID);
-            expect(result.cloudinaryUrl).not.toBeNull();
-            // warnings array should remain empty (link failure is only logged, not surfaced)
-            expect(result.warnings).toHaveLength(0);
+            // Assert — failure is surfaced via the graceful-fail shape.
+            expect(result.assetId).toBeNull();
+            expect(result.cloudinaryUrl).toBeNull();
+            expect(result.warnings).toContain(
+                'Media uploaded but could not be linked to the post/target; manual review required'
+            );
         });
     });
 
@@ -657,6 +692,556 @@ describe('SocialImagePipelineService', () => {
 
             // Assert
             expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 15_000);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // social_post_target_media link row (HOS-65 T-011)
+    // -------------------------------------------------------------------------
+
+    describe('processImage — social_post_target_media link (HOS-65 G-3)', () => {
+        it('should create a social_post_target_media link row when socialPostTargetId is provided', async () => {
+            // Arrange
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            postMediaModelMock.create.mockResolvedValue(
+                buildMockPostMediaRow({ id: 'media-row-uuid' })
+            );
+
+            // Act
+            await service.processImage({
+                image,
+                socialPostId: MOCK_POST_UUID,
+                socialPostTargetId: MOCK_TARGET_UUID
+            });
+
+            // Assert
+            expect(postTargetMediaModelMock.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    socialPostTargetId: MOCK_TARGET_UUID,
+                    socialPostMediaId: 'media-row-uuid',
+                    position: 0
+                })
+            );
+        });
+
+        it('should NOT create a social_post_target_media link row when socialPostTargetId is absent', async () => {
+            // Arrange
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+
+            // Act
+            await service.processImage({ image, socialPostId: MOCK_POST_UUID });
+
+            // Assert
+            expect(postTargetMediaModelMock.create).not.toHaveBeenCalled();
+        });
+
+        it('should not attempt the link row when socialPostId is absent even if socialPostTargetId is provided', async () => {
+            // Arrange — no social_post_media row is created without a socialPostId,
+            // so there is no socialPostMediaId to link.
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+
+            // Act
+            await service.processImage({ image, socialPostTargetId: MOCK_TARGET_UUID });
+
+            // Assert
+            expect(postMediaModelMock.create).not.toHaveBeenCalled();
+            expect(postTargetMediaModelMock.create).not.toHaveBeenCalled();
+        });
+
+        // HOS-65 FIX 7: orphan cleanup when the SECOND insert (the target
+        // link) fails after the FIRST insert (social_post_media) already
+        // committed — there is no surrounding transaction in this pipeline.
+        it('deletes the orphaned social_post_media row when the social_post_target_media link insert fails', async () => {
+            // Arrange
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            postMediaModelMock.create.mockResolvedValue(
+                buildMockPostMediaRow({ id: 'media-row-uuid' })
+            );
+            postTargetMediaModelMock.create.mockRejectedValue(
+                new Error('unique constraint violation on social_post_target_media')
+            );
+            postMediaModelMock.hardDelete.mockResolvedValue(1);
+
+            // Act
+            const result = await service.processImage({
+                image,
+                socialPostId: MOCK_POST_UUID,
+                socialPostTargetId: MOCK_TARGET_UUID
+            });
+
+            // Assert — the already-committed social_post_media row is deleted
+            // so it never lingers as an orphan with zero link rows.
+            expect(postMediaModelMock.hardDelete).toHaveBeenCalledWith({ id: 'media-row-uuid' });
+
+            // Assert — the failure still surfaces as a graceful-fail, exactly
+            // as it did before FIX 7 (the cleanup is purely internal).
+            expect(result.assetId).toBeNull();
+            expect(result.cloudinaryUrl).toBeNull();
+            expect(result.warnings).toContain(
+                'Media uploaded but could not be linked to the post/target; manual review required'
+            );
+        });
+
+        it('still surfaces the graceful-fail warning even when the compensating delete itself fails', async () => {
+            // Arrange — both the link insert AND the compensating hardDelete
+            // fail; the delete failure must not mask the original outcome.
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            postMediaModelMock.create.mockResolvedValue(
+                buildMockPostMediaRow({ id: 'media-row-uuid' })
+            );
+            postTargetMediaModelMock.create.mockRejectedValue(new Error('link insert failed'));
+            postMediaModelMock.hardDelete.mockRejectedValue(new Error('delete also failed'));
+
+            // Act
+            const result = await service.processImage({
+                image,
+                socialPostId: MOCK_POST_UUID,
+                socialPostTargetId: MOCK_TARGET_UUID
+            });
+
+            // Assert — graceful-fail contract still holds despite the
+            // secondary delete failure.
+            expect(result.assetId).toBeNull();
+            expect(result.cloudinaryUrl).toBeNull();
+            expect(result.warnings).toContain(
+                'Media uploaded but could not be linked to the post/target; manual review required'
+            );
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // processImages — N-asset pipeline (HOS-65 T-012)
+    // -------------------------------------------------------------------------
+
+    describe('processImages — N-asset pipeline (HOS-65 G-3)', () => {
+        beforeEach(() => {
+            // Each social_post_media.create call gets a distinct id keyed by its
+            // requested position, so assertions can trace media rows to link rows.
+            postMediaModelMock.create.mockImplementation(async (data: Record<string, unknown>) =>
+                buildMockPostMediaRow({ id: `media-row-${data.position}`, ...data })
+            );
+        });
+
+        it('processes a single asset (N=1) at position 0 with one link row', async () => {
+            // Arrange
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+
+            // Act
+            const results = await service.processImages([
+                { image, socialPostId: MOCK_POST_UUID, socialPostTargetId: MOCK_TARGET_UUID }
+            ]);
+
+            // Assert
+            expect(results).toHaveLength(1);
+            expect(results[0]?.assetId).toBe(MOCK_ASSET_UUID);
+            expect(postMediaModelMock.create).toHaveBeenCalledTimes(1);
+            expect(postMediaModelMock.create).toHaveBeenCalledWith(
+                expect.objectContaining({ position: 0 })
+            );
+            expect(postTargetMediaModelMock.create).toHaveBeenCalledTimes(1);
+            expect(postTargetMediaModelMock.create).toHaveBeenCalledWith(
+                expect.objectContaining({ socialPostMediaId: 'media-row-0', position: 0 })
+            );
+        });
+
+        it('processes N=3 assets writing sequential positions 0/1/2 on media rows and link rows', async () => {
+            // Arrange
+            const images: GptImagePayload[] = [
+                { mode: 'public_url', url: 'https://example.com/a.jpg' },
+                { mode: 'public_url', url: 'https://example.com/b.jpg' },
+                { mode: 'public_url', url: 'https://example.com/c.jpg' }
+            ];
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+
+            // Act
+            const results = await service.processImages(
+                images.map((image) => ({
+                    image,
+                    socialPostId: MOCK_POST_UUID,
+                    socialPostTargetId: MOCK_TARGET_UUID
+                }))
+            );
+
+            // Assert
+            expect(results).toHaveLength(3);
+            for (const result of results) {
+                expect(result.assetId).toBe(MOCK_ASSET_UUID);
+            }
+            expect(postMediaModelMock.create).toHaveBeenCalledTimes(3);
+            expect(postMediaModelMock.create).toHaveBeenNthCalledWith(
+                1,
+                expect.objectContaining({ position: 0 })
+            );
+            expect(postMediaModelMock.create).toHaveBeenNthCalledWith(
+                2,
+                expect.objectContaining({ position: 1 })
+            );
+            expect(postMediaModelMock.create).toHaveBeenNthCalledWith(
+                3,
+                expect.objectContaining({ position: 2 })
+            );
+            expect(postTargetMediaModelMock.create).toHaveBeenCalledTimes(3);
+            expect(postTargetMediaModelMock.create).toHaveBeenNthCalledWith(
+                1,
+                expect.objectContaining({ socialPostMediaId: 'media-row-0', position: 0 })
+            );
+            expect(postTargetMediaModelMock.create).toHaveBeenNthCalledWith(
+                2,
+                expect.objectContaining({ socialPostMediaId: 'media-row-1', position: 1 })
+            );
+            expect(postTargetMediaModelMock.create).toHaveBeenNthCalledWith(
+                3,
+                expect.objectContaining({ socialPostMediaId: 'media-row-2', position: 2 })
+            );
+        });
+
+        it('isolates a mid-array failure: siblings still succeed and no orphan link row is created for the failed asset', async () => {
+            // Arrange — index 1's download fails, indices 0 and 2 succeed.
+            const images: GptImagePayload[] = [
+                { mode: 'public_url', url: 'https://example.com/a.jpg' },
+                { mode: 'public_url', url: 'https://example.com/b.jpg' },
+                { mode: 'public_url', url: 'https://example.com/c.jpg' }
+            ];
+            vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+                if (url === 'https://example.com/b.jpg') {
+                    throw new Error('network error');
+                }
+                return makeOkResponse();
+            });
+
+            // Act
+            const results = await service.processImages(
+                images.map((image) => ({
+                    image,
+                    socialPostId: MOCK_POST_UUID,
+                    socialPostTargetId: MOCK_TARGET_UUID
+                }))
+            );
+
+            // Assert — siblings unaffected
+            expect(results).toHaveLength(3);
+            expect(results[0]?.assetId).toBe(MOCK_ASSET_UUID);
+            expect(results[2]?.assetId).toBe(MOCK_ASSET_UUID);
+
+            // Assert — failed asset returns the graceful-fail shape
+            expect(results[1]?.assetId).toBeNull();
+            expect(results[1]?.cloudinaryUrl).toBeNull();
+            expect(results[1]?.warnings).toContain('Media upload failed; manual upload required');
+
+            // Assert — only 2 media rows created (indices 0 and 2), no row for index 1
+            expect(postMediaModelMock.create).toHaveBeenCalledTimes(2);
+            expect(postMediaModelMock.create).toHaveBeenCalledWith(
+                expect.objectContaining({ position: 0 })
+            );
+            expect(postMediaModelMock.create).toHaveBeenCalledWith(
+                expect.objectContaining({ position: 2 })
+            );
+            expect(postMediaModelMock.create).not.toHaveBeenCalledWith(
+                expect.objectContaining({ position: 1 })
+            );
+
+            // Assert — only 2 link rows created, no orphan link row for the failed asset
+            expect(postTargetMediaModelMock.create).toHaveBeenCalledTimes(2);
+            expect(postTargetMediaModelMock.create).not.toHaveBeenCalledWith(
+                expect.objectContaining({ position: 1 })
+            );
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // processVideo (HOS-65 T-013)
+    // -------------------------------------------------------------------------
+
+    describe('processVideo — public_url mode (HOS-65 G-3)', () => {
+        const FAKE_VIDEO_URL = 'https://example.com/fake-video.mp4';
+
+        it('persists a social_assets row with mediaType=VIDEO and durationSeconds set, plus a link row', async () => {
+            // Arrange
+            const video: GptVideoPayload = {
+                mode: 'public_url',
+                url: FAKE_VIDEO_URL,
+                mimeType: 'video/mp4'
+            };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            vi.spyOn(mediaProvider, 'upload').mockResolvedValue({
+                url: FAKE_CLOUDINARY_URL,
+                publicId: 'hospeda/social/assets/generated-video-1',
+                width: 1080,
+                height: 1920,
+                durationSeconds: 42
+            });
+            assetModelMock.create.mockResolvedValue(
+                buildMockAssetRow({ mediaType: SocialMediaTypeEnum.VIDEO, durationSeconds: 42 })
+            );
+
+            // Act
+            const result = await service.processVideo({
+                video,
+                socialPostId: MOCK_POST_UUID,
+                socialPostTargetId: MOCK_TARGET_UUID,
+                actorId: MOCK_ACTOR_UUID
+            });
+
+            // Assert — result shape
+            expect(result.assetId).toBe(MOCK_ASSET_UUID);
+            expect(result.cloudinaryUrl).not.toBeNull();
+            expect(result.warnings).toHaveLength(0);
+
+            // Assert — mediaType forced to VIDEO, durationSeconds persisted
+            expect(assetModelMock.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    mediaType: SocialMediaTypeEnum.VIDEO,
+                    durationSeconds: 42
+                })
+            );
+
+            // Assert — link rows created (media + target-media)
+            expect(postMediaModelMock.create).toHaveBeenCalledWith(
+                expect.objectContaining({ socialPostId: MOCK_POST_UUID, position: 0 })
+            );
+            expect(postTargetMediaModelMock.create).toHaveBeenCalledWith(
+                expect.objectContaining({ socialPostTargetId: MOCK_TARGET_UUID, position: 0 })
+            );
+        });
+
+        it('returns the graceful-fail shape without throwing and without a link row when the download fails', async () => {
+            // Arrange
+            const video: GptVideoPayload = { mode: 'public_url', url: FAKE_VIDEO_URL };
+            vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network error'));
+
+            // Act
+            const result = await service.processVideo({
+                video,
+                socialPostId: MOCK_POST_UUID,
+                socialPostTargetId: MOCK_TARGET_UUID
+            });
+
+            // Assert
+            expect(result.assetId).toBeNull();
+            expect(result.cloudinaryUrl).toBeNull();
+            expect(result.warnings).toContain('Media upload failed; manual upload required');
+            expect(assetModelMock.create).not.toHaveBeenCalled();
+            expect(postMediaModelMock.create).not.toHaveBeenCalled();
+            expect(postTargetMediaModelMock.create).not.toHaveBeenCalled();
+        });
+
+        it('returns the graceful-fail shape without a link row when the Cloudinary upload fails', async () => {
+            // Arrange
+            const video: GptVideoPayload = { mode: 'public_url', url: FAKE_VIDEO_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            vi.spyOn(mediaProvider, 'upload').mockRejectedValue(new Error('Cloudinary error'));
+
+            // Act
+            const result = await service.processVideo({
+                video,
+                socialPostId: MOCK_POST_UUID,
+                socialPostTargetId: MOCK_TARGET_UUID
+            });
+
+            // Assert
+            expect(result.assetId).toBeNull();
+            expect(result.cloudinaryUrl).toBeNull();
+            expect(result.warnings).toContain('Media upload failed; manual upload required');
+            expect(assetModelMock.create).not.toHaveBeenCalled();
+            expect(postTargetMediaModelMock.create).not.toHaveBeenCalled();
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Video/story Cloudinary presets (HOS-65 T-021)
+    // -------------------------------------------------------------------------
+
+    describe('video/story Cloudinary presets (HOS-65 T-021)', () => {
+        const FAKE_VIDEO_URL = 'https://example.com/fake-video.mp4';
+
+        it('processVideo rejects gracefully (no asset row, no link row) when duration exceeds the VIDEO_POST limit', async () => {
+            // Arrange — Cloudinary reports a duration over VIDEO_POST_LIMITS.maxDurationSeconds
+            const video: GptVideoPayload = { mode: 'public_url', url: FAKE_VIDEO_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            vi.spyOn(mediaProvider, 'upload').mockResolvedValue({
+                url: FAKE_CLOUDINARY_URL,
+                publicId: 'hospeda/social/assets/generated-video-2',
+                width: 1080,
+                height: 1920,
+                durationSeconds: VIDEO_POST_LIMITS.maxDurationSeconds + 1
+            });
+
+            // Act
+            const result = await service.processVideo({
+                video,
+                socialPostId: MOCK_POST_UUID,
+                socialPostTargetId: MOCK_TARGET_UUID,
+                publishFormat: SocialPublishFormatEnum.VIDEO_POST
+            });
+
+            // Assert — graceful failure, no DB rows written for the rejected asset
+            expect(result.assetId).toBeNull();
+            expect(result.cloudinaryUrl).toBeNull();
+            expect(result.warnings.length).toBeGreaterThan(0);
+            expect(assetModelMock.create).not.toHaveBeenCalled();
+            expect(postMediaModelMock.create).not.toHaveBeenCalled();
+            expect(postTargetMediaModelMock.create).not.toHaveBeenCalled();
+        });
+
+        it('processVideo succeeds when duration is within the VIDEO_POST limit', async () => {
+            // Arrange
+            const video: GptVideoPayload = { mode: 'public_url', url: FAKE_VIDEO_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            vi.spyOn(mediaProvider, 'upload').mockResolvedValue({
+                url: FAKE_CLOUDINARY_URL,
+                publicId: 'hospeda/social/assets/generated-video-3',
+                width: 1080,
+                height: 1920,
+                durationSeconds: VIDEO_POST_LIMITS.maxDurationSeconds
+            });
+            assetModelMock.create.mockResolvedValue(
+                buildMockAssetRow({
+                    mediaType: SocialMediaTypeEnum.VIDEO,
+                    durationSeconds: VIDEO_POST_LIMITS.maxDurationSeconds
+                })
+            );
+
+            // Act
+            const result = await service.processVideo({
+                video,
+                socialPostId: MOCK_POST_UUID,
+                publishFormat: SocialPublishFormatEnum.VIDEO_POST
+            });
+
+            // Assert — exactly-at-the-limit is allowed (not exceeded)
+            expect(result.assetId).toBe(MOCK_ASSET_UUID);
+            expect(result.warnings).toHaveLength(0);
+        });
+
+        it('forwards the STORY 9:16 transformation to the upload call for a STORY-format image', async () => {
+            // Arrange
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            const uploadSpy = vi.spyOn(mediaProvider, 'upload');
+
+            // Act
+            await service.processImage({ image, publishFormat: SocialPublishFormatEnum.STORY });
+
+            // Assert
+            expect(uploadSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ transformation: STORY_ASPECT_RATIO_TRANSFORM })
+            );
+        });
+
+        it('forwards NO transformation for a non-STORY image upload', async () => {
+            // Arrange
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            const uploadSpy = vi.spyOn(mediaProvider, 'upload');
+
+            // Act
+            await service.processImage({
+                image,
+                publishFormat: SocialPublishFormatEnum.FEED_POST
+            });
+
+            // Assert
+            expect(uploadSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ transformation: undefined })
+            );
+        });
+
+        it('forwards NO transformation when publishFormat is omitted entirely (backward compat)', async () => {
+            // Arrange
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            const uploadSpy = vi.spyOn(mediaProvider, 'upload');
+
+            // Act
+            await service.processImage({ image });
+
+            // Assert
+            expect(uploadSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ transformation: undefined })
+            );
+        });
+
+        // HOS-65 FIX 2: processVideo must upload with resource_type 'video',
+        // otherwise Cloudinary treats the bytes as an image and never reports
+        // `duration`, silently disabling the VIDEO_POST duration limit.
+        it('forwards resourceType "video" to the upload call for processVideo', async () => {
+            // Arrange
+            const video: GptVideoPayload = { mode: 'public_url', url: FAKE_VIDEO_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            const uploadSpy = vi.spyOn(mediaProvider, 'upload').mockResolvedValue({
+                url: FAKE_CLOUDINARY_URL,
+                publicId: 'hospeda/social/assets/generated-video-rt',
+                width: 1080,
+                height: 1920,
+                durationSeconds: 10
+            });
+
+            // Act
+            await service.processVideo({ video });
+
+            // Assert
+            expect(uploadSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ resourceType: 'video' })
+            );
+        });
+
+        // HOS-65 FIX 5: a STORY-format video must get the 9:16 transform, just
+        // like a STORY image — previously processVideo ignored the STORY preset.
+        it('forwards the STORY 9:16 transformation (and resourceType video) for a STORY-format video', async () => {
+            // Arrange
+            const video: GptVideoPayload = { mode: 'public_url', url: FAKE_VIDEO_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            const uploadSpy = vi.spyOn(mediaProvider, 'upload').mockResolvedValue({
+                url: FAKE_CLOUDINARY_URL,
+                publicId: 'hospeda/social/assets/generated-video-story',
+                width: 1080,
+                height: 1920,
+                durationSeconds: 8
+            });
+
+            // Act
+            await service.processVideo({
+                video,
+                publishFormat: SocialPublishFormatEnum.STORY
+            });
+
+            // Assert
+            expect(uploadSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    transformation: STORY_ASPECT_RATIO_TRANSFORM,
+                    resourceType: 'video'
+                })
+            );
+        });
+
+        it('forwards NO transformation for a VIDEO_POST video (limits only, no crop)', async () => {
+            // Arrange
+            const video: GptVideoPayload = { mode: 'public_url', url: FAKE_VIDEO_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            const uploadSpy = vi.spyOn(mediaProvider, 'upload').mockResolvedValue({
+                url: FAKE_CLOUDINARY_URL,
+                publicId: 'hospeda/social/assets/generated-video-vp',
+                width: 1080,
+                height: 1920,
+                durationSeconds: 8
+            });
+
+            // Act
+            await service.processVideo({
+                video,
+                publishFormat: SocialPublishFormatEnum.VIDEO_POST
+            });
+
+            // Assert — VIDEO_POST enforces limits but applies no Cloudinary crop.
+            expect(uploadSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ transformation: undefined, resourceType: 'video' })
+            );
         });
     });
 });

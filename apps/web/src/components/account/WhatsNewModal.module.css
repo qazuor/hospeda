@@ -243,7 +243,9 @@
     color: var(--core-muted-foreground);
     font-size: 1.125rem;
     border-radius: var(--radius-button);
-    transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
+    transition:
+        background-color var(--duration-fast) ease,
+        color var(--duration-fast) ease;
     flex-shrink: 0;
 }
 
@@ -264,7 +266,9 @@
     color: var(--core-muted-foreground);
     font-size: 1rem;
     border-radius: var(--radius-button);
-    transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
+    transition:
+        background-color var(--duration-fast) ease,
+        color var(--duration-fast) ease;
     flex-shrink: 0;
 }
 

@@ -19,6 +19,7 @@
  * DB interactions are fully mocked — no real DB is touched.
  */
 
+import type { Experience } from '@repo/schemas';
 import {
     ExperiencePriceUnitEnum,
     ExperienceTypeEnum,
@@ -29,7 +30,6 @@ import {
     ServiceErrorCode,
     VisibilityEnum
 } from '@repo/schemas';
-import type { Experience } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExperienceService } from '../../../src/services/experience/experience.service';
 import type { Actor } from '../../../src/types';
@@ -703,5 +703,53 @@ describe('ExperienceService.listOwn', () => {
             undefined,
             undefined
         );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// BETA-119 regression — _executeSearch forwards sort from ctx.pagination
+// Before the fix, sortBy/sortOrder were destructured out of params (to _sortBy/
+// _sortOrder) and discarded, so findAllWithRelations received only { page,
+// pageSize } and built no ORDER BY — the public listing's sort dropdown was a
+// silent no-op. BaseCrudRead.search republishes sort via ctx.pagination, so the
+// service must read it from there.
+// ---------------------------------------------------------------------------
+
+describe('ExperienceService._executeSearch — BETA-119 regression (sort forwarded from ctx.pagination)', () => {
+    it('forwards ctx.pagination.sortBy/sortOrder into the findAllWithRelations pagination argument', async () => {
+        const entity = makeExperienceEntity();
+        const service = makeService(entity);
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
+
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {
+            pagination: { sortBy: 'averageRating', sortOrder: 'desc' }
+        });
+
+        // arg[2] is the pagination options object in findAllWithRelations
+        expect(mockFindAllWithRelations.mock.calls[0]?.[2]).toMatchObject({
+            page: 1,
+            pageSize: 10,
+            sortBy: 'averageRating',
+            sortOrder: 'desc'
+        });
+    });
+
+    it('leaves sortBy/sortOrder undefined when ctx has no pagination (no ORDER BY forced)', async () => {
+        const entity = makeExperienceEntity();
+        const service = makeService(entity);
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
+
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {});
+
+        const paginationArg = mockFindAllWithRelations.mock.calls[0]?.[2] as {
+            sortBy?: unknown;
+            sortOrder?: unknown;
+        };
+        expect(paginationArg.sortBy).toBeUndefined();
+        expect(paginationArg.sortOrder).toBeUndefined();
     });
 });

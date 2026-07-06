@@ -24,24 +24,28 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NoOpRevalidationAdapter } from '../../../../packages/service-core/src/revalidation/adapters/noop-revalidation.adapter';
+import { RevalidationService } from '../../../../packages/service-core/src/revalidation/revalidation.service';
 import {
     _resetRevalidationService,
     getRevalidationService,
     initializeRevalidationService
 } from '../../../../packages/service-core/src/revalidation/revalidation-init';
-import { RevalidationService } from '../../../../packages/service-core/src/revalidation/revalidation.service';
 
 // ---------------------------------------------------------------------------
 // Mock @repo/db so the service can be instantiated without a real DB
 // ---------------------------------------------------------------------------
 
 vi.mock('@repo/db', () => ({
-    RevalidationConfigModel: vi.fn().mockImplementation(() => ({
-        findByEntityType: vi.fn().mockResolvedValue(undefined)
-    })),
-    RevalidationLogModel: vi.fn().mockImplementation(() => ({
-        create: vi.fn().mockResolvedValue(undefined)
-    }))
+    RevalidationConfigModel: vi.fn().mockImplementation(function () {
+        return {
+            findByEntityType: vi.fn().mockResolvedValue(undefined)
+        };
+    }),
+    RevalidationLogModel: vi.fn().mockImplementation(function () {
+        return {
+            create: vi.fn().mockResolvedValue(undefined)
+        };
+    })
 }));
 
 vi.mock('@repo/logger', () => ({

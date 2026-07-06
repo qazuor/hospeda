@@ -24,6 +24,21 @@ updates:
     # production minor/patch bumps, one for all dev minor/patch bumps. Majors
     # still open individual PRs so they get focused review.
     groups:
+      # Tiptap must move as ONE coordinated unit — core, every @tiptap/*
+      # extension, and the tiptap-markdown companion share a major and
+      # peer-lock together (a lone extension ahead of core is the runtime
+      # mismatch behind the closed PR #1890 / the HOS-17 v3 migration).
+      # Grouping ALL update types (incl. major) keeps a future v3 -> v4 bump a
+      # single reviewable PR instead of per-package major PRs. Listed first so
+      # tiptap deps land here rather than in the generic minor/patch groups.
+      tiptap:
+        patterns:
+          - '@tiptap/*'
+          - 'tiptap-markdown'
+        update-types:
+          - 'major'
+          - 'minor'
+          - 'patch'
       production-minor-patch:
         dependency-type: 'production'
         update-types:
@@ -42,35 +57,10 @@ updates:
     #   - zod: 4.4 made `.merge()` throw on object schemas containing refinements
     #     (use `.safeExtend()`), breaking apps/admin env cross-validation and
     #     cascading into E2E. Owner: SPEC-132 (Zod 4 migration).
-    #   - typescript: the dev group aligns ALL workspaces to a single version,
-    #     which DOWNGRADES apps/mobile from its pinned 6.0.3 (required by Expo
-    #     SDK 56) down to the group version. Mobile's tsconfig sets
-    #     `ignoreDeprecations: "6.0"` (TS 6 deprecated `baseUrl`, which Expo/Metro
-    #     needs to resolve `@/*` aliases at bundle time), and "6.0" is an invalid
-    #     value under TS < 6, so the mobile typecheck fails with TS5103. Lift this
-    #     ignore when the monorepo TS-major alignment chore lands (ADR-034
-    #     follow-up: unify the repo on a single TS major so mobile stops diverging).
-    #     Owner: HOS-59.
-    #   - better-auth: 1.4 -> 1.6 changes the auth type signatures, breaking
-    #     apps/api typecheck at src/lib/auth.ts (TS2322). Core auth surface —
-    #     merits a dedicated migration spec. Lift when that migration lands.
-    #     The whole @better-auth/* scope must be gated together: a lone
-    #     @better-auth/expo minor bump desyncs against @better-auth/core and
-    #     breaks apps/mobile build (Unable to resolve @better-auth/core/utils/json).
-    #     Owner: HOS-60.
-    #   - @react-email/render: 2.0.4 -> 2.0.9 breaks
-    #     packages/email/test/templates/verify-email.test.tsx. Lift when the
-    #     react-email render bump is taken on with its template snapshots.
-    #     Owner: HOS-61.
     #   - jsdom: 26 -> 29 changes the accessible-name computation (whitespace
     #     concatenation), so role+name queries like DestinationReviewSidebarCard
     #     stop matching. Dev-only (test env; real browsers unaffected). Lift
     #     with a dedicated jsdom upgrade + test sweep. Owner: HOS-62.
-    #   - @tiptap/*: the editor extensions move from v2 to v3 as a coordinated
-    #     breaking migration (core + every extension must bump in lockstep, or
-    #     a lone extension at v3 peer-mismatches the v2 core at runtime). Gating
-    #     the whole scope prevents a single-extension PR (e.g. extension-underline
-    #     2 -> 3) from landing a split-version state. Owner: SPEC-307 (tiptap v3).
     #   - @tanstack/react-form: 0.42.1 -> 1.33.0 is a 0.x -> 1.x major with a
     #     genuine breaking API surface, and Dependabot bumping only the direct
     #     dependency leaves the transitive @tanstack/form-core resolved at the
@@ -85,7 +75,7 @@ updates:
     #     ~56.0.2 in apps/mobile/package.json. Merging any leaf package alone
     #     leaves a split-SDK state that Jest unit tests won't catch (they don't
     #     exercise the native module runtime). Gate the whole scope together,
-    #     same pattern as @better-auth/* and @tiptap/* above. Owner: HOS-78.
+    #     same pattern as @better-auth/* above. Owner: HOS-78.
     #     Unlike the zod/better-auth/etc entries above, expo/expo-* are
     #     scoped to `update-types: [semver-major]` only — the breaking changes
     #     found so far are all major-version jumps, so minor/patch (including
@@ -94,12 +84,7 @@ updates:
     # Policy + routing: docs/guides/dependabot-policy.md (SPEC-219 T-003 / T-005).
     ignore:
       - dependency-name: 'zod'
-      - dependency-name: 'typescript'
-      - dependency-name: 'better-auth'
-      - dependency-name: '@better-auth/*'
-      - dependency-name: '@react-email/render'
       - dependency-name: 'jsdom'
-      - dependency-name: '@tiptap/*'
       - dependency-name: '@tanstack/react-form'
       - dependency-name: 'expo'
         update-types: ['version-update:semver-major']
@@ -120,6 +105,18 @@ updates:
       # native-memory ceiling is fixed (vmForks+vmMemoryLimit or heavy-test
       # isolation). Owner: HOS-80.
       - dependency-name: '@radix-ui/*'
+      # @ai-sdk/openai + @ai-sdk/anthropic + ai: the Vercel AI SDK v4/v7 line
+      # ships a LanguageModelV4 provider that the installed `ai` core's
+      # generateText/streamText don't accept, so these three MUST move together
+      # (bumping any one alone fails Build/Typecheck — see the adapter error in
+      # packages/ai-core/src/providers/vercel-openai.adapter.ts). Dependabot kept
+      # re-opening #2077/#2116 (openai), #2123 (anthropic), #2120 (ai) as
+      # standalone bumps; gate them until the coordinated migration lands.
+      # @ai-sdk/gateway is already on v4 (#2078, merged) and unaffected.
+      # Owner: HOS-88.
+      - dependency-name: '@ai-sdk/openai'
+      - dependency-name: '@ai-sdk/anthropic'
+      - dependency-name: 'ai'
     cooldown:
       # Supply-chain hardening: wait 7 days before bumping a newly published
       # version (satisfies semgrep dependabot-missing-cooldown).

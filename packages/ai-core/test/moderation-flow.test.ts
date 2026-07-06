@@ -29,9 +29,13 @@
 import type { AiFeatureConfig } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { AiModerationBlockedError, createAiEngine } from '../src/engine/index.js';
 import type { AiEngine, AiEngineEvent } from '../src/engine/index.js';
-import { AiCeilingHitError, AiProviderUnconfiguredError } from '../src/engine/index.js';
+import {
+    AiCeilingHitError,
+    AiModerationBlockedError,
+    AiProviderUnconfiguredError,
+    createAiEngine
+} from '../src/engine/index.js';
 import { runModerationPass } from '../src/engine/moderation-pass.js';
 import type { AiProvider } from '../src/providers/ai-provider.interface.js';
 import { StubProvider } from '../src/providers/index.js';
@@ -128,12 +132,18 @@ beforeEach(() => {
     vi.clearAllMocks();
     mockResolveConfig.mockResolvedValue({ providers: {}, features: {} });
     mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_ENABLED);
-    mockIsFeatureKillSwitched.mockImplementation((cfg: AiFeatureConfig) => !cfg.enabled);
-    mockGetProviderOrder.mockImplementation(
-        ({ featureConfig }: { featureConfig: AiFeatureConfig }) => ({
+    mockIsFeatureKillSwitched.mockImplementation(function (cfg: AiFeatureConfig) {
+        return !cfg.enabled;
+    });
+    mockGetProviderOrder.mockImplementation(function ({
+        featureConfig
+    }: {
+        featureConfig: AiFeatureConfig;
+    }) {
+        return {
             providers: [featureConfig.primaryProvider, ...featureConfig.fallbackChain]
-        })
-    );
+        };
+    });
 });
 
 // ---------------------------------------------------------------------------

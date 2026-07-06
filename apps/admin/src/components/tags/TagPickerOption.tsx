@@ -76,7 +76,6 @@ export function TagPickerOption({ tag, isChecked, onToggle, isPending }: TagPick
             {/* Type badge */}
             <span
                 className={`flex-shrink-0 rounded-full px-1.5 py-0.5 font-medium text-xs ${badge.className}`}
-                aria-label={`Tipo: ${badge.label}`}
             >
                 {badge.label}
             </span>

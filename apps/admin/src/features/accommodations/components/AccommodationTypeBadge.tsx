@@ -1,6 +1,6 @@
-import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import { getAccommodationTypeColorScheme, getAccommodationTypeIcon } from '@repo/icons';
+import { useTranslations } from '@/hooks/use-translations';
 import type { Accommodation } from '../schemas/accommodations.schemas';
 
 /**

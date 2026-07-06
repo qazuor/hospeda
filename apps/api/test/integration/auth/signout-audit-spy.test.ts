@@ -16,6 +16,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { initApp } from '../../../src/app';
 import type { AppOpenAPI } from '../../../src/types';
 import { validateApiEnv } from '../../../src/utils/env';
+import { forceVerifyEmail } from '../../e2e/helpers/auth-helpers';
 import { testDb } from '../../e2e/setup/test-database';
 
 // ---------------------------------------------------------------------------
@@ -45,12 +46,27 @@ const { AuditEventType } = await import('../../../src/utils/audit-logger');
 let app: AppOpenAPI;
 let userCounter = 0;
 const testPassword = 'TestPassword123!';
+// Better Auth's CSRF protection (advanced.disableCSRFCheck: false) rejects
+// mutating requests without a trusted Origin header (MISSING_OR_NULL_ORIGIN).
+// Real browser clients always send one; tests must too. Matches HOSPEDA_SITE_URL.
+const TRUSTED_ORIGIN = 'http://localhost:4321';
+
+// `.env.test` sets HOSPEDA_DISABLE_AUTH=true, which makes `authMiddleware()`
+// install a Bearer-token-only mock branch that never inspects cookies (see
+// `src/middlewares/auth.ts`). The Hospeda cleanup endpoint needs a real
+// cookie-resolved actor to emit SESSION_SIGNOUT, so this suite must force the
+// real Better Auth branch for its own `initApp()` instance. Restored in
+// `afterAll` because vitest.config.e2e.ts runs all e2e files sequentially in
+// a single fork (`singleFork: true`), so a stray override here would leak
+// into later files.
+const ORIGINAL_DISABLE_AUTH = process.env.HOSPEDA_DISABLE_AUTH;
 
 // ---------------------------------------------------------------------------
 // Lifecycle
 // ---------------------------------------------------------------------------
 
 beforeAll(async () => {
+    process.env.HOSPEDA_DISABLE_AUTH = 'false';
     validateApiEnv();
     app = initApp();
     await testDb.setup();
@@ -59,6 +75,7 @@ beforeAll(async () => {
 afterAll(async () => {
     await testDb.teardown();
     vi.restoreAllMocks();
+    process.env.HOSPEDA_DISABLE_AUTH = ORIGINAL_DISABLE_AUTH;
 });
 
 beforeEach(() => {
@@ -89,7 +106,8 @@ async function createTestUser(): Promise<string> {
         method: 'POST',
         headers: {
             'content-type': 'application/json',
-            'user-agent': 'vitest'
+            'user-agent': 'vitest',
+            origin: TRUSTED_ORIGIN
         },
         body: JSON.stringify({
             email,
@@ -99,6 +117,10 @@ async function createTestUser(): Promise<string> {
     });
 
     expect(res.status).toBeLessThan(400);
+
+    // Remove the fire-and-forget email-verify race (see forceVerifyEmail docs).
+    await forceVerifyEmail({ email });
+
     return email;
 }
 
@@ -114,7 +136,8 @@ async function signIn({ email }: { readonly email: string }): Promise<string> {
         method: 'POST',
         headers: {
             'content-type': 'application/json',
-            'user-agent': 'vitest'
+            'user-agent': 'vitest',
+            origin: TRUSTED_ORIGIN
         },
         body: JSON.stringify({ email, password: testPassword })
     });
@@ -134,11 +157,12 @@ async function signIn({ email }: { readonly email: string }): Promise<string> {
  * @returns Raw Response
  */
 async function hospedaSignout({ cookie }: { readonly cookie: string }): Promise<Response> {
-    return app.request('/api/v1/auth/signout', {
+    return app.request('/api/v1/public/auth/signout', {
         method: 'POST',
         headers: {
             cookie,
-            'user-agent': 'vitest'
+            'user-agent': 'vitest',
+            origin: TRUSTED_ORIGIN
         }
     });
 }
@@ -213,7 +237,7 @@ describe('Sign-out audit log verification [SPEC-026 T-031 / GAP-020]', () => {
         // Invalidate via Better Auth signout
         await app.request('/api/auth/sign-out', {
             method: 'POST',
-            headers: { cookie, 'user-agent': 'vitest' }
+            headers: { cookie, 'user-agent': 'vitest', origin: TRUSTED_ORIGIN }
         });
 
         auditLogSpy.mockClear();
@@ -224,7 +248,7 @@ describe('Sign-out audit log verification [SPEC-026 T-031 / GAP-020]', () => {
         // Assert: endpoint should handle gracefully (200 with cacheCleared: false)
         expect(cleanupRes.status).toBe(200);
         const body = await cleanupRes.json();
-        expect(body.cacheCleared).toBe(false);
+        expect(body.data.cacheCleared).toBe(false);
 
         // Assert: no SESSION_SIGNOUT event — no authenticated actor to audit
         const call = findSignoutAuditCall();

@@ -1,6 +1,6 @@
 import type { RRolePermissionModel, RUserPermissionModel } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode, type UserIdType } from '@repo/schemas';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import {
     _resetPermissionEffects,
     setPermissionChangeAuditEmitter,
@@ -22,8 +22,8 @@ describe('PermissionService.removePermissionFromUser', () => {
     let userPermissionModelMock: ReturnType<typeof createModelMock>;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: ReturnType<typeof createActor>;
-    let cacheSpy: ReturnType<typeof vi.fn>;
-    let auditSpy: ReturnType<typeof vi.fn>;
+    let cacheSpy: Mock;
+    let auditSpy: Mock;
 
     beforeEach(() => {
         vi.clearAllMocks();

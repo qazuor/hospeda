@@ -35,7 +35,6 @@ import { accommodationTypeTokens } from '../tokens/accommodation-types.js';
 import { amenityTypeTokens } from '../tokens/amenity-types.js';
 import { authProviderTokens } from '../tokens/auth-providers.js';
 import {
-    type OKLCH,
     accent,
     avatarGradients,
     brandSecondary,
@@ -45,6 +44,7 @@ import {
     danger,
     forest,
     info,
+    type OKLCH,
     ratingStar,
     river,
     sand,
@@ -139,6 +139,8 @@ export const webLight: Theme = {
     // ========================================================================
     'surface-warm': surfaces.warm,
     'surface-warm-foreground': surfaces.warmForeground,
+    'surface-header': surfaces.header,
+    'surface-header-foreground': surfaces.headerForeground,
     'surface-dark': surfaces.dark,
     'surface-dark-foreground': surfaces.darkForeground,
     'surface-elevated': surfaces.elevated,

@@ -1393,6 +1393,19 @@ const marketingSidebar: SidebarInput = {
                     route: '/social/credentials',
                     permissions: ['SOCIAL_SETTINGS_MANAGE'],
                     onMissing: 'hide'
+                },
+                {
+                    type: 'link',
+                    id: 'social-integration-config',
+                    label: {
+                        es: 'Exportar configuración',
+                        en: 'Integration config export',
+                        pt: 'Exportar configuração'
+                    },
+                    icon: 'WebhookIcon',
+                    route: '/social/integration-config',
+                    permissions: ['SOCIAL_SETTINGS_MANAGE'],
+                    onMissing: 'hide'
                 }
             ]
         },

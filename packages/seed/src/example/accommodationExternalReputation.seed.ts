@@ -225,7 +225,7 @@ export async function seedAccommodationExternalReputation(
                 reviewsCount: def.reviewsCount,
                 deepLink: def.deepLink,
                 snippets: def.snippets ? [...def.snippets] : null,
-                snippetsFetchedAt: def.snippets !== null ? now : null,
+                snippetsFetchedAt: def.snippets === null ? null : now,
                 aggregateFetchedAt: now,
                 fetchStatus: def.fetchStatus,
                 fetchMessage: null

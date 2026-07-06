@@ -1,7 +1,7 @@
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
-import type { z } from 'zod';
 import {
     type EventLocation,
     EventLocationListItemSchema
@@ -75,4 +75,5 @@ export const eventLocationsConfig: EntityConfig<EventLocation> = {
 };
 
 const { component, route } = createEntityListPage(eventLocationsConfig);
+
 export { component as EventLocationsPageComponent, route as EventLocationsRoute };

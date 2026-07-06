@@ -103,7 +103,7 @@ describe('resolver real-shape contract', () => {
             // The users/stats fetch returns byRole; the content fetches return
             // pagination.total. The implementation issues a single fetchApi mock,
             // so we vary the response by URL.
-            mockFetchApi.mockImplementation(async ({ path }: { path: string }) => {
+            mockFetchApi.mockImplementation(async function ({ path }: { path: string }) {
                 if (path.includes('/users/stats')) {
                     return envelope({
                         success: true,
@@ -309,7 +309,7 @@ describe('resolver real-shape contract', () => {
     // ── Card E — admin.system.health ────────────────────────────────────────
     describe('admin.system.health (card E)', () => {
         it('emits 3 chips (api/db/redis) + a metrics row (uptime, requests, …)', async () => {
-            mockFetchApi.mockImplementation(async ({ path }: { path: string }) => {
+            mockFetchApi.mockImplementation(async function ({ path }: { path: string }) {
                 if (path.includes('/system/health')) {
                     return envelope({
                         success: true,

@@ -23,11 +23,11 @@ vi.mock('@/features/billing/use-my-entitlements', () => ({
     useMyEntitlements: () => ({ has: () => true, isLoading: false })
 }));
 
-import { EntityFormSection } from '@/components/entity-form/EntityFormSection';
 import {
     EntityFormContext,
     type EntityFormContextValue
 } from '@/components/entity-form/context/EntityFormContext';
+import { EntityFormSection } from '@/components/entity-form/EntityFormSection';
 import {
     FieldTypeEnum,
     FormModeEnum,

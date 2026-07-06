@@ -13,7 +13,6 @@
  * webhooks.
  */
 
-import { fetchApi } from '@/lib/api/client';
 import type {
     NewsletterChannelEnum,
     NewsletterSourceEnum,
@@ -22,6 +21,7 @@ import type {
     NewsletterSubscriberStatusEnum
 } from '@repo/schemas';
 import { useQuery } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 // ---------------------------------------------------------------------------
 // Query key factory

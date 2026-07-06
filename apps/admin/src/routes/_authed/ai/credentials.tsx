@@ -8,6 +8,12 @@
  * Uses Card-based layout instead of DataTable since the list is bounded
  * to 3 providers max.
  */
+
+import { useTranslations } from '@repo/i18n';
+import { AddIcon, AlertCircleIcon, DeleteIcon, EditIcon, LoaderIcon } from '@repo/icons';
+import { getKnownProvider, KNOWN_PROVIDERS } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,9 +48,7 @@ import {
 } from '@/features/ai-settings';
 import { useToast } from '@/hooks/use-toast';
 import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
-import { AddIcon, AlertCircleIcon, DeleteIcon, EditIcon, LoaderIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { SyncModelsSection } from './-components/SyncModelsSection';
 
 export const Route = createFileRoute('/_authed/ai/credentials')({
     component: AiCredentialsPage
@@ -53,124 +57,12 @@ export const Route = createFileRoute('/_authed/ai/credentials')({
 // ---------------------------------------------------------------------------
 // Known providers metadata
 // ---------------------------------------------------------------------------
-
-interface KnownProvider {
-    id: string;
-    label: string;
-    apiKeyPlaceholder: string;
-    baseURL: string;
-    keyUrl: string;
-    models: readonly string[];
-    needsApiKey: boolean;
-}
-
-const KNOWN_PROVIDERS: readonly KnownProvider[] = [
-    {
-        id: 'openai',
-        label: 'OpenAI (GPT)',
-        apiKeyPlaceholder: 'sk-...',
-        baseURL: 'https://api.openai.com/v1',
-        keyUrl: 'https://platform.openai.com/api-keys',
-        models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'gpt-4.1-mini', 'o3-mini'],
-        needsApiKey: true
-    },
-    {
-        id: 'anthropic',
-        label: 'Anthropic (Claude)',
-        apiKeyPlaceholder: 'sk-ant-...',
-        baseURL: 'https://api.anthropic.com/v1',
-        keyUrl: 'https://console.anthropic.com/settings/keys',
-        models: ['claude-sonnet-4-20250514', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'],
-        needsApiKey: true
-    },
-    {
-        id: 'google',
-        label: 'Google (Gemini)',
-        apiKeyPlaceholder: 'AIza...',
-        baseURL: 'https://generativelanguage.googleapis.com/v1beta',
-        keyUrl: 'https://aistudio.google.com/apikey',
-        models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'],
-        needsApiKey: true
-    },
-    {
-        id: 'deepseek',
-        label: 'DeepSeek',
-        apiKeyPlaceholder: 'sk-...',
-        baseURL: 'https://api.deepseek.com/v1',
-        keyUrl: 'https://platform.deepseek.com/api_keys',
-        models: ['deepseek-chat', 'deepseek-reasoner'],
-        needsApiKey: true
-    },
-    {
-        id: 'groq',
-        label: 'Groq',
-        apiKeyPlaceholder: 'gsk_...',
-        baseURL: 'https://api.groq.com/openai/v1',
-        keyUrl: 'https://console.groq.com/keys',
-        models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'],
-        needsApiKey: true
-    },
-    {
-        id: 'together',
-        label: 'Together AI',
-        apiKeyPlaceholder: '...',
-        baseURL: 'https://api.together.xyz/v1',
-        keyUrl: 'https://api.together.xyz/settings/api-keys',
-        models: ['meta-llama/Llama-3.3-70B-Instruct-Turbo', 'Qwen/Qwen2.5-72B-Instruct-Turbo'],
-        needsApiKey: true
-    },
-    {
-        id: 'mistral',
-        label: 'Mistral AI',
-        apiKeyPlaceholder: '...',
-        baseURL: 'https://api.mistral.ai/v1',
-        keyUrl: 'https://console.mistral.ai/api-keys/',
-        models: ['mistral-large-latest', 'mistral-small-latest', 'codestral-latest'],
-        needsApiKey: true
-    },
-    {
-        id: 'moonshot',
-        label: 'Moonshot (Kimi)',
-        apiKeyPlaceholder: 'sk-...',
-        baseURL: 'https://api.moonshot.cn/v1',
-        keyUrl: 'https://platform.moonshot.cn/console/api-keys',
-        models: ['moonshot-v1-128k', 'moonshot-v1-32k', 'moonshot-v1-8k'],
-        needsApiKey: true
-    },
-    {
-        id: 'zhipu',
-        label: 'Zhipu AI (GLM)',
-        apiKeyPlaceholder: '...',
-        baseURL: 'https://open.bigmodel.cn/api/paas/v4',
-        keyUrl: 'https://open.bigmodel.cn/usercenter/apikeys',
-        models: ['glm-4-plus', 'glm-4-flash', 'glm-4-long'],
-        needsApiKey: true
-    },
-    {
-        id: 'baidu',
-        label: 'Baidu (ERNIE)',
-        apiKeyPlaceholder: '...',
-        baseURL: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop',
-        keyUrl: 'https://console.bce.baidu.com/qianfan/ais/console/applicationConsole/application',
-        models: ['ernie-4.0-8k', 'ernie-3.5-8k', 'ernie-speed-128k'],
-        needsApiKey: true
-    },
-    {
-        id: 'ollama',
-        label: 'Ollama (local)',
-        apiKeyPlaceholder: 'ollama (no key needed)',
-        baseURL: 'http://localhost:11434/v1',
-        keyUrl: '',
-        models: ['llama3', 'mistral', 'codellama', 'qwen2.5'],
-        needsApiKey: false
-    }
-] as const;
+//
+// The curated `KNOWN_PROVIDERS` catalog + `getKnownProvider` lookup now live in
+// `@repo/schemas` (`ai-provider-catalog.ts`, HOS-94) so the API's model-sync
+// merge can consume the exact same curated metadata. Imported above.
 
 const CUSTOM_OPTION_ID = '__custom__';
-
-function getKnownProvider(id: string): KnownProvider | undefined {
-    return KNOWN_PROVIDERS.find((p) => p.id === id);
-}
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -608,20 +500,19 @@ function RotateCredentialDialog({
 }
 
 /** Edit credential metadata dialog. */
-function EditCredentialDialog({
-    credential
-}: {
-    readonly credential: AiCredentialMasked;
-}) {
+export function EditCredentialDialog({ credential }: { readonly credential: AiCredentialMasked }) {
+    const { t } = useTranslations();
     const { addToast } = useToast();
     const updateMutation = useUpdateAiCredentialMutation();
+    const rotateMutation = useRotateAiCredentialMutation();
     const [open, setOpen] = useState(false);
     const [label, setLabel] = useState('');
     const [baseURL, setBaseURL] = useState('');
     const [selectedModels, setSelectedModels] = useState<string[]>([]);
-    const [newModel, setNewModel] = useState('');
+    const [newApiKey, setNewApiKey] = useState('');
 
     const known = getKnownProvider(credential.providerId);
+    const isSaving = updateMutation.isPending || rotateMutation.isPending;
 
     // Pre-fill from credential metadata when dialog opens
     const handleOpenChange = (nextOpen: boolean) => {
@@ -631,24 +522,26 @@ function EditCredentialDialog({
             const meta = credential.metadata ?? {};
             setBaseURL(typeof meta.baseURL === 'string' ? meta.baseURL : '');
             setSelectedModels(Array.isArray(meta.models) ? (meta.models as string[]) : []);
+            setNewApiKey('');
         }
-    };
-
-    const toggleModel = (model: string) => {
-        setSelectedModels((prev) =>
-            prev.includes(model) ? prev.filter((m) => m !== model) : [...prev, model]
-        );
-    };
-
-    const addCustomModel = () => {
-        const m = newModel.trim();
-        if (!m || selectedModels.includes(m)) return;
-        setSelectedModels((prev) => [...prev, m]);
-        setNewModel('');
     };
 
     const handleSubmit = async () => {
         try {
+            const trimmedNewKey = newApiKey.trim();
+
+            // Rotate first (if requested), then persist label/metadata. The two
+            // mutations touch disjoint columns (ciphertext vs. label/metadata),
+            // so there is no write conflict either way — rotating first just
+            // means a failed metadata save never leaves the operator believing
+            // the key change also failed.
+            if (trimmedNewKey) {
+                await rotateMutation.mutateAsync({
+                    providerId: credential.providerId,
+                    payload: { newPlaintextKey: trimmedNewKey }
+                });
+            }
+
             const metadata: Record<string, unknown> = {};
             if (baseURL) metadata.baseURL = baseURL;
             if (selectedModels.length > 0) metadata.models = selectedModels;
@@ -666,6 +559,7 @@ function EditCredentialDialog({
                 variant: 'success'
             });
             setOpen(false);
+            setNewApiKey('');
         } catch (err) {
             addToast({
                 title: 'Error al actualizar',
@@ -694,8 +588,7 @@ function EditCredentialDialog({
                 <DialogHeader>
                     <DialogTitle>Editar — {getProviderLabel(credential.providerId)}</DialogTitle>
                     <DialogDescription>
-                        Actualizá la etiqueta y los modelos habilitados. La clave API no se
-                        modifica.
+                        {t('admin-ai.credentials.edit.description')}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -723,120 +616,47 @@ function EditCredentialDialog({
                         />
                     </div>
 
-                    {/* Model selector */}
+                    {/* New API key (optional) — HOS-94 owner follow-up */}
+                    <div>
+                        <Label htmlFor={`edit-api-key-${credential.providerId}`}>
+                            {t('admin-ai.credentials.edit.newApiKeyLabel')}
+                        </Label>
+                        <Input
+                            id={`edit-api-key-${credential.providerId}`}
+                            type="password"
+                            value={newApiKey}
+                            onChange={(e) => setNewApiKey(e.target.value)}
+                            placeholder={known?.apiKeyPlaceholder ?? 'sk-...'}
+                            className="mt-2"
+                        />
+                        <p className="mt-1 text-muted-foreground text-xs">
+                            {t('admin-ai.credentials.edit.newApiKeyHint')}
+                        </p>
+                    </div>
+
+                    {/* Model selector — sync + curated/detected/both list (HOS-94) */}
                     {known && (
-                        <div className="border-t pt-4">
-                            <Label>Modelos habilitados</Label>
-                            <p className="mb-3 text-muted-foreground text-xs">
-                                Activá los modelos que querés habilitar para este proveedor.
-                            </p>
-                            <div className="grid gap-2">
-                                {/* Predefined models */}
-                                {known.models.map((model) => {
-                                    const isEnabled = selectedModels.includes(model);
-                                    return (
-                                        <div
-                                            key={model}
-                                            className="flex items-center justify-between rounded-md border p-2 hover:bg-muted/50"
-                                        >
-                                            <span className="font-mono text-xs">{model}</span>
-                                            <div className="flex items-center gap-2">
-                                                <Switch
-                                                    checked={isEnabled}
-                                                    onCheckedChange={() => toggleModel(model)}
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                                                    onClick={() =>
-                                                        setSelectedModels((prev) =>
-                                                            prev.filter((m) => m !== model)
-                                                        )
-                                                    }
-                                                >
-                                                    <DeleteIcon className="h-3 w-3" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                                {/* Custom models (not in known list) */}
-                                {selectedModels
-                                    .filter((m) => !known.models.includes(m))
-                                    .map((model) => (
-                                        <div
-                                            key={model}
-                                            className="flex items-center justify-between rounded-md border border-dashed p-2"
-                                        >
-                                            <span className="font-mono text-xs">{model}</span>
-                                            <div className="flex items-center gap-2">
-                                                <Switch
-                                                    checked={true}
-                                                    onCheckedChange={() => toggleModel(model)}
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                                                    onClick={() =>
-                                                        setSelectedModels((prev) =>
-                                                            prev.filter((m) => m !== model)
-                                                        )
-                                                    }
-                                                >
-                                                    <DeleteIcon className="h-3 w-3" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))}
-                            </div>
-                            {/* Add custom model */}
-                            <div className="mt-3 flex items-end gap-2">
-                                <div className="flex-1">
-                                    <Input
-                                        value={newModel}
-                                        onChange={(e) => setNewModel(e.target.value)}
-                                        placeholder="Agregar modelo no listado..."
-                                        className="h-8 text-xs"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault();
-                                                addCustomModel();
-                                            }
-                                        }}
-                                    />
-                                </div>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={addCustomModel}
-                                    disabled={!newModel.trim()}
-                                >
-                                    Agregar
-                                </Button>
-                            </div>
-                        </div>
+                        <SyncModelsSection
+                            providerId={credential.providerId}
+                            curatedModels={known.models}
+                            selectedModels={selectedModels}
+                            onSelectedModelsChange={setSelectedModels}
+                        />
                     )}
                 </div>
                 <DialogFooter>
                     <Button
                         variant="outline"
                         onClick={() => setOpen(false)}
-                        disabled={updateMutation.isPending}
+                        disabled={isSaving}
                     >
                         Cancelar
                     </Button>
                     <Button
                         onClick={handleSubmit}
-                        disabled={updateMutation.isPending}
+                        disabled={isSaving}
                     >
-                        {updateMutation.isPending && (
-                            <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
-                        )}
+                        {isSaving && <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />}
                         Guardar
                     </Button>
                 </DialogFooter>
@@ -926,11 +746,7 @@ function DeleteCredentialDialog({
 // Credential card
 // ---------------------------------------------------------------------------
 
-function CredentialCard({
-    credential
-}: {
-    readonly credential: AiCredentialMasked;
-}) {
+function CredentialCard({ credential }: { readonly credential: AiCredentialMasked }) {
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">

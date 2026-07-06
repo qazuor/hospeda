@@ -108,8 +108,10 @@ export function resolveSubject({
     const types = filters.types ?? [];
     const typeEntries = catalogs.types ?? [];
 
-    const genericSingular = locale === 'es' ? 'hospedaje' : 'accommodation';
-    const genericPlural = locale === 'es' ? 'hospedajes' : 'accommodations';
+    const genericSingular =
+        locale === 'es' ? 'hospedaje' : locale === 'pt' ? 'hospedagem' : 'accommodation';
+    const genericPlural =
+        locale === 'es' ? 'hospedajes' : locale === 'pt' ? 'hospedagens' : 'accommodations';
 
     const buildGeneric = (): ResolvedSubject => ({
         subjectPhrase: pluralizeWord({
@@ -146,7 +148,7 @@ export function resolveSubject({
         return entry ? entry.plural[locale] : typeKey;
     });
 
-    const conjunction = locale === 'es' ? 'y' : 'and';
+    const conjunction = locale === 'es' ? 'y' : locale === 'pt' ? 'e' : 'and';
     const subjectPhrase = formatNaturalList({ items: pluralLabels, conjunction });
 
     return {

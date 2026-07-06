@@ -75,10 +75,7 @@ const mockRedeemAndRecordUsage = promoRedemptionModule.redeemAndRecordUsage as R
  * - tx.select().from(...).where(...).limit(1) → returns `subRows`
  * - tx.execute(sql`...`)                       → resolves void (tracked by executeFn)
  */
-function buildTxMock(options: {
-    subRows: unknown[];
-    executeFn?: ReturnType<typeof vi.fn>;
-}) {
+function buildTxMock(options: { subRows: unknown[]; executeFn?: ReturnType<typeof vi.fn> }) {
     const { subRows, executeFn = vi.fn().mockResolvedValue(undefined) } = options;
 
     return {
@@ -229,12 +226,12 @@ describe('SPEC-262 T-006 — extendExistingSubscriptionTrial', () => {
 
             const executeFn = vi.fn().mockResolvedValue(undefined);
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({ subRows: [sub], executeFn });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({ subRows: [sub], executeFn });
+                return fn(tx);
+            });
 
             // Act
             const result = await extendExistingSubscriptionTrial({
@@ -265,12 +262,12 @@ describe('SPEC-262 T-006 — extendExistingSubscriptionTrial', () => {
             mockGetPromoCodeById.mockResolvedValue({ success: true, data: promoCode });
             mockRedeemAndRecordUsage.mockResolvedValue(redeemSuccess());
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({ subRows: [sub] });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({ subRows: [sub] });
+                return fn(tx);
+            });
 
             // Act
             const result = await extendExistingSubscriptionTrial({
@@ -312,12 +309,12 @@ describe('SPEC-262 T-006 — extendExistingSubscriptionTrial', () => {
             mockGetPromoCodeById.mockResolvedValue({ success: true, data: promoCode });
             mockRedeemAndRecordUsage.mockResolvedValue(redeemSuccess());
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({ subRows: [sub] });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({ subRows: [sub] });
+                return fn(tx);
+            });
 
             // Act
             const result = await extendExistingSubscriptionTrial({
@@ -342,12 +339,12 @@ describe('SPEC-262 T-006 — extendExistingSubscriptionTrial', () => {
             mockRedeemAndRecordUsage.mockResolvedValue(redeemSuccess());
 
             const beforeCall = Date.now();
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({ subRows: [sub] });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({ subRows: [sub] });
+                return fn(tx);
+            });
             const afterCallBound = Date.now() + 1000; // 1-second buffer
 
             // Act
@@ -387,12 +384,12 @@ describe('SPEC-262 T-006 — extendExistingSubscriptionTrial', () => {
 
             const executeFn = vi.fn();
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({ subRows: [sub], executeFn });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({ subRows: [sub], executeFn });
+                return fn(tx);
+            });
 
             // Act
             const result = await extendExistingSubscriptionTrial({
@@ -426,12 +423,12 @@ describe('SPEC-262 T-006 — extendExistingSubscriptionTrial', () => {
 
             const executeFn = vi.fn();
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({ subRows: [sub], executeFn });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({ subRows: [sub], executeFn });
+                return fn(tx);
+            });
 
             // Act
             const result = await extendExistingSubscriptionTrial({
@@ -462,12 +459,12 @@ describe('SPEC-262 T-006 — extendExistingSubscriptionTrial', () => {
 
             const executeFn = vi.fn();
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({ subRows: [sub], executeFn });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({ subRows: [sub], executeFn });
+                return fn(tx);
+            });
 
             // Act
             const result = await extendExistingSubscriptionTrial({
@@ -497,12 +494,12 @@ describe('SPEC-262 T-006 — extendExistingSubscriptionTrial', () => {
 
             const executeFn = vi.fn();
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({ subRows: [sub], executeFn });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({ subRows: [sub], executeFn });
+                return fn(tx);
+            });
 
             // Act
             const result = await extendExistingSubscriptionTrial({
@@ -525,12 +522,12 @@ describe('SPEC-262 T-006 — extendExistingSubscriptionTrial', () => {
 
             const executeFn = vi.fn();
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({ subRows: [], executeFn }); // empty → not found
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({ subRows: [], executeFn }); // empty → not found
+                return fn(tx);
+            });
 
             // Act
             const result = await extendExistingSubscriptionTrial({
@@ -562,12 +559,12 @@ describe('SPEC-262 T-006 — extendExistingSubscriptionTrial', () => {
             mockGetPromoCodeById.mockResolvedValue({ success: true, data: promoCode });
             mockRedeemAndRecordUsage.mockResolvedValue(redeemSuccess());
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({ subRows: [sub] });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({ subRows: [sub] });
+                return fn(tx);
+            });
 
             // Act
             const result = await extendExistingSubscriptionTrial({
@@ -603,12 +600,12 @@ describe('SPEC-262 T-006 — extendExistingSubscriptionTrial', () => {
 
             const executeFn = vi.fn();
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({ subRows: [sub], executeFn });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({ subRows: [sub], executeFn });
+                return fn(tx);
+            });
 
             // Act
             const result = await extendExistingSubscriptionTrial({
@@ -755,12 +752,12 @@ describe('SPEC-262 T-006 — extendExistingSubscriptionTrial', () => {
             mockGetPromoCodeById.mockResolvedValue({ success: true, data: promoCode });
             mockRedeemAndRecordUsage.mockResolvedValue(redeemSuccess());
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = buildTxMock({ subRows: [sub] });
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildTxMock({ subRows: [sub] });
+                return fn(tx);
+            });
 
             // Act
             const result = await extendExistingSubscriptionTrial({

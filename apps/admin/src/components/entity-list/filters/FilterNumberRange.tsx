@@ -8,10 +8,10 @@
  * rating, and capacity.
  */
 
+import type { TranslationKey } from '@repo/i18n';
 import { Input } from '@/components/ui/input';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import type { TranslationKey } from '@repo/i18n';
 import type { NumberRangeFilterConfig } from './filter-types';
 
 /**

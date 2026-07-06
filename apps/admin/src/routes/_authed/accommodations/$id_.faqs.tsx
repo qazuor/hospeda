@@ -16,12 +16,12 @@
  * other accommodation sub-tab in this project.
  */
 
+import { EntitlementKey } from '@repo/billing';
+import { createFileRoute } from '@tanstack/react-router';
 import { FaqManager } from '@/components/faqs/FaqManager';
 import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
 import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
-import { EntitlementKey } from '@repo/billing';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/accommodations/$id_/faqs')({
     component: AccommodationFaqsPage
