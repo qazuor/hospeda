@@ -10,6 +10,7 @@
  */
 
 import { AddIcon, AlertCircleIcon, DeleteIcon, EditIcon, LoaderIcon } from '@repo/icons';
+import { getKnownProvider, KNOWN_PROVIDERS } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
@@ -54,124 +55,12 @@ export const Route = createFileRoute('/_authed/ai/credentials')({
 // ---------------------------------------------------------------------------
 // Known providers metadata
 // ---------------------------------------------------------------------------
-
-interface KnownProvider {
-    id: string;
-    label: string;
-    apiKeyPlaceholder: string;
-    baseURL: string;
-    keyUrl: string;
-    models: readonly string[];
-    needsApiKey: boolean;
-}
-
-const KNOWN_PROVIDERS: readonly KnownProvider[] = [
-    {
-        id: 'openai',
-        label: 'OpenAI (GPT)',
-        apiKeyPlaceholder: 'sk-...',
-        baseURL: 'https://api.openai.com/v1',
-        keyUrl: 'https://platform.openai.com/api-keys',
-        models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'gpt-4.1-mini', 'o3-mini'],
-        needsApiKey: true
-    },
-    {
-        id: 'anthropic',
-        label: 'Anthropic (Claude)',
-        apiKeyPlaceholder: 'sk-ant-...',
-        baseURL: 'https://api.anthropic.com/v1',
-        keyUrl: 'https://console.anthropic.com/settings/keys',
-        models: ['claude-sonnet-4-20250514', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'],
-        needsApiKey: true
-    },
-    {
-        id: 'google',
-        label: 'Google (Gemini)',
-        apiKeyPlaceholder: 'AIza...',
-        baseURL: 'https://generativelanguage.googleapis.com/v1beta',
-        keyUrl: 'https://aistudio.google.com/apikey',
-        models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'],
-        needsApiKey: true
-    },
-    {
-        id: 'deepseek',
-        label: 'DeepSeek',
-        apiKeyPlaceholder: 'sk-...',
-        baseURL: 'https://api.deepseek.com/v1',
-        keyUrl: 'https://platform.deepseek.com/api_keys',
-        models: ['deepseek-chat', 'deepseek-reasoner'],
-        needsApiKey: true
-    },
-    {
-        id: 'groq',
-        label: 'Groq',
-        apiKeyPlaceholder: 'gsk_...',
-        baseURL: 'https://api.groq.com/openai/v1',
-        keyUrl: 'https://console.groq.com/keys',
-        models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'],
-        needsApiKey: true
-    },
-    {
-        id: 'together',
-        label: 'Together AI',
-        apiKeyPlaceholder: '...',
-        baseURL: 'https://api.together.xyz/v1',
-        keyUrl: 'https://api.together.xyz/settings/api-keys',
-        models: ['meta-llama/Llama-3.3-70B-Instruct-Turbo', 'Qwen/Qwen2.5-72B-Instruct-Turbo'],
-        needsApiKey: true
-    },
-    {
-        id: 'mistral',
-        label: 'Mistral AI',
-        apiKeyPlaceholder: '...',
-        baseURL: 'https://api.mistral.ai/v1',
-        keyUrl: 'https://console.mistral.ai/api-keys/',
-        models: ['mistral-large-latest', 'mistral-small-latest', 'codestral-latest'],
-        needsApiKey: true
-    },
-    {
-        id: 'moonshot',
-        label: 'Moonshot (Kimi)',
-        apiKeyPlaceholder: 'sk-...',
-        baseURL: 'https://api.moonshot.cn/v1',
-        keyUrl: 'https://platform.moonshot.cn/console/api-keys',
-        models: ['moonshot-v1-128k', 'moonshot-v1-32k', 'moonshot-v1-8k'],
-        needsApiKey: true
-    },
-    {
-        id: 'zhipu',
-        label: 'Zhipu AI (GLM)',
-        apiKeyPlaceholder: '...',
-        baseURL: 'https://open.bigmodel.cn/api/paas/v4',
-        keyUrl: 'https://open.bigmodel.cn/usercenter/apikeys',
-        models: ['glm-4-plus', 'glm-4-flash', 'glm-4-long'],
-        needsApiKey: true
-    },
-    {
-        id: 'baidu',
-        label: 'Baidu (ERNIE)',
-        apiKeyPlaceholder: '...',
-        baseURL: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop',
-        keyUrl: 'https://console.bce.baidu.com/qianfan/ais/console/applicationConsole/application',
-        models: ['ernie-4.0-8k', 'ernie-3.5-8k', 'ernie-speed-128k'],
-        needsApiKey: true
-    },
-    {
-        id: 'ollama',
-        label: 'Ollama (local)',
-        apiKeyPlaceholder: 'ollama (no key needed)',
-        baseURL: 'http://localhost:11434/v1',
-        keyUrl: '',
-        models: ['llama3', 'mistral', 'codellama', 'qwen2.5'],
-        needsApiKey: false
-    }
-] as const;
+//
+// The curated `KNOWN_PROVIDERS` catalog + `getKnownProvider` lookup now live in
+// `@repo/schemas` (`ai-provider-catalog.ts`, HOS-94) so the API's model-sync
+// merge can consume the exact same curated metadata. Imported above.
 
 const CUSTOM_OPTION_ID = '__custom__';
-
-function getKnownProvider(id: string): KnownProvider | undefined {
-    return KNOWN_PROVIDERS.find((p) => p.id === id);
-}
 
 // ---------------------------------------------------------------------------
 // Sub-components

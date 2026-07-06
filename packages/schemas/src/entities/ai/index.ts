@@ -13,12 +13,16 @@ export * from './ai-post-generate.schema.js';
 // Versioned system-prompt entity
 export * from './ai-prompt.schema.js';
 export * from './ai-provider.schema.js';
+// Curated provider catalog (baseURL/keyUrl/suggested models) shared by admin UI + API sync-models merge (HOS-94)
+export * from './ai-provider-catalog.js';
 // Request body + SSE event schemas for the conversational AI search child spec (SPEC-212)
 export * from './ai-search-chat.schema.js';
 // Request body, entity slot, and response schemas for the AI NL search child spec (SPEC-199)
 export * from './ai-search-intent.schema.js';
 // Admin-managed settings blob (ai_settings JSONB value)
 export * from './ai-settings.schema.js';
+// Detected/curated model catalog + sync-models result shapes (HOS-94)
+export * from './ai-sync-models.schema.js';
 // HTTP request/response schemas for the text-improve child spec (SPEC-198)
 export * from './ai-text-improve.schema.js';
 // Usage reporting aggregate response shapes (SPEC-173 T-018)
