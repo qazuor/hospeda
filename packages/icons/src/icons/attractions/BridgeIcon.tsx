@@ -18,8 +18,9 @@
  * the Puente Internacional Libertador General San Martín
  * (Concordia–Salto) — bridges of the Argentine Litoral region.
  */
-import { ICON_SIZES } from '../../types';
+
 import type { IconProps } from '../../types';
+import { ICON_SIZES } from '../../types';
 
 /**
  * Bridge icon. See module description for design rationale.

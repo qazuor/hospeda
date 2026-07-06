@@ -98,7 +98,7 @@ export function normalizeAdminInfo(input: unknown): AdminInfoType | undefined {
     const { notes, favorite } = input as Partial<AdminInfoType>;
     if (notes === undefined && favorite === undefined) return undefined;
     return {
-        ...(notes !== undefined ? { notes } : {}),
+        ...(notes === undefined ? {} : { notes }),
         favorite: typeof favorite === 'boolean' ? favorite : false
     } as AdminInfoType;
 }

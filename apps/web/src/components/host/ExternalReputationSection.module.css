@@ -274,7 +274,9 @@ select.addFormSelect {
     font-weight: 600;
     font-size: 0.875rem;
     cursor: pointer;
-    transition: background-color 150ms ease-out, color 150ms ease-out;
+    transition:
+        background-color 150ms ease-out,
+        color 150ms ease-out;
 }
 
 .refreshButton:hover {

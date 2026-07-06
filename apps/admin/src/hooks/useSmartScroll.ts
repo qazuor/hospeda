@@ -1,5 +1,5 @@
-import { adminLogger } from '@/utils/logger';
 import { useCallback, useMemo, useRef } from 'react';
+import { adminLogger } from '@/utils/logger';
 
 /**
  * Configuration options for smart scrolling

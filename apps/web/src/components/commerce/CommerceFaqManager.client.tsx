@@ -17,11 +17,12 @@
  *   It does NOT participate in the parent editor's dirty / PATCH payload — FAQs
  *   have their own endpoints and are saved independently.
  */
+
+import { type JSX, useCallback, useState } from 'react';
 import { apiClient } from '@/lib/api/client';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { type JSX, useCallback, useState } from 'react';
 import styles from './CommerceFaqManager.module.css';
 
 // ---------------------------------------------------------------------------
@@ -66,7 +67,10 @@ const EMPTY_EDITOR: FaqEditor = { question: '', answer: '', category: '' };
 function faqBasePath({
     vertical,
     listingId
-}: { vertical: CommerceVertical; listingId: string }): string {
+}: {
+    vertical: CommerceVertical;
+    listingId: string;
+}): string {
     const entity = vertical === 'gastronomy' ? 'gastronomies' : 'experiences';
     return `/api/v1/protected/${entity}/${listingId}/faqs`;
 }

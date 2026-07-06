@@ -190,13 +190,13 @@ export function mapIntentToSearchParams(
     // Clamp to [0, 5]. If after clamping minRating > maxRating, drop maxRating.
     if (entities.minRating !== undefined || entities.maxRating !== undefined) {
         const clampedMin =
-            entities.minRating !== undefined
-                ? Math.max(MIN_RATING, Math.min(MAX_RATING, entities.minRating))
-                : undefined;
+            entities.minRating === undefined
+                ? undefined
+                : Math.max(MIN_RATING, Math.min(MAX_RATING, entities.minRating));
         const clampedMax =
-            entities.maxRating !== undefined
-                ? Math.max(MIN_RATING, Math.min(MAX_RATING, entities.maxRating))
-                : undefined;
+            entities.maxRating === undefined
+                ? undefined
+                : Math.max(MIN_RATING, Math.min(MAX_RATING, entities.maxRating));
 
         if (clampedMin !== undefined) {
             params.minRating = String(clampedMin);

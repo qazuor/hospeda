@@ -11,8 +11,8 @@ import {
     SocialPostDetailSchema,
     SocialPostUpdateSchema
 } from '@repo/schemas';
-import { ServiceError, SocialPostService } from '@repo/service-core';
 import type { UpdatePostData } from '@repo/service-core';
+import { ServiceError, SocialPostService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';

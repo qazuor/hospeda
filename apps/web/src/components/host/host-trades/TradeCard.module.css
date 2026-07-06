@@ -11,8 +11,9 @@
     border: 1px solid var(--border, var(--core-foreground-a15, oklch(0 0 0 / 0.08)));
     border-radius: var(--radius-card, 24px);
     box-shadow: var(--shadow-card);
-    transition: box-shadow var(--duration-normal, 0.4s) ease, transform var(--duration-normal, 0.4s)
-        ease;
+    transition:
+        box-shadow var(--duration-normal, 0.4s) ease,
+        transform var(--duration-normal, 0.4s) ease;
 }
 
 .card:hover {

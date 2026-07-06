@@ -5,10 +5,10 @@
  * maxStars config, and aria-label attributes.
  */
 
-import { StarsFilter } from '@/components/shared/filters/filter-types/StarsFilter';
-import type { StarsFilterConfig } from '@/components/shared/filters/filter-types/StarsFilter';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { StarsFilterConfig } from '@/components/shared/filters/filter-types/StarsFilter';
+import { StarsFilter } from '@/components/shared/filters/filter-types/StarsFilter';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({

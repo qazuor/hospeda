@@ -8,8 +8,8 @@
  */
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: {

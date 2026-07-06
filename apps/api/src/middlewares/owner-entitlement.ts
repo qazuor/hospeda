@@ -35,16 +35,16 @@
  */
 import {
     type EntitlementKey,
-    type LimitKey,
     getDefaultEntitlements,
     getUnlimitedEntitlements,
     isEntitlementKey,
-    isLimitKey
+    isLimitKey,
+    type LimitKey
 } from '@repo/billing';
 import { accommodations, getDb, users } from '@repo/db';
 import { RoleEnum } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
-import { type SQL, eq, inArray } from 'drizzle-orm';
+import { eq, inArray, type SQL } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
 import { PlanService } from '../services/plan.service';
 import type { AppBindings } from '../types';
@@ -719,10 +719,10 @@ export async function resolveOwnerEntitlementsForOwnerIds(
         if (seen.has(ownerId)) continue;
         seen.add(ownerId);
         const cached = getOwnerEntitlementBadgeCacheEntry(ownerId);
-        if (cached !== null) {
-            result.set(ownerId, cached);
-        } else {
+        if (cached === null) {
             missing.push(ownerId);
+        } else {
+            result.set(ownerId, cached);
         }
     }
 

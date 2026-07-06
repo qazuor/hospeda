@@ -1,7 +1,7 @@
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
-import type { z } from 'zod';
 import { type HostTradeListItem, HostTradeListItemSchema } from '../schemas/host-trades.schemas';
 import { createHostTradesColumns } from './host-trades.columns';
 
@@ -148,4 +148,5 @@ export const hostTradesConfig: EntityConfig<HostTradeListItem> = {
 };
 
 const { component, route } = createEntityListPage(hostTradesConfig);
+
 export { component as HostTradesPageComponent, route as HostTradesRoute };

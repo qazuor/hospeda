@@ -352,8 +352,8 @@ export class PaymentService {
                 failureReason: b.failureReason || null,
                 mercadoPagoResponse: b.mercadoPagoResponse || null,
                 lifecycleState: b.lifecycleState || 'ACTIVE',
-                isActive: b.isActive !== undefined ? b.isActive : true,
-                isDeleted: b.isDeleted !== undefined ? b.isDeleted : false,
+                isActive: b.isActive === undefined ? true : b.isActive,
+                isDeleted: b.isDeleted === undefined ? false : b.isDeleted,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             }
@@ -419,7 +419,7 @@ export class PaymentMethodService {
                 userId: String(b.userId),
                 type: String(b.type || 'CREDIT_CARD'),
                 provider: b.provider || null,
-                isDefault: b.isDefault !== undefined ? b.isDefault : false,
+                isDefault: b.isDefault === undefined ? false : b.isDefault,
                 cardBrand: b.cardBrand || null,
                 cardLastFour: b.cardLastFour || null,
                 cardExpiryMonth: b.cardExpiryMonth || null,
@@ -430,8 +430,8 @@ export class PaymentMethodService {
                 externalReference: b.externalReference || null,
                 metadata: b.metadata || null,
                 lifecycleState: b.lifecycleState || 'ACTIVE',
-                isActive: b.isActive !== undefined ? b.isActive : true,
-                isDeleted: b.isDeleted !== undefined ? b.isDeleted : false,
+                isActive: b.isActive === undefined ? true : b.isActive,
+                isDeleted: b.isDeleted === undefined ? false : b.isDeleted,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             }
@@ -471,9 +471,9 @@ export class PaymentMethodService {
             data: {
                 id: params.id,
                 isDefault:
-                    (params.data as Record<string, unknown>).isDefault !== undefined
-                        ? (params.data as Record<string, unknown>).isDefault
-                        : false,
+                    (params.data as Record<string, unknown>).isDefault === undefined
+                        ? false
+                        : (params.data as Record<string, unknown>).isDefault,
                 updatedAt: new Date().toISOString()
             }
         };
@@ -509,8 +509,8 @@ export class InvoiceService {
                 notes: b.notes || null,
                 metadata: b.metadata || null,
                 lifecycleState: b.lifecycleState || 'ACTIVE',
-                isActive: b.isActive !== undefined ? b.isActive : true,
-                isDeleted: b.isDeleted !== undefined ? b.isDeleted : false,
+                isActive: b.isActive === undefined ? true : b.isActive,
+                isDeleted: b.isDeleted === undefined ? false : b.isDeleted,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             }
@@ -579,8 +579,8 @@ export class InvoiceLineService {
                 productId: b.productId || null,
                 metadata: b.metadata || null,
                 lifecycleState: b.lifecycleState || 'ACTIVE',
-                isActive: b.isActive !== undefined ? b.isActive : true,
-                isDeleted: b.isDeleted !== undefined ? b.isDeleted : false,
+                isActive: b.isActive === undefined ? true : b.isActive,
+                isDeleted: b.isDeleted === undefined ? false : b.isDeleted,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             }
@@ -651,8 +651,8 @@ export class RefundService {
                 providerRefundId: b.providerRefundId || null,
                 failureReason: b.failureReason || null,
                 lifecycleState: b.lifecycleState || 'ACTIVE',
-                isActive: b.isActive !== undefined ? b.isActive : true,
-                isDeleted: b.isDeleted !== undefined ? b.isDeleted : false,
+                isActive: b.isActive === undefined ? true : b.isActive,
+                isDeleted: b.isDeleted === undefined ? false : b.isDeleted,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             }
@@ -723,7 +723,7 @@ export class CreditNoteService {
                 notes: b.notes || null,
                 metadata: b.metadata || null,
                 lifecycleState: b.lifecycleState || 'ACTIVE',
-                isActive: b.isActive !== undefined ? b.isActive : true,
+                isActive: b.isActive === undefined ? true : b.isActive,
                 isDeleted: false,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()

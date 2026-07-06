@@ -1,7 +1,7 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getWelcomeTourForRole } from '@/config/tours';
 import { useTourState } from '@/hooks/use-tour-state';
-import { type SupportedLocale, createTranslations } from '@/lib/i18n';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 
 interface TourControllerProps {
     readonly locale: SupportedLocale;

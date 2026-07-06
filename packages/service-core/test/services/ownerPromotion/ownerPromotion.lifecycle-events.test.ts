@@ -11,8 +11,8 @@
 
 import type { AccommodationModel, OwnerPromotionModel } from '@repo/db';
 import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockInstance } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OwnerPromotionLifecycleEvent } from '../../../src/services/owner-promotion/ownerPromotion.lifecycle-events';
 import * as lifecycleEventsModule from '../../../src/services/owner-promotion/ownerPromotion.lifecycle-events';
 import { OwnerPromotionService } from '../../../src/services/owner-promotion/ownerPromotion.service';

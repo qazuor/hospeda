@@ -9,13 +9,21 @@
  * `generateGalleryId`) live in the root `@repo/media` entrypoint instead.
  */
 
+export type { CloudinaryProviderConfig } from './cloudinary.provider.js';
 export {
     CloudinaryProvider,
     ConfigurationError,
     InvalidFolderError
 } from './cloudinary.provider.js';
-export type { CloudinaryProviderConfig } from './cloudinary.provider.js';
-
+export type { MediaEnvironment } from './environment.js';
+export { resolveEnvironment } from './environment.js';
+export type {
+    EntityWithMedia,
+    ExtractAllMediaPublicIdsOptions,
+    MediaAssetLike,
+    MediaLike
+} from './extract-all-public-ids.js';
+export { extractAllMediaPublicIds } from './extract-all-public-ids.js';
 export type {
     DeleteByPrefixOptions,
     DeleteOptions,
@@ -25,12 +33,6 @@ export type {
     UploadOptions,
     UploadResult
 } from './types.js';
-
-export {
-    AVATAR_ALLOWED_MIME_TYPES,
-    ENTITY_ALLOWED_MIME_TYPES,
-    validateMediaFile
-} from './validate-media-file.js';
 export type {
     ValidateMediaFileInput,
     ValidationContext,
@@ -39,14 +41,8 @@ export type {
     ValidationResult,
     ValidationSuccess
 } from './validate-media-file.js';
-
-export { resolveEnvironment } from './environment.js';
-export type { MediaEnvironment } from './environment.js';
-
-export { extractAllMediaPublicIds } from './extract-all-public-ids.js';
-export type {
-    EntityWithMedia,
-    ExtractAllMediaPublicIdsOptions,
-    MediaAssetLike,
-    MediaLike
-} from './extract-all-public-ids.js';
+export {
+    AVATAR_ALLOWED_MIME_TYPES,
+    ENTITY_ALLOWED_MIME_TYPES,
+    validateMediaFile
+} from './validate-media-file.js';

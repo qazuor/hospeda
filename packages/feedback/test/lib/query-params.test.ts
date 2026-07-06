@@ -2,8 +2,8 @@
  * Tests for the query-params serialization/parsing utilities.
  */
 import { describe, expect, it } from 'vitest';
-import { parseFeedbackParams, serializeFeedbackParams } from '../../src/lib/query-params.js';
 import type { FeedbackQueryParams } from '../../src/lib/query-params.js';
+import { parseFeedbackParams, serializeFeedbackParams } from '../../src/lib/query-params.js';
 
 describe('serializeFeedbackParams', () => {
     it('should serialize all defined params to a query string', () => {

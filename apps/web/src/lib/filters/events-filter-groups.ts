@@ -8,6 +8,7 @@
 
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
 import type { TranslationFn } from '@/lib/i18n';
+import { computeEventDatePresetRange, EVENT_DATE_PRESET_DEFS } from './event-date-presets';
 
 /** Minimal destination shape needed to populate the "Lugar" select-search options. */
 export interface EventFilterDestination {
@@ -27,6 +28,14 @@ interface BuildEventsFilterGroupsParams {
      * is already fixed by the URL path rather than user-selectable.
      */
     readonly excludeCategory?: boolean;
+    /**
+     * Reference instant used to resolve the `date` group's preset pills
+     * (BETA-115). Defaults to `new Date()`; callers should pass the same
+     * `now` used for the page's own `?when=` bounds computation so the
+     * preset bounds and any `?when=` → `startDateAfter`/`startDateBefore`
+     * alias stay in sync. Tests can pin a fixed instant.
+     */
+    readonly now?: Date;
 }
 
 /**
@@ -37,8 +46,20 @@ interface BuildEventsFilterGroupsParams {
 export function buildEventsFilterGroups({
     t,
     destinations,
-    excludeCategory = false
+    excludeCategory = false,
+    now = new Date()
 }: BuildEventsFilterGroupsParams): FilterGroup[] {
+    /**
+     * Date preset pills (BETA-115): folds the retired `EventDateFilterChips`
+     * row into the sidebar's `date` filter group. Bounds are resolved once
+     * here (plain data, not a `getRange` function) so the config survives
+     * the Astro → React `client:*` prop serialization boundary.
+     */
+    const datePresets = EVENT_DATE_PRESET_DEFS.map(({ value, i18nKey, fallback }) => {
+        const range = computeEventDatePresetRange({ when: value, now });
+        return { value, label: t(i18nKey, fallback), from: range.from, to: range.to };
+    });
+
     const categoryGroup: FilterGroup = {
         id: 'category',
         label: t('events.filters.category', 'Categoría'),
@@ -77,7 +98,8 @@ export function buildEventsFilterGroups({
             fromParam: 'startDateAfter',
             toParam: 'startDateBefore',
             mode: 'bounds',
-            allowPastDates: true
+            allowPastDates: true,
+            presets: datePresets
         },
         {
             id: 'destinationId',

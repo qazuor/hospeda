@@ -11,9 +11,9 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import {
-    UsageProgressBar,
     computeUsagePercent,
-    pickUsageTone
+    pickUsageTone,
+    UsageProgressBar
 } from '../../../src/components/billing/UsageProgressBar';
 
 describe('computeUsagePercent', () => {

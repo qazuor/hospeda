@@ -16,9 +16,9 @@
  * route is responsible for masking, the hook just passes through.
  */
 
-import { fetchApi } from '@/lib/api/client';
 import type { NewsletterCampaignStatusEnum } from '@repo/schemas';
 import { useQuery } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 import { newsletterCampaignQueryKeys } from './use-newsletter-campaigns';
 
 // ---------------------------------------------------------------------------

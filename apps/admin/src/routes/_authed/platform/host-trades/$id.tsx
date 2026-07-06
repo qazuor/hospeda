@@ -1,3 +1,5 @@
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
@@ -5,8 +7,6 @@ import { useHostTradePage } from '@/features/host-trades/hooks/useHostTradePage'
 import { useDeleteHostTradeMutation } from '@/features/host-trades/hooks/useHostTradeQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 /**
  * Host-Trade View Route Configuration

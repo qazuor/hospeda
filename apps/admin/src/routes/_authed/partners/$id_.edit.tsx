@@ -1,3 +1,5 @@
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { PartnerForm } from '@/features/partners/components/PartnerForm';
 import {
@@ -6,8 +8,6 @@ import {
     useUpdatePartnerMutation
 } from '@/features/partners/hooks/usePartnerQuery';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/partners/$id_/edit')({
     component: PartnerEditPage,

@@ -3,11 +3,12 @@
  *
  * Shows a Coming Soon state until the analytics API endpoint is implemented.
  */
+
+import type { TranslationKey } from '@repo/i18n';
+import { createFileRoute } from '@tanstack/react-router';
 import { ComingSoon } from '@/components/feedback/ComingSoon';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/sponsor/analytics')({
     component: SponsorAnalyticsPage

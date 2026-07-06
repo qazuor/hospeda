@@ -12,19 +12,19 @@
  * Pagination: page + pageSize (admin convention — NOT limit).
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { PermissionEnum, type SocialContentBatch } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { Button } from '@/components/ui/button';
 import type { CatalogListFilters } from '@/hooks/use-social-catalog';
 import { useDeleteSocialBatch, useSocialBatchesList } from '@/hooks/use-social-catalog';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import type { TranslationKey } from '@repo/i18n';
-import { PermissionEnum, type SocialContentBatch } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 import { CatalogDeleteConfirm } from '../catalog/-components/CatalogDeleteConfirm';
-import { BatchFormModal } from './-components/BatchFormModal';
 import { BatchesTable } from './-components/BatchesTable';
+import { BatchFormModal } from './-components/BatchFormModal';
 
 export const Route = createFileRoute('/_authed/social/batches/')({
     component: BatchesPage,

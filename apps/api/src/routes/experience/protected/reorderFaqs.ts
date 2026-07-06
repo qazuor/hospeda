@@ -7,7 +7,7 @@
  * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
  */
 import { ExperienceFaqRemoveOutputSchema, FaqReorderPayloadSchema } from '@repo/schemas';
-import { ExperienceService, ServiceError, reorderExperienceFaqs } from '@repo/service-core';
+import { ExperienceService, reorderExperienceFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';

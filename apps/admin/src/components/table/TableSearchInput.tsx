@@ -6,8 +6,8 @@
  * controls instead of hanging alone in the top toolbar.
  */
 
-import { useTranslations } from '@/hooks/use-translations';
 import { CloseIcon, LoaderIcon, SearchIcon } from '@repo/icons';
+import { useTranslations } from '@/hooks/use-translations';
 
 export type TableSearchInputProps = {
     readonly query: string;
@@ -37,7 +37,7 @@ export const TableSearchInput = ({
         <div className="relative">
             <SearchIcon
                 size="xs"
-                className="-translate-y-1/2 absolute top-1/2 left-3 text-muted-foreground"
+                className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
             />
             <input
                 type="search"
@@ -50,7 +50,7 @@ export const TableSearchInput = ({
                 onChange={(e) => onQueryChange(e.target.value)}
                 aria-label={t('ui.accessibility.search')}
             />
-            <div className="-translate-y-1/2 absolute top-1/2 right-3">
+            <div className="absolute top-1/2 right-3 -translate-y-1/2">
                 {isSearching ? (
                     <LoaderIcon
                         size="xs"

@@ -10,7 +10,7 @@
  * See SPEC-118 for the 2-reason contract rationale.
  */
 
-import type { ResetPasswordCheckResult, authApi } from '@/lib/api/endpoints';
+import type { authApi, ResetPasswordCheckResult } from '@/lib/api/endpoints';
 import type { ApiResult } from '@/lib/api/types';
 
 /**

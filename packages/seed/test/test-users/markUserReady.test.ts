@@ -5,15 +5,16 @@
  * Mirrors the port-injection + stub pattern from
  * `packages/seed/test/required/systemUser.seed.test.ts`.
  */
-import { UserSettingsSchema } from '@repo/schemas';
+
 import type { User } from '@repo/schemas';
+import { UserSettingsSchema } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     ALL_ADMIN_TOUR_IDS,
     type MarkUserReadyResult,
+    markUserReady,
     TOUR_READY_SENTINEL,
-    type UserReadyModelPort,
-    markUserReady
+    type UserReadyModelPort
 } from '../../src/test-users/markUserReady.js';
 
 // ---------------------------------------------------------------------------

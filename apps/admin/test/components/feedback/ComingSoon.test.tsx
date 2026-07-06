@@ -11,9 +11,9 @@
  * @module ComingSoon.test
  */
 
-import { ComingSoon } from '@/components/feedback/ComingSoon';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { ComingSoon } from '@/components/feedback/ComingSoon';
 
 vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({

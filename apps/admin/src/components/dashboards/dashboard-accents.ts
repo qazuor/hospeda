@@ -20,6 +20,7 @@
  * @module dashboards/dashboard-accents
  */
 
+import type { IconProps } from '@repo/icons';
 import {
     ActivityIcon,
     BarChartIcon,
@@ -35,7 +36,6 @@ import {
     UserIcon,
     UsersIcon
 } from '@repo/icons';
-import type { IconProps } from '@repo/icons';
 import type { ComponentType } from 'react';
 
 /**

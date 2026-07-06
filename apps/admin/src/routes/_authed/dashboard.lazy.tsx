@@ -18,11 +18,12 @@
  * Source-registry side-effect import lives inside DashboardRenderer itself
  * (`@/lib/dashboard-sources/index`), so no extra import is needed here.
  */
+
+import { createLazyFileRoute } from '@tanstack/react-router';
 import { DashboardRenderer } from '@/components/dashboards/DashboardRenderer';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { DashboardSkeleton } from '@/components/loading';
 import { useTranslations } from '@/hooks/use-translations';
-import { createLazyFileRoute } from '@tanstack/react-router';
 
 export const Route = createLazyFileRoute('/_authed/dashboard')({
     component: Dashboard,

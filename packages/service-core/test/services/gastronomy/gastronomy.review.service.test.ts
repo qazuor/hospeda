@@ -16,6 +16,7 @@
  * DB interactions are fully mocked — no real DB is touched.
  */
 
+import type { GastronomyReview } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
@@ -23,7 +24,6 @@ import {
     RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import type { GastronomyReview } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     type GastronomyReviewModerateInput,

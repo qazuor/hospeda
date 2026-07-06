@@ -11,9 +11,14 @@
  * This page is distinct from `/billing/addons` which manages purchased
  * (customer) add-ons.
  */
+
+import type { AddonDefinition } from '@repo/billing';
+import { AddIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { DataTable } from '@/components/table/DataTable';
 import type { DataTableColumn } from '@/components/table/DataTable';
+import { DataTable } from '@/components/table/DataTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -23,9 +28,9 @@ import {
     AddonHardDeleteConfirmDialog,
     AddonSoftDeleteConfirmDialog,
     type CreateAddonPayload,
+    getAddonCatalogColumns,
     type ParsedAddonRecord,
     type UpdateAddonPayload,
-    getAddonCatalogColumns,
     useAddonCatalogQuery,
     useCreateAddonMutation,
     useDeleteAddonMutation,
@@ -38,10 +43,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
 import { getFriendlyErrorInfo, isApiError, reportError } from '@/lib/errors';
-import type { AddonDefinition } from '@repo/billing';
-import { AddIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/addon-catalog')({
     beforeLoad: ({ context }) => requireBillingAccess(context),
@@ -66,7 +67,7 @@ function BillingAddonCatalogPage() {
     const { data, isLoading, error } = useAddonCatalogQuery({
         page,
         pageSize,
-        billingType: billingTypeFilter !== 'all' ? billingTypeFilter : undefined,
+        billingType: billingTypeFilter === 'all' ? undefined : billingTypeFilter,
         includeDeleted
     });
 

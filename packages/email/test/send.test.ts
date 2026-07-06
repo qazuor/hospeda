@@ -5,8 +5,8 @@ vi.mock('@react-email/render', () => ({
 }));
 
 import type { EmailClient } from '../src/client.js';
-import { sendEmail } from '../src/send.js';
 import type { SendEmailInput } from '../src/send.js';
+import { sendEmail } from '../src/send.js';
 
 const TEST_CLIENT: EmailClient = {
     apiKey: 'xkeysib-test',

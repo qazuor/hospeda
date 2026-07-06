@@ -229,6 +229,7 @@ export function PasswordField({
                 <div
                     id={strengthId}
                     className={styles.strengthRow}
+                    role="status"
                     aria-live="polite"
                     aria-label={strengthLabel}
                 >

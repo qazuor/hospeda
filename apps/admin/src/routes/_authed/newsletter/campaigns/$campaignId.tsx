@@ -17,12 +17,12 @@
  * @module CampaignDetailPage
  */
 
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { useNewsletterCampaign } from '@/hooks/newsletter';
 import { useTranslations } from '@/hooks/use-translations';
 import type { AuthState } from '@/lib/auth-session';
-import { PermissionEnum } from '@repo/schemas';
-import { createFileRoute, redirect } from '@tanstack/react-router';
 import { CampaignEditor } from './-components/CampaignEditor';
 import { CampaignMetricsPanel } from './-components/CampaignMetricsPanel';
 
@@ -71,6 +71,7 @@ function StatusBadge({ status }: StatusBadgeProps) {
     return (
         <span
             className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-medium text-xs ${style}`}
+            role="status"
             aria-label={`Estado: ${label}`}
         >
             {label}

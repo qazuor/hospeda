@@ -1,10 +1,10 @@
 import { and, eq, gte, isNull, lte } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { conversationAccessTokens } from '../../schemas/conversation/conversation_access_tokens.dbschema.ts';
 import type {
     InsertConversationAccessToken,
     SelectConversationAccessToken
 } from '../../schemas/conversation/conversation_access_tokens.dbschema.ts';
+import { conversationAccessTokens } from '../../schemas/conversation/conversation_access_tokens.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';

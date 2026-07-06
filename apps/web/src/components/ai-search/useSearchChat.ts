@@ -20,6 +20,12 @@
  * @module useSearchChat
  */
 
+import type {
+    AccommodationPublic,
+    AiSearchChatFiltersEvent,
+    SearchIntentEntities
+} from '@repo/schemas';
+import { useCallback, useRef, useState } from 'react';
 import { accommodationsApi } from '@/lib/api/endpoints';
 import {
     type SearchChatMessage,
@@ -27,12 +33,6 @@ import {
     streamSearchChat
 } from '@/lib/api/search-chat-stream';
 import type { PaginatedResponse } from '@/lib/api/types';
-import type {
-    AccommodationPublic,
-    AiSearchChatFiltersEvent,
-    SearchIntentEntities
-} from '@repo/schemas';
-import { useCallback, useRef, useState } from 'react';
 
 // ─── Public types ──────────────────────────────────────────────────────────────
 
@@ -319,9 +319,9 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
                 locale,
                 conversationId: current.conversationId,
                 currentFilters:
-                    current.currentFilters !== null
-                        ? (current.currentFilters as AiSearchChatFiltersEvent['intent'])
-                        : undefined,
+                    current.currentFilters === null
+                        ? undefined
+                        : (current.currentFilters as AiSearchChatFiltersEvent['intent']),
                 signal: controller.signal,
                 onEvent: (event: SearchChatSseEvent) => {
                     if (event.type === 'filters') {

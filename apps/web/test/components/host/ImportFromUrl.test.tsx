@@ -206,23 +206,20 @@ describe('ImportFromUrl — failureCode branch (SPEC-258 C.1)', () => {
         ['provider_error', 'provider_error'],
         ['timeout', 'timeout'],
         ['nothing_found', 'nothing_found']
-    ])(
-        'renders an error alert (not a success notice) for failureCode "%s"',
-        async (failureCode) => {
-            // Arrange + Act
-            const { onImported, onError } = await submitWithFailureCode(failureCode);
+    ])('renders an error alert (not a success notice) for failureCode "%s"', async (failureCode) => {
+        // Arrange + Act
+        const { onImported, onError } = await submitWithFailureCode(failureCode);
 
-            // Assert: error alert is shown
-            const alert = await screen.findByRole('alert');
-            expect(alert).toBeInTheDocument();
+        // Assert: error alert is shown
+        const alert = await screen.findByRole('alert');
+        expect(alert).toBeInTheDocument();
 
-            // Assert: onImported was NOT called
-            expect(onImported).not.toHaveBeenCalled();
+        // Assert: onImported was NOT called
+        expect(onImported).not.toHaveBeenCalled();
 
-            // Assert: onError was called with the failureCode
-            await waitFor(() => expect(onError).toHaveBeenCalledWith(failureCode));
-        }
-    );
+        // Assert: onError was called with the failureCode
+        await waitFor(() => expect(onError).toHaveBeenCalledWith(failureCode));
+    });
 
     it('does NOT render a success notice when failureCode is present', async () => {
         // Arrange

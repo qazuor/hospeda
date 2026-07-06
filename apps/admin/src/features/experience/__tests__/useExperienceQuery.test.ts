@@ -17,11 +17,11 @@
  * since React state updates are async and may not settle immediately after the call.
  */
 
-import { fetchApi } from '@/lib/api/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fetchApi } from '@/lib/api/client';
 import {
     useAssignExperienceOwnerMutation,
     useCreateExperienceMutation,

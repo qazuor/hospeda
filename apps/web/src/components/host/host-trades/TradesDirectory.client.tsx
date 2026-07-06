@@ -15,12 +15,12 @@
  * server-side). i18n is resolved client-side via `createTranslations(locale)`.
  */
 
+import type { HostTradePublic } from '@repo/schemas';
+import type { JSX } from 'react';
+import { useMemo, useState } from 'react';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { HostTradePublic } from '@repo/schemas';
-import { useMemo, useState } from 'react';
-import type { JSX } from 'react';
 import { TradeCard } from './TradeCard';
 import styles from './TradesDirectory.module.css';
 

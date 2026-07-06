@@ -13,11 +13,11 @@
  * References: D-012, AC-008-01, AC-008-02
  */
 
-import type { UserTagWithOwner } from '@/hooks/use-user-tag-moderation';
 import { LifecycleStatusEnum, TagColorEnum, TagTypeEnum } from '@repo/schemas';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import type { UserTagWithOwner } from '@/hooks/use-user-tag-moderation';
 import { UserTagModerationTable } from '../UserTagModerationTable';
 
 // ---------------------------------------------------------------------------

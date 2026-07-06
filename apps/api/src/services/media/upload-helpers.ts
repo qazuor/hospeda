@@ -5,8 +5,9 @@
  * response validation) so both tiers reuse the same code without
  * duplicating the Cloudinary interaction pattern.
  */
-import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
+
 import type { ImageProvider } from '@repo/media/server';
+import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
 import { UploadResponseDataSchema } from '@repo/schemas';
 import { Sentry } from '../../lib/sentry';
 import { incrementDomainCounter } from '../../middlewares/metrics';
@@ -119,8 +120,8 @@ export async function uploadToProvider(
             file: params.buffer,
             folder: params.folder,
             publicId: params.publicId,
-            ...(params.tags !== undefined ? { tags: [...params.tags] } : {}),
-            ...(params.overwrite !== undefined ? { overwrite: params.overwrite } : {})
+            ...(params.tags === undefined ? {} : { tags: [...params.tags] }),
+            ...(params.overwrite === undefined ? {} : { overwrite: params.overwrite })
         });
     } catch (uploadError) {
         apiLogger.error(
@@ -306,29 +307,29 @@ export function buildPatchPayload(input: BuildPatchPayloadInput): BuildPatchPayl
 
     const result: Record<string, unknown> = { ...rest };
 
-    if (media !== undefined) {
-        // ── Nested form: extract from media wrapper ──────────────────────────
-
-        // featuredImage: object → extract id; null → explicit null for DB clear
-        if (Object.prototype.hasOwnProperty.call(media, 'featuredImage')) {
-            result.featuredImageId = media.featuredImage != null ? media.featuredImage.id : null;
-        }
-
-        // gallery: array → extract ids
-        if (media.gallery !== undefined) {
-            result.galleryImageIds = media.gallery.map((img) => img.id);
-        }
-    } else {
+    if (media === undefined) {
         // ── Flat form: forward as-is, including explicit null ────────────────
 
         // Only include featuredImageId when the caller explicitly provided it
         // (including null — null signals a deliberate clear, not an omission).
-        if (Object.prototype.hasOwnProperty.call(input, 'featuredImageId')) {
+        if (Object.hasOwn(input, 'featuredImageId')) {
             result.featuredImageId = flatFeaturedId ?? null;
         }
 
         if (flatGalleryIds !== undefined) {
             result.galleryImageIds = flatGalleryIds;
+        }
+    } else {
+        // ── Nested form: extract from media wrapper ──────────────────────────
+
+        // featuredImage: object → extract id; null → explicit null for DB clear
+        if (Object.hasOwn(media, 'featuredImage')) {
+            result.featuredImageId = media.featuredImage == null ? null : media.featuredImage.id;
+        }
+
+        // gallery: array → extract ids
+        if (media.gallery !== undefined) {
+            result.galleryImageIds = media.gallery.map((img) => img.id);
         }
     }
 

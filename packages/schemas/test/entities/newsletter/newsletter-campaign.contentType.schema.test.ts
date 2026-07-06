@@ -8,8 +8,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
-import { CreateNewsletterCampaignSchema } from '../../../src/entities/newsletter/newsletter-campaign.crud.schema.js';
-import { UpdateNewsletterCampaignSchema } from '../../../src/entities/newsletter/newsletter-campaign.crud.schema.js';
+import {
+    CreateNewsletterCampaignSchema,
+    UpdateNewsletterCampaignSchema
+} from '../../../src/entities/newsletter/newsletter-campaign.crud.schema.js';
 import { NewsletterCampaignSchema } from '../../../src/entities/newsletter/newsletter-campaign.schema.js';
 import { NewsletterContentTypeEnum } from '../../../src/enums/newsletter-content-type.enum.js';
 
@@ -39,16 +41,15 @@ describe('NewsletterCampaignSchema.contentType', () => {
         expect(parsed.contentType).toBeNull();
     });
 
-    it.each(Object.values(NewsletterContentTypeEnum))(
-        'accepts each NewsletterContentTypeEnum value (%s)',
-        (value) => {
-            const parsed = NewsletterCampaignSchema.parse({
-                ...validCampaignBase,
-                contentType: value
-            });
-            expect(parsed.contentType).toBe(value);
-        }
-    );
+    it.each(
+        Object.values(NewsletterContentTypeEnum)
+    )('accepts each NewsletterContentTypeEnum value (%s)', (value) => {
+        const parsed = NewsletterCampaignSchema.parse({
+            ...validCampaignBase,
+            contentType: value
+        });
+        expect(parsed.contentType).toBe(value);
+    });
 
     it('rejects an unknown content type string', () => {
         expect(() =>

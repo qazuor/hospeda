@@ -1,15 +1,15 @@
-import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
+import { PermissionEnum, PostUpdateInputSchema } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
+import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
 import { TranslationSection } from '@/features/content/components/TranslationSection';
 import { PostQualityScore } from '@/features/posts/components/PostQualityScore';
 import { usePostPage } from '@/features/posts/hooks/usePostPage';
 import { createUploadHandler, useMediaUpload } from '@/hooks/use-media-upload';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum, PostUpdateInputSchema } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
-import { useMemo } from 'react';
 
 /**
  * Post Edit Route Configuration

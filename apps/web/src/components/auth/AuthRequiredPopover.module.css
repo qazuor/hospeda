@@ -20,7 +20,9 @@
     border: 1px solid var(--brand-primary-a20);
     background-color: var(--core-card);
     box-shadow: var(--shadow-card);
-    transition: opacity 0.18s ease, transform 0.18s ease;
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease;
 }
 
 .popoverHidden {
@@ -161,7 +163,9 @@
     font-family: var(--font-sans);
     font-weight: 600;
     text-decoration: none;
-    transition: filter var(--duration-fast) ease, transform var(--duration-fast) ease;
+    transition:
+        filter var(--duration-fast) ease,
+        transform var(--duration-fast) ease;
 }
 
 .signInButton:hover {
@@ -188,7 +192,9 @@
     font-family: var(--font-sans);
     font-weight: 600;
     text-decoration: none;
-    transition: border-color var(--duration-fast) ease, background-color var(--duration-fast) ease,
+    transition:
+        border-color var(--duration-fast) ease,
+        background-color var(--duration-fast) ease,
         transform var(--duration-fast) ease;
 }
 

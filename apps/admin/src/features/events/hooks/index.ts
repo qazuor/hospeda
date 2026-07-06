@@ -1,2 +1,2 @@
-export * from './useEventQuery';
 export * from './useEventPage';
+export * from './useEventQuery';

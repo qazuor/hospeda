@@ -38,7 +38,7 @@
  */
 import { and, eq } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
-import { postTags, posts, rEntityTag, rPostPostTag, tags, users } from '../../src/schemas/index.ts';
+import { posts, postTags, rEntityTag, rPostPostTag, tags, users } from '../../src/schemas/index.ts';
 import { closeTestPool, getTestPool, withCleanSlate, withTestTransaction } from './helpers.ts';
 
 // ---------------------------------------------------------------------------

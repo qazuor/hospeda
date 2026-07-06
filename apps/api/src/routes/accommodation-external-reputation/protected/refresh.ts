@@ -110,7 +110,7 @@ export const protectedRefreshReputationRoute = createProtectedRoute({
                 const serviceErr = new ServiceError(
                     ServiceErrorCode.QUOTA_EXCEEDED,
                     result.error.message,
-                    retryAfter !== undefined ? { retryAfter } : details
+                    retryAfter === undefined ? details : { retryAfter }
                 );
 
                 // Return 429 directly so the Retry-After header can be set.

@@ -22,7 +22,7 @@
  * @see apps/admin/test/routes/__root.ssr-guard.test.ts (guard pattern mirrored)
  */
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -59,10 +59,7 @@ interface Violation {
  * @param params.fileLabel - A label (usually the relative path) for reporting.
  * @returns The list of violations found (empty when the source is clean).
  */
-function detectIconViolations(params: {
-    source: string;
-    fileLabel: string;
-}): Violation[] {
+function detectIconViolations(params: { source: string; fileLabel: string }): Violation[] {
     const { source, fileLabel } = params;
     const violations: Violation[] = [];
     const lines = source.split('\n');

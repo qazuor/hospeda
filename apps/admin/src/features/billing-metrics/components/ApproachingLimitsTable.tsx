@@ -3,12 +3,13 @@
  *
  * Displays customers who are approaching their limits (>90% usage)
  */
+
+import { formatNumber } from '@repo/i18n';
+import { AlertTriangleIcon } from '@repo/icons';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useTranslations } from '@/hooks/use-translations';
-import { formatNumber } from '@repo/i18n';
-import { AlertTriangleIcon } from '@repo/icons';
 import type { ApproachingLimitsResponse } from '../types';
 
 interface ApproachingLimitsTableProps {
@@ -47,9 +48,9 @@ export function ApproachingLimitsTable({ data }: ApproachingLimitsTableProps) {
                 </CardTitle>
                 <CardDescription>
                     {data.totalCustomers}{' '}
-                    {data.totalCustomers !== 1
-                        ? t('admin-billing.metrics.approachingLimits.clientsUsingPlural')
-                        : t('admin-billing.metrics.approachingLimits.clientsUsing')}{' '}
+                    {data.totalCustomers === 1
+                        ? t('admin-billing.metrics.approachingLimits.clientsUsing')
+                        : t('admin-billing.metrics.approachingLimits.clientsUsingPlural')}{' '}
                     {t('admin-billing.metrics.approachingLimits.clientsUsingSuffix')}{' '}
                     {data.threshold}
                     {t('admin-billing.metrics.approachingLimits.clientsUsingSuffix2')}
@@ -57,9 +58,9 @@ export function ApproachingLimitsTable({ data }: ApproachingLimitsTableProps) {
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
-                    {data.customers.map((customer, idx) => (
+                    {data.customers.map((customer) => (
                         <div
-                            key={`${customer.customerId}-${customer.limitKey}-${idx}`}
+                            key={`${customer.customerId}-${customer.limitKey}`}
                             className="rounded-lg border bg-card p-4"
                         >
                             <div className="flex items-start justify-between">

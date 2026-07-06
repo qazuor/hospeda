@@ -539,20 +539,17 @@ describe('SPEC-063 T-058 — cross-cutting lifecycleState strip on public endpoi
                     expect(items).toEqual([]);
                 }
             ]
-        ])(
-            '%s: soft-deleted ACTIVE records are not leaked on the public tier',
-            async (_name, setup, url, assertEmpty) => {
-                // Arrange
-                setup();
+        ])('%s: soft-deleted ACTIVE records are not leaked on the public tier', async (_name, setup, url, assertEmpty) => {
+            // Arrange
+            setup();
 
-                // Act
-                const res = await app.request(url, { headers: publicHeaders });
+            // Act
+            const res = await app.request(url, { headers: publicHeaders });
 
-                // Assert
-                expect(res.status).toBe(200);
-                const body = await res.json();
-                assertEmpty(body);
-            }
-        );
+            // Assert
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            assertEmpty(body);
+        });
     });
 });

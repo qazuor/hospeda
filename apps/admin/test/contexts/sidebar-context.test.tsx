@@ -9,12 +9,11 @@
  * 5. Context error when used outside provider
  */
 
-import { SidebarProvider, useSidebarContext } from '@/contexts/sidebar-context';
-import type { SidebarConfig } from '@/lib/sections/types';
-import { render, screen } from '@testing-library/react';
-import { act, renderHook } from '@testing-library/react';
+import { act, render, renderHook, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { SidebarProvider, useSidebarContext } from '@/contexts/sidebar-context';
+import type { SidebarConfig } from '@/lib/sections/types';
 
 // Wrapper component for testing hooks
 function wrapper({ children }: { children: ReactNode }) {

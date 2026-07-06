@@ -4,6 +4,11 @@
  * Form for managing exchange rate configuration settings.
  * Uses TanStack Form with controlled inputs.
  */
+
+import type { ApiErrorShape } from '@repo/i18n';
+import { LoaderIcon } from '@repo/icons';
+import { useForm } from '@tanstack/react-form';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,12 +24,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import { translateAdminApiError } from '@/lib/errors';
-import type { ApiErrorShape } from '@repo/i18n';
-import { LoaderIcon } from '@repo/icons';
-import { useForm } from '@tanstack/react-form';
-import { useEffect } from 'react';
-import { ExchangeRateTypeEnum } from '../types';
 import type { ExchangeRateConfig, ExchangeRateConfigUpdateInput } from '../types';
+import { ExchangeRateTypeEnum } from '../types';
 
 interface FetchConfigFormProps {
     config: ExchangeRateConfig | null;

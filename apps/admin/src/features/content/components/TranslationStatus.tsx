@@ -8,10 +8,10 @@
  * @module features/content/components/TranslationStatus
  */
 
+import { useCallback, useState } from 'react';
 import { Badge } from '@/components/ui-wrapped/Badge';
 import { Button } from '@/components/ui-wrapped/Button';
 import { useTranslations } from '@/hooks/use-translations';
-import { useCallback, useState } from 'react';
 import { TranslationOverrideModal } from './TranslationOverrideModal';
 
 // ---------------------------------------------------------------------------

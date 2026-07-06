@@ -9,8 +9,8 @@
  * Badge.astro — see that file for the complete spec.
  */
 
-import { resolveWebIcon } from '@/lib/icon-map';
 import type { ReactElement } from 'react';
+import { resolveWebIcon } from '@/lib/icon-map';
 import styles from './Badge.module.css';
 import type { BadgeBaseProps } from './badge.types';
 import type { BadgeStylesMap } from './badge.utils';
@@ -98,11 +98,23 @@ export function Badge({
         );
     }
 
+    if (ariaLabel) {
+        return (
+            <span
+                className={classList}
+                style={styleObject}
+                role="img"
+                aria-label={ariaLabel}
+            >
+                {content}
+            </span>
+        );
+    }
+
     return (
         <span
             className={classList}
             style={styleObject}
-            aria-label={ariaLabel}
         >
             {content}
         </span>

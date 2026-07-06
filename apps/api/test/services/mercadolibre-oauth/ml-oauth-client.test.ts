@@ -42,15 +42,9 @@ const { mockFetch } = vi.hoisted(() => ({
 }));
 
 describe('ml-oauth-client', () => {
-    let exchangeAuthorizationCode: typeof import(
-        '../../../src/services/mercadolibre-oauth/ml-oauth-client.js'
-    ).exchangeAuthorizationCode;
-    let refreshAccessToken: typeof import(
-        '../../../src/services/mercadolibre-oauth/ml-oauth-client.js'
-    ).refreshAccessToken;
-    let MLOAuthClientError: typeof import(
-        '../../../src/services/mercadolibre-oauth/ml-oauth-client.js'
-    ).MLOAuthClientError;
+    let exchangeAuthorizationCode: typeof import('../../../src/services/mercadolibre-oauth/ml-oauth-client.js').exchangeAuthorizationCode;
+    let refreshAccessToken: typeof import('../../../src/services/mercadolibre-oauth/ml-oauth-client.js').refreshAccessToken;
+    let MLOAuthClientError: typeof import('../../../src/services/mercadolibre-oauth/ml-oauth-client.js').MLOAuthClientError;
 
     beforeEach(async () => {
         vi.clearAllMocks();

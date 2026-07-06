@@ -7,13 +7,15 @@
 
 // Re-export the canonical types from schemas so all feature code
 // references a single source of truth.
-export type { CronJobAdmin, CronJobsAdminList } from '@repo/schemas';
-
 /**
  * Alias for the list response — kept for backward compatibility with
  * existing usages of `CronJobsListResponse` inside this feature.
  */
-export type { CronJobsAdminList as CronJobsListResponse } from '@repo/schemas';
+export type {
+    CronJobAdmin,
+    CronJobsAdminList,
+    CronJobsAdminList as CronJobsListResponse
+} from '@repo/schemas';
 
 /**
  * Cron job execution result returned by POST /api/v1/admin/cron/:jobName

@@ -18,8 +18,7 @@ import { tmpdir } from 'node:os';
  *
  * References: AC-F20, R-4, tag-seeds.md
  */
-import { resolve } from 'node:path';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PostTagModelPort } from '../../src/required/postTags.seed.js';
 import { seedPostTags } from '../../src/required/postTags.seed.js';

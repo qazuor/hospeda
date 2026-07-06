@@ -16,8 +16,8 @@
  *     middleware just ensures the actor is an admin.
  */
 
-import { PermissionEnum, PlatformSettingsKeySchema, ServiceErrorCode } from '@repo/schemas';
 import type { PlatformSettingsKey } from '@repo/schemas';
+import { PermissionEnum, PlatformSettingsKeySchema, ServiceErrorCode } from '@repo/schemas';
 import { PlatformSettingsService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';

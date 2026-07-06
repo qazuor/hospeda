@@ -14,8 +14,6 @@
  *   (same pattern for footers, campaigns, batches, audiences)
  */
 
-import { fetchApi } from '@/lib/api/client';
-import { isApiError } from '@/lib/errors/api-error';
 import type {
     SocialAudience,
     SocialAudienceCreate,
@@ -34,6 +32,8 @@ import type {
     SocialPostFooterUpdate
 } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
+import { isApiError } from '@/lib/errors/api-error';
 
 // ---------------------------------------------------------------------------
 // Shared types

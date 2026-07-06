@@ -1,8 +1,8 @@
+import type { I18nText } from '@repo/schemas';
+import * as React from 'react';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
 import { Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-import type { I18nText } from '@repo/schemas';
-import * as React from 'react';
 
 const LOCALES = ['es', 'en', 'pt'] as const;
 type Locale = (typeof LOCALES)[number];

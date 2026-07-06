@@ -8,9 +8,9 @@
  * T-051b: collection detail page — bookmark remove action.
  */
 
+import { useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useState } from 'react';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 

@@ -19,19 +19,20 @@
  *   T-015 media gallery
  *   T-016 amenities / features
  */
-import { apiClient } from '@/lib/api/client';
-import type { AmenityData } from '@/lib/api/types';
-import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/owner-listings';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
+
+import type { Image, OpeningHours } from '@repo/schemas';
 import {
     ExperiencePriceUnitEnum,
     ExperienceTypeEnum,
     GastronomyTypeEnum,
     PriceRangeEnum
 } from '@repo/schemas';
-import type { Image, OpeningHours } from '@repo/schemas';
 import { type JSX, useCallback, useState } from 'react';
+import { apiClient } from '@/lib/api/client';
+import type { AmenityData } from '@/lib/api/types';
+import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/owner-listings';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { AmenitiesFeaturesField } from './AmenitiesFeaturesField';
 import styles from './CommerceListingEditor.module.css';
 import {
@@ -105,7 +106,10 @@ const PRICE_UNIT_OPTIONS = Object.values(ExperiencePriceUnitEnum);
 function patchPathFor({
     vertical,
     listingId
-}: { vertical: CommerceVertical; listingId: string }): string {
+}: {
+    vertical: CommerceVertical;
+    listingId: string;
+}): string {
     return vertical === 'gastronomy'
         ? `/api/v1/protected/gastronomies/${listingId}`
         : `/api/v1/protected/experiences/${listingId}`;
@@ -530,7 +534,9 @@ export function CommerceListingEditor({
                     aria-live="polite"
                 >
                     {summaryError ||
-                        t('commerce.owner.editor.validation.summaryHint', `${summary.length}/300`)}
+                        t('commerce.owner.editor.validation.summaryHint', '{{count}}/300', {
+                            count: summary.length
+                        })}
                 </span>
             </section>
 

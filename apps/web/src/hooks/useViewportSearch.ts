@@ -1,3 +1,5 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ListingBBox } from '@/components/maps/ListingMap.client';
 import type { AccommodationCardData } from '@/data/types';
 /**
  * @file useViewportSearch.ts
@@ -12,9 +14,6 @@ import type { AccommodationCardData } from '@/data/types';
  */
 import { accommodationsApi } from '@/lib/api/endpoints';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
-import { useCallback, useEffect, useRef, useState } from 'react';
-
-import type { ListingBBox } from '@/components/maps/ListingMap.client';
 
 const DEFAULT_DEBOUNCE_MS = 500;
 

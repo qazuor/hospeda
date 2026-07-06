@@ -12,11 +12,24 @@
  */
 
 import { expo } from '@better-auth/expo';
-import { and, asc, conversations, eq, getDb, isNull } from '@repo/db';
-import { accounts, sessions, users, verifications } from '@repo/db';
-import { createEmailClient, sendEmail } from '@repo/email';
-import { ResetPasswordTemplate } from '@repo/email';
-import { VerifyEmailTemplate } from '@repo/email';
+import {
+    accounts,
+    and,
+    asc,
+    conversations,
+    eq,
+    getDb,
+    isNull,
+    sessions,
+    users,
+    verifications
+} from '@repo/db';
+import {
+    createEmailClient,
+    ResetPasswordTemplate,
+    sendEmail,
+    VerifyEmailTemplate
+} from '@repo/email';
 import { createLogger } from '@repo/logger';
 import { RoleEnum } from '@repo/schemas';
 import { compare, hash } from 'bcryptjs';
@@ -251,7 +264,10 @@ function buildAuth() {
                 verify: async ({
                     hash: storedHash,
                     password
-                }: { hash: string; password: string }) => compare(password, storedHash)
+                }: {
+                    hash: string;
+                    password: string;
+                }) => compare(password, storedHash)
             },
             sendResetPassword: async ({ user, token }) => {
                 // Fire-and-forget to prevent timing attacks (BA recommendation)

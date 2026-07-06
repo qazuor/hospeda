@@ -18,7 +18,7 @@
 //   node packages/db/scripts/apply-postgres-extras.mjs 'postgresql://user:pass@host:5432/db'
 // =============================================================================
 import 'dotenv/config';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pkg from 'pg';

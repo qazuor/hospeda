@@ -30,13 +30,13 @@
  * available type is used with a `// TODO(SPEC-239)` comment.
  */
 
+import { LifecycleStatusEnum, ModerationStatusEnum, PermissionEnum } from '@repo/schemas';
 import {
     FieldTypeEnum,
     LayoutTypeEnum,
     RichTextFeatureEnum
 } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/consolidated-config.types';
-import { LifecycleStatusEnum, ModerationStatusEnum, PermissionEnum } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Internal helpers

@@ -26,16 +26,16 @@
 
 export {
     AiFeatureNotConfiguredError,
+    type GetProviderOrderInput,
     getProviderOrder,
     invalidateConfigCache,
     isFeatureKillSwitched,
-    resolveConfig,
-    resolveFeatureConfig,
-    saveConfig,
-    type GetProviderOrderInput,
     type ProviderOrderResult,
     type ResolveFeatureConfigInput,
-    type SaveConfigInput
+    resolveConfig,
+    resolveFeatureConfig,
+    type SaveConfigInput,
+    saveConfig
 } from './resolver.js';
 
 // ---------------------------------------------------------------------------
@@ -45,7 +45,7 @@ export {
 export {
     composeSystemPrompt,
     invalidatePromptCache,
-    resolveSystemPrompt,
     type ResolveSystemPromptInput,
-    type ResolveSystemPromptResult
+    type ResolveSystemPromptResult,
+    resolveSystemPrompt
 } from './prompt-resolver.js';

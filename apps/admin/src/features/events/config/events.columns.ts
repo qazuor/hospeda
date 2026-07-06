@@ -1,18 +1,18 @@
+import type { TranslationKey } from '@repo/i18n';
+import { PermissionEnum } from '@repo/schemas';
+import { createElement } from 'react';
 import { InlineFeaturedCell } from '@/components/entity-list/InlineFeaturedCell';
 import {
     type InlineStateOption,
     InlineStateSelectCell
 } from '@/components/entity-list/InlineStateSelectCell';
-import { Views30dCell } from '@/components/entity-list/Views30dCell';
 import type {
     ColumnConfig,
     ColumnTFunction,
     CreateColumnsOptions
 } from '@/components/entity-list/types';
+import { Views30dCell } from '@/components/entity-list/Views30dCell';
 import { BadgeColor, ColumnType, EntityType, ListOrientation } from '@/components/table/DataTable';
-import type { TranslationKey } from '@repo/i18n';
-import { PermissionEnum } from '@repo/schemas';
-import { createElement } from 'react';
 import { EventCategoryBadge } from '../components/EventCategoryBadge';
 import { useUpdateEventMutation } from '../hooks/useEventQuery';
 import type { Event } from '../schemas/events.schemas';

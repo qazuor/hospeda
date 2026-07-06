@@ -1,14 +1,11 @@
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { useToast } from '@/components/ui/ToastProvider';
 import { usePlansQuery } from '@/features/billing-plans/hooks';
 import { CancelSubscriptionDialog } from '@/features/billing-subscriptions/CancelSubscriptionDialog';
 import { ChangePlanDialog } from '@/features/billing-subscriptions/ChangePlanDialog';
 import { ExtendTrialDialog } from '@/features/billing-subscriptions/ExtendTrialDialog';
-import { PauseSubscriptionDialog } from '@/features/billing-subscriptions/PauseSubscriptionDialog';
-import { ResumeSubscriptionDialog } from '@/features/billing-subscriptions/ResumeSubscriptionDialog';
-import { SubscriptionDetailsDialog } from '@/features/billing-subscriptions/SubscriptionDetailsDialog';
-import { SubscriptionFilters } from '@/features/billing-subscriptions/SubscriptionFilters';
-import { SubscriptionsTable } from '@/features/billing-subscriptions/SubscriptionsTable';
 import {
     useCancelSubscriptionMutation,
     useChangePlanMutation,
@@ -17,12 +14,15 @@ import {
     useResumeSubscriptionMutation,
     useSubscriptionsQuery
 } from '@/features/billing-subscriptions/hooks';
+import { PauseSubscriptionDialog } from '@/features/billing-subscriptions/PauseSubscriptionDialog';
+import { ResumeSubscriptionDialog } from '@/features/billing-subscriptions/ResumeSubscriptionDialog';
+import { SubscriptionDetailsDialog } from '@/features/billing-subscriptions/SubscriptionDetailsDialog';
+import { SubscriptionFilters } from '@/features/billing-subscriptions/SubscriptionFilters';
+import { SubscriptionsTable } from '@/features/billing-subscriptions/SubscriptionsTable';
 import type { Subscription, SubscriptionStatus } from '@/features/billing-subscriptions/types';
 import { getPlanBySlug } from '@/features/billing-subscriptions/utils';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/subscriptions')({
     beforeLoad: ({ context }) => requireBillingAccess(context),

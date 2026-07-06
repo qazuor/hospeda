@@ -11,6 +11,8 @@
  * badge count from `useUnreadCount`, matched by its stable config ID.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { CloseIcon } from '@repo/icons';
 import { useSidebarContext } from '@/contexts/sidebar-context';
 import { useUnreadCount } from '@/features/conversations/hooks/useUnreadCount';
 import { useCurrentSidebar } from '@/hooks/use-current-sidebar';
@@ -18,8 +20,6 @@ import { useTranslations } from '@/hooks/use-translations';
 import type { VisibleGroupItem, VisibleLinkItem } from '@/hooks/use-visible-sidebar-items';
 import { useVisibleSidebarItems } from '@/hooks/use-visible-sidebar-items';
 import { cn } from '@/lib/utils';
-import type { TranslationKey } from '@repo/i18n';
-import { CloseIcon } from '@repo/icons';
 import { SidebarGroup } from './SidebarGroup';
 import { SidebarItem } from './SidebarItem';
 
@@ -68,9 +68,10 @@ function SidebarInner({
     return (
         <>
             {/* Mobile overlay */}
-            <div
+            <button
+                type="button"
                 className={cn(
-                    'fixed inset-0 z-30 bg-black/40 transition-opacity duration-200 md:hidden',
+                    'fixed inset-0 z-30 cursor-default bg-black/40 transition-opacity duration-200 md:hidden',
                     isMobileOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
                 )}
                 onClick={closeMobile}

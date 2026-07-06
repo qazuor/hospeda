@@ -1,13 +1,11 @@
 import { createRouter as createTanstackRouter } from '@tanstack/react-router';
-
-// Import the generated route tree
-import { routeTree } from './routeTree.gen';
-
 // HOS-33 T-006 (GAP-042-18): isomorphic CSP nonce reader for `ssr.nonce`
 // below — see src/lib/csp-nonce.ts for the full server/client
 // implementation and rationale (kept in its own module so it stays
 // unit-testable without importing the generated route tree).
 import { getCspNonce } from '@/lib/csp-nonce';
+// Import the generated route tree
+import { routeTree } from './routeTree.gen';
 
 /**
  * Router context interface

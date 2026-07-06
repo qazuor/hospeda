@@ -1,7 +1,7 @@
+import { ChevronDownIcon } from '@repo/icons';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { AiModelParams } from '@/features/ai-settings';
-import { ChevronDownIcon } from '@repo/icons';
 
 /**
  * Collapsible panel for overriding AI model parameters (temperature, maxTokens, topP).

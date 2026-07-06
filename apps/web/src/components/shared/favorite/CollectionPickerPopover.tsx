@@ -21,12 +21,6 @@
  * its CSS dynamically and the swap drops dynamically-injected `<style>` tags.
  */
 
-import { translateApiError } from '@/lib/api-errors';
-import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
-import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createT } from '@/lib/i18n';
-import { addToast } from '@/store/toast-store';
 import {
     type FC,
     type RefObject,
@@ -37,6 +31,12 @@ import {
     useState
 } from 'react';
 import { createPortal } from 'react-dom';
+import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
+import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
+import { translateApiError } from '@/lib/api-errors';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+import { addToast } from '@/store/toast-store';
 
 /** Auto-dismiss the popover after this many milliseconds of inactivity. */
 const AUTO_DISMISS_MS = 8000;

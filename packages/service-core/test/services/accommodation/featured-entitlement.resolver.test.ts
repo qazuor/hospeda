@@ -134,43 +134,43 @@ describe('resolveOwnerPlanGrantsFeatured', () => {
         expect(mockSelect).toHaveBeenCalledTimes(1);
     });
 
-    it.each(['paused', 'past_due', 'cancelled'] as const)(
-        'returns false when the customer has no active/trialing/comp subscription (e.g. only a %s one exists, excluded by the typed status filter)',
-        async (_status) => {
-            mockSelect
-                .mockReturnValueOnce(makeChain([{ id: 'cust-1' }]))
-                .mockReturnValueOnce(makeChain([]));
+    it.each([
+        'paused',
+        'past_due',
+        'cancelled'
+    ] as const)('returns false when the customer has no active/trialing/comp subscription (e.g. only a %s one exists, excluded by the typed status filter)', async (_status) => {
+        mockSelect
+            .mockReturnValueOnce(makeChain([{ id: 'cust-1' }]))
+            .mockReturnValueOnce(makeChain([]));
 
-            const result = await resolveOwnerPlanGrantsFeatured({ ownerId: 'owner-1' });
+        const result = await resolveOwnerPlanGrantsFeatured({ ownerId: 'owner-1' });
 
-            expect(result).toBe(false);
-        }
-    );
+        expect(result).toBe(false);
+    });
 
-    it.each(['active', 'trialing', 'comp'] as const)(
-        'returns true for a %s subscription on a FEATURED_LISTING plan',
-        async (status) => {
-            mockSelect
-                .mockReturnValueOnce(makeChain([{ id: 'cust-1' }]))
-                .mockReturnValueOnce(
-                    makeChain([
-                        {
-                            id: 'sub-1',
-                            planId: 'plan-1',
-                            status,
-                            productDomain: 'accommodation'
-                        }
-                    ])
-                )
-                .mockReturnValueOnce(
-                    makeChain([{ entitlements: [EntitlementKey.FEATURED_LISTING] }])
-                );
+    it.each([
+        'active',
+        'trialing',
+        'comp'
+    ] as const)('returns true for a %s subscription on a FEATURED_LISTING plan', async (status) => {
+        mockSelect
+            .mockReturnValueOnce(makeChain([{ id: 'cust-1' }]))
+            .mockReturnValueOnce(
+                makeChain([
+                    {
+                        id: 'sub-1',
+                        planId: 'plan-1',
+                        status,
+                        productDomain: 'accommodation'
+                    }
+                ])
+            )
+            .mockReturnValueOnce(makeChain([{ entitlements: [EntitlementKey.FEATURED_LISTING] }]));
 
-            const result = await resolveOwnerPlanGrantsFeatured({ ownerId: 'owner-1' });
+        const result = await resolveOwnerPlanGrantsFeatured({ ownerId: 'owner-1' });
 
-            expect(result).toBe(true);
-        }
-    );
+        expect(result).toBe(true);
+    });
 
     it('returns false when the plan does not include FEATURED_LISTING', async () => {
         mockSelect

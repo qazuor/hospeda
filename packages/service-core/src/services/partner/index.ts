@@ -1,2 +1,2 @@
-export * from './partner.service';
 export * from './partner.permissions';
+export * from './partner.service';

@@ -11,11 +11,11 @@
  * 6. Renders groups correctly (uses I18nLabel + resolveIcon)
  */
 
-import type { VisibleGroupItem, VisibleLinkItem } from '@/hooks/use-visible-sidebar-items';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { VisibleGroupItem, VisibleLinkItem } from '@/hooks/use-visible-sidebar-items';
 
 // ── TanStack Router mock ──────────────────────────────────────────────────────
 vi.mock('@tanstack/react-router', () => ({
@@ -24,7 +24,12 @@ vi.mock('@tanstack/react-router', () => ({
         children,
         className,
         ...props
-    }: { to: string; children: ReactNode; className?: string; [k: string]: unknown }) => (
+    }: {
+        to: string;
+        children: ReactNode;
+        className?: string;
+        [k: string]: unknown;
+    }) => (
         <a
             href={to}
             className={className}
@@ -67,7 +72,7 @@ vi.mock('@/contexts/sidebar-context', () => ({
 // ── New hook mocks ────────────────────────────────────────────────────────────
 // useCurrentSidebar — returns the raw Sidebar or undefined.
 type MockSidebar = { items: readonly object[] } | undefined;
-let mockCurrentSidebar: MockSidebar = undefined;
+let mockCurrentSidebar: MockSidebar;
 
 vi.mock('@/hooks/use-current-sidebar', () => ({
     useCurrentSidebar: () => mockCurrentSidebar

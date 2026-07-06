@@ -12,8 +12,6 @@
  * primitives, no `ChartContainer` wrapper.
  */
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useTranslations } from '@/hooks/use-translations';
 import type { SocialDashboardPlatformBreakdownItem } from '@repo/schemas';
 import {
     Bar,
@@ -25,6 +23,8 @@ import {
     XAxis,
     YAxis
 } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
 
 /** Props for {@link PlatformBreakdownChart}. */
 export interface PlatformBreakdownChartProps {

@@ -161,6 +161,7 @@ export function BetaSearch({ placeholder = 'Buscar en la documentación…' }: B
 
             {open && (
                 // biome-ignore lint/a11y/useKeyWithClickEvents: Escape is handled globally via window keydown; backdrop click is a mouse-only convenience
+                // biome-ignore lint/a11y/noStaticElementInteractions: backdrop click-to-close is a mouse-only convenience; the global Escape listener covers keyboard users
                 <div
                     className={styles.overlay}
                     onClick={onOverlayClick}

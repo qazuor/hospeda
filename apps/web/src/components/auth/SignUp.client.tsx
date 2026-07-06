@@ -11,6 +11,8 @@
  * structured firstName + lastName instead of a single free-text name.
  */
 
+import { StrongPasswordRegex } from '@repo/schemas';
+import { useEffect, useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
 import { WebEvents } from '@/lib/analytics/events';
@@ -20,8 +22,6 @@ import { signIn, signUp } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { StrongPasswordRegex } from '@repo/schemas';
-import { useEffect, useState } from 'react';
 import styles from './SignUp.module.css';
 
 /** Props for the SignUp component. */
@@ -234,6 +234,7 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
         return (
             <div
                 className={styles.skeleton}
+                role="status"
                 aria-busy="true"
                 aria-label={t('auth-ui.loading', 'Loading form')}
             >

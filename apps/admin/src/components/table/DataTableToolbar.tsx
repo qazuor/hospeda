@@ -1,3 +1,5 @@
+import { ChevronDownIcon, GridIcon, ListIcon } from '@repo/icons';
+import { useCallback } from 'react';
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -8,8 +10,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import { ChevronDownIcon, GridIcon, ListIcon } from '@repo/icons';
-import { useCallback } from 'react';
 
 export type DataTableToolbarProps = {
     readonly view: 'table' | 'grid';

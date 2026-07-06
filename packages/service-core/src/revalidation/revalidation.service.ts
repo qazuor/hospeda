@@ -6,8 +6,8 @@
  * @module revalidation/revalidation.service
  */
 
-import { RevalidationConfigModel, RevalidationLogModel } from '@repo/db';
 import type { RevalidationConfigRecord } from '@repo/db';
+import { RevalidationConfigModel, RevalidationLogModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { RevalidatePathResult, RevalidationAdapter } from './adapters/revalidation.adapter.js';
 import type { EntityChangeData } from './entity-path-mapper.js';
@@ -481,7 +481,33 @@ export class RevalidationService {
         const key = debounceKeyId ? `${entityType}:${debounceKeyId}` : entityType;
 
         const existing = this.pendingTimers.get(key);
-        if (existing !== undefined) {
+        if (existing === undefined) {
+            // Create a new debounce entry. entityId is pinned here; later calls
+            // in the same window only set it when still undefined (see above).
+            const pathSet = new Set(paths);
+            const entry: PendingEntityDebounce = {
+                paths: pathSet,
+                entityType,
+                entityId,
+                timer: setTimeout(() => {
+                    this.pendingTimers.delete(key);
+                    const allPaths = Array.from(pathSet);
+                    void this.revalidatePaths({
+                        paths: allPaths,
+                        reason,
+                        trigger: 'hook',
+                        entityType,
+                        entityId: entry.entityId
+                    }).catch((error: unknown) => {
+                        this.logger.error(
+                            `[RevalidationService] Unhandled error in debounced revalidation for key "${key}": ${error instanceof Error ? error.message : String(error)}`
+                        );
+                    });
+                }, debounceMs)
+            };
+
+            this.pendingTimers.set(key, entry);
+        } else {
             // Accumulate new paths into the existing debounce entry
             for (const path of paths) {
                 existing.paths.add(path);
@@ -510,32 +536,6 @@ export class RevalidationService {
                     );
                 });
             }, debounceMs);
-        } else {
-            // Create a new debounce entry. entityId is pinned here; later calls
-            // in the same window only set it when still undefined (see above).
-            const pathSet = new Set(paths);
-            const entry: PendingEntityDebounce = {
-                paths: pathSet,
-                entityType,
-                entityId,
-                timer: setTimeout(() => {
-                    this.pendingTimers.delete(key);
-                    const allPaths = Array.from(pathSet);
-                    void this.revalidatePaths({
-                        paths: allPaths,
-                        reason,
-                        trigger: 'hook',
-                        entityType,
-                        entityId: entry.entityId
-                    }).catch((error: unknown) => {
-                        this.logger.error(
-                            `[RevalidationService] Unhandled error in debounced revalidation for key "${key}": ${error instanceof Error ? error.message : String(error)}`
-                        );
-                    });
-                }, debounceMs)
-            };
-
-            this.pendingTimers.set(key, entry);
         }
     }
 

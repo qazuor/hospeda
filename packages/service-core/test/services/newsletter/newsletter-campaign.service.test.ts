@@ -136,8 +136,8 @@ import {
     RoleEnum
 } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { NewsletterCampaignService } from '../../../src/services/newsletter/newsletter-campaign.service.js';
 import type { INewsletterDeliveryService } from '../../../src/services/newsletter/newsletter-campaign.service.js';
+import { NewsletterCampaignService } from '../../../src/services/newsletter/newsletter-campaign.service.js';
 import type { NewsletterSubscriberService } from '../../../src/services/newsletter/newsletter-subscriber.service.js';
 import type { Actor } from '../../../src/types/index.js';
 
@@ -252,11 +252,11 @@ function makeDeliveryService(
 
 /** Creates a mock subscriber service with getEligibleForCampaign stub. */
 function makeSubscriberService(
-    result: {
-        eligibleIds: string[];
-        softCappedCount: number;
-        totalCandidates: number;
-    } = { eligibleIds: [SUBSCRIBER_ID_1, SUBSCRIBER_ID_2], softCappedCount: 2, totalCandidates: 4 }
+    result: { eligibleIds: string[]; softCappedCount: number; totalCandidates: number } = {
+        eligibleIds: [SUBSCRIBER_ID_1, SUBSCRIBER_ID_2],
+        softCappedCount: 2,
+        totalCandidates: 4
+    }
 ) {
     return {
         getEligibleForCampaign: vi.fn().mockResolvedValue({ data: result })

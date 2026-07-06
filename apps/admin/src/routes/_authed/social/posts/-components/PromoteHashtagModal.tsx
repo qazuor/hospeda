@@ -5,6 +5,8 @@
  * calling the promote-hashtag mutation.
  */
 
+import { useForm } from '@tanstack/react-form';
+import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -17,9 +19,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePromoteHashtag } from '@/hooks/use-social-posts';
 import { useTranslations } from '@/hooks/use-translations';
-
-import { useForm } from '@tanstack/react-form';
-import { useCallback, useState } from 'react';
 
 // ---------------------------------------------------------------------------
 // Types

@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
-    SEO_DEFAULT_LOCALE,
-    SEO_LIMITS,
     buildSeoPayload,
     buildSeoPreviewDescription,
     buildSeoPreviewTitle,
     buildSeoPreviewUrl,
     getSeoCounterTone,
     normalizeSeoText,
+    SEO_DEFAULT_LOCALE,
+    SEO_LIMITS,
     truncateSeoPreview
 } from '../../../src/components/seo/seo-editor.utils';
 

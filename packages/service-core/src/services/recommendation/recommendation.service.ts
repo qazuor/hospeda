@@ -551,9 +551,9 @@ export class RecommendationService extends BaseService {
             averageRating: row.averageRating ?? 0,
             destinationId: row.destinationId,
             amenityIds,
-            ...(row.approximateLocation !== undefined
-                ? { approximateLocation: row.approximateLocation }
-                : {})
+            ...(row.approximateLocation === undefined
+                ? {}
+                : { approximateLocation: row.approximateLocation })
         };
 
         return {

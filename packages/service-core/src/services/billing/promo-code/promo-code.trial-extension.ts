@@ -13,8 +13,8 @@
  * @module services/billing/promo-code/promo-code.trial-extension
  */
 
-import { billingSubscriptions, eq, sql, withTransaction } from '@repo/db';
 import type { QueryContext } from '@repo/db';
+import { billingSubscriptions, eq, sql, withTransaction } from '@repo/db';
 import { PromoEffectKindEnum, ServiceErrorCode, SubscriptionStatusEnum } from '@repo/schemas';
 import { calculatePromoCodeEffect } from './effect-reducer.js';
 import { getPromoCodeById } from './promo-code.crud.js';

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { PriceCurrencyEnumSchema } from '../../enums/index.js';
-import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
+import { applyOpenApiMetadata, type OpenApiSchemaMetadata } from '../../utils/openapi.utils.js';
 import { PostSponsorshipSchema } from './postSponsorship.schema.js';
 
 /**

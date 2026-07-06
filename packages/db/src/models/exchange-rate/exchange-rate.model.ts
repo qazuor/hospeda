@@ -4,8 +4,8 @@ import type {
     ExchangeRateTypeEnum,
     PriceCurrencyEnum
 } from '@repo/schemas';
-import { and, count, desc, eq, gte, lte, max } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
+import { and, count, desc, eq, gte, lte, max } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { exchangeRates } from '../../schemas/exchange-rate/exchange-rate.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';

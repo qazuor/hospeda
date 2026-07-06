@@ -5,11 +5,12 @@
  * The route and component are generated from `GastronomiesRoute` /
  * `GastronomiesPageComponent` in the `gastronomy` feature config.
  */
+
+import { createFileRoute } from '@tanstack/react-router';
 import {
     GastronomiesPageComponent,
     GastronomiesRoute
 } from '@/features/gastronomy/config/gastronomy.config';
-import { createFileRoute } from '@tanstack/react-router';
 
 // TanStack Router requirement: bare reference prevents unused-import removal by bundler
 createFileRoute;

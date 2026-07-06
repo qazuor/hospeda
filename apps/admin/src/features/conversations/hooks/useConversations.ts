@@ -6,8 +6,8 @@
  * Super-admins with CONVERSATION_VIEW_ALL see everything.
  */
 
-import { fetchApi } from '@/lib/api/client';
 import { useQuery } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 import type { ConversationListFilters, ConversationListResponse } from '../types';
 
 /** TanStack Query key factory for conversation queries */

@@ -7,15 +7,17 @@
  * Gate-protected by COMMERCE_CREATE.
  */
 
-import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreatePageBase } from '@/components/entity-pages';
-import type { EntityCreateConfig } from '@/components/entity-pages';
-import { createGastronomyConsolidatedConfig } from '@/features/gastronomy';
-import { useCreateGastronomyMutation } from '@/features/gastronomy';
-import { useTranslations } from '@/hooks/use-translations';
-import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { GastronomyAdminCreateInputSchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
+import type { EntityCreateConfig } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
+import {
+    createGastronomyConsolidatedConfig,
+    useCreateGastronomyMutation
+} from '@/features/gastronomy';
+import { useTranslations } from '@/hooks/use-translations';
+import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
 export const Route = createFileRoute('/_authed/gastronomies/new')({
     component: GastronomyCreatePage,

@@ -30,11 +30,6 @@
  * @module features/ai-usage/components/AiUsageDailyChart
  */
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AiUsageBlockState } from '@/features/ai-usage/components/AiUsageBlockState';
-import { useAiUsageDailyQuery } from '@/features/ai-usage/hooks';
-import type { AiUsageDailySearch } from '@/features/ai-usage/types';
-import { useTranslations } from '@/hooks/use-translations';
 import type { AiUsageDailyRow } from '@repo/schemas';
 import { formatMicroUsd } from '@repo/utils';
 import {
@@ -48,6 +43,11 @@ import {
     XAxis,
     YAxis
 } from 'recharts';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AiUsageBlockState } from '@/features/ai-usage/components/AiUsageBlockState';
+import { useAiUsageDailyQuery } from '@/features/ai-usage/hooks';
+import type { AiUsageDailySearch } from '@/features/ai-usage/types';
+import { useTranslations } from '@/hooks/use-translations';
 
 // ---------------------------------------------------------------------------
 // Props

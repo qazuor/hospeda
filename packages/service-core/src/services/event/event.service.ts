@@ -1,6 +1,6 @@
 import {
-    EventModel,
     buildSearchCondition,
+    EventModel,
     eventLocations as eventLocationsTable,
     events as eventTable,
     getDb

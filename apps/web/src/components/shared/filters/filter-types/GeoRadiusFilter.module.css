@@ -44,7 +44,9 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     cursor: pointer;
-    transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+    transition:
+        border-color var(--duration-fast) ease,
+        box-shadow var(--duration-fast) ease;
 }
 
 .destSelect:focus-visible {
@@ -71,7 +73,9 @@
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color var(--duration-fast) ease, transform var(--duration-fast) ease;
+    transition:
+        background-color var(--duration-fast) ease,
+        transform var(--duration-fast) ease;
 }
 
 .browserCta:hover:not(:disabled),
@@ -113,7 +117,9 @@
     font-size: 0.8125rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease,
+    transition:
+        background-color var(--duration-fast) ease,
+        color var(--duration-fast) ease,
         border-color var(--duration-fast) ease;
 }
 

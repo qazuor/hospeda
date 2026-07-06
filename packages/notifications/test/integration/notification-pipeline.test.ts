@@ -15,14 +15,14 @@
 import { billingNotificationLog, type getDb } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import type Redis from 'ioredis';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { NOTIFICATION_CONSTANTS } from '../../src/constants/notification.constants';
 import {
     NotificationService,
     type NotificationServiceDeps
 } from '../../src/services/notification.service';
 import type { PreferenceService } from '../../src/services/preference.service';
-import { RetryService, type RetryableNotification } from '../../src/services/retry.service';
+import { type RetryableNotification, RetryService } from '../../src/services/retry.service';
 import type { EmailTransport } from '../../src/transports/email/email-transport.interface';
 import { type NotificationPayload, NotificationType } from '../../src/types/notification.types';
 

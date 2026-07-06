@@ -23,14 +23,14 @@
  * @module apps/api/routes/ai/protected/search-chat.prompt-builder.test
  */
 
-import { AccommodationTypeEnum } from '@repo/schemas';
 import type { AiChatMessage, SearchIntentEntities } from '@repo/schemas';
+import { AccommodationTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
-    CONVERSATION_HISTORY_LIMIT,
     buildConversationalSearchPrompt,
     buildSearchReplyMessages,
-    buildSearchReplySystemPrompt
+    buildSearchReplySystemPrompt,
+    CONVERSATION_HISTORY_LIMIT
 } from '../../../../src/routes/ai/protected/search-chat.prompt';
 
 const MESSAGE = 'cabaña para 4 con pileta';

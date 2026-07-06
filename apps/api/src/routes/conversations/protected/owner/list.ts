@@ -8,7 +8,7 @@
  * returning so the UI can render inbox rows without additional round trips.
  */
 
-import { AccommodationModel, MessageModel, UserModel, accommodations, getDb } from '@repo/db';
+import { AccommodationModel, accommodations, getDb, MessageModel, UserModel } from '@repo/db';
 import {
     ConversationStatusEnum,
     OwnerConversationListItemSchema,

@@ -222,35 +222,35 @@ describe('AnimatedCounter — locale formatting after intersection', () => {
             locale: 'en' as const,
             expected: new Intl.NumberFormat(toBcp47Locale('en')).format(1234)
         }
-    ])(
-        'renders the value formatted for locale=$locale after the animation completes',
-        async ({ locale, expected }) => {
-            render(
-                <AnimatedCounter
-                    value={1234}
-                    label="alojamientos"
-                    locale={locale}
-                />
-            );
+    ])('renders the value formatted for locale=$locale after the animation completes', async ({
+        locale,
+        expected
+    }) => {
+        render(
+            <AnimatedCounter
+                value={1234}
+                label="alojamientos"
+                locale={locale}
+            />
+        );
 
-            // Flush the queued IO callback so the component schedules its
-            // first RAF tick and exits the idle "0" state.
-            await act(async () => {
-                await clock.flushMicrotasks();
-            });
+        // Flush the queued IO callback so the component schedules its
+        // first RAF tick and exits the idle "0" state.
+        await act(async () => {
+            await clock.flushMicrotasks();
+        });
 
-            // Advance the virtual clock past the 2000ms default duration.
-            // The component clamps `progress` to 1 and snaps to the exact
-            // final value.
-            await act(async () => {
-                clock.advance(2200);
-            });
+        // Advance the virtual clock past the 2000ms default duration.
+        // The component clamps `progress` to 1 and snaps to the exact
+        // final value.
+        await act(async () => {
+            clock.advance(2200);
+        });
 
-            const numberNode = document.querySelector('[aria-hidden="true"]');
-            expect(numberNode?.textContent).toBe(expected);
+        const numberNode = document.querySelector('[aria-hidden="true"]');
+        expect(numberNode?.textContent).toBe(expected);
 
-            // Sanity: aria-label uses the same formatted final value.
-            expect(screen.getByLabelText(`${expected} alojamientos`)).toBeInTheDocument();
-        }
-    );
+        // Sanity: aria-label uses the same formatted final value.
+        expect(screen.getByLabelText(`${expected} alojamientos`)).toBeInTheDocument();
+    });
 });

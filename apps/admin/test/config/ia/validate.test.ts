@@ -9,8 +9,8 @@
  * human-readable with dot-paths per issue.
  */
 
-import { AdminIAConfigSchema } from '@/config/ia/schema';
 import { describe, expect, it } from 'vitest';
+import { AdminIAConfigSchema } from '@/config/ia/schema';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Integration proof — the REAL config must load without throwing

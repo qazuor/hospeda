@@ -7,10 +7,10 @@
  * runs without a live database connection.
  */
 
-import { AccessTokenModel } from '@repo/db';
 import type { SelectConversationAccessToken } from '@repo/db';
+import { AccessTokenModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { AccessTokenService } from '../../../src/services/conversation/access-token.service';
 import { createActor } from '../../factories/actorFactory';
 import {

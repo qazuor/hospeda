@@ -17,17 +17,17 @@
  *   avoid ES-module cache issues with dynamic re-imports.
  */
 
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import type { ResolverContext } from '@/lib/dashboard-sources';
 import {
-    DASHBOARD_QUERY_KEY_ROOT,
-    DASHBOARD_STALE_TIME_MS,
     _clearRegistryForTesting,
     buildDashboardQueryKey,
+    DASHBOARD_QUERY_KEY_ROOT,
+    DASHBOARD_STALE_TIME_MS,
     isSourceRegistered,
     registerDataSource,
     resolveDataSource
 } from '@/lib/dashboard-sources';
-import type { ResolverContext } from '@/lib/dashboard-sources';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 // ============================================================================
 // HELPERS
@@ -197,13 +197,12 @@ describe('ADMIN source queryKey structure', () => {
 // ============================================================================
 
 describe('ADMIN source stale times', () => {
-    it.each(ADMIN_MODULE_SOURCE_IDS.filter((id) => id !== 'admin.system.health'))(
-        '%s — staleTime equals DASHBOARD_STALE_TIME_MS',
-        (sourceId) => {
-            const { options } = resolveDataSource(sourceId, makeAdminCtx());
-            expect(options.staleTime).toBe(DASHBOARD_STALE_TIME_MS);
-        }
-    );
+    it.each(
+        ADMIN_MODULE_SOURCE_IDS.filter((id) => id !== 'admin.system.health')
+    )('%s — staleTime equals DASHBOARD_STALE_TIME_MS', (sourceId) => {
+        const { options } = resolveDataSource(sourceId, makeAdminCtx());
+        expect(options.staleTime).toBe(DASHBOARD_STALE_TIME_MS);
+    });
 
     it('admin.system.health uses a shorter 30-second staleTime', () => {
         const { options } = resolveDataSource('admin.system.health', makeAdminCtx());

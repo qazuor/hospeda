@@ -7,11 +7,11 @@
  * @module test/integration/invoice-detail-dialog
  */
 
-import { InvoiceDetailDialog } from '@/features/billing-invoices/components/InvoiceDetailDialog';
-import type { Invoice } from '@/features/billing-invoices/components/InvoiceDetailDialog';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import type { Invoice } from '@/features/billing-invoices/components/InvoiceDetailDialog';
+import { InvoiceDetailDialog } from '@/features/billing-invoices/components/InvoiceDetailDialog';
 import { mockBillingInvoice, mockBillingInvoiceList } from '../fixtures/billing-invoice.fixture';
 import { renderWithProviders } from '../helpers/render-with-providers';
 

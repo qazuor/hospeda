@@ -10,10 +10,11 @@
  *
  * @module features/billing/use-limit-counts
  */
-import { useAuthContext } from '@/hooks/use-auth-context';
-import { fetchApi } from '@/lib/api/client';
+
 import { LifecycleStatusEnum } from '@repo/schemas';
 import { useQuery } from '@tanstack/react-query';
+import { useAuthContext } from '@/hooks/use-auth-context';
+import { fetchApi } from '@/lib/api/client';
 
 // ---------------------------------------------------------------------------
 // Internal helpers

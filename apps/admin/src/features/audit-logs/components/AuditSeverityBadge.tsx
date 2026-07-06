@@ -4,8 +4,9 @@
  * Renders a styled badge for an audit/security log severity value.
  * critical -> destructive (red), info -> neutral outline.
  */
-import { Badge } from '@/components/ui/badge';
+
 import type { AuditLogSeverity } from '@repo/schemas';
+import { Badge } from '@/components/ui/badge';
 
 /** Props for AuditSeverityBadge */
 export interface AuditSeverityBadgeProps {

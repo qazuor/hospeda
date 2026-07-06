@@ -11,6 +11,7 @@
  * not just the in-header tabs.
  */
 
+import { useBlocker } from '@tanstack/react-router';
 import { useEntityFormContext } from '@/components/entity-form/context/EntityFormContext';
 import {
     AlertDialog,
@@ -22,7 +23,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle
 } from '@/components/ui/alert-dialog';
-import { useBlocker } from '@tanstack/react-router';
 
 export function UserEditDirtyGuard() {
     const { hasUnsavedChanges } = useEntityFormContext();

@@ -24,11 +24,11 @@
  * @see SPEC-175 §7.3, §12.4
  */
 
-import { useTranslations } from '@/hooks/use-translations';
-import { useWhatsNew } from '@/hooks/use-whats-new';
 import type { TranslationKey } from '@repo/i18n';
 import { SparkleIcon } from '@repo/icons';
 import { useCallback, useState } from 'react';
+import { useTranslations } from '@/hooks/use-translations';
+import { useWhatsNew } from '@/hooks/use-whats-new';
 import { WhatsNewPanel } from './WhatsNewPanel';
 
 // ---------------------------------------------------------------------------
@@ -81,7 +81,7 @@ export function WhatsNewBadge() {
                 {unseenCount > 0 && (
                     <span
                         aria-hidden="true"
-                        className="-right-1 -top-1 absolute flex min-w-[1.25rem] items-center justify-center rounded-full bg-destructive px-1 py-px font-semibold text-[0.625rem] text-destructive-foreground leading-none"
+                        className="absolute -top-1 -right-1 flex min-w-[1.25rem] items-center justify-center rounded-full bg-destructive px-1 py-px font-semibold text-[0.625rem] text-destructive-foreground leading-none"
                     >
                         {unseenCount > 99 ? '99+' : unseenCount}
                     </span>

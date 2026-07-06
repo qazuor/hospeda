@@ -8,8 +8,8 @@
  * @module services/addon-expiration.queries
  */
 
-import { getDb } from '@repo/db';
 import type { QueryContext } from '@repo/db';
+import { getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
 import { and, eq, gte, isNotNull, isNull, lte } from 'drizzle-orm';
 import { z } from 'zod';

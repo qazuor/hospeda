@@ -1,4 +1,4 @@
-import { AccommodationModel, FeatureModel, RAccommodationFeatureModel, features } from '@repo/db';
+import { AccommodationModel, FeatureModel, features, RAccommodationFeatureModel } from '@repo/db';
 import type {
     Accommodation,
     AccommodationFeature,

@@ -2,6 +2,7 @@
 // scripts/refresh-search-view.js
 import 'dotenv/config';
 import pkg from 'pg';
+
 const { Client } = pkg;
 
 /**

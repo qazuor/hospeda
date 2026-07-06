@@ -7,8 +7,9 @@
  *
  * Named export (exception: route files use default exports per Expo Router).
  */
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+
 import type { TextInputProps } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { theme } from '../../design';
 
 // ---------------------------------------------------------------------------

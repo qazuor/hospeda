@@ -1,7 +1,7 @@
-import { fetchApi } from '@/lib/api/client';
-import { TagTypeEnum } from '@repo/schemas';
 import type { Tag, TagCreateInput, TagUpdateInput } from '@repo/schemas';
+import { TagTypeEnum } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 /**
  * Query key factory for SYSTEM tag queries.

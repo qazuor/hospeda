@@ -4,13 +4,13 @@
  * Displays events held at a specific event location.
  */
 
-import { PageTabs, eventLocationTabs } from '@/components/layout/PageTabs';
+import { CalendarIcon, InfoIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
+import { eventLocationTabs, PageTabs } from '@/components/layout/PageTabs';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useEventLocationQuery } from '@/features/event-locations/hooks/useEventLocationQuery';
 import { useTranslations } from '@/hooks/use-translations';
-import { CalendarIcon, InfoIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/events/locations/$id_/events')({
     component: EventLocationEventsPage

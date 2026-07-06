@@ -11,8 +11,7 @@
  * Actors with _ANY permissions bypass the accommodation scope check.
  */
 
-import { getDb } from '@repo/db';
-import { accommodations } from '@repo/db';
+import { accommodations, getDb } from '@repo/db';
 import {
     ConversationSchema,
     ConversationStatusEnum,

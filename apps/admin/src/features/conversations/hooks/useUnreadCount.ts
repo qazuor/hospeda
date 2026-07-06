@@ -5,8 +5,8 @@
  * Used by the sidebar badge component to show pending messages.
  */
 
-import { fetchApi } from '@/lib/api/client';
 import { useQuery } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 import type { UnreadCountResponse } from '../types';
 import { conversationQueryKeys } from './useConversations';
 

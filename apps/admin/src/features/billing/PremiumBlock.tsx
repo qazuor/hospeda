@@ -1,7 +1,7 @@
-import { useTranslations } from '@/hooks/use-translations';
-import { cn } from '@/lib/utils';
 import { CrownIcon } from '@repo/icons';
 import * as React from 'react';
+import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 
 export interface PremiumBlockItem {
     /** Stable id for React keys. */

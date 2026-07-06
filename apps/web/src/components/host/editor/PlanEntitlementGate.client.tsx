@@ -9,10 +9,10 @@
  * @module components/host/editor/PlanEntitlementGate
  */
 
+import type * as React from 'react';
 import { useMyEntitlements } from '@/hooks/useMyEntitlements';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type * as React from 'react';
 import styles from './PlanEntitlementGate.module.css';
 
 // ---------------------------------------------------------------------------

@@ -13,11 +13,11 @@
  * practice and a spinner causes more layout shift than it's worth).
  */
 
+import type { NewsletterCampaignStatusEnum } from '@repo/schemas';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCampaignMetrics } from '@/hooks/newsletter';
 import { useTranslations } from '@/hooks/use-translations';
-import type { NewsletterCampaignStatusEnum } from '@repo/schemas';
-import { useState } from 'react';
 import { FailedDeliveriesDialog } from './FailedDeliveriesDialog';
 
 export interface CampaignMetricsPanelProps {

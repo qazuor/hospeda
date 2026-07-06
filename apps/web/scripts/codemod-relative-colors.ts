@@ -89,7 +89,7 @@
  * @see .qtm/specs/SPEC-176-web-color-fallback-old-browsers/variant-token-derivation.md
  */
 
-import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

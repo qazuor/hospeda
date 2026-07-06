@@ -17,13 +17,13 @@
  *  - Always-visible Google-only explainer note
  */
 
-import { PlatformStatusChips } from '@/components/host/PlatformStatusChips';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { PlatformStatusEntry } from '@/components/host/PlatformStatusChips';
+import { PlatformStatusChips } from '@/components/host/PlatformStatusChips';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useReputationStatus } from '@/hooks/use-reputation-status';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './ExternalReputationSection.module.css';
 import chipStyles from './ReputationStatus.module.css';
 

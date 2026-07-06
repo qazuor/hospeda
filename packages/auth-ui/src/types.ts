@@ -38,11 +38,7 @@ export interface SignInMethods {
  * Sign-up methods provided by the auth client
  */
 export interface SignUpMethods {
-    email: (params: {
-        email: string;
-        password: string;
-        name: string;
-    }) => Promise<AuthResult>;
+    email: (params: { email: string; password: string; name: string }) => Promise<AuthResult>;
 }
 
 /**

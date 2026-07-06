@@ -4,9 +4,9 @@
  * Renders a Shadcn Badge with a color variant mapped to ConversationStatus.
  */
 
+import type { TranslationKey } from '@repo/i18n';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
 import type { ConversationStatus } from '../types';
 
 /** Props for the StatusBadge component */

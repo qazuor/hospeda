@@ -14,10 +14,10 @@ export { AuditSeverityBadge } from './components/AuditSeverityBadge';
 
 // Framework-generated page components + routes
 export {
-    auditLogsConfig,
     AuditLogsPageComponent,
     AuditLogsRoute,
-    securityLogsConfig,
+    auditLogsConfig,
     SecurityLogsPageComponent,
-    SecurityLogsRoute
+    SecurityLogsRoute,
+    securityLogsConfig
 } from './config/audit-logs.config';

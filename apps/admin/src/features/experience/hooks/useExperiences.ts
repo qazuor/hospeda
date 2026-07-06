@@ -10,6 +10,7 @@
  * import from `useExperiences` get a stable public surface.
  */
 
+export { useExperiencePage } from './useExperiencePage';
 export {
     experienceHooks,
     useAssignExperienceOwnerMutation,
@@ -21,5 +22,3 @@ export {
     useRestoreExperienceMutation,
     useUpdateExperienceMutation
 } from './useExperienceQuery';
-
-export { useExperiencePage } from './useExperiencePage';

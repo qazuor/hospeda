@@ -19,11 +19,10 @@
  *    `HOSPEDA_CRON_ADAPTER=node-cron` and the API boots.
  */
 
-// Export all types
-export type { CronJobContext, CronJobDefinition, CronJobHandler, CronJobResult } from './types';
+// Export bootstrap function
+export { startCronScheduler } from './bootstrap';
 
 // Export registry functions
 export { cronJobs, getCronJob, getEnabledCronJobs } from './registry';
-
-// Export bootstrap function
-export { startCronScheduler } from './bootstrap';
+// Export all types
+export type { CronJobContext, CronJobDefinition, CronJobHandler, CronJobResult } from './types';

@@ -5,6 +5,8 @@
  * Gate-protected by COMMERCE_EDIT_ALL.
  */
 
+import { GastronomyUpdateInputSchema, PermissionEnum } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
@@ -13,8 +15,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrappe
 import { useGastronomyPage } from '@/features/gastronomy';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { GastronomyUpdateInputSchema, PermissionEnum } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
 
 /** Route configuration for the gastronomy edit page. */
 export const Route = createFileRoute('/_authed/gastronomies/$id_/edit')({

@@ -16,8 +16,8 @@
  */
 
 import { UserBookmarkModel } from '@repo/db';
-import { EntityTypeEnum, PermissionEnum } from '@repo/schemas';
 import type { UserBookmark } from '@repo/schemas';
+import { EntityTypeEnum, PermissionEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserBookmarkService } from '../../../src/services/userBookmark/userBookmark.service';
 import { createActor } from '../../factories/actorFactory';

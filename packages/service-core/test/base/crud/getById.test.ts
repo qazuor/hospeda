@@ -1,4 +1,5 @@
 import type { BaseModel, DrizzleClient } from '@repo/db';
+import type { ListRelationsConfig } from '@repo/schemas';
 /**
  * @fileoverview
  * Test suite for the `getById` method of BaseService and its derivatives.
@@ -14,7 +15,6 @@ import type { BaseModel, DrizzleClient } from '@repo/db';
  * All test data, comments, and documentation are in English, following project guidelines.
  */
 import { ServiceErrorCode } from '@repo/schemas';
-import type { ListRelationsConfig } from '@repo/schemas';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ServiceError } from '../../../src/types';

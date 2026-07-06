@@ -17,9 +17,10 @@
  * - Visual structure (fieldCard, localeBadge, sectionTitle) mirrors
  *   TranslationPanel.module.css so the two panels feel consistent.
  */
+
+import { type JSX, useCallback, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { type JSX, useCallback, useState } from 'react';
 import styles from './CommerceTranslationPanel.module.css';
 
 // ---------------------------------------------------------------------------

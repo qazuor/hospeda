@@ -9,10 +9,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-    OwnerPromotionSearchHttpSchema,
     httpToDomainOwnerPromotionCreate,
     httpToDomainOwnerPromotionSearch,
-    httpToDomainOwnerPromotionUpdate
+    httpToDomainOwnerPromotionUpdate,
+    OwnerPromotionSearchHttpSchema
 } from '../../../src/entities/ownerPromotion/owner-promotion.http.schema.js';
 import { LifecycleStatusEnum } from '../../../src/enums/lifecycle-state.enum.js';
 import { OwnerPromotionDiscountTypeEnum } from '../../../src/enums/owner-promotion-discount-type.enum.js';

@@ -1,10 +1,10 @@
+import { ExternalLinkIcon, PlayIcon } from '@repo/icons';
+import * as React from 'react';
 import type { VideoEntry } from '@/components/entity-form/fields/VideoGalleryField';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
 import { Label } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import { ExternalLinkIcon, PlayIcon } from '@repo/icons';
-import * as React from 'react';
 
 export interface VideoGalleryViewFieldProps {
     readonly config: FieldConfig;
@@ -86,7 +86,7 @@ export const VideoGalleryViewField = React.forwardRef<HTMLDivElement, VideoGalle
                                                 size={24}
                                                 weight="fill"
                                                 aria-hidden="true"
-                                                className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 text-white drop-shadow"
+                                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white drop-shadow"
                                             />
                                         </>
                                     ) : (

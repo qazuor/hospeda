@@ -16,9 +16,9 @@
  * @see SPEC-154 T-021 (label rendering helper)
  */
 
-import { useLocalizedLabel } from '@/hooks/use-localized-label';
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { useLocalizedLabel } from '@/hooks/use-localized-label';
 
 // ---------------------------------------------------------------------------
 // Mock @/hooks/use-translations so we can control the active locale.

@@ -63,7 +63,7 @@ Default behaviour (schema-sync is NOT included by default — run \`hops
 db-migrate\` separately first, or pass \`--migrate\` to include it):
   --reset, --required, --example are ON. --build, --clean-images,
   --migrate are OFF. The default invocation:
-    1. (optional) git pull \$HOPS_REPO_ROOT
+    1. (optional) git pull $HOPS_REPO_ROOT
     2. (after pull) pnpm install --frozen-lockfile
     3. pnpm --filter @repo/seed seed --reset --required --example
 
@@ -107,7 +107,7 @@ Flags:
                       Off by default — the seed resolves deps from src/ via
                       tsconfig paths. Use this escape hatch when a dep needs
                       a dist/ artifact, or for CI parity.
-  --pull              Always git pull \$HOPS_REPO_ROOT before seeding.
+  --pull              Always git pull $HOPS_REPO_ROOT before seeding.
                       Mutually exclusive with --no-pull.
   --no-pull           Never git pull. Mutually exclusive with --pull.
   --no-install        Skip \`pnpm install --frozen-lockfile\` after the pull.

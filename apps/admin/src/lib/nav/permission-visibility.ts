@@ -28,9 +28,9 @@
  * @see SPEC-154
  */
 
+import type { PermissionEnum } from '@repo/schemas';
 import { expandPermissions } from '@/config/ia/permission-bundles';
 import type { PermissionExpression, SidebarItem } from '@/config/ia/schema';
-import type { PermissionEnum } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // isPermissionGateGranted

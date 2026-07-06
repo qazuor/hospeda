@@ -1,4 +1,4 @@
-import { readFile, readdir } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 /**
@@ -33,8 +33,7 @@ import { fileURLToPath } from 'node:url';
  * require a DB connection. The live round-trip test requires the integration
  * Docker PostgreSQL (matches the rest of `test/integration/`).
  */
-import { sql } from 'drizzle-orm';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { accommodations, destinations, users } from '../../src/schemas/index.ts';
 import { closeTestPool, getTestDb, testData, withTestTransaction } from './helpers.ts';

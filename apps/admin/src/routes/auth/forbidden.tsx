@@ -17,15 +17,15 @@
  * @module routes/auth/forbidden
  */
 
-import { env } from '@/env';
-import { useTranslations } from '@/hooks/use-translations';
-import { signOut } from '@/lib/auth-client';
-import { type AuthState, fetchAuthSession } from '@/lib/auth-session';
-import { type ForbiddenReason, buildSupportMailto } from '@/lib/forbidden-mailto';
 import { ShieldAlertIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
+import { env } from '@/env';
+import { useTranslations } from '@/hooks/use-translations';
+import { signOut } from '@/lib/auth-client';
+import { type AuthState, fetchAuthSession } from '@/lib/auth-session';
+import { buildSupportMailto, type ForbiddenReason } from '@/lib/forbidden-mailto';
 import { type AuthBackgroundImage, getRandomAuthImage } from '../../utils/auth-images';
 
 const searchSchema = z.object({

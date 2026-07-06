@@ -12,13 +12,13 @@
  * definition with the file-based routing tree.
  */
 
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import {
     AccommodationsPageComponent,
     AccommodationsRoute
 } from '@/features/accommodations/config/accommodations.config';
 import type { AuthState } from '@/lib/auth-session';
 import { decideOwnerScopedRedirect } from '@/lib/owner-scoped-guard';
-import { createFileRoute, redirect } from '@tanstack/react-router';
 
 // TanStack Router requirement: bare reference prevents unused-import removal by bundler.
 createFileRoute;

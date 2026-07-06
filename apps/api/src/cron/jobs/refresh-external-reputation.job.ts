@@ -24,8 +24,8 @@ import {
     AccommodationModel
 } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { AccommodationExternalReputationService } from '@repo/service-core';
 import type { Actor } from '@repo/service-core';
+import { AccommodationExternalReputationService } from '@repo/service-core';
 import { getReputationAdapterCredentials } from '../../utils/reputation-credentials.js';
 import type { CronJobDefinition } from '../types.js';
 import {

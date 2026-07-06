@@ -12,12 +12,12 @@
  *
  * @see SPEC-086 D-024, T-025..T-028
  */
-export {
-    adminInternalTagRoutes,
-    adminSystemTagRoutes,
-    adminOwnTagRoutes,
-    adminUserTagModerationRoutes,
-    adminEntityTagAttributionRoutes
-} from './admin/index.js';
 
 export { adminEntityTagRoutes } from './admin/entities.js';
+export {
+    adminEntityTagAttributionRoutes,
+    adminInternalTagRoutes,
+    adminOwnTagRoutes,
+    adminSystemTagRoutes,
+    adminUserTagModerationRoutes
+} from './admin/index.js';

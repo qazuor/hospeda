@@ -38,7 +38,7 @@ describe('RAccommodationAmenityModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 rAccommodationAmenity: rAccommodationAmenityMock
             }
         });
@@ -71,7 +71,7 @@ describe('RAccommodationAmenityModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 rAccommodationAmenity: rAccommodationAmenityMock
             }
         });
@@ -88,7 +88,7 @@ describe('RAccommodationAmenityModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 rAccommodationAmenity: rAccommodationAmenityMock
             }
         });

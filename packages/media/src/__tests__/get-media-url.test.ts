@@ -65,15 +65,20 @@ describe('getMediaUrl', () => {
     });
 
     // All 7 presets work
-    it.each(['thumbnail', 'card', 'hero', 'gallery', 'avatar', 'full', 'og'] as const)(
-        'should work with preset "%s"',
-        (preset) => {
-            const result = getMediaUrl(cloudinaryBase, { preset });
-            expect(result).toContain('/upload/');
-            expect(result).toContain('q_auto');
-            expect(result).not.toBe(cloudinaryBase);
-        }
-    );
+    it.each([
+        'thumbnail',
+        'card',
+        'hero',
+        'gallery',
+        'avatar',
+        'full',
+        'og'
+    ] as const)('should work with preset "%s"', (preset) => {
+        const result = getMediaUrl(cloudinaryBase, { preset });
+        expect(result).toContain('/upload/');
+        expect(result).toContain('q_auto');
+        expect(result).not.toBe(cloudinaryBase);
+    });
 
     // No options returns URL unchanged
     it('should return Cloudinary URL unchanged when no options provided', () => {

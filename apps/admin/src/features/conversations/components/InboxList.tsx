@@ -9,16 +9,16 @@
  * Pagination via page/pageSize URL search params.
  */
 
-import { Button } from '@/components/ui/button';
-import { useTranslations } from '@/hooks/use-translations';
 import { useNavigate } from '@tanstack/react-router';
 import {
-    type SortingState,
     flexRender,
     getCoreRowModel,
+    type SortingState,
     useReactTable
 } from '@tanstack/react-table';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/hooks/use-translations';
 import { createConversationColumns } from '../config/columns';
 import type { ConversationListItem } from '../types';
 
@@ -154,6 +154,7 @@ export function InboxList({
                                           params: { id: row.original.id }
                                       });
                                   return (
+                                      // biome-ignore lint/a11y/useSemanticElements: clickable table rows are the established admin list pattern; full keyboard support via onKeyDown
                                       <tr
                                           key={row.id}
                                           className="cursor-pointer border-t transition-colors hover:bg-muted/30"
@@ -165,7 +166,6 @@ export function InboxList({
                                               }
                                           }}
                                           tabIndex={0}
-                                          // biome-ignore lint/a11y/useSemanticElements: clickable table rows are the established admin list pattern; full keyboard support via onKeyDown
                                           role="button"
                                           aria-label={`${t('conversations.actions.viewConversation')} ${row.original.id}`}
                                       >

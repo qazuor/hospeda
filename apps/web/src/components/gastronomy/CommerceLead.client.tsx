@@ -11,12 +11,12 @@
  * Hydration: caller MUST use `client:load`.
  */
 
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 import { CheckCircleIcon } from '@repo/icons';
 import type { CommerceLeadCreateInput } from '@repo/schemas';
 import { CommerceLeadCreateInputSchema } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, useState } from 'react';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import styles from './CommerceLead.module.css';
 
 // API base URL — must be absolute because the web app (host A) and the API
@@ -236,7 +236,7 @@ export function CommerceLead({ locale, destinations = [] }: CommerceLeadProps) {
                     {t('commerce.lead.fields.businessName', 'Nombre del negocio')}
                     <span
                         className={styles.required}
-                        aria-label={t('ui.required', 'requerido')}
+                        aria-hidden="true"
                     >
                         *
                     </span>
@@ -273,7 +273,7 @@ export function CommerceLead({ locale, destinations = [] }: CommerceLeadProps) {
                     {t('commerce.lead.fields.contactName', 'Tu nombre')}
                     <span
                         className={styles.required}
-                        aria-label={t('ui.required', 'requerido')}
+                        aria-hidden="true"
                     >
                         *
                     </span>
@@ -310,7 +310,7 @@ export function CommerceLead({ locale, destinations = [] }: CommerceLeadProps) {
                     {t('commerce.lead.fields.email', 'Correo electrónico')}
                     <span
                         className={styles.required}
-                        aria-label={t('ui.required', 'requerido')}
+                        aria-hidden="true"
                     >
                         *
                     </span>

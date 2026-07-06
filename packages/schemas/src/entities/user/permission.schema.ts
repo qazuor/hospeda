@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { UserIdSchema } from '../../common/id.schema.js';
-import { PermissionEffectEnum } from '../../enums/permission-effect.enum.js';
 import { PermissionEnumSchema } from '../../enums/permission.schema.js';
+import { PermissionEffectEnum } from '../../enums/permission-effect.enum.js';
 import { PermissionEffectSchema } from '../permission/permission.management.schema.js';
 
 /**

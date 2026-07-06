@@ -136,7 +136,7 @@ export async function logs(argv: ReadonlyArray<string>): Promise<void> {
     // doesn't kick in, leaving the cursor mid-line on each linefeed.
     // Doing the regex test in Node and writing CRLF terminated lines
     // sidesteps both problems and removes the grep dependency.
-    const matcher = pattern !== undefined ? new RegExp(pattern, 'i') : null;
+    const matcher = pattern === undefined ? null : new RegExp(pattern, 'i');
     const writeOutLine = (line: string, target: NodeJS.WriteStream): void => {
         // Trim trailing whitespace defensively even though docker logs
         // do not appear to add any — keeps output predictable across

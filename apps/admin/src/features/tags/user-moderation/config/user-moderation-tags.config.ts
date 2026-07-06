@@ -1,9 +1,9 @@
+import { TagSchema } from '@repo/schemas';
+import { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
 import type { UserTagWithOwner } from '@/hooks/use-user-tag-moderation';
-import { TagSchema } from '@repo/schemas';
-import { z } from 'zod';
 import { createUserModerationTagsColumns } from './user-moderation-tags.columns';
 
 /**
@@ -127,4 +127,5 @@ export const userModerationTagsConfig: EntityConfig<UserTagWithOwner> = {
 };
 
 const { component, route } = createEntityListPage(userModerationTagsConfig);
+
 export { component as UserModerationTagsPageComponent, route as UserModerationTagsRoute };

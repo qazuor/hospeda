@@ -28,7 +28,10 @@
 /* Interactive affordance: cursor + hover-lift, no dotted underline */
 .badgeInteractive {
     cursor: pointer;
-    transition: transform 150ms ease, filter 150ms ease, background-color 150ms ease;
+    transition:
+        transform 150ms ease,
+        filter 150ms ease,
+        background-color 150ms ease;
 }
 
 .badgeInteractive:hover {

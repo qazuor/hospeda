@@ -8,8 +8,8 @@ import { PermissionEnum } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { z } from 'zod';
 import {
-    SOCIAL_CREDENTIAL_KEYS,
-    listSocialCredentials
+    listSocialCredentials,
+    SOCIAL_CREDENTIAL_KEYS
 } from '../../../../services/social-credential-vault.service';
 import { extractPaginationParams, getPaginationResponse } from '../../../../utils/pagination';
 import { createAdminListRoute } from '../../../../utils/route-factory';

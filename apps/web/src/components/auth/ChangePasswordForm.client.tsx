@@ -18,11 +18,11 @@
  * Hydration: caller MUST use `client:load`.
  */
 
+import { ChangePasswordInputSchema } from '@repo/schemas';
+import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from 'react';
 import { refreshBetterAuthSession } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { ChangePasswordInputSchema } from '@repo/schemas';
-import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from 'react';
 import styles from './ChangePasswordForm.module.css';
 
 // API base URL — must be absolute because the web app and API live on different
@@ -287,7 +287,7 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
                             )}
                             <span
                                 className={styles.required}
-                                aria-label={t('ui.required', 'requerido')}
+                                aria-hidden="true"
                             >
                                 *
                             </span>
@@ -348,7 +348,7 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
                             {t('commerce.changePassword.fields.newPassword', 'Nueva contraseña')}
                             <span
                                 className={styles.required}
-                                aria-label={t('ui.required', 'requerido')}
+                                aria-hidden="true"
                             >
                                 *
                             </span>
@@ -394,6 +394,7 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
                         {fields.newPassword.length > 0 && (
                             <div
                                 className={styles.strengthMeter}
+                                role="status"
                                 aria-label={t(
                                     'commerce.changePassword.strengthLabel',
                                     'Seguridad de la contraseña'
@@ -411,9 +412,9 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
                                     />
                                     <span
                                         className={`${styles.strengthBar} ${
-                                            strength !== 'weak'
-                                                ? `${styles.strengthBarActive} ${strength === 'medium' ? styles.strengthBarMedium : styles.strengthBarStrong}`
-                                                : ''
+                                            strength === 'weak'
+                                                ? ''
+                                                : `${styles.strengthBarActive} ${strength === 'medium' ? styles.strengthBarMedium : styles.strengthBarStrong}`
                                         }`}
                                     />
                                     <span
@@ -451,7 +452,7 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
                             )}
                             <span
                                 className={styles.required}
-                                aria-label={t('ui.required', 'requerido')}
+                                aria-hidden="true"
                             >
                                 *
                             </span>

@@ -27,12 +27,12 @@
  * References: SPEC-165 T-016
  */
 
-import type { Widget } from '@/config/ia/schema';
-import { useHasPermission } from '@/hooks/use-auth-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Widget } from '@/config/ia/schema';
+import { useHasPermission } from '@/hooks/use-auth-context';
 import { CommentsFeedCard } from '../CommentsFeedCard';
 
 // ---------------------------------------------------------------------------

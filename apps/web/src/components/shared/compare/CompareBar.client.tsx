@@ -13,11 +13,11 @@
  * @module components/shared/compare/CompareBar
  */
 
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { clearCompare, removeFromCompare, useCompareStore } from '@/store/compare-store';
 import { XIcon } from '@repo/icons';
 import type { FC, MouseEvent } from 'react';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { clearCompare, removeFromCompare, useCompareStore } from '@/store/compare-store';
 import styles from './CompareBar.module.css';
 
 /** Minimum number of selected accommodations required to open the comparison. */

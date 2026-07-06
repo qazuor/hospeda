@@ -11,7 +11,7 @@ import {
 } from '@repo/content-moderation/engine/index';
 import { ContentModerationTermModel, getDb, rolePermission } from '@repo/db';
 import { locales } from '@repo/i18n';
-import { LogFormat, LogLevel, configureLogger, registerCaptureHook } from '@repo/logger';
+import { configureLogger, LogFormat, LogLevel, registerCaptureHook } from '@repo/logger';
 import {
     ensureDefaultPromoCodes,
     initializeRevalidationService,
@@ -144,9 +144,8 @@ const startServer = async (): Promise<void> => {
                 return rows.map((row) => ({
                     term: row.term,
                     kind: row.kind as 'word' | 'domain',
-                    category: row.category as import(
-                        '@repo/content-moderation/types'
-                    ).ModerationCategory,
+                    category:
+                        row.category as import('@repo/content-moderation/types').ModerationCategory,
                     severity: row.severity
                 }));
             }

@@ -14,7 +14,7 @@ import type {
     FilterBarConfig,
     NumberRangeFilterConfig
 } from '../filter-types';
-import { FILTER_CLEARED_SENTINEL, buildFilterChips, extractActiveFilters } from '../filter-utils';
+import { buildFilterChips, extractActiveFilters, FILTER_CLEARED_SENTINEL } from '../filter-utils';
 
 // ---------------------------------------------------------------------------
 // Identity translation function

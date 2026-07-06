@@ -11,15 +11,6 @@
  * `apps/admin/src/lib/nav-icon-map.ts` `resolveNavIcon`). Putting UI/nav icons in
  * this shared map bloats it and defeats tree-shaking in consumers.
  */
-import type { IconProps } from './types';
-
-// System icons routinely referenced by `icon` strings in declarative
-// configs (filter section headers, etc). Kept in this resolver so callers
-// can stay declarative instead of importing component refs per usage.
-import { CarIcon } from './icons/amenities/CarIcon';
-import { DogIcon } from './icons/amenities/DogIcon';
-import { MapIcon } from './icons/system/MapIcon';
-import { PriceIcon } from './icons/system/PriceIcon';
 
 // Amenity icons
 import { AirConditioningIcon } from './icons/amenities/AirConditioningIcon';
@@ -35,12 +26,17 @@ import { BlackoutCurtainsIcon } from './icons/amenities/BlackoutCurtainsIcon';
 import { BoardGamesIcon } from './icons/amenities/BoardGamesIcon';
 import { BooksAndMagazinesIcon } from './icons/amenities/BooksAndMagazinesIcon';
 import { BreakfastIcon } from './icons/amenities/BreakfastIcon';
+// System icons routinely referenced by `icon` strings in declarative
+// configs (filter section headers, etc). Kept in this resolver so callers
+// can stay declarative instead of importing component refs per usage.
+import { CarIcon } from './icons/amenities/CarIcon';
 import { CoffeeMakerIcon } from './icons/amenities/CoffeeMakerIcon';
 import { CoveredGrillAreaIcon } from './icons/amenities/CoveredGrillAreaIcon';
 import { CoveredParkingIcon } from './icons/amenities/CoveredParkingIcon';
 import { CoworkingSpaceIcon } from './icons/amenities/CoworkingSpaceIcon';
 import { DailyCleaningIcon } from './icons/amenities/DailyCleaningIcon';
 import { DockAccessIcon } from './icons/amenities/DockAccessIcon';
+import { DogIcon } from './icons/amenities/DogIcon';
 import { DoubleGlazingIcon } from './icons/amenities/DoubleGlazingIcon';
 import { ElectricBlanketIcon } from './icons/amenities/ElectricBlanketIcon';
 import { ElevatorIcon } from './icons/amenities/ElevatorIcon';
@@ -106,7 +102,82 @@ import { WaterDispenserIcon } from './icons/amenities/WaterDispenserIcon';
 import { WifiIcon } from './icons/amenities/WifiIcon';
 import { WorkshopSpaceIcon } from './icons/amenities/WorkshopSpaceIcon';
 import { YogaMeditationIcon } from './icons/amenities/YogaMeditationIcon';
-
+// Attraction icons (stored in DB as attraction category types)
+import { AgriculturalCenterIcon } from './icons/attractions/AgriculturalCenterIcon';
+import { AmphitheaterIcon } from './icons/attractions/AmphitheaterIcon';
+import { ArchaeologicalSiteIcon } from './icons/attractions/ArchaeologicalSiteIcon';
+import { BeachIcon } from './icons/attractions/BeachIcon';
+import { BirdWatchingIcon } from './icons/attractions/BirdWatchingIcon';
+import { CarnavalVenueIcon } from './icons/attractions/CarnavalVenueIcon';
+import { CasinoIcon } from './icons/attractions/CasinoIcon';
+import { CathedralIcon } from './icons/attractions/CathedralIcon';
+import { ColonialChurchIcon } from './icons/attractions/ColonialChurchIcon';
+import { CraftsFairIcon } from './icons/attractions/CraftsFairIcon';
+import { CulturalCenterIcon } from './icons/attractions/CulturalCenterIcon';
+import { EducationalFarmIcon } from './icons/attractions/EducationalFarmIcon';
+import { EventCenterIcon } from './icons/attractions/EventCenterIcon';
+import { FamilyThermalIcon } from './icons/attractions/FamilyThermalIcon';
+import { FishingPierIcon } from './icons/attractions/FishingPierIcon';
+import { GastronomicMarketIcon } from './icons/attractions/GastronomicMarketIcon';
+import { HistoricMonumentIcon } from './icons/attractions/HistoricMonumentIcon';
+import { HistoricMuseumIcon } from './icons/attractions/HistoricMuseumIcon';
+import { MainSquareIcon } from './icons/attractions/MainSquareIcon';
+import { MunicipalBeachIcon } from './icons/attractions/MunicipalBeachIcon';
+import { MunicipalParkIcon } from './icons/attractions/MunicipalParkIcon';
+import { MunicipalStadiumIcon } from './icons/attractions/MunicipalStadiumIcon';
+import { MuseumIcon } from './icons/attractions/MuseumIcon';
+import { NaturalReserveIcon } from './icons/attractions/NaturalReserveIcon';
+import { NatureReserveIcon } from './icons/attractions/NatureReserveIcon';
+import { ParkIcon } from './icons/attractions/ParkIcon';
+import { ProtectedAreaIcon } from './icons/attractions/ProtectedAreaIcon';
+import { RecreationalBoatingIcon } from './icons/attractions/RecreationalBoatingIcon';
+import { RestaurantIcon } from './icons/attractions/RestaurantIcon';
+import { RiverBeachIcon } from './icons/attractions/RiverBeachIcon';
+import { RiverKayakIcon } from './icons/attractions/RiverKayakIcon';
+import { ShoppingCenterIcon } from './icons/attractions/ShoppingCenterIcon';
+import { SoccerFieldIcon } from './icons/attractions/SoccerFieldIcon';
+import { SportFishingIcon } from './icons/attractions/SportFishingIcon';
+import { SportsCenterIcon } from './icons/attractions/SportsCenterIcon';
+import { ThermalAquaParkIcon } from './icons/attractions/ThermalAquaParkIcon';
+import { ThermalPoolsIcon } from './icons/attractions/ThermalPoolsIcon';
+import { ThermalSpaIcon } from './icons/attractions/ThermalSpaIcon';
+import { TouristPierIcon } from './icons/attractions/TouristPierIcon';
+import { TouristRanchIcon } from './icons/attractions/TouristRanchIcon';
+import { WellnessCenterIcon } from './icons/attractions/WellnessCenterIcon';
+import { WetlandsIcon } from './icons/attractions/WetlandsIcon';
+// Booking state icons
+import { AvailableIcon } from './icons/booking/AvailableIcon';
+import { CancelledIcon } from './icons/booking/CancelledIcon';
+import { CheckInIcon } from './icons/booking/CheckInIcon';
+import { CheckOutIcon } from './icons/booking/CheckOutIcon';
+import { ConfirmedIcon } from './icons/booking/ConfirmedIcon';
+import { GuestsIcon } from './icons/booking/GuestsIcon';
+import { PendingIcon } from './icons/booking/PendingIcon';
+import { ReserveIcon } from './icons/booking/ReserveIcon';
+import { RoomsIcon } from './icons/booking/RoomsIcon';
+import { UnavailableIcon } from './icons/booking/UnavailableIcon';
+// Communication icons (stored in DB as contact channel types)
+import { ChatIcon } from './icons/communication/ChatIcon';
+import { ContactoIcon } from './icons/communication/ContactoIcon';
+import { EmailIcon } from './icons/communication/EmailIcon';
+import { LanguageIcon } from './icons/communication/LanguageIcon';
+import { NewsletterIcon } from './icons/communication/NewsletterIcon';
+import { PhoneIcon } from './icons/communication/PhoneIcon';
+import { SmsIcon } from './icons/communication/SmsIcon';
+// Entity icons
+import { AccommodationIcon } from './icons/entities/AccommodationIcon';
+import { ContentIcon } from './icons/entities/ContentIcon';
+import { CouponsIcon } from './icons/entities/CouponsIcon';
+import { DestinationIcon } from './icons/entities/DestinationIcon';
+import { EventIcon } from './icons/entities/EventIcon';
+import { EventLocationIcon } from './icons/entities/EventLocationIcon';
+import { EventOrganizerIcon } from './icons/entities/EventOrganizerIcon';
+import { OffersIcon } from './icons/entities/OffersIcon';
+import { PermissionIcon } from './icons/entities/PermissionIcon';
+import { PostIcon } from './icons/entities/PostIcon';
+import { PostSponsorIcon } from './icons/entities/PostSponsorIcon';
+import { PostSponsorshipIcon } from './icons/entities/PostSponsorshipIcon';
+import { PromotionsIcon } from './icons/entities/PromotionsIcon';
 // Feature icons
 import { AccessibilityFriendlyIcon } from './icons/features/AccessibilityFriendlyIcon';
 import { AdultsOnlyIcon } from './icons/features/AdultsOnlyIcon';
@@ -167,103 +238,24 @@ import { SpaFrontIcon } from './icons/features/SpaFrontIcon';
 import { ThemedRoomsIcon } from './icons/features/ThemedRoomsIcon';
 import { TouristInfoIcon } from './icons/features/TouristInfoIcon';
 import { WasteRecyclingIcon } from './icons/features/WasteRecyclingIcon';
-
-// Entity icons
-import { AccommodationIcon } from './icons/entities/AccommodationIcon';
-import { ContentIcon } from './icons/entities/ContentIcon';
-import { CouponsIcon } from './icons/entities/CouponsIcon';
-import { DestinationIcon } from './icons/entities/DestinationIcon';
-import { EventIcon } from './icons/entities/EventIcon';
-import { EventLocationIcon } from './icons/entities/EventLocationIcon';
-import { EventOrganizerIcon } from './icons/entities/EventOrganizerIcon';
-import { OffersIcon } from './icons/entities/OffersIcon';
-import { PermissionIcon } from './icons/entities/PermissionIcon';
-import { PostIcon } from './icons/entities/PostIcon';
-import { PostSponsorIcon } from './icons/entities/PostSponsorIcon';
-import { PostSponsorshipIcon } from './icons/entities/PostSponsorshipIcon';
-import { PromotionsIcon } from './icons/entities/PromotionsIcon';
-
-// Booking state icons
-import { AvailableIcon } from './icons/booking/AvailableIcon';
-import { CancelledIcon } from './icons/booking/CancelledIcon';
-import { CheckInIcon } from './icons/booking/CheckInIcon';
-import { CheckOutIcon } from './icons/booking/CheckOutIcon';
-import { ConfirmedIcon } from './icons/booking/ConfirmedIcon';
-import { GuestsIcon } from './icons/booking/GuestsIcon';
-import { PendingIcon } from './icons/booking/PendingIcon';
-import { ReserveIcon } from './icons/booking/ReserveIcon';
-import { RoomsIcon } from './icons/booking/RoomsIcon';
-import { UnavailableIcon } from './icons/booking/UnavailableIcon';
-
 // Social icons (stored in DB as contact/social link types)
 import { FacebookIcon } from './icons/social/FacebookIcon';
 import { InstagramIcon } from './icons/social/InstagramIcon';
 import { TwitterIcon } from './icons/social/TwitterIcon';
 import { WebIcon } from './icons/social/WebIcon';
 import { WhatsappIcon } from './icons/social/WhatsappIcon';
-
 // System icons (used in homepage features, stats, etc.)
 import { BuildingIcon } from './icons/system/BuildingIcon';
 import { CalendarDotsIcon } from './icons/system/CalendarDotsIcon';
 import { CompassIcon } from './icons/system/CompassIcon';
 import { LocationIcon } from './icons/system/LocationIcon';
+import { MapIcon } from './icons/system/MapIcon';
+import { PriceIcon } from './icons/system/PriceIcon';
 import { ShieldIcon } from './icons/system/ShieldIcon';
 import { SparkleIcon } from './icons/system/SparkleIcon';
 import { StarIcon } from './icons/system/StarIcon';
 import { UsersIcon } from './icons/system/UsersIcon';
-
-// Communication icons (stored in DB as contact channel types)
-import { ChatIcon } from './icons/communication/ChatIcon';
-import { ContactoIcon } from './icons/communication/ContactoIcon';
-import { EmailIcon } from './icons/communication/EmailIcon';
-import { LanguageIcon } from './icons/communication/LanguageIcon';
-import { NewsletterIcon } from './icons/communication/NewsletterIcon';
-import { PhoneIcon } from './icons/communication/PhoneIcon';
-import { SmsIcon } from './icons/communication/SmsIcon';
-
-// Attraction icons (stored in DB as attraction category types)
-import { AgriculturalCenterIcon } from './icons/attractions/AgriculturalCenterIcon';
-import { AmphitheaterIcon } from './icons/attractions/AmphitheaterIcon';
-import { ArchaeologicalSiteIcon } from './icons/attractions/ArchaeologicalSiteIcon';
-import { BeachIcon } from './icons/attractions/BeachIcon';
-import { BirdWatchingIcon } from './icons/attractions/BirdWatchingIcon';
-import { CarnavalVenueIcon } from './icons/attractions/CarnavalVenueIcon';
-import { CasinoIcon } from './icons/attractions/CasinoIcon';
-import { CathedralIcon } from './icons/attractions/CathedralIcon';
-import { ColonialChurchIcon } from './icons/attractions/ColonialChurchIcon';
-import { CraftsFairIcon } from './icons/attractions/CraftsFairIcon';
-import { CulturalCenterIcon } from './icons/attractions/CulturalCenterIcon';
-import { EducationalFarmIcon } from './icons/attractions/EducationalFarmIcon';
-import { EventCenterIcon } from './icons/attractions/EventCenterIcon';
-import { FamilyThermalIcon } from './icons/attractions/FamilyThermalIcon';
-import { FishingPierIcon } from './icons/attractions/FishingPierIcon';
-import { GastronomicMarketIcon } from './icons/attractions/GastronomicMarketIcon';
-import { HistoricMonumentIcon } from './icons/attractions/HistoricMonumentIcon';
-import { HistoricMuseumIcon } from './icons/attractions/HistoricMuseumIcon';
-import { MainSquareIcon } from './icons/attractions/MainSquareIcon';
-import { MunicipalBeachIcon } from './icons/attractions/MunicipalBeachIcon';
-import { MunicipalParkIcon } from './icons/attractions/MunicipalParkIcon';
-import { MunicipalStadiumIcon } from './icons/attractions/MunicipalStadiumIcon';
-import { MuseumIcon } from './icons/attractions/MuseumIcon';
-import { NaturalReserveIcon } from './icons/attractions/NaturalReserveIcon';
-import { NatureReserveIcon } from './icons/attractions/NatureReserveIcon';
-import { ParkIcon } from './icons/attractions/ParkIcon';
-import { ProtectedAreaIcon } from './icons/attractions/ProtectedAreaIcon';
-import { RecreationalBoatingIcon } from './icons/attractions/RecreationalBoatingIcon';
-import { RestaurantIcon } from './icons/attractions/RestaurantIcon';
-import { RiverBeachIcon } from './icons/attractions/RiverBeachIcon';
-import { RiverKayakIcon } from './icons/attractions/RiverKayakIcon';
-import { ShoppingCenterIcon } from './icons/attractions/ShoppingCenterIcon';
-import { SoccerFieldIcon } from './icons/attractions/SoccerFieldIcon';
-import { SportFishingIcon } from './icons/attractions/SportFishingIcon';
-import { SportsCenterIcon } from './icons/attractions/SportsCenterIcon';
-import { ThermalAquaParkIcon } from './icons/attractions/ThermalAquaParkIcon';
-import { ThermalPoolsIcon } from './icons/attractions/ThermalPoolsIcon';
-import { ThermalSpaIcon } from './icons/attractions/ThermalSpaIcon';
-import { TouristPierIcon } from './icons/attractions/TouristPierIcon';
-import { TouristRanchIcon } from './icons/attractions/TouristRanchIcon';
-import { WellnessCenterIcon } from './icons/attractions/WellnessCenterIcon';
-import { WetlandsIcon } from './icons/attractions/WetlandsIcon';
+import type { IconProps } from './types';
 
 type IconComponent = React.ComponentType<IconProps>;
 
@@ -545,6 +537,8 @@ export const ICON_MAP: Record<string, IconComponent> = {
  */
 export function resolveIcon({
     iconName
-}: { readonly iconName: string }): IconComponent | undefined {
+}: {
+    readonly iconName: string;
+}): IconComponent | undefined {
     return ICON_MAP[iconName];
 }

@@ -20,12 +20,11 @@
  * @module ai-core/engine
  */
 
-export { createAiEngine, defaultProviderOrderStrategy } from './engine.js';
 export type {
     AiEngine,
     AiEngineEvent,
-    AiEngineFallbackEvent,
     AiEngineExhaustedEvent,
+    AiEngineFallbackEvent,
     AiEngineKillSwitchEvent,
     AiEngineModerationBlockedEvent,
     AiEngineModerationErrorEvent,
@@ -34,7 +33,8 @@ export type {
     ProviderOrderStrategy,
     ProviderOrderStrategyInput
 } from './engine.js';
-
+export { createAiEngine, defaultProviderOrderStrategy } from './engine.js';
+export type { ProviderAttempt } from './errors.js';
 export {
     AiCeilingHitError,
     AiEngineError,
@@ -44,16 +44,14 @@ export {
     AiNoEnabledProviderError,
     AiProviderUnconfiguredError
 } from './errors.js';
-export type { ProviderAttempt } from './errors.js';
-
+export type { WithRetryInput } from './retry.js';
 export {
     isRetryableError,
-    withRetry,
     MAX_ATTEMPTS_PER_PROVIDER,
     RETRY_BASE_DELAY_MS,
-    sleep
+    sleep,
+    withRetry
 } from './retry.js';
-export type { WithRetryInput } from './retry.js';
 
 // ---------------------------------------------------------------------------
 // Default prompts (T-034)
@@ -65,14 +63,13 @@ export { DEFAULT_PROMPTS, DEFAULT_RULES } from './default-prompts.js';
 // Prompt injection helper (T-034)
 // ---------------------------------------------------------------------------
 
-export { injectSystemPrompt } from './prompt-injection.js';
 export type { InjectSystemPromptInput } from './prompt-injection.js';
+export { injectSystemPrompt } from './prompt-injection.js';
 
 // ---------------------------------------------------------------------------
 // AiService (T-015) — public facade
 // ---------------------------------------------------------------------------
 
-export { createAiService } from './ai-service.js';
 export type {
     AiFeature,
     AiService,
@@ -85,3 +82,4 @@ export type {
     ModerateCapabilityInput,
     StreamTextCapabilityInput
 } from './ai-service.js';
+export { createAiService } from './ai-service.js';

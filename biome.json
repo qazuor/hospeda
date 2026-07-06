@@ -1,12 +1,12 @@
 {
-    "$schema": "https://biomejs.dev/schemas/1.5.3/schema.json",
+    "$schema": "https://biomejs.dev/schemas/2.5.2/schema.json",
     "extends": ["./packages/biome-config/biome.json"],
     "overrides": [
         {
-            "include": [
-                "apps/web/src/components/sections/SearchBar.client.tsx",
-                "apps/web/src/components/sections/DestinationsIsland.client.tsx",
-                "apps/web/src/components/shared/MobileMenu.client.tsx"
+            "includes": [
+                "**/apps/web/src/components/sections/SearchBar.client.tsx",
+                "**/apps/web/src/components/sections/DestinationsIsland.client.tsx",
+                "**/apps/web/src/components/shared/MobileMenu.client.tsx"
             ],
             "linter": {
                 "rules": {
@@ -19,7 +19,7 @@
             }
         },
         {
-            "include": ["apps/web/src/components/sections/DestinationsIsland.client.tsx"],
+            "includes": ["**/apps/web/src/components/sections/DestinationsIsland.client.tsx"],
             "linter": {
                 "rules": {
                     "suspicious": {

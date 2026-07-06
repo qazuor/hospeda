@@ -13,7 +13,6 @@
  * @module ai-core/storage/usage
  */
 
-import { aiRequestLog, aiUsage, getDb } from '@repo/db';
 import type {
     DrizzleClient,
     InsertAiRequestLog,
@@ -21,6 +20,7 @@ import type {
     SelectAiRequestLog,
     SelectAiUsage
 } from '@repo/db';
+import { aiRequestLog, aiUsage, getDb } from '@repo/db';
 
 // ---------------------------------------------------------------------------
 // insertAiUsage

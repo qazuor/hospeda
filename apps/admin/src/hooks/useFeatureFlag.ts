@@ -1,5 +1,5 @@
-import { fetchApi } from '@/lib/api/client';
 import { useQuery } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 /**
  * Admin hook to check if a specific feature flag is enabled.

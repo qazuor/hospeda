@@ -24,7 +24,9 @@
     border-radius: var(--radius-button, 8px);
     cursor: pointer;
     user-select: none;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
 }
 
 .radioRow:hover {
@@ -75,7 +77,9 @@
     border: 2px solid var(--border);
     background-color: var(--core-background);
     pointer-events: none;
-    transition: border-color 0.15s ease, background-color 0.15s ease;
+    transition:
+        border-color 0.15s ease,
+        background-color 0.15s ease;
 }
 
 /* Checked state — driven by the sibling input */
@@ -171,7 +175,10 @@
     font-weight: 500;
     cursor: pointer;
     text-align: left;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
 }
 
 .newCollectionBtn:hover:not(:disabled) {
@@ -209,8 +216,9 @@
     font-size: 0.9375rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color var(--duration-normal, 0.4s) ease, border-color
-        var(--duration-normal, 0.4s) ease;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        border-color var(--duration-normal, 0.4s) ease;
 }
 
 .cancelBtn:hover {

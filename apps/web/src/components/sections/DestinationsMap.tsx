@@ -10,10 +10,28 @@
  * inside the DestinationsIsland which is already a React island).
  */
 
+import { BridgeIcon } from '@repo/icons';
+import { type MouseEvent as ReactMouseEvent, useCallback, useRef, useState } from 'react';
 import type { DestinationCardData } from '@/data/types';
 import { cn } from '@/lib/cn';
-import { BridgeIcon } from '@repo/icons';
 import styles from './DestinationsMap.module.css';
+
+// ---------------------------------------------------------------------------
+// Design-space constants
+// ---------------------------------------------------------------------------
+
+/** Width of the original Figma design space the pin coordinates live in. */
+const DESIGN_WIDTH = 616;
+/** Height of the original Figma design space the pin coordinates live in. */
+const DESIGN_HEIGHT = 793;
+
+/**
+ * Maximum distance (in design-space units) between a pointer and a city dot for
+ * a click/hover to resolve to that city. Clicks farther than this from every
+ * clickable dot select nothing. Large enough to cover the dot and its adjacent
+ * label, small enough that empty regions of the map stay inert.
+ */
+const MAX_HIT_RADIUS = 45;
 
 // ---------------------------------------------------------------------------
 // Pin data (from Figma analysis — coordinates in the 616×793 space)
@@ -108,7 +126,17 @@ const CITIES: readonly City[] = [
         size: 'secondary',
         labelPosition: 'left'
     },
-    { slug: 'liebig', name: 'Liebig', x: 351, y: 337, size: 'secondary', labelPosition: 'left' },
+    // Destination slug is `pueblo-liebig` (derived from the name "Pueblo
+    // Liebig"), NOT `liebig` — the pin stayed unclickable until this matched
+    // the real slug (BETA-109). The short label "Liebig" is kept for the map.
+    {
+        slug: 'pueblo-liebig',
+        name: 'Liebig',
+        x: 351,
+        y: 337,
+        size: 'secondary',
+        labelPosition: 'left'
+    },
     {
         slug: 'rosario-del-tala',
         name: 'Rosario del Tala',
@@ -212,12 +240,77 @@ export function DestinationsMap({
     mapLabel,
     pinLabel
 }: DestinationsMapProps) {
+    const pinsLayerRef = useRef<HTMLDivElement>(null);
+    const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
+
     /**
      * Finds the destination index matching a given city slug.
      * Returns -1 if no destination matches (city is on map but not in data).
      */
-    const findDestinationIndex = (slug: string): number =>
-        destinations.findIndex((d) => d.slug === slug);
+    const findDestinationIndex = useCallback(
+        (slug: string): number => destinations.findIndex((d) => d.slug === slug),
+        [destinations]
+    );
+
+    /**
+     * Resolve the clickable city whose dot is nearest to a pointer position,
+     * within {@link MAX_HIT_RADIUS} design units. Returns `null` when the
+     * pointer is not near any clickable city.
+     *
+     * This is the core of the collision-proof interaction (BETA-109): rather
+     * than letting the topmost overlapping pin capture the pointer (which made
+     * a nearby main pin swallow a smaller neighbour's clicks), EVERY pointer
+     * event is resolved to the nearest clickable dot. No matter how densely
+     * pins overlap, the click always lands on the closest one.
+     */
+    const nearestClickable = useCallback(
+        (clientX: number, clientY: number): { slug: string; index: number } | null => {
+            const layer = pinsLayerRef.current;
+            if (!layer) return null;
+            const rect = layer.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return null;
+
+            // Pointer position expressed in the 616×793 design space.
+            const px = ((clientX - rect.left) / rect.width) * DESIGN_WIDTH;
+            const py = ((clientY - rect.top) / rect.height) * DESIGN_HEIGHT;
+
+            let best: { slug: string; index: number } | null = null;
+            let bestDistSq = MAX_HIT_RADIUS * MAX_HIT_RADIUS;
+            for (const city of CITIES) {
+                const index = findDestinationIndex(city.slug);
+                if (index === -1) continue; // decorative-only pin, never selectable
+                const dx = city.x - px;
+                const dy = city.y - py;
+                const distSq = dx * dx + dy * dy;
+                if (distSq <= bestDistSq) {
+                    bestDistSq = distSq;
+                    best = { slug: city.slug, index };
+                }
+            }
+            return best;
+        },
+        [findDestinationIndex]
+    );
+
+    /** Pointer click / tap on the map → select the nearest clickable city. */
+    const handlePointerSelect = useCallback(
+        (event: ReactMouseEvent<HTMLDivElement>): void => {
+            const hit = nearestClickable(event.clientX, event.clientY);
+            if (hit) onSelectDestination(hit.index);
+        },
+        [nearestClickable, onSelectDestination]
+    );
+
+    /** Pointer move over the map → highlight the nearest clickable city. */
+    const handlePointerMove = useCallback(
+        (event: ReactMouseEvent<HTMLDivElement>): void => {
+            const hit = nearestClickable(event.clientX, event.clientY);
+            setHoveredSlug(hit?.slug ?? null);
+        },
+        [nearestClickable]
+    );
+
+    const handlePointerLeave = useCallback((): void => setHoveredSlug(null), []);
 
     return (
         // biome-ignore lint/a11y/useSemanticElements: <fieldset> is only for form-control groups; role="group" is the correct ARIA for an interactive map widget that contains focusable destination pins.
@@ -244,10 +337,19 @@ export function DestinationsMap({
                 draggable={false}
             />
 
-            {/* Pins layer */}
+            {/* Pins layer — owns pointer interaction and resolves it by
+                proximity to the nearest clickable dot (BETA-109). The pin
+                wrappers are pointer-events:none so mouse/touch fall through to
+                this handler; the buttons stay keyboard-focusable for a11y. */}
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: this div is a pointer-only proximity hit-surface; keyboard users tab to and activate the focusable <button> pins inside it, which carry their own keyboard handling. A key handler here would be meaningless (proximity needs pointer coordinates). */}
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: this is a pointer proximity hit-surface, not a single semantic control; the real controls are the focusable <button> pins nested inside it, and the parent map already carries role="group". */}
             <div
-                className={styles.pinsLayer}
+                ref={pinsLayerRef}
+                className={cn(styles.pinsLayer, hoveredSlug && styles.pinsLayerInteractive)}
                 aria-hidden="false"
+                onClick={handlePointerSelect}
+                onMouseMove={handlePointerMove}
+                onMouseLeave={handlePointerLeave}
             >
                 {/* Bridge markers — decorative, always non-interactive */}
                 {BRIDGES.map((bridge) => (
@@ -284,6 +386,8 @@ export function DestinationsMap({
                     const isActive = destIndex !== -1 && destIndex === activeIndex;
                     const isClickable = destIndex !== -1;
                     const isMain = city.size === 'main';
+                    // Active state dominates; only highlight hover when not active.
+                    const isHovered = isClickable && !isActive && hoveredSlug === city.slug;
 
                     return (
                         <div
@@ -307,7 +411,15 @@ export function DestinationsMap({
                                     city.labelPosition === 'bottom' &&
                                         (isMain ? styles.pinLabelBottom : styles.secondaryPinBottom)
                                 )}
-                                onClick={() => {
+                                onClick={(event) => {
+                                    // Mouse/touch never reaches this button (the pin
+                                    // wrapper is pointer-events:none and the layer
+                                    // resolves the click by proximity). This fires
+                                    // ONLY for keyboard activation of the focused pin,
+                                    // which selects itself directly; stop it so the
+                                    // layer's proximity handler doesn't also run on a
+                                    // zero-coordinate synthetic click.
+                                    event.stopPropagation();
                                     if (isClickable) {
                                         onSelectDestination(destIndex);
                                     }
@@ -330,7 +442,11 @@ export function DestinationsMap({
                                         isActive &&
                                             (isMain
                                                 ? styles.mainDotActive
-                                                : styles.secondaryDotActive)
+                                                : styles.secondaryDotActive),
+                                        isHovered &&
+                                            (isMain
+                                                ? styles.mainDotHovered
+                                                : styles.secondaryDotHovered)
                                     )}
                                 />
                                 <span
@@ -339,7 +455,11 @@ export function DestinationsMap({
                                         isActive &&
                                             (isMain
                                                 ? styles.mainLabelActive
-                                                : styles.secondaryLabelActive)
+                                                : styles.secondaryLabelActive),
+                                        isHovered &&
+                                            (isMain
+                                                ? styles.mainLabelHovered
+                                                : styles.secondaryLabelHovered)
                                     )}
                                 >
                                     {city.name}

@@ -14,6 +14,9 @@
  * No zodResolver. No create or delete.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { type SocialPlatformFormat, SocialPlatformFormatUpdateSchema } from '@repo/schemas';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -28,9 +31,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useUpdatePlatformFormat } from '@/hooks/use-social-platform-settings';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import { type SocialPlatformFormat, SocialPlatformFormatUpdateSchema } from '@repo/schemas';
-import { useState } from 'react';
 
 /** Props for {@link PlatformFormatFormModal}. */
 export interface PlatformFormatFormModalProps {
@@ -54,7 +54,7 @@ function itemToForm(item: SocialPlatformFormat): FormState {
     return {
         enabled: item.enabled,
         mvpEnabled: item.mvpEnabled,
-        maxCaptionLength: item.maxCaptionLength != null ? String(item.maxCaptionLength) : '',
+        maxCaptionLength: item.maxCaptionLength == null ? '' : String(item.maxCaptionLength),
         makeChannelKey: item.makeChannelKey ?? '',
         notes: item.notes ?? ''
     };

@@ -19,8 +19,8 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-    STRIP_MARKDOWN_REGEX_SET,
     renderPlain,
+    STRIP_MARKDOWN_REGEX_SET,
     stripMarkdownPlain
 } from '../../src/lib/render-plain';
 
@@ -174,7 +174,7 @@ describe('renderPlain', () => {
 
             // FR-2 end-to-end: no markdown markers, no HTML tags, safe to
             // interpolate as a text node.
-            expect(rendered).not.toMatch(/[*#`\[\]>~]/);
+            expect(rendered).not.toMatch(/[*#`[\]>~]/);
             expect(rendered).not.toContain('<');
             expect(rendered).not.toContain('>');
             expect(rendered).toBe('Title\n\nbold\nlink\nitem\ncode');

@@ -8,6 +8,11 @@
  * save does not clobber unrelated state.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { GlobeIcon, MonitorIcon, MoonIcon, PaletteIcon, SunIcon } from '@repo/icons';
+import type { LanguageEnum, ThemeEnum, UserSettings } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
+import { useCallback, useEffect, useState } from 'react';
 import { MainPageLayout } from '@/components/layout/MainPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,11 +24,6 @@ import {
     useUpdateUserSettings,
     useUserProfile
 } from '@/hooks/use-user-profile';
-import type { TranslationKey } from '@repo/i18n';
-import { GlobeIcon, MonitorIcon, MoonIcon, PaletteIcon, SunIcon } from '@repo/icons';
-import type { LanguageEnum, ThemeEnum, UserSettings } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
 
 type TranslateFn = (key: TranslationKey, params?: Record<string, unknown>) => string;
 
@@ -273,16 +273,20 @@ interface ThemePickerProps {
     readonly t: TranslateFn;
 }
 
-function ThemePicker({ label, value, onChange, disabled, idPrefix, t }: ThemePickerProps) {
+function ThemePicker({
+    label,
+    value,
+    onChange,
+    disabled,
+    idPrefix: _idPrefix,
+    t
+}: ThemePickerProps) {
     return (
-        <div>
-            <span className="mb-2 block font-medium text-muted-foreground text-xs uppercase">
+        <fieldset className="m-0 border-0 p-0">
+            <legend className="mb-2 block font-medium text-muted-foreground text-xs uppercase">
                 {label}
-            </span>
-            <div
-                className="flex flex-wrap gap-3"
-                aria-labelledby={`${idPrefix}-label`}
-            >
+            </legend>
+            <div className="flex flex-wrap gap-3">
                 <ThemeButton
                     icon={<MonitorIcon className="h-5 w-5" />}
                     label={t('admin-pages.settings.appearance.system')}
@@ -305,7 +309,7 @@ function ThemePicker({ label, value, onChange, disabled, idPrefix, t }: ThemePic
                     onClick={() => onChange('dark')}
                 />
             </div>
-        </div>
+        </fieldset>
     );
 }
 
@@ -318,16 +322,20 @@ interface LanguagePickerProps {
     readonly t: TranslateFn;
 }
 
-function LanguagePicker({ label, value, onChange, disabled, idPrefix, t }: LanguagePickerProps) {
+function LanguagePicker({
+    label,
+    value,
+    onChange,
+    disabled,
+    idPrefix: _idPrefix,
+    t
+}: LanguagePickerProps) {
     return (
-        <div>
-            <span className="mb-2 block font-medium text-muted-foreground text-xs uppercase">
+        <fieldset className="m-0 border-0 p-0">
+            <legend className="mb-2 block font-medium text-muted-foreground text-xs uppercase">
                 {label}
-            </span>
-            <div
-                className="flex flex-wrap gap-3"
-                aria-labelledby={`${idPrefix}-label`}
-            >
+            </legend>
+            <div className="flex flex-wrap gap-3">
                 <LanguageButton
                     label={t('admin-pages.settings.language.es')}
                     code="es"
@@ -350,7 +358,7 @@ function LanguagePicker({ label, value, onChange, disabled, idPrefix, t }: Langu
                     onClick={() => onChange('pt')}
                 />
             </div>
-        </div>
+        </fieldset>
     );
 }
 

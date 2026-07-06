@@ -89,7 +89,7 @@ function generateIdempotencyKey(
     daysAhead?: number
 ): string {
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const daySuffix = daysAhead !== undefined ? `:d${daysAhead}` : '';
+    const daySuffix = daysAhead === undefined ? '' : `:d${daysAhead}`;
     return `${type}:${customerId}:${today}${daySuffix}`;
 }
 
@@ -538,7 +538,7 @@ export const notificationScheduleJob: CronJobDefinition = {
                                     userId: customerDetails.userId,
                                     customerId: subscription.customerId,
                                     planName,
-                                    ...(amount !== undefined ? { amount, currency } : {}),
+                                    ...(amount === undefined ? {} : { amount, currency }),
                                     renewalDate: endDate.toISOString(),
                                     daysRemaining,
                                     idempotencyKey: generateIdempotencyKey(

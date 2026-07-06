@@ -361,7 +361,7 @@ export function checkPremiumFeatures(accommodation: AccommodationData): {
 } {
     // Check for markdown in description
     const hasRichDescription = Boolean(
-        accommodation.description && /[*#`\[\]>~]/.test(accommodation.description)
+        accommodation.description && /[*#`[\]>~]/.test(accommodation.description)
     );
 
     // Check for video content

@@ -8,10 +8,10 @@
  * - Displays inline validation errors
  */
 
-import { ContactInfoSection } from '@/components/host/editor/ContactInfoSection.client';
-import type { ContactInfoSectionProps } from '@/components/host/editor/ContactInfoSection.client';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { ContactInfoSectionProps } from '@/components/host/editor/ContactInfoSection.client';
+import { ContactInfoSection } from '@/components/host/editor/ContactInfoSection.client';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({

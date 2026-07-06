@@ -9,8 +9,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-    MLTokenRefreshError,
-    classifyMLRefreshFailure
+    classifyMLRefreshFailure,
+    MLTokenRefreshError
 } from '../../../src/services/mercadolibre-oauth/ml-token.errors';
 
 describe('MLTokenRefreshError', () => {

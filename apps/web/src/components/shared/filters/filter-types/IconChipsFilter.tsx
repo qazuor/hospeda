@@ -6,12 +6,12 @@
  * category grouping.
  */
 
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { resolveWebIcon } from '@/lib/icon-map';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import styles from './IconChipsFilter.module.css';
 import type { IconChipsFilterConfig } from './filter.types';
+import styles from './IconChipsFilter.module.css';
 
 /** Props for the IconChipsFilter component. */
 interface IconChipsFilterProps {

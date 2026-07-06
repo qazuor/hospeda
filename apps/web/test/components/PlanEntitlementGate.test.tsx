@@ -4,9 +4,9 @@
  * Verifies entitled vs locked state rendering, loading behavior, and upgrade CTA.
  */
 
-import { PlanEntitlementGate } from '@/components/host/editor/PlanEntitlementGate.client';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PlanEntitlementGate } from '@/components/host/editor/PlanEntitlementGate.client';
 
 // ---------------------------------------------------------------------------
 // Mocks
