@@ -76,8 +76,8 @@ export interface EvaluateCompareAddParams {
  *    room". The comparison matrix cannot render an unbounded set, so the
  *    `-1` (unlimited) sentinel, `0`, and `NaN` all deny with `'limit'` rather
  *    than allowing infinite columns. Every plan that ships the entitlement has
- *    a finite cap (Plus=2, VIP=4 per SPEC-288 D-1), so this path only triggers
- *    on a misconfiguration.
+ *    a finite cap (Plus=3, VIP=5 — SPEC-288 D-1 originally set Plus=2/VIP=4,
+ *    raised by HOS-16), so this path only triggers on a misconfiguration.
  * 3. At or above the cap -> `'limit'`.
  *
  * @param params - {@link EvaluateCompareAddParams}.

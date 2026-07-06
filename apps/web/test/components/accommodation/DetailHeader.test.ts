@@ -193,3 +193,39 @@ describe('DetailHeader.astro — T-045: FavoriteButton + bookmark counter', () =
         });
     });
 });
+
+describe('DetailHeader.astro — HOS-85 T-010: DetailCompareButton island', () => {
+    describe('imports', () => {
+        it('imports DetailCompareButton from components/accommodation', () => {
+            expect(src).toContain("from '@/components/accommodation/DetailCompareButton.client'");
+        });
+    });
+
+    describe('DetailCompareButton island', () => {
+        it('renders DetailCompareButton with client:load', () => {
+            expect(src).toMatch(/<DetailCompareButton[\s\S]*?client:load/);
+        });
+
+        it('passes accommodationId from the accommodationId prop', () => {
+            expect(src).toMatch(/<DetailCompareButton[\s\S]*?accommodationId=\{accommodationId\}/);
+        });
+
+        it('passes accommodationName from accommodation.name', () => {
+            expect(src).toMatch(
+                /<DetailCompareButton[\s\S]*?accommodationName=\{accommodation\.name\}/
+            );
+        });
+
+        it('passes accommodationThumbnailUrl from accommodation.featuredImage', () => {
+            expect(src).toMatch(
+                /<DetailCompareButton[\s\S]*?accommodationThumbnailUrl=\{accommodation\.featuredImage\}/
+            );
+        });
+
+        it('is placed inside the shared right-aligned detail-header__favorite container, before FavoriteButton', () => {
+            expect(src).toMatch(
+                /detail-header__favorite[\s\S]*?<DetailCompareButton[\s\S]*?<FavoriteButton/
+            );
+        });
+    });
+});

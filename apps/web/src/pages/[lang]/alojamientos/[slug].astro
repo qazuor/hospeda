@@ -9,6 +9,7 @@
 
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { CompareBar } from '@/components/shared/compare/CompareBar.client';
 import LodgingBusinessJsonLd from '@/components/seo/LodgingBusinessJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
@@ -627,6 +628,16 @@ const faqSections = accommodation.faqs.map((faq) => ({
             apiUrl={getApiUrl()}
         />
     )}
+
+    <!-- Floating accommodation comparison bar (HOS-85 post-review fix). Mounted
+         directly here — NOT in DetailLayout, which is shared by destination,
+         event, post, and attraction detail pages that have nothing to do with
+         accommodation comparison. Safe to mount unconditionally: it renders
+         nothing until the user has an in-progress selection (built on the
+         listing page, or a prior visit to this section — the selection
+         persists across /alojamientos/* per clearCompareModeIfOutsideSection),
+         and is fixed-position so its place in the DOM tree doesn't matter. -->
+    <CompareBar locale={locale} client:idle />
 
     <!-- Sidebar -->
     <Fragment slot="sidebar">
