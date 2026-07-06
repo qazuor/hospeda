@@ -23,6 +23,7 @@
             "!**/*.astro",
             "!**/docs/examples",
             "!**/mappings/id-mappings.json",
+            "!**/config/generated",
             "!**/.remember",
             "!**/test/**/fixtures",
             "!**/*.svg"

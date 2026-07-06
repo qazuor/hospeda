@@ -8,7 +8,7 @@
             "id": "T-001",
             "title": "Spike: confirm env-registry-types.ts needs no new fields",
             "description": "Review packages/config/src/env-registry-types.ts against the wizard's needs (US-5). Confirm howToObtain/helpUrl already cover the secret-hint requirement (verified in spec) and that no other field is missing before Phase 2 work depends on the shape. If a gap IS found, add the field here first. Test: none required if no change is made; if a field is added, extend the existing packages/config type tests to cover it.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-002"],
@@ -24,25 +24,38 @@
             ],
             "tags": ["config", "registry"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T22:37:41Z",
+                "completed": "2026-07-04T22:38:53Z"
             }
         },
         {
             "id": "T-002",
             "title": "Register the 3 known-missing env vars in the registry",
             "description": "Add HOSPEDA_TAG_USER_QUOTA_PER_USER (packages/service-core/src/services/tag/tag.service.ts:241), HOSPEDA_DEPLOY_ENV (packages/media/src/server/environment.ts:43), HOSPEDA_QZPAY_TEST_CONTROL_ENABLED (packages/billing/src/adapters/qzpay-test-control.ts:77) to packages/config/src/env-registry.hospeda.ts with full metadata (description, type, apps, category, secret if applicable). Test: pnpm env:check:registry still passes (no schema drift introduced); regenerate .env.example via pnpm gen:env-examples and confirm the 3 vars appear.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "Add HOSPEDA_TAG_USER_QUOTA_PER_USER entry", "completed": false },
-                { "title": "Add HOSPEDA_DEPLOY_ENV entry", "completed": false },
-                { "title": "Add HOSPEDA_QZPAY_TEST_CONTROL_ENABLED entry", "completed": false },
+                {
+                    "title": "Add HOSPEDA_TAG_USER_QUOTA_PER_USER entry",
+                    "completed": false
+                },
+                {
+                    "title": "Add HOSPEDA_DEPLOY_ENV entry",
+                    "completed": false
+                },
+                {
+                    "title": "Add HOSPEDA_QZPAY_TEST_CONTROL_ENABLED entry",
+                    "completed": false
+                },
                 {
                     "title": "Run pnpm gen:env-examples and commit regenerated .env.example files",
                     "completed": false
@@ -50,40 +63,57 @@
             ],
             "tags": ["config", "registry"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T22:39:45Z",
+                "completed": "2026-07-04T22:48:36Z"
             }
         },
         {
             "id": "T-003",
             "title": "Extract apps/api/src/utils/env-schema.ts (pure base schema)",
             "description": "Move ApiEnvBaseSchema (plain z.object, currently inline in apps/api/src/utils/env.ts) into a new file apps/api/src/utils/env-schema.ts with ZERO non-zod imports (no dotenv, no logger). Update env.ts to re-export it and keep the dotenv/validator wiring. Test: apps/api typecheck passes; apps/api/test/utils/env-registry-cross-validation.test.ts still passes unchanged (imports ApiEnvBaseSchema from the new location).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-011", "T-023"],
             "subtasks": [
-                { "title": "Create env-schema.ts with the extracted z.object", "completed": false },
-                { "title": "Update env.ts to re-export from env-schema.ts", "completed": false },
-                { "title": "Update the cross-validation test's import path", "completed": false }
+                {
+                    "title": "Create env-schema.ts with the extracted z.object",
+                    "completed": false
+                },
+                {
+                    "title": "Update env.ts to re-export from env-schema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Update the cross-validation test's import path",
+                    "completed": false
+                }
             ],
             "tags": ["api", "env"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T22:53:27Z",
+                "completed": "2026-07-04T23:17:49Z"
             }
         },
         {
             "id": "T-004",
             "title": "Extract apps/admin/src/env-schema.ts (pure base schema)",
             "description": "Extract the z.object({...}) currently in apps/admin/src/env.ts into a new apps/admin/src/env-schema.ts, WITHOUT the adminLogger import from '@/utils/logger' (confirmed this session: that Vite-only path alias does not resolve outside admin's own Vite/tsconfig context). Update env.ts to re-export it, moving any logger-dependent logic to stay in env.ts. Test: apps/admin typecheck passes; apps/admin/test/env-registry-cross-validation.test.ts still passes unchanged.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-011", "T-023"],
@@ -96,22 +126,29 @@
                     "title": "Update env.ts to re-export and keep logger-dependent code local",
                     "completed": false
                 },
-                { "title": "Update the cross-validation test's import path", "completed": false }
+                {
+                    "title": "Update the cross-validation test's import path",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "env"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T22:53:27Z",
+                "completed": "2026-07-04T23:17:49Z"
             }
         },
         {
             "id": "T-005",
             "title": "Extract apps/mobile/src/lib/env-schema.ts (pure base schema)",
             "description": "Extract EnvSchema currently in apps/mobile/src/lib/env.ts into apps/mobile/src/lib/env-schema.ts, WITHOUT the 'expo-constants' import (confirmed this session: unsafe to import under plain Node/tsx). Update env.ts to re-export it, keeping Constants-dependent logic local. Test: apps/mobile typecheck passes; existing mobile env tests still pass unchanged.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-011", "T-023"],
@@ -127,18 +164,22 @@
             ],
             "tags": ["mobile", "env"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T22:53:27Z",
+                "completed": "2026-07-04T23:17:49Z"
             }
         },
         {
             "id": "T-006",
             "title": "Add apps/web/src/env-schema.ts re-export for naming consistency",
             "description": "apps/web/src/env.ts's serverEnvBaseSchema is already import-clean (zero non-zod imports, confirmed this session). Add apps/web/src/env-schema.ts that re-exports it, purely for naming consistency with the other 3 apps so the JSON generator (T-011) can import a uniformly-named file per app. Test: apps/web typecheck passes; apps/web/test/lib/env-registry-cross-validation.test.ts still passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-011", "T-023"],
@@ -150,18 +191,22 @@
             ],
             "tags": ["web", "env"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T22:53:27Z",
+                "completed": "2026-07-04T23:17:49Z"
             }
         },
         {
             "id": "T-007",
             "title": "Build pnpm env:check:usage (source-usage-vs-registry scanner)",
             "description": "Write scripts/check-env-usage.ts: regex-scan process.env.X across apps/**/src + packages/**/src (excluding test/dist/docs/scripts subpaths), build the used-keys set, diff against ENV_REGISTRY both directions (used-not-registered = fail with file:line; registered-not-used = informational phantom warning). Wire pnpm env:check:usage in package.json. Test: unit test with a fixture directory containing both a registered and an unregistered process.env.X usage, assert correct classification of each.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-013", "T-020", "T-024"],
@@ -170,68 +215,107 @@
                     "title": "Implement the source scanner (regex over apps/+packages/, exclusions)",
                     "completed": false
                 },
-                { "title": "Implement the two-way diff against ENV_REGISTRY", "completed": false },
-                { "title": "Wire the pnpm env:check:usage script", "completed": false },
-                { "title": "Write fixture-based unit test", "completed": false }
+                {
+                    "title": "Implement the two-way diff against ENV_REGISTRY",
+                    "completed": false
+                },
+                {
+                    "title": "Wire the pnpm env:check:usage script",
+                    "completed": false
+                },
+                {
+                    "title": "Write fixture-based unit test",
+                    "completed": false
+                }
             ],
             "tags": ["config", "ci", "check"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T23:20:31Z",
+                "completed": "2026-07-04T23:54:51Z"
             }
         },
         {
             "id": "T-008",
             "title": "Build pnpm env:check:local (.env.local vs registry diff)",
             "description": "Write scripts/check-env-local.ts: parse each app's .env.local (dotenv-style), diff against ENV_REGISTRY filtered by apps.includes(appId), honoring requiredScope ('always' must be present; 'production' NOT required locally; 'conditional' required only when requiredWhen's condition is met in that same .env.local). Wire pnpm env:check:local. Test: 5 fixture cases per US-2's acceptance criteria (present-and-required=pass, missing-and-always-required=fail, missing-and-production-scoped=pass, missing-and-conditional-met=fail, missing-and-conditional-unmet=pass).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-013", "T-018"],
             "subtasks": [
-                { "title": "Implement .env.local parsing per app", "completed": false },
-                { "title": "Implement requiredScope-aware diff logic", "completed": false },
-                { "title": "Wire the pnpm env:check:local script", "completed": false },
-                { "title": "Write the 5 fixture-based unit tests", "completed": false }
+                {
+                    "title": "Implement .env.local parsing per app",
+                    "completed": false
+                },
+                {
+                    "title": "Implement requiredScope-aware diff logic",
+                    "completed": false
+                },
+                {
+                    "title": "Wire the pnpm env:check:local script",
+                    "completed": false
+                },
+                {
+                    "title": "Write the 5 fixture-based unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["config", "check", "worktree"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T23:20:31Z",
+                "completed": "2026-07-04T23:54:51Z"
             }
         },
         {
             "id": "T-009",
             "title": "Author packages/config/src/env-cross-checks.ts with the seeded REVALIDATION_SECRET rule",
             "description": "Create the CrossCheckRule type + array: { id, description, appliesTo: ('local'|'coolify')[], comparator: 'equals', compare: {app,key}[] }. Seed the first rule: HOSPEDA_REVALIDATION_SECRET must match between api and web, appliesTo: ['local','coolify']. Test: type-level test/compile check that the shape matches; no runtime test needed here (evaluation logic is T-010).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-010", "T-011", "T-016", "T-021"],
             "subtasks": [
-                { "title": "Define CrossCheckRule type", "completed": false },
-                { "title": "Seed the REVALIDATION_SECRET rule", "completed": false }
+                {
+                    "title": "Define CrossCheckRule type",
+                    "completed": false
+                },
+                {
+                    "title": "Seed the REVALIDATION_SECRET rule",
+                    "completed": false
+                }
             ],
             "tags": ["config", "rules"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-05T00:09:31Z",
+                "completed": "2026-07-05T00:35:59Z"
             }
         },
         {
             "id": "T-010",
             "title": "Build pnpm env:check:rules (three-state rule evaluator, local values)",
             "description": "Write scripts/check-env-rules.ts: for each rule in env-cross-checks.ts with appliesTo including 'local', read the named .env.local values, evaluate to 'pass' (equal)/'fail' (both set, different)/'partial' (one side unset — non-failing everywhere). Wire pnpm env:check:rules. Test: 3 fixture cases (both-set-equal→pass, both-set-different→fail, one-unset→partial with exit 0).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009"],
             "blocks": ["T-013", "T-021"],
@@ -244,23 +328,33 @@
                     "title": "Implement local .env.local value resolution per rule's compare[]",
                     "completed": false
                 },
-                { "title": "Wire the pnpm env:check:rules script", "completed": false },
-                { "title": "Write the 3 fixture-based unit tests", "completed": false }
+                {
+                    "title": "Wire the pnpm env:check:rules script",
+                    "completed": false
+                },
+                {
+                    "title": "Write the 3 fixture-based unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["config", "rules", "check"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-05T00:09:31Z",
+                "completed": "2026-07-05T00:35:59Z"
             }
         },
         {
             "id": "T-011",
             "title": "Build scripts/generate-env-registry-json.ts + committed JSON artifact",
             "description": "New sibling script (NOT folded into generate-env-examples.ts's main()) that imports ENV_REGISTRY, the 4 *-env-schema.ts files (T-003..T-006), and env-cross-checks.ts (T-009), introspects simple Zod shapes (ZodEnum.options, ZodBoolean, ZodNumber min/max via _def.checks) into a constraints map keyed 'app:KEY', and writes packages/config/generated/env-registry.json ({registry, crossChecks, constraints}). Skip docker/seed pseudo-AppIds explicitly (mirror EXAMPLE_PATHS' null mapping). Wire pnpm gen:env-registry-json. Test: run twice in a row, assert byte-identical output (determinism).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004", "T-005", "T-006", "T-009"],
             "blocks": ["T-012", "T-015", "T-016", "T-018", "T-021"],
@@ -269,25 +363,41 @@
                     "title": "Implement Zod-shape introspection (enum/boolean/numeric)",
                     "completed": false
                 },
-                { "title": "Assemble and write the JSON artifact", "completed": false },
-                { "title": "Skip docker/seed AppIds explicitly", "completed": false },
-                { "title": "Wire pnpm gen:env-registry-json", "completed": false },
-                { "title": "Write the determinism test (run twice, diff)", "completed": false }
+                {
+                    "title": "Assemble and write the JSON artifact",
+                    "completed": false
+                },
+                {
+                    "title": "Skip docker/seed AppIds explicitly",
+                    "completed": false
+                },
+                {
+                    "title": "Wire pnpm gen:env-registry-json",
+                    "completed": false
+                },
+                {
+                    "title": "Write the determinism test (run twice, diff)",
+                    "completed": false
+                }
             ],
             "tags": ["config", "generator", "json-bridge"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-05T00:09:31Z",
+                "completed": "2026-07-05T00:35:59Z"
             }
         },
         {
             "id": "T-012",
             "title": "Write the env-registry-json guard test",
             "description": "Create packages/config/src/__tests__/env-registry-json.guard.test.ts, re-implementing the JSON-building logic inline (mirroring env-examples.guard.test.ts's exact convention — do NOT import the generator script). Assert committed packages/config/generated/env-registry.json has zero drift vs freshly generated. Also assert the 4 *-env-schema.ts files have zero non-zod imports (simple source-text check) so a future accidental re-import fails loudly. Test: this task IS the test — verify it fails on intentional drift and on an intentionally-reintroduced non-zod import in a throwaway local check before finalizing.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-011"],
             "blocks": ["T-021"],
@@ -296,7 +406,10 @@
                     "title": "Re-implement JSON-building logic inline in the test",
                     "completed": false
                 },
-                { "title": "Add the drift=0 assertion", "completed": false },
+                {
+                    "title": "Add the drift=0 assertion",
+                    "completed": false
+                },
                 {
                     "title": "Add the zero-non-zod-import assertion for the 4 schema files",
                     "completed": false
@@ -304,39 +417,53 @@
             ],
             "tags": ["config", "test", "guard"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-05T00:09:31Z",
+                "completed": "2026-07-05T00:35:59Z"
             }
         },
         {
             "id": "T-013",
             "title": "Wire pnpm env:doctor umbrella script",
             "description": "Add the env:doctor script to package.json running env:check:usage + env:check:local + env:check:rules in sequence, aggregating exit codes (non-zero if any sub-check fails). Test: integration-style test (or a small script test) confirming aggregate exit code reflects the worst sub-check result.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-007", "T-008", "T-010"],
             "blocks": ["T-025"],
             "subtasks": [
-                { "title": "Wire the umbrella script", "completed": false },
-                { "title": "Verify aggregate exit-code behavior", "completed": false }
+                {
+                    "title": "Wire the umbrella script",
+                    "completed": false
+                },
+                {
+                    "title": "Verify aggregate exit-code behavior",
+                    "completed": false
+                }
             ],
             "tags": ["config", "ci"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-05T00:44:07Z",
+                "completed": "2026-07-05T00:47:36Z"
             }
         },
         {
             "id": "T-014",
             "title": "Extract scripts/server-tools/src/lib/repo-root.ts",
             "description": "Extract the --repo / HOPS_REPO_ROOT / ~/hospeda resolution logic currently inlined in scripts/server-tools/src/commands/update.ts into a shared lib/repo-root.ts, and update update.ts to use it. Test: bun test covering the resolution precedence (--repo flag wins, then HOPS_REPO_ROOT env var, then ~/hospeda default).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-015", "T-016"],
@@ -345,12 +472,22 @@
                     "title": "Create lib/repo-root.ts with the extracted resolution logic",
                     "completed": false
                 },
-                { "title": "Update update.ts to use the shared helper", "completed": false },
-                { "title": "Write the precedence unit test", "completed": false }
+                {
+                    "title": "Update update.ts to use the shared helper",
+                    "completed": false
+                },
+                {
+                    "title": "Write the precedence unit test",
+                    "completed": false
+                }
             ],
             "tags": ["hops", "vps", "refactor"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -361,22 +498,35 @@
             "id": "T-015",
             "title": "Add hops env-reconcile command",
             "description": "New scripts/server-tools/src/commands/env-reconcile.ts: <api|web|admin> positional + --target=<prod|staging> (explicit-required policy). Reads packages/config/generated/env-registry.json via repo-root.ts (T-014), fetches live Coolify env vars via existing coolify.ts client + container-lookup.ts (findContainer/getApplicationUuid), diffs registry (filtered by apps + requiredScope for that target) vs actual, reports missing-required and orphan-in-coolify. Register in scripts/server-tools/src/index.ts's COMMANDS array. Test: unit test with a mocked coolify.ts client covering missing-required and orphan cases.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011", "T-014"],
             "blocks": ["T-017", "T-019", "T-022"],
             "subtasks": [
-                { "title": "Implement JSON-registry reading via repo-root.ts", "completed": false },
+                {
+                    "title": "Implement JSON-registry reading via repo-root.ts",
+                    "completed": false
+                },
                 {
                     "title": "Implement the Coolify-diff logic (missing/orphan)",
                     "completed": false
                 },
-                { "title": "Register the command in index.ts", "completed": false },
-                { "title": "Write mocked-client unit tests", "completed": false }
+                {
+                    "title": "Register the command in index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Write mocked-client unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["hops", "vps", "coolify"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -387,7 +537,7 @@
             "id": "T-016",
             "title": "Add hops env-check-rules command",
             "description": "New scripts/server-tools/src/commands/env-check-rules.ts: --target=<prod|staging> [--app=<api|web|admin>] — NO mandatory app positional (a rule can span 2 apps). --app only filters which rules run, a selected rule still fetches every app its compare[] names. Evaluate rules with appliesTo including 'coolify' via the same three-state logic as T-010 (reused via the JSON bridge). MUST catch per-rule container-resolution failures (findContainer throws synchronously) and report 'skipped: container unreachable' for that rule only, without aborting the run. Memoize (app,target)→applicationUuid within one run. Register in index.ts. Test: unit tests covering skip-on-unreachable-container and memoization (assert findContainer called once per unique app+target across multiple rules).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-011", "T-014"],
             "blocks": ["T-017", "T-022"],
@@ -404,8 +554,14 @@
                     "title": "Add per-rule try/catch + skipped-status reporting",
                     "completed": false
                 },
-                { "title": "Add (app,target)→uuid memoization within a run", "completed": false },
-                { "title": "Register the command in index.ts", "completed": false },
+                {
+                    "title": "Add (app,target)→uuid memoization within a run",
+                    "completed": false
+                },
+                {
+                    "title": "Register the command in index.ts",
+                    "completed": false
+                },
                 {
                     "title": "Write unit tests (skip-on-unreachable, memoization)",
                     "completed": false
@@ -413,7 +569,11 @@
             ],
             "tags": ["hops", "vps", "coolify", "rules"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -424,18 +584,31 @@
             "id": "T-017",
             "title": "Add hops env-doctor command (VPS umbrella)",
             "description": "New scripts/server-tools/src/commands/env-doctor.ts: <api|web|admin> --target=<prod|staging>, runs env-reconcile + env-check-rules (filtered to the given app) and aggregates results. Register in index.ts. Test: integration-style test confirming aggregate result reflects both sub-commands.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-015", "T-016"],
             "blocks": ["T-025"],
             "subtasks": [
-                { "title": "Implement the umbrella command", "completed": false },
-                { "title": "Register in index.ts", "completed": false },
-                { "title": "Write the aggregate-result test", "completed": false }
+                {
+                    "title": "Implement the umbrella command",
+                    "completed": false
+                },
+                {
+                    "title": "Register in index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Write the aggregate-result test",
+                    "completed": false
+                }
             ],
             "tags": ["hops", "vps"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -446,7 +619,7 @@
             "id": "T-018",
             "title": "Build the local interactive wizard (pnpm env:set)",
             "description": "Write scripts/env-set-wizard.ts using @clack/prompts. Default mode: only prompt for gaps flagged by env:check:local (T-008) (missing-and-required, missing-and-optional) — never all ~224 entries. --review-all: walk every registry entry for the target app(s), keep/change, redacting secret current values. For type:'enum' entries use the introspected enumValues (from T-011's constraints map) as a select; for boolean/numeric-with-bounds entries, constrain the prompt accordingly. Show howToObtain/helpUrl before prompting for secret entries. Wire pnpm env:set. Test: unit test the gap-detection-to-prompt-list logic and constraint-based prompt selection (enum→select, boolean→y/n, numeric→validated range) without driving the actual interactive prompt (inject a fake prompt adapter).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008", "T-011"],
             "blocks": ["T-019", "T-022"],
@@ -463,8 +636,14 @@
                     "title": "Implement constraint-based prompt selection (enum/boolean/numeric)",
                     "completed": false
                 },
-                { "title": "Show howToObtain/helpUrl for secret entries", "completed": false },
-                { "title": "Wire the pnpm env:set script", "completed": false },
+                {
+                    "title": "Show howToObtain/helpUrl for secret entries",
+                    "completed": false
+                },
+                {
+                    "title": "Wire the pnpm env:set script",
+                    "completed": false
+                },
                 {
                     "title": "Write unit tests with an injectable fake prompt adapter",
                     "completed": false
@@ -472,7 +651,11 @@
             ],
             "tags": ["config", "wizard", "dx"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -483,7 +666,7 @@
             "id": "T-019",
             "title": "Extend hops env-set with --wizard/--review-all (VPS variant)",
             "description": "Extend the existing scripts/server-tools/src/commands/env-set.ts with --wizard and --review-all flags, reusing the same gaps-only-by-default UX as T-018 but sourced from env-reconcile's (T-015) output and writing via the existing client.updateEnvVar/createEnvVar. Test: unit tests mirroring T-018's (gap detection, constraint-based prompts) adapted for the Coolify-backed data source.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-018", "T-015"],
             "blocks": ["T-022"],
@@ -492,16 +675,26 @@
                     "title": "Add --wizard/--review-all flag parsing to env-set.ts",
                     "completed": false
                 },
-                { "title": "Source gaps from env-reconcile's diff logic", "completed": false },
+                {
+                    "title": "Source gaps from env-reconcile's diff logic",
+                    "completed": false
+                },
                 {
                     "title": "Reuse constraint-based prompt selection from T-018",
                     "completed": false
                 },
-                { "title": "Write unit tests for the VPS wizard variant", "completed": false }
+                {
+                    "title": "Write unit tests for the VPS wizard variant",
+                    "completed": false
+                }
             ],
             "tags": ["hops", "vps", "wizard"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -512,7 +705,7 @@
             "id": "T-020",
             "title": "Regression test: env:check:usage red-then-green on the 3 known-missing vars",
             "description": "Before T-002's registration lands (or via a git-stash/checkout trick in the test), confirm pnpm env:check:usage flags HOSPEDA_TAG_USER_QUOTA_PER_USER, HOSPEDA_DEPLOY_ENV, HOSPEDA_QZPAY_TEST_CONTROL_ENABLED as used-but-unregistered; after T-002, confirm it's clean. This is the concrete regression test for the bug that motivated this spec — document the before/after explicitly in the test or its description.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007", "T-002"],
             "blocks": [],
@@ -528,7 +721,11 @@
             ],
             "tags": ["test", "regression"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -539,17 +736,27 @@
             "id": "T-021",
             "title": "Full test/typecheck pass — packages/config",
             "description": "Run pnpm --filter @repo/config test and pnpm --filter @repo/config typecheck after T-009/T-010/T-011/T-012 land. Fix any fallout. Confirms env-cross-checks.ts, the generator, and the guard test are all green together, not just individually.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009", "T-010", "T-011", "T-012"],
             "blocks": [],
             "subtasks": [
-                { "title": "Run and fix packages/config test suite", "completed": false },
-                { "title": "Run and fix packages/config typecheck", "completed": false }
+                {
+                    "title": "Run and fix packages/config test suite",
+                    "completed": false
+                },
+                {
+                    "title": "Run and fix packages/config typecheck",
+                    "completed": false
+                }
             ],
             "tags": ["test", "config"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -560,17 +767,27 @@
             "id": "T-022",
             "title": "Full test/typecheck pass — scripts/server-tools",
             "description": "Run the server-tools test suite (bun test, if present) and typecheck after T-015/T-016/T-017/T-018/T-019 land. Fix any fallout. Confirms all new hops commands work together (shared repo-root.ts, shared coolify client mocks).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-015", "T-016", "T-017", "T-018", "T-019"],
             "blocks": [],
             "subtasks": [
-                { "title": "Run and fix scripts/server-tools test suite", "completed": false },
-                { "title": "Run and fix scripts/server-tools typecheck", "completed": false }
+                {
+                    "title": "Run and fix scripts/server-tools test suite",
+                    "completed": false
+                },
+                {
+                    "title": "Run and fix scripts/server-tools typecheck",
+                    "completed": false
+                }
             ],
             "tags": ["test", "hops"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -581,7 +798,7 @@
             "id": "T-023",
             "title": "Full test/typecheck pass — 4 apps post schema-extraction",
             "description": "Run typecheck + the env-registry-cross-validation test for apps/api, apps/web, apps/admin, apps/mobile after T-003/T-004/T-005/T-006 land, confirming the *-env-schema.ts extraction didn't break anything (imports still resolve, .shape still enumerable, existing cross-validation tests still pass).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003", "T-004", "T-005", "T-006"],
             "blocks": [],
@@ -605,7 +822,11 @@
             ],
             "tags": ["test", "apps"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -616,17 +837,27 @@
             "id": "T-024",
             "title": "Wire env:check:usage into CI guards job",
             "description": "Add a new step to .github/workflows/ci.yml's guards job, right after the existing env-check steps (~line 227-230), following the identical '- name: ... (HOS-79)\\n  run: pnpm <script>' convention: '- name: Env usage vs registry (HOS-79)\\n  run: pnpm env:check:usage'. Do NOT wire env:check:local/env:check:rules into CI (no real .env.local there). Test: push and confirm the new CI step runs and passes on a clean branch.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-007"],
             "blocks": ["T-025"],
             "subtasks": [
-                { "title": "Add the CI step to the guards job", "completed": false },
-                { "title": "Verify the step runs green in a CI run", "completed": false }
+                {
+                    "title": "Add the CI step to the guards job",
+                    "completed": false
+                },
+                {
+                    "title": "Verify the step runs green in a CI run",
+                    "completed": false
+                }
             ],
             "tags": ["ci", "devops"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -637,12 +868,15 @@
             "id": "T-025",
             "title": "Update docs/guides/env-management.md",
             "description": "Replace the manual 'Audit checklist' section with references to the new automated commands (env:doctor locally, hops env-doctor on the VPS). Note that the Sentry-environment-tagging manual check (currently a documented manual recipe) is now covered by a hops env-check-rules rule IF that rule was added to env-cross-checks.ts within this spec's scope — otherwise flag it explicitly as an immediate follow-up item in the doc.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013", "T-017", "T-024"],
             "blocks": [],
             "subtasks": [
-                { "title": "Replace the manual Audit checklist section", "completed": false },
+                {
+                    "title": "Replace the manual Audit checklist section",
+                    "completed": false
+                },
                 {
                     "title": "Update the Sentry-tagging section (covered-by-rule note or follow-up flag)",
                     "completed": false
@@ -650,7 +884,11 @@
             ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -660,9 +898,9 @@
     ],
     "summary": {
         "total": 25,
-        "pending": 25,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.1
     }

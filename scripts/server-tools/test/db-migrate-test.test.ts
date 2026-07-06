@@ -1,19 +1,19 @@
 /**
  * Unit tests for `src/commands/db-migrate-test.ts`.
  *
- * Covers pure helper functions: arg parsing, scratch DB name generation,
- * and repo root resolution. Docker, pg_dump, pg_restore, and the migrate
- * sequence involve live containers and are not unit-tested here.
+ * Covers pure helper functions: arg parsing and scratch DB name generation.
+ * Docker, pg_dump, pg_restore, and the migrate sequence involve live
+ * containers and are not unit-tested here.
+ *
+ * Repo-root resolution moved to `src/lib/repo-root.ts` (HOS-79 T-014) —
+ * see `test/repo-root.test.ts` for its tests.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 import {
     buildScratchDbName,
     type ParsedMigrateTestArgs,
-    parseMigrateTestArgs,
-    resolveRepoRoot
+    parseMigrateTestArgs
 } from '../src/commands/db-migrate-test.ts';
 
 const ENV_KEYS_TOUCHED = ['HOPS_REPO_ROOT'] as const;
@@ -155,21 +155,5 @@ describe('buildScratchDbName(now)', () => {
     it('defaults to current time when no argument is supplied (just verifies format)', () => {
         const name = buildScratchDbName();
         expect(/^hospeda_migrate_test_\d{8}_\d{6}$/.test(name)).toBe(true);
-    });
-});
-
-describe('resolveRepoRoot()', () => {
-    it('defaults to ~/hospeda when HOPS_REPO_ROOT is unset', () => {
-        expect(resolveRepoRoot()).toBe(join(homedir(), 'hospeda'));
-    });
-
-    it('honours HOPS_REPO_ROOT when set', () => {
-        process.env.HOPS_REPO_ROOT = '/opt/hospeda-staging';
-        expect(resolveRepoRoot()).toBe('/opt/hospeda-staging');
-    });
-
-    it('treats empty HOPS_REPO_ROOT as unset', () => {
-        process.env.HOPS_REPO_ROOT = '';
-        expect(resolveRepoRoot()).toBe(join(homedir(), 'hospeda'));
     });
 });

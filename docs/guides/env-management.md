@@ -32,6 +32,13 @@ runs three per-app cross-validation tests that fail CI if they drift.
 The schema and the values store are NOT auto-synced — that is the
 operator's responsibility.
 
+The registry (plus its cross-check rules and Zod-introspected constraint
+shapes) is also published as a committed JSON artifact,
+`packages/config/generated/env-registry.json`, regenerated via `pnpm
+gen:env-registry-json`. The `hops env-*` commands on the VPS read this
+file as plain data — no pnpm/node deps needed there. A guard test fails
+CI if the JSON drifts from its source.
+
 ## Local development
 
 Each app keeps its own `.env.local` in its directory:
@@ -56,6 +63,49 @@ hops env-pull api --reveal --output ~/api-prod.env
 ```
 
 Or just paste from Coolify UI for one-off values.
+
+### Checking & fixing local env
+
+Three checks validate your local setup, plus an umbrella that runs all
+three:
+
+```bash
+pnpm env:check:usage   # process.env.X reads vs registry (both directions)
+pnpm env:check:local   # local .env values vs registry (scope-aware)
+pnpm env:check:rules   # cross-check rules vs local .env values
+pnpm env:doctor        # runs all three in sequence
+```
+
+- `env:check:usage` scans `apps/**/src` + `packages/**/src` for
+  `process.env.X` reads and diffs against the registry both ways: a
+  read with no registry entry fails the check (naming the file:line);
+  a registry entry that's never read is reported as a non-failing
+  phantom. This is the only one of the three wired into CI (the Guards
+  job) — it needs no per-app dotenv to run.
+- `env:check:local` reads each app's local dotenv and diffs it against
+  the registry, filtered by which apps use each var and by
+  `requiredScope` — a var scoped to production only is not required
+  locally.
+- `env:check:rules` evaluates the cross-check rules
+  (`packages/config/src/env-cross-checks.ts`) against your local
+  dotenv values. Each rule resolves to `pass` (all referenced sides
+  present and equal), `fail` (all present, not equal — non-zero exit),
+  or `partial` (a side unset — non-failing, expected on a fresh
+  checkout). The first seeded rule checks that
+  `HOSPEDA_REVALIDATION_SECRET` matches between `api` and `web`.
+
+When a check reports gaps, fix them interactively instead of editing
+`.env.local` by hand:
+
+```bash
+pnpm env:set                # prompts only for the gaps env:check:local would flag
+pnpm env:set --review-all   # walks every applicable registry entry (keep/change)
+```
+
+Prompts are shaped from the registry: an enum field becomes a select,
+a bounded numeric field gets validated input, and a secret field gets
+a masked prompt shown after its how-to-obtain hint (`--review-all`
+shows current secret values redacted).
 
 ## Production (Coolify on the VPS)
 
@@ -88,6 +138,18 @@ hops env-delete api FOO
 # Dump everything to a local file (mode 0600, gitignored)
 hops env-pull api --output ./api-prod.env
 
+# Reconcile registry vs live Coolify values, and evaluate cross-check
+# rules against those live values
+hops env-reconcile api --target=prod          # missing required vars vs Coolify
+hops env-check-rules --target=prod            # all rules that apply to Coolify
+hops env-check-rules --target=prod --app=api  # optional: scope to one app
+hops env-doctor api --target=prod             # runs reconcile + check-rules for api
+
+# Interactive wizard (writes to live Coolify, same gaps-only UX as
+# `pnpm env:set`, reusing env-reconcile's gap detection)
+hops env-set --wizard
+hops env-set --wizard --review-all
+
 # After ANY env change, the running container does NOT pick up the value
 # until restart:
 hops redeploy api          # full rebuild
@@ -96,6 +158,20 @@ hops app-restart api       # in-place restart (no image pull)
 
 Use this path when you are already SSH-ed in for ops, or in scripts
 that compose env changes with other operations.
+
+`env-reconcile` diffs the registry (`requiredScope`-aware for the given
+`--target`) against the live Coolify env vars for that app — it reports
+every required var missing from Coolify, and informationally lists vars
+present in Coolify but absent from the registry.
+
+`env-check-rules` runs the same rule engine as `pnpm env:check:rules`,
+but against live Coolify values, for rules whose scope includes
+Coolify. It adds a fourth state, `skipped`, for a rule whose referenced
+app container is unreachable — that one rule is skipped and the rest
+still evaluate, so one broken app never blanks the whole report.
+
+`env-doctor <kind> --target=<prod|staging>` is the umbrella: it runs
+`env-reconcile` then `env-check-rules` for that app.
 
 ### Via Coolify UI
 
@@ -165,6 +241,9 @@ hops exec admin --target=staging -- printenv | rg SENTRY
 # OR check the JS bundle directly:
 curl -s https://staging-admin.hospeda.com.ar/assets/index-*.js | rg -o 'environment["\']?:\s*["\'][a-z]+'
 ```
+
+Turning this manual check into a formal `env-check-rules` rule is a
+tracked follow-up (HOS-79 OQ-1), not yet implemented.
 
 ## Sentry release tagging — connect to the deploy SHA
 
@@ -239,10 +318,13 @@ the upload's release tag.
 
 1. From a laptop, run `pnpm env:check:registry` — confirms zero drift
    between registry and schemas.
-2. SSH to the VPS, run `hops env-list api` (and `web`, `admin`).
-   Spot-check that every required var in the registry has a value in
-   the relevant app(s).
-3. Confirm no preview-mirrored vars are leaking secrets that should
+2. From a laptop, run `pnpm env:doctor` — confirms zero drift between
+   `process.env` usage, local dotenv values, and cross-check rules.
+3. SSH to the VPS, run `hops env-doctor <api|web|admin>
+   --target=prod` (and `--target=staging`) for each app — confirms
+   zero drift between the registry and the live Coolify values, and
+   that all applicable cross-check rules pass.
+4. Confirm no preview-mirrored vars are leaking secrets that should
    only exist in production (`hops env-list api --reveal | grep
    '[preview]'`).
 

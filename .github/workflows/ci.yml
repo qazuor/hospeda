@@ -239,6 +239,11 @@ jobs:
         run: pnpm env:check:registry
       - name: Env examples drift guard (SPEC-235)
         run: pnpm env:check:examples
+      # Scans source for process.env.X reads with no registry entry (both
+      # directions). Only the usage check runs in CI: env:check:local and
+      # env:check:rules need a real .env.local, which CI does not have (HOS-79 OQ-2).
+      - name: Env usage-vs-registry parity (HOS-79)
+        run: pnpm env:check:usage
 
   # ------------------------------------------------------------------
   # Build all packages and apps. Required by typecheck and tests.
