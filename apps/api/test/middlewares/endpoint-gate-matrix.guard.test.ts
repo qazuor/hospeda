@@ -232,7 +232,8 @@ const MULTI_ROUTE_INDEX_FILES: ReadonlySet<string> = new Set([
     'revalidation/index.ts', // Revalidation admin routes
     'exchange-rates/admin/index.ts', // Exchange-rate admin routes
     'metrics/index.ts', // Ops metrics admin
-    'auth/index.ts' // Admin auth monitoring (Better Auth passthrough)
+    'auth/index.ts', // Admin auth monitoring (Better Auth passthrough)
+    'ai/credentials/index.ts' // Admin AI-credential CRUD + rotate + sync-models (HOS-94)
 ]);
 
 /**
