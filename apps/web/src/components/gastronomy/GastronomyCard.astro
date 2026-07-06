@@ -319,14 +319,17 @@ const closedNowLabel = t('gastronomy.card.closedNow', 'Cerrado ahora');
         line-height: 1.4;
     }
 
+    /* BETA-117: solid, opaque fills (not low-alpha tints) so the badge reads
+     * over any photo, in both light and dark themes. Mirrors the "Nuevo"
+     * corner badge / .featured-badge precedent in this same file/stylesheet. */
     .gastro-card__open-badge--open {
-        background-color: var(--brand-accent-a15);
-        color: var(--brand-accent);
+        background-color: var(--hospeda-forest);
+        color: var(--primary-foreground);
     }
 
     .gastro-card__open-badge--closed {
-        background-color: var(--brand-accent-a05);
-        color: var(--core-muted-foreground);
+        background-color: var(--destructive);
+        color: var(--destructive-foreground);
     }
 
     /* Top-right actions overlay (FavoriteButton) */

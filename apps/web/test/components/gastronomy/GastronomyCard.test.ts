@@ -97,6 +97,29 @@ describe('GastronomyCard.astro', () => {
         it('uses gastronomy.card.closedNow i18n key', () => {
             expect(src).toContain('gastronomy.card.closedNow');
         });
+
+        // BETA-117: the badge was illegible over photos because it used
+        // near-transparent alpha tints. It must use solid/opaque tokens.
+        it('uses a solid fill + high-contrast foreground for the open state', () => {
+            expect(src).toContain(
+                '.gastro-card__open-badge--open {\n' +
+                    '        background-color: var(--hospeda-forest);\n' +
+                    '        color: var(--primary-foreground);'
+            );
+        });
+
+        it('uses a solid fill + high-contrast foreground for the closed state', () => {
+            expect(src).toContain(
+                '.gastro-card__open-badge--closed {\n' +
+                    '        background-color: var(--destructive);\n' +
+                    '        color: var(--destructive-foreground);'
+            );
+        });
+
+        it('does not use low-alpha accent tints for the badge (regression guard)', () => {
+            expect(src).not.toContain('--brand-accent-a15');
+            expect(src).not.toContain('--brand-accent-a05');
+        });
     });
 
     describe('eager image loading', () => {
@@ -143,8 +166,8 @@ describe('GastronomyCard.astro', () => {
             expect(src).toContain('var(--radius-md');
         });
 
-        it('uses --brand-accent for the CTA / price range color', () => {
-            expect(src).toContain('var(--brand-accent)');
+        it('uses --brand-accent-text for the price range color', () => {
+            expect(src).toContain('var(--brand-accent-text)');
         });
 
         it('does not contain Tailwind utility class patterns', () => {
