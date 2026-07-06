@@ -17,8 +17,8 @@
  *   GET /api/v1/public/owner-promotions
  */
 
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Mutable reference for the captured `search` mock. The `vi.mock()` factory is

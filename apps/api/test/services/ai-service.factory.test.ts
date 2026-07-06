@@ -230,7 +230,9 @@ beforeEach(() => {
     // Default: openai has a key, anthropic has a key.
     mockGetDecryptedAiProviderCredential.mockImplementation(async function ({
         providerId
-    }: { providerId: string }) {
+    }: {
+        providerId: string;
+    }) {
         if (providerId === 'openai') {
             return { data: { providerId: 'openai', plaintextKey: 'sk-test-openai-key' } };
         }
@@ -310,7 +312,9 @@ describe('createConfiguredAiService', () => {
         // Arrange — anthropic has no credential.
         mockGetDecryptedAiProviderCredential.mockImplementation(async function ({
             providerId
-        }: { providerId: string }) {
+        }: {
+            providerId: string;
+        }) {
             if (providerId === 'openai') {
                 return { data: { providerId: 'openai', plaintextKey: 'sk-test-openai-key' } };
             }

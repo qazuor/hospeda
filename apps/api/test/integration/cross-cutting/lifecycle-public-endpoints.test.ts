@@ -18,8 +18,8 @@
  * until then, per-handler strip is the standing decision.
  */
 
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const accommodationReviewMock: { listByAccommodation: Mock } = {
     listByAccommodation: vi.fn()

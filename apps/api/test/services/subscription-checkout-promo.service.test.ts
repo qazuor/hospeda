@@ -12,8 +12,8 @@
  * @module test/services/subscription-checkout-promo.service
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const validatePromoCodeMock = vi.fn();
 // Reassigned per-test before invoking the resolver; read lazily by the mocked

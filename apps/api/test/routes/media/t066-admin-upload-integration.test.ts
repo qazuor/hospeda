@@ -277,7 +277,10 @@ describe('POST /api/v1/admin/media/upload — integration (T-066)', () => {
             mockUpload.mockImplementationOnce(async function ({
                 folder,
                 publicId
-            }: { folder: string; publicId: string }) {
+            }: {
+                folder: string;
+                publicId: string;
+            }) {
                 return {
                     url: `https://res.cloudinary.com/hospeda/image/upload/v1/${folder}/${publicId}.png`,
                     publicId: `${folder}/${publicId}`,

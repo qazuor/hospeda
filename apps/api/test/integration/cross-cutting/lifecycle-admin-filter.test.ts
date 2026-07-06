@@ -15,8 +15,8 @@
  */
 
 import { LifecycleStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const accomMock: { adminList: Mock } = { adminList: vi.fn() };
 const destMock: { adminList: Mock } = { adminList: vi.fn() };

@@ -19,8 +19,8 @@
  */
 
 import { ModerationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Mutable reference holding the captured mock for listForModeration.

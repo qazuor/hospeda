@@ -8,8 +8,8 @@
 import { RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import type { Context } from 'hono';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { billingCustomerMiddleware } from '../../src/middlewares/billing-customer';
 import type { AppBindings } from '../../src/types';
 

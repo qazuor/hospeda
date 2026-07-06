@@ -18,8 +18,8 @@
  * @module test/routes/media/observability
  */
 import { PermissionEnum } from '@repo/schemas';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAuthenticatedRequest, createMockAdminActor } from '../../helpers/auth';
 
 const { mockUpload, mockDelete, mockCaptureException } = vi.hoisted(() => ({

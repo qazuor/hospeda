@@ -17,8 +17,8 @@
  */
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Mutable refs for mocks — same pattern as

@@ -18,8 +18,8 @@
  */
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const accomMockRef: { update: Mock } = {
     update: vi.fn()

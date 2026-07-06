@@ -19,8 +19,8 @@
  */
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Mutable ref for the mocked `UserService.update`. `vi.mock()` hoists its
