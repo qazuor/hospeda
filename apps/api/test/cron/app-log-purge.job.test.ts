@@ -4,7 +4,9 @@ import type { CronJobContext } from '../../src/cron/types';
 const { mockPurgeOld } = vi.hoisted(() => ({ mockPurgeOld: vi.fn() }));
 
 vi.mock('@repo/service-core', () => ({
-    AppLogEntryService: vi.fn(() => ({ purgeOld: mockPurgeOld }))
+    AppLogEntryService: vi.fn(function () {
+        return { purgeOld: mockPurgeOld };
+    })
 }));
 
 vi.mock('../../src/utils/logger.js', () => ({

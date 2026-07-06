@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { generateAttractionSlug } from '../../../src/services/attraction/attraction.helpers';
 
 describe('generateAttractionSlug', () => {
-    let findOneMock: ReturnType<typeof vi.fn>;
+    let findOneMock: Mock;
     let model: { findOne: typeof findOneMock };
     beforeEach(() => {
         findOneMock = vi.fn();

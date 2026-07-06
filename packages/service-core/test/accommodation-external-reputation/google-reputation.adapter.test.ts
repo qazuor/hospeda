@@ -94,6 +94,10 @@ function makePlacesResponse(overrides: Record<string, unknown> = {}): unknown {
 const mockFetch = vi.fn<typeof globalThis.fetch>();
 
 beforeEach(() => {
+    // Vitest 4 (HOS-28): restoreAllMocks (in afterEach) does not clear the call
+    // history of the module-level `mockFetch` vi.fn(), so it accumulated across
+    // tests. Clear it here so per-test call-count assertions are accurate.
+    vi.clearAllMocks();
     vi.stubGlobal('fetch', mockFetch);
 });
 

@@ -96,9 +96,9 @@ function useFakeGenericAdapter(extractImpl: (url: URL, ctx: ImportContext) => Pr
         supports: vi.fn(),
         extract: vi.fn<(url: URL, ctx: ImportContext) => Promise<unknown>>(extractImpl)
     };
-    mockGenericAdapter.mockImplementation(
-        () => fakeGeneric as unknown as InstanceType<typeof GenericAdapter>
-    );
+    mockGenericAdapter.mockImplementation(function () {
+        return fakeGeneric as unknown as InstanceType<typeof GenericAdapter>;
+    });
     return fakeGeneric;
 }
 

@@ -124,19 +124,20 @@ describe('sharedTestConfig', () => {
         expect(sharedTestConfig.test.pool).toBe('forks');
     });
 
-    it('should expose poolOptions.forks.maxForks with the value computed at import time', () => {
-        // The config object is evaluated at module load time, so the maxForks
+    it('should expose maxWorkers with the value computed at import time', () => {
+        // The config object is evaluated at module load time, so the maxWorkers
         // value reflects whatever VITEST_MAX_FORKS was set to when the module
         // was imported. This test verifies the structure is present and is a
-        // positive integer.
-        const maxForks = sharedTestConfig.test.poolOptions.forks.maxForks;
+        // positive integer. (Vitest 4 / HOS-28: this moved from the removed
+        // `poolOptions.forks.maxForks` to the top-level `maxWorkers` option.)
+        const maxForks = sharedTestConfig.test.maxWorkers;
 
         expect(typeof maxForks).toBe('number');
         expect(maxForks).toBeGreaterThan(0);
         expect(Number.isInteger(maxForks)).toBe(true);
     });
 
-    it('should have maxForks equal to resolveMaxForks() called with the same env as at import time', () => {
+    it('should have maxWorkers equal to resolveMaxForks() called with the same env as at import time', () => {
         // sharedTestConfig is frozen at module import time — its maxForks reflects
         // whatever VITEST_MAX_FORKS was when the module was first required. We
         // can't assert a specific value (3) here because the test runner may be
@@ -144,7 +145,7 @@ describe('sharedTestConfig', () => {
         // check). What we CAN assert is the structural guarantee: the frozen
         // config value must match what resolveMaxForks() returns when called with
         // the SAME env state that existed at import time (ORIGINAL_MAX_FORKS).
-        const fromConfig = sharedTestConfig.test.poolOptions.forks.maxForks;
+        const fromConfig = sharedTestConfig.test.maxWorkers;
 
         // Temporarily restore the original env so resolveMaxForks reflects the
         // import-time env, then compare.

@@ -52,9 +52,9 @@ describe('DestinationService.removeFaq', () => {
             destinationId: entity.id as DestinationFaqRemoveInput['destinationId'],
             faqId: faqId as DestinationFaqRemoveInput['faqId']
         };
-        vi.spyOn(db, 'DestinationFaqModel').mockImplementation(
-            () => faqModelMock as unknown as db.DestinationFaqModel
-        );
+        vi.spyOn(db, 'DestinationFaqModel').mockImplementation(function () {
+            return faqModelMock as unknown as db.DestinationFaqModel;
+        });
     });
 
     it('should remove a FAQ successfully', async () => {

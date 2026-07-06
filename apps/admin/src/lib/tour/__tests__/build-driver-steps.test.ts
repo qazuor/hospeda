@@ -216,7 +216,7 @@ describe('buildDriverSteps', () => {
 
     it('includes a gated step when the user has permission', () => {
         // Arrange — mock grants the gated step
-        mockIsPermissionGateGranted.mockImplementation(({ gate }) => {
+        mockIsPermissionGateGranted.mockImplementation(function ({ gate }) {
             if (!gate) return true;
             return true; // grant all
         });
@@ -233,7 +233,7 @@ describe('buildDriverSteps', () => {
 
     it('excludes a gated step when the user lacks permission', () => {
         // Arrange — deny the gated step (has permissions field), allow ungated
-        mockIsPermissionGateGranted.mockImplementation(({ gate }) => {
+        mockIsPermissionGateGranted.mockImplementation(function ({ gate }) {
             if (!gate) return true;
             return false; // deny gated
         });
@@ -285,7 +285,7 @@ describe('buildDriverSteps', () => {
 
     it('always includes ungated steps regardless of user permissions', () => {
         // Arrange — deny all gated steps
-        mockIsPermissionGateGranted.mockImplementation(({ gate }) => {
+        mockIsPermissionGateGranted.mockImplementation(function ({ gate }) {
             return !gate; // ungated → true, gated → false
         });
 

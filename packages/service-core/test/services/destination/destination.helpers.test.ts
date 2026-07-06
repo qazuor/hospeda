@@ -1,9 +1,9 @@
 import { DestinationModel } from '@repo/db';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { generateDestinationSlug } from '../../../src/services/destination/destination.helpers';
 
 describe('generateDestinationSlug', () => {
-    let findOneMock: ReturnType<typeof vi.fn>;
+    let findOneMock: Mock;
     beforeEach(() => {
         findOneMock = vi.fn();
         vi.spyOn(DestinationModel.prototype, 'findOne').mockImplementation(findOneMock);

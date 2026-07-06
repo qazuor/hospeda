@@ -101,6 +101,13 @@ const {
     };
 });
 
+// Derived from the hoisted mocks' own inferred `vi.fn(impl)` types (rather than
+// re-declaring the nested Mock<> chain by hand) so the callback signatures used
+// to restore these mocks in `beforeEach` below stay structurally identical to
+// what `mockImplementation()` actually expects.
+type MockDbTransactionCallback = Parameters<typeof mockDbTransaction>[0];
+type MockDbTx = Parameters<MockDbTransactionCallback>[0];
+
 // Mock @repo/db/client - dynamic import used inside confirmAddonPurchase
 vi.mock('@repo/db/client', () => ({
     getDb: vi.fn(() => ({
@@ -144,9 +151,11 @@ vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        AccommodationModel: vi.fn().mockImplementation(() => ({
-            findById: mockAccommodationFindById
-        })),
+        AccommodationModel: vi.fn().mockImplementation(function () {
+            return {
+                findById: mockAccommodationFindById
+            };
+        }),
         // SPEC-309 T-007: backs both the featured_listing_addon_grants insert
         // and the pre-existing needsEntitlementSync update.
         getDb: vi.fn(() => ({
@@ -245,10 +254,12 @@ vi.mock('../../src/utils/env', () => ({
 // PromoCodeService is constructed inside createAddonCheckout. Stub it so the
 // happy path skips real DB lookups.
 vi.mock('../../src/services/promo-code.service', () => ({
-    PromoCodeService: vi.fn().mockImplementation(() => ({
-        validate: vi.fn().mockResolvedValue({ valid: true, discountAmount: 0 }),
-        getByCode: vi.fn().mockResolvedValue({ success: true, data: { id: 'promo_uuid' } })
-    }))
+    PromoCodeService: vi.fn().mockImplementation(function () {
+        return {
+            validate: vi.fn().mockResolvedValue({ valid: true, discountAmount: 0 }),
+            getByCode: vi.fn().mockResolvedValue({ success: true, data: { id: 'promo_uuid' } })
+        };
+    })
 }));
 
 // SPEC-127 T-001 / T-003: PlanService + AddonCatalogService mocks.
@@ -267,13 +278,17 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        PlanService: vi.fn().mockImplementation(() => ({
-            getById: mockPlanServiceGetById,
-            getBySlug: mockPlanServiceGetBySlug
-        })),
-        AddonCatalogService: vi.fn().mockImplementation(() => ({
-            getBySlug: mockAddonCatalogGetBySlug
-        }))
+        PlanService: vi.fn().mockImplementation(function () {
+            return {
+                getById: mockPlanServiceGetById,
+                getBySlug: mockPlanServiceGetBySlug
+            };
+        }),
+        AddonCatalogService: vi.fn().mockImplementation(function () {
+            return {
+                getBySlug: mockAddonCatalogGetBySlug
+            };
+        })
     };
 });
 
@@ -336,7 +351,7 @@ describe('confirmAddonPurchase', () => {
 
         // Default AddonCatalogService mock: returns known addon definitions by slug.
         // Tests that need a different addon or a NOT_FOUND override individually.
-        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockAddonCatalogGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === 'extra-photos-20') {
                 return {
                     success: true,
@@ -396,39 +411,21 @@ describe('confirmAddonPurchase', () => {
 
         // Restore mockDbTransaction after clearAllMocks.
         // SPEC-064: tx must have both insert() and execute() (for SELECT FOR UPDATE dedup check).
-        mockDbTransaction.mockImplementation(
-            async (
-                callback: (tx: {
-                    insert: ReturnType<typeof vi.fn>;
-                    execute: ReturnType<typeof vi.fn>;
-                }) => Promise<unknown>
-            ) => {
-                const mockInsert = vi.fn(() => ({ values: mockDbInsertValues }));
-                const mockExecute = vi.fn().mockResolvedValue({ rows: [] }); // no duplicate → allow insert
-                mockDbInsertValues.mockReturnValue({ returning: mockDbInsertReturning });
-                return callback({ insert: mockInsert, execute: mockExecute });
-            }
-        );
+        mockDbTransaction.mockImplementation(async function (callback: MockDbTransactionCallback) {
+            const mockInsert = vi.fn(() => ({ values: mockDbInsertValues }));
+            const mockExecute = vi.fn().mockResolvedValue({ rows: [] }); // no duplicate → allow insert
+            mockDbInsertValues.mockReturnValue({ returning: mockDbInsertReturning });
+            return callback({ insert: mockInsert, execute: mockExecute });
+        });
 
         // Restore mockWithTransaction (SPEC-064) after clearAllMocks.
-        mockWithTransaction.mockImplementation(
-            async (
-                callback: (tx: {
-                    insert: ReturnType<typeof vi.fn>;
-                    execute: ReturnType<typeof vi.fn>;
-                }) => Promise<unknown>,
-                existingTx?: unknown
-            ) => {
-                if (existingTx)
-                    return callback(
-                        existingTx as {
-                            insert: ReturnType<typeof vi.fn>;
-                            execute: ReturnType<typeof vi.fn>;
-                        }
-                    );
-                return mockDbTransaction(callback);
-            }
-        );
+        mockWithTransaction.mockImplementation(async function (
+            callback: MockDbTransactionCallback,
+            existingTx?: unknown
+        ) {
+            if (existingTx) return callback(existingTx as MockDbTx);
+            return mockDbTransaction(callback);
+        });
     });
 
     afterEach(() => {
@@ -1076,7 +1073,7 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
         });
 
         // Default AddonCatalogService mock: returns known addon definitions by slug.
-        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockAddonCatalogGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === 'extra-photos-20') {
                 return {
                     success: true,
@@ -1250,7 +1247,7 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
                 expiresAt: new Date('2030-01-01T00:30:00Z')
             });
             // Reset addon mock since clearAllMocks wipes it
-            mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+            mockAddonCatalogGetBySlug.mockImplementation(async function (slug: string) {
                 if (slug === 'extra-photos-20') {
                     return {
                         success: true,
@@ -1563,16 +1560,15 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
             const { PromoCodeService: MockedPromoCodeService } = await import(
                 '../../src/services/promo-code.service'
             );
-            vi.mocked(MockedPromoCodeService).mockImplementationOnce(
-                () =>
-                    ({
-                        validate: vi.fn().mockResolvedValue({ valid: true, discountAmount: 5000 }),
-                        getByCode: vi.fn().mockResolvedValue({
-                            success: true,
-                            data: { id: 'promo_full' }
-                        })
-                    }) as unknown as InstanceType<typeof MockedPromoCodeService>
-            );
+            vi.mocked(MockedPromoCodeService).mockImplementationOnce(function () {
+                return {
+                    validate: vi.fn().mockResolvedValue({ valid: true, discountAmount: 5000 }),
+                    getByCode: vi.fn().mockResolvedValue({
+                        success: true,
+                        data: { id: 'promo_full' }
+                    })
+                } as unknown as InstanceType<typeof MockedPromoCodeService>;
+            });
 
             const billing = createBillingForCheckout({ customer });
 
@@ -1851,7 +1847,7 @@ describe('createAddonCheckout — provider error wiring (SPEC-149 T-005)', () =>
         });
 
         // Re-set addon catalog mock — extra-photos-20 is active
-        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockAddonCatalogGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === 'extra-photos-20') {
                 return {
                     success: true,
@@ -2112,7 +2108,7 @@ describe('createAddonCheckout — no server-side retry (SPEC-149 descope pin)', 
         });
 
         // Default addon catalog mock
-        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockAddonCatalogGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === 'extra-photos-20') {
                 return {
                     success: true,

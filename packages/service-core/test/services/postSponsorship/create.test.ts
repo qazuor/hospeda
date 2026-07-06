@@ -14,9 +14,11 @@ vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
     return {
         ...actual,
-        PostModel: vi.fn().mockImplementation(() => ({
-            update: vi.fn().mockResolvedValue(undefined)
-        }))
+        PostModel: vi.fn().mockImplementation(function () {
+            return {
+                update: vi.fn().mockResolvedValue(undefined)
+            };
+        })
     };
 });
 

@@ -80,9 +80,11 @@ const updateAccommodationsCountMock = vi.hoisted(() => vi.fn().mockResolvedValue
 
 vi.mock('@repo/service-core', () => ({
     getRevalidationService: vi.fn().mockReturnValue(undefined),
-    DestinationService: vi.fn().mockImplementation(() => ({
-        updateAccommodationsCount: updateAccommodationsCountMock
-    }))
+    DestinationService: vi.fn().mockImplementation(function () {
+        return {
+            updateAccommodationsCount: updateAccommodationsCountMock
+        };
+    })
 }));
 
 // ---------------------------------------------------------------------------

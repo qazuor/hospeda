@@ -53,26 +53,30 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        DolarApiClient: vi.fn().mockImplementation(() => ({
-            fetchAll: async () => {
-                if (stubRef.dolarFetchAll === null) {
-                    throw new Error(
-                        'DolarApiClient.fetchAll stub not initialised — exchange-rate-cron.test.ts must set stubRef.dolarFetchAll before invoking the handler'
-                    );
+        DolarApiClient: vi.fn().mockImplementation(function () {
+            return {
+                fetchAll: async () => {
+                    if (stubRef.dolarFetchAll === null) {
+                        throw new Error(
+                            'DolarApiClient.fetchAll stub not initialised — exchange-rate-cron.test.ts must set stubRef.dolarFetchAll before invoking the handler'
+                        );
+                    }
+                    return stubRef.dolarFetchAll();
                 }
-                return stubRef.dolarFetchAll();
-            }
-        })),
-        ExchangeRateApiClient: vi.fn().mockImplementation(() => ({
-            fetchLatestRates: async () => {
-                if (stubRef.exchangeFetchLatestRates === null) {
-                    throw new Error(
-                        'ExchangeRateApiClient.fetchLatestRates stub not initialised — exchange-rate-cron.test.ts must set stubRef.exchangeFetchLatestRates before invoking the handler'
-                    );
+            };
+        }),
+        ExchangeRateApiClient: vi.fn().mockImplementation(function () {
+            return {
+                fetchLatestRates: async () => {
+                    if (stubRef.exchangeFetchLatestRates === null) {
+                        throw new Error(
+                            'ExchangeRateApiClient.fetchLatestRates stub not initialised — exchange-rate-cron.test.ts must set stubRef.exchangeFetchLatestRates before invoking the handler'
+                        );
+                    }
+                    return stubRef.exchangeFetchLatestRates();
                 }
-                return stubRef.exchangeFetchLatestRates();
-            }
-        }))
+            };
+        })
         // ExchangeRateFetcher is the REAL impl from @repo/service-core,
         // and so is ExchangeRateModel (re-imported from @repo/db). The
         // cron job's runtime construction exercises the real wiring.

@@ -149,18 +149,18 @@ describe('BillingSettingsService', () => {
                     })
                 })
             });
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = {
-                        insert: vi.fn().mockReturnValue({
-                            values: vi.fn().mockReturnValue({
-                                onConflictDoUpdate: vi.fn().mockResolvedValue([])
-                            })
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = {
+                    insert: vi.fn().mockReturnValue({
+                        values: vi.fn().mockReturnValue({
+                            onConflictDoUpdate: vi.fn().mockResolvedValue([])
                         })
-                    };
-                    return fn(tx);
-                }
-            );
+                    })
+                };
+                return fn(tx);
+            });
 
             // Act
             const result = await service.updateSettings({ taxRate: 10 });
@@ -187,9 +187,11 @@ describe('BillingSettingsService', () => {
             const valuesSpy = vi.fn().mockReturnValue({
                 onConflictDoUpdate: vi.fn().mockResolvedValue([])
             });
-            mockWithTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
-                fn({ insert: vi.fn().mockReturnValue({ values: valuesSpy }) })
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                return fn({ insert: vi.fn().mockReturnValue({ values: valuesSpy }) });
+            });
 
             await service.updateSettings({ taxRate: 10 });
 
@@ -227,18 +229,18 @@ describe('BillingSettingsService', () => {
     describe('resetSettings', () => {
         it('should persist DEFAULT_SETTINGS and return them', async () => {
             // Arrange
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = {
-                        insert: vi.fn().mockReturnValue({
-                            values: vi.fn().mockReturnValue({
-                                onConflictDoUpdate: vi.fn().mockResolvedValue([])
-                            })
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = {
+                    insert: vi.fn().mockReturnValue({
+                        values: vi.fn().mockReturnValue({
+                            onConflictDoUpdate: vi.fn().mockResolvedValue([])
                         })
-                    };
-                    return fn(tx);
-                }
-            );
+                    })
+                };
+                return fn(tx);
+            });
 
             // Act
             const result = await service.resetSettings('admin-1');
@@ -335,9 +337,11 @@ describe('BillingSettingsService', () => {
                 };
                 const ctx = { tx: mockTx as unknown as DrizzleClient };
 
-                mockWithTransaction.mockImplementation(
-                    async (fn: (tx: unknown) => Promise<unknown>) => fn(mockTx)
-                );
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (tx: unknown) => Promise<unknown>
+                ) {
+                    return fn(mockTx);
+                });
 
                 // Act
                 const result = await service.updateSettings({ taxRate: 10 }, undefined, ctx);
@@ -359,18 +363,18 @@ describe('BillingSettingsService', () => {
                         })
                     })
                 });
-                mockWithTransaction.mockImplementation(
-                    async (fn: (tx: unknown) => Promise<unknown>) => {
-                        const tx = {
-                            insert: vi.fn().mockReturnValue({
-                                values: vi.fn().mockReturnValue({
-                                    onConflictDoUpdate: vi.fn().mockResolvedValue([])
-                                })
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (tx: unknown) => Promise<unknown>
+                ) {
+                    const tx = {
+                        insert: vi.fn().mockReturnValue({
+                            values: vi.fn().mockReturnValue({
+                                onConflictDoUpdate: vi.fn().mockResolvedValue([])
                             })
-                        };
-                        return fn(tx);
-                    }
-                );
+                        })
+                    };
+                    return fn(tx);
+                });
 
                 // Act
                 await service.updateSettings({ taxRate: 5 });
@@ -383,18 +387,18 @@ describe('BillingSettingsService', () => {
         describe('resetSettings', () => {
             it('should accept ctx parameter without error (backward-compat API)', async () => {
                 // Arrange
-                mockWithTransaction.mockImplementation(
-                    async (fn: (tx: unknown) => Promise<unknown>) => {
-                        const tx = {
-                            insert: vi.fn().mockReturnValue({
-                                values: vi.fn().mockReturnValue({
-                                    onConflictDoUpdate: vi.fn().mockResolvedValue([])
-                                })
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (tx: unknown) => Promise<unknown>
+                ) {
+                    const tx = {
+                        insert: vi.fn().mockReturnValue({
+                            values: vi.fn().mockReturnValue({
+                                onConflictDoUpdate: vi.fn().mockResolvedValue([])
                             })
-                        };
-                        return fn(tx);
-                    }
-                );
+                        })
+                    };
+                    return fn(tx);
+                });
                 const ctx = { tx: {} as unknown as DrizzleClient };
 
                 // Act — should not throw

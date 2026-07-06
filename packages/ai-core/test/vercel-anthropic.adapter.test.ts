@@ -104,7 +104,9 @@ beforeEach(() => {
 
     mockAnthropicProvider.mockReturnValue(FAKE_LANGUAGE_MODEL);
     mockCreateAnthropic.mockReturnValue(mockAnthropicProvider);
-    mockZodSchema.mockImplementation((s: unknown) => s);
+    mockZodSchema.mockImplementation(function (s: unknown) {
+        return s;
+    });
 });
 
 // ---------------------------------------------------------------------------

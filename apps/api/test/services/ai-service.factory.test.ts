@@ -228,21 +228,23 @@ beforeEach(() => {
     capturedCreateAiServiceInput.current = null;
 
     // Default: openai has a key, anthropic has a key.
-    mockGetDecryptedAiProviderCredential.mockImplementation(
-        async ({ providerId }: { providerId: string }) => {
-            if (providerId === 'openai') {
-                return { data: { providerId: 'openai', plaintextKey: 'sk-test-openai-key' } };
-            }
-            if (providerId === 'anthropic') {
-                return { data: { providerId: 'anthropic', plaintextKey: 'sk-test-anthropic-key' } };
-            }
-            return { error: { code: 'NOT_FOUND', message: 'not found' } };
+    mockGetDecryptedAiProviderCredential.mockImplementation(async function ({
+        providerId
+    }: {
+        providerId: string;
+    }) {
+        if (providerId === 'openai') {
+            return { data: { providerId: 'openai', plaintextKey: 'sk-test-openai-key' } };
         }
-    );
+        if (providerId === 'anthropic') {
+            return { data: { providerId: 'anthropic', plaintextKey: 'sk-test-anthropic-key' } };
+        }
+        return { error: { code: 'NOT_FOUND', message: 'not found' } };
+    });
 
     mockCheckCostCeiling.mockResolvedValue(undefined);
     mockCreateAiCostThresholdAlertHook.mockReturnValue(vi.fn());
-    mockCreateAiService.mockImplementation((input: CapturedAiServiceInput) => {
+    mockCreateAiService.mockImplementation(function (input: CapturedAiServiceInput) {
         capturedCreateAiServiceInput.current = input;
         return {
             engine: {},
@@ -308,14 +310,16 @@ describe('createConfiguredAiService', () => {
 
     it('should not throw when a credential is missing for one provider', async () => {
         // Arrange — anthropic has no credential.
-        mockGetDecryptedAiProviderCredential.mockImplementation(
-            async ({ providerId }: { providerId: string }) => {
-                if (providerId === 'openai') {
-                    return { data: { providerId: 'openai', plaintextKey: 'sk-test-openai-key' } };
-                }
-                return { error: { code: 'NOT_FOUND', message: 'not found' } };
+        mockGetDecryptedAiProviderCredential.mockImplementation(async function ({
+            providerId
+        }: {
+            providerId: string;
+        }) {
+            if (providerId === 'openai') {
+                return { data: { providerId: 'openai', plaintextKey: 'sk-test-openai-key' } };
             }
-        );
+            return { error: { code: 'NOT_FOUND', message: 'not found' } };
+        });
 
         // Act + Assert — construction should not throw.
         await expect(createConfiguredAiService()).resolves.toBeDefined();

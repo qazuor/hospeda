@@ -135,7 +135,7 @@ import {
     PermissionEnum,
     RoleEnum
 } from '@repo/schemas';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import type { INewsletterDeliveryService } from '../../../src/services/newsletter/newsletter-campaign.service.js';
 import { NewsletterCampaignService } from '../../../src/services/newsletter/newsletter-campaign.service.js';
 import type { NewsletterSubscriberService } from '../../../src/services/newsletter/newsletter-subscriber.service.js';
@@ -282,7 +282,7 @@ function makeService(
     opts: {
         deliveryService?: INewsletterDeliveryService;
         subscriberService?: ReturnType<typeof makeSubscriberService>;
-        notifyCampaignClosedWithFailuresFn?: ReturnType<typeof vi.fn>;
+        notifyCampaignClosedWithFailuresFn?: Mock;
     } = {}
 ) {
     return new NewsletterCampaignService(

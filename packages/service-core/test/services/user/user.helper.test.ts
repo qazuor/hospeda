@@ -3,7 +3,7 @@
 // TODO [66432d02-1576-4797-8cfe-9462af448b51]: Add generateUserSlug tests here, moved from generateSlug.test.ts. Keep only non-permission, non-normalizer helpers.
 
 import { UserModel } from '@repo/db';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { generateUserSlug } from '../../../src/services/user/user.helpers';
 
 /**
@@ -11,7 +11,7 @@ import { generateUserSlug } from '../../../src/services/user/user.helpers';
  * Ensures robust, unique, and predictable slug generation for users.
  */
 describe('generateUserSlug (UserService)', () => {
-    let findOneMock: ReturnType<typeof vi.fn>;
+    let findOneMock: Mock;
     beforeEach(() => {
         findOneMock = vi.fn();
         vi.spyOn(UserModel.prototype, 'findOne').mockImplementation(findOneMock);

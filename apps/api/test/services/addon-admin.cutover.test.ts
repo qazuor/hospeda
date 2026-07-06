@@ -31,10 +31,12 @@ const { mockList, mockGetBySlug, mockGetDb, mockWithTransaction } = vi.hoisted((
 
 // Mock AddonCatalogService (DB-backed, now used by addon.admin)
 vi.mock('@repo/service-core', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        list: mockList,
-        getBySlug: mockGetBySlug
-    }))
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            list: mockList,
+            getBySlug: mockGetBySlug
+        };
+    })
 }));
 
 vi.mock('@repo/db', () => ({
@@ -81,15 +83,19 @@ vi.mock('drizzle-orm', () => ({
 }));
 
 vi.mock('../../src/services/addon-entitlement.service', () => ({
-    AddonEntitlementService: vi.fn().mockImplementation(() => ({
-        applyAddonEntitlements: vi.fn().mockResolvedValue({ success: true, data: undefined })
-    }))
+    AddonEntitlementService: vi.fn().mockImplementation(function () {
+        return {
+            applyAddonEntitlements: vi.fn().mockResolvedValue({ success: true, data: undefined })
+        };
+    })
 }));
 
 vi.mock('../../src/services/addon-expiration.service', () => ({
-    AddonExpirationService: vi.fn().mockImplementation(() => ({
-        expireAddon: vi.fn().mockResolvedValue({ success: true, data: {} })
-    }))
+    AddonExpirationService: vi.fn().mockImplementation(function () {
+        return {
+            expireAddon: vi.fn().mockResolvedValue({ success: true, data: {} })
+        };
+    })
 }));
 
 vi.mock('../../src/utils/logger', () => ({
@@ -309,28 +315,29 @@ describe('addon.admin cutover parity (SPEC-192 T-009)', () => {
             const purchaseId = 'purchase-visibility-boost-7d';
 
             // Wire withTransaction to execute callback + set lockedPurchase
-            mockWithTransaction.mockImplementation(
-                async (callback: (tx: unknown) => Promise<unknown>, _existingTx?: unknown) => {
-                    const fakeTx = {
-                        execute: vi.fn().mockResolvedValue({
-                            rows: [
-                                {
-                                    id: purchaseId,
-                                    customerId: 'cust-uuid',
-                                    addonSlug: 'visibility-boost-7d',
-                                    status: 'expired'
-                                }
-                            ]
-                        }),
-                        update: vi.fn().mockReturnValue({
-                            set: vi.fn().mockReturnValue({
-                                where: vi.fn().mockResolvedValue([])
-                            })
+            mockWithTransaction.mockImplementation(async function (
+                callback: (tx: unknown) => Promise<unknown>,
+                _existingTx?: unknown
+            ) {
+                const fakeTx = {
+                    execute: vi.fn().mockResolvedValue({
+                        rows: [
+                            {
+                                id: purchaseId,
+                                customerId: 'cust-uuid',
+                                addonSlug: 'visibility-boost-7d',
+                                status: 'expired'
+                            }
+                        ]
+                    }),
+                    update: vi.fn().mockReturnValue({
+                        set: vi.fn().mockReturnValue({
+                            where: vi.fn().mockResolvedValue([])
                         })
-                    };
-                    return callback(fakeTx);
-                }
-            );
+                    })
+                };
+                return callback(fakeTx);
+            });
 
             // getBySlug returns the 7-day duration addon
             mockGetBySlug.mockResolvedValue({
@@ -415,28 +422,29 @@ describe('addon.admin cutover parity (SPEC-192 T-009)', () => {
 
         it('should use null expiresAt when catalog returns NOT_FOUND for the slug', async () => {
             // Arrange
-            mockWithTransaction.mockImplementation(
-                async (callback: (tx: unknown) => Promise<unknown>, _existingTx?: unknown) => {
-                    const fakeTx = {
-                        execute: vi.fn().mockResolvedValue({
-                            rows: [
-                                {
-                                    id: 'purchase-unknown',
-                                    customerId: 'cust-uuid',
-                                    addonSlug: 'unknown-slug',
-                                    status: 'expired'
-                                }
-                            ]
-                        }),
-                        update: vi.fn().mockReturnValue({
-                            set: vi.fn().mockReturnValue({
-                                where: vi.fn().mockResolvedValue([])
-                            })
+            mockWithTransaction.mockImplementation(async function (
+                callback: (tx: unknown) => Promise<unknown>,
+                _existingTx?: unknown
+            ) {
+                const fakeTx = {
+                    execute: vi.fn().mockResolvedValue({
+                        rows: [
+                            {
+                                id: 'purchase-unknown',
+                                customerId: 'cust-uuid',
+                                addonSlug: 'unknown-slug',
+                                status: 'expired'
+                            }
+                        ]
+                    }),
+                    update: vi.fn().mockReturnValue({
+                        set: vi.fn().mockReturnValue({
+                            where: vi.fn().mockResolvedValue([])
                         })
-                    };
-                    return callback(fakeTx);
-                }
-            );
+                    })
+                };
+                return callback(fakeTx);
+            });
 
             // Catalog returns NOT_FOUND — addon has no durationDays, expiresAt stays null
             mockGetBySlug.mockResolvedValue({

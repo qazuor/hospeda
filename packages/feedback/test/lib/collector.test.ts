@@ -13,7 +13,9 @@ vi.mock('ua-parser-js', () => {
         getOS: () => ({ name: 'Windows', version: '11' })
     };
     return {
-        UAParser: vi.fn().mockImplementation(() => mockInstance)
+        UAParser: vi.fn().mockImplementation(function () {
+            return mockInstance;
+        })
     };
 });
 

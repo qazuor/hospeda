@@ -10,7 +10,7 @@ import { defineConfig } from 'vitest/config';
  *   `*.integration.test.ts`).
  * - Wires `globalSetup` so the ephemeral `hospeda_integration_test` database
  *   is created/dropped exactly once per run.
- * - Uses `pool: 'forks'` with `maxForks: 1`. Tests that rely on
+ * - Uses `pool: 'forks'` with `fileParallelism: false` (maxWorkers 1). Tests that rely on
  *   `withCleanSlate` (TRUNCATE-based) cannot share a worker pool with
  *   parallel tests because one fork's TRUNCATE wipes another fork's just-
  *   committed rows mid-test (causing FK 23503 errors). The `withTestTransaction`
@@ -19,8 +19,9 @@ import { defineConfig } from 'vitest/config';
  *   tests are I/O-bound rather than CPU-bound.
  * - Bumps timeouts to absorb slower DB-bound assertions.
  *
- * Vitest version: ^3.x (poolOptions.forks API). On v4+, replace
- * `poolOptions.forks.maxForks` with top-level `maxWorkers`.
+ * Vitest 4 (HOS-28): `poolOptions` was removed. Serial execution is now
+ * expressed with top-level `fileParallelism: false` (which forces
+ * `maxWorkers: 1`), replacing the old `singleFork: true` + `maxForks: 1`.
  */
 export default defineConfig({
     plugins: [tsconfigPaths()],
@@ -28,12 +29,7 @@ export default defineConfig({
         globals: true,
         environment: 'node',
         pool: 'forks',
-        poolOptions: {
-            forks: {
-                singleFork: true,
-                maxForks: 1
-            }
-        },
+        fileParallelism: false,
         include: ['test/integration/**/*.test.ts'],
         globalSetup: [path.resolve(__dirname, 'test/integration/global-setup.ts')],
         testTimeout: 30_000,

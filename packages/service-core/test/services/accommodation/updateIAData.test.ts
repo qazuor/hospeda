@@ -89,9 +89,9 @@ describe('AccommodationService.updateIAData', () => {
                 category: 'updated-attractions'
             }
         };
-        vi.spyOn(db, 'AccommodationIaDataModel').mockImplementation(
-            () => iaDataModelMock as unknown as db.AccommodationIaDataModel
-        );
+        vi.spyOn(db, 'AccommodationIaDataModel').mockImplementation(function () {
+            return iaDataModelMock as unknown as db.AccommodationIaDataModel;
+        });
     });
 
     it('should update AI data successfully', async () => {

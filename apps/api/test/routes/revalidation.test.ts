@@ -111,8 +111,12 @@ vi.mock('@repo/db', async () => {
     const base = createDbMock();
     return {
         ...base,
-        RevalidationConfigModel: vi.fn(() => mockConfigModel),
-        RevalidationLogModel: vi.fn(() => mockLogModel),
+        RevalidationConfigModel: vi.fn(function () {
+            return mockConfigModel;
+        }),
+        RevalidationLogModel: vi.fn(function () {
+            return mockLogModel;
+        }),
         // Ensure revalidationLog table stub exists for RevalidationStatsService
         revalidationLog: {
             status: 'status',
@@ -138,9 +142,11 @@ const mockStats = {
 };
 
 vi.mock('../../src/services/revalidation-stats.service', () => ({
-    RevalidationStatsService: vi.fn(() => ({
-        getStats: vi.fn().mockResolvedValue(mockStats)
-    }))
+    RevalidationStatsService: vi.fn(function () {
+        return {
+            getStats: vi.fn().mockResolvedValue(mockStats)
+        };
+    })
 }));
 
 // ---------------------------------------------------------------------------

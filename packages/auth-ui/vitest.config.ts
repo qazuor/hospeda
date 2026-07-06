@@ -9,11 +9,7 @@ export default defineConfig({
         environment: 'jsdom',
         setupFiles: ['./test/setup.tsx'],
         pool: 'forks',
-        poolOptions: {
-            forks: {
-                maxForks: 3
-            }
-        },
+        maxWorkers: 3,
         include: [
             'test/**/*.test.ts',
             'test/**/*.test.tsx',

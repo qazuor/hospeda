@@ -53,11 +53,13 @@ describe('scroll-reveal', () => {
         const observeSpy = vi.fn();
         vi.stubGlobal(
             'IntersectionObserver',
-            vi.fn(() => ({
-                observe: observeSpy,
-                unobserve: vi.fn(),
-                disconnect: vi.fn()
-            }))
+            vi.fn(function () {
+                return {
+                    observe: observeSpy,
+                    unobserve: vi.fn(),
+                    disconnect: vi.fn()
+                };
+            })
         );
 
         initScrollReveal();
@@ -80,7 +82,7 @@ describe('scroll-reveal', () => {
         let capturedOptions: IntersectionObserverInit | undefined;
         vi.stubGlobal(
             'IntersectionObserver',
-            vi.fn((_cb: IntersectionObserverCallback, opts?: IntersectionObserverInit) => {
+            vi.fn(function (_cb: IntersectionObserverCallback, opts?: IntersectionObserverInit) {
                 capturedOptions = opts;
                 return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() };
             })
@@ -110,11 +112,13 @@ describe('scroll-reveal', () => {
         const disconnectSpy = vi.fn();
         vi.stubGlobal(
             'IntersectionObserver',
-            vi.fn(() => ({
-                observe: vi.fn(),
-                unobserve: vi.fn(),
-                disconnect: disconnectSpy
-            }))
+            vi.fn(function () {
+                return {
+                    observe: vi.fn(),
+                    unobserve: vi.fn(),
+                    disconnect: disconnectSpy
+                };
+            })
         );
 
         initScrollReveal();
@@ -143,7 +147,9 @@ describe('scroll-reveal', () => {
         const observeSpy = vi.fn();
         vi.stubGlobal(
             'IntersectionObserver',
-            vi.fn(() => ({ observe: observeSpy, unobserve: vi.fn(), disconnect: vi.fn() }))
+            vi.fn(function () {
+                return { observe: observeSpy, unobserve: vi.fn(), disconnect: vi.fn() };
+            })
         );
 
         initScrollReveal();
@@ -163,7 +169,9 @@ describe('scroll-reveal', () => {
         const observeSpy = vi.fn();
         vi.stubGlobal(
             'IntersectionObserver',
-            vi.fn(() => ({ observe: observeSpy, unobserve: vi.fn(), disconnect: vi.fn() }))
+            vi.fn(function () {
+                return { observe: observeSpy, unobserve: vi.fn(), disconnect: vi.fn() };
+            })
         );
 
         initScrollReveal();
@@ -224,11 +232,13 @@ describe('scroll-reveal', () => {
         const disconnectSpy = vi.fn();
         vi.stubGlobal(
             'IntersectionObserver',
-            vi.fn(() => ({
-                observe: vi.fn(),
-                unobserve: vi.fn(),
-                disconnect: disconnectSpy
-            }))
+            vi.fn(function () {
+                return {
+                    observe: vi.fn(),
+                    unobserve: vi.fn(),
+                    disconnect: disconnectSpy
+                };
+            })
         );
 
         initScrollReveal();

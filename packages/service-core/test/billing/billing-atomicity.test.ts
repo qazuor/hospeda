@@ -70,7 +70,9 @@ describe('billing atomicity — tryRedeemAtomically multi-write rollback (SPEC-0
     it('returns failure and does not commit when the UPDATE (second write) throws', async () => {
         // Arrange — first write (SELECT FOR UPDATE via tx.execute) succeeds,
         // second write (UPDATE ... RETURNING via tx.update chain) throws
-        mockWithTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+        mockWithTransaction.mockImplementation(async function (
+            fn: (tx: unknown) => Promise<unknown>
+        ) {
             const tx = {
                 ...selectForUpdateMock([{ id: 'pc1', usedCount: 0, maxUses: 10 }]),
                 update: vi.fn().mockReturnValue({
@@ -99,7 +101,9 @@ describe('billing atomicity — tryRedeemAtomically multi-write rollback (SPEC-0
 
     it('asserts withTransaction was called (atomicity boundary was established)', async () => {
         // Arrange
-        mockWithTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+        mockWithTransaction.mockImplementation(async function (
+            fn: (tx: unknown) => Promise<unknown>
+        ) {
             const tx = selectForUpdateMock([]);
             return fn(tx);
         });
@@ -114,7 +118,9 @@ describe('billing atomicity — tryRedeemAtomically multi-write rollback (SPEC-0
     it('does not call UPDATE at all when the SELECT FOR UPDATE finds no row', async () => {
         // Arrange — first write returns empty rows (promo code not found)
         const updateSpy = vi.fn();
-        mockWithTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+        mockWithTransaction.mockImplementation(async function (
+            fn: (tx: unknown) => Promise<unknown>
+        ) {
             const tx = {
                 ...selectForUpdateMock([]),
                 update: updateSpy
@@ -133,7 +139,9 @@ describe('billing atomicity — tryRedeemAtomically multi-write rollback (SPEC-0
     it('does not call UPDATE when max uses is already reached', async () => {
         // Arrange — promo code is at capacity
         const updateSpy = vi.fn();
-        mockWithTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+        mockWithTransaction.mockImplementation(async function (
+            fn: (tx: unknown) => Promise<unknown>
+        ) {
             const tx = {
                 ...selectForUpdateMock([{ id: 'pc1', usedCount: 5, maxUses: 5 }]),
                 update: updateSpy
@@ -165,7 +173,9 @@ describe('billing atomicity — tryRedeemAtomically multi-write rollback (SPEC-0
                 })
             })
         });
-        mockWithTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+        mockWithTransaction.mockImplementation(async function (
+            fn: (tx: unknown) => Promise<unknown>
+        ) {
             const tx = {
                 ...selectForUpdateMock([{ id: 'pc1', usedCount: 0, maxUses: 10 }]),
                 update: updateSpy

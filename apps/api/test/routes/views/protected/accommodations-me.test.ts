@@ -66,10 +66,12 @@ vi.mock('../../../../src/utils/actor', () => ({
 // does not throw when the route module is imported (the route now wires
 // requireEntitlement(VIEW_BASIC_STATS) — same pattern as response-rate.test.ts).
 vi.mock('../../../../src/services/plan.service', () => ({
-    PlanService: vi.fn().mockImplementation(() => ({
-        list: vi.fn(),
-        getBySlug: vi.fn()
-    }))
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            list: vi.fn(),
+            getBySlug: vi.fn()
+        };
+    })
 }));
 
 // Mock entityViewService — no real DB calls. RoleEnum must be included so

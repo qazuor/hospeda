@@ -26,23 +26,29 @@ vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
     return {
         ...actual,
-        AccommodationReviewModel: vi.fn(() => mockModel),
-        AccommodationModel: vi.fn(() => ({
-            findById: vi.fn(),
-            findOne: vi.fn(),
-            create: vi.fn(),
-            update: vi.fn(),
-            count: vi.fn(),
-            findAll: vi.fn()
-        }))
+        AccommodationReviewModel: vi.fn(function () {
+            return mockModel;
+        }),
+        AccommodationModel: vi.fn(function () {
+            return {
+                findById: vi.fn(),
+                findOne: vi.fn(),
+                create: vi.fn(),
+                update: vi.fn(),
+                count: vi.fn(),
+                findAll: vi.fn()
+            };
+        })
     };
 });
 
 vi.mock('../../../src/services/accommodation/accommodation.service.js', () => ({
-    AccommodationService: vi.fn(() => ({
-        updateStatsFromReview: vi.fn().mockResolvedValue(undefined),
-        getById: vi.fn()
-    }))
+    AccommodationService: vi.fn(function () {
+        return {
+            updateStatsFromReview: vi.fn().mockResolvedValue(undefined),
+            getById: vi.fn()
+        };
+    })
 }));
 
 vi.mock('../../../src/utils/transaction.js', () => ({

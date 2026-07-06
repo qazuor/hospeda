@@ -189,10 +189,12 @@ describe('subscription-poll cron job', () => {
     beforeEach(() => {
         advisoryLockAcquired(true);
         mockFindDuePending.mockResolvedValue([]);
-        mockStorageUpdate.mockImplementation(async (input) => ({
-            ...buildJob(),
-            ...input
-        }));
+        mockStorageUpdate.mockImplementation(async function (input) {
+            return {
+                ...buildJob(),
+                ...input
+            };
+        });
         mockRetrieve.mockResolvedValue({ id: 'preapproval_test', status: 'active' });
         mockProcessSubscriptionUpdated.mockResolvedValue({
             success: true,
@@ -262,7 +264,7 @@ describe('subscription-poll cron job', () => {
         });
 
         it('exits cleanly when MercadoPago adapter cannot be constructed', async () => {
-            mockCreateMercadoPagoAdapter.mockImplementationOnce(() => {
+            mockCreateMercadoPagoAdapter.mockImplementationOnce(function () {
                 throw new Error('MP creds missing');
             });
 
@@ -365,12 +367,14 @@ describe('subscription-poll cron job', () => {
             });
             mockFindDuePending.mockResolvedValue([job]);
             // Lock returns the job with incremented attempts (61 > 60)
-            mockStorageUpdate.mockImplementationOnce(async (input) => ({
-                ...job,
-                ...input,
-                attempts: 61,
-                version: 'version-2'
-            }));
+            mockStorageUpdate.mockImplementationOnce(async function (input) {
+                return {
+                    ...job,
+                    ...input,
+                    attempts: 61,
+                    version: 'version-2'
+                };
+            });
 
             const result = await subscriptionPollJob.handler(buildContext());
 
@@ -434,7 +438,9 @@ describe('subscription-poll cron job', () => {
         // test in this describe block installs its own mock that preserves
         // the fixture identity.
         function lockWithJob(job: QZPaySubscriptionPollingJob): void {
-            mockStorageUpdate.mockImplementation(async (input) => ({ ...job, ...input }));
+            mockStorageUpdate.mockImplementation(async function (input) {
+                return { ...job, ...input };
+            });
         }
 
         it('transitions a one_time_payment job to succeeded when a payment is approved', async () => {
@@ -590,7 +596,9 @@ describe('subscription-poll cron job', () => {
         // and notification path.
 
         function lockWithJob(job: QZPaySubscriptionPollingJob): void {
-            mockStorageUpdate.mockImplementation(async (input) => ({ ...job, ...input }));
+            mockStorageUpdate.mockImplementation(async function (input) {
+                return { ...job, ...input };
+            });
         }
 
         it('addon job + succeeded payment → processPaymentUpdated called with synthetic payload, returns terminal succeeded', async () => {

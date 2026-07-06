@@ -7,11 +7,7 @@ export default defineConfig({
         globals: true,
         environment: 'node',
         pool: 'forks',
-        poolOptions: {
-            forks: {
-                maxForks: 3
-            }
-        },
+        maxWorkers: 3,
         coverage: {
             provider: 'v8',
             reporter: ['text', 'html', 'json-summary'],

@@ -94,7 +94,9 @@ vi.mock('@repo/db', () => {
     }
     return {
         // EntityViewService singleton (service-core barrel) dereferences this at import.
-        AccommodationModel: vi.fn(() => ({ findIdsByOwnerId: vi.fn(async () => []) })),
+        AccommodationModel: vi.fn(function () {
+            return { findIdsByOwnerId: vi.fn(async () => []) };
+        }),
         entityViewModel: {
             insertView: vi.fn(),
             getStatsForEntities: vi.fn(async () => []),
@@ -175,7 +177,9 @@ vi.mock('../../../src/services/refund-lifecycle.service', () => ({
 
 vi.mock('../../../src/services/addon.service', () => {
     const confirmPurchase = vi.fn().mockResolvedValue({ success: true, data: undefined });
-    const MockAddonService = vi.fn().mockImplementation(() => ({ confirmPurchase }));
+    const MockAddonService = vi.fn().mockImplementation(function () {
+        return { confirmPurchase };
+    });
     // Expose confirmPurchase on the constructor for test access
     (MockAddonService as unknown as Record<string, unknown>).__mockConfirmPurchase =
         confirmPurchase;

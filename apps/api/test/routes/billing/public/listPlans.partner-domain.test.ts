@@ -7,9 +7,11 @@ const { mockPlanList, mockCreateSimpleRoute, mockSelectWhere } = vi.hoisted(() =
 }));
 
 vi.mock('../../../../src/services/plan.service', () => ({
-    PlanService: vi.fn().mockImplementation(() => ({
-        list: mockPlanList
-    }))
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            list: mockPlanList
+        };
+    })
 }));
 
 vi.mock('../../../../src/utils/route-factory.js', () => ({

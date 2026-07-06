@@ -86,41 +86,51 @@ vi.mock('../../../../src/utils/actor', () => ({
 }));
 
 vi.mock('@repo/service-core', () => ({
-    SocialHashtagSetService: vi.fn(() => ({
-        adminList: mockHashtagSetAdminList,
-        create: mockHashtagSetCreate,
-        getById: vi.fn(),
-        update: vi.fn(),
-        softDelete: vi.fn()
-    })),
-    SocialPostFooterService: vi.fn(() => ({
-        adminList: mockFooterAdminList,
-        create: mockFooterCreate,
-        getById: vi.fn(),
-        update: vi.fn(),
-        softDelete: vi.fn()
-    })),
-    SocialCampaignService: vi.fn(() => ({
-        adminList: mockCampaignAdminList,
-        create: mockCampaignCreate,
-        getById: vi.fn(),
-        update: vi.fn(),
-        softDelete: vi.fn()
-    })),
-    SocialContentBatchService: vi.fn(() => ({
-        adminList: mockBatchAdminList,
-        create: mockBatchCreate,
-        getById: vi.fn(),
-        update: vi.fn(),
-        softDelete: vi.fn()
-    })),
-    SocialAudienceService: vi.fn(() => ({
-        adminList: mockAudienceAdminList,
-        create: mockAudienceCreate,
-        getById: vi.fn(),
-        update: vi.fn(),
-        softDelete: vi.fn()
-    })),
+    SocialHashtagSetService: vi.fn(function () {
+        return {
+            adminList: mockHashtagSetAdminList,
+            create: mockHashtagSetCreate,
+            getById: vi.fn(),
+            update: vi.fn(),
+            softDelete: vi.fn()
+        };
+    }),
+    SocialPostFooterService: vi.fn(function () {
+        return {
+            adminList: mockFooterAdminList,
+            create: mockFooterCreate,
+            getById: vi.fn(),
+            update: vi.fn(),
+            softDelete: vi.fn()
+        };
+    }),
+    SocialCampaignService: vi.fn(function () {
+        return {
+            adminList: mockCampaignAdminList,
+            create: mockCampaignCreate,
+            getById: vi.fn(),
+            update: vi.fn(),
+            softDelete: vi.fn()
+        };
+    }),
+    SocialContentBatchService: vi.fn(function () {
+        return {
+            adminList: mockBatchAdminList,
+            create: mockBatchCreate,
+            getById: vi.fn(),
+            update: vi.fn(),
+            softDelete: vi.fn()
+        };
+    }),
+    SocialAudienceService: vi.fn(function () {
+        return {
+            adminList: mockAudienceAdminList,
+            create: mockAudienceCreate,
+            getById: vi.fn(),
+            update: vi.fn(),
+            softDelete: vi.fn()
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,

@@ -39,10 +39,12 @@ const { mockGetBySlug, mockWithTransaction, mockPlanGetById, mockPlanGetBySlug }
 
 // Mock AddonCatalogService — DB-backed after cutover
 vi.mock('../../src/services/billing/addon/addon-catalog.service.js', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockGetBySlug,
-        list: vi.fn()
-    }))
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockGetBySlug,
+            list: vi.fn()
+        };
+    })
 }));
 
 // Mock @repo/db — withTransaction must execute the callback synchronously
@@ -60,10 +62,12 @@ vi.mock('@repo/db', () => ({
 
 // Mock PlanService — DB-backed after T-027 cutover
 vi.mock('../../src/services/billing/plan/plan.service.js', () => ({
-    PlanService: vi.fn().mockImplementation(() => ({
-        getById: mockPlanGetById,
-        getBySlug: mockPlanGetBySlug
-    }))
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            getById: mockPlanGetById,
+            getBySlug: mockPlanGetBySlug
+        };
+    })
 }));
 
 // Mock @repo/billing — getPlanBySlug no longer used after T-027 cutover
@@ -182,7 +186,9 @@ const CATALOG_STUBS: Record<
  * minimal transaction mock that simulates `execute()` returning `rows`.
  */
 function wireTxWithRows(rows: unknown[]) {
-    mockWithTransaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+    mockWithTransaction.mockImplementation(async function (
+        callback: (tx: unknown) => Promise<unknown>
+    ) {
         const fakeTx = {
             execute: vi.fn().mockResolvedValue({ rows })
         };
@@ -232,7 +238,7 @@ function wirePlan(limitKey: string, basePlanLimit: number) {
  */
 function wireCatalog(slug: string) {
     const stub = CATALOG_STUBS[slug];
-    mockGetBySlug.mockImplementation(async (s: string) => {
+    mockGetBySlug.mockImplementation(async function (s: string) {
         const found = CATALOG_STUBS[s];
         if (found) return { success: true, data: found };
         return { success: false, error: { code: 'NOT_FOUND', message: `not found: ${s}` } };

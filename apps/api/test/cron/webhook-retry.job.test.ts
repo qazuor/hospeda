@@ -313,12 +313,11 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
         } as ReturnType<typeof getAddonBySlug>);
 
         const confirmPurchaseMock = vi.fn().mockResolvedValue({ success: true, data: undefined });
-        vi.mocked(AddonService).mockImplementation(
-            () =>
-                ({
-                    confirmPurchase: confirmPurchaseMock
-                }) as unknown as InstanceType<typeof AddonService>
-        );
+        vi.mocked(AddonService).mockImplementation(function () {
+            return {
+                confirmPurchase: confirmPurchaseMock
+            } as unknown as InstanceType<typeof AddonService>;
+        });
 
         const ctx = makeCronContext();
 
@@ -997,12 +996,11 @@ describe('webhookRetryJob.handler — retryMercadoPagoPaymentUpdated', () => {
             success: false,
             error: { code: 'DB_ERROR', message: 'insert failed' }
         });
-        vi.mocked(AddonService).mockImplementation(
-            () =>
-                ({
-                    confirmPurchase: confirmPurchaseMock
-                }) as unknown as InstanceType<typeof AddonService>
-        );
+        vi.mocked(AddonService).mockImplementation(function () {
+            return {
+                confirmPurchase: confirmPurchaseMock
+            } as unknown as InstanceType<typeof AddonService>;
+        });
 
         const ctx = makeCronContext();
 
@@ -1321,12 +1319,11 @@ describe('webhookRetryJob.handler — batch processing', () => {
             success: false,
             error: { code: 'FAIL', message: 'error' }
         });
-        vi.mocked(AddonService).mockImplementation(
-            () =>
-                ({
-                    confirmPurchase: confirmPurchaseMock
-                }) as unknown as InstanceType<typeof AddonService>
-        );
+        vi.mocked(AddonService).mockImplementation(function () {
+            return {
+                confirmPurchase: confirmPurchaseMock
+            } as unknown as InstanceType<typeof AddonService>;
+        });
 
         const ctx = makeCronContext();
 
@@ -1413,15 +1410,14 @@ describe('webhookRetryJob.handler — batch processing', () => {
             addonSlug: 'test-addon',
             customerId: 'cust-x'
         });
-        vi.mocked(AddonService).mockImplementation(
-            () =>
-                ({
-                    confirmPurchase: vi.fn().mockResolvedValue({
-                        success: false,
-                        error: { code: 'ERR', message: 'failed' }
-                    })
-                }) as unknown as InstanceType<typeof AddonService>
-        );
+        vi.mocked(AddonService).mockImplementation(function () {
+            return {
+                confirmPurchase: vi.fn().mockResolvedValue({
+                    success: false,
+                    error: { code: 'ERR', message: 'failed' }
+                })
+            } as unknown as InstanceType<typeof AddonService>;
+        });
 
         const ctx = makeCronContext();
 

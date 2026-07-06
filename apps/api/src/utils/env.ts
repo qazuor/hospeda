@@ -37,11 +37,16 @@ const appDir = (() => {
     // Fallback: works for source layout (src/utils/env.ts → two levels up)
     return resolve(__dirname, '../..');
 })();
-const envFiles = [resolve(appDir, '.env.local')];
-
-if (process.env.NODE_ENV === 'test') {
-    envFiles.unshift(resolve(appDir, '.env.test'));
-}
+// Under test, load ONLY .env.test (deterministic dummy values). Loading the
+// developer's .env.local would leak real dev/staging secrets (Cloudinary,
+// MercadoPago, OpenAI, etc.) into process.env, making tests diverge from CI —
+// where no .env.local exists — and letting live credentials alter test flow.
+// (HOS-28). NODE_ENV=test is pinned in vitest.config.ts and test/setup.ts before
+// this module is imported during collection, so the gate has a reliable signal.
+const envFiles =
+    process.env.NODE_ENV === 'test'
+        ? [resolve(appDir, '.env.test')]
+        : [resolve(appDir, '.env.local')];
 
 for (const envFile of envFiles) {
     if (!existsSync(envFile)) continue;

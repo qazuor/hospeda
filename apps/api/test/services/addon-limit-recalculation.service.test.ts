@@ -110,18 +110,22 @@ vi.mock('@repo/billing', async (importOriginal) => {
 vi.mock(
     '../../../../packages/service-core/src/services/billing/addon/addon-catalog.service',
     () => ({
-        AddonCatalogService: vi.fn().mockImplementation(() => ({
-            getBySlug: mockAddonCatalogGetBySlug,
-            list: vi.fn().mockResolvedValue({ success: true, data: [] })
-        }))
+        AddonCatalogService: vi.fn().mockImplementation(function () {
+            return {
+                getBySlug: mockAddonCatalogGetBySlug,
+                list: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+        })
     })
 );
 
 vi.mock('../../../../packages/service-core/src/services/billing/plan/plan.service', () => ({
-    PlanService: vi.fn().mockImplementation(() => ({
-        getById: mockPlanServiceGetById,
-        getBySlug: mockPlanServiceGetBySlug
-    }))
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            getById: mockPlanServiceGetById,
+            getBySlug: mockPlanServiceGetBySlug
+        };
+    })
 }));
 
 // drizzle helpers (eq, and, isNull) pass through unchanged

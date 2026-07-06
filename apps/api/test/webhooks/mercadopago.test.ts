@@ -95,9 +95,11 @@ vi.mock('../../src/routes/webhooks/mercadopago/utils', async (importOriginal) =>
 
 // Service layer mock: AddonService
 vi.mock('../../src/services/addon.service', () => ({
-    AddonService: vi.fn().mockImplementation(() => ({
-        confirmPurchase: vi.fn()
-    }))
+    AddonService: vi.fn().mockImplementation(function () {
+        return {
+            confirmPurchase: vi.fn()
+        };
+    })
 }));
 
 vi.mock('../../src/utils/logger', () => ({
@@ -779,12 +781,11 @@ describe('MercadoPago Webhook Handler', () => {
                     }
                 }
             });
-            vi.mocked(AddonService).mockImplementation(
-                () =>
-                    ({
-                        confirmPurchase: mockConfirmPurchase
-                    }) as never
-            );
+            vi.mocked(AddonService).mockImplementation(function () {
+                return {
+                    confirmPurchase: mockConfirmPurchase
+                } as never;
+            });
 
             const context = createMockContext({ requestId: 'req_addon' });
             const event = createMockEvent({

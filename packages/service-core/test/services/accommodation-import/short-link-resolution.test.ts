@@ -162,21 +162,21 @@ beforeEach(() => {
     fakeMl = makeFakeAdapter('mercadolibre', false);
 
     // Wire constructors.
-    mockGenericAdapter.mockImplementation(
-        () => fakeGeneric as unknown as InstanceType<typeof GenericAdapter>
-    );
-    mockAirbnbAdapter.mockImplementation(
-        () => fakeAirbnb as unknown as InstanceType<typeof AirbnbAdapter>
-    );
-    mockBookingAdapter.mockImplementation(
-        () => fakeBooking as unknown as InstanceType<typeof BookingAdapter>
-    );
-    mockGoogleAdapter.mockImplementation(
-        () => fakeGoogle as unknown as InstanceType<typeof GooglePlacesAdapter>
-    );
-    mockMlAdapter.mockImplementation(
-        () => fakeMl as unknown as InstanceType<typeof MercadoLibreAdapter>
-    );
+    mockGenericAdapter.mockImplementation(function () {
+        return fakeGeneric as unknown as InstanceType<typeof GenericAdapter>;
+    });
+    mockAirbnbAdapter.mockImplementation(function () {
+        return fakeAirbnb as unknown as InstanceType<typeof AirbnbAdapter>;
+    });
+    mockBookingAdapter.mockImplementation(function () {
+        return fakeBooking as unknown as InstanceType<typeof BookingAdapter>;
+    });
+    mockGoogleAdapter.mockImplementation(function () {
+        return fakeGoogle as unknown as InstanceType<typeof GooglePlacesAdapter>;
+    });
+    mockMlAdapter.mockImplementation(function () {
+        return fakeMl as unknown as InstanceType<typeof MercadoLibreAdapter>;
+    });
 });
 
 // ---------------------------------------------------------------------------

@@ -578,7 +578,7 @@ describe('ContentModerationTermService — extended coverage', () => {
 
             // _executeSearch does Promise.all([items, count]) — need two select chains
             let callIdx = 0;
-            mockDbSelect.mockImplementation(() => {
+            mockDbSelect.mockImplementation(function () {
                 const rows = callIdx++ === 0 ? termRows : countRows;
                 return makeDbChain(rows);
             });

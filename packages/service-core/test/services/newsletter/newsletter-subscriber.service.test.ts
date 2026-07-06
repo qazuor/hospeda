@@ -68,7 +68,7 @@ vi.mock('@repo/db', async (importOriginal) => {
 });
 
 import { NewsletterSourceEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { NewsletterSubscriberService } from '../../../src/services/newsletter/newsletter-subscriber.service.js';
 import {
     generateUnsubscribeToken,
@@ -166,8 +166,8 @@ function enqueueResponse(rows: unknown[]) {
 /** No-op dispatcher stubs. */
 function makeDispatcher() {
     return {
-        sendVerification: vi.fn().mockResolvedValue(undefined) as ReturnType<typeof vi.fn>,
-        sendWelcome: vi.fn().mockResolvedValue(undefined) as ReturnType<typeof vi.fn>
+        sendVerification: vi.fn().mockResolvedValue(undefined) as Mock,
+        sendWelcome: vi.fn().mockResolvedValue(undefined) as Mock
     };
 }
 

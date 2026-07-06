@@ -41,10 +41,12 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        AddonCatalogService: vi.fn().mockImplementation(() => ({
-            getBySlug: mockAddonCatalogGetBySlug,
-            list: vi.fn().mockResolvedValue({ success: true, data: [] })
-        }))
+        AddonCatalogService: vi.fn().mockImplementation(function () {
+            return {
+                getBySlug: mockAddonCatalogGetBySlug,
+                list: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+        })
     };
 });
 
@@ -248,10 +250,12 @@ const { mockApplyAddonEntitlements, mockRemoveAddonEntitlements } = vi.hoisted((
 }));
 
 vi.mock('../../src/services/addon-entitlement.service', () => ({
-    AddonEntitlementService: vi.fn().mockImplementation(() => ({
-        applyAddonEntitlements: mockApplyAddonEntitlements,
-        removeAddonEntitlements: mockRemoveAddonEntitlements
-    }))
+    AddonEntitlementService: vi.fn().mockImplementation(function () {
+        return {
+            applyAddonEntitlements: mockApplyAddonEntitlements,
+            removeAddonEntitlements: mockRemoveAddonEntitlements
+        };
+    })
 }));
 
 import { EntitlementKey, getAddonBySlug } from '@repo/billing';
@@ -329,7 +333,7 @@ describe('Add-on Expiry Cron Job', () => {
         // caller (wasNotificationSent, revocation retry, split-state,
         // entitlement reconciliation, grant reconciliation) while giving the
         // two new call sites their own directly-resolving `.where()`.
-        mockDbFrom.mockImplementation((table: unknown) => {
+        mockDbFrom.mockImplementation(function (table: unknown) {
             if (table === featuredListingAddonGrants) {
                 return { where: mockDbGrantLinkWhere };
             }
@@ -434,7 +438,9 @@ describe('Add-on Expiry Cron Job', () => {
                 })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -464,7 +470,9 @@ describe('Add-on Expiry Cron Job', () => {
                 })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -521,7 +529,9 @@ describe('Add-on Expiry Cron Job', () => {
                 })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -588,9 +598,9 @@ describe('Add-on Expiry Cron Job', () => {
                 customerId: 'cust-featured-1'
             });
 
-            vi.mocked(AddonExpirationService).mockImplementation(
-                () => buildMockServiceForAddon(addon) as never
-            );
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return buildMockServiceForAddon(addon) as never;
+            });
 
             // T-007 grant link: purchase -> accommodation
             mockDbGrantLinkWhere.mockResolvedValueOnce([{ accommodationId: 'acc-featured-1' }]);
@@ -634,9 +644,9 @@ describe('Add-on Expiry Cron Job', () => {
                 addonSlug: 'visibility-boost-30d'
             });
 
-            vi.mocked(AddonExpirationService).mockImplementation(
-                () => buildMockServiceForAddon(addon) as never
-            );
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return buildMockServiceForAddon(addon) as never;
+            });
 
             mockDbGrantLinkWhere.mockResolvedValueOnce([{ accommodationId: 'acc-featured-2' }]);
             mockDbAccommodationOwnerWhere.mockResolvedValueOnce([{ ownerId: 'owner-featured-2' }]);
@@ -701,7 +711,9 @@ describe('Add-on Expiry Cron Job', () => {
                     })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
 
             vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
@@ -759,7 +771,9 @@ describe('Add-on Expiry Cron Job', () => {
                     })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
 
             vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
@@ -816,7 +830,9 @@ describe('Add-on Expiry Cron Job', () => {
                     })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
 
             vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
@@ -907,7 +923,9 @@ describe('Add-on Expiry Cron Job', () => {
                 })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
             vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
@@ -968,7 +986,9 @@ describe('Add-on Expiry Cron Job', () => {
                     })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
             vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
@@ -1015,7 +1035,9 @@ describe('Add-on Expiry Cron Job', () => {
                 })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -1041,7 +1063,9 @@ describe('Add-on Expiry Cron Job', () => {
                 })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -1065,7 +1089,9 @@ describe('Add-on Expiry Cron Job', () => {
                 findExpiringAddons: vi.fn()
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -1107,7 +1133,9 @@ describe('Add-on Expiry Cron Job', () => {
                     })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
 
             vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
@@ -1155,7 +1183,9 @@ describe('Add-on Expiry Cron Job', () => {
                     })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
             vi.mocked(sendNotification).mockRejectedValue(new Error('Email service unavailable'));
 
             vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
@@ -1196,7 +1226,9 @@ describe('Add-on Expiry Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBillingInstance as never);
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             // Act
             await addonExpiryJob.handler(ctx);
@@ -1215,7 +1247,9 @@ describe('Add-on Expiry Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(null as never);
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -1266,7 +1300,9 @@ describe('Add-on Expiry Cron Job', () => {
                 })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -1387,7 +1423,9 @@ describe('Add-on Expiry Cron Job', () => {
             // Arrange
             const ctx = createMockContext();
             const mockService = buildBaseService();
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             const purchase = {
                 id: 'purchase-orphan-1',
@@ -1431,7 +1469,9 @@ describe('Add-on Expiry Cron Job', () => {
             // Arrange
             const ctx = createMockContext();
             const mockService = buildBaseService();
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             const purchase = {
                 id: 'purchase-exhausted',
@@ -1464,7 +1504,9 @@ describe('Add-on Expiry Cron Job', () => {
             // Arrange
             const ctx = createMockContext();
             const mockService = buildBaseService();
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             const purchase = {
                 id: 'purchase-fail-1',
@@ -1539,7 +1581,9 @@ describe('Add-on Expiry Cron Job', () => {
             // Arrange
             const ctx = createMockContext();
             const mockService = buildBaseService();
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             const purchase = {
                 id: 'purchase-sentry',
@@ -1608,7 +1652,9 @@ describe('Add-on Expiry Cron Job', () => {
             // Arrange
             const ctx = createMockContext();
             const mockService = buildBaseService();
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             const purchases = [
                 {
@@ -1678,7 +1724,9 @@ describe('Add-on Expiry Cron Job', () => {
             // Arrange
             const ctx = createMockContext();
             const mockService = buildBaseService();
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             const { db } = buildMockDb([]); // empty result
             const { getDb, withTransaction } = await import('@repo/db');
@@ -1731,7 +1779,9 @@ describe('Add-on Expiry Cron Job', () => {
                     data: []
                 })
             };
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             const orphanPurchase = {
                 id: 'purchase-coexist',
@@ -1796,7 +1846,9 @@ describe('Add-on Expiry Cron Job', () => {
                 findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
                 findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
             };
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             const purchase = {
                 id: 'purchase-dryrun',
@@ -1897,7 +1949,9 @@ describe('Add-on Expiry Cron Job', () => {
                 })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
             vi.mocked(getQZPayBilling).mockReturnValue({
                 api: 'mock-billing',
@@ -1969,7 +2023,9 @@ describe('Add-on Expiry Cron Job', () => {
                 })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
             vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
             // SPEC-192 T-015: production resolves display names via AddonCatalogService,
@@ -2036,7 +2092,9 @@ describe('Add-on Expiry Cron Job', () => {
                 })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
             // Include subscriptions so Phase 5 does not throw when it calls billing.subscriptions.get()
             vi.mocked(getQZPayBilling).mockReturnValue({
@@ -2134,7 +2192,7 @@ describe('Add-on Expiry Cron Job', () => {
             // wasNotificationSent uses .where().limit() — return empty (no prior notification)
             const whereForNotif = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
 
-            mockDbFrom.mockImplementation((table: unknown) => {
+            mockDbFrom.mockImplementation(function (table: unknown) {
                 // Phase 5 queries billingSubscriptions table (no innerJoin, has limit)
                 if (table === 'status') {
                     return { where: whereForPhase5, innerJoin };
@@ -2148,9 +2206,9 @@ describe('Add-on Expiry Cron Job', () => {
         it('should reconcile split-state subscription when QZPay is active', async () => {
             // Arrange
             const ctx = createMockContext();
-            vi.mocked(AddonExpirationService).mockImplementation(
-                () => createDefaultMockService() as never
-            );
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return createDefaultMockService() as never;
+            });
 
             const splitSub = {
                 id: 'sub-split-1',
@@ -2193,9 +2251,9 @@ describe('Add-on Expiry Cron Job', () => {
         it('should skip reconciliation when QZPay status is already cancelled', async () => {
             // Arrange
             const ctx = createMockContext();
-            vi.mocked(AddonExpirationService).mockImplementation(
-                () => createDefaultMockService() as never
-            );
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return createDefaultMockService() as never;
+            });
 
             const splitSub = {
                 id: 'sub-already-cancelled',
@@ -2229,9 +2287,9 @@ describe('Add-on Expiry Cron Job', () => {
         it('should handle QZPay errors gracefully without failing the job', async () => {
             // Arrange
             const ctx = createMockContext();
-            vi.mocked(AddonExpirationService).mockImplementation(
-                () => createDefaultMockService() as never
-            );
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return createDefaultMockService() as never;
+            });
 
             const splitSub = {
                 id: 'sub-error',
@@ -2263,9 +2321,9 @@ describe('Add-on Expiry Cron Job', () => {
         it('should not call cancel in dry-run mode', async () => {
             // Arrange
             const ctx = createMockContext({ dryRun: true });
-            vi.mocked(AddonExpirationService).mockImplementation(
-                () => createDefaultMockService() as never
-            );
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return createDefaultMockService() as never;
+            });
 
             const splitSub = {
                 id: 'sub-dry-run',
@@ -2298,9 +2356,9 @@ describe('Add-on Expiry Cron Job', () => {
         it('should skip subscription with null QZPay response', async () => {
             // Arrange
             const ctx = createMockContext();
-            vi.mocked(AddonExpirationService).mockImplementation(
-                () => createDefaultMockService() as never
-            );
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return createDefaultMockService() as never;
+            });
 
             const splitSub = {
                 id: 'sub-null',
@@ -2358,7 +2416,9 @@ describe('Add-on Expiry Cron Job', () => {
                 expireAddon: vi.fn(),
                 findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
             };
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             // Ensure the tx stub reports the lock as acquired (default, but explicit here)
             vi.mocked(withTransaction).mockImplementationOnce(async (callback) =>
@@ -2383,7 +2443,9 @@ describe('Add-on Expiry Cron Job', () => {
                 expireAddon: vi.fn(),
                 findExpiringAddons: vi.fn()
             };
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             // Simulate a concurrent run holding the lock: acquired=false
             vi.mocked(withTransaction).mockImplementationOnce(async (callback) =>
@@ -2495,9 +2557,9 @@ describe('Add-on Expiry Cron Job', () => {
         it('re-applies entitlement grants for an active purchase with needsEntitlementSync=true', async () => {
             // Arrange — split-state fixture: active row + missing grant
             const ctx = createMockContext();
-            vi.mocked(AddonExpirationService).mockImplementation(
-                () => createDefaultMockService() as never
-            );
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return createDefaultMockService() as never;
+            });
 
             const splitPurchase = {
                 id: 'purch-split-1',
@@ -2538,9 +2600,9 @@ describe('Add-on Expiry Cron Job', () => {
         it('keeps needsEntitlementSync=true and increments retry counter when grant fails', async () => {
             // Arrange
             const ctx = createMockContext();
-            vi.mocked(AddonExpirationService).mockImplementation(
-                () => createDefaultMockService() as never
-            );
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return createDefaultMockService() as never;
+            });
 
             const splitPurchase = {
                 id: 'purch-split-2',
@@ -2578,9 +2640,9 @@ describe('Add-on Expiry Cron Job', () => {
         it('processes each purchase in isolation so one failure does not block the rest', async () => {
             // Arrange
             const ctx = createMockContext();
-            vi.mocked(AddonExpirationService).mockImplementation(
-                () => createDefaultMockService() as never
-            );
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return createDefaultMockService() as never;
+            });
 
             const purchases = [
                 { id: 'purch-iso-1', customerId: 'cust-iso-1', addonSlug: 'addon-a', metadata: {} },
@@ -2612,9 +2674,9 @@ describe('Add-on Expiry Cron Job', () => {
         it('skips real work in dry-run mode but reports count', async () => {
             // Arrange
             const ctx = createMockContext({ dryRun: true });
-            vi.mocked(AddonExpirationService).mockImplementation(
-                () => createDefaultMockService() as never
-            );
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return createDefaultMockService() as never;
+            });
 
             const splitPurchase = {
                 id: 'purch-dry-1',
@@ -2639,9 +2701,9 @@ describe('Add-on Expiry Cron Job', () => {
         it('returns zero grantReconciled when no purchases need sync', async () => {
             // Arrange
             const ctx = createMockContext();
-            vi.mocked(AddonExpirationService).mockImplementation(
-                () => createDefaultMockService() as never
-            );
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return createDefaultMockService() as never;
+            });
 
             // Phase 7 query returns empty (no split-state purchases)
             const txStub = buildTxWithPhase7Rows([]);
@@ -2692,7 +2754,9 @@ describe('Add-on Expiry Cron Job', () => {
                 findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -2743,7 +2807,9 @@ describe('Add-on Expiry Cron Job', () => {
                 findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -2796,7 +2862,9 @@ describe('Add-on Expiry Cron Job', () => {
                 findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -2873,7 +2941,9 @@ describe('Add-on Expiry Cron Job', () => {
                 findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -2947,7 +3017,9 @@ describe('Add-on Expiry Cron Job', () => {
                 findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
 
             // Act
             await addonExpiryJob.handler(ctx);

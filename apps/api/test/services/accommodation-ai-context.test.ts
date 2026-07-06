@@ -86,10 +86,12 @@ const { mockGetById, mockGetFaqs, mockGetDb, mockApiLogger } = vi.hoisted(() => 
 
 // Mock AccommodationService to expose only getById + getFaqs.
 vi.mock('@repo/service-core', () => ({
-    AccommodationService: vi.fn().mockImplementation(() => ({
-        getById: mockGetById,
-        getFaqs: mockGetFaqs
-    })),
+    AccommodationService: vi.fn().mockImplementation(function () {
+        return {
+            getById: mockGetById,
+            getFaqs: mockGetFaqs
+        };
+    }),
     // Minimal stand-in for the error class so the SUT can be tested in
     // isolation without pulling in the entire service-core dependency graph
     // (which transitively imports @repo/content-moderation, not available in

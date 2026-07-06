@@ -94,7 +94,9 @@ describe('Trial Expiry Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             const result = await trialExpiryJob.handler(ctx);
@@ -124,7 +126,9 @@ describe('Trial Expiry Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             const result = await trialExpiryJob.handler(ctx);
@@ -241,7 +245,9 @@ describe('Trial Expiry Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             const result = await trialExpiryJob.handler(ctx);
@@ -270,7 +276,9 @@ describe('Trial Expiry Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             const result = await trialExpiryJob.handler(ctx);
@@ -318,7 +326,9 @@ describe('Trial Expiry Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             const result = await trialExpiryJob.handler(ctx);
@@ -356,7 +366,9 @@ describe('Trial Expiry Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await trialExpiryJob.handler(ctx);
@@ -394,7 +406,9 @@ describe('Trial Expiry Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await trialExpiryJob.handler(ctx);
@@ -418,7 +432,9 @@ describe('Trial Expiry Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await trialExpiryJob.handler(ctx);

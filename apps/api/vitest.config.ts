@@ -1,6 +1,21 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
 
+// Pin NODE_ENV=test authoritatively for the whole run. A developer's
+// apps/api/.env.local carries NODE_ENV=development, which src/utils/logger.ts and
+// src/utils/env.ts eagerly dotenv-load at import time (during test collection).
+// This config module is evaluated in Vitest's MAIN process before the `forks`
+// pool spawns workers, so the workers inherit NODE_ENV=test at birth; the later
+// dotenv loads run WITHOUT override and therefore cannot clobber it, and
+// resolveEnvironment() (packages/media) resolves to 'test' locally as it already
+// does in CI (no .env.local there).
+//
+// NOTE: this MUST be a direct process.env mutation, not the vitest `test.env`
+// block. As of Vitest 4 (HOS-28), `test.env` writes ONLY to import.meta.env and
+// no longer patches process.env, so the old `env: { NODE_ENV: 'test' }` block was
+// an inert no-op for runtime helpers that read process.env.NODE_ENV.
+process.env.NODE_ENV = 'test';
+
 export default defineConfig({
     test: {
         globals: true,
@@ -14,11 +29,7 @@ export default defineConfig({
         // headroom; the real fix (cutting per-file cold-import cost) is tracked in SPEC-188.
         testTimeout: 30000,
         pool: 'forks',
-        poolOptions: {
-            forks: {
-                maxForks: 3
-            }
-        },
+        maxWorkers: 3,
         include: ['test/**/*.test.ts', 'src/**/*.test.ts'],
         // E2E and integration tests run separately with vitest.config.e2e.ts
         exclude: ['test/e2e/**/*.test.ts', 'test/integration/**/*.test.ts', 'node_modules/**'],

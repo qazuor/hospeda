@@ -55,12 +55,16 @@ vi.mock('../../../src/utils/actor', () => ({
 }));
 
 vi.mock('@repo/service-core', () => ({
-    AccommodationReviewService: vi.fn(() => ({
-        getPendingCount: mockAccGetPendingCount
-    })),
-    DestinationReviewService: vi.fn(() => ({
-        getPendingCount: mockDestGetPendingCount
-    })),
+    AccommodationReviewService: vi.fn(function () {
+        return {
+            getPendingCount: mockAccGetPendingCount
+        };
+    }),
+    DestinationReviewService: vi.fn(function () {
+        return {
+            getPendingCount: mockDestGetPendingCount
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,

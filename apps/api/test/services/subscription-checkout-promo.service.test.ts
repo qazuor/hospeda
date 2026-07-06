@@ -12,12 +12,13 @@
  * @module test/services/subscription-checkout-promo.service
  */
 
+import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const validatePromoCodeMock = vi.fn();
 // Reassigned per-test before invoking the resolver; read lazily by the mocked
 // PromoCodeService.getByCode (see the vi.mock factory below).
-let promoServiceGetByCodeMock: ReturnType<typeof vi.fn>;
+let promoServiceGetByCodeMock: Mock;
 
 vi.mock('@repo/service-core', async () => {
     return {

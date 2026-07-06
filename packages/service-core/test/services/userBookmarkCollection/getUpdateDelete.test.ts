@@ -113,8 +113,12 @@ vi.mock('@repo/db', async () => {
         }),
         // Override constructors so `new UserBookmarkModel()` inside the service
         // returns our test-controlled mock instance.
-        UserBookmarkCollectionModel: vi.fn(() => collectionModelMock),
-        UserBookmarkModel: vi.fn(() => bookmarkModelMock)
+        UserBookmarkCollectionModel: vi.fn(function () {
+            return collectionModelMock;
+        }),
+        UserBookmarkModel: vi.fn(function () {
+            return bookmarkModelMock;
+        })
     };
 });
 

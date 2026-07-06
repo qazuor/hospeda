@@ -256,7 +256,7 @@ function resetAllMocks(): void {
     });
 
     // Default withTransaction: calls callback with tx that has insert/update
-    mockWithTransaction.mockImplementation(async (cb: (tx: unknown) => Promise<void>) => {
+    mockWithTransaction.mockImplementation(async function (cb: (tx: unknown) => Promise<void>) {
         const tx = {
             insert: mockDbInsert,
             update: mockDbUpdate,
@@ -328,7 +328,7 @@ describe('createAiProviderCredential', () => {
 
             // Capture what was passed to insert().values()
             const capturedValues: unknown[] = [];
-            mockDbInsertValues.mockImplementation((vals: unknown) => {
+            mockDbInsertValues.mockImplementation(function (vals: unknown) {
                 capturedValues.push(vals);
                 const returningMock = vi.fn().mockResolvedValue([{ id: 'new-cred-uuid' }]);
                 return { returning: returningMock };
@@ -358,7 +358,7 @@ describe('createAiProviderCredential', () => {
             mockDbSelectLimit.mockResolvedValue([]);
 
             const allInsertedValues: unknown[] = [];
-            mockDbInsertValues.mockImplementation((vals: unknown) => {
+            mockDbInsertValues.mockImplementation(function (vals: unknown) {
                 allInsertedValues.push(vals);
                 const returningMock = vi.fn().mockResolvedValue([{ id: 'new-cred-uuid' }]);
                 return { returning: returningMock };
@@ -452,7 +452,7 @@ describe('rotateAiProviderCredential', () => {
         it('should update ciphertext in-place on the existing row', async () => {
             // Arrange — capture what was passed to update().set()
             const capturedSetValues: unknown[] = [];
-            mockDbUpdateSet.mockImplementation((vals: unknown) => {
+            mockDbUpdateSet.mockImplementation(function (vals: unknown) {
                 capturedSetValues.push(vals);
                 return { where: mockDbUpdateSetWhere };
             });
@@ -476,7 +476,7 @@ describe('rotateAiProviderCredential', () => {
         it('should insert an audit row with action "rotated"', async () => {
             // Arrange — capture all insert().values() calls
             const allInsertedValues: unknown[] = [];
-            mockDbInsertValues.mockImplementation((vals: unknown) => {
+            mockDbInsertValues.mockImplementation(function (vals: unknown) {
                 allInsertedValues.push(vals);
                 const returningMock = vi.fn().mockResolvedValue([]);
                 return { returning: returningMock };
@@ -550,7 +550,7 @@ describe('deleteAiProviderCredential', () => {
         it('should set deletedAt and deletedById on the credential row', async () => {
             // Arrange — capture update().set() payload
             const capturedSetValues: unknown[] = [];
-            mockDbUpdateSet.mockImplementation((vals: unknown) => {
+            mockDbUpdateSet.mockImplementation(function (vals: unknown) {
                 capturedSetValues.push(vals);
                 return { where: mockDbUpdateSetWhere };
             });
@@ -571,7 +571,7 @@ describe('deleteAiProviderCredential', () => {
         it('should insert an audit row with action "deleted"', async () => {
             // Arrange — capture insert().values() calls
             const allInsertedValues: unknown[] = [];
-            mockDbInsertValues.mockImplementation((vals: unknown) => {
+            mockDbInsertValues.mockImplementation(function (vals: unknown) {
                 allInsertedValues.push(vals);
                 const returningMock = vi.fn().mockResolvedValue([]);
                 return { returning: returningMock };

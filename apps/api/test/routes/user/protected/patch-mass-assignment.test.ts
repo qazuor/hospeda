@@ -19,6 +19,7 @@
  */
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import type { Mock } from 'vitest';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
@@ -26,7 +27,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
  * factory above outer const declarations, so the factory reads through this
  * ref instead of closing over a `const` directly.
  */
-const userServiceRef: { update: ReturnType<typeof vi.fn> } = {
+const userServiceRef: { update: Mock } = {
     update: vi.fn()
 };
 
@@ -34,9 +35,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        UserService: vi.fn().mockImplementation(() => ({
-            update: (...args: unknown[]) => userServiceRef.update(...args)
-        }))
+        UserService: vi.fn().mockImplementation(function () {
+            return {
+                update: (...args: unknown[]) => userServiceRef.update(...args)
+            };
+        })
     };
 });
 

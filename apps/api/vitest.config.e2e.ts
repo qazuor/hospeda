@@ -14,8 +14,9 @@ import { defineConfig } from 'vitest/config';
  *
  * ## Isolation contract (SPEC-143 T-143-56)
  *
- * The suite runs in a SINGLE forked process (`singleFork: true`) and test files
- * execute SEQUENTIALLY. This is intentional and currently mandatory because 48
+ * The suite runs with `fileParallelism: false` (Vitest 4 replacement for the
+ * removed `singleFork: true`) and test files execute SEQUENTIALLY in a single
+ * forked worker. This is intentional and currently mandatory because 48
  * of the 50 e2e test files perform `testDb.clean()` (TRUNCATE * CASCADE on the
  * public schema) between tests. Running two files concurrently against the same
  * database would mean one file's clean() wipes another file's in-flight data.
@@ -26,7 +27,7 @@ import { defineConfig } from 'vitest/config';
  * and its own apply-postgres-extras run. That is a future SPEC follow-up; see
  * `apps/api/test/e2e/README.md` "Path to parallelism".
  *
- * Until then, do NOT flip singleFork to false. The T-143-65 fix
+ * Until then, do NOT set fileParallelism to true. The T-143-65 fix
  * (resetDb + assertSchemaReady) made cross-FILE setup/teardown safe, but
  * cross-fork concurrent writes against a shared DB are still broken by the
  * clean() pattern.
@@ -75,19 +76,18 @@ export default defineConfig({
         ...(jsonOutputPath ? { outputFile: jsonOutputPath } : {}),
         // Run tests sequentially to avoid database conflicts.
         // See the "Isolation contract" section in the file header.
+        // Vitest 4 (HOS-28): `fileParallelism: false` (forces maxWorkers 1)
+        // replaces the removed `poolOptions.forks.singleFork: true`.
         pool: 'forks',
-        poolOptions: {
-            forks: {
-                singleFork: true,
-                // The whole suite runs in one long-lived fork (singleFork), so V8
-                // heap use accumulates across every test file. The default ~2 GB
-                // ceiling is exceeded partway through (observed OOM after ~11 files),
-                // so raise it here to make the suite reliably runnable without an
-                // external NODE_OPTIONS flag. This is a ceiling bump, not a leak fix —
-                // reducing the per-file native-memory growth is tracked in HOS-80.
-                execArgv: ['--max-old-space-size=8192']
-            }
-        },
+        fileParallelism: false,
+        // The whole suite runs in one long-lived fork (fileParallelism: false, the
+        // Vitest 4 replacement for singleFork), so V8 heap use accumulates across
+        // every test file. The default ~2 GB ceiling is exceeded partway through
+        // (observed OOM after ~11 files), so raise it here to make the suite
+        // reliably runnable without an external NODE_OPTIONS flag. This is a
+        // ceiling bump, not a leak fix — per-file native-memory growth is HOS-80.
+        // Vitest 4 (HOS-28): execArgv moved from poolOptions.forks to top-level.
+        execArgv: ['--max-old-space-size=8192'],
         coverage: {
             provider: 'v8',
             reporter: ['text', 'json', 'html'],

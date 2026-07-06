@@ -64,7 +64,9 @@ const mockTrialService = {
 };
 
 vi.mock('../../src/services/trial.service', () => ({
-    TrialService: vi.fn(() => mockTrialService)
+    TrialService: vi.fn(function () {
+        return mockTrialService;
+    })
 }));
 
 // Mock billing middleware

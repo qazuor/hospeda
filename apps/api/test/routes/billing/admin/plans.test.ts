@@ -54,16 +54,18 @@ const {
 
 // Mock PlanService
 vi.mock('../../../../src/services/plan.service', () => ({
-    PlanService: vi.fn().mockImplementation(() => ({
-        list: mockPlanList,
-        getById: mockPlanGetById,
-        create: mockPlanCreate,
-        update: mockPlanUpdate,
-        toggleActive: mockPlanToggleActive,
-        softDelete: mockPlanSoftDelete,
-        restore: mockPlanRestore,
-        hardDelete: mockPlanHardDelete
-    }))
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            list: mockPlanList,
+            getById: mockPlanGetById,
+            create: mockPlanCreate,
+            update: mockPlanUpdate,
+            toggleActive: mockPlanToggleActive,
+            softDelete: mockPlanSoftDelete,
+            restore: mockPlanRestore,
+            hardDelete: mockPlanHardDelete
+        };
+    })
 }));
 
 // Mock @repo/schemas — preserve actual schemas, override PermissionEnum

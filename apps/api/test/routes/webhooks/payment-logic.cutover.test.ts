@@ -34,10 +34,12 @@ const { mockGetBySlug, mockGetAddonBySlug } = vi.hoisted(() => ({
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
 vi.mock('@repo/service-core', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockGetBySlug,
-        list: vi.fn()
-    }))
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockGetBySlug,
+            list: vi.fn()
+        };
+    })
 }));
 
 // getAddonBySlug must NOT be called after cutover
@@ -96,9 +98,11 @@ vi.mock('../../../src/routes/webhooks/mercadopago/utils', () => ({
 }));
 
 vi.mock('../../../src/services/addon.service', () => ({
-    AddonService: vi.fn().mockImplementation(() => ({
-        confirmPurchase: vi.fn().mockResolvedValue({ success: true, data: undefined })
-    }))
+    AddonService: vi.fn().mockImplementation(function () {
+        return {
+            confirmPurchase: vi.fn().mockResolvedValue({ success: true, data: undefined })
+        };
+    })
 }));
 
 vi.mock('../../../src/services/addon-plan-change.service', () => ({
@@ -247,9 +251,9 @@ describe('payment-logic.ts addon reads cutover parity (SPEC-192 T-016)', () => {
             // Arrange — catalog NOT_FOUND only affects notification, not purchase confirmation
             const { AddonService } = await import('../../../src/services/addon.service');
             const mockConfirmPurchase = vi.fn().mockResolvedValue({ success: true });
-            vi.mocked(AddonService).mockImplementation(
-                () => ({ confirmPurchase: mockConfirmPurchase }) as never
-            );
+            vi.mocked(AddonService).mockImplementation(function () {
+                return { confirmPurchase: mockConfirmPurchase } as never;
+            });
 
             mockGetBySlug.mockResolvedValue({
                 success: false,

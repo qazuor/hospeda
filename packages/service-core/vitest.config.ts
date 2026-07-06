@@ -7,11 +7,7 @@ export default defineConfig({
         globals: false,
         environment: 'node',
         pool: 'forks',
-        poolOptions: {
-            forks: {
-                maxForks: 3
-            }
-        },
+        maxWorkers: 3,
         retry: 1,
         include: ['test/**/*.test.ts'],
         // SPEC-080 real-DB integration tests live under

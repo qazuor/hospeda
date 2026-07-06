@@ -72,10 +72,12 @@ vi.mock('../../../src/utils/actor', () => ({
 
 // Mock UserService so no real DB calls happen.
 vi.mock('@repo/service-core', () => ({
-    UserService: vi.fn(() => ({
-        softDelete: mockSoftDelete,
-        hardDelete: mockHardDelete
-    })),
+    UserService: vi.fn(function () {
+        return {
+            softDelete: mockSoftDelete,
+            hardDelete: mockHardDelete
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,

@@ -57,10 +57,12 @@ const { mockHandleClaim, mockHandleResult } = vi.hoisted(() => ({
 }));
 
 vi.mock('@repo/service-core', () => ({
-    SocialPublishDispatchService: vi.fn().mockImplementation(() => ({
-        handleMakeCallbackClaim: mockHandleClaim,
-        handleMakeCallbackResult: mockHandleResult
-    })),
+    SocialPublishDispatchService: vi.fn().mockImplementation(function () {
+        return {
+            handleMakeCallbackClaim: mockHandleClaim,
+            handleMakeCallbackResult: mockHandleResult
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         public code: string;
         public reason?: string;

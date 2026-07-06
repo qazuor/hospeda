@@ -49,9 +49,11 @@ vi.mock('../../../../src/utils/env', async (importOriginal) => {
 
 const mockSearch = vi.fn();
 const mockImageSearchService = vi.hoisted(() => ({
-    ImageSearchService: vi.fn().mockImplementation(() => ({
-        search: mockSearch
-    }))
+    ImageSearchService: vi.fn().mockImplementation(function () {
+        return {
+            search: mockSearch
+        };
+    })
 }));
 
 vi.mock('@repo/service-core', async (importOriginal) => {

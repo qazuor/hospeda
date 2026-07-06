@@ -250,7 +250,7 @@ describe('Tour system — a11y regression (SPEC-174 T-015)', () => {
             mockHasNextStep.mockReturnValue(true);
 
             let onDestroyStarted: (() => void) | undefined;
-            mockDriverFactory.mockImplementation((config: Record<string, unknown>) => {
+            mockDriverFactory.mockImplementation(function (config: Record<string, unknown>) {
                 onDestroyStarted = config.onDestroyStarted as (() => void) | undefined;
                 return mockDriverInstance;
             });
@@ -293,7 +293,7 @@ describe('Tour system — a11y regression (SPEC-174 T-015)', () => {
             mockHasNextStep.mockReturnValue(false);
 
             let onDestroyStarted: (() => void) | undefined;
-            mockDriverFactory.mockImplementation((config: Record<string, unknown>) => {
+            mockDriverFactory.mockImplementation(function (config: Record<string, unknown>) {
                 onDestroyStarted = config.onDestroyStarted as (() => void) | undefined;
                 return mockDriverInstance;
             });

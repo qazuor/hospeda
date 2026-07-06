@@ -86,9 +86,9 @@ describe('UserService.hardDelete — avatar cleanup (T-065)', () => {
 
         const afterSpy = vi.spyOn(
             service as unknown as {
-                _afterHardDelete: UserService['_afterHardDelete' extends never ? never : never];
+                _afterHardDelete: UserService['_afterHardDelete'];
             },
-            '_afterHardDelete' as never
+            '_afterHardDelete'
         );
         const deleteSpy = vi.spyOn(provider, 'delete');
 

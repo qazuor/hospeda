@@ -47,11 +47,15 @@ import {
 // ---------------------------------------------------------------------------
 
 vi.mock('../../../src/services/destination/destination.service', () => ({
-    DestinationService: vi.fn().mockImplementation(() => ({}))
+    DestinationService: vi.fn().mockImplementation(function () {
+        return {};
+    })
 }));
 
 vi.mock('../../../src/services/conversation/conversation.service', () => ({
-    ConversationService: vi.fn().mockImplementation(() => ({}))
+    ConversationService: vi.fn().mockImplementation(function () {
+        return {};
+    })
 }));
 
 // ---------------------------------------------------------------------------

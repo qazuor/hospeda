@@ -194,7 +194,7 @@ describe('withServiceTransaction — timeoutMs option (SPEC-059)', () => {
         // Arrange — make tx.execute simulate a timeout abort on the second call
         // (the first call is the SET LOCAL; subsequent calls would be user queries)
         let callCount = 0;
-        mockExecute.mockImplementation(async () => {
+        mockExecute.mockImplementation(async function () {
             callCount++;
             if (callCount === 1) {
                 // First call: SET LOCAL statement_timeout — succeeds immediately

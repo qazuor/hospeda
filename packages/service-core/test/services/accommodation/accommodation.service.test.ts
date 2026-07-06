@@ -23,7 +23,9 @@ class MockAccommodationModel {
 
 // Mock DestinationService
 vi.mock('../../../src/services/destination/destination.service', () => ({
-    DestinationService: vi.fn().mockImplementation(() => ({}))
+    DestinationService: vi.fn().mockImplementation(function () {
+        return {};
+    })
 }));
 
 describe('AccommodationService - Relations Support', () => {
