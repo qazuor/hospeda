@@ -124,6 +124,24 @@ describe('buildMakeWebhookSchemaDoc() — unit', () => {
         // scheduledAt is a z.date() — generation must not throw.
         expect(() => buildMakeWebhookSchemaDoc()).not.toThrow();
     });
+
+    it('renders scheduledAt (z.date) as an ISO date-time string, not an opaque {}', () => {
+        const doc = buildMakeWebhookSchemaDoc();
+        const props = (doc.payloadSchema as { properties?: Record<string, unknown> }).properties;
+        // nullable date → anyOf/type-array; the date branch must carry the
+        // string + date-time hint, not the default empty {} for unrepresentable.
+        const json = JSON.stringify(props?.scheduledAt);
+        expect(json).toContain('date-time');
+        expect(json).toContain('"string"');
+    });
+
+    it('responseSchema documents the optional makeRunId echoed by Make.com', () => {
+        const doc = buildMakeWebhookSchemaDoc();
+        // Make.com's Webhook Response echoes {{executionId}} as makeRunId in both
+        // SUCCESS and FAILED branches; the generated schema must surface it.
+        const json = JSON.stringify(doc.responseSchema);
+        expect(json).toContain('makeRunId');
+    });
 });
 
 // ---------------------------------------------------------------------------

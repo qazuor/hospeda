@@ -94,9 +94,11 @@ function toCredentialField(result: VaultReadResult): CredentialField {
  * `SocialMakePayloadSchema` / `MakeWebhookResponseSchema` is reflected here
  * automatically (the AC-1 "generated, not hand-written" guarantee).
  *
- * `unrepresentable: 'any'` maps JSON-Schema-unrepresentable Zod nodes (e.g.
- * `scheduledAt: z.date()`) to an open `{}` instead of throwing; the field is
- * serialised as an ISO string on the wire.
+ * `unrepresentable: 'any'` stops JSON-Schema-unrepresentable Zod nodes (e.g.
+ * `scheduledAt: z.date()`) from throwing, and the `override` maps every
+ * `z.date()` node to a `{ type: 'string', format: 'date-time' }` — which is how
+ * the value is actually serialised on the wire (an ISO datetime string), rather
+ * than the opaque `{}` the default `unrepresentable: 'any'` would emit.
  *
  * @returns The payload/response JSON Schemas plus the outbound header name.
  */
@@ -105,12 +107,29 @@ export function buildMakeWebhookSchemaDoc(): {
     readonly responseSchema: Record<string, unknown>;
     readonly headerName: typeof MAKE_AUTH_HEADER_NAME;
 } {
-    const payloadSchema = zodCore.toJSONSchema(SocialMakePayloadSchema, {
-        unrepresentable: 'any'
-    }) as Record<string, unknown>;
-    const responseSchema = zodCore.toJSONSchema(MakeWebhookResponseSchema, {
-        unrepresentable: 'any'
-    }) as Record<string, unknown>;
+    const options = {
+        unrepresentable: 'any',
+        override: (ctx: {
+            zodSchema: { _zod: { def: { type: string } } };
+            jsonSchema: Record<string, unknown>;
+        }) => {
+            // z.date() has no native JSON Schema type; on the wire it is an ISO
+            // datetime string, so surface it as such instead of an opaque `{}`.
+            if (ctx.zodSchema._zod.def.type === 'date') {
+                ctx.jsonSchema.type = 'string';
+                ctx.jsonSchema.format = 'date-time';
+            }
+        }
+    } as const;
+
+    const payloadSchema = zodCore.toJSONSchema(SocialMakePayloadSchema, options) as Record<
+        string,
+        unknown
+    >;
+    const responseSchema = zodCore.toJSONSchema(MakeWebhookResponseSchema, options) as Record<
+        string,
+        unknown
+    >;
 
     return { payloadSchema, responseSchema, headerName: MAKE_AUTH_HEADER_NAME };
 }
