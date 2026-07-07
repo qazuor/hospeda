@@ -31,6 +31,16 @@ interface ContactHostAccommodation {
     readonly id: string;
     readonly lifecycleState: string;
     readonly deletedAt: string | null | undefined;
+    /** Accommodation type (HOTEL, CABIN, …) — enriches booking analytics. */
+    readonly type: string;
+    /** Destination id the accommodation belongs to. */
+    readonly destinationId: string;
+    /** Destination display name (denormalized for readable breakdowns). */
+    readonly destinationName: string;
+    /** Nightly base price in the smallest currency unit, or null when unpriced. */
+    readonly price: number | null;
+    /** ISO currency code for `price`, or null when unpriced. */
+    readonly currency: string | null;
 }
 
 /** Authenticated user data (optional — absent when anonymous) */
@@ -174,11 +184,19 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
         if (isSubmitDisabled) return;
 
         setSubmitState({ phase: 'submitting' });
-        trackEvent(WebEvents.BookingInitiated, {
+        // Shared analytics props for the booking funnel — enriched with type,
+        // destination and price so funnels can segment inquiries by them.
+        const bookingProps = {
             accommodation_id: accommodation.id,
+            accommodation_type: accommodation.type,
+            destination_id: accommodation.destinationId,
+            destination_name: accommodation.destinationName,
+            price: accommodation.price,
+            currency: accommodation.currency,
             is_authenticated: isAuthenticated,
             locale
-        });
+        };
+        trackEvent(WebEvents.BookingInitiated, bookingProps);
 
         try {
             if (isAuthenticated) {
@@ -214,11 +232,7 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
 
                 const conversationId = body.data?.conversationId;
                 if (conversationId) {
-                    trackEvent(WebEvents.BookingRequestSent, {
-                        accommodation_id: accommodation.id,
-                        is_authenticated: isAuthenticated,
-                        locale
-                    });
+                    trackEvent(WebEvents.BookingRequestSent, bookingProps);
                     window.location.href = buildUrl({
                         locale,
                         path: `mi-cuenta/consultas/${conversationId}`
@@ -271,11 +285,7 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                     return;
                 }
 
-                trackEvent(WebEvents.BookingRequestSent, {
-                    accommodation_id: accommodation.id,
-                    is_authenticated: isAuthenticated,
-                    locale
-                });
+                trackEvent(WebEvents.BookingRequestSent, bookingProps);
                 setSubmitState({
                     phase: 'success',
                     message: t('conversations.notifications.verificationSent')

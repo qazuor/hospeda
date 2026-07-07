@@ -47,22 +47,33 @@ vi.mock('../../../src/components/shared/feedback/LoadingButton.module.css', () =
 // Fixtures
 // ---------------------------------------------------------------------------
 
+const ACCOMMODATION_META = {
+    type: 'CABIN',
+    destinationId: 'dest-colon',
+    destinationName: 'Colón',
+    price: 12000,
+    currency: 'ARS'
+} as const;
+
 const ACTIVE_ACCOMMODATION = {
     id: 'acc-001',
     lifecycleState: 'ACTIVE' as const,
-    deletedAt: null
+    deletedAt: null,
+    ...ACCOMMODATION_META
 };
 
 const INACTIVE_ACCOMMODATION = {
     id: 'acc-001',
     lifecycleState: 'ARCHIVED' as const,
-    deletedAt: null
+    deletedAt: null,
+    ...ACCOMMODATION_META
 };
 
 const DELETED_ACCOMMODATION = {
     id: 'acc-001',
     lifecycleState: 'ACTIVE' as const,
-    deletedAt: '2024-01-01T00:00:00Z'
+    deletedAt: '2024-01-01T00:00:00Z',
+    ...ACCOMMODATION_META
 };
 
 const CURRENT_USER = { id: 'user-001', name: 'Ana', email: 'ana@example.com' };
@@ -645,6 +656,11 @@ describe('ContactHost', () => {
             );
             expect(bookingRequestCall?.[1]).toEqual({
                 accommodation_id: ACTIVE_ACCOMMODATION.id,
+                accommodation_type: 'CABIN',
+                destination_id: 'dest-colon',
+                destination_name: 'Colón',
+                price: 12000,
+                currency: 'ARS',
                 is_authenticated: false,
                 locale: LOCALE
             });
@@ -688,6 +704,11 @@ describe('ContactHost', () => {
             );
             expect(bookingRequestCall?.[1]).toEqual({
                 accommodation_id: ACTIVE_ACCOMMODATION.id,
+                accommodation_type: 'CABIN',
+                destination_id: 'dest-colon',
+                destination_name: 'Colón',
+                price: 12000,
+                currency: 'ARS',
                 is_authenticated: true,
                 locale: LOCALE
             });
