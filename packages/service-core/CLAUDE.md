@@ -1197,6 +1197,19 @@ a syntactically valid 5-field cron expression, falling back to the original `*/5
 literal when the setting is missing or invalid — the dispatch cron can never fail to register
 because of a bad admin-entered value.
 
+**`social_assets_folder` is a BASE PREFIX, not the final folder (env isolation fix).**
+`SocialImagePipelineService.getAssetsFolder()` (`social-image-pipeline.service.ts`) ALWAYS
+composes the final Cloudinary folder as `${base}/${environment}/assets` via the pure helper
+`buildSocialAssetsFolder()` (`social-image-pipeline-config.util.ts`), where `environment` comes
+from `resolveEnvironment()` (`@repo/media/server`, imported at RUNTIME — same established
+precedent as `AccommodationService`'s hard-delete Cloudinary cleanup). This guarantees staging
+and prod (which share one Cloudinary account) can never collide, regardless of what an admin
+configures as the base prefix — the setting/seed value can no longer defeat env separation as
+it could when the setting stored the full path (`hospeda/social/assets`, no env segment). The
+fallback base is `SOCIAL_ASSETS_FOLDER_BASE_FALLBACK = 'hospeda/social'`. Target layout:
+`hospeda/social/prod/assets`, `hospeda/social/preview/assets`, etc — deliberately its own
+top-level subtree, separate from entity media (`hospeda/{env}/accommodations/...`).
+
 ### G-4 — Social Credentials Vault
 
 Mirrors the AI Credential Vault (SPEC-173) pattern exactly, one vault per domain (separate
