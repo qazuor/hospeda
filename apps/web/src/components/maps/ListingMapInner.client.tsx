@@ -73,6 +73,7 @@ import styles from './ListingMap.module.css';
 // exact-mode detail map). Deleting the override makes Leaflet use the base
 // `Icon._getIconUrl`, which returns our explicit URL verbatim.
 // biome-ignore lint/performance/noDelete: one-time module-load reset of a prototype method; not a hot path.
+// TYPE-WORKAROUND: Leaflet's public types don't expose the internal `_getIconUrl` member we must delete.
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: iconRetinaUrl.src ?? iconRetinaUrl,
