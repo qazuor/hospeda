@@ -28,6 +28,7 @@ interface PostHogStub {
     capture(name: string, props?: Record<string, unknown>): void;
     set_config(config: Record<string, unknown>): void;
     identify(distinctId: string, props?: Record<string, unknown>): void;
+    setPersonProperties(props: Record<string, unknown>): void;
     reset(): void;
 }
 
@@ -85,6 +86,13 @@ function hasAnalyticsConsent(): boolean {
  * `cookie-consent.ts`). `null` means nothing pending.
  */
 let pendingIdentify: { userId: string; props?: Record<string, unknown> } | null = null;
+/**
+ * Person properties requested before analytics consent was granted. Merged
+ * across calls and flushed the moment consent flips to `true`. `null` means
+ * nothing pending. Kept separate from {@link pendingIdentify} because person
+ * properties can be set without (re-)identifying.
+ */
+let pendingPersonProperties: Record<string, unknown> | null = null;
 /** Guard so the `cookie-consent:changed` listener is attached at most once. */
 let consentListenerAttached = false;
 
@@ -93,9 +101,14 @@ function attachConsentListenerOnce(): void {
     consentListenerAttached = true;
     window.addEventListener('cookie-consent:changed', (event) => {
         const detail = (event as CustomEvent<{ analytics?: boolean }>).detail;
-        if (detail?.analytics === true && pendingIdentify) {
+        if (detail?.analytics !== true) return;
+        if (pendingIdentify) {
             window.posthog?.identify(pendingIdentify.userId, pendingIdentify.props);
             pendingIdentify = null;
+        }
+        if (pendingPersonProperties) {
+            window.posthog?.setPersonProperties(pendingPersonProperties);
+            pendingPersonProperties = null;
         }
     });
 }
@@ -139,6 +152,25 @@ export function identifyUser(userId: string, props?: Record<string, unknown>): v
 }
 
 /**
+ * Set durable person properties on the current PostHog person profile (e.g.
+ * `plan`, `plan_status`). Like {@link identifyUser} this writes to a person
+ * profile, so it is CONSENT-GATED: applied immediately when consent is already
+ * granted, otherwise merged into a pending buffer and flushed the moment
+ * consent flips to `true`. No-op on the server and when PostHog never loaded.
+ *
+ * @param props - Non-sensitive person properties to set. Never pass PII.
+ */
+export function setPersonProperties(props: Record<string, unknown>): void {
+    if (typeof window === 'undefined') return;
+    if (hasAnalyticsConsent()) {
+        window.posthog?.setPersonProperties(props);
+        return;
+    }
+    pendingPersonProperties = { ...(pendingPersonProperties ?? {}), ...props };
+    attachConsentListenerOnce();
+}
+
+/**
  * Clear the identified visitor. Call on sign-out so events captured on the
  * same browser afterwards (by a different user, or as a guest) are not
  * attributed to the previous person. Also drops any identity that was pending
@@ -147,5 +179,6 @@ export function identifyUser(userId: string, props?: Record<string, unknown>): v
 export function resetUser(): void {
     if (typeof window === 'undefined') return;
     pendingIdentify = null;
+    pendingPersonProperties = null;
     window.posthog?.reset();
 }

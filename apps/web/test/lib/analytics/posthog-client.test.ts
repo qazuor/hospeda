@@ -12,7 +12,12 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { identifyUser, resetUser, trackEvent } from '@/lib/analytics/posthog-client';
+import {
+    identifyUser,
+    resetUser,
+    setPersonProperties,
+    trackEvent
+} from '@/lib/analytics/posthog-client';
 
 /** Set (or clear, when `granted` is false) the analytics-consent cookie. */
 function setAnalyticsConsent(granted: boolean): void {
@@ -156,6 +161,49 @@ describe('identifyUser (consent-gated)', () => {
 
         // Assert
         expect(identifySpy).not.toHaveBeenCalled();
+    });
+});
+
+describe('setPersonProperties (consent-gated)', () => {
+    it('sets properties immediately when analytics consent is granted', () => {
+        setAnalyticsConsent(true);
+        const setSpy = vi.fn();
+        (window as unknown as { posthog: { setPersonProperties: typeof setSpy } }).posthog = {
+            setPersonProperties: setSpy
+        };
+
+        setPersonProperties({ plan: 'host-pro', plan_status: 'active' });
+
+        expect(setSpy).toHaveBeenCalledWith({ plan: 'host-pro', plan_status: 'active' });
+    });
+
+    it('does NOT set properties when consent is absent (privacy gate)', () => {
+        const setSpy = vi.fn();
+        (window as unknown as { posthog: { setPersonProperties: typeof setSpy } }).posthog = {
+            setPersonProperties: setSpy
+        };
+
+        setPersonProperties({ plan: 'host-pro' });
+
+        expect(setSpy).not.toHaveBeenCalled();
+    });
+
+    it('replays the deferred (merged) properties once consent flips to true', () => {
+        const setSpy = vi.fn();
+        (window as unknown as { posthog: { setPersonProperties: typeof setSpy } }).posthog = {
+            setPersonProperties: setSpy
+        };
+
+        // Two pre-consent calls should merge into a single flushed payload.
+        setPersonProperties({ plan: 'host-pro' });
+        setPersonProperties({ plan_status: 'active' });
+        expect(setSpy).not.toHaveBeenCalled();
+
+        window.dispatchEvent(
+            new CustomEvent('cookie-consent:changed', { detail: { analytics: true } })
+        );
+
+        expect(setSpy).toHaveBeenCalledWith({ plan: 'host-pro', plan_status: 'active' });
     });
 });
 

@@ -23,6 +23,12 @@ vi.mock('../../../../src/lib/analytics/posthog-client', () => ({
     resetUser: vi.fn()
 }));
 
+// The plan/tier sync fires its own protected fetch on mount; mock it so it
+// doesn't interfere with the /auth/me fetch assertions in this suite.
+vi.mock('../../../../src/lib/analytics/plan-properties', () => ({
+    syncPlanPersonProperties: vi.fn().mockResolvedValue(undefined)
+}));
+
 vi.mock('../../../../src/lib/env', () => ({
     getApiUrl: () => 'https://api.test'
 }));

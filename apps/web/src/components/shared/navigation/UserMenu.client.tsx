@@ -41,6 +41,7 @@ import type { ComponentType, JSX } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
+import { syncPlanPersonProperties } from '@/lib/analytics/plan-properties';
 import { identifyUser, resetUser } from '@/lib/analytics/posthog-client';
 import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
@@ -509,6 +510,15 @@ export function UserMenu({
                   };
         identifyUser(user.id, props);
     }, [user, permissions, role]);
+
+    // ── PostHog plan/tier person property ────────────────────────────────
+    // Resolved from the PROTECTED entitlements endpoint (NOT /auth/me, which
+    // must stay a cheap public hot path), client-side and non-blocking, once
+    // the visitor is known. Guarded to run at most once per page load.
+    useEffect(() => {
+        if (!user) return;
+        void syncPlanPersonProperties({ apiUrl: getApiUrl() });
+    }, [user]);
 
     // ── Click-outside dismissal ─────────────────────────────────────────
     useEffect(() => {
