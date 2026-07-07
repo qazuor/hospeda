@@ -1,0 +1,408 @@
+---
+/**
+ * @file FilterChips.astro
+ * @description Canonical horizontal scrollable row of chip-styled anchor
+ * links for quick category/type/facet filtering on listing pages. Renders a
+ * semantically correct <nav> with an accessible label and a horizontally
+ * scrollable chip list.
+ *
+ * HOS-97: promoted from `apps/web/src/components/TagChips.astro` (now
+ * retired) to `shared/ui/` as the single canonical quick-filter chip row,
+ * shared by every listing that offers a scrollable row of filter chips:
+ * eventos (category, in-place `?category=` toggle), publicaciones (category
+ * and tag, dedicated-route nav), gastronomía / experiencias (type, in-place
+ * `?type=` toggle), and alojamientos (type, dedicated-route nav).
+ *
+ * This component is intentionally HREF-AGNOSTIC — it does not know or care
+ * whether a chip's `href` toggles a query param in place or navigates to a
+ * dedicated facet route. Callers resolve their own hrefs (and `active`
+ * state, if any) and pass them in; this component only renders the row.
+ *
+ * BETA-113 (icon parity): each chip supports an OPTIONAL leading icon — a
+ * resolved `@repo/icons` component reference (not a JSX element), the same
+ * dynamic-component-rendering pattern used by `AccommodationTypeBadge.astro`
+ * and the destinos attraction filter (`const Icon = getAttractionIcon(...);
+ * <Icon .../>`). Callers resolve their own per-category/type icon component
+ * and pass it in `chips[].icon`; this component only renders it, it does not
+ * resolve any mapping itself.
+ *
+ * HOS-97 (second pass): optional `showScrollButtons` prop ports the desktop
+ * click-to-scroll arrow-button affordance from `ScrollableNav.astro`
+ * (`‹`/`›`, >=768px, enable/disable at scroll extremes) so alojamientos does
+ * not lose it when migrating off `ScrollableNav`, and every other
+ * quick-filter chip row can opt into the same affordance for consistency.
+ * The mobile edge-fade (BETA-30) is unchanged and always active regardless
+ * of this prop — arrows are additive, not a replacement.
+ *
+ * Rendering: Static (no client JavaScript besides the scroll-fade/arrow script).
+ */
+import type { ComponentType } from 'react';
+import type { IconProps } from '@repo/icons';
+
+interface ChipItem {
+    /** Visible label rendered inside the chip. */
+    readonly label: string;
+    /** Target URL for the chip anchor. */
+    readonly href: string;
+    /** When true, the chip renders in the active/selected state. */
+    readonly active?: boolean;
+    /** Optional leading icon component (already resolved by the caller). */
+    readonly icon?: ComponentType<IconProps>;
+}
+
+interface Props {
+    /** Array of chips to render. */
+    readonly chips: ReadonlyArray<ChipItem>;
+    /** Accessible label for the surrounding <nav> element. */
+    readonly ariaLabel: string;
+    /**
+     * When true, renders desktop (>=768px) click-to-scroll arrow buttons
+     * ported from `ScrollableNav.astro`, in addition to the always-on mobile
+     * edge-fade. Defaults to `false` (fade-only, the original behavior).
+     */
+    readonly showScrollButtons?: boolean;
+    /** Accessible label for the "scroll left" button. Only used when `showScrollButtons` is true. */
+    readonly prevLabel?: string;
+    /** Accessible label for the "scroll right" button. Only used when `showScrollButtons` is true. */
+    readonly nextLabel?: string;
+}
+
+const {
+    chips,
+    ariaLabel,
+    showScrollButtons = false,
+    prevLabel = 'Anterior',
+    nextLabel = 'Siguiente'
+} = Astro.props;
+---
+
+<div class="filter-chips" data-filter-chips data-scroll-buttons={showScrollButtons ? 'true' : undefined}>
+    {showScrollButtons && (
+        <button
+            type="button"
+            class="filter-chips__arrow filter-chips__arrow--prev"
+            aria-label={prevLabel}
+            data-filter-chips-prev
+            tabindex="-1"
+        >
+            &lsaquo;
+        </button>
+    )}
+
+    <nav class="filter-chips__nav" aria-label={ariaLabel}>
+        <div class="filter-chips__fade-wrapper">
+            <ul class="filter-chips__list" role="list" data-filter-chips-list>
+                {chips.map(({ label, href, active, icon: Icon }) => (
+                    <li class="filter-chips__item">
+                        <a
+                            href={href}
+                            class:list={['filter-chips__chip', { 'filter-chips__chip--active': active }]}
+                            aria-current={active ? 'true' : undefined}
+                        >
+                            {Icon && (
+                                <span class="filter-chips__chip-icon" aria-hidden="true">
+                                    <Icon size={14} weight="regular" />
+                                </span>
+                            )}
+                            <span class="filter-chips__chip-label">{label}</span>
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    </nav>
+
+    {showScrollButtons && (
+        <button
+            type="button"
+            class="filter-chips__arrow filter-chips__arrow--next"
+            aria-label={nextLabel}
+            data-filter-chips-next
+            tabindex="-1"
+        >
+            &rsaquo;
+        </button>
+    )}
+</div>
+
+<style>
+    /* ========================================================
+       Filter Chips — canonical scrollable row of quick-filter chips
+       ======================================================== */
+    .filter-chips {
+        position: relative;
+        width: 100%;
+        /* Breathing room between the chip row and the results grid below it —
+           without this the chips sit flush against the first cards
+           (BETA-120). Pairs with the ~8px padding-block on the list for a
+           balanced gap. */
+        margin-bottom: var(--space-6, 24px);
+    }
+
+    .filter-chips__nav {
+        display: block;
+        width: 100%;
+    }
+
+    .filter-chips__fade-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    .filter-chips__list {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: var(--space-3, 12px);
+        padding-block: var(--space-2, 8px);
+        padding-inline: 2px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        list-style: none;
+        /* Edge-fade widths, driven by the scroll-state script below. Default is
+           0 (no fade) on both sides so the FIRST chip is never dimmed at rest
+           (BETA-30: "Cultura" looked faded under a fixed left fade). The script
+           raises a side to 48px only when there is off-screen content to scroll
+           toward on that side. */
+        --filter-chips-fade-start: 0px;
+        --filter-chips-fade-end: 0px;
+        mask-image: linear-gradient(
+            to right,
+            transparent 0,
+            black var(--filter-chips-fade-start),
+            black calc(100% - var(--filter-chips-fade-end)),
+            transparent 100%
+        );
+        -webkit-mask-image: linear-gradient(
+            to right,
+            transparent 0,
+            black var(--filter-chips-fade-start),
+            black calc(100% - var(--filter-chips-fade-end)),
+            transparent 100%
+        );
+    }
+
+    .filter-chips__list::-webkit-scrollbar {
+        display: none;
+    }
+
+    .filter-chips__chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        white-space: nowrap;
+        padding: 6px 16px;
+        border-radius: var(--radius-pill, 9999px);
+        border: 1px solid var(--border, var(--brand-primary-a25));
+        background-color: var(--core-card);
+        color: var(--core-foreground);
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        font-weight: 500;
+        line-height: 1.4;
+        text-decoration: none;
+        transition:
+            background-color var(--duration-normal) ease,
+            color var(--duration-normal) ease,
+            border-color var(--duration-normal) ease,
+            box-shadow var(--duration-normal) ease;
+        cursor: pointer;
+        /* Prevent the chip from being squished in the flex row, and force its
+           intrinsic width to include the full trailing padding. Without
+           min-width:max-content, Chromium's shrink-to-fit sizing of an
+           inline-flex item inside an overflowing nowrap flex row undercounts
+           the right padding by ~13px, gluing the label to the chip's right
+           edge (HOS-97 owner feedback: text looked stuck to the badge border). */
+        flex-shrink: 0;
+        min-width: max-content;
+    }
+
+    .filter-chips__chip:hover {
+        background-color: var(--brand-accent);
+        color: var(--accent-foreground, #fff);
+        border-color: var(--brand-accent);
+        box-shadow: 0 2px 8px var(--brand-accent-a30);
+    }
+
+    /* Active/selected chip — matches the temporal quick-filter chips so both
+       rows of filters read as the same control. */
+    .filter-chips__chip--active {
+        background-color: var(--brand-accent);
+        color: var(--accent-foreground, #fff);
+        border-color: var(--brand-accent);
+    }
+
+    .filter-chips__chip:focus-visible {
+        outline: 2px solid var(--brand-accent);
+        outline-offset: 2px;
+    }
+
+    /* Optional leading icon (BETA-113 icon parity) — same 14px size and
+       vertical centering as the destinos attraction-filter chip icon, so
+       every quick-filter chip surface reads consistently when an icon is
+       present. */
+    .filter-chips__chip-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    /* ============================================================
+       Desktop click-to-scroll arrows (HOS-97, ported from ScrollableNav)
+       ============================================================ */
+
+    /* Mobile: arrows are touch-redundant (swipe is the natural gesture),
+       matching ScrollableNav's own mobile behavior. */
+    @media (max-width: 767px) {
+        .filter-chips__arrow {
+            display: none;
+        }
+    }
+
+    @media (min-width: 768px) {
+        /* No gutter is reserved for the arrows: they float over the row and the
+           edge-fade mask (above) dissolves the chip beneath a visible arrow
+           into the page background, so nothing looks glued to an arrow.
+           Reserving a padding gutter instead pushed the first chip out of
+           alignment with the card grid AND starved the fade of real content to
+           act on, so the chip cut hard against the arrow (HOS-97 owner
+           feedback). The leading chip now sits flush with the grid; the prev
+           arrow only appears once you've scrolled, by which point that chip is
+           already offscreen. */
+        .filter-chips__arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            width: 42px;
+            height: 42px;
+            padding: 0;
+            border-radius: 9999px;
+            border: 1px solid var(--border);
+            background-color: var(--core-card);
+            box-shadow: 0 2px 8px oklch(0 0 0 / 0.12);
+            font-size: 1.4rem;
+            line-height: 1;
+            font-weight: 700;
+            color: var(--core-foreground);
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--duration-fast) ease,
+                background-color var(--duration-fast) ease;
+        }
+
+        .filter-chips__arrow:hover {
+            background-color: var(--brand-primary);
+            color: var(--primary-foreground);
+        }
+
+        .filter-chips__arrow:focus-visible {
+            outline: 2px solid var(--brand-primary);
+            outline-offset: 2px;
+        }
+
+        .filter-chips__arrow--prev {
+            left: -4px;
+        }
+
+        .filter-chips__arrow--next {
+            right: -4px;
+        }
+
+        /* Show only when there's overflow AND we're not already at that edge. */
+        .filter-chips[data-overflow='true']:not([data-scroll-start='true'])
+            .filter-chips__arrow--prev,
+        .filter-chips[data-overflow='true']:not([data-scroll-end='true'])
+            .filter-chips__arrow--next {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    }
+</style>
+
+<script>
+    /**
+     * Drives both the edge-fade mask (BETA-30, all breakpoints) and the
+     * optional desktop click-to-scroll arrow buttons (HOS-97, ported from
+     * ScrollableNav) from a single scroll-state script per instance.
+     *
+     * Runs on every page load incl. View Transitions; idempotent per
+     * component instance via a root-level `data-filter-chips-ready` guard,
+     * mirroring ScrollableNav's `dataset.scrollableNavInit` pattern. All
+     * lookups are scoped to the container (`container.querySelector(...)`),
+     * never a page-global selector, so multiple FilterChips instances on the
+     * same page never collide.
+     */
+    const FADE = '48px';
+    /* Wider fade used on desktop when the floating arrows are shown, so the
+       chip passing under an arrow dissolves into the page background across the
+       whole arrow footprint instead of cutting hard against it (HOS-97 owner
+       feedback). Mobile / no-arrow rows keep the tighter FADE. */
+    const FADE_WIDE = '140px';
+    const NONE = '0px';
+
+    function initFilterChips(): void {
+        const containers = document.querySelectorAll<HTMLElement>(
+            '[data-filter-chips]:not([data-filter-chips-ready])'
+        );
+        for (const container of containers) {
+            container.dataset.filterChipsReady = 'true';
+
+            const list = container.querySelector<HTMLElement>('[data-filter-chips-list]');
+            if (!list) continue;
+            const prev = container.querySelector<HTMLButtonElement>('[data-filter-chips-prev]');
+            const next = container.querySelector<HTMLButtonElement>('[data-filter-chips-next]');
+
+            const update = (): void => {
+                const maxScroll = list.scrollWidth - list.clientWidth;
+                const scrollable = maxScroll > 1;
+                const atStart = list.scrollLeft <= 1;
+                const atEnd = list.scrollLeft >= maxScroll - 1;
+
+                // On desktop with the floating arrows enabled, widen the fade so
+                // the chip under an arrow fades into the background across the
+                // arrow's whole footprint (recomputed here, not once at init, so
+                // it tracks viewport resizes across the 768px breakpoint).
+                const wideFade =
+                    container.dataset.scrollButtons === 'true' &&
+                    typeof window.matchMedia === 'function' &&
+                    window.matchMedia('(min-width: 768px)').matches;
+                const fade = wideFade ? FADE_WIDE : FADE;
+
+                list.style.setProperty(
+                    '--filter-chips-fade-start',
+                    scrollable && !atStart ? fade : NONE
+                );
+                list.style.setProperty(
+                    '--filter-chips-fade-end',
+                    scrollable && !atEnd ? fade : NONE
+                );
+
+                container.dataset.overflow = scrollable ? 'true' : 'false';
+                container.dataset.scrollStart = atStart ? 'true' : 'false';
+                container.dataset.scrollEnd = atEnd ? 'true' : 'false';
+            };
+
+            list.addEventListener('scroll', update, { passive: true });
+            if (typeof ResizeObserver !== 'undefined') {
+                new ResizeObserver(update).observe(list);
+            }
+            update();
+
+            // Scroll by ~70% of the visible width on arrow click so users see
+            // new content while keeping a couple of chips as visual anchor
+            // (matches ScrollableNav's scroll-by-viewport behavior).
+            const scrollByViewport = (direction: 1 | -1): void => {
+                const amount = list.clientWidth * 0.7 * direction;
+                list.scrollBy({ left: amount, behavior: 'smooth' });
+            };
+            prev?.addEventListener('click', () => scrollByViewport(-1));
+            next?.addEventListener('click', () => scrollByViewport(1));
+        }
+    }
+
+    document.addEventListener('astro:page-load', initFilterChips);
+</script>
