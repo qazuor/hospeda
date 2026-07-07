@@ -407,10 +407,11 @@ export const SETTINGS: InsertSocialSetting[] = [
     },
     {
         key: 'social_assets_folder',
-        value: 'hospeda/social/assets',
+        value: 'hospeda/social',
         type: 'string',
         active: true,
-        description: 'Cloudinary folder path where processed social media assets are uploaded'
+        description:
+            'Cloudinary folder BASE PREFIX for processed social media assets. The environment segment and "assets" suffix are always appended by code (e.g. "hospeda/social/prod/assets") and cannot be overridden here — this only controls the prefix.'
     },
     {
         key: 'dispatch_cron_cadence',
