@@ -21,6 +21,7 @@ import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
+import FilterChips from '@/components/shared/ui/FilterChips.astro';
 import {
     buildExperienceListingSummary,
     DEFAULT_EXPERIENCE_TYPES
@@ -28,9 +29,11 @@ import {
 import { experiencesApi, destinationsApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toExperienceCardProps } from '@/lib/api/transforms';
+import { getExperienceTypeIcon } from '@/lib/experience-type-icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -233,6 +236,29 @@ const filterSummary = buildExperienceListingSummary({
 const baseUrl = buildUrl({ locale, path: 'experiencias' });
 const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
 
+/**
+ * Quick-filter type chips (HOS-97): filter the listing in place via
+ * `?type=ENUM` (preserving every other active filter/sort and resetting to
+ * page 1) instead of navigating to a separate route. The chip matching the
+ * active type is highlighted; clicking it clears the filter (toggle) — same
+ * single-select model as the eventos category chips.
+ */
+const typeChips = EXPERIENCE_TYPES.map((value) => {
+    const isActive = type === value;
+    return {
+        label: t(`experience.type.${value}`, value),
+        href: buildToggleParamHref({
+            baseUrl,
+            searchParams: url.searchParams,
+            key: 'type',
+            value,
+            isActive
+        }),
+        active: isActive,
+        icon: getExperienceTypeIcon({ type: value })
+    };
+});
+
 const itemListEntries = cards.map((card) => ({
     url: new URL(buildUrl({ locale, path: `experiencias/${card.slug}` }), Astro.site ?? Astro.url.origin)
         .href,
@@ -282,6 +308,14 @@ const itemListEntries = cards.map((card) => ({
         filters={filterGroups}
         sortOptions={sortOptions}
         initialParams={initialParams}
+    />
+
+    <FilterChips
+        chips={typeChips}
+        ariaLabel={t('experience.typeChips.ariaLabel', 'Filtrar por tipo de experiencia')}
+        showScrollButtons
+        prevLabel={t('common.prev', 'Anterior')}
+        nextLabel={t('common.next', 'Siguiente')}
     />
 
     {hasError && !result.ok && (

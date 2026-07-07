@@ -39,7 +39,7 @@ import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
-import TagChips from '@/components/TagChips.astro';
+import FilterChips from '@/components/shared/ui/FilterChips.astro';
 import { getPostCategoryIcon } from '@repo/icons';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import {
@@ -357,9 +357,12 @@ const postCategoryChips = [
         initialParams={sidebarInitialParams}
     />
 
-    <TagChips
+    <FilterChips
         chips={postCategoryChips}
         ariaLabel={t('blog.categoryChips.ariaLabel', 'Filtrar por categoría de publicación')}
+        showScrollButtons
+        prevLabel={t('common.prev', 'Anterior')}
+        nextLabel={t('common.next', 'Siguiente')}
     />
 
     {/* API error: show skeleton grid as visual placeholder alongside ErrorBanner. */}

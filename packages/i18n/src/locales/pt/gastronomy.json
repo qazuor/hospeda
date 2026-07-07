@@ -48,5 +48,8 @@
         "PANADERIA": "Padaria",
         "ROTISERIA": "Rotisserie",
         "FOOD_TRUCK": "Food Truck"
+    },
+    "typeChips": {
+        "ariaLabel": "Filtrar por tipo de estabelecimento"
     }
 }
