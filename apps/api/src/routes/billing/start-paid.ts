@@ -342,6 +342,14 @@ export const handleStartPaidSubscription = async (
                     ? p.billingInterval === 'year'
                     : p.billingInterval === 'month'
             );
+            // `unitAmount` is stored in centavos, but the payment_failed /
+            // subscription_payment_succeeded events capture MP's transaction_amount
+            // in MAJOR units (ARS pesos). Normalize to major units here so `amount`
+            // has ONE unit across the whole checkout→payment funnel.
+            const amountMajor =
+                typeof priceForInterval?.unitAmount === 'number'
+                    ? priceForInterval.unitAmount / 100
+                    : null;
             getPostHogClient()?.capture({
                 distinctId: actor.id,
                 event: 'checkout_started',
@@ -349,7 +357,7 @@ export const handleStartPaidSubscription = async (
                     planSlug: body.planSlug,
                     billingInterval: body.billingInterval,
                     promoCode: body.promoCode ?? null,
-                    amount: priceForInterval?.unitAmount ?? null,
+                    amount: amountMajor,
                     currency: priceForInterval?.currency ?? null
                 }
             });

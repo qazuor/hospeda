@@ -570,6 +570,7 @@ describe('handleStartPaidSubscription — checkout_started analytics', () => {
                 {
                     id: PLAN_ID,
                     name: 'owner-premium',
+                    // unitAmount is centavos; the event normalizes to major units.
                     prices: [{ ...MONTHLY_PRICE, unitAmount: 500_000, currency: 'ARS' }]
                 }
             ] as unknown as ReturnType<typeof createPlan>[]
@@ -590,7 +591,9 @@ describe('handleStartPaidSubscription — checkout_started analytics', () => {
                 planSlug: 'owner-premium',
                 billingInterval: 'monthly',
                 promoCode: null,
-                amount: 500_000,
+                // 500_000 centavos → 5_000 major units (ARS pesos), matching the
+                // unit used by payment_failed / subscription_payment_succeeded.
+                amount: 5_000,
                 currency: 'ARS'
             }
         });
