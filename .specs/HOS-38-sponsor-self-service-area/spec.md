@@ -3,18 +3,21 @@ title: Sponsor Self-Service Area — Feature Audit + Scope Decision
 linear: HOS-38
 statusSource: linear
 created: 2026-07-01
+updated: 2026-07-07
 type: improvement
 areas:
-  - admin
+  - web
   - api
+  - auth
   - billing
+  - admin
 ---
 
 # Sponsor Self-Service Area — Feature Audit + Scope Decision
 
 > Migrated from `.qtm/specs/SPEC-151-sponsor-self-service-area/spec.md` on 2026-07-01 as part of the Linear tracking migration. Canonical tracking is now HOS-38.
 >
-> **Status**: DRAFT — needs scope decisions from owner before generating tasks. The "follow-up F2" from the post-SPEC-143 billing audit was scoped as "1 broken endpoint in sponsor-dashboard hooks", but on inspection the entire sponsor self-service area is half-built (3 of 4 sub-pages are placeholders or broken). This spec audits the current state and asks the owner to decide the destination.
+> **Status**: SCOPED — owner answered the Q1-Q5 scope decisions on 2026-07-07 (see §4). Work is **deferred to backlog / post-launch** (low priority); this revision only records the decisions and re-plans the phases. No implementation in this pass. The "follow-up F2" from the post-SPEC-143 billing audit was scoped as "1 broken endpoint in sponsor-dashboard hooks", but on inspection the entire sponsor self-service area is half-built (3 of 4 sub-pages are placeholders or broken). This spec audited that state; the owner has now chosen the destination.
 
 ## 1. Origin
 
@@ -63,7 +66,7 @@ sponsorship-level/
 └── index.ts
 ```
 
-**Key finding**: `protected/` tier exists for `sponsorship` with a list+analytics+CRUD surface that returns ONLY the actor's own sponsorships. This is exactly what the sponsor dashboard should be calling — but doesn't.
+**Key finding**: `protected/` tier exists for `sponsorship` with a list+analytics+CRUD surface that returns ONLY the actor's own sponsorships. This is exactly what the sponsor dashboard should be calling — but doesn't. Under the resolved scope (§4) the sponsor dashboard is **read-only**, so only the read half of this surface (list / get-by-id / get-analytics) is consumed; the create/update/soft-delete endpoints stay admin-only.
 
 ### 2.3 Admin app — three coexisting feature directories
 
@@ -78,6 +81,8 @@ The three are mixed in mental model:
 - `sponsors/` + `sponsorships/` = **admin manages sponsors as a domain** (CRUD by platform admin).
 - `sponsor-dashboard/` = **sponsor users view their own billing/sponsorships** (self-service, NOT admin gestionando).
 
+> **Resolved-scope note (§4)**: the sponsor-facing dashboard moves to **`apps/web`**. The `apps/admin/src/features/sponsor-dashboard/` directory and the `_authed/sponsor/*` routes below become dead code and are removed during implementation (Phase 3). The admin keeps only the admin-managed views (`sponsors/`, `sponsorships/`, `/billing/sponsorships`).
+
 ### 2.4 Admin app — sponsor-facing pages (`routes/_authed/sponsor/*`)
 
 | Route | Status | Backend it calls | Reality |
@@ -87,12 +92,16 @@ The three are mixed in mental model:
 | `/sponsor/analytics` | stub (944 bytes) | `useSponsorAnalyticsQuery` returns hard-coded `[]` | **Placeholder**: no backend, no UI substance. Comment says "Pending: GET /api/v1/admin/sponsorships/:id/analytics" — but that endpoint exists at `/protected/sponsorships/:id/analytics`. |
 | `/sponsor/invoices` | UI complete (12K LOC) | `useSponsorInvoicesQuery` → `GET /api/v1/protected/billing/invoices` | **Broken** (original F2): returns the actor's billing invoices, no sponsor filter. PDF download button is `disabled` in code. |
 
+> These four admin pages are the scaffolding that motivated the audit. Under the resolved scope they are **not the target** — the read-only dashboard is rebuilt in `apps/web` (§5). They are removed in Phase 3, not fixed in place.
+
 ### 2.5 Admin app — admin-facing sponsor management pages
 
 | Route | Status |
 |-------|--------|
 | `routes/_authed/billing/sponsorships.tsx` | Exists. Admin sees all sponsorships under the billing area. |
 | `routes/_authed/posts/$id_.sponsorship.tsx` | Exists. Per-post sponsor assignment. |
+
+These stay — all sponsorship management (create/edit/cancel/assign) remains an **admin-only** responsibility.
 
 ### 2.6 Web app
 
@@ -116,154 +125,127 @@ Two layers compound the issue:
 
 In short: the feature was bootstrapped without a coherent identity model and never wired to the right backend endpoints.
 
-## 4. Scope decision points (Owner must answer)
+## 4. Scope decisions — RESOLVED (owner, 2026-07-07)
 
-The spec cannot proceed to tasks without these decisions. None are "implementation details" — they shape the whole feature.
+> These were open questions in the original audit. The owner answered them on 2026-07-07. The chosen direction is recorded per-question below, followed by the two additional constraints the owner added that reshape the feature.
 
-### Q1 — Is the "Sponsor" a first-class user role today?
+### Decisions at a glance
 
-Three possibilities:
+| # | Question | Decision |
+|---|----------|----------|
+| **Q1** | Is "Sponsor" a first-class user role? | **A — Yes, build it.** A `Sponsor` becomes a real user role (does not exist today; must be designed + added). |
+| **Location** | Where does the sponsor dashboard live? | **`apps/web`, NOT `apps/admin`.** A sponsor is an external end-user, like an accommodation owner — the self-service dashboard belongs in the web app. |
+| **Nature** | What can the sponsor do? | **Read-only.** The sponsor only *views* (what they've sponsored, metrics, history). No create / edit / cancel / any action. All management stays admin-side. |
+| **Q2** | PostSponsor vs Sponsorship canonical? | **B (default) — validate at implementation.** PostSponsor = brand entity, Sponsorship = contract. Confirm against the real schema before building. |
+| **Q3** | Timing? | **B — Post-launch / backlog, low priority.** Not built now; recruit sponsors first, build the dashboard once real sponsors exist. |
+| **Q4** | Billing integration? | **C — decide later.** The invoices view is read-only; *how* a sponsor is charged (billing-pipeline integration) is a separate spec. If no integration exists at build time, the invoices section shows "coming soon". |
+| **Q5** | Analytics / tracking? | **B + C — show existing metrics read-only, defer instrumentation to SPEC-140 (PostHog).** Do not build a custom counter pipeline now. |
 
-- **A. Yes** — A `Sponsor` is a user with a specific permission set + linked sponsor entity. They log into admin/sponsor URL and only see their data. Existing `PermissionEnum.SPONSOR_*` permissions are wired or need to be wired.
-- **B. Not yet, but should be** — sponsor self-service is a future feature; today, only platform admins exist. We need to design + add the `Sponsor` role.
-- **C. No, and don't bother** — sponsorships are managed exclusively by platform admins for now (no sponsor self-service). The `/_authed/sponsor/*` pages are dead code or aspirational and should be deleted/hidden.
+### 4.1 Q1 — Sponsor is a first-class user role: **YES (build it)**
 
-**Default assumption if no answer**: B (not yet, but worth designing). If C, scope collapses to a delete + hide PR.
+A `Sponsor` will be a user role with its own permission set and a linked sponsor entity, so the user logs in (to the **web app**) and sees only their own data. This role does **not** exist today, so it must be designed and added (permissions, user↔sponsor link, route guard). How a user *becomes* a sponsor (assignment) is deliberately kept minimal — see §4.3.
 
-### Q2 — PostSponsor vs Sponsorship — which is canonical?
+### 4.2 Location — the dashboard lives in **`apps/web`**
 
-Looking at the schema/service code: it appears `Sponsorship` is the newer/cleaner abstraction (has protected tier, analytics endpoint, levels, packages), while `PostSponsor` + `PostSponsorship` look like an older post-specific concept that may have been generalized.
+The original audit found the scaffolding in `apps/admin` (`/_authed/sponsor/*`). That was the wrong home: `apps/admin` is staff-only, while a sponsor is an external customer. The resolved dashboard is built in **`apps/web`** (React islands / Astro per the web app's conventions), consuming the `/api/v1/protected/sponsorships/*` read endpoints. The admin scaffolding is removed (Phase 3).
 
-- **A. Sponsorship is canonical** — PostSponsor/PostSponsorship are vestigial; plan migration/deprecation.
-- **B. Both are canonical** — PostSponsor = the BRAND entity (a company), Sponsorship = the contract relating that brand to a target (post, event, accommodation, etc.). Different roles, both stay.
-- **C. Reverse** — PostSponsor is canonical and Sponsorship is a recent refactor that was never completed.
+### 4.3 Nature — **read-only**
 
-**Default assumption if no answer**: B (PostSponsor = brand entity, Sponsorship = contract). This needs validation against the actual schema relationships.
+The sponsor dashboard is a **view-only** surface. The sponsor can see:
 
-### Q3 — Is this pre-launch or post-launch work?
+- A summary of their sponsorship activity (active count, totals).
+- The list of what they are sponsoring (their own sponsorships only).
+- Metrics per sponsorship (impressions / clicks / CTR — subject to Q5).
+- Their invoices (subject to Q4).
 
-- **A. Pre-launch (must ship before public launch)** — block launch on having sponsor self-service. Adds 2-4 weeks of work. Unlikely useful given no sponsors are onboarded yet.
-- **B. Post-launch v1.5 / v2** — ship Hospeda first, recruit sponsors after, then build the dashboard once we have real sponsors. Scope this as a backlog spec.
-- **C. Now, but only the broken-endpoint fixes (no new features)** — make the existing pages correctly call `/protected/sponsorships/*` so they show real data; defer analytics / invoice PDF / sponsor signup flow.
+The sponsor **cannot** take any action: no starting a new sponsorship, no cancelling, no editing, no self-service purchase. Every mutation (assigning a sponsor to a post, creating/cancelling a contract, billing) stays an **admin** responsibility via the existing admin pages (§2.5). This is a hard constraint — it keeps the initial build small and avoids the whole billing-checkout / self-signup surface.
 
-**Default assumption if no answer**: B or C depending on how soon a sponsor is expected. C is the minimum-effort cleanup that takes the area from "broken" to "honestly showing what's there".
+### 4.4 Q3 — timing: **post-launch / backlog (low priority)**
 
-### Q4 — Billing integration for sponsors?
+The owner explicitly rates this low-priority relative to other issues. No implementation happens in this pass. HOS-38 returns to **Backlog** after this spec update. Implementation is picked up later, once there are real sponsors to serve.
 
-A sponsor pays. The current flow has zero integration with the billing system:
+## 5. Proposed phases (for the eventual implementation)
 
-- `SponsorInvoice` (in `sponsor-dashboard/types.ts`) defines its own shape that has nothing to do with `billing_invoices`.
-- The dashboard hits `/protected/billing/invoices` but the comment says it should be filtered by `sponsorId=current` — that's not a field on `billing_invoices`.
-- No sponsorship records appear to be linked to billing customer / subscription / invoice rows.
+> Not started in this pass. This is the plan for when the backlog item is picked up. Each phase gates on the prior.
 
-Options:
+### Phase 0 — Decisions + spec update ✅ (this pass, 2026-07-07)
 
-- **A. Sponsorships are billed via standard subscriptions/invoices** — link `sponsorship_package` → `billing_plan`, sponsor user gets a `billing_customer`, invoices flow through the standard billing pipeline.
-- **B. Sponsorships have their own ad-hoc payment flow** — manual invoicing, no billing integration. The `SponsorInvoice` type stays separate.
-- **C. Decide later** — deprecate the sponsor invoice page UI for now (delete or "coming soon").
+Q1-Q5 answered, location + read-only constraints recorded, phases re-planned. No code.
 
-**Default assumption if no answer**: C (decide later), but if Q3 = A or C, must answer this now.
+### Phase 1 — Sponsor role (auth)
 
-### Q5 — Analytics and tracking
+- Add a first-class `Sponsor` role: `PermissionEnum.SPONSOR_*` wiring, a user↔sponsor-entity link, and a route guard so a sponsor user can only read their own sponsorships.
+- Sponsor assignment is **admin-driven** (an admin marks a user as a sponsor and links the sponsor entity) — no self-signup flow. Self-signup/onboarding is explicitly out of scope (§7).
+- Confirm Q2 against the real schema here: which of `PostSponsor` / `Sponsorship` is the entity the user links to.
 
-The dashboard shows impressions, clicks, CTR. Today these come from `sponsorship.impressions` and `sponsorship.clicks` columns. But there's no instrumentation in the web app that increments these counters when a `PostSponsorshipBanner` is rendered/clicked.
+### Phase 2 — Web read-only dashboard (`apps/web`)
 
-- **A. Wire instrumentation now** — add tracking to the web Banner component, expose increment endpoints, integrate with PostHog (SPEC-140) if applicable.
-- **B. Skip tracking — show "coming soon" on metrics** — hide impressions/clicks columns from the dashboard. Sponsorships table still works, just without metrics.
-- **C. Defer to SPEC-140 (analytics-stack-posthog)** — PostHog will source these metrics anyway. Don't write our own counter pipeline.
+- New sponsor dashboard routes in `apps/web`, consuming the read half of `/api/v1/protected/sponsorships/*`:
+  - **Summary** — derive from `GET /protected/sponsorships?sponsorshipStatus=active` (or a dedicated aggregate endpoint if the client-side reduce is too heavy — see Phase 3).
+  - **My sponsorships** — `GET /protected/sponsorships?<filters>` (actor-scoped by the backend).
+  - **Metrics** — `GET /protected/sponsorships/:id/analytics`. Per Q5, show existing columns only; no new instrumentation.
+  - **Invoices** — per Q4: read-only view if a billing link exists, else "coming soon".
+- Strictly read-only UI: no action buttons, no forms, no mutating calls.
+- i18n for all strings (web app convention), vanilla CSS / CSS Modules (not Tailwind — web app rule).
 
-**Default assumption if no answer**: B + C combined (hide metrics, defer to SPEC-140 when ready).
+### Phase 3 — Remove the dead admin scaffolding
 
-## 5. Proposed phases (assumes Q3 = C, "fix what's there + honest UI")
-
-If owner picks the minimum-effort path, the work decomposes as follows. Each phase is gated on the prior.
-
-### Phase 0 — Identity model decision (15min, just decisions, no code)
-
-Answer Q1 + Q2. If Q1 = C, jump to Phase X (delete area).
-
-### Phase 1 — Endpoint correction (~2h)
-
-Switch the 4 dashboard hooks to the correct backend:
-
-- `useSponsorSummaryQuery` → derive from `GET /api/v1/protected/sponsorships?sponsorshipStatus=active`. Backend already returns only the actor's records (assuming Q1 = A or B with sponsor role).
-- `useSponsorSponsorshipsQuery` → `GET /api/v1/protected/sponsorships?<filters>`.
-- `useSponsorAnalyticsQuery` → `GET /api/v1/protected/sponsorships/:id/analytics` (per-sponsorship; the dashboard summary may need a separate endpoint).
-- `useSponsorInvoicesQuery` → depends on Q4. If Q4 = C, change the UI to show "coming soon".
-
-Acceptance: dashboard pages render the actor's own data (verified locally with two test users — admin and sponsor).
-
-### Phase 2 — UI honesty (~1h)
-
-Remove or hide features that are placeholders:
-
-- Disable PDF download button on invoices page (already `disabled` in code) — add visible "coming soon" tooltip.
-- If Q5 = B/C, hide the impressions/clicks columns from sponsorships table.
-- Remove "recent activity" card from dashboard if no API exists (`activityApiPending` flag).
-
-### Phase 3 — Backend gaps (depends on prior answers)
-
-Catch all the backend endpoints required by the dashboard that don't exist yet. Examples (depending on Q1-Q5):
-
-- Aggregate-summary endpoint (so the dashboard doesn't fetch 1000 sponsorships to reduce client-side).
-- Recent activity feed.
-- Sponsor-invoice link (Q4 = A).
-
-### Phase X — Delete area (only if Q1 = C)
-
-- Remove `apps/admin/src/routes/_authed/sponsor/*` routes.
-- Remove sidebar entries pointing there.
+- Remove `apps/admin/src/routes/_authed/sponsor/*` and the sidebar entries pointing there.
 - Remove `apps/admin/src/features/sponsor-dashboard/`.
-- Optionally remove `apps/admin/src/features/sponsors/` + `sponsorships/` if also dead.
-- Keep `routes/_authed/billing/sponsorships.tsx` (admin-managed view).
+- Evaluate `apps/admin/src/features/sponsors/` + `sponsorships/` — keep only what the admin-managed views (`/billing/sponsorships`, per-post assignment) actually use; remove the rest.
+- **Keep** `routes/_authed/billing/sponsorships.tsx` and `routes/_authed/posts/$id_.sponsorship.tsx` (admin management).
 
-Estimated effort: 1-2h.
+### Phase 4 — Backend gaps (only if Phase 2 surfaces them)
+
+- A dedicated aggregate-summary endpoint (so the dashboard doesn't fetch N sponsorships to reduce client-side).
+- Sponsor↔invoice link (only if Q4 is later escalated to "A — standard billing").
 
 ## 6. Risk + tradeoffs
 
 | Path | Effort | Risk if wrong |
 |------|--------|---------------|
-| Full feature build-out (Q3 = A) | 2-4 weeks | Building for hypothetical sponsors that may never come; bloats codebase |
-| Fix-what's-there only (Q3 = C) | 4-6h | Sponsor self-service stays half-baked but at least not lying; cosmetic debt |
-| Delete area (Q1 = C) | 1-2h | If sponsors come later, we rebuild from scratch; loses the existing UI scaffolding |
-| Status quo | 0h | UI shows fake/wrong data; if anyone tests with a real sponsor account it embarrasses |
+| **Chosen: sponsor role + web read-only dashboard, post-launch** | ~1-2 weeks when picked up (role + web dashboard + admin cleanup) | Building for sponsors that may take time to arrive; but read-only + admin-driven assignment keeps the blast radius small and defers the expensive surfaces (billing checkout, self-signup, instrumentation). |
+| Full self-service build-out (mutations, checkout) | 2-4 weeks | Not chosen — over-builds for hypothetical sponsors. |
+| Delete area entirely | 1-2h | Not chosen — owner wants the feature, just later. |
+| Status quo | 0h | UI shows fake/wrong data; embarrassing if tested with a real sponsor account. Mitigated because the broken admin pages are removed in Phase 3 regardless. |
 
 ## 7. Out of scope (explicit)
 
-- Sponsor onboarding flow (signup, OAuth invite, role assignment) — separate spec if ever needed.
-- Sponsor-side billing customer creation (Q4 = A) — separate spec.
-- Reporting / advanced analytics for sponsors — covered by SPEC-140 PostHog.
-- PostSponsor/PostSponsorship vs Sponsorship reconciliation refactor (Q2) — separate spec if owner chooses A or C.
-- Web app banner instrumentation — separate spec, depends on Q5.
+- **Sponsor self-signup / onboarding flow** (a user turning themselves into a sponsor) — assignment is admin-driven; a real signup/invite flow is a separate spec if ever needed.
+- **Any sponsor-side mutation** (start/stop/edit a sponsorship, self-service purchase) — read-only by decision (§4.3); management stays admin-side.
+- **Sponsor-side billing customer creation + checkout** (Q4 = A path) — separate spec.
+- **Web app banner instrumentation** (incrementing impressions/clicks) — separate spec; deferred to SPEC-140 (PostHog) per Q5.
+- **PostSponsor/PostSponsorship vs Sponsorship reconciliation refactor** (Q2 = A/C path) — separate spec; Phase 1 only *validates* the model, does not refactor it.
 
-## 8. Acceptance criteria (placeholder, depends on Q3)
+## 8. Acceptance criteria (for the eventual implementation)
 
-Will be finalized once Q1-Q5 are answered.
+To be finalized when the backlog item is picked up. Target for the chosen scope:
 
-If Q3 = C (minimum path):
-
-- [ ] All 4 hooks in `apps/admin/src/features/sponsor-dashboard/hooks.ts` call `/api/v1/protected/sponsorships/*`.
-- [ ] Two manual smokes pass: admin user sees admin pages (`/billing/sponsorships`); sponsor user sees only their own data on `/sponsor/*`.
-- [ ] UI no longer claims metrics/PDF/activity that aren't backed by real data.
-- [ ] Spec file marked `status: completed` and archived.
+- [ ] A `Sponsor` role exists (permissions + user↔sponsor link + guard); a sponsor user can authenticate on the web app.
+- [ ] `apps/web` exposes a read-only sponsor dashboard: summary, my-sponsorships, metrics, invoices.
+- [ ] Every data call is actor-scoped via `/api/v1/protected/sponsorships/*`; a sponsor sees only their own data (verified with two test users: a sponsor and a non-sponsor).
+- [ ] The dashboard has **no** mutating controls (no create/edit/cancel/purchase).
+- [ ] Metrics show existing columns only (or "coming soon"); no custom instrumentation added.
+- [ ] Invoices show a read-only view or "coming soon" (per Q4 at build time).
+- [ ] The dead admin scaffolding (`_authed/sponsor/*`, `features/sponsor-dashboard/`) is removed; admin management pages remain.
+- [ ] Spec marked complete and the Linear issue closed.
 
 ## 9. Cross-references
 
 - `docs/billing/ui-audit-2026.md` — F2 origin
-- `apps/admin/src/routes/_authed/sponsor/` — sponsor area
-- `apps/admin/src/features/sponsor-dashboard/` — dashboard feature
-- `apps/api/src/routes/sponsorship/protected/` — backend that the dashboard SHOULD be using
+- `apps/admin/src/routes/_authed/sponsor/` — sponsor area (to be REMOVED, Phase 3)
+- `apps/admin/src/features/sponsor-dashboard/` — dashboard feature (to be REMOVED, Phase 3)
+- `apps/web/` — new home of the read-only sponsor dashboard (Phase 2)
+- `apps/api/src/routes/sponsorship/protected/` — read backend the web dashboard consumes
+- `apps/web/src/components/post/PostSponsorshipBanner.astro` — existing public banner (instrumentation deferred, Q5)
 - SPEC-143 — billing testing coverage (parent context for F2 origin)
-- SPEC-140 — analytics-stack-posthog (potential source for Q5)
-- Engram topic: `spec-151/scope-decisions` (to be created once Q1-Q5 are answered)
+- SPEC-140 — analytics-stack-posthog (source for Q5 metrics)
 
 ## 10. Next action
 
-**Owner**: Answer Q1-Q5. With those answers I can:
+Decisions are recorded; work is **deferred to backlog**. When picked up:
 
-- Generate the task breakdown (`/task-master:task-from-spec`).
-- Update this spec from `draft` to `in-progress`.
-- Cut the worktree + branch.
-- Begin implementation.
+- Confirm Q2 against the live schema, then run `/task-master:task-from-spec` to generate the Phase 1-3 breakdown.
+- Re-open HOS-38 (Backlog → In Progress) and implement per §5.
 
-Estimated total: 1h (delete-only) to 4-6h (minimum fix) to 2-4 weeks (full build-out).
+Estimated total when picked up: ~1-2 weeks (sponsor role + web read-only dashboard + admin cleanup).
