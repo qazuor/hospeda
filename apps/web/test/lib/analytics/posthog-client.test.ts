@@ -15,6 +15,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     associateGroup,
     identifyUser,
+    resetGroups,
     resetUser,
     setPersonProperties,
     trackEvent
@@ -266,5 +267,49 @@ describe('resetUser', () => {
 
         // Assert
         expect(resetSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('drops pending person properties and group associations so they do not replay for the next user', () => {
+        // Arrange — buffer a person property and a group while consent is absent.
+        const setSpy = vi.fn();
+        const groupSpy = vi.fn();
+        (
+            window as unknown as {
+                posthog: {
+                    setPersonProperties: typeof setSpy;
+                    group: typeof groupSpy;
+                    reset: () => void;
+                };
+            }
+        ).posthog = { setPersonProperties: setSpy, group: groupSpy, reset: vi.fn() };
+        setPersonProperties({ plan: 'host-pro' });
+        associateGroup('accommodation', 'acc-1');
+
+        // Act — sign out clears the pending buffers, then consent is granted.
+        resetUser();
+        window.dispatchEvent(
+            new CustomEvent('cookie-consent:changed', { detail: { analytics: true } })
+        );
+
+        // Assert — nothing stale replays onto the next (possibly different) user.
+        expect(setSpy).not.toHaveBeenCalled();
+        expect(groupSpy).not.toHaveBeenCalled();
+    });
+});
+
+describe('resetGroups', () => {
+    it('no-ops when window.posthog is undefined', () => {
+        expect(() => resetGroups()).not.toThrow();
+    });
+
+    it('calls window.posthog.resetGroups() when the stub is present', () => {
+        const resetGroupsSpy = vi.fn();
+        (window as unknown as { posthog: { resetGroups: typeof resetGroupsSpy } }).posthog = {
+            resetGroups: resetGroupsSpy
+        };
+
+        resetGroups();
+
+        expect(resetGroupsSpy).toHaveBeenCalledTimes(1);
     });
 });

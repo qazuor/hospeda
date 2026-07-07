@@ -10,6 +10,7 @@ import type {
     UserMenuUser
 } from '../../../../src/components/shared/navigation/UserMenu.client';
 import { UserMenu } from '../../../../src/components/shared/navigation/UserMenu.client';
+import { syncPlanPersonProperties } from '../../../../src/lib/analytics/plan-properties';
 import {
     identifyUser,
     resetUser,
@@ -589,6 +590,13 @@ describe('UserMenu — PostHog identify/reset', () => {
         renderMenu();
         await waitFor(() => {
             expect(setPersonProperties).toHaveBeenCalledWith({ locale: 'es' });
+        });
+    });
+
+    it('syncs the plan person property from the entitlements endpoint for an authenticated visitor', async () => {
+        renderMenu();
+        await waitFor(() => {
+            expect(syncPlanPersonProperties).toHaveBeenCalledWith({ apiUrl: 'https://api.test' });
         });
     });
 

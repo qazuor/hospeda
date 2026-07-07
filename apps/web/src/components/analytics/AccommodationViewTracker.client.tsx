@@ -15,7 +15,7 @@
 import { EntityTypeEnum } from '@repo/schemas';
 import { useEffect } from 'react';
 import { WebEvents } from '@/lib/analytics/events';
-import { associateGroup, trackEvent } from '@/lib/analytics/posthog-client';
+import { associateGroup, resetGroups, trackEvent } from '@/lib/analytics/posthog-client';
 import { sendViewBeacon } from '@/lib/analytics/view-capture';
 import type { SupportedLocale } from '@/lib/i18n';
 
@@ -99,6 +99,14 @@ export function AccommodationViewTracker({
 
         // View beacon to the server-side view capture endpoint (SPEC-159).
         sendViewBeacon({ entityType: EntityTypeEnum.ACCOMMODATION, entityId: accommodationId });
+
+        // Clear the accommodation group when leaving this page (unmount on
+        // navigation away) so it never leaks onto events captured on unrelated
+        // pages. Navigating to another accommodation unmounts+remounts, so the
+        // next page re-associates its own id.
+        return () => {
+            resetGroups();
+        };
     }, [
         slug,
         accommodationId,

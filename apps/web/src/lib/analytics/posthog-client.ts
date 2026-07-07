@@ -30,6 +30,7 @@ interface PostHogStub {
     identify(distinctId: string, props?: Record<string, unknown>): void;
     setPersonProperties(props: Record<string, unknown>): void;
     group(groupType: string, groupKey: string, groupProperties?: Record<string, unknown>): void;
+    resetGroups(): void;
     reset(): void;
 }
 
@@ -206,6 +207,20 @@ export function associateGroup(groupType: string, groupKey: string): void {
     }
     pendingGroups = { ...pendingGroups, [groupType]: groupKey };
     attachConsentListenerOnce();
+}
+
+/**
+ * Clear ALL current group associations for the session. Call when leaving the
+ * context that set a group (e.g. unmounting an accommodation detail page) so the
+ * association does not leak onto events captured on unrelated pages afterwards —
+ * `group()` otherwise persists until superseded or reset. Also drops any group
+ * association that was still pending consent. No-op on the server / when PostHog
+ * never loaded.
+ */
+export function resetGroups(): void {
+    if (typeof window === 'undefined') return;
+    pendingGroups = {};
+    window.posthog?.resetGroups();
 }
 
 /**

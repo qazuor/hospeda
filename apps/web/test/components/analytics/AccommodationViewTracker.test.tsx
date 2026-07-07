@@ -18,9 +18,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const trackEventMock = vi.fn();
 const associateGroupMock = vi.fn();
+const resetGroupsMock = vi.fn();
 vi.mock('@/lib/analytics/posthog-client', () => ({
     trackEvent: (...args: unknown[]) => trackEventMock(...args),
-    associateGroup: (...args: unknown[]) => associateGroupMock(...args)
+    associateGroup: (...args: unknown[]) => associateGroupMock(...args),
+    resetGroups: (...args: unknown[]) => resetGroupsMock(...args)
 }));
 
 const sendViewBeaconMock = vi.fn();
@@ -53,6 +55,7 @@ describe('AccommodationViewTracker (SPEC-159 T-012)', () => {
     beforeEach(() => {
         trackEventMock.mockClear();
         associateGroupMock.mockClear();
+        resetGroupsMock.mockClear();
         sendViewBeaconMock.mockClear();
     });
 
@@ -113,6 +116,15 @@ describe('AccommodationViewTracker (SPEC-159 T-012)', () => {
             'accommodation',
             DEFAULT_PROPS.accommodationId
         );
+    });
+
+    it('clears the group association on unmount (no leak onto later pages)', () => {
+        const { unmount } = render(<AccommodationViewTracker {...DEFAULT_PROPS} />);
+        expect(resetGroupsMock).not.toHaveBeenCalled();
+
+        unmount();
+
+        expect(resetGroupsMock).toHaveBeenCalledTimes(1);
     });
 
     // ── No double-fire on stable props re-render ───────────────────────────
