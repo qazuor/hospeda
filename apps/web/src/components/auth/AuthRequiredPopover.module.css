@@ -11,18 +11,29 @@
  * `overflow: visible` is required so the arrow (positioned outside the box)
  * is not clipped.
  */
+/*
+ * background-color / border-radius / box-shadow / z-index come from the
+ * shared `.overlay-surface` primitive (see apps/web/src/styles/
+ * components.css) — AuthRequiredPopover.client.tsx adds that class
+ * alongside this one.
+ */
 .popover {
     position: fixed;
-    z-index: 1000;
     width: 17.5rem;
     max-width: calc(100vw - 16px);
-    border-radius: var(--radius-card);
-    border: 1px solid var(--brand-primary-a20);
-    background-color: var(--core-card);
-    box-shadow: var(--shadow-card);
     transition:
         opacity 0.18s ease,
         transform 0.18s ease;
+}
+
+/*
+ * This popover keeps its brand-tinted border (matches the header wash and
+ * arrow border below) instead of the primitive's neutral `--overlay-ring`.
+ * Overridden via a compound selector so the win doesn't depend on the
+ * import order between this module and the shared global stylesheet.
+ */
+.popover:global(.overlay-surface) {
+    border-color: var(--brand-primary-a20);
 }
 
 .popoverHidden {
@@ -41,6 +52,17 @@
 .popoverVisible {
     opacity: 1;
     transform: translateY(0) scale(1);
+}
+
+/* Reduced motion: drop the slide + scale, keep a plain opacity crossfade. */
+@media (prefers-reduced-motion: reduce) {
+    .popover {
+        transition: opacity 0.18s ease;
+    }
+    .popover[data-placement="bottom"].popoverHidden,
+    .popover[data-placement="top"].popoverHidden {
+        transform: none;
+    }
 }
 
 /* ---- Arrow ---- */
@@ -67,7 +89,9 @@
 
 .popover[data-placement="top"] .arrow {
     bottom: -0.375rem;
-    background-color: var(--core-card);
+    /* Matches the popover's own `.overlay-surface` background so the arrow
+       tip blends seamlessly into the panel it points from. */
+    background-color: var(--surface-overlay);
     border-bottom: 1px solid var(--brand-primary-a20);
     border-right: 1px solid var(--brand-primary-a20);
 }
@@ -144,7 +168,9 @@
     display: flex;
     gap: 0.5rem;
     padding: 0.875rem 1rem;
-    background-color: var(--core-card);
+    /* Matches the popover's own `.overlay-surface` background — this strip
+       sits flush against the panel's bottom edge, not a separate card. */
+    background-color: var(--surface-overlay);
     border-bottom-left-radius: var(--radius-card);
     border-bottom-right-radius: var(--radius-card);
 }

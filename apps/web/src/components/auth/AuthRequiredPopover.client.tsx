@@ -231,6 +231,7 @@ export function AuthRequiredPopover({
             aria-label={dialogLabel}
             className={cn(
                 styles.popover,
+                'overlay-surface',
                 isVisible && position ? styles.popoverVisible : styles.popoverHidden,
                 className
             )}
@@ -305,5 +306,24 @@ export function AuthRequiredPopover({
         </div>
     );
 
-    return createPortal(popoverNode, document.body);
+    return createPortal(
+        <>
+            {/* Full-viewport dismiss scrim behind the popover. This is a
+                behavior change, not just decoration: because it covers the
+                whole viewport above the page (only the popover sits higher),
+                a click anywhere outside the popover lands on the scrim and
+                dismisses — dismiss-only, with NO click-through, so clicking a
+                link/button while the popover is open closes it without also
+                activating that target (a second click is then needed). The
+                pre-existing document-level click-outside listener still runs;
+                this scrim intercepts the click first by design. */}
+            <div
+                className="overlay-base overlay-scrim"
+                aria-hidden="true"
+                onClick={onClose}
+            />
+            {popoverNode}
+        </>,
+        document.body
+    );
 }

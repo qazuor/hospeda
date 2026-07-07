@@ -707,6 +707,22 @@
     background-color: var(--overlay-bg-light);
 }
 
+/*
+ * Subtle dismiss-on-click scrim behind an OPEN popover/dropdown (never a
+ * toast — toasts are ephemeral and must never gate interaction). Compose
+ * with `.overlay-base` for the fixed positioning + fade-in:
+ *   <div class="overlay-base overlay-scrim" onClick={close} aria-hidden />
+ * Deliberately lighter than `.overlay-light` (which backs full drawers/
+ * sheets) — this only needs to hint "click outside to close", not dim the
+ * page. Sits one stacking step below the popover surface itself, which
+ * MUST use `--z-popover` (see `.overlay-surface` below) for the layering
+ * to hold.
+ */
+.overlay-scrim {
+    background-color: var(--popover-scrim);
+    z-index: calc(var(--z-popover) - 1);
+}
+
 @keyframes overlay-fade-in {
     from {
         opacity: 0;
@@ -720,6 +736,38 @@
     .overlay-base {
         animation: none;
     }
+}
+
+/* ==========================================================================
+   Overlay surface — shared elevation for floating UI
+   --------------------------------------------------------------------------
+   One raised-surface treatment for toasts, contextual popovers, and
+   portal-mounted dropdowns — anything that floats free above the page and
+   needs to read as elevated on ANY background, including dark mode (where a
+   flush `--core-card` fill blends into the page). Compose this class
+   alongside a component's own sizing/positioning rules:
+
+       <div class={cn(styles.popover, 'overlay-surface')}>
+
+   Sets background, border, box-shadow, a default border-radius, and
+   z-index — all from the `--surface-overlay` / `--overlay-ring` /
+   `--shadow-overlay` / `--z-popover` tokens (see web-light.ts / web-dark.ts
+   in @repo/design-tokens for why light and dark use genuinely different
+   shadow recipes, not just a color swap). Components that need a different
+   corner radius than the default keep their own `border-radius` declaration
+   — it simply overrides this class's value, same as any other CSS Module
+   rule layered on top of a shared class.
+
+   The toast viewport keeps `--z-toast` on its own fixed-positioned
+   container (toasts must float above modals, not just other popovers) —
+   only the individual toast surface uses this class, not the viewport.
+   ========================================================================== */
+.overlay-surface {
+    background-color: var(--surface-overlay);
+    border: 1px solid var(--overlay-ring);
+    box-shadow: var(--shadow-overlay);
+    border-radius: var(--radius-card);
+    z-index: var(--z-popover);
 }
 
 /* ==========================================================================

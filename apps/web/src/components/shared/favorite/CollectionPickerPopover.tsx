@@ -259,7 +259,7 @@ export const CollectionPickerPopover: FC<CollectionPickerPopoverProps> = ({
     const popoverNode = (
         <div
             ref={popoverRef}
-            className={`collection-picker ${visibilityClass}`}
+            className={`collection-picker overlay-surface ${visibilityClass}`}
             style={{
                 top: position ? `${position.top}px` : 0,
                 left: position ? `${position.left}px` : 0
@@ -320,5 +320,24 @@ export const CollectionPickerPopover: FC<CollectionPickerPopoverProps> = ({
         </div>
     );
 
-    return createPortal(popoverNode, document.body);
+    return createPortal(
+        <>
+            {/* Full-viewport dismiss scrim behind the popover. This is a
+                behavior change, not just decoration: because it covers the
+                whole viewport above the page (only the popover sits higher),
+                a click anywhere outside the popover lands on the scrim and
+                dismisses — dismiss-only, with NO click-through, so clicking a
+                link/button while the popover is open closes it without also
+                activating that target (a second click is then needed). The
+                pre-existing document-level click-outside listener still runs;
+                this scrim intercepts the click first by design. */}
+            <div
+                className="overlay-base overlay-scrim"
+                aria-hidden="true"
+                onClick={onClose}
+            />
+            {popoverNode}
+        </>,
+        document.body
+    );
 };

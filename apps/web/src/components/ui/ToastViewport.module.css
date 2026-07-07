@@ -76,17 +76,32 @@
     gap: var(--space-3, 0.75rem);
     padding: var(--space-4, 1rem);
     min-height: 88px;
-    border-radius: var(--radius-card, 16px);
-    background-color: var(--toast-bg, var(--core-card, #fff));
-    border: 1px solid transparent;
-    box-shadow:
-        0 12px 32px rgba(0, 0, 0, 0.1),
-        0 4px 8px rgba(0, 0, 0, 0.04);
+    /*
+     * background-color / border / box-shadow / border-radius come from the
+     * shared `.overlay-surface` primitive (see apps/web/src/styles/
+     * components.css) — ToastViewport.client.tsx adds that class alongside
+     * this one. `.overlay-surface` also sets `z-index: var(--z-popover)`,
+     * which is harmless here: `.toast` is only `position: relative` (for
+     * `overflow: hidden` + layout), so that z-index only orders toasts
+     * against each other, never against the page — the real stacking layer
+     * is `--z-toast` on `.viewport` below.
+     */
     color: var(--core-foreground);
     animation: toast-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     touch-action: pan-y;
     user-select: none;
     will-change: transform, opacity;
+}
+
+/*
+ * `.overlay-surface`'s default background is the flat `--surface-overlay`
+ * fill; toasts need their own feedback-tinted `--toast-bg` (color-mix per
+ * variant below) instead. Override via a compound selector (higher
+ * specificity than `.overlay-surface` alone) rather than relying on the
+ * import order between this module and the shared global stylesheet.
+ */
+.toast:global(.overlay-surface) {
+    background-color: var(--toast-bg, var(--surface-overlay, #fff));
 }
 
 /* Body fills the middle column and centers content vertically so short
@@ -307,31 +322,35 @@
 .toast[data-toast-type="success"] {
     --toast-accent: var(--success, #16a34a);
     --toast-accent-foreground: var(--success-foreground, #fff);
-    --toast-bg: color-mix(in oklab, var(--core-card, #fff) 87%, var(--success, #16a34a) 13%);
+    --toast-bg: color-mix(in oklab, var(--surface-overlay, #fff) 87%, var(--success, #16a34a) 13%);
 }
 
 .toast[data-toast-type="error"] {
     --toast-accent: var(--destructive, #dc2626);
     --toast-accent-foreground: var(--destructive-foreground, #fff);
-    --toast-bg: color-mix(in oklab, var(--core-card, #fff) 87%, var(--destructive, #dc2626) 13%);
+    --toast-bg: color-mix(
+        in oklab,
+        var(--surface-overlay, #fff) 87%,
+        var(--destructive, #dc2626) 13%
+    );
 }
 
 .toast[data-toast-type="warning"] {
     --toast-accent: var(--warning, #ea580c);
     --toast-accent-foreground: var(--warning-foreground, #1a1a1a);
-    --toast-bg: color-mix(in oklab, var(--core-card, #fff) 87%, var(--warning, #ea580c) 13%);
+    --toast-bg: color-mix(in oklab, var(--surface-overlay, #fff) 87%, var(--warning, #ea580c) 13%);
 }
 
 .toast[data-toast-type="info"] {
     --toast-accent: var(--info, #2563eb);
     --toast-accent-foreground: var(--info-foreground, #fff);
-    --toast-bg: color-mix(in oklab, var(--core-card, #fff) 87%, var(--info, #2563eb) 13%);
+    --toast-bg: color-mix(in oklab, var(--surface-overlay, #fff) 87%, var(--info, #2563eb) 13%);
 }
 
 .toast[data-toast-type="loading"] {
     --toast-accent: var(--info, #2563eb);
     --toast-accent-foreground: var(--info-foreground, #fff);
-    --toast-bg: var(--core-card, #fff);
+    --toast-bg: var(--surface-overlay, #fff);
     border-color: var(--info-a20);
 }
 
@@ -341,7 +360,7 @@
 [data-theme="dark"] .toast[data-toast-type="error"],
 [data-theme="dark"] .toast[data-toast-type="warning"],
 [data-theme="dark"] .toast[data-toast-type="info"] {
-    --toast-bg: color-mix(in oklab, var(--core-card, #1a1a1a) 86%, var(--toast-accent) 14%);
+    --toast-bg: color-mix(in oklab, var(--surface-overlay, #1a1a1a) 86%, var(--toast-accent) 14%);
 }
 
 @media (prefers-reduced-motion: reduce) {
