@@ -41,6 +41,8 @@ interface ContactHostAccommodation {
     readonly price: number | null;
     /** ISO currency code for `price`, or null when unpriced. */
     readonly currency: string | null;
+    /** Owner (host) id — a booking-event dimension. */
+    readonly ownerId: string;
 }
 
 /** Authenticated user data (optional — absent when anonymous) */
@@ -193,6 +195,7 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
             destination_name: accommodation.destinationName,
             price: accommodation.price,
             currency: accommodation.currency,
+            owner_id: accommodation.ownerId,
             is_authenticated: isAuthenticated,
             locale
         };

@@ -17,8 +17,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // ─── Module mocks (must precede the import under test) ────────────────────────
 
 const trackEventMock = vi.fn();
+const associateGroupMock = vi.fn();
 vi.mock('@/lib/analytics/posthog-client', () => ({
-    trackEvent: (...args: unknown[]) => trackEventMock(...args)
+    trackEvent: (...args: unknown[]) => trackEventMock(...args),
+    associateGroup: (...args: unknown[]) => associateGroupMock(...args)
 }));
 
 const sendViewBeaconMock = vi.fn();
@@ -41,7 +43,8 @@ const DEFAULT_PROPS = {
     destinationId: 'dest-colon',
     destinationName: 'Colón',
     price: 12000,
-    currency: 'ARS'
+    currency: 'ARS',
+    ownerId: 'owner-9'
 };
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -49,6 +52,7 @@ const DEFAULT_PROPS = {
 describe('AccommodationViewTracker (SPEC-159 T-012)', () => {
     beforeEach(() => {
         trackEventMock.mockClear();
+        associateGroupMock.mockClear();
         sendViewBeaconMock.mockClear();
     });
 
@@ -97,8 +101,18 @@ describe('AccommodationViewTracker (SPEC-159 T-012)', () => {
             destination_id: 'dest-colon',
             destination_name: 'Colón',
             price: 12000,
-            currency: 'ARS'
+            currency: 'ARS',
+            owner_id: 'owner-9'
         });
+    });
+
+    it('associates the accommodation group on mount', () => {
+        render(<AccommodationViewTracker {...DEFAULT_PROPS} />);
+
+        expect(associateGroupMock).toHaveBeenCalledWith(
+            'accommodation',
+            DEFAULT_PROPS.accommodationId
+        );
     });
 
     // ── No double-fire on stable props re-render ───────────────────────────

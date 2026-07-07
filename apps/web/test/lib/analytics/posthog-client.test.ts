@@ -13,6 +13,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+    associateGroup,
     identifyUser,
     resetUser,
     setPersonProperties,
@@ -204,6 +205,47 @@ describe('setPersonProperties (consent-gated)', () => {
         );
 
         expect(setSpy).toHaveBeenCalledWith({ plan: 'host-pro', plan_status: 'active' });
+    });
+});
+
+describe('associateGroup (consent-gated)', () => {
+    it('associates the group immediately when consent is granted', () => {
+        setAnalyticsConsent(true);
+        const groupSpy = vi.fn();
+        (window as unknown as { posthog: { group: typeof groupSpy } }).posthog = {
+            group: groupSpy
+        };
+
+        associateGroup('accommodation', 'acc-1');
+
+        expect(groupSpy).toHaveBeenCalledWith('accommodation', 'acc-1');
+    });
+
+    it('does NOT associate when consent is absent (privacy gate)', () => {
+        const groupSpy = vi.fn();
+        (window as unknown as { posthog: { group: typeof groupSpy } }).posthog = {
+            group: groupSpy
+        };
+
+        associateGroup('accommodation', 'acc-1');
+
+        expect(groupSpy).not.toHaveBeenCalled();
+    });
+
+    it('replays the deferred association once consent flips to true', () => {
+        const groupSpy = vi.fn();
+        (window as unknown as { posthog: { group: typeof groupSpy } }).posthog = {
+            group: groupSpy
+        };
+
+        associateGroup('accommodation', 'acc-1');
+        expect(groupSpy).not.toHaveBeenCalled();
+
+        window.dispatchEvent(
+            new CustomEvent('cookie-consent:changed', { detail: { analytics: true } })
+        );
+
+        expect(groupSpy).toHaveBeenCalledWith('accommodation', 'acc-1');
     });
 });
 

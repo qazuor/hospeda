@@ -15,7 +15,7 @@
 import { EntityTypeEnum } from '@repo/schemas';
 import { useEffect } from 'react';
 import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { associateGroup, trackEvent } from '@/lib/analytics/posthog-client';
 import { sendViewBeacon } from '@/lib/analytics/view-capture';
 import type { SupportedLocale } from '@/lib/i18n';
 
@@ -35,6 +35,8 @@ interface AccommodationViewTrackerProps {
     readonly price: number | null;
     /** ISO currency code for `price`, or null when unpriced. */
     readonly currency: string | null;
+    /** Owner (host) id — an event dimension and PostHog group association. */
+    readonly ownerId: string;
 }
 
 /**
@@ -71,10 +73,16 @@ export function AccommodationViewTracker({
     destinationId,
     destinationName,
     price,
-    currency
+    currency,
+    ownerId
 }: AccommodationViewTrackerProps): null {
     useEffect(() => {
-        // PostHog event — enriched with type/featured/destination/price so
+        // Associate subsequent events on this page with the accommodation group
+        // so PostHog can aggregate at the accommodation level. No-op until the
+        // group type is configured in the PostHog project (ops/plan-dependent).
+        associateGroup('accommodation', accommodationId);
+
+        // PostHog event — enriched with type/featured/destination/price/owner so
         // funnels can segment views without a join (SPEC-140 base props kept).
         trackEvent(WebEvents.AccommodationViewed, {
             slug,
@@ -85,7 +93,8 @@ export function AccommodationViewTracker({
             destination_id: destinationId,
             destination_name: destinationName,
             price,
-            currency
+            currency,
+            owner_id: ownerId
         });
 
         // View beacon to the server-side view capture endpoint (SPEC-159).
@@ -99,7 +108,8 @@ export function AccommodationViewTracker({
         destinationId,
         destinationName,
         price,
-        currency
+        currency,
+        ownerId
     ]);
 
     return null;

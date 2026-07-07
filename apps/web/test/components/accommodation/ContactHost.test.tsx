@@ -52,7 +52,8 @@ const ACCOMMODATION_META = {
     destinationId: 'dest-colon',
     destinationName: 'Colón',
     price: 12000,
-    currency: 'ARS'
+    currency: 'ARS',
+    ownerId: 'owner-9'
 } as const;
 
 const ACTIVE_ACCOMMODATION = {
@@ -661,6 +662,7 @@ describe('ContactHost', () => {
                 destination_name: 'Colón',
                 price: 12000,
                 currency: 'ARS',
+                owner_id: 'owner-9',
                 is_authenticated: false,
                 locale: LOCALE
             });
@@ -709,6 +711,7 @@ describe('ContactHost', () => {
                 destination_name: 'Colón',
                 price: 12000,
                 currency: 'ARS',
+                owner_id: 'owner-9',
                 is_authenticated: true,
                 locale: LOCALE
             });
@@ -767,6 +770,7 @@ describe('ContactHost', () => {
                 destination_name: 'Colón',
                 price: 12000,
                 currency: 'ARS',
+                owner_id: 'owner-9',
                 is_authenticated: false,
                 locale: LOCALE
             });
@@ -821,6 +825,7 @@ describe('ContactHost', () => {
                 destination_name: 'Colón',
                 price: 12000,
                 currency: 'ARS',
+                owner_id: 'owner-9',
                 is_authenticated: false,
                 retry_after: 90,
                 locale: LOCALE
