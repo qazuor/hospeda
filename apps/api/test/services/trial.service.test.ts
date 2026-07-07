@@ -175,28 +175,27 @@ describe('TrialService', () => {
             );
         });
 
-        // HOSPEDA_TRIAL_DAYS_OVERRIDE (testing-only): in a NON-production env a
-        // positive integer override replaces OWNER_TRIAL_DAYS (14) so QA can
-        // exercise trial expiry after e.g. 1 day. The override is HARD-GATED to
-        // non-production so a stray value can never shrink real hosts' trials.
+        // HOSPEDA_TRIAL_DAYS_OVERRIDE (testing-only): when set to a positive integer
+        // it replaces OWNER_TRIAL_DAYS (14) so QA can exercise trial expiry after
+        // e.g. 1 day. It is intentionally NOT gated by environment (NODE_ENV is
+        // 'production' on both the prod and staging deployments, and testing must be
+        // possible against production), so these tests assert the override applies
+        // whenever set and falls back to the constant when unset.
         describe('HOSPEDA_TRIAL_DAYS_OVERRIDE', () => {
             // `env` is a live binding populated at runtime by validateApiEnv(), so
             // snapshot it inside beforeEach (not in the describe body, where it is
             // still undefined during collection).
-            let originalNodeEnv: typeof env.NODE_ENV;
             let originalOverride: typeof env.HOSPEDA_TRIAL_DAYS_OVERRIDE;
 
             beforeEach(() => {
-                originalNodeEnv = env.NODE_ENV;
                 originalOverride = env.HOSPEDA_TRIAL_DAYS_OVERRIDE;
             });
 
             afterEach(() => {
-                env.NODE_ENV = originalNodeEnv;
                 env.HOSPEDA_TRIAL_DAYS_OVERRIDE = originalOverride;
             });
 
-            const arrangeHappyPath = (customerId: string) => {
+            const arrangeHappyPath = () => {
                 const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
                 vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
                     data: [mockPlan]
@@ -209,14 +208,13 @@ describe('TrialService', () => {
                 } as never);
             };
 
-            it('uses the override trial length in a non-production environment', async () => {
+            it('uses the override trial length when set to a positive integer', async () => {
                 // Arrange
-                env.NODE_ENV = 'development';
                 env.HOSPEDA_TRIAL_DAYS_OVERRIDE = 1;
-                arrangeHappyPath('customer-override-dev');
+                arrangeHappyPath();
 
                 // Act
-                await trialService.startTrial({ customerId: 'customer-override-dev' });
+                await trialService.startTrial({ customerId: 'customer-override-set' });
 
                 // Assert — the shortened trial length flows into subscriptions.create
                 expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
@@ -224,26 +222,10 @@ describe('TrialService', () => {
                 );
             });
 
-            it('IGNORES the override in production and keeps OWNER_TRIAL_DAYS (14)', async () => {
-                // Arrange — a stray override on a prod deploy must never shrink trials
-                env.NODE_ENV = 'production';
-                env.HOSPEDA_TRIAL_DAYS_OVERRIDE = 1;
-                arrangeHappyPath('customer-override-prod');
-
-                // Act
-                await trialService.startTrial({ customerId: 'customer-override-prod' });
-
-                // Assert — falls back to the constant, not the override
-                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
-                    expect.objectContaining({ trialDays: 14 })
-                );
-            });
-
             it('falls back to OWNER_TRIAL_DAYS (14) when the override is unset', async () => {
                 // Arrange
-                env.NODE_ENV = 'development';
                 env.HOSPEDA_TRIAL_DAYS_OVERRIDE = undefined;
-                arrangeHappyPath('customer-override-unset');
+                arrangeHappyPath();
 
                 // Act
                 await trialService.startTrial({ customerId: 'customer-override-unset' });

@@ -1434,9 +1434,10 @@ export const HOSPEDA_ENV_VARS = [
     // -------------------------------------------------------------------------
     {
         name: 'HOSPEDA_TRIAL_DAYS_OVERRIDE',
-        description: 'Override host trial length (days) for testing. Ignored in production.',
+        description:
+            'Override host trial length (days) for testing. Affects every trial while set.',
         descriptionEs:
-            'Sobrescribe la duración del trial de host (días) para testing. Se ignora en producción.',
+            'Sobrescribe la duración del trial de host (días) para testing. Afecta a todo trial mientras esté seteada.',
         type: 'number',
         required: false,
         secret: false,
@@ -1444,9 +1445,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'testing',
         howToObtain:
-            'Set to a positive integer (e.g. 1) in local/staging to shorten the host publish trial for QA, so trial expiry can be exercised without waiting 14 days. HARD-GATED to non-production: ignored when NODE_ENV=production, where the trial is always OWNER_TRIAL_DAYS (14). Leave unset in every real environment.',
+            'Set to a positive integer (e.g. 1) to shorten the host publish trial so QA can exercise trial expiry without waiting 14 days. NOT gated by environment (NODE_ENV is "production" on both the prod and staging deployments and cannot distinguish them, and testing must be possible against production). It is an explicit ops knob: it affects EVERY trial started while it is set, so set it, run the test, then UNSET it. Unset by default in every environment.',
         howToObtainEs:
-            'Poné un entero positivo (ej. 1) en local/staging para acortar el trial de publicación de host en QA, así se puede probar la expiración sin esperar 14 días. BLINDADO a no-producción: se ignora cuando NODE_ENV=production, donde el trial siempre es OWNER_TRIAL_DAYS (14). Dejala sin setear en todo entorno real.'
+            'Poné un entero positivo (ej. 1) para acortar el trial de publicación de host y poder probar la expiración sin esperar 14 días. NO tiene gate de entorno (NODE_ENV es "production" tanto en la instancia de prod como en la de staging, así que no las distingue, y hay que poder testear contra producción). Es una perilla explícita de ops: afecta a TODO trial que arranque mientras esté seteada, así que la seteás, hacés la prueba y la SACÁS. Sin setear por defecto en todos los entornos.'
     },
     {
         name: 'HOSPEDA_DISABLE_AUTH',
