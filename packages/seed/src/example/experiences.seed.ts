@@ -15,6 +15,20 @@
  * Idempotent: each INSERT uses ON CONFLICT (slug) DO NOTHING so re-running
  * the seed is safe.
  *
+ * HOS-25 T-026: every experience listing is inserted with an explicit
+ * deterministic UUIDv5 `id` (see `getExperienceFixtureId`), derived from its
+ * curated `slug`, instead of the column's DB-random default — so a versioned
+ * data-migration can target a specific listing by a fixed id. This was
+ * already a raw-SQL, service-bypassing insert (see above), so no NEW service
+ * lifecycle hook is skipped here; this only replaces a random id with a
+ * stable, reproducible one and registers the id in `idMapper` under the
+ * `'experiences'` namespace (keyed by `slug`) for downstream fixtures — e.g.
+ * an `EXPERIENCE`-typed bookmark (see `bookmarks.seed.ts`).
+ *
+ * There is no `example` JSON fixture folder for experiences (unlike
+ * gastronomies) — the 5 listings below are hardcoded inline, so no dedicated
+ * child-table fixtures (FAQs/reviews) exist for this entity yet.
+ *
  * Seeded listings:
  *  1. EXCURSION       — Concepción del Uruguay, per_person, ACTIVE+PUBLIC+hasActiveSub=true
  *  2. KAYAK_RENTAL    — Colón, per_hour, ACTIVE+PUBLIC+hasActiveSub=true
@@ -24,6 +38,7 @@
  */
 
 import { Pool } from 'pg';
+import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 
@@ -51,6 +66,8 @@ interface SeedMedia {
 }
 
 interface ExperienceInsertInput {
+    /** Explicit deterministic UUIDv5 id (HOS-25 T-026) — see `getExperienceFixtureId`. */
+    id: string;
     slug: string;
     name: string;
     summary: string;
@@ -70,13 +87,40 @@ interface ExperienceInsertInput {
     media: SeedMedia;
 }
 
+/**
+ * Derives the deterministic UUIDv5 id for an `example` experience commerce
+ * listing (HOS-25 T-026).
+ *
+ * Unlike other `example` entities (accommodations, events, destinations…),
+ * experience listings have no JSON fixture with a stable top-level `id` field
+ * — they are a small hardcoded array in `buildExperienceInputs` below, each
+ * with a unique, curated `slug` (already this table's own uniqueness key, via
+ * `ON CONFLICT (slug)`). The `slug` is therefore used directly as the
+ * seed-key input instead of a `"<entity>:<fixture.id>"` pair.
+ *
+ * Exported (rather than an inline lambda) so tests can assert the id is
+ * stable across calls without running the full seed pipeline, mirroring
+ * `getAccommodationFixtureId` in `accommodations.seed.ts` (HOS-25 T-016).
+ *
+ * @param input - RO-RO input with the experience's own slug
+ * @returns Stable UUIDv5 derived from the experience's seed-key
+ */
+export const getExperienceFixtureId = (input: { slug: string }): string =>
+    deterministicFixtureId({ seedKey: `experience:${input.slug}` });
+
 // ---------------------------------------------------------------------------
 // Experience seed definitions
 // ---------------------------------------------------------------------------
 
+/** Literal experience definitions before the deterministic `id` is derived from `slug`. */
+type ExperienceInsertInputDraft = Omit<ExperienceInsertInput, 'id'>;
+
 /**
  * Builds the list of experience insert inputs once owner/destination IDs are
  * resolved from the live database.
+ *
+ * Each entry is stamped with a deterministic UUIDv5 `id` (HOS-25 T-026) derived
+ * from its `slug` — see `getExperienceFixtureId`.
  */
 function buildExperienceInputs(
     superAdminId: string,
@@ -95,7 +139,7 @@ function buildExperienceInputs(
         );
     }
 
-    return [
+    const drafts: ExperienceInsertInputDraft[] = [
         {
             slug: 'excursion-rio-uruguay-concepcion',
             name: 'Excursión al Río Uruguay',
@@ -288,6 +332,11 @@ function buildExperienceInputs(
             }
         }
     ];
+
+    return drafts.map((draft) => ({
+        ...draft,
+        id: getExperienceFixtureId({ slug: draft.slug })
+    }));
 }
 
 // ---------------------------------------------------------------------------
@@ -373,20 +422,25 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
         let skipped = 0;
 
         for (const input of inputs) {
+            // HOS-25 T-026: explicit deterministic UUIDv5 id (see
+            // `getExperienceFixtureId`), inserted instead of relying on the
+            // column's DB-random default, so versioned data-migrations can
+            // target a specific experience listing by a fixed id.
             const result = await pool.query<{ id: string }>(
                 `INSERT INTO experiences
-                   (slug, name, summary, description, type,
+                   (id, slug, name, summary, description, type,
                     price_from, price_unit, is_price_on_request, has_active_subscription,
                     visibility, lifecycle_state, moderation_state, is_featured,
                     owner_id, destination_id, created_by_id, updated_by_id, media)
                  VALUES
-                   ($1, $2, $3, $4, $5,
-                    $6, $7, $8, $9,
-                    $10, $11, $12, $13,
-                    $14, $15, $16, $16, $17::jsonb)
+                   ($1, $2, $3, $4, $5, $6,
+                    $7, $8, $9, $10,
+                    $11, $12, $13, $14,
+                    $15, $16, $17, $17, $18::jsonb)
                  ON CONFLICT (slug) DO NOTHING
                  RETURNING id`,
                 [
+                    input.id,
                     input.slug,
                     input.name,
                     input.summary,
@@ -407,23 +461,37 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
                 ]
             );
 
-            if (result.rows[0]) {
+            let realId = result.rows[0]?.id;
+            if (realId) {
                 inserted++;
-                logger.success({
-                    msg: `[experiences] Inserted: "${input.name}" → ${result.rows[0].id}`
-                });
+                logger.success({ msg: `[experiences] Inserted: "${input.name}" → ${realId}` });
             } else {
+                // Row already exists (slug conflict). Resolve its real DB id so
+                // the idMapper registration below always points at a valid FK —
+                // do NOT assume it equals the freshly-computed deterministic id:
+                // a pre-existing row seeded before HOS-25 T-026 introduced
+                // deterministic ids would still carry its original
+                // randomly-assigned id.
+                const existing = await pool.query<{ id: string }>(
+                    'SELECT id FROM experiences WHERE slug = $1 LIMIT 1',
+                    [input.slug]
+                );
+                realId = existing.rows[0]?.id;
                 skipped++;
                 logger.info(`[experiences] Skipped (already exists): "${input.name}"`);
+            }
+
+            if (realId) {
+                // Register in idMapper so downstream fixtures (e.g. an
+                // EXPERIENCE-typed bookmark — see `bookmarks.seed.ts`) can
+                // resolve this experience's real id from its slug.
+                context.idMapper.setMapping('experiences', input.slug, realId, input.name);
             }
         }
 
         logger.success({
             msg: `[experiences] Done — inserted=${inserted} skipped=${skipped} total=${inputs.length}`
         });
-
-        // Keep actor unchanged (we used super admin implicitly; context.actor not mutated)
-        void context;
     } finally {
         await pool.end();
     }

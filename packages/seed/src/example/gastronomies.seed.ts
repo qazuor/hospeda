@@ -16,11 +16,63 @@ import {
 import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { hash } from 'bcryptjs';
 import exampleManifest from '../manifest-example.json';
+import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { loadJsonFiles } from '../utils/loadJsonFile.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
+
+/**
+ * Derives the deterministic UUIDv5 id for an `example` gastronomy listing
+ * fixture (HOS-25 T-026), from the fixture's own top-level `id` seed-key.
+ *
+ * Exported (rather than an inline lambda) so tests can assert the id is
+ * stable across calls without running the full seed pipeline, mirroring
+ * `getAccommodationFixtureId` in `accommodations.seed.ts` (HOS-25 T-016).
+ *
+ * @param seedId - Raw gastronomy fixture's top-level `id` field
+ * @returns Stable UUIDv5 derived from the fixture's seed-key
+ */
+export const getGastronomyFixtureId = (seedId: string): string =>
+    deterministicFixtureId({ seedKey: `gastronomy:${seedId}` });
+
+/**
+ * Derives the deterministic UUIDv5 id for a single FAQ belonging to an
+ * `example` gastronomy fixture (HOS-25 T-026), keyed off the parent
+ * gastronomy's seed-key plus the FAQ's position in its fixture array (FAQ
+ * fixtures have no `id` of their own) — mirrors
+ * `getAccommodationFaqFixtureId` in `accommodations.seed.ts`.
+ *
+ * @param input - RO-RO input with the parent gastronomy's seed-key and this FAQ's index
+ * @returns Stable UUIDv5 derived from the FAQ's composite seed-key
+ */
+export const getGastronomyFaqFixtureId = (input: {
+    gastronomySeedId: string;
+    index: number;
+}): string =>
+    deterministicFixtureId({
+        seedKey: `gastronomyFaq:${input.gastronomySeedId}:${input.index}`
+    });
+
+/**
+ * Derives the deterministic UUIDv5 id for a single review belonging to an
+ * `example` gastronomy fixture (HOS-25 T-026), keyed off the parent
+ * gastronomy's seed-key plus the reviewer's own seed id — the `(userId,
+ * gastronomyId)` pair is already the DB's own UNIQUE constraint for this
+ * table, so it is a more content-stable composite key than array position
+ * (unaffected by fixture-array reordering).
+ *
+ * @param input - RO-RO input with the parent gastronomy's seed-key and the reviewer's seed id
+ * @returns Stable UUIDv5 derived from the review's composite seed-key
+ */
+export const getGastronomyReviewFixtureId = (input: {
+    gastronomySeedId: string;
+    reviewerSeedId: string;
+}): string =>
+    deterministicFixtureId({
+        seedKey: `gastronomyReview:${input.gastronomySeedId}:${input.reviewerSeedId}`
+    });
 
 /**
  * Bcrypt rounds — must match apps/api/src/lib/auth.ts BCRYPT_SALT_ROUNDS.
@@ -303,8 +355,24 @@ async function ensureListingSubscriptionLink(
  * - Commerce owner users: idempotent via pre-check on `email`.
  * - Billing rows: idempotent via pre-check on `externalId` / `customerId`.
  * - Subscription links: idempotent via `onConflictDoNothing` on UNIQUE(entityType, entityId).
- * - FAQ rows: idempotent via `onConflictDoNothing`.
+ * - FAQ rows: idempotent via `onConflictDoNothing` on the (now explicit,
+ *   deterministic) primary key.
  * - Review rows: idempotent via `onConflictDoNothing` on UNIQUE(userId, gastronomyId).
+ *
+ * ### Deterministic ids (HOS-25 T-026)
+ * Gastronomy listings, FAQs, and reviews are all inserted with an explicit
+ * UUIDv5 id derived from a stable seed-key (see `getGastronomyFixtureId` /
+ * `getGastronomyFaqFixtureId` / `getGastronomyReviewFixtureId` above), instead
+ * of the column's `defaultRandom()`. This was already a model-direct Drizzle
+ * insert (never went through `GastronomyService`/`GastronomyFaqService`/
+ * `GastronomyReviewService`), so no service lifecycle hook is newly bypassed —
+ * this only replaces a random id with a stable, reproducible one. The
+ * `reviewsCount`/`averageRating` denormalized columns on `gastronomies` are
+ * static, author-curated values taken directly from the fixture (matching the
+ * companion review fixtures), NOT computed via `GastronomyService.recomputeRating`
+ * — unlike `AccommodationReviewService`/`DestinationReviewService`
+ * (HOS-25 T-025), there is no bypassed hook here that used to compute them, so
+ * no recompute call is introduced.
  *
  * @param context - Seed context providing the idMapper and actor
  */
@@ -511,9 +579,16 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                 throw new Error(`No mapping found for owner ID: ${item.ownerId}`);
             }
 
+            // HOS-25 T-026: stable UUIDv5 derived from the fixture's seed-key,
+            // inserted explicitly (bypassing the column's `defaultRandom()`) so
+            // versioned data-migrations can target a specific gastronomy listing
+            // by a fixed id.
+            const gastronomyId = getGastronomyFixtureId(item.id);
+
             const [inserted] = await db
                 .insert(gastronomies)
                 .values({
+                    id: gastronomyId,
                     slug: item.slug,
                     name: item.name,
                     summary: item.summary,
@@ -553,7 +628,21 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                 .onConflictDoNothing()
                 .returning({ id: gastronomies.id });
 
-            const realId = inserted?.id;
+            let realId = inserted?.id;
+            if (!realId) {
+                // Row already exists (slug conflict). Resolve its real DB id so
+                // downstream FAQs/reviews/idMapper consumers always get a valid
+                // FK — do NOT assume it equals the freshly-computed deterministic
+                // id: a pre-existing row seeded before HOS-25 T-026 introduced
+                // deterministic ids would still carry its original
+                // randomly-assigned id.
+                const existingRows = await db
+                    .select({ id: gastronomies.id })
+                    .from(gastronomies)
+                    .where(eq(gastronomies.slug, item.slug))
+                    .limit(1);
+                realId = existingRows[0]?.id;
+            }
 
             if (realId) {
                 // Register in idMapper so downstream (reviews, FAQs) can resolve
@@ -628,10 +717,20 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                 continue;
             }
 
-            for (const faq of faqFileData.faqs) {
+            for (const [faqIndex, faq] of faqFileData.faqs.entries()) {
                 await db
                     .insert(gastronomyFaqs)
                     .values({
+                        // HOS-25 T-026: stable UUIDv5 keyed off the parent
+                        // gastronomy's seed-key + this FAQ's array position
+                        // (FAQ fixtures have no `id` of their own) — mirrors
+                        // `getAccommodationFaqFixtureId`. Also makes
+                        // `onConflictDoNothing()` below meaningfully idempotent
+                        // (previously the DB-random default id never collided).
+                        id: getGastronomyFaqFixtureId({
+                            gastronomySeedId: faqFileData.$gastronomyId,
+                            index: faqIndex
+                        }),
                         gastronomyId: realGastronomyId,
                         question: faq.question,
                         answer: faq.answer,
@@ -690,6 +789,16 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                 await db
                     .insert(gastronomyReviews)
                     .values({
+                        // HOS-25 T-026: stable UUIDv5 keyed off the parent
+                        // gastronomy's seed-key + the reviewer's own seed id —
+                        // the (userId, gastronomyId) pair is already this
+                        // table's UNIQUE constraint, so it doubles as a
+                        // content-stable composite key (unaffected by array
+                        // reordering, unlike an index-based key).
+                        id: getGastronomyReviewFixtureId({
+                            gastronomySeedId: reviewFileData.$gastronomyId,
+                            reviewerSeedId: review.userId
+                        }),
                         gastronomyId: realGastronomyId,
                         userId: realUserId,
                         title: review.title ?? null,

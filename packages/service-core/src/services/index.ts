@@ -11,6 +11,9 @@ export type {
 export * from './accommodation/featured-entitlement.resolver';
 export * from './accommodation-external-reputation/index.js';
 export * from './accommodation-import/index.js';
+// HOS-25 T-025: pure per-review average helper, reused by seed factories that
+// model-direct insert review rows (bypassing the service's own _afterCreate).
+export { computeAccommodationReviewAverage } from './accommodationReview/accommodationReview.helpers';
 export * from './accommodationReview/accommodationReview.service';
 export type { AccommodationReviewHookState } from './accommodationReview/accommodationReview.types';
 export * from './alert';
@@ -24,8 +27,16 @@ export type { CommerceListingHookState } from './commerce/commerce.types';
 export * from './contentModeration';
 export * from './conversation/index.js';
 export * from './cronRun/index.js';
+// HOS-25 T-025: pure hierarchy-math helpers (level/path/pathIds computation),
+// reused by the `required` destinations seed factory so it does not
+// re-implement the same math when model-direct inserting fixtures with a
+// deterministic id (which bypasses DestinationService._beforeCreate).
+export * from './destination/destination.hierarchy.helpers';
 export * from './destination/destination.service';
 export type { DestinationHookState } from './destination/destination.types';
+// HOS-25 T-025: pure per-review average helper, mirrors
+// computeAccommodationReviewAverage above for the destination-review side.
+export { computeReviewAverageRating } from './destinationReview/destinationReview.helpers';
 export * from './destinationReview/destinationReview.service';
 export type { DestinationReviewHookState } from './destinationReview/destinationReview.types';
 export * from './entityComment/entityComment.service';

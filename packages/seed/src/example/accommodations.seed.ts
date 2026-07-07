@@ -1,4 +1,4 @@
-import { AccommodationMediaModel } from '@repo/db';
+import { AccommodationFaqModel, AccommodationMediaModel, AccommodationModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { AccommodationService, AmenityService, FeatureService } from '@repo/service-core/index.js';
 import exampleManifest from '../manifest-example.json';
@@ -6,6 +6,7 @@ import {
     buildAccommodationMediaRows,
     type FixtureMediaBlock
 } from '../utils/accommodation-media-builder.js';
+import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { createSeedFactory } from '../utils/seedFactory.js';
@@ -13,6 +14,14 @@ import { createServiceRelationBuilder } from '../utils/serviceRelationBuilder.js
 
 /**
  * Normalizes accommodation data by removing metadata and auto-generated fields.
+ *
+ * Keeps `slug` (see HOS-25 T-016): every `example` accommodation is now created
+ * via the deterministic-id, model-direct path (see `deterministicId` below),
+ * which bypasses `AccommodationService._beforeCreate` — the hook that would
+ * otherwise auto-generate a unique slug from `type` + `name`. Fixture slugs are
+ * already curated and verified unique across the whole `example` dataset, so
+ * passing them straight through is both safe and more readable than the
+ * service's auto-generated `"type name"` slug.
  *
  * @param data - Raw accommodation data from JSON file
  * @returns Cleaned accommodation data ready for database insertion
@@ -22,7 +31,6 @@ const accommodationNormalizer = (data: Record<string, unknown>) => {
     const {
         $schema,
         id,
-        slug,
         tagIds,
         averageRating,
         amenityIds,
@@ -124,6 +132,43 @@ const getAccommodationInfo = (item: unknown) => {
 };
 
 /**
+ * Derives the deterministic UUIDv5 id for an `example` accommodation fixture
+ * (HOS-25 T-016), from the fixture's own top-level `id` seed-key.
+ *
+ * Exported (rather than an inline lambda) so tests can assert the id is
+ * stable across calls without running the full seed pipeline.
+ *
+ * @param item - Raw accommodation fixture item (pre-normalization)
+ * @returns Stable UUIDv5 derived from the fixture's seed-key
+ */
+export const getAccommodationFixtureId = (item: unknown): string =>
+    deterministicFixtureId({
+        seedKey: `accommodation:${(item as { id: string }).id}`
+    });
+
+/**
+ * Derives the deterministic UUIDv5 id for a single FAQ belonging to an
+ * `example` accommodation fixture (HOS-25 T-016).
+ *
+ * FAQs are child rows created outside the seed-factory's own item loop (see
+ * the `relationBuilder` below), so `SeedFactoryConfig.deterministicId` does
+ * not apply to them directly — this helper replicates the same
+ * seed-key-derived-UUIDv5 pattern manually, keyed off the parent
+ * accommodation's seed-key plus the FAQ's position in its fixture array
+ * (FAQ fixtures have no `id` of their own).
+ *
+ * @param input - RO-RO input with the parent accommodation's seed-key and this FAQ's index
+ * @returns Stable UUIDv5 derived from the FAQ's composite seed-key
+ */
+export const getAccommodationFaqFixtureId = (input: {
+    accommodationSeedKey: string;
+    index: number;
+}): string =>
+    deterministicFixtureId({
+        seedKey: `accommodationFaq:${input.accommodationSeedKey}:${input.index}`
+    });
+
+/**
  * Seeds accommodations with their associated amenities, features, FAQs, and AI data.
  *
  * This seed factory creates accommodation entities and establishes
@@ -154,6 +199,17 @@ export const seedAccommodations = createSeedFactory({
     normalizer: accommodationNormalizer,
     preProcess: preProcessAccommodation,
     getEntityInfo: getAccommodationInfo,
+
+    // HOS-25 T-016: every `example` accommodation gets a stable UUIDv5 derived
+    // from its fixture seed-key, so versioned data-migrations can target a
+    // specific accommodation by a fixed id. See the audit note on
+    // `accommodationNormalizer` above for why this bypasses
+    // `AccommodationService._beforeCreate` safely (slug is passed through from
+    // the fixture instead of being service-generated).
+    deterministicId: {
+        modelClass: AccommodationModel,
+        getId: getAccommodationFixtureId
+    },
 
     // Custom relation builders for amenities, features, FAQs, and AI data
     relationBuilder: async (result: unknown, item: unknown, context: SeedContext) => {
@@ -228,6 +284,18 @@ export const seedAccommodations = createSeedFactory({
             const accommodationInfo = getAccommodationInfo(item);
             logger.info(`Creating ${faqs.length} FAQs for ${accommodationInfo}`);
 
+            // HOS-25 T-016: FAQs are child rows created outside the seed-factory's
+            // own item loop (they're not a top-level fixture with their own `id`),
+            // so `SeedFactoryConfig.deterministicId` does not apply here directly.
+            // We replicate the same model-direct pattern manually: a deterministic
+            // id per FAQ (keyed off the parent accommodation's seed-key + index)
+            // and an explicit `displayOrder` matching what
+            // `AccommodationService.addFaq` would compute for a fresh entity
+            // (`max(existing displayOrder) + 1`, starting at 0) — safe here
+            // because every fixture accommodation starts with zero FAQs.
+            const accommodationSeedKey = accommodationData.id as string;
+            const faqModel = new AccommodationFaqModel();
+
             for (let i = 0; i < faqs.length; i++) {
                 const faq = faqs[i];
                 if (!faq) continue;
@@ -236,12 +304,18 @@ export const seedAccommodations = createSeedFactory({
                     if (!context.actor) {
                         throw new Error('Actor not available in context');
                     }
-                    await service.addFaq(context.actor, {
+                    await faqModel.create({
+                        id: getAccommodationFaqFixtureId({
+                            accommodationSeedKey,
+                            index: i
+                        }),
                         accommodationId,
-                        faq: {
-                            question: faq.question,
-                            answer: faq.answer
-                        }
+                        question: faq.question,
+                        answer: faq.answer,
+                        category: faq.category ?? null,
+                        displayOrder: i,
+                        createdById: context.actor.id,
+                        updatedById: context.actor.id
                     });
                     logger.success({
                         msg: `[${i + 1} of ${faqs.length}] - Created FAQ: "${faq.question}"`

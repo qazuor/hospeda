@@ -387,6 +387,25 @@ export class DestinationReviewService extends BaseCrudService<
     }
 
     /**
+     * Public wrapper around {@link recalculateAndUpdateDestinationStats}.
+     *
+     * Mirrors `AccommodationReviewService.recalculateStats` (HOS-25 T-025):
+     * every normal write path already triggers this recalculation, but a
+     * model-direct seed insert (deterministic fixture id, bypassing
+     * `service.create()`) needs an explicit entry point to keep the parent
+     * destination's aggregate stats correct without duplicating the
+     * aggregation SQL above. Same `@internal`-style convention as the
+     * sibling `updateStatsFromReview` methods — no actor/permission gate.
+     *
+     * @param destinationId - The ID of the destination to recompute stats for
+     * @param ctx - Optional service context. When provided with a transaction, the recomputation runs within it.
+     * @internal
+     */
+    public async recalculateStats(destinationId: string, ctx?: ServiceContext): Promise<void> {
+        await this.recalculateAndUpdateDestinationStats(destinationId, ctx?.tx);
+    }
+
+    /**
      * @param entity - The newly created review entity.
      * @param _actor - The actor who performed the create.
      * @param _tx - Optional transaction client. When provided, stat updates run within the transaction.
