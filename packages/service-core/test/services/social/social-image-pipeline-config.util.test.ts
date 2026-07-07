@@ -6,10 +6,11 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    buildSocialAssetsFolder,
     DOWNLOAD_TIMEOUT_MS_FALLBACK,
     resolveNumericSettingWithFallback,
     resolveStringSettingWithFallback,
-    SOCIAL_ASSETS_FOLDER_FALLBACK
+    SOCIAL_ASSETS_FOLDER_BASE_FALLBACK
 } from '../../../src/services/social/social-image-pipeline-config.util';
 
 describe('resolveNumericSettingWithFallback', () => {
@@ -77,7 +78,39 @@ describe('resolveStringSettingWithFallback', () => {
         ).toBe('hospeda/social/assets');
     });
 
-    it('should use the documented default for social_assets_folder', () => {
-        expect(SOCIAL_ASSETS_FOLDER_FALLBACK).toBe('hospeda/social/assets');
+    it('should use the documented default base prefix for social_assets_folder', () => {
+        expect(SOCIAL_ASSETS_FOLDER_BASE_FALLBACK).toBe('hospeda/social');
+    });
+});
+
+describe('buildSocialAssetsFolder', () => {
+    it('should compose the folder for the prod environment', () => {
+        expect(buildSocialAssetsFolder({ base: 'hospeda/social', environment: 'prod' })).toBe(
+            'hospeda/social/prod/assets'
+        );
+    });
+
+    it('should compose the folder for the preview environment', () => {
+        expect(buildSocialAssetsFolder({ base: 'hospeda/social', environment: 'preview' })).toBe(
+            'hospeda/social/preview/assets'
+        );
+    });
+
+    it('should compose the folder for the dev environment', () => {
+        expect(buildSocialAssetsFolder({ base: 'hospeda/social', environment: 'dev' })).toBe(
+            'hospeda/social/dev/assets'
+        );
+    });
+
+    it('should compose the folder for the test environment', () => {
+        expect(buildSocialAssetsFolder({ base: 'hospeda/social', environment: 'test' })).toBe(
+            'hospeda/social/test/assets'
+        );
+    });
+
+    it('should honor a custom base prefix', () => {
+        expect(buildSocialAssetsFolder({ base: 'custom/base', environment: 'prod' })).toBe(
+            'custom/base/prod/assets'
+        );
     });
 });

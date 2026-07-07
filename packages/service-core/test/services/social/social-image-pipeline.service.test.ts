@@ -27,6 +27,7 @@ import type {
     SocialSettingModel
 } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
+import { resolveEnvironment } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
 import { SocialAssetSourceEnum, SocialMediaTypeEnum, SocialPublishFormatEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -586,7 +587,7 @@ describe('SocialImagePipelineService', () => {
     // -------------------------------------------------------------------------
 
     describe('settings-driven config', () => {
-        it('uses a custom social_assets_folder from settings when uploading', async () => {
+        it('uses a custom social_assets_folder base prefix from settings, always composed with the environment segment', async () => {
             // Arrange
             const uploadSpy = vi.spyOn(mediaProvider, 'upload');
             settingModelMock.findOne.mockImplementation(async (query: Record<string, unknown>) => {
@@ -601,13 +602,16 @@ describe('SocialImagePipelineService', () => {
             // Act
             await service.processImage({ image });
 
-            // Assert
+            // Assert — the DB-configured base prefix can NEVER defeat env isolation:
+            // the environment segment is always appended by code.
             expect(uploadSpy).toHaveBeenCalledWith(
-                expect.objectContaining({ folder: 'custom/folder/path' })
+                expect.objectContaining({
+                    folder: `custom/folder/path/${resolveEnvironment()}/assets`
+                })
             );
         });
 
-        it('falls back to hospeda/social/assets when social_assets_folder is missing', async () => {
+        it('falls back to hospeda/social/{env}/assets when social_assets_folder is missing', async () => {
             // Arrange — beforeEach already leaves settingModelMock.findOne resolving undefined
             const uploadSpy = vi.spyOn(mediaProvider, 'upload');
             const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
@@ -618,11 +622,13 @@ describe('SocialImagePipelineService', () => {
 
             // Assert
             expect(uploadSpy).toHaveBeenCalledWith(
-                expect.objectContaining({ folder: 'hospeda/social/assets' })
+                expect.objectContaining({
+                    folder: `hospeda/social/${resolveEnvironment()}/assets`
+                })
             );
         });
 
-        it('falls back to hospeda/social/assets when social_assets_folder is an empty string', async () => {
+        it('falls back to hospeda/social/{env}/assets when social_assets_folder is an empty string', async () => {
             // Arrange
             const uploadSpy = vi.spyOn(mediaProvider, 'upload');
             settingModelMock.findOne.mockImplementation(async (query: Record<string, unknown>) => {
@@ -639,7 +645,9 @@ describe('SocialImagePipelineService', () => {
 
             // Assert
             expect(uploadSpy).toHaveBeenCalledWith(
-                expect.objectContaining({ folder: 'hospeda/social/assets' })
+                expect.objectContaining({
+                    folder: `hospeda/social/${resolveEnvironment()}/assets`
+                })
             );
         });
 

@@ -11,18 +11,20 @@ import {
     SocialSettingModel as RealSocialSettingModel
 } from '@repo/db';
 import type { ImageProvider, UploadOptions } from '@repo/media/server';
-import { SocialAssetSourceEnum, SocialMediaTypeEnum } from '@repo/schemas';
+import { resolveEnvironment } from '@repo/media/server';
 import type { SocialPublishFormatEnum } from '@repo/schemas';
+import { SocialAssetSourceEnum, SocialMediaTypeEnum } from '@repo/schemas';
 import type { ServiceConfig } from '../../types';
 import { isUuid } from '../../utils/identifier';
 import type { ServiceLogger } from '../../utils/service-logger';
 import { serviceLogger } from '../../utils/service-logger';
 import {
+    buildSocialAssetsFolder,
     DOWNLOAD_TIMEOUT_MS_FALLBACK,
     DOWNLOAD_TIMEOUT_MS_KEY,
     resolveNumericSettingWithFallback,
     resolveStringSettingWithFallback,
-    SOCIAL_ASSETS_FOLDER_FALLBACK,
+    SOCIAL_ASSETS_FOLDER_BASE_FALLBACK,
     SOCIAL_ASSETS_FOLDER_KEY
 } from './social-image-pipeline-config.util';
 import { resolveVideoPipelinePreset } from './social-video-pipeline-config.util';
@@ -276,7 +278,10 @@ function buildVideoDurationLimitWarning(maxDurationSeconds: number): string {
  *    `openaiFileIdRefs[0].download_link` for `openai_file_refs`).
  * 3. Download the image bytes with `fetch()` and a configurable `AbortController`
  *    timeout (default 15 s, `download_timeout_ms` social setting — HOS-64 G-2).
- * 4. Upload the bytes to Cloudinary via the injected `ImageProvider`.
+ * 4. Upload the bytes to Cloudinary via the injected `ImageProvider`, under a
+ *    folder ALWAYS composed as `${base}/${environment}/assets` (see
+ *    {@link getAssetsFolder}) so staging/prod (which share one Cloudinary
+ *    account) never collide, regardless of the admin-configured base prefix.
  * 5. Persist a `social_assets` row with the Cloudinary fields + metadata.
  * 6. Optionally create a `social_post_media` link row at `position = 0`, and
  *    (HOS-65 G-3) optionally a `social_post_target_media` link row scoping
@@ -331,15 +336,27 @@ export class SocialImagePipelineService {
     }
 
     /**
-     * Reads `social_assets_folder` from `social_settings`, falling back to
-     * `hospeda/social/assets` when the row is missing or empty.
+     * Resolves the Cloudinary folder social-pipeline uploads are stored under.
+     *
+     * Reads `social_assets_folder` from `social_settings` as a BASE PREFIX
+     * (falling back to {@link SOCIAL_ASSETS_FOLDER_BASE_FALLBACK} when the row
+     * is missing or empty), then ALWAYS composes the final folder as
+     * `${base}/${environment}/assets` via {@link buildSocialAssetsFolder},
+     * where `environment` comes from {@link resolveEnvironment}.
+     *
+     * The environment segment is never sourced from the setting/seed value —
+     * this guarantees staging and production (which share a single Cloudinary
+     * account) can never collide, regardless of what an admin configures as
+     * the base prefix.
      */
     private async getAssetsFolder(): Promise<string> {
         const settingRow = await this.settingModel.findOne({ key: SOCIAL_ASSETS_FOLDER_KEY });
-        return resolveStringSettingWithFallback({
+        const base = resolveStringSettingWithFallback({
             rawValue: settingRow?.value as string | null | undefined,
-            fallback: SOCIAL_ASSETS_FOLDER_FALLBACK
+            fallback: SOCIAL_ASSETS_FOLDER_BASE_FALLBACK
         });
+        const environment = resolveEnvironment();
+        return buildSocialAssetsFolder({ base, environment });
     }
 
     // ---------------------------------------------------------------------------

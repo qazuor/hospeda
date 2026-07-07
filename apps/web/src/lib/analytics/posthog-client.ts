@@ -27,6 +27,8 @@
 interface PostHogStub {
     capture(name: string, props?: Record<string, unknown>): void;
     set_config(config: Record<string, unknown>): void;
+    identify(distinctId: string, props?: Record<string, unknown>): void;
+    reset(): void;
 }
 
 declare global {
@@ -55,4 +57,95 @@ declare global {
 export function trackEvent(name: string, props?: Record<string, unknown>): void {
     if (typeof window === 'undefined') return;
     window.posthog?.capture(name, props);
+}
+
+/**
+ * Read the `cookie-consent` cookie and report whether the visitor granted
+ * analytics consent (`analytics === true`). Mirrors the exact gate the inline
+ * snippet in `PostHogScript.astro` uses to decide `persistence`. Returns
+ * `false` on any parse error or when the cookie is absent (privacy-safe
+ * default). Server-safe: returns `false` when `document` is unavailable.
+ */
+function hasAnalyticsConsent(): boolean {
+    if (typeof document === 'undefined') return false;
+    try {
+        const found = document.cookie.split('; ').find((c) => c.indexOf('cookie-consent=') === 0);
+        if (!found) return false;
+        const parsed = JSON.parse(decodeURIComponent(found.slice('cookie-consent='.length)));
+        return !!(parsed && parsed.analytics === true);
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * When `identifyUser` is called before analytics consent is granted, the
+ * requested identity is stashed here and applied later, the moment consent
+ * flips to `true` via the `cookie-consent:changed` event (dispatched by
+ * `cookie-consent.ts`). `null` means nothing pending.
+ */
+let pendingIdentify: { userId: string; props?: Record<string, unknown> } | null = null;
+/** Guard so the `cookie-consent:changed` listener is attached at most once. */
+let consentListenerAttached = false;
+
+function attachConsentListenerOnce(): void {
+    if (consentListenerAttached || typeof window === 'undefined') return;
+    consentListenerAttached = true;
+    window.addEventListener('cookie-consent:changed', (event) => {
+        const detail = (event as CustomEvent<{ analytics?: boolean }>).detail;
+        if (detail?.analytics === true && pendingIdentify) {
+            window.posthog?.identify(pendingIdentify.userId, pendingIdentify.props);
+            pendingIdentify = null;
+        }
+    });
+}
+
+/**
+ * Identify the current visitor to PostHog so their events (across devices,
+ * once logged in) are grouped under a stable person profile instead of an
+ * anonymous distinct id.
+ *
+ * CONSENT-GATED. `identify()` sends the real user id to PostHog's servers and
+ * creates a durable person profile, so — unlike anonymous `capture()` — it may
+ * only fire once the visitor has granted analytics consent. This function
+ * therefore:
+ * - fires `identify()` immediately when consent is already granted;
+ * - otherwise stashes the identity and replays it the moment consent flips to
+ *   `true` (via the `cookie-consent:changed` event), so a user who logs in and
+ *   *then* accepts cookies still gets identified without a reload.
+ *
+ * `person_profiles` is configured as `'identified_only'` (see
+ * `PostHogScript.astro`), so calling this is what actually creates a person
+ * profile for the user — without it, every event from a logged-in visitor
+ * stays anonymous. Idempotent (safe to call repeatedly with the same id).
+ * No-op on the server, and (via the optional chain) when PostHog never loaded
+ * (dev mode / missing key). Note: the snippet IS rendered even without
+ * consent — it just uses `memory` persistence — so `window.posthog` exists;
+ * the consent gate here, not the snippet, is what withholds `identify()`.
+ *
+ * @param userId - Stable app user id (Better Auth user.id). Never pass an
+ *   email or other PII as the distinct id.
+ * @param props - Optional non-sensitive person properties.
+ */
+export function identifyUser(userId: string, props?: Record<string, unknown>): void {
+    if (typeof window === 'undefined') return;
+    if (hasAnalyticsConsent()) {
+        window.posthog?.identify(userId, props);
+        return;
+    }
+    // No consent yet: defer until the visitor accepts analytics cookies.
+    pendingIdentify = { userId, props };
+    attachConsentListenerOnce();
+}
+
+/**
+ * Clear the identified visitor. Call on sign-out so events captured on the
+ * same browser afterwards (by a different user, or as a guest) are not
+ * attributed to the previous person. Also drops any identity that was pending
+ * consent, so a signed-out user is never identified retroactively.
+ */
+export function resetUser(): void {
+    if (typeof window === 'undefined') return;
+    pendingIdentify = null;
+    window.posthog?.reset();
 }

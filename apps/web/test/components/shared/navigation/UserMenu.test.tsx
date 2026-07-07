@@ -10,11 +10,17 @@ import type {
     UserMenuUser
 } from '../../../../src/components/shared/navigation/UserMenu.client';
 import { UserMenu } from '../../../../src/components/shared/navigation/UserMenu.client';
+import { identifyUser, resetUser } from '../../../../src/lib/analytics/posthog-client';
 import { AUTH_ME_CACHE_KEY } from '../../../../src/lib/auth-cache';
 import { signOut } from '../../../../src/lib/auth-client';
 
 vi.mock('../../../../src/lib/auth-client', () => ({
     signOut: vi.fn().mockResolvedValue(undefined)
+}));
+
+vi.mock('../../../../src/lib/analytics/posthog-client', () => ({
+    identifyUser: vi.fn(),
+    resetUser: vi.fn()
 }));
 
 vi.mock('../../../../src/lib/env', () => ({
@@ -467,6 +473,60 @@ describe('UserMenu — sign out', () => {
         fireEvent.click(signOutBtn);
         await waitFor(() => {
             expect(signOut).toHaveBeenCalled();
+        });
+    });
+});
+
+describe('UserMenu — PostHog identify/reset', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: { actor: { id: 'user-1', permissions: [] }, isAuthenticated: true }
+            })
+        }) as unknown as typeof fetch;
+        sessionStorage.clear();
+        // handleSignOut assigns window.location.href — jsdom blocks direct
+        // assignment, so stub it like other suites that exercise sign-out.
+        Object.defineProperty(window, 'location', {
+            value: { href: '' },
+            writable: true,
+            configurable: true
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        sessionStorage.clear();
+    });
+
+    it('calls identifyUser with the resolved user id when authenticated', async () => {
+        renderMenu();
+        await waitFor(() => {
+            expect(identifyUser).toHaveBeenCalledWith('user-1');
+        });
+    });
+
+    it('does NOT call identifyUser when the visitor is a guest', () => {
+        render(
+            <UserMenu
+                initialUser={null}
+                locale="es"
+                currentPath="/es/"
+                adminPanelUrl="https://admin.test"
+            />
+        );
+        expect(identifyUser).not.toHaveBeenCalled();
+    });
+
+    it('calls resetUser when "Cerrar sesión" is clicked', async () => {
+        renderMenu();
+        open();
+        const signOutBtn = screen.getByRole('menuitem', { name: /cerrar sesión/i });
+        fireEvent.click(signOutBtn);
+        await waitFor(() => {
+            expect(resetUser).toHaveBeenCalled();
         });
     });
 });

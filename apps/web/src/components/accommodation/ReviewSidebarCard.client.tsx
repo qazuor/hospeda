@@ -16,6 +16,8 @@
  */
 
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { WebEvents } from '@/lib/analytics/events';
+import { trackEvent } from '@/lib/analytics/posthog-client';
 import { translateApiError } from '@/lib/api-errors';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -167,6 +169,15 @@ export function ReviewSidebarCard({
                     );
                     return;
                 }
+
+                const averageRating =
+                    RATING_KEYS.reduce((sum, key) => sum + ratings[key], 0) / RATING_KEYS.length;
+                trackEvent(WebEvents.ReviewSubmitted, {
+                    accommodation_id: accommodationId,
+                    average_rating: averageRating,
+                    has_title: title.trim().length > 0,
+                    has_content: content.trim().length > 0
+                });
 
                 setSuccess(true);
                 window.setTimeout(() => window.location.reload(), 1400);

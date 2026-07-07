@@ -1310,3 +1310,117 @@ describe('FavoriteButton — locale number formatting', () => {
         expect(screen.getByText(formattedEn)).toBeInTheDocument();
     });
 });
+
+// ---------------------------------------------------------------------------
+// 13. PostHog analytics — favorite_toggled
+// ---------------------------------------------------------------------------
+
+describe('FavoriteButton — favorite_toggled analytics event', () => {
+    let captureSpy: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+        captureSpy = vi.fn();
+        (window as unknown as { posthog: { capture: typeof captureSpy } }).posthog = {
+            capture: captureSpy
+        };
+    });
+
+    afterEach(() => {
+        (window as unknown as { posthog?: unknown }).posthog = undefined;
+    });
+
+    it('fires favorite_toggled with action="add" when favoriting succeeds', async () => {
+        // Arrange
+        mockToggle.mockResolvedValue({
+            ok: true,
+            data: { toggled: true, bookmark: { id: 'bm-success-1' } }
+        });
+        render(
+            <FavoriteButton
+                {...buildProps({
+                    isAuthenticated: true,
+                    initialIsFavorited: false,
+                    entityId: 'entity-add-1',
+                    entityType: 'ACCOMMODATION'
+                })}
+            />
+        );
+
+        // Act
+        fireEvent.click(screen.getByRole('button'));
+
+        // Assert
+        await waitFor(() => {
+            expect(captureSpy).toHaveBeenCalledWith('favorite_toggled', {
+                entity_type: 'ACCOMMODATION',
+                entity_id: 'entity-add-1',
+                action: 'add',
+                assigned_collection: false
+            });
+        });
+    });
+
+    it('fires favorite_toggled with action="remove" when un-favoriting succeeds', async () => {
+        // Arrange
+        mockToggle.mockResolvedValue({
+            ok: true,
+            data: { toggled: false, bookmark: null }
+        });
+        render(
+            <FavoriteButton
+                {...buildProps({
+                    isAuthenticated: true,
+                    initialIsFavorited: true,
+                    entityId: 'entity-remove-1',
+                    entityType: 'DESTINATION'
+                })}
+            />
+        );
+
+        // Act
+        fireEvent.click(screen.getByRole('button'));
+
+        // Assert
+        await waitFor(() => {
+            expect(captureSpy).toHaveBeenCalledWith('favorite_toggled', {
+                entity_type: 'DESTINATION',
+                entity_id: 'entity-remove-1',
+                action: 'remove',
+                assigned_collection: false
+            });
+        });
+    });
+
+    it('does NOT fire favorite_toggled on an error response', async () => {
+        // Arrange
+        mockToggle.mockResolvedValue({
+            ok: false,
+            error: { status: 500, code: 'ERROR', message: 'fail' }
+        });
+        render(
+            <FavoriteButton {...buildProps({ isAuthenticated: true, initialIsFavorited: false })} />
+        );
+
+        // Act
+        fireEvent.click(screen.getByRole('button'));
+
+        // Assert
+        await waitFor(() => expect(mockAddToast).toHaveBeenCalled());
+        expect(captureSpy).not.toHaveBeenCalled();
+    });
+
+    it('does NOT fire favorite_toggled for a guest click', () => {
+        // Arrange
+        render(
+            <FavoriteButton
+                {...buildProps({ isAuthenticated: false, initialIsFavorited: false })}
+            />
+        );
+
+        // Act
+        fireEvent.click(screen.getByRole('button'));
+
+        // Assert
+        expect(captureSpy).not.toHaveBeenCalled();
+    });
+});
