@@ -167,9 +167,13 @@ describe('theme exports', () => {
     it('all four theme records are imported and shaped correctly', () => {
         // 155 was the prior count; grew to 208 after SSOT icon+color passes added
         // event-category (8), post-category (18), user-role (7), auth-provider (5),
-        // amenity-type (12) and sponsor-type (3) token families.
-        expect(Object.keys(webLight)).toHaveLength(215); // + dark-refresh + SPEC-308 + HOS-84 header tokens
-        expect(Object.keys(webDark)).toHaveLength(65);
+        // amenity-type (12) and sponsor-type (3) token families. Grew to 215 after
+        // dark-refresh + SPEC-308 + HOS-84 header tokens, then to 220 after the
+        // toast/popover contrast fix (z-popover, surface-overlay, overlay-ring,
+        // shadow-overlay, popover-scrim), then to 221 after z-popover-in-overlay
+        // (SortPopover-in-drawer z fix).
+        expect(Object.keys(webLight)).toHaveLength(221);
+        expect(Object.keys(webDark)).toHaveLength(69);
         // Admin: 39 was prior count (17 core + 12 brand + 10 per-accommodation-type).
         // Grew to 92 after the same SSOT passes added event-category/post-category/
         // user-role/auth-provider/amenity-type/sponsor-type families to admin-light.
