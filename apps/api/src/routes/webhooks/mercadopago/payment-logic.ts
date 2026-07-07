@@ -935,6 +935,26 @@ export async function processPaymentUpdated({
                 failureReason,
                 billing
             );
+
+            // Fire-and-forget product analytics (no DB, no await). Mirrors the
+            // approved-branch capture above and is wrapped in try/catch so a
+            // misbehaving PostHog client can NEVER break webhook processing.
+            try {
+                getPostHogClient()?.capture({
+                    distinctId: customerId,
+                    event: 'payment_failed',
+                    properties: { amount, currency, status, failureReason, source }
+                });
+            } catch (phErr) {
+                apiLogger.warn(
+                    {
+                        customerId,
+                        source,
+                        error: phErr instanceof Error ? phErr.message : String(phErr)
+                    },
+                    'PostHog capture failed for payment_failed (non-blocking)'
+                );
+            }
         }
     }
 

@@ -388,7 +388,9 @@ describe('processPaymentUpdated', () => {
                 billing: mockBilling
             });
 
-            expect(mockPostHogCapture).not.toHaveBeenCalled();
+            expect(mockPostHogCapture).not.toHaveBeenCalledWith(
+                expect.objectContaining({ event: 'subscription_payment_succeeded' })
+            );
         });
 
         it('does not throw and processing still succeeds when the PostHog client throws', async () => {
@@ -419,6 +421,100 @@ describe('processPaymentUpdated', () => {
                 'credit_card',
                 mockBilling
             );
+        });
+    });
+
+    // ── PostHog payment_failed capture ────────────────────────────────────
+    describe('PostHog payment_failed capture', () => {
+        it('captures payment_failed with failureReason on a rejected payment', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 500,
+                currency: 'ARS',
+                status: 'rejected',
+                statusDetail: 'cc_rejected_insufficient_amount',
+                paymentMethod: 'credit_card'
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(result.success).toBe(true);
+            expect(mockPostHogCapture).toHaveBeenCalledWith({
+                distinctId: 'cust-1',
+                event: 'payment_failed',
+                properties: {
+                    amount: 500,
+                    currency: 'ARS',
+                    status: 'rejected',
+                    failureReason: 'cc_rejected_insufficient_amount',
+                    source: 'webhook'
+                }
+            });
+        });
+
+        it('falls back to status as failureReason when statusDetail is absent', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 500,
+                currency: 'ARS',
+                status: 'cancelled',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+
+            await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            const call = mockPostHogCapture.mock.calls.find(
+                ([arg]) => (arg as { event?: string }).event === 'payment_failed'
+            );
+            expect(
+                (call?.[0] as { properties: { failureReason: string } }).properties.failureReason
+            ).toBe('cancelled');
+        });
+
+        it('does NOT capture payment_failed for an approved payment', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 1000,
+                currency: 'ARS',
+                status: 'approved',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+
+            await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(mockPostHogCapture).not.toHaveBeenCalledWith(
+                expect.objectContaining({ event: 'payment_failed' })
+            );
+        });
+
+        it('does not throw and processing still succeeds when the PostHog client throws', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 500,
+                currency: 'ARS',
+                status: 'refunded',
+                statusDetail: 'refunded',
+                paymentMethod: 'credit_card'
+            });
+            mockGetPostHogClient.mockImplementationOnce(() => {
+                throw new Error('PostHog client unavailable');
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(result.success).toBe(true);
+            expect(sendPaymentFailureNotifications).toHaveBeenCalled();
         });
     });
 
