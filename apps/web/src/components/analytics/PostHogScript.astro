@@ -45,6 +45,10 @@ const { cspNonce } = Astro.props;
 const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY ?? '';
 const posthogHost = import.meta.env.PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com';
 const isDev = import.meta.env.DEV === true;
+// Deploy version, baked in at build time. Registered as a PostHog super
+// property so every captured event carries the app build it came from,
+// making it trivial to correlate a spike/regression with a specific release.
+const appVersion = import.meta.env.PUBLIC_VERSION ?? 'unknown';
 
 // Compute whether to render the snippet at all. Templates without the key
 // render an empty fragment so the page never ships an empty <script> tag.
@@ -82,7 +86,10 @@ const snippetBody = `
         autocapture: true,
         disable_session_recording: true,
         persistence: analyticsAllowed ? 'localStorage+cookie' : 'memory',
-        respect_dnt: true
+        respect_dnt: true,
+        loaded: function (ph) {
+            ph.register({ app_version: appVersion });
+        }
     });
 
     window.addEventListener('cookie-consent:changed', function (event) {
@@ -103,7 +110,7 @@ const snippetBody = `
         <script
             is:inline
             nonce={cspNonce}
-            define:vars={{ posthogKey, posthogHost }}
+            define:vars={{ posthogKey, posthogHost, appVersion }}
             set:html={snippetBody}
         />
     )
