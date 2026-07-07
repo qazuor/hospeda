@@ -35,7 +35,13 @@ import { AccommodationViewTracker } from '@/components/analytics/AccommodationVi
 const DEFAULT_PROPS = {
     slug: 'cabana-del-rio',
     accommodationId: '550e8400-e29b-41d4-a716-446655440000',
-    locale: 'es' as const
+    locale: 'es' as const,
+    accommodationType: 'CABIN',
+    isFeatured: true,
+    destinationId: 'dest-colon',
+    destinationName: 'Colón',
+    price: 12000,
+    currency: 'ARS'
 };
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -85,7 +91,13 @@ describe('AccommodationViewTracker (SPEC-159 T-012)', () => {
         expect(trackEventMock).toHaveBeenCalledWith('accommodation_viewed', {
             slug: DEFAULT_PROPS.slug,
             accommodation_id: DEFAULT_PROPS.accommodationId,
-            locale: DEFAULT_PROPS.locale
+            locale: DEFAULT_PROPS.locale,
+            accommodation_type: 'CABIN',
+            is_featured: true,
+            destination_id: 'dest-colon',
+            destination_name: 'Colón',
+            price: 12000,
+            currency: 'ARS'
         });
     });
 
