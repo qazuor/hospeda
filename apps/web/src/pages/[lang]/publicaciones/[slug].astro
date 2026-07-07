@@ -18,7 +18,7 @@ import PostAuthorCard from '@/components/post/PostAuthorCard.astro';
 import PostRelatedEntityCard from '@/components/post/PostRelatedEntityCard.astro';
 import PostSponsorshipBanner from '@/components/post/PostSponsorshipBanner.astro';
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
-import TagChips from '@/components/TagChips.astro';
+import FilterChips from '@/components/shared/ui/FilterChips.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
 import CommentThread from '@/components/comments/CommentThread.astro';
 import { ReadingProgressBar } from '@/components/post/ReadingProgressBar.client';
@@ -463,7 +463,7 @@ const breadcrumbItems = [
 		<!-- PostTags (SPEC-086): public SEO taxonomy linking to tag-filtered listings -->
 		{postTags.length > 0 && (
 			<div class="post-detail__tags">
-				<TagChips
+				<FilterChips
 					ariaLabel={t('blog.detail.tags.title', 'Etiquetas de la publicación')}
 					chips={postTags.map((tag) => ({
 						label: tag.name,

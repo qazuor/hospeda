@@ -17,8 +17,7 @@ import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
-import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
-import ScrollableNav from '@/components/shared/ui/ScrollableNav.astro';
+import FilterChips from '@/components/shared/ui/FilterChips.astro';
 import { AccommodationTypeEnum } from '@repo/schemas';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import { buildAccommodationsFilterGroups } from '@/lib/filters/accommodations-filter-groups';
@@ -30,6 +29,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { resolvePromotedFacetCanonical } from '@/lib/seo/promoted-facet-canonical';
+import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
@@ -428,17 +428,24 @@ const canonicalBaseUrl = singlePromotedType
 const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalBaseUrl;
 
 /**
- * Quick-filter type badges shown above the listing grid. Uses the canonical
- * enum so any new accommodation type is picked up automatically. The slug
- * for the route is the lowercased enum value with `_` → `-` (e.g.
+ * Quick-filter type chips shown above the listing grid (HOS-97). Uses the
+ * canonical enum so any new accommodation type is picked up automatically.
+ * The slug for the route is the lowercased enum value with `_` → `-` (e.g.
  * `COUNTRY_HOUSE` → `country-house`) to match `tipo/[type]/index.astro`.
+ *
+ * This row navigates to a dedicated `/alojamientos/tipo/{slug}/` route
+ * (route-nav, not an in-place `?types=` toggle), so — matching the previous
+ * `AccommodationTypeBadge` behavior on this page — no chip is ever marked
+ * `active` here; the per-type landing page is what renders in a filtered
+ * state.
  */
-const typeBadges = Object.values(AccommodationTypeEnum).map((value) => {
+const typeChips = Object.values(AccommodationTypeEnum).map((value) => {
     const enumValue = String(value);
     const slug = enumValue.toLowerCase().replace(/_/g, '-');
     return {
-        type: enumValue,
-        href: buildUrl({ locale, path: `/alojamientos/tipo/${slug}/` })
+        label: getAccommodationTypeLabel({ type: enumValue, t }),
+        href: buildUrl({ locale, path: `/alojamientos/tipo/${slug}/` }),
+        icon: getAccommodationTypeIcon({ type: enumValue })
     };
 });
 
@@ -645,14 +652,13 @@ const emptyStateSuggestions = [
 		initialParams={initialParams}
 	/>
 
-	<ScrollableNav
+	<FilterChips
+		chips={typeChips}
 		ariaLabel={t('accommodations.typeChips.ariaLabel', 'Filtrar por tipo de alojamiento')}
-		innerClass="acc-type-badges"
-	>
-		{typeBadges.map(({ type, href }) => (
-			<AccommodationTypeBadge type={type} locale={locale} size="sm" href={href} />
-		))}
-	</ScrollableNav>
+		showScrollButtons
+		prevLabel={t('common.prev', 'Anterior')}
+		nextLabel={t('common.next', 'Siguiente')}
+	/>
 
 	{/* Listing toolbar: list/map switch (left) + AI search entry (right),
 	    aligned on a single row (desktop). On mobile the view toggle becomes a
@@ -801,14 +807,6 @@ const emptyStateSuggestions = [
 
 	:global([data-filters-loading]) .acc-grid-skeleton {
 		display: block;
-	}
-
-	/* Quick-filter type badges row above the listing grid.
-	 * Scroll affordance (overflow/fade/arrows) is provided by the
-	 * <ScrollableNav> wrapper — this rule only sets the row spacing. */
-	.acc-type-badges {
-		gap: 0.5rem;
-		margin-bottom: var(--space-6, 24px);
 	}
 
 	/* View toggle (Lista / Mapa) */
