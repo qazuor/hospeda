@@ -34,6 +34,17 @@ vi.mock('../../../src/lib/i18n', () => ({
     })
 }));
 
+/**
+ * Capture analytics calls so the submit flow can assert the payload shape.
+ * A hoisted spy lets the regression test below verify that
+ * `accommodation_types` is serialized as a plain array (not a JS Set, which
+ * PostHog would drop as `{}`).
+ */
+const { trackEventSpy } = vi.hoisted(() => ({ trackEventSpy: vi.fn() }));
+vi.mock('../../../src/lib/analytics/posthog-client', () => ({
+    trackEvent: trackEventSpy
+}));
+
 const BASE = '/es/alojamientos/';
 
 const DEFAULTS = {
@@ -284,6 +295,26 @@ describe('<SearchBar /> submit flow', () => {
         expect(navigatedTo).not.toContain('checkOut=');
         expect(navigatedTo).not.toContain('children=');
         expect(navigatedTo).not.toContain('types=');
+    });
+
+    it('sends accommodation_types as a plain array so PostHog does not drop it as {} (Set→Array regression)', async () => {
+        const user = userEvent.setup();
+        trackEventSpy.mockClear();
+
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /^buscar$/i }));
+
+        expect(trackEventSpy).toHaveBeenCalledTimes(1);
+        const [, payload] = trackEventSpy.mock.calls[0] as [string, Record<string, unknown>];
+        // A JS Set serializes to `{}` in PostHog; the fix wraps it in Array.from().
+        expect(Array.isArray(payload.accommodation_types)).toBe(true);
     });
 });
 

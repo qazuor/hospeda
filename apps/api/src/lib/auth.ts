@@ -40,6 +40,7 @@ import { getQZPayBilling } from '../middlewares/billing';
 import { BillingCustomerSyncService } from '../services/billing-customer-sync';
 import { env } from '../utils/env';
 import { resolveCookieDomain } from './auth-cookie-domain';
+import { captureSignupCompleted } from './auth-signup-analytics';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
 
 const logger = createLogger('auth');
@@ -619,11 +620,18 @@ function buildAuth() {
                             }
                         };
                     },
-                    after: async (user) => {
+                    after: async (user, context) => {
                         logger.info(
                             { userId: user.id, email: user.email },
                             'New user created via Better Auth'
                         );
+
+                        // Product analytics: signup_completed (PostHog). Fired
+                        // server-side so it covers BOTH email and OAuth signups
+                        // uniformly (the OAuth flow is a full redirect that
+                        // unmounts the web form) and exactly once per new user.
+                        // Non-blocking — see captureSignupCompleted.
+                        captureSignupCompleted({ userId: user.id, context });
 
                         // Billing customer sync (non-blocking).
                         // We create the billing_customers row eagerly here so

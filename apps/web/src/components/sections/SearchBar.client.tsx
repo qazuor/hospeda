@@ -516,7 +516,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         });
                         trackEvent(WebEvents.AccommodationSearched, {
                             destination_id: selectedDestination?.id ?? null,
-                            accommodation_types: selectedTypes,
+                            accommodation_types: Array.from(selectedTypes),
                             has_dates: Boolean(dateRange?.from || dateRange?.to),
                             adults,
                             children,

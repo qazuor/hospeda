@@ -28,6 +28,9 @@ interface PostHogStub {
     capture(name: string, props?: Record<string, unknown>): void;
     set_config(config: Record<string, unknown>): void;
     identify(distinctId: string, props?: Record<string, unknown>): void;
+    setPersonProperties(props: Record<string, unknown>): void;
+    group(groupType: string, groupKey: string, groupProperties?: Record<string, unknown>): void;
+    resetGroups(): void;
     reset(): void;
 }
 
@@ -85,6 +88,19 @@ function hasAnalyticsConsent(): boolean {
  * `cookie-consent.ts`). `null` means nothing pending.
  */
 let pendingIdentify: { userId: string; props?: Record<string, unknown> } | null = null;
+/**
+ * Person properties requested before analytics consent was granted. Merged
+ * across calls and flushed the moment consent flips to `true`. `null` means
+ * nothing pending. Kept separate from {@link pendingIdentify} because person
+ * properties can be set without (re-)identifying.
+ */
+let pendingPersonProperties: Record<string, unknown> | null = null;
+/**
+ * Group association requested before analytics consent was granted, flushed the
+ * moment consent flips to `true`. Only the latest association per group type is
+ * kept (a re-association supersedes an earlier pending one).
+ */
+let pendingGroups: Record<string, string> = {};
 /** Guard so the `cookie-consent:changed` listener is attached at most once. */
 let consentListenerAttached = false;
 
@@ -93,10 +109,19 @@ function attachConsentListenerOnce(): void {
     consentListenerAttached = true;
     window.addEventListener('cookie-consent:changed', (event) => {
         const detail = (event as CustomEvent<{ analytics?: boolean }>).detail;
-        if (detail?.analytics === true && pendingIdentify) {
+        if (detail?.analytics !== true) return;
+        if (pendingIdentify) {
             window.posthog?.identify(pendingIdentify.userId, pendingIdentify.props);
             pendingIdentify = null;
         }
+        if (pendingPersonProperties) {
+            window.posthog?.setPersonProperties(pendingPersonProperties);
+            pendingPersonProperties = null;
+        }
+        for (const [groupType, groupKey] of Object.entries(pendingGroups)) {
+            window.posthog?.group(groupType, groupKey);
+        }
+        pendingGroups = {};
     });
 }
 
@@ -139,6 +164,66 @@ export function identifyUser(userId: string, props?: Record<string, unknown>): v
 }
 
 /**
+ * Set durable person properties on the current PostHog person profile (e.g.
+ * `plan`, `plan_status`). Like {@link identifyUser} this writes to a person
+ * profile, so it is CONSENT-GATED: applied immediately when consent is already
+ * granted, otherwise merged into a pending buffer and flushed the moment
+ * consent flips to `true`. No-op on the server and when PostHog never loaded.
+ *
+ * @param props - Non-sensitive person properties to set. Never pass PII.
+ */
+export function setPersonProperties(props: Record<string, unknown>): void {
+    if (typeof window === 'undefined') return;
+    if (hasAnalyticsConsent()) {
+        window.posthog?.setPersonProperties(props);
+        return;
+    }
+    pendingPersonProperties = { ...(pendingPersonProperties ?? {}), ...props };
+    attachConsentListenerOnce();
+}
+
+/**
+ * Associate subsequent events with a PostHog group (e.g. `accommodation`), so
+ * analytics can aggregate at the entity level (unique users per accommodation,
+ * group-level funnels).
+ *
+ * CONSENT-GATED like {@link identifyUser}: applied immediately when consent is
+ * granted, otherwise buffered and flushed on consent. No-op on the server / when
+ * PostHog never loaded.
+ *
+ * NOTE: `group()` persists on the session until the next association or reset,
+ * and only has an effect once the matching group type is configured in the
+ * PostHog project (a manual/ops step, plan-dependent). Until then this is a
+ * harmless no-op on PostHog's side.
+ *
+ * @param groupType - The group type slug (e.g. `'accommodation'`).
+ * @param groupKey - The concrete group id (e.g. the accommodation id).
+ */
+export function associateGroup(groupType: string, groupKey: string): void {
+    if (typeof window === 'undefined') return;
+    if (hasAnalyticsConsent()) {
+        window.posthog?.group(groupType, groupKey);
+        return;
+    }
+    pendingGroups = { ...pendingGroups, [groupType]: groupKey };
+    attachConsentListenerOnce();
+}
+
+/**
+ * Clear ALL current group associations for the session. Call when leaving the
+ * context that set a group (e.g. unmounting an accommodation detail page) so the
+ * association does not leak onto events captured on unrelated pages afterwards —
+ * `group()` otherwise persists until superseded or reset. Also drops any group
+ * association that was still pending consent. No-op on the server / when PostHog
+ * never loaded.
+ */
+export function resetGroups(): void {
+    if (typeof window === 'undefined') return;
+    pendingGroups = {};
+    window.posthog?.resetGroups();
+}
+
+/**
  * Clear the identified visitor. Call on sign-out so events captured on the
  * same browser afterwards (by a different user, or as a guest) are not
  * attributed to the previous person. Also drops any identity that was pending
@@ -147,5 +232,7 @@ export function identifyUser(userId: string, props?: Record<string, unknown>): v
 export function resetUser(): void {
     if (typeof window === 'undefined') return;
     pendingIdentify = null;
+    pendingPersonProperties = null;
+    pendingGroups = {};
     window.posthog?.reset();
 }
