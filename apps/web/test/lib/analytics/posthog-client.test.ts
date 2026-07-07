@@ -12,11 +12,26 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { identifyUser, resetUser, trackEvent } from '@/lib/analytics/posthog-client';
+
+/** Set (or clear, when `granted` is false) the analytics-consent cookie. */
+function setAnalyticsConsent(granted: boolean): void {
+    if (granted) {
+        document.cookie = `cookie-consent=${encodeURIComponent(
+            JSON.stringify({ analytics: true })
+        )}; path=/`;
+    } else {
+        document.cookie = 'cookie-consent=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+    }
+}
 
 afterEach(() => {
     // Reset window.posthog between tests so cross-test state doesn't leak.
     (window as unknown as { posthog?: unknown }).posthog = undefined;
+    // Clear any identity that a deferring test left pending (module singleton),
+    // and drop the consent cookie, so tests stay order-independent.
+    resetUser();
+    setAnalyticsConsent(false);
     vi.restoreAllMocks();
 });
 
@@ -55,5 +70,111 @@ describe('trackEvent (SPEC-140 — fix B)', () => {
 
         // Assert
         expect(captureSpy).toHaveBeenCalledWith('newsletter_subscribed', undefined);
+    });
+});
+
+describe('identifyUser (consent-gated)', () => {
+    it('should no-op when window.posthog is undefined', () => {
+        setAnalyticsConsent(true);
+        expect(() => identifyUser('user-1')).not.toThrow();
+    });
+
+    it('should identify immediately when analytics consent is granted', () => {
+        // Arrange
+        setAnalyticsConsent(true);
+        const identifySpy = vi.fn();
+        (window as unknown as { posthog: { identify: typeof identifySpy } }).posthog = {
+            identify: identifySpy
+        };
+
+        // Act
+        identifyUser('user-1', { role: 'host' });
+
+        // Assert
+        expect(identifySpy).toHaveBeenCalledWith('user-1', { role: 'host' });
+    });
+
+    it('should pass props through as-is when consent is granted', () => {
+        // Arrange
+        setAnalyticsConsent(true);
+        const identifySpy = vi.fn();
+        (window as unknown as { posthog: { identify: typeof identifySpy } }).posthog = {
+            identify: identifySpy
+        };
+
+        // Act
+        identifyUser('user-2');
+
+        // Assert
+        expect(identifySpy).toHaveBeenCalledWith('user-2', undefined);
+    });
+
+    it('should NOT identify when analytics consent is absent (privacy gate)', () => {
+        // Arrange — no consent cookie set.
+        const identifySpy = vi.fn();
+        (window as unknown as { posthog: { identify: typeof identifySpy } }).posthog = {
+            identify: identifySpy
+        };
+
+        // Act
+        identifyUser('user-3', { role: 'host' });
+
+        // Assert
+        expect(identifySpy).not.toHaveBeenCalled();
+    });
+
+    it('should replay the deferred identify once consent flips to true', () => {
+        // Arrange — identify while consent is absent, so it defers.
+        const identifySpy = vi.fn();
+        (window as unknown as { posthog: { identify: typeof identifySpy } }).posthog = {
+            identify: identifySpy
+        };
+        identifyUser('user-4', { role: 'host' });
+        expect(identifySpy).not.toHaveBeenCalled();
+
+        // Act — the visitor accepts analytics cookies.
+        window.dispatchEvent(
+            new CustomEvent('cookie-consent:changed', { detail: { analytics: true } })
+        );
+
+        // Assert
+        expect(identifySpy).toHaveBeenCalledWith('user-4', { role: 'host' });
+    });
+
+    it('should NOT replay a deferred identify when consent change is not analytics', () => {
+        // Arrange
+        const identifySpy = vi.fn();
+        (window as unknown as { posthog: { identify: typeof identifySpy } }).posthog = {
+            identify: identifySpy
+        };
+        identifyUser('user-5');
+
+        // Act — a consent change that does NOT grant analytics.
+        window.dispatchEvent(
+            new CustomEvent('cookie-consent:changed', { detail: { analytics: false } })
+        );
+
+        // Assert
+        expect(identifySpy).not.toHaveBeenCalled();
+    });
+});
+
+describe('resetUser', () => {
+    it('should no-op when window.posthog is undefined', () => {
+        expect(() => resetUser()).not.toThrow();
+    });
+
+    it('should call window.posthog.reset() when stub is present', () => {
+        // Arrange
+        const resetSpy = vi.fn();
+        (window as unknown as { posthog: { reset: typeof resetSpy } }).posthog = {
+            reset: resetSpy
+        };
+
+        // Act
+        resetUser();
+
+        // Assert
+        expect(resetSpy).toHaveBeenCalledTimes(1);
     });
 });
