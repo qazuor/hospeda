@@ -372,9 +372,32 @@ describe('processPaymentUpdated', () => {
                     currency: 'ARS',
                     paymentMethod: 'credit_card',
                     kind: 'subscription_renewal',
-                    source: 'webhook'
+                    source: 'webhook',
+                    $set: { plan_status: 'active' }
                 }
             });
+        });
+
+        it('marks the payer active on the person profile via $set', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 1000,
+                currency: 'ARS',
+                status: 'approved',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+
+            await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            const call = mockPostHogCapture.mock.calls.find(
+                ([arg]) => (arg as { event?: string }).event === 'subscription_payment_succeeded'
+            );
+            expect(
+                (call?.[0] as { properties: { $set: Record<string, unknown> } }).properties.$set
+            ).toEqual({ plan_status: 'active' });
         });
 
         it('falls back to customerId as distinctId when the customer maps to no user', async () => {

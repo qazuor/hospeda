@@ -920,7 +920,21 @@ export async function processPaymentUpdated({
                 getPostHogClient()?.capture({
                     distinctId: analyticsDistinctId,
                     event: 'subscription_payment_succeeded',
-                    properties: { amount, currency, paymentMethod, kind, source }
+                    // `$set` updates the person profile server-side: an approved
+                    // payment means the subscription is active, so mark the payer
+                    // as such immediately (feeds the "Paying users" cohort) without
+                    // waiting for their next web visit. The exact plan slug is set
+                    // client-side from the entitlements endpoint (plan-properties.ts)
+                    // — resolving it here would need extra billing lookups, out of
+                    // scope for analytics-only changes.
+                    properties: {
+                        amount,
+                        currency,
+                        paymentMethod,
+                        kind,
+                        source,
+                        $set: { plan_status: 'active' }
+                    }
                 });
             } catch (phErr) {
                 apiLogger.warn(
