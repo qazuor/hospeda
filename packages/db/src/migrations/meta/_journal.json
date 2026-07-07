@@ -344,6 +344,13 @@
             "when": 1783202500321,
             "tag": "0048_glossy_psylocke",
             "breakpoints": true
+        },
+        {
+            "idx": 49,
+            "version": "7",
+            "when": 1783427545180,
+            "tag": "0049_tiny_firebird",
+            "breakpoints": true
         }
     ]
 }
