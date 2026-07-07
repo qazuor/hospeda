@@ -504,7 +504,61 @@ describe('UserMenu — PostHog identify/reset', () => {
     it('calls identifyUser with the resolved user id when authenticated', async () => {
         renderMenu();
         await waitFor(() => {
-            expect(identifyUser).toHaveBeenCalledWith('user-1');
+            expect(identifyUser).toHaveBeenCalledWith('user-1', expect.any(Object));
+        });
+    });
+
+    it('attaches segment person properties once permissions resolve', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: {
+                    actor: {
+                        id: 'user-1',
+                        role: 'HOST',
+                        permissions: ['accommodation.create', 'commerce.editOwn']
+                    },
+                    isAuthenticated: true
+                }
+            })
+        }) as unknown as typeof fetch;
+
+        renderMenu();
+
+        await waitFor(() => {
+            expect(identifyUser).toHaveBeenCalledWith('user-1', {
+                role: 'HOST',
+                is_host: true,
+                is_commerce_owner: true,
+                is_staff: false
+            });
+        });
+    });
+
+    it('marks platform staff via is_staff when access.apiAdmin is present', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: {
+                    actor: {
+                        id: 'user-1',
+                        role: 'ADMIN',
+                        permissions: ['access.panelAdmin', 'access.apiAdmin']
+                    },
+                    isAuthenticated: true
+                }
+            })
+        }) as unknown as typeof fetch;
+
+        renderMenu();
+
+        await waitFor(() => {
+            expect(identifyUser).toHaveBeenCalledWith('user-1', {
+                role: 'ADMIN',
+                is_host: false,
+                is_commerce_owner: false,
+                is_staff: true
+            });
         });
     });
 
