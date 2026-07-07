@@ -71,8 +71,12 @@ if (dsn && crashReportingAllowed) {
         integrations: [
             Sentry.browserTracingIntegration(),
             Sentry.replayIntegration({
-                maskAllText: false,
-                blockAllMedia: false
+                // Privacy hardening (production launch, Argentina real users):
+                // mask all text content and block all media in session replays
+                // so replays never leak personal data (names, addresses,
+                // booking details, photos) rendered in the DOM.
+                maskAllText: true,
+                blockAllMedia: true
             })
         ],
 
