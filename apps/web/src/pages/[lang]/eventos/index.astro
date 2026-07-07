@@ -45,7 +45,7 @@ import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
-import TagChips from '@/components/TagChips.astro';
+import FilterChips from '@/components/shared/ui/FilterChips.astro';
 import { getEventCategoryIconComponent } from '@/components/shared/cards/utils/eventCategoryIcon';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import {
@@ -53,6 +53,7 @@ import {
     DEFAULT_EVENT_CATEGORIES
 } from '@/lib/event-listing-summary';
 import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
+import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 import {
     computeWhenQueryBounds,
     EVENT_DATE_FILTER_VALUES,
@@ -393,18 +394,22 @@ const CATEGORY_CHIP_DEFS = [
 
 const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
     const isActive = category === value;
-    const params = new URLSearchParams(paginationParams);
-    if (isActive) {
-        params.delete('category');
-    } else {
-        params.set('category', value);
-    }
-    const qs = params.toString();
     // BETA-113 (icon parity): reuse the same category → icon mapping the
     // event cards already use, so a category shows the identical icon on its
     // card and in this quick-filter chip.
     const icon = getEventCategoryIconComponent(value);
-    return { label, href: qs ? `${baseUrl}?${qs}` : baseUrl, active: isActive, icon };
+    return {
+        label,
+        href: buildToggleParamHref({
+            baseUrl,
+            searchParams: paginationParams,
+            key: 'category',
+            value,
+            isActive
+        }),
+        active: isActive,
+        icon
+    };
 });
 
 // ItemList JSON-LD entries — the visible page of event cards, routed through
@@ -471,9 +476,12 @@ const itemListEntries = cards.map((card) => ({
 	  (see `buildEventsFilterGroups`'s `date` group `presets`).
 	-->
 	<!-- Category chips -->
-	<TagChips
+	<FilterChips
 		chips={categoryChips}
 		ariaLabel={t('events.categoryChips.ariaLabel', 'Filtrar por categoría de evento')}
+		showScrollButtons
+		prevLabel={t('common.prev', 'Anterior')}
+		nextLabel={t('common.next', 'Siguiente')}
 	/>
 
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="eventos" />}

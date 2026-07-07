@@ -490,6 +490,46 @@ describe('Environment Configuration', () => {
             envModule.validateApiEnv();
             expect(envModule.env.HOSPEDA_AI_VAULT_MASTER_KEY).toBeUndefined();
         });
+
+        it('should require HOSPEDA_SENTRY_DSN in production (Sentry prod hardening)', async () => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+
+            process.env = createValidProdEnv({
+                // Explicitly removed to prove production requires it.
+                HOSPEDA_SENTRY_DSN: undefined
+            });
+
+            const { validateApiEnv } = await import('../../src/utils/env');
+            expect(() => validateApiEnv()).toThrow('Process exit');
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
+        });
+
+        it('should accept HOSPEDA_SENTRY_DSN in production when provided', async () => {
+            process.env = createValidProdEnv({
+                HOSPEDA_SENTRY_DSN: 'https://key@sentry.io/123'
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_SENTRY_DSN).toBe('https://key@sentry.io/123');
+        });
+
+        it('should NOT require HOSPEDA_SENTRY_DSN in non-production environments', async () => {
+            process.env = createValidTestEnv({
+                NODE_ENV: 'test'
+                // HOSPEDA_SENTRY_DSN intentionally missing
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_SENTRY_DSN).toBeUndefined();
+        });
     });
 
     describe('String Transformations', () => {

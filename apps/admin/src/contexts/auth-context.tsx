@@ -13,6 +13,7 @@ import { identifyUser, resetUser } from '@/lib/analytics/posthog-client';
 import { fetchApi } from '@/lib/api/client';
 import { signOut as authSignOut, useSession } from '@/lib/auth-client';
 import type { AuthState as ServerAuthState } from '@/lib/auth-session';
+import { isSentryInitialized, setSentryUser } from '@/lib/sentry';
 import { adminLogger } from '../utils/logger';
 
 /**
@@ -374,6 +375,27 @@ export function AuthProvider({ children, initialAuthState }: AuthProviderProps) 
         clearSession,
         refreshSession
     ]);
+
+    /**
+     * Attach the authenticated user (id + anonymized email) to Sentry so
+     * error events can be cross-referenced with a user id during support/bug
+     * triage, without ever attaching a real email address. Clears the Sentry
+     * user context on logout (`isAuthenticated` flips back to false).
+     * No-ops when Sentry is not initialized (dev, or missing DSN).
+     */
+    useEffect(() => {
+        if (!isSentryInitialized()) return;
+
+        if (authState.isAuthenticated && authState.user) {
+            setSentryUser({
+                id: authState.user.id,
+                email: authState.user.email,
+                username: authState.user.displayName
+            });
+        } else {
+            setSentryUser(null);
+        }
+    }, [authState.isAuthenticated, authState.user]);
 
     /**
      * Handle session expiration

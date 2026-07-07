@@ -1,14 +1,21 @@
 /**
- * Tests for the PostHog identify/reset wiring in auth-context.tsx.
+ * Tests for the analytics/observability side effects wired into
+ * auth-context.tsx:
  *
- * Scope: only the two effects added for analytics — identifying the staff
- * user once the session resolves, and clearing the identity on sign-out.
- * The rest of AuthProvider's session-sync behavior already has coverage
- * elsewhere (integration tests under test/integration/, HeaderUser tests).
+ * - Sentry user-context wiring: an authenticated user (id + anonymized email)
+ *   must be attached to Sentry, and cleared when the user is no longer
+ *   authenticated (logout). Anonymization itself happens inside
+ *   `setSentryUser` (covered by sentry.config.test.ts), not here.
+ * - PostHog identify/reset wiring: identifying the staff user once the
+ *   session resolves, and clearing the identity on sign-out.
+ *
+ * Scope: only these two effects. The rest of AuthProvider's session-sync
+ * behavior already has coverage elsewhere (integration tests under
+ * test/integration/, HeaderUser tests).
  */
 
 import { fireEvent, render, waitFor } from '@testing-library/react';
-import { useContext } from 'react';
+import { type ReactNode, useContext } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext, AuthProvider } from '@/contexts/auth-context';
 
@@ -19,6 +26,8 @@ import { AuthContext, AuthProvider } from '@/contexts/auth-context';
 
 const mockUseSession = vi.fn();
 const mockAuthSignOut = vi.fn().mockResolvedValue(undefined);
+const isSentryInitializedMock = vi.fn(() => true);
+const setSentryUserMock = vi.fn();
 const mockIdentifyUser = vi.fn();
 const mockResetUser = vi.fn();
 
@@ -28,12 +37,26 @@ vi.mock('@/lib/auth-client', () => ({
 }));
 
 vi.mock('@/lib/api/client', () => ({
-    fetchApi: vi.fn().mockResolvedValue({ status: 401, data: null })
+    fetchApi: vi.fn().mockResolvedValue({ status: 200, data: { success: false } })
+}));
+
+vi.mock('@/lib/sentry', () => ({
+    isSentryInitialized: () => isSentryInitializedMock(),
+    setSentryUser: (user: unknown) => setSentryUserMock(user)
 }));
 
 vi.mock('@/lib/analytics/posthog-client', () => ({
     identifyUser: (...args: unknown[]) => mockIdentifyUser(...args),
     resetUser: () => mockResetUser()
+}));
+
+vi.mock('../../src/utils/logger', () => ({
+    adminLogger: {
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn()
+    }
 }));
 
 const AUTHENTICATED_SERVER_STATE = {
@@ -65,12 +88,89 @@ function SignOutButton() {
     );
 }
 
+function Consumer() {
+    const ctx = useContext(AuthContext);
+    return <div data-testid="authed">{String(ctx?.isAuthenticated)}</div>;
+}
+
+function renderWithProvider(
+    children: ReactNode,
+    initialAuthState?: Parameters<typeof AuthProvider>[0]['initialAuthState']
+) {
+    return render(<AuthProvider initialAuthState={initialAuthState}>{children}</AuthProvider>);
+}
+
+describe('AuthProvider — Sentry user context wiring', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        sessionStorage.clear();
+        isSentryInitializedMock.mockReturnValue(true);
+        mockUseSession.mockReturnValue({ data: null, isPending: false });
+    });
+
+    afterEach(() => {
+        sessionStorage.clear();
+    });
+
+    it('attaches the user id and email to setSentryUser when authenticated (anonymization happens inside setSentryUser itself, covered by sentry.config.test.ts)', async () => {
+        renderWithProvider(<Consumer />, {
+            userId: 'user-123',
+            isAuthenticated: true,
+            role: 'admin',
+            permissions: [],
+            passwordChangeRequired: false,
+            displayName: 'Jane Doe',
+            email: 'jane.doe@example.com',
+            avatar: null,
+            emailVerified: true
+        });
+
+        await waitFor(() => {
+            expect(setSentryUserMock).toHaveBeenCalledWith({
+                id: 'user-123',
+                email: 'jane.doe@example.com',
+                username: 'Jane Doe'
+            });
+        });
+    });
+
+    it('clears the Sentry user when there is no authenticated session', async () => {
+        renderWithProvider(<Consumer />);
+
+        await waitFor(() => {
+            expect(setSentryUserMock).toHaveBeenCalledWith(null);
+        });
+    });
+
+    it('does not touch Sentry when it is not initialized', async () => {
+        isSentryInitializedMock.mockReturnValue(false);
+
+        renderWithProvider(<Consumer />, {
+            userId: 'user-123',
+            isAuthenticated: true,
+            role: 'admin',
+            permissions: [],
+            passwordChangeRequired: false,
+            displayName: 'Jane Doe',
+            email: 'jane.doe@example.com',
+            avatar: null,
+            emailVerified: true
+        });
+
+        await waitFor(() => {
+            expect(mockUseSession).toHaveBeenCalled();
+        });
+        expect(setSentryUserMock).not.toHaveBeenCalled();
+    });
+});
+
 describe('AuthProvider — PostHog identify/reset wiring', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // AuthProvider persists to sessionStorage (SESSION_KEYS.USER) so a
         // prior test's authenticated state does not leak into the next one.
         sessionStorage.clear();
+        isSentryInitializedMock.mockReturnValue(true);
         mockUseSession.mockReturnValue({
             data: {
                 user: {

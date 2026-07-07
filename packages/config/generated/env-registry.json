@@ -3346,6 +3346,22 @@
       "howToObtainEs": "Número flotante entre 0.0 y 1.0 que controla qué fracción de transacciones web Sentry registra para trazas de performance. 0.1 (10%) es el default de prod — suficiente para tendencias CWV a bajo costo. Setealo en 1.0 en hospeda-web-staging para que cada request sea traceado y los datos de Core Web Vitals nunca queden sin muestra. Aumentá temporalmente en prod solo cuando estés debuggeando una regresión de performance."
     },
     {
+      "name": "PUBLIC_SENTRY_CSP_REPORT_URI",
+      "description": "CSP violation report endpoint for a dedicated Sentry project (hospeda-csp), separate from PUBLIC_SENTRY_DSN (app errors)",
+      "descriptionEs": "Endpoint de reporte de violaciones CSP para un proyecto Sentry dedicado (hospeda-csp), separado de PUBLIC_SENTRY_DSN (errores de la app)",
+      "type": "url",
+      "required": false,
+      "secret": false,
+      "exampleValue": "https://o4508855548313600.ingest.us.sentry.io/api/4511691304796160/security/?sentry_key=aee8ea28124af13fd58a4c965a0b8713",
+      "apps": [
+        "web"
+      ],
+      "category": "client-web",
+      "helpUrl": "https://docs.sentry.io/product/security-policy-reporting/",
+      "howToObtain": "Sentry → the dedicated `hospeda-csp` project (NOT the app error-tracking project) → Settings → Security Headers → copy the full report endpoint URL (already includes `/api/<project_id>/security/?sentry_key=<key>`, unlike a normal DSN). Routes browser-emitted CSP violation reports to their own project so they never pollute the app error stream. When unset, the web CSP falls back to deriving the report-uri from PUBLIC_SENTRY_DSN (previous behavior) — CSP enforcement itself is unaffected either way.",
+      "howToObtainEs": "Sentry → el proyecto dedicado `hospeda-csp` (NO el proyecto de tracking de errores de la app) → Settings → Security Headers → copiá la URL completa del endpoint de reporte (ya incluye `/api/<project_id>/security/?sentry_key=<key>`, a diferencia de un DSN normal). Enruta los reportes de violación de CSP emitidos por el browser a su propio proyecto para que nunca contaminen el stream de errores de la app. Si no está seteada, el CSP de la web cae de vuelta a derivar el report-uri desde PUBLIC_SENTRY_DSN (comportamiento previo) — la aplicación del CSP en sí no se ve afectada de ninguna forma."
+    },
+    {
       "name": "PUBLIC_ENABLE_LOGGING",
       "description": "Enable verbose client-side logging in the web app",
       "descriptionEs": "Activa el logging verboso del lado cliente en la web",
@@ -3632,6 +3648,7 @@
       "descriptionEs": "DSN de Sentry para tracking de errores en el dashboard del admin",
       "type": "url",
       "required": false,
+      "requiredScope": "production",
       "secret": false,
       "exampleValue": "https://abc123def456@o123456.ingest.sentry.io/7890123",
       "apps": [
@@ -3686,6 +3703,22 @@
       "category": "client-admin",
       "howToObtain": "Free-text label applied to all Sentry events from the admin. Set to `production` on hospeda-admin-prod and `staging` on hospeda-admin-staging. Takes precedence over import.meta.env.MODE in the Sentry init — without it, Vite production builds always tag events as `production` regardless of which deployment they came from, mixing staging and prod in the same Sentry environment bucket. NOTE: must be passed as a Docker build-arg too (the admin Dockerfile bakes VITE_* into the bundle at build time). Mirror of HOSPEDA_SENTRY_ENVIRONMENT (API).",
       "howToObtainEs": "Etiqueta libre que se aplica a todos los eventos de Sentry del admin. Poné `production` en hospeda-admin-prod y `staging` en hospeda-admin-staging. Tiene precedencia sobre import.meta.env.MODE en el init de Sentry — sin esto, los builds de Vite en producción siempre etiquetan los eventos como `production` sin importar de qué deploy vinieron, mezclando staging y prod en el mismo bucket en Sentry. OJO: hay que pasarla también como build-arg de Docker (el Dockerfile del admin embebe los VITE_* en el bundle en build-time). Mirror de HOSPEDA_SENTRY_ENVIRONMENT (API)."
+    },
+    {
+      "name": "VITE_SENTRY_CSP_REPORT_URI",
+      "description": "CSP violation report endpoint for a dedicated Sentry project (hospeda-csp), separate from VITE_SENTRY_DSN (admin app errors)",
+      "descriptionEs": "Endpoint de reporte de violaciones CSP para un proyecto Sentry dedicado (hospeda-csp), separado de VITE_SENTRY_DSN (errores del admin)",
+      "type": "url",
+      "required": false,
+      "secret": false,
+      "exampleValue": "https://o4508855548313600.ingest.us.sentry.io/api/4511691304796160/security/?sentry_key=aee8ea28124af13fd58a4c965a0b8713",
+      "apps": [
+        "admin"
+      ],
+      "category": "client-admin",
+      "helpUrl": "https://docs.sentry.io/product/security-policy-reporting/",
+      "howToObtain": "Sentry → the dedicated `hospeda-csp` project (NOT the admin error-tracking project) → Settings → Security Headers → copy the full report endpoint URL (already includes `/api/<project_id>/security/?sentry_key=<key>`, unlike a normal DSN). Routes browser-emitted CSP violation reports to their own project so they never pollute the admin error stream. When unset, the admin CSP falls back to deriving the report-uri from VITE_SENTRY_DSN (previous behavior) — CSP enforcement itself is unaffected either way. NOTE: must be passed as a Docker build-arg too (the admin Dockerfile bakes VITE_* into the bundle at build time), same as VITE_SENTRY_DSN.",
+      "howToObtainEs": "Sentry → el proyecto dedicado `hospeda-csp` (NO el proyecto de tracking de errores del admin) → Settings → Security Headers → copiá la URL completa del endpoint de reporte (ya incluye `/api/<project_id>/security/?sentry_key=<key>`, a diferencia de un DSN normal). Enruta los reportes de violación de CSP emitidos por el browser a su propio proyecto para que nunca contaminen el stream de errores del admin. Si no está seteada, el CSP del admin cae de vuelta a derivar el report-uri desde VITE_SENTRY_DSN (comportamiento previo) — la aplicación del CSP en sí no se ve afectada. OJO: hay que pasarla también como build-arg de Docker (el Dockerfile del admin embebe los VITE_* en el bundle en build-time), igual que VITE_SENTRY_DSN."
     },
     {
       "name": "VITE_DEBUG_LAZY_SECTIONS",

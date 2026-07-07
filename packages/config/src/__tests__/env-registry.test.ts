@@ -199,11 +199,16 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * HOSPEDA_DEPLOY_ENV) — none of these needed a registry change, only a
  * Coolify-side cleanup/rename. 249 + 1 = 250.
  *
+ * Sentry prod-hardening added PUBLIC_SENTRY_CSP_REPORT_URI (web) +
+ * VITE_SENTRY_CSP_REPORT_URI (admin) — dedicated `hospeda-csp` Sentry project
+ * for CSP violation reports, separate from each app's own error-tracking DSN.
+ * 250 + 2 = 252.
+ *
  * HOS-25 T-011 added `HOSPEDA_ALLOW_DESTRUCTIVE_MIGRATION` (production gate
  * for destructive versioned seed data-migrations, mirroring
- * `HOSPEDA_ALLOW_PROD_CLEANUP`). 250 + 1 = 251.
+ * `HOSPEDA_ALLOW_PROD_CLEANUP`). 252 + 1 = 253.
  */
-const EXPECTED_VAR_COUNT = 251;
+const EXPECTED_VAR_COUNT = 253;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -606,13 +611,16 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.secret).toBe(false);
         });
 
-        it('should contain all 28 VITE_* admin variables', () => {
+        it('should contain all 29 VITE_* admin variables', () => {
             // Arrange
+            // 28 original + VITE_SENTRY_CSP_REPORT_URI (Sentry prod-hardening,
+            // dedicated hospeda-csp CSP-violation-report project).
             const viteVars = REGISTRY.filter((e) => e.name.startsWith('VITE_'));
 
             // Assert
             // 27 original VITE_* vars + VITE_TURNSTILE_SITE_KEY (SPEC-301 T-010)
-            expect(viteVars.length).toBe(28);
+            // + VITE_SENTRY_CSP_REPORT_URI (Sentry prod-hardening) = 29
+            expect(viteVars.length).toBe(29);
         });
     });
 

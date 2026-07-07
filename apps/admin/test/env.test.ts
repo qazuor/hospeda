@@ -17,7 +17,7 @@ vi.mock('@/utils/logger', () => ({
     }
 }));
 
-import { AdminEnvSchema } from '../src/env';
+import { AdminEnvSchema, AdminEnvValidatedSchema } from '../src/env';
 
 /**
  * Creates a valid env object with all required fields and sensible defaults.
@@ -357,6 +357,38 @@ describe('AdminEnvSchema', () => {
             const result = AdminEnvSchema.parse(createValidEnv());
             expect(result.DEV).toBeUndefined();
             expect(result.PROD).toBeUndefined();
+        });
+    });
+
+    describe('VITE_SENTRY_DSN required in production build (Sentry prod hardening)', () => {
+        it('rejects a production build (PROD=true) without VITE_SENTRY_DSN', () => {
+            const result = AdminEnvValidatedSchema.safeParse(
+                createValidEnv({ PROD: true, VITE_SENTRY_DSN: undefined })
+            );
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues.some((i) => i.path.includes('VITE_SENTRY_DSN'))).toBe(
+                    true
+                );
+            }
+        });
+
+        it('accepts a production build (PROD=true) with VITE_SENTRY_DSN set', () => {
+            const result = AdminEnvValidatedSchema.safeParse(
+                createValidEnv({ PROD: true, VITE_SENTRY_DSN: 'https://key@sentry.io/123' })
+            );
+            expect(result.success).toBe(true);
+        });
+
+        it('does not require VITE_SENTRY_DSN when PROD is not true (dev/test builds)', () => {
+            const result = AdminEnvValidatedSchema.safeParse(
+                createValidEnv({ PROD: false, VITE_SENTRY_DSN: undefined })
+            );
+            expect(result.success).toBe(true);
+        });
+
+        it('still exposes AdminEnvSchema as a plain object schema (registry cross-validation needs .shape)', () => {
+            expect(typeof AdminEnvSchema.shape).toBe('object');
         });
     });
 

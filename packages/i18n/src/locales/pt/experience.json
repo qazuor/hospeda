@@ -85,5 +85,8 @@
     },
     "faq": {
         "heading": "Perguntas frequentes"
+    },
+    "typeChips": {
+        "ariaLabel": "Filtrar por tipo de experiência"
     }
 }

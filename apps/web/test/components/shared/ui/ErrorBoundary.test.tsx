@@ -1,72 +1,99 @@
 /**
  * @file ErrorBoundary.test.tsx
- * @description Unit tests for React ErrorBoundary component.
- * Uses source-reading pattern (consistent with project conventions).
+ * @description React Testing Library tests for the ErrorBoundary component,
+ * including the Sentry error-reporting hook added for production hardening.
  */
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { Component, type ReactNode } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
 
-const src = readFileSync(
-    resolve(__dirname, '../../../../src/components/shared/ui/ErrorBoundary.tsx'),
-    'utf8'
-);
+const captureExceptionMock = vi.fn();
+
+vi.mock('@sentry/astro', () => ({
+    captureException: (...args: unknown[]) => captureExceptionMock(...args)
+}));
+
+/**
+ * A child that throws on render so we can exercise componentDidCatch.
+ */
+class Thrower extends Component<{ shouldThrow: boolean; children?: ReactNode }> {
+    render() {
+        if (this.props.shouldThrow) {
+            throw new Error('boom');
+        }
+        return this.props.children ?? null;
+    }
+}
 
 describe('ErrorBoundary', () => {
-    describe('structure', () => {
-        it('should be a class component (required for componentDidCatch)', () => {
-            expect(src).toContain('class ErrorBoundary extends Component');
-        });
-
-        it('should implement getDerivedStateFromError', () => {
-            expect(src).toContain('getDerivedStateFromError');
-        });
-
-        it('should implement componentDidCatch for error logging', () => {
-            expect(src).toContain('componentDidCatch');
-        });
+    beforeEach(() => {
+        captureExceptionMock.mockClear();
+        // React logs the error to console.error as well; silence it for clean test output.
+        vi.spyOn(console, 'error').mockImplementation(() => {});
     });
 
-    describe('props', () => {
-        it('should accept children prop', () => {
-            expect(src).toContain('readonly children: ReactNode');
-        });
-
-        it('should accept optional fallback prop', () => {
-            expect(src).toContain('readonly fallback?: ReactNode');
-        });
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
-    describe('error handling', () => {
-        it('should track hasError in state', () => {
-            expect(src).toContain('hasError');
-        });
+    it('renders children when there is no error', () => {
+        render(
+            <ErrorBoundary>
+                <Thrower shouldThrow={false}>
+                    <span>content</span>
+                </Thrower>
+            </ErrorBoundary>
+        );
 
-        it('should have a retry handler that resets state', () => {
-            expect(src).toContain('handleRetry');
-            expect(src).toContain('hasError: false');
-        });
+        expect(screen.getByText('content')).toBeInTheDocument();
+        expect(captureExceptionMock).not.toHaveBeenCalled();
     });
 
-    describe('fallback UI', () => {
-        it('should show error message in default fallback', () => {
-            expect(src).toContain('Something went wrong');
-        });
+    it('reports the error to Sentry with the React component stack', () => {
+        render(
+            <ErrorBoundary>
+                <Thrower shouldThrow={true} />
+            </ErrorBoundary>
+        );
 
-        it('should show Try again button', () => {
-            expect(src).toContain('Try again');
-        });
-
-        it('should render custom fallback when provided', () => {
-            expect(src).toContain('this.props.fallback');
-        });
+        expect(captureExceptionMock).toHaveBeenCalledTimes(1);
+        const [error, context] = captureExceptionMock.mock.calls[0] as [
+            Error,
+            { contexts: { react: { componentStack: string } } }
+        ];
+        expect(error).toBeInstanceOf(Error);
+        expect(error.message).toBe('boom');
+        expect(context.contexts.react.componentStack).toEqual(expect.any(String));
     });
 
-    describe('exports', () => {
-        it('should use named export only', () => {
-            expect(src).toContain('export class ErrorBoundary');
-            expect(src).not.toContain('export default');
-        });
+    it('shows the fallback UI and allows retrying after an error', async () => {
+        const user = userEvent.setup();
+        render(
+            <ErrorBoundary>
+                <Thrower shouldThrow={true} />
+            </ErrorBoundary>
+        );
+
+        expect(screen.getByText('Something went wrong loading this section.')).toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: 'Try again' }));
+
+        // Retry resets state; the child re-throws immediately since shouldThrow is
+        // still true, so the fallback is shown again (proves handleRetry ran).
+        expect(screen.getByText('Something went wrong loading this section.')).toBeInTheDocument();
+        expect(captureExceptionMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('renders a custom fallback when provided', () => {
+        render(
+            <ErrorBoundary fallback={<div>custom fallback</div>}>
+                <Thrower shouldThrow={true} />
+            </ErrorBoundary>
+        );
+
+        expect(screen.getByText('custom fallback')).toBeInTheDocument();
     });
 });
