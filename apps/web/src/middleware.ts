@@ -23,7 +23,6 @@ import {
     buildLocaleRedirect,
     buildLoginRedirect,
     buildProfileCompletionRedirect,
-    buildSentryReportUri,
     buildSetPasswordRedirect,
     extractLocaleFromPath,
     generateCspNonce,
@@ -40,7 +39,8 @@ import {
     isStaticAssetRoute,
     parseNoindexHosts,
     parseProfileStatus,
-    parseSessionUser
+    parseSessionUser,
+    resolveSentryReportUri
 } from './lib/middleware-helpers';
 
 /**
@@ -133,7 +133,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
             });
 
             const sentryDsn = import.meta.env.PUBLIC_SENTRY_DSN as string | undefined;
-            const sentryReportUri = sentryDsn ? buildSentryReportUri({ dsn: sentryDsn }) : null;
+            const dedicatedCspReportUri = import.meta.env.PUBLIC_SENTRY_CSP_REPORT_URI as
+                | string
+                | undefined;
+            const sentryReportUri = resolveSentryReportUri({ sentryDsn, dedicatedCspReportUri });
             const directives = buildCspHeader({
                 nonce: cspNonce,
                 apiUrl: getApiUrl(),
@@ -319,7 +322,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
     if (isHtmlPage) {
         const sentryDsn = import.meta.env.PUBLIC_SENTRY_DSN as string | undefined;
-        const sentryReportUri = sentryDsn ? buildSentryReportUri({ dsn: sentryDsn }) : null;
+        const dedicatedCspReportUri = import.meta.env.PUBLIC_SENTRY_CSP_REPORT_URI as
+            | string
+            | undefined;
+        const sentryReportUri = resolveSentryReportUri({ sentryDsn, dedicatedCspReportUri });
 
         const directives = buildCspHeader({
             nonce: cspNonce,

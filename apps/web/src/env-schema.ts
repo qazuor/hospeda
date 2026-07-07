@@ -82,6 +82,19 @@ export const serverEnvBaseSchema = z.object({
      * Defaults to 0.1 if unset.
      */
     PUBLIC_SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).optional(),
+    /**
+     * CSP violation report endpoint for a DEDICATED Sentry project
+     * (`hospeda-csp`), separate from the app's own error-tracking project
+     * (`PUBLIC_SENTRY_DSN`). Browser-emitted CSP violation reports are noisy
+     * and unrelated to application errors; routing them to their own project
+     * keeps the app's Sentry issue stream clean. This is the Sentry Security
+     * Header endpoint URL (`https://<host>/api/<project_id>/security/?sentry_key=<key>`),
+     * NOT a DSN — copy it directly from the `hospeda-csp` project settings.
+     * When unset, the web CSP `report-uri` directive falls back to the app's
+     * own DSN-derived report endpoint (previous behavior) so CSP enforcement
+     * is never affected by this var being unset.
+     */
+    PUBLIC_SENTRY_CSP_REPORT_URI: z.url().optional(),
     PUBLIC_VERSION: z.string().optional(),
     /**
      * Kill switch for the feedback FAB widget in the web app.

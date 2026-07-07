@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildSentryReportUri } from '../src/sentry';
+import { anonymizeEmail, buildSentryReportUri } from '../src/sentry';
 
 describe('buildSentryReportUri', () => {
     it('returns a valid report URI for a valid DSN', () => {
@@ -52,5 +52,27 @@ describe('buildSentryReportUri', () => {
         });
 
         expect(result).toBe('https://sentry.mycompany.com/api/99/security/?sentry_key=secretkey');
+    });
+});
+
+describe('anonymizeEmail', () => {
+    it('keeps only the domain for a normal email address', () => {
+        expect(anonymizeEmail('user@example.com')).toBe('***@example.com');
+    });
+
+    it('uses the LAST @-delimited segment as the domain for malformed addresses', () => {
+        expect(anonymizeEmail('a@b@c.com')).toBe('***@c.com');
+    });
+
+    it('returns "***" for a string with no @ at all', () => {
+        expect(anonymizeEmail('not-an-email')).toBe('***');
+    });
+
+    it('returns "***" when the email ends with @ and has no domain', () => {
+        expect(anonymizeEmail('user@')).toBe('***');
+    });
+
+    it('returns "***" for an empty string', () => {
+        expect(anonymizeEmail('')).toBe('***');
     });
 });

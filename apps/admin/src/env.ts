@@ -12,7 +12,32 @@ import { AdminEnvSchema } from './env-schema.js';
 // `AdminEnvSchema` now lives in the pure `env-schema.ts` sibling file (no
 // `@/utils/logger` / Vite-alias import) — see its module docblock for why.
 // Re-exported below (near the bottom of this file) so every existing importer
-// (notably the env-registry cross-validation test) keeps working unchanged.
+// (notably the env-registry cross-validation test, which reads `.shape` and
+// therefore needs the PLAIN object schema, not a `.superRefine`-wrapped one)
+// keeps working unchanged.
+
+/**
+ * Admin environment schema with cross-field validation, layered on top of the
+ * plain {@link AdminEnvSchema}.
+ *
+ * Production hardening (Sentry prod-hardening spec): `VITE_SENTRY_DSN` is
+ * required when running a production BUILD. Gated on `data.PROD` — Vite's own
+ * built-in production-build flag — rather than `NODE_ENV`, because Vite does
+ * NOT populate `import.meta.env.NODE_ENV` automatically (unlike `PROD`/`DEV`,
+ * which Vite always sets based on the build mode); relying on `NODE_ENV` here
+ * would silently never fire in a real production bundle. Mirrors the
+ * `PUBLIC_SENTRY_DSN` (web) / `HOSPEDA_SENTRY_DSN` (api) production-required
+ * pattern.
+ */
+const AdminEnvValidatedSchema = AdminEnvSchema.superRefine((data, ctx) => {
+    if (data.PROD === true && (!data.VITE_SENTRY_DSN || data.VITE_SENTRY_DSN.trim() === '')) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['VITE_SENTRY_DSN'],
+            message: 'VITE_SENTRY_DSN is required in a production build'
+        });
+    }
+});
 
 /**
  * Type for validated environment variables
@@ -70,6 +95,7 @@ export const validateAdminEnv = (): AdminEnv => {
             VITE_SENTRY_RELEASE: import.meta.env.VITE_SENTRY_RELEASE,
             VITE_SENTRY_PROJECT: import.meta.env.VITE_SENTRY_PROJECT,
             VITE_SENTRY_ENVIRONMENT: import.meta.env.VITE_SENTRY_ENVIRONMENT,
+            VITE_SENTRY_CSP_REPORT_URI: import.meta.env.VITE_SENTRY_CSP_REPORT_URI,
             VITE_TURNSTILE_SITE_KEY: import.meta.env.VITE_TURNSTILE_SITE_KEY,
             VITE_POSTHOG_KEY: import.meta.env.VITE_POSTHOG_KEY,
             VITE_POSTHOG_HOST: import.meta.env.VITE_POSTHOG_HOST,
@@ -83,7 +109,7 @@ export const validateAdminEnv = (): AdminEnv => {
             PROD: import.meta.env.PROD
         };
 
-        return AdminEnvSchema.parse(envData);
+        return AdminEnvValidatedSchema.parse(envData);
     } catch (error) {
         // Build a detailed, structured error report. We log to BOTH adminLogger
         // (dev convenience, browser console) AND console.error (guarantees the
@@ -215,5 +241,5 @@ export const env = new Proxy({} as AdminEnv, {
     }
 });
 
-// Export the schema for testing
-export { AdminEnvSchema };
+// Export the schemas for testing
+export { AdminEnvSchema, AdminEnvValidatedSchema };

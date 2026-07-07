@@ -7,6 +7,7 @@
  * @module lib/sentry
  */
 
+import { anonymizeEmail } from '@repo/utils';
 import type { ErrorEvent, EventHint } from '@sentry/node';
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
@@ -588,17 +589,6 @@ export function setUserFromContext(c: Context): void {
  */
 export function clearUserContext(): void {
     Sentry.setUser(null);
-}
-
-/**
- * Anonymize email address (keep domain only)
- *
- * @param email - Email to anonymize
- * @returns Anonymized email (e.g., "***@example.com")
- */
-function anonymizeEmail(email: string): string {
-    const [, domain] = email.split('@');
-    return domain ? `***@${domain}` : '***';
 }
 
 /**
