@@ -198,8 +198,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * admin's own VITE_SITE_URL; HOSPEDA_CLOUDINARY_ENV vs the already-registered
  * HOSPEDA_DEPLOY_ENV) — none of these needed a registry change, only a
  * Coolify-side cleanup/rename. 249 + 1 = 250.
+ *
+ * HOS-25 T-011 added `HOSPEDA_ALLOW_DESTRUCTIVE_MIGRATION` (production gate
+ * for destructive versioned seed data-migrations, mirroring
+ * `HOSPEDA_ALLOW_PROD_CLEANUP`). 250 + 1 = 251.
  */
-const EXPECTED_VAR_COUNT = 250;
+const EXPECTED_VAR_COUNT = 251;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
