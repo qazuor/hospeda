@@ -32,6 +32,7 @@ import {
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
+import { getPostHogClient } from '../../../lib/posthog';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { AddonService } from '../../../services/addon.service';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
@@ -884,6 +885,39 @@ export async function processPaymentUpdated({
                 paymentMethod,
                 billing
             );
+
+            // Fire-and-forget product analytics (no DB, no await). Wrapped in
+            // try/catch so a misbehaving PostHog client can NEVER break webhook
+            // processing — this handler must always resolve normally regardless
+            // of analytics outcome. `kind` distinguishes which downstream flow
+            // this approved charge will dispatch to below (annual activation,
+            // plan-change upgrade, addon purchase, or a plain recurring renewal);
+            // computed from metadata already parsed further down in this
+            // function — no additional DB queries.
+            try {
+                const kind = extractAnnualSubscriptionMetadata(data.metadata)
+                    ? 'annual'
+                    : extractPlanChangeUpgradeMetadata(data.metadata)
+                      ? 'plan_upgrade'
+                      : extractAddonMetadata(data.metadata)
+                        ? 'addon'
+                        : 'subscription_renewal';
+
+                getPostHogClient()?.capture({
+                    distinctId: customerId,
+                    event: 'subscription_payment_succeeded',
+                    properties: { amount, currency, paymentMethod, kind, source }
+                });
+            } catch (phErr) {
+                apiLogger.warn(
+                    {
+                        customerId,
+                        source,
+                        error: phErr instanceof Error ? phErr.message : String(phErr)
+                    },
+                    'PostHog capture failed for subscription_payment_succeeded (non-blocking)'
+                );
+            }
         }
 
         if (status === 'rejected' || status === 'cancelled' || status === 'refunded') {
