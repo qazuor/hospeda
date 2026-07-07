@@ -77,7 +77,11 @@ function generateCspNonce(byteLength: number): string {
 export const cspMiddleware = createMiddleware({ type: 'request' }).server(async ({ next }) => {
     const nonce = generateCspNonce(16);
     const sentryDsn = import.meta.env.VITE_SENTRY_DSN ?? '';
-    const cspValue = buildCspDirectives({ nonce, sentryDsn });
+    // Dedicated `hospeda-csp` Sentry project for CSP violation reports, kept
+    // separate from the admin's own error-tracking project (VITE_SENTRY_DSN).
+    // Falls back to the DSN-derived report-uri when unset (see buildCspDirectives).
+    const cspReportUri = import.meta.env.VITE_SENTRY_CSP_REPORT_URI ?? '';
+    const cspValue = buildCspDirectives({ nonce, sentryDsn, cspReportUri });
 
     const result = await next({ context: { cspNonce: nonce } });
 

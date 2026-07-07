@@ -148,6 +148,13 @@ export const AdminEnvSchema = z.object({
         .describe(
             'Sentry environment tag (production | staging | development). Overrides import.meta.env.MODE so staging and prod (both MODE=production) end up in separate Sentry environments.'
         ),
+    VITE_SENTRY_CSP_REPORT_URI: z
+        .string()
+        .url()
+        .optional()
+        .describe(
+            'CSP violation report endpoint for a dedicated Sentry project (hospeda-csp), separate from VITE_SENTRY_DSN (admin app errors). Falls back to the VITE_SENTRY_DSN-derived report-uri when unset.'
+        ),
 
     // Integrations — Cloudflare Turnstile (SPEC-301 T-010)
     // Public by design; ships in the admin browser bundle.
