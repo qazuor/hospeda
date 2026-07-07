@@ -1,15 +1,24 @@
+import { EventModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { EventService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
+import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { createSeedFactory } from '../utils/seedFactory.js';
 
 /**
- * Normalizer for event data
+ * Normalizer for event data.
+ *
+ * Keeps `slug` (see HOS-25 T-016): every `example` event is now created via
+ * the deterministic-id, model-direct path (see `deterministicId` below),
+ * which bypasses `EventService._beforeCreate` — the hook that would otherwise
+ * auto-generate a unique slug from `category` + `name` + `date.start`.
+ * Fixture slugs are already curated and verified unique across the whole
+ * `example` dataset, so passing them straight through is safe.
  */
 const eventNormalizer = (data: Record<string, unknown>) => {
     // First exclude metadata fields and auto-generated fields
-    const { $schema, id, slug, tagIds, ...cleanData } = data as {
+    const { $schema, id, tagIds, ...cleanData } = data as {
         $schema?: string;
         id?: string;
         slug?: string;
@@ -28,6 +37,21 @@ const getEventInfo = (item: unknown) => {
     const category = eventData.category as string;
     return `"${name}" (${category})`;
 };
+
+/**
+ * Derives the deterministic UUIDv5 id for an `example` event fixture
+ * (HOS-25 T-016), from the fixture's own top-level `id` seed-key.
+ *
+ * Exported (rather than an inline lambda) so tests can assert the id is
+ * stable across calls without running the full seed pipeline.
+ *
+ * @param item - Raw event fixture item (pre-normalization)
+ * @returns Stable UUIDv5 derived from the fixture's seed-key
+ */
+export const getEventFixtureId = (item: unknown): string =>
+    deterministicFixtureId({
+        seedKey: `event:${(item as { id: string }).id}`
+    });
 
 /**
  * Pre-process callback to map IDs and set correct actor
@@ -94,5 +118,14 @@ export const seedEvents = createSeedFactory({
     files: exampleManifest.events,
     normalizer: eventNormalizer,
     preProcess: preProcessEvent,
-    getEntityInfo: getEventInfo
+    getEntityInfo: getEventInfo,
+
+    // HOS-25 T-016: every `example` event gets a stable UUIDv5 derived from its
+    // fixture seed-key, so versioned data-migrations can target a specific
+    // event by a fixed id. See the audit note on `eventNormalizer` above for
+    // why this bypasses `EventService._beforeCreate` safely.
+    deterministicId: {
+        modelClass: EventModel,
+        getId: getEventFixtureId
+    }
 });

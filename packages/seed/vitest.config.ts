@@ -9,6 +9,17 @@ export default defineConfig({
         pool: 'forks',
         maxWorkers: 3,
         include: ['test/**/*.test.ts'],
+        exclude: [
+            'node_modules',
+            'dist',
+            // HOS-25: real-PostgreSQL data-migration tests run in the
+            // integration carril (`vitest.integration.config.ts` + its
+            // globalSetup), NOT the sharded unit job which has no database.
+            // The unit job's bare `new Pool(HOSPEDA_DATABASE_URL)` bootstrap
+            // would throw in `beforeAll` here. Excluded so nothing runs twice.
+            'test/integration/**',
+            'test/**/*.integration.test.ts'
+        ],
         coverage: {
             provider: 'v8',
             reporter: ['text', 'json', 'html'],
@@ -42,7 +53,20 @@ export default defineConfig({
                 'src/utils/serviceRelationBuilder.ts',
                 'src/utils/superAdminLoader.ts',
                 'src/utils/validateAllManifests.ts',
-                'src/utils/validateManifestVsFolder.ts'
+                'src/utils/validateManifestVsFolder.ts',
+                // HOS-25: versioned data-migration runtime exercised ONLY by
+                // the seed integration suite (real PostgreSQL — migration
+                // runner, ledger, FK guard, safe-delete, baseline stamp, and
+                // the ported billing-plan migrations). They cannot run without
+                // a live DB, so they are excluded from unit coverage the same
+                // way `src/required/**` and `src/utils/db.ts` are. The pure
+                // helpers (context, discover, make, prodGate, status, types)
+                // keep their unit coverage and are intentionally NOT excluded.
+                'src/data-migrations/runner.ts',
+                'src/data-migrations/ledger.ts',
+                'src/data-migrations/baselineStamp.ts',
+                'src/data-migrations/helpers/**',
+                'src/data-migrations/000*.ts'
             ]
         }
     }

@@ -1,7 +1,26 @@
+import { EventLocationModel } from '@repo/db';
 import { EventLocationService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
+import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { createSeedFactory } from '../utils/seedFactory.js';
+
+/**
+ * Derives the deterministic UUIDv5 id for an `example` event location fixture
+ * (HOS-25 T-025), from the fixture's own top-level `id` seed-key.
+ *
+ * `EventLocationService._beforeCreate` only performs a read-only validation
+ * (that `destinationId` references a CITY-typed destination) — no computed
+ * field is lost by bypassing it, and curated fixtures are trusted to already
+ * reference valid CITY destinations.
+ *
+ * @param item - Raw event location fixture item (pre-normalization)
+ * @returns Stable UUIDv5 derived from the fixture's seed-key
+ */
+export const getEventLocationFixtureId = (item: unknown): string =>
+    deterministicFixtureId({
+        seedKey: `eventLocation:${(item as { id: string }).id}`
+    });
 
 /**
  * Normalizer for event location data.
@@ -62,5 +81,14 @@ export const seedEventLocations = createSeedFactory({
     files: exampleManifest.eventLocations,
     normalizer: eventLocationNormalizer,
     preProcess: preProcessEventLocation,
-    getEntityInfo: getEventLocationInfo
+    getEntityInfo: getEventLocationInfo,
+
+    // HOS-25 T-025: every `example` event location gets a stable UUIDv5
+    // derived from its fixture seed-key, so versioned data-migrations can
+    // target a specific location by a fixed id. See `getEventLocationFixtureId`
+    // above for why this bypasses `EventLocationService._beforeCreate` safely.
+    deterministicId: {
+        modelClass: EventLocationModel,
+        getId: getEventLocationFixtureId
+    }
 });

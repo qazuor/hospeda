@@ -145,6 +145,22 @@
       "howToObtainEs": "Elegí una contraseña fuerte; se convierte en la contraseña del usuario super-admin que crea db:seed. Solo se usa al sembrar la DB; después la podés cambiar desde la UI del admin."
     },
     {
+      "name": "HOSPEDA_ALLOW_DESTRUCTIVE_MIGRATION",
+      "description": "Safety flag required to allow destructive versioned seed data-migrations (deletes/irreversible updates) to run in production environments. Must be exactly \"true\".",
+      "descriptionEs": "Flag de seguridad requerido para permitir que las data-migrations de seed versionadas destructivas (deletes/updates irreversibles) corran en entornos de producción. Debe ser exactamente \"true\".",
+      "type": "boolean",
+      "required": false,
+      "secret": false,
+      "defaultValue": "false",
+      "exampleValue": "false",
+      "apps": [
+        "seed"
+      ],
+      "category": "database",
+      "howToObtain": "Hard guard (HOS-25 T-011). Keep \"false\". Set to \"true\" ONLY for the duration of an authorized, reviewed run of a destructive data-migration in production, then revert to false immediately. Equivalent to passing --allow-destructive to the seed CLI.",
+      "howToObtainEs": "Guarda dura (HOS-25 T-011). Dejalo en \"false\". Ponelo en \"true\" SOLO durante una corrida autorizada y revisada de una data-migration destructiva en producción; después volvelo a false inmediatamente. Equivalente a pasar --allow-destructive al CLI de seed."
+    },
+    {
       "name": "HOSPEDA_BETTER_AUTH_SECRET",
       "description": "Better Auth session signing secret. Min 32 chars enforced by Zod (apps/api/src/utils/env.ts).",
       "descriptionEs": "Secreto de firma de sesiones de Better Auth. Mínimo 32 caracteres (validado por Zod en apps/api/src/utils/env.ts).",

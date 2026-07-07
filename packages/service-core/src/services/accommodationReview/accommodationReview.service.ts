@@ -294,6 +294,37 @@ export class AccommodationReviewService extends BaseCrudService<
     }
 
     /**
+     * Public wrapper around {@link recalculateAndUpdateAccommodationStats}.
+     *
+     * Every normal write path (`_afterCreate`, `_afterUpdate`,
+     * `_afterSoftDelete`, `_afterHardDelete`, `_afterRestore`, `moderateReview`)
+     * already triggers this recalculation as a side effect of going through
+     * this service. This public entry point exists for callers that
+     * legitimately bypass the review lifecycle entirely — currently, the
+     * `example` seed's model-direct review inserts (HOS-25 T-025), which
+     * assign a deterministic fixture id and therefore cannot go through
+     * `service.create()` (see `SeedFactoryConfig.deterministicId` in
+     * `@repo/seed`). Those callers still need the parent accommodation's
+     * aggregate stats (`reviewsCount`, `averageRating`, `rating`) recomputed
+     * from the reviews actually present in the DB, without duplicating the
+     * aggregation SQL above.
+     *
+     * Mirrors the existing `@internal`-style convention of sibling methods
+     * like `AccommodationService.updateStatsFromReview` / `DestinationService
+     * .updateStatsFromReview` (no actor/permission gate, no `Result` wrapper)
+     * rather than the actor-facing RO-RO+Result convention: this is the same
+     * category of trusted, internal system recomputation, not a user-facing
+     * mutation.
+     *
+     * @param accommodationId - The ID of the accommodation to recompute stats for
+     * @param ctx - Optional service context. When provided with a transaction, the recomputation runs within it.
+     * @internal
+     */
+    public async recalculateStats(accommodationId: string, ctx?: ServiceContext): Promise<void> {
+        await this.recalculateAndUpdateAccommodationStats(accommodationId, ctx?.tx);
+    }
+
+    /**
      * Enforces one review per user per accommodation, then runs the content-moderation
      * check and resolves the initial `moderationState` for the new review.
      *
