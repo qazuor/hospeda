@@ -60,7 +60,9 @@
     },
     "card": {
         "seeMore": "Ver mais",
-        "location": "Localização"
+        "location": "Localização",
+        "accommodation_one": "{{count}} acomodação",
+        "accommodation_other": "{{count}} acomodações"
     },
     "seeAll": "Ver todos os destinos",
     "list": {

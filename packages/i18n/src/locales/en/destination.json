@@ -60,7 +60,9 @@
     },
     "card": {
         "seeMore": "See more",
-        "location": "Location"
+        "location": "Location",
+        "accommodation_one": "{{count}} accommodation",
+        "accommodation_other": "{{count}} accommodations"
     },
     "seeAll": "See all destinations",
     "list": {
