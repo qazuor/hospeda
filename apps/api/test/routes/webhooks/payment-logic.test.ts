@@ -18,6 +18,18 @@ vi.mock('../../../src/utils/notification-helper', () => ({
     sendNotification: vi.fn().mockResolvedValue(undefined)
 }));
 
+// PostHog capture spy — hoisted so `mockPostHogCapture`/`mockGetPostHogClient`
+// are available inside the vi.mock factory below. Individual tests can swap
+// `mockGetPostHogClient`'s implementation to simulate a throwing client.
+const { mockPostHogCapture, mockGetPostHogClient } = vi.hoisted(() => ({
+    mockPostHogCapture: vi.fn(),
+    mockGetPostHogClient: vi.fn(() => ({ capture: mockPostHogCapture }))
+}));
+
+vi.mock('../../../src/lib/posthog', () => ({
+    getPostHogClient: mockGetPostHogClient
+}));
+
 vi.mock('../../../src/routes/webhooks/mercadopago/notifications', () => ({
     sendPaymentSuccessNotification: vi.fn().mockResolvedValue(undefined),
     sendPaymentFailureNotifications: vi.fn().mockResolvedValue(undefined)
@@ -329,6 +341,85 @@ describe('processPaymentUpdated', () => {
             mockBilling
         );
         expect(result.success).toBe(true);
+    });
+
+    // ── PostHog subscription_payment_succeeded (this task) ─────────────────
+    describe('PostHog subscription_payment_succeeded capture', () => {
+        it('captures subscription_payment_succeeded on an approved payment', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 1000,
+                currency: 'ARS',
+                status: 'approved',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(result.success).toBe(true);
+            expect(mockPostHogCapture).toHaveBeenCalledWith({
+                distinctId: 'cust-1',
+                event: 'subscription_payment_succeeded',
+                properties: {
+                    amount: 1000,
+                    currency: 'ARS',
+                    paymentMethod: 'credit_card',
+                    kind: 'subscription_renewal',
+                    source: 'webhook'
+                }
+            });
+        });
+
+        it('does NOT capture subscription_payment_succeeded for a rejected payment', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 500,
+                currency: 'ARS',
+                status: 'rejected',
+                statusDetail: 'cc_rejected_other_reason',
+                paymentMethod: 'credit_card'
+            });
+
+            await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(mockPostHogCapture).not.toHaveBeenCalled();
+        });
+
+        it('does not throw and processing still succeeds when the PostHog client throws', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 1000,
+                currency: 'ARS',
+                status: 'approved',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+            mockGetPostHogClient.mockImplementationOnce(() => {
+                throw new Error('PostHog client unavailable');
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            // The webhook handler must resolve normally regardless of the
+            // analytics failure — success notification still fires and the
+            // result is unaffected.
+            expect(result.success).toBe(true);
+            expect(sendPaymentSuccessNotification).toHaveBeenCalledWith(
+                'cust-1',
+                1000,
+                'ARS',
+                'credit_card',
+                mockBilling
+            );
+        });
     });
 
     it('should send failure notification for rejected payment', async () => {

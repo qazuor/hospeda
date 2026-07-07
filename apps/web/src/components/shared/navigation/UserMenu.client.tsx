@@ -41,6 +41,7 @@ import type { ComponentType, JSX } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
+import { identifyUser, resetUser } from '@/lib/analytics/posthog-client';
 import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
 import { getInitials } from '@/lib/avatar-utils';
@@ -457,6 +458,21 @@ export function UserMenu({
         };
     }, []);
 
+    // ── PostHog identify ─────────────────────────────────────────────────
+    // Fires whenever `user` resolves to a known, authenticated id (from the
+    // SSR-provided `initialUser`, the sessionStorage cache, or the /auth/me
+    // fetch above). UserMenu is mounted on every page (`client:load`), so
+    // this is the single place that reliably knows the current visitor's id
+    // client-side. Idempotent — safe to call again with the same id on every
+    // remount (soft nav). The counterpart `resetUser()` call lives in
+    // `handleSignOut` below, not here, so a guest page load never resets an
+    // anonymous visitor's distinct id.
+    useEffect(() => {
+        if (user) {
+            identifyUser(user.id);
+        }
+    }, [user]);
+
     // ── Click-outside dismissal ─────────────────────────────────────────
     useEffect(() => {
         if (!isOpen) return;
@@ -497,6 +513,7 @@ export function UserMenu({
         setIsOpen(false);
         try {
             sessionStorage.removeItem(AUTH_ME_CACHE_KEY);
+            resetUser();
             await signOut();
         } finally {
             window.location.href = buildUrl({ locale, path: '/' });
