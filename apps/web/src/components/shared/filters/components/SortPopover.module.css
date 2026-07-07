@@ -52,19 +52,40 @@
    Dropdown (portal-mounted on document.body, position:fixed via inline style)
    ============================================================ */
 
+/*
+ * background-color / border / box-shadow / border-radius / z-index come
+ * from the shared `.overlay-surface` primitive (see apps/web/src/styles/
+ * components.css) — SortPopover.tsx adds that class alongside this one.
+ * Previously the background/border were resolved via inline styles + a JS
+ * `document.documentElement.dataset.theme` read; CSS custom properties
+ * already switch automatically with the active theme, so that workaround
+ * is gone along with the inline styles.
+ */
 .sortPopoverDropdown {
     position: fixed;
-    z-index: 500;
     min-width: 200px;
-    /* background-color and border set via inline style to read theme from document */
-    border-radius: 0.5rem;
-    box-shadow:
-        0 8px 32px oklch(0 0 0 / 0.18),
-        0 2px 8px oklch(0 0 0 / 0.08);
     padding: 0.375rem;
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
+}
+
+/* This dropdown keeps its smaller corner radius instead of the primitive's
+   `--radius-card` default. */
+.sortPopoverDropdown:global(.overlay-surface) {
+    border-radius: 0.5rem;
+}
+
+/*
+ * In-drawer variant: when SortPopover is rendered inside the mobile filter
+ * drawer (`FilterSidebar` `drawerMode`), its portaled dropdown must clear the
+ * drawer panel (untokenized z-index 400) — otherwise the `.overlay-surface`
+ * default `--z-popover` (70) would place it BEHIND the drawer it was opened
+ * from. `--z-popover-in-overlay` (410) is the dedicated ladder tier for this.
+ * Desktop (no `.inDrawer`) keeps the clean `--z-popover`.
+ */
+.sortPopoverDropdownInDrawer {
+    z-index: var(--z-popover-in-overlay);
 }
 
 /* ============================================================

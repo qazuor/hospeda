@@ -31,14 +31,17 @@ function serializeThemeValue(value: unknown): string {
 }
 
 describe('webLight — coverage', () => {
-    it('declares all 215 web :root tokens', () => {
+    it('declares all 221 web :root tokens', () => {
         // 155 was the prior count (accommodation-type tokens + base). Count grew
         // to 208 after the SSOT icon+color passes added event-category (8),
         // post-category (18), user-role (7), auth-provider (5), amenity-type (12)
         // and sponsor-type (3) token families. The dark-mode refresh + SPEC-308
         // a11y pass then added hospeda-forest-link and the dark navy-ramp
-        // companions. Adding or removing entries should be intentional.
-        expect(Object.keys(webLight)).toHaveLength(215);
+        // companions, bringing it to 215. The toast/popover contrast fix added
+        // z-popover, surface-overlay, overlay-ring, shadow-overlay, and
+        // popover-scrim → 220, then z-popover-in-overlay (SortPopover-in-drawer
+        // z fix) → 221. Adding or removing entries should be intentional.
+        expect(Object.keys(webLight)).toHaveLength(221);
     });
 
     it('declares the 10 per-accommodation-type tokens referencing palette primitives', () => {
@@ -156,12 +159,15 @@ describe('webLight — radius / spacing / typography / shadows / motion / z-inde
 });
 
 describe('webDark — coverage', () => {
-    it('declares 65 dark overrides', () => {
+    it('declares 69 dark overrides', () => {
         // 57 was the count after brand-primary-text; the dark-mode navy refresh
         // (hero-wave-fill) and the SPEC-308 a11y pass (brand-primary-link,
         // hospeda-forest-link, surface-warm-foreground) brought it to 63.
-        // HOS-84 added surface-header + surface-header-foreground → 65.
-        expect(Object.keys(webDark)).toHaveLength(65);
+        // HOS-84 added surface-header + surface-header-foreground → 65. The
+        // toast/popover contrast fix added surface-overlay, overlay-ring,
+        // shadow-overlay, and popover-scrim (z-popover is NOT dark-overridden,
+        // it inherits from light like the rest of the z-index ladder) → 69.
+        expect(Object.keys(webDark)).toHaveLength(69);
     });
 
     // Dark tokens that intentionally have NO light counterpart (the light value

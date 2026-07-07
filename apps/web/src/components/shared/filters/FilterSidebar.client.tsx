@@ -231,6 +231,7 @@ function SidebarPanel({
                                 value={state.sort}
                                 onChange={(v) => dispatch({ type: 'SET_SORT', value: v })}
                                 locale={locale}
+                                inDrawer={drawerMode}
                             />
                         )}
                         {activeCount > 0 && (

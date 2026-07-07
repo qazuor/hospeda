@@ -13,8 +13,10 @@ describe('zIndex ladder — anchored to web seed', () => {
         content: 10,
         nav: 50,
         dropdown: 60,
+        popover: 70,
         modal: 100,
         toast: 200,
+        popoverInOverlay: 410,
         cookieBanner: 9000,
         mobileMenu: 9100
     };
@@ -23,20 +25,23 @@ describe('zIndex ladder — anchored to web seed', () => {
         expect(zIndex[key as ZIndexName]).toBe(expectedValue);
     });
 
-    it('declares 7 layers', () => {
-        expect(Object.keys(zIndex)).toHaveLength(7);
+    it('declares 9 layers', () => {
+        expect(Object.keys(zIndex)).toHaveLength(9);
     });
 
     it('orders layers strictly by stacking position', () => {
         // The layer order is the architectural contract — modal must
-        // sit above dropdown, toast above modal, and the 9000+ block
-        // above every in-page layer.
+        // sit above dropdown, toast above modal, popoverInOverlay above
+        // the mobile-drawer panel (z 400), and the 9000+ block above every
+        // in-page layer.
         const ordered: ZIndexName[] = [
             'content',
             'nav',
             'dropdown',
+            'popover',
             'modal',
             'toast',
+            'popoverInOverlay',
             'cookieBanner',
             'mobileMenu'
         ];

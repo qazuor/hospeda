@@ -71,6 +71,29 @@ export const webDark: Theme = {
     input: oklchValue(0.32, 0.03, 258),
     ring: oklchValue(0.68, 0.17, 259),
 
+    // ========================================================================
+    // Overlay surface — toast/popover contrast fix (dark).
+    //
+    // Dark cannot reuse the light recipe: a foreground-tinted shadow on a
+    // near-black page reads as almost nothing, and the surface itself has to
+    // be visibly LIGHTER than the page to register as "raised" at all (light
+    // mode gets that lift for free from white-on-off-white; dark needs an
+    // explicit, deliberately-lighter fill). `--surface-overlay` sits above
+    // both `--core-background` (0.205) and `--core-card` (0.275) so a toast
+    // or popover reads as its own elevated layer, not just another card.
+    // `--shadow-overlay` drops the relative-color trick for literal black at
+    // real weight, plus an `inset` top highlight that fakes a light source
+    // catching the surface's top edge — the cue eyes actually use to read
+    // "this is floating above, not embedded in" on a dark canvas.
+    // ========================================================================
+    'surface-overlay': oklchValue(0.37, 0.045, 258),
+    'overlay-ring': 'oklch(0.94 0.02 258 / 0.26)',
+    'shadow-overlay':
+        '0 28px 64px -12px oklch(0 0 0 / 0.72), 0 8px 22px -4px oklch(0 0 0 / 0.6), 0 0 50px 6px oklch(0 0 0 / 0.38), inset 0 1px 0 oklch(1 0 0 / 0.1)',
+    // A touch stronger than light's 0.12 — dark surfaces need more contrast
+    // for the same "click outside to close" affordance to register.
+    'popover-scrim': 'oklch(0 0 0 / 0.22)',
+
     'chart-1': oklchValue(0.68, 0.17, 259),
     'chart-2': oklchValue(0.68, 0.15, 155),
     'chart-3': oklchValue(0.72, 0.19, 55),

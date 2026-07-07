@@ -660,7 +660,7 @@ export function UserMenu({
                     ref={menuRef}
                     role="menu"
                     aria-label={texts.openMenu}
-                    className={styles.menu}
+                    className={cn(styles.menu, 'overlay-surface')}
                 >
                     {/* Header */}
                     <div className={styles.menuHeader}>

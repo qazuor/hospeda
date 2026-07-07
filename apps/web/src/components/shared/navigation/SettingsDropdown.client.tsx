@@ -125,7 +125,7 @@ export function SettingsDropdown({
                     ref={popoverRef}
                     role="group"
                     aria-label={texts.openSettings}
-                    className={styles.popover}
+                    className={cn(styles.popover, 'overlay-surface')}
                 >
                     <div className={styles.row}>
                         <span className={styles.label}>{texts.language}</span>
