@@ -10,7 +10,11 @@ import type {
     UserMenuUser
 } from '../../../../src/components/shared/navigation/UserMenu.client';
 import { UserMenu } from '../../../../src/components/shared/navigation/UserMenu.client';
-import { identifyUser, resetUser } from '../../../../src/lib/analytics/posthog-client';
+import {
+    identifyUser,
+    resetUser,
+    setPersonProperties
+} from '../../../../src/lib/analytics/posthog-client';
 import { AUTH_ME_CACHE_KEY } from '../../../../src/lib/auth-cache';
 import { signOut } from '../../../../src/lib/auth-client';
 
@@ -20,7 +24,8 @@ vi.mock('../../../../src/lib/auth-client', () => ({
 
 vi.mock('../../../../src/lib/analytics/posthog-client', () => ({
     identifyUser: vi.fn(),
-    resetUser: vi.fn()
+    resetUser: vi.fn(),
+    setPersonProperties: vi.fn()
 }));
 
 // The plan/tier sync fires its own protected fetch on mount; mock it so it
@@ -578,6 +583,25 @@ describe('UserMenu — PostHog identify/reset', () => {
             />
         );
         expect(identifyUser).not.toHaveBeenCalled();
+    });
+
+    it('sets the locale person property for an authenticated visitor', async () => {
+        renderMenu();
+        await waitFor(() => {
+            expect(setPersonProperties).toHaveBeenCalledWith({ locale: 'es' });
+        });
+    });
+
+    it('does NOT set person properties for a guest', () => {
+        render(
+            <UserMenu
+                initialUser={null}
+                locale="es"
+                currentPath="/es/"
+                adminPanelUrl="https://admin.test"
+            />
+        );
+        expect(setPersonProperties).not.toHaveBeenCalled();
     });
 
     it('calls resetUser when "Cerrar sesión" is clicked', async () => {

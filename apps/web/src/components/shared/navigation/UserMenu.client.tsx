@@ -42,7 +42,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
 import { syncPlanPersonProperties } from '@/lib/analytics/plan-properties';
-import { identifyUser, resetUser } from '@/lib/analytics/posthog-client';
+import { identifyUser, resetUser, setPersonProperties } from '@/lib/analytics/posthog-client';
 import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
 import { getInitials } from '@/lib/avatar-utils';
@@ -519,6 +519,14 @@ export function UserMenu({
         if (!user) return;
         void syncPlanPersonProperties({ apiUrl: getApiUrl() });
     }, [user]);
+
+    // ── PostHog locale person property ───────────────────────────────────
+    // The active locale is already known client-side, so this is free (no
+    // server hit) and updates if the user switches language mid-session.
+    useEffect(() => {
+        if (!user) return;
+        setPersonProperties({ locale });
+    }, [user, locale]);
 
     // ── Click-outside dismissal ─────────────────────────────────────────
     useEffect(() => {
