@@ -51,7 +51,7 @@ const mapItems = cards
 			thumbnailUrl: c.featuredImage?.url,
 			accommodationsCount: count,
 			accommodationsLabel: typeof count === 'number'
-				? tPlural('destination.card.accommodation', count, { count })
+				? tPlural('destinations.card.accommodation', count, { count })
 				: undefined,
 			detailHref: buildUrl({ locale, path: `destinos/${c.slug}` }),
 			coordinates: {

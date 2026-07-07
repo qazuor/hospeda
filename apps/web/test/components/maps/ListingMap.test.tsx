@@ -46,7 +46,10 @@ vi.mock('react-leaflet-cluster', () => ({
 
 vi.mock('leaflet', () => ({
     default: {
-        Icon: { Default: { mergeOptions: vi.fn() } },
+        // `Icon.Default.prototype._getIconUrl` must exist because ListingMapInner
+        // does `delete L.Icon.Default.prototype._getIconUrl` at module load (HOS-95
+        // marker-icon-path fix); without a prototype object the delete throws.
+        Icon: { Default: { mergeOptions: vi.fn(), prototype: { _getIconUrl: vi.fn() } } },
         // divIcon was added in commit 9690b6a25 ("show Airbnb-style pill on each
         // map accommodation") — the mock must include it so the component can
         // call L.divIcon() without throwing.

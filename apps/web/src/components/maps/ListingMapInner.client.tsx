@@ -18,7 +18,16 @@ import L from 'leaflet';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import iconShadowUrl from 'leaflet/dist/images/marker-shadow.png';
-import { type ReactElement, useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+    type ReactElement,
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState
+} from 'react';
+import { createPortal } from 'react-dom';
 import {
     Circle,
     MapContainer,
@@ -56,6 +65,16 @@ import type {
 } from './ListingMap.client';
 import styles from './ListingMap.module.css';
 
+// HOS-95: Leaflet's `Icon.Default._getIconUrl` prepends its CSS-detected
+// `imagePath` (e.g. `.../leaflet/dist/images/`) to whatever `iconUrl` we set.
+// Since the bundler already resolves these imports to fully-qualified URLs,
+// that prepend produces a DOUBLED, broken path (the default `<Marker>` icon
+// then 404s and renders as a broken image on the destinations map and any
+// exact-mode detail map). Deleting the override makes Leaflet use the base
+// `Icon._getIconUrl`, which returns our explicit URL verbatim.
+// biome-ignore lint/performance/noDelete: one-time module-load reset of a prototype method; not a hot path.
+// TYPE-WORKAROUND: Leaflet's public types don't expose the internal `_getIconUrl` member we must delete.
+delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: iconRetinaUrl.src ?? iconRetinaUrl,
     iconUrl: iconUrl.src ?? iconUrl,
@@ -66,6 +85,23 @@ const ACCOMMODATION_MAX_ZOOM = 17;
 const DESTINATION_MAX_ZOOM = 19;
 const DEFAULT_BOUNDS_DEBOUNCE_MS = 300;
 const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+/*
+ * HOS-95 destination-pin: a solid brand-accent teardrop with a white centre dot,
+ * for the destination markers ONLY (accommodations use their own pills). The
+ * fill uses CSS custom properties inherited from :root, so dark mode / token
+ * changes apply automatically. Built once and shared across all destination
+ * markers (a divIcon is stateless — Leaflet clones its DOM per marker).
+ */
+const DESTINATION_PIN_SVG = `<svg viewBox="0 0 24 24" width="30" height="40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="var(--brand-accent, #ea6d24)" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg>`;
+
+const DESTINATION_ICON: L.DivIcon = L.divIcon({
+    className: styles.destPinReset,
+    html: `<span class="${styles.destPin}">${DESTINATION_PIN_SVG}</span>`,
+    iconSize: [30, 40],
+    iconAnchor: [15, 40],
+    popupAnchor: [0, -38]
+});
 
 /**
  * Escapes HTML-significant characters before we inject accommodation
@@ -217,6 +253,128 @@ function BoundsReporter({
 }
 
 /**
+ * Closes any open popup as soon as the user starts dragging or zooming the map
+ * (HOS-95, both listing maps). We listen to `dragstart` / `zoomstart` — NOT
+ * `movestart`/`moveend` — because the popup's own `autoPan` pans the map when it
+ * opens, which would fire a move event and immediately close the popup we just
+ * opened. `dragstart` only fires on genuine user drag (not programmatic
+ * `panTo`), and `autoPan` never zooms, so both events are safe. On the
+ * accommodations map this also neutralises the BETA-47 problem (auto-pans
+ * fighting the user's drag): there is never an open popup mid-drag to pan
+ * against, because it closes the moment the drag starts.
+ */
+function ClosePopupOnInteract() {
+    const map = useMapEvents({
+        dragstart: () => map.closePopup(),
+        zoomstart: () => map.closePopup()
+    });
+    return null;
+}
+
+/**
+ * Floating accommodation card, rendered OUTSIDE the Leaflet container (portaled
+ * into the map's `.root` wrapper) so it is never clipped by the container's
+ * rounded `overflow: hidden`, and positioned so the whole card stays inside the
+ * map viewport WITHOUT moving the map (HOS-95).
+ *
+ * Why not a Leaflet `<Popup>` + autoPan here (unlike the destinations map): on
+ * the accommodations map, panning the map fires `moveend`, which makes
+ * `useViewportSearch` refetch the results for the new viewport. So an autoPan on
+ * popup-open reshuffled the pills and moved the one just clicked — the popup felt
+ * "off". This card keeps the map still: it projects the marker's lat/lng to a
+ * container pixel with `latLngToContainerPoint`, anchors the card above the
+ * marker, then clamps left/top so the card is fully within the map rectangle
+ * (padding on every side). It closes on drag/zoom start and on a background map
+ * click, mirroring popup semantics.
+ */
+const FLOATING_CARD_PADDING = 12;
+const FLOATING_CARD_GAP_ABOVE_MARKER = 18;
+
+function AccommodationCardPopup({
+    item,
+    viewDetailsLabel,
+    isAuthenticated,
+    locale,
+    onClose
+}: {
+    readonly item: AccommodationListingItem;
+    readonly viewDetailsLabel?: string;
+    readonly isAuthenticated: boolean;
+    readonly locale: SupportedLocale;
+    readonly onClose: () => void;
+}) {
+    const map = useMap();
+    const cardRef = useRef<HTMLDivElement>(null);
+    const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+
+    // Measure the card and clamp it inside the map rectangle. Runs after layout
+    // (so `offsetWidth/Height` are real) and on container resize. No continuous
+    // follow is needed — the card closes the moment the user drags or zooms.
+    useLayoutEffect(() => {
+        const place = () => {
+            const card = cardRef.current;
+            if (!card) return;
+            const point = map.latLngToContainerPoint([
+                item.approximateLocation.lat,
+                item.approximateLocation.lng
+            ]);
+            const size = map.getSize();
+            const cw = card.offsetWidth;
+            const ch = card.offsetHeight;
+            const pad = FLOATING_CARD_PADDING;
+            const left = Math.max(pad, Math.min(point.x - cw / 2, size.x - cw - pad));
+            const top = Math.max(
+                pad,
+                Math.min(point.y - ch - FLOATING_CARD_GAP_ABOVE_MARKER, size.y - ch - pad)
+            );
+            setPos({ left, top });
+        };
+        place();
+        const container = map.getContainer();
+        const ro = new ResizeObserver(place);
+        ro.observe(container);
+        return () => ro.disconnect();
+    }, [map, item]);
+
+    useMapEvents({
+        dragstart: onClose,
+        zoomstart: onClose,
+        click: onClose
+    });
+
+    const root = map.getContainer().parentElement;
+    if (!root) return null;
+
+    return createPortal(
+        <div
+            ref={cardRef}
+            className={styles.floatingCard}
+            style={{
+                left: pos ? `${pos.left}px` : '0',
+                top: pos ? `${pos.top}px` : '0',
+                visibility: pos ? 'visible' : 'hidden'
+            }}
+        >
+            <button
+                type="button"
+                className={styles.floatingCardClose}
+                onClick={onClose}
+                aria-label="Cerrar"
+            >
+                ×
+            </button>
+            <AccommodationPopupContent
+                item={item}
+                viewDetailsLabel={viewDetailsLabel}
+                isAuthenticated={isAuthenticated}
+                locale={locale}
+            />
+        </div>,
+        root
+    );
+}
+
+/**
  * Full Leaflet + react-leaflet-cluster implementation of ListingMap.
  * Loaded as an async chunk via React.lazy in ListingMap.client.tsx.
  *
@@ -239,6 +397,10 @@ export function ListingMapInner(props: ListingMapProps) {
 
     const isAccommodationMode = props.mode === 'accommodation-list';
     const maxZoom = isAccommodationMode ? ACCOMMODATION_MAX_ZOOM : DESTINATION_MAX_ZOOM;
+
+    // HOS-95: id of the accommodation whose floating card is open (accommodation
+    // map only — destinations still use a Leaflet <Popup>). `null` = none open.
+    const [openCardId, setOpenCardId] = useState<string | null>(null);
 
     const accentColor = 'var(--brand-accent)';
     const highlightColor = 'var(--primary, #2563eb)';
@@ -362,37 +524,29 @@ export function ListingMapInner(props: ListingMapProps) {
                             weight: isHovered ? 3 : 2
                         }}
                         eventHandlers={{
-                            click: () => onMarkerClick?.(item.id)
+                            click: () => {
+                                onMarkerClick?.(item.id);
+                                setOpenCardId(item.id);
+                            }
                         }}
                     />
                 );
                 const marker = (
+                    // HOS-95: no Leaflet <Popup> here — the accommodation card is a
+                    // floating portal (AccommodationCardPopup) opened via `openCardId`,
+                    // so opening it never pans/moves the map (which would trigger a
+                    // useViewportSearch refetch). Click just records which card to show.
                     <Marker
                         key={`${item.id}-pill`}
                         position={[item.approximateLocation.lat, item.approximateLocation.lng]}
                         icon={pillIcon}
                         eventHandlers={{
-                            click: () => onMarkerClick?.(item.id)
+                            click: () => {
+                                onMarkerClick?.(item.id);
+                                setOpenCardId(item.id);
+                            }
                         }}
-                    >
-                        <Popup
-                            className={styles.popup}
-                            maxWidth={300}
-                            minWidth={280}
-                            // BETA-47: disable Leaflet's reactive autoPan — it panned the map on
-                            // every popup open, and after several markers the queued pans fought
-                            // the user's drag and locked the map. Popups still open in place.
-                            autoPan={false}
-                            keepInView={false}
-                        >
-                            <AccommodationPopupContent
-                                item={item}
-                                viewDetailsLabel={i18nStrings.viewDetails}
-                                isAuthenticated={isAuthenticated}
-                                locale={locale}
-                            />
-                        </Popup>
-                    </Marker>
+                    />
                 );
                 cache.set(item.id, { signature, circle, marker });
                 circles.push(circle);
@@ -430,6 +584,7 @@ export function ListingMapInner(props: ListingMapProps) {
                 <Marker
                     key={item.id}
                     position={[item.coordinates.lat, item.coordinates.lng]}
+                    icon={DESTINATION_ICON}
                     eventHandlers={{
                         click: () => onMarkerClick?.(item.id)
                     }}
@@ -438,9 +593,15 @@ export function ListingMapInner(props: ListingMapProps) {
                         className={styles.popup}
                         maxWidth={300}
                         minWidth={280}
-                        // BETA-47: disable reactive autoPan (see accommodation popup above).
-                        autoPan={false}
-                        keepInView={false}
+                        // HOS-95: destinations auto-pan so an edge-pin popup (e.g.
+                        // Concordia at the top) is never clipped by the rounded map
+                        // frame — the map nudges to bring the full popup into view.
+                        // This is destination-ONLY: the accommodation popup above keeps
+                        // autoPan disabled (BETA-47), because on that map many markers +
+                        // viewport-search refetch made queued auto-pans fight the user's
+                        // drag. Destinations are a static ~22-item set, so it's safe.
+                        autoPan={true}
+                        autoPanPadding={[24, 24]}
                     >
                         <DestinationPopupContent
                             item={item}
@@ -456,15 +617,10 @@ export function ListingMapInner(props: ListingMapProps) {
             if (!seenIds.has(id)) cache.delete(id);
         }
         return { clusterableMarkers: markers, accommodationCircles: [] as ReactElement[] };
-    }, [
-        props.items,
-        isAccommodationMode,
-        hoveredItemId,
-        onMarkerClick,
-        i18nStrings,
-        isAuthenticated,
-        locale
-    ]);
+        // isAuthenticated/locale are NOT deps: since HOS-95 the markers no longer
+        // render popup content (the accommodation card is a separate portal), so
+        // marker elements don't depend on auth/locale anymore.
+    }, [props.items, isAccommodationMode, hoveredItemId, onMarkerClick, i18nStrings]);
 
     /*
      * When the runtime-affecting context flips (locale, auth, click handler,
@@ -478,6 +634,15 @@ export function ListingMapInner(props: ListingMapProps) {
         accommodationCacheRef.current.clear();
         destinationCacheRef.current.clear();
     }, [isAccommodationMode, onMarkerClick, i18nStrings, isAuthenticated, locale]);
+
+    // The accommodation whose floating card is open (if any). Resolved from the
+    // live item list, so if a viewport refetch drops it the card just closes.
+    const openAccommodationItem =
+        isAccommodationMode && openCardId
+            ? (props.items as ReadonlyArray<AccommodationListingItem>).find(
+                  (it) => it.id === openCardId
+              )
+            : undefined;
 
     return (
         // biome-ignore lint/a11y/useSemanticElements: <fieldset> is only for form-control groups; role="group" is the correct ARIA for an interactive map widget that contains focusable Leaflet controls.
@@ -509,7 +674,38 @@ export function ListingMapInner(props: ListingMapProps) {
                     debounceMs={DEFAULT_BOUNDS_DEBOUNCE_MS}
                 />
                 {accommodationCircles}
-                <MarkerClusterGroup chunkedLoading>{clusterableMarkers}</MarkerClusterGroup>
+                {/*
+                 * Accommodations cluster (100+ items, dense); destinations do NOT
+                 * (HOS-95) — with ~22 spread-out destinations the numbered cluster
+                 * bubbles read as counts rather than places, so we render the pins
+                 * directly. `showCoverageOnHover={false}` hides the convex-hull
+                 * polygon Leaflet.markercluster draws on cluster hover; click-to-zoom
+                 * is a separate option (`zoomToBoundsOnClick`, still default `true`).
+                 */}
+                {isAccommodationMode ? (
+                    <MarkerClusterGroup
+                        chunkedLoading
+                        showCoverageOnHover={false}
+                    >
+                        {clusterableMarkers}
+                    </MarkerClusterGroup>
+                ) : (
+                    clusterableMarkers
+                )}
+                {/* Destinations use a Leaflet <Popup>, so close it on drag/zoom.
+                    Accommodations use the floating card, which manages its own
+                    close-on-interact inside AccommodationCardPopup. */}
+                {!isAccommodationMode && <ClosePopupOnInteract />}
+                {openAccommodationItem && (
+                    <AccommodationCardPopup
+                        key={openAccommodationItem.id}
+                        item={openAccommodationItem}
+                        viewDetailsLabel={i18nStrings.viewDetails}
+                        isAuthenticated={isAuthenticated}
+                        locale={locale}
+                        onClose={() => setOpenCardId(null)}
+                    />
+                )}
                 {selectedCoord && (
                     <PulseHalo
                         lat={selectedCoord.lat}
@@ -626,11 +822,12 @@ function DestinationPopupContent({
         <div className={styles.popupCard}>
             {item.thumbnailUrl ? (
                 <div className={styles.popupImageWrapper}>
+                    {/* Eager: the popup only mounts on click, so the image is
+                        wanted immediately; lazy just delayed it (HOS-95). */}
                     <img
                         src={item.thumbnailUrl}
                         alt={item.name}
                         className={styles.popupImage}
-                        loading="lazy"
                     />
                 </div>
             ) : null}
