@@ -115,7 +115,14 @@ export class TrialService {
             // The accommodation type (simple cabin vs hotel/complex) is an attribute
             // of the accommodation entity, not the user or subscription.
             const planSlug = 'owner-basico';
-            const trialDays = OWNER_TRIAL_DAYS;
+            // Testing-only override (HOSPEDA_TRIAL_DAYS_OVERRIDE): shorten the trial
+            // in local/staging so QA can exercise trial expiry without waiting the
+            // full OWNER_TRIAL_DAYS. HARD-GATED to non-production — a stray value on
+            // a production deploy is ignored and can never shrink real hosts' trials.
+            const trialDays =
+                env.NODE_ENV !== 'production' && env.HOSPEDA_TRIAL_DAYS_OVERRIDE
+                    ? env.HOSPEDA_TRIAL_DAYS_OVERRIDE
+                    : OWNER_TRIAL_DAYS;
 
             apiLogger.info(
                 {

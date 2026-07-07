@@ -538,6 +538,19 @@ export const ApiEnvBaseSchema = z.object({
      */
     HOSPEDA_ALERT_PRICE_DROP_THRESHOLD_PCT: z.coerce.number().default(5),
 
+    /**
+     * Testing-only override for the host publish-flow trial length, in days.
+     * When set to a positive integer in a NON-production environment, it replaces
+     * the `OWNER_TRIAL_DAYS` (14) constant used by `TrialService.startTrial`, so a
+     * QA run can exercise trial expiry after e.g. 1 day instead of waiting 14.
+     *
+     * HARD-GATED to non-production at the consumer (`trial.service.ts`): a stray
+     * value on a production deploy is ignored and can never shrink real hosts'
+     * trials. Leave unset in every real environment. Optional (no default) so the
+     * absence of the var yields `undefined` and the constant path is taken.
+     */
+    HOSPEDA_TRIAL_DAYS_OVERRIDE: z.coerce.number().int().positive().optional(),
+
     // AI / Credential Vault
     // Decision (owner-approved 2026-06-04): base-optional so non-production envs
     // (local dev / test / CI) where the AI feature is not yet active do not fail

@@ -1297,6 +1297,21 @@
       "howToObtainEs": "Creá un check en healthchecks.io (o Cronitor) para \"hospeda weekly restart\", copiá su ping URL, y exportá WEEKLY_RESTART_HEARTBEAT_URL en la entrada de crontab (o un archivo que esta cargue) que corre weekly-restart.sh en el host del VPS — NO en Coolify. Dejala sin setear para saltear el ping de heartbeat (el restart en sí igual corre y queda logueado)."
     },
     {
+      "name": "HOSPEDA_TRIAL_DAYS_OVERRIDE",
+      "description": "Override host trial length (days) for testing. Ignored in production.",
+      "descriptionEs": "Sobrescribe la duración del trial de host (días) para testing. Se ignora en producción.",
+      "type": "number",
+      "required": false,
+      "secret": false,
+      "exampleValue": "1",
+      "apps": [
+        "api"
+      ],
+      "category": "testing",
+      "howToObtain": "Set to a positive integer (e.g. 1) in local/staging to shorten the host publish trial for QA, so trial expiry can be exercised without waiting 14 days. HARD-GATED to non-production: ignored when NODE_ENV=production, where the trial is always OWNER_TRIAL_DAYS (14). Leave unset in every real environment.",
+      "howToObtainEs": "Poné un entero positivo (ej. 1) en local/staging para acortar el trial de publicación de host en QA, así se puede probar la expiración sin esperar 14 días. BLINDADO a no-producción: se ignora cuando NODE_ENV=production, donde el trial siempre es OWNER_TRIAL_DAYS (14). Dejala sin setear en todo entorno real."
+    },
+    {
       "name": "HOSPEDA_DISABLE_AUTH",
       "description": "Bypass auth in tests",
       "descriptionEs": "Saltea la autenticación en tests",
@@ -4258,6 +4273,12 @@
         "memory",
         "redis"
       ]
+    },
+    "HOSPEDA_TRIAL_DAYS_OVERRIDE": {
+      "numeric": {
+        "min": 0,
+        "max": 9007199254740991
+      }
     },
     "HOSPEDA_EXTREP_GOOGLE_SNIPPET_TTL_DAYS": {
       "numeric": {
