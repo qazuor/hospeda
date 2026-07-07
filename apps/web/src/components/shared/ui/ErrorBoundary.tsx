@@ -4,6 +4,7 @@
  * Shows a user-friendly fallback UI with a retry button when an island crashes.
  */
 
+import * as Sentry from '@sentry/astro';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Component } from 'react';
 
@@ -42,6 +43,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
         console.error('[ErrorBoundary] Caught error in React island:', error, errorInfo);
+        Sentry.captureException(error, {
+            contexts: {
+                react: {
+                    componentStack: errorInfo.componentStack
+                }
+            }
+        });
     }
 
     handleRetry = (): void => {

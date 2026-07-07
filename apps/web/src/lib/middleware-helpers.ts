@@ -6,6 +6,7 @@
  * rather than being hardcoded here so they have a single source of truth.
  */
 
+import { buildSentryReportUri } from '@repo/utils';
 import * as Sentry from '@sentry/astro';
 import { DEFAULT_LOCALE, isValidLocale, type SupportedLocale } from './i18n';
 import { webLogger } from './logger';
@@ -601,7 +602,36 @@ export function buildCspHeader({
 }
 
 // Re-export from shared package for backward compatibility
-export { buildSentryReportUri } from '@repo/utils';
+export { buildSentryReportUri };
+
+/**
+ * Resolves the CSP `report-uri` target for the current request.
+ *
+ * Prefers `PUBLIC_SENTRY_CSP_REPORT_URI` — a dedicated Sentry project
+ * (`hospeda-csp`) used ONLY for browser-emitted CSP violation reports, kept
+ * separate from the app's own error-tracking project so violation noise never
+ * pollutes the app's issue stream. Falls back to the report endpoint derived
+ * from the app's own `PUBLIC_SENTRY_DSN` (previous behavior, via
+ * {@link buildSentryReportUri}) when the dedicated var is unset, so CSP
+ * enforcement is never affected by this var being unset — the previous
+ * per-app-DSN behavior keeps working exactly as before.
+ *
+ * @param params - Object with the app's own Sentry DSN and the optional
+ *   dedicated CSP report-uri override.
+ * @returns The report-uri target, or `null` when neither is configured.
+ */
+export function resolveSentryReportUri({
+    sentryDsn,
+    dedicatedCspReportUri
+}: {
+    readonly sentryDsn: string | undefined;
+    readonly dedicatedCspReportUri: string | undefined;
+}): string | null {
+    if (dedicatedCspReportUri) {
+        return dedicatedCspReportUri;
+    }
+    return sentryDsn ? buildSentryReportUri({ dsn: sentryDsn }) : null;
+}
 
 // SPEC-182: the admin→web cross-origin signin redirect helper is colocated with
 // the callbackUrl validator in `auth-callback.ts` (both manage the same param),

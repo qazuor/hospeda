@@ -18,15 +18,25 @@ export { buildSentryReportUri };
  *
  * @param nonce - Cryptographically random nonce for this request
  * @param sentryDsn - Sentry DSN for CSP violation reporting. Pass empty string to disable reporting.
+ * @param cspReportUri - Optional override for the CSP `report-uri` target,
+ *   pointing at a DEDICATED Sentry project (`hospeda-csp`) used ONLY for
+ *   browser-emitted CSP violation reports, kept separate from the admin's own
+ *   error-tracking project so violation noise never pollutes the app's issue
+ *   stream. When omitted/empty, falls back to the report endpoint derived
+ *   from `sentryDsn` (previous behavior) — CSP enforcement is unaffected
+ *   either way.
  */
 export function buildCspDirectives({
     nonce,
-    sentryDsn
+    sentryDsn,
+    cspReportUri
 }: {
     nonce: string;
     sentryDsn: string;
+    cspReportUri?: string;
 }): string {
-    const sentryReportUri = sentryDsn ? buildSentryReportUri({ dsn: sentryDsn }) : null;
+    const sentryReportUri =
+        cspReportUri || (sentryDsn ? buildSentryReportUri({ dsn: sentryDsn }) : null);
 
     const directives = [
         "default-src 'self'",

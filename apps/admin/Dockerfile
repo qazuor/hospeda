@@ -39,6 +39,10 @@ ARG VITE_ADMIN_URL=https://admin.placeholder.local
 ARG VITE_BETTER_AUTH_URL=https://api.placeholder.local/api/auth
 ARG VITE_SENTRY_DSN
 ARG VITE_SENTRY_ENVIRONMENT
+# Dedicated `hospeda-csp` Sentry project for CSP violation reports (Sentry
+# prod-hardening), kept separate from VITE_SENTRY_DSN (admin app errors).
+# Falls back to the VITE_SENTRY_DSN-derived report-uri when unset.
+ARG VITE_SENTRY_CSP_REPORT_URI
 # SPEC-180 BETA-66: SENTRY_AUTH_TOKEN is a build-time secret used by the
 # Sentry Vite plugin to upload source maps during `vite build`. It must
 # NOT be forwarded to the runner stage — it is only needed at build time.
@@ -68,6 +72,7 @@ ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     VITE_SENTRY_DSN=$VITE_SENTRY_DSN \
     VITE_SENTRY_RELEASE=$VITE_SENTRY_RELEASE \
     VITE_SENTRY_ENVIRONMENT=$VITE_SENTRY_ENVIRONMENT \
+    VITE_SENTRY_CSP_REPORT_URI=$VITE_SENTRY_CSP_REPORT_URI \
     VITE_POSTHOG_KEY=$VITE_POSTHOG_KEY \
     VITE_POSTHOG_HOST=$VITE_POSTHOG_HOST \
     HOSPEDA_GIT_SHA=$HOSPEDA_GIT_SHA \
