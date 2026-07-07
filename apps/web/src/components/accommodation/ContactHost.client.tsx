@@ -214,6 +214,11 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
 
                 const conversationId = body.data?.conversationId;
                 if (conversationId) {
+                    trackEvent(WebEvents.BookingRequestSent, {
+                        accommodation_id: accommodation.id,
+                        is_authenticated: isAuthenticated,
+                        locale
+                    });
                     window.location.href = buildUrl({
                         locale,
                         path: `mi-cuenta/consultas/${conversationId}`
@@ -266,6 +271,11 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                     return;
                 }
 
+                trackEvent(WebEvents.BookingRequestSent, {
+                    accommodation_id: accommodation.id,
+                    is_authenticated: isAuthenticated,
+                    locale
+                });
                 setSubmitState({
                     phase: 'success',
                     message: t('conversations.notifications.verificationSent')

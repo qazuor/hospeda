@@ -15,6 +15,8 @@
 import { FavoriteIcon } from '@repo/icons';
 import { type FC, type MouseEvent, useEffect, useRef, useState } from 'react';
 import { AuthRequiredPopover } from '@/components/auth/AuthRequiredPopover.client';
+import { WebEvents } from '@/lib/analytics/events';
+import { trackEvent } from '@/lib/analytics/posthog-client';
 import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
@@ -394,6 +396,12 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                         href: favoritesHref
                     }
                 });
+                trackEvent(WebEvents.FavoriteToggled, {
+                    entity_type: entityType,
+                    entity_id: entityId,
+                    action: 'add',
+                    assigned_collection: Boolean(assignedCollectionId)
+                });
 
                 // Open the inline collection picker on the next render if the
                 // user has any collections AND the bookmark is not yet assigned.
@@ -404,6 +412,12 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                 addToast({
                     type: 'success',
                     message: t('account.favorites.toast.removed', 'Eliminado de favoritos')
+                });
+                trackEvent(WebEvents.FavoriteToggled, {
+                    entity_type: entityType,
+                    entity_id: entityId,
+                    action: 'remove',
+                    assigned_collection: false
                 });
             }
             // Reset the per-click assignment ref so the next save starts fresh.

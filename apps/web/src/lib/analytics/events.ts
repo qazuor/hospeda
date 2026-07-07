@@ -37,6 +37,13 @@ export const WebEvents = {
     /** Visitor clicked the "contact host" CTA on an accommodation detail. Props: `slug`. */
     BookingInitiated: 'booking_initiated',
 
+    /**
+     * Contact-host / booking-request form was sent successfully (anonymous
+     * verification-sent flow, or authenticated conversation created).
+     * Props: `accommodation_id`, `is_authenticated`, `locale`.
+     */
+    BookingRequestSent: 'booking_request_sent',
+
     /** Newsletter subscription form completed successfully. Props: `source` (footer | inline). */
     NewsletterSubscribed: 'newsletter_subscribed',
 
@@ -114,7 +121,25 @@ export const WebEvents = {
      * Import-from-URL failed (SPEC-258 A7).
      * Props: `source` (ImportSource | 'unknown').
      */
-    PropertyImportFailed: 'property_import_failed'
+    PropertyImportFailed: 'property_import_failed',
+
+    // ── Favorites ──────────────────────────────────────────────────────────────
+
+    /**
+     * A polymorphic entity was added to or removed from the visitor's favorites.
+     * Props: `entity_type`, `entity_id`, `action` ('add' | 'remove'),
+     * `assigned_collection: boolean`.
+     */
+    FavoriteToggled: 'favorite_toggled',
+
+    // ── Reviews ────────────────────────────────────────────────────────────────
+
+    /**
+     * A review was submitted successfully from the accommodation detail sidebar.
+     * Props: `accommodation_id`, `average_rating`, `has_title: boolean`,
+     * `has_content: boolean`.
+     */
+    ReviewSubmitted: 'review_submitted'
 } as const;
 
 /** Union of all explicit web event names — safe to use as a function argument type. */
