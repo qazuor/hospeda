@@ -234,21 +234,51 @@ the schema current.
   (or vice-versa); a fresh DB and a live DB diverge. A CI check (baseline vs
   replayed-migrations parity) may be needed — scope in tech-analysis.
 
-## 8. Open Questions (for tech-analysis / owner)
+## 8. Open Questions — RESOLVED (2026-07-07)
 
-- **OQ-1** — `example` determinism: seeded Faker + stable IDs as the prerequisite,
-  or descope `example` to "re-runnable without crashing" (no targeted deltas) for
-  v1? **Owner decision needed.**
-- **OQ-2** — operator-edit provenance: marker column vs `updatedAt`-heuristic vs
-  reuse Model-C field split. (tech-analysis, may need owner input.)
-- **OQ-3** — relationship to the existing `extras/` data-migration carril: supersede,
-  absorb billing's precedent, or coexist with a documented boundary?
-- **OQ-4** — forward-only (Drizzle-style) or support `down()` reversal? Default:
-  forward-only.
-- **OQ-5** — ledger granularity: one row per migration file (recommended) vs per
-  logical change; and where `group` (`required`/`example`) gates execution.
-- **OQ-6** — prod destructive-gate UX: a per-migration `destructive: true` flag in
-  `meta` requiring an explicit `--allow-destructive` in prod?
+All six OQs are closed. Resolutions below drive the task plan.
+
+- **OQ-1 — `example` determinism → RESOLVED: include `example` deterministically in
+  v1.** Code investigation invalidated R-1's premise: **there is no Faker in
+  `packages/seed`** (the seed `CLAUDE.md` documenting Faker patterns is stale and
+  wrong). `example` data is 100% static hand-authored JSON under
+  `src/data/<entity>/*.json`. The *only* source of non-determinism is that DB PKs use
+  `uuid().defaultRandom()` and the seeder normalizers **strip the fixture `id` field**
+  before `service.create()`. Making `example` deterministic is therefore mechanical:
+  assign a stable UUID (UUIDv5 derived from the fixture seed-key string) and thread it
+  through create instead of discarding it. **Owner decision (2026-07-07): cover both
+  `required` and `example` in v1.**
+- **OQ-2 — operator-edit provenance → RESOLVED: reuse the SPEC-211 Model C field
+  split.** `billingPlans.seed.ts` already implements the hardened pattern —
+  `MODEL_C_FIELD_SPLIT` per-field classification table + `assertAllSeedFieldsClassified`
+  fail-fast exhaustiveness guard + diff-detect-then-selective-update (capability fields
+  sync, commercial fields preserved). HOS-39 already burned once here (4 fields
+  reclassified capability→commercial after seed silently reverted operator edits) —
+  treat as cautionary precedent. The shared `safeDelete`/upsert helpers adopt this
+  policy rather than inventing a marker column.
+- **OQ-3 — `extras/` boundary → RESOLVED: the new `data-migrations/` (TS) carril owns
+  row-level DATA changes; `extras/` (SQL) is reserved for Drizzle-invisible DB objects
+  (triggers, matviews, CHECK, special indexes).** The billing `extras/023/024/025-*.plan.sql`
+  files are pure `billing_plans` UPDATEs that exist *only* because Model C classifies
+  those fields commercial, so the seeder never reaches already-seeded staging/prod rows.
+  That dual path (seed for fresh + hand-written extras SQL for live) is exactly what this
+  carril unifies; those three files are the migration target to port into numbered TS
+  data-migrations (existing pure-DB-object extras stay put).
+- **OQ-4 — forward-only vs `down()` → RESOLVED: forward-only** (Drizzle-style). No
+  `down()` in v1.
+- **OQ-5 — ledger granularity → RESOLVED: one row per migration file.** `group`
+  (`required`/`example`) is a column on the row and gates execution filtering.
+  **Prerequisite fix:** `dbReset.ALWAYS_EXCLUDE_TABLES` currently lists
+  `'drizzle_migrations'` (wrong — drizzle-kit's real table is `__drizzle_migrations` in
+  the `drizzle` schema, harmless only because reset scans `schemaname='public'`). The
+  new `seed_migrations` table lives in `public`, so it **must** be added to the preserve
+  list with the correct name, or a `--reset` will wipe migration-tracking state.
+- **OQ-6 — prod destructive-gate → RESOLVED: per-migration `destructive: true` flag in
+  `meta`, requiring an explicit opt-in env var / `--allow-destructive` flag in prod**,
+  following the pure-function `evaluateProdCleanupGate` shape — but wired **directly into
+  the new data-migration runner** (the existing `--reset`/TRUNCATE path and
+  `apply-postgres-extras.mjs` have no prod gate at all today, so there is nothing to
+  reuse — the gate must live in this runner).
 
 ## 9. Relationship to existing systems
 
@@ -269,3 +299,11 @@ the schema current.
   (Drizzle-style); (4) scope = both `required` and `example`. Six open questions
   (OQ-1..6) deferred to tech-analysis, with `example` determinism (OQ-1/R-1) flagged
   as the primary prerequisite.
+- 2026-07-07 — Phase 2 kickoff (HOS-25). Seed-system code exploration completed;
+  **all six OQs resolved** (see §8). Key finding: R-1's Faker premise was wrong — there
+  is no Faker in `packages/seed`, `example` is static JSON, and determinism is a
+  mechanical stable-UUID threading fix, not a non-trivial refactor. Owner decided OQ-1 =
+  cover `example` in v1. OQ-2 reuses billing Model C; OQ-3 gives data its own TS carril
+  and ports the billing `extras/*.plan.sql` files; OQ-4 forward-only; OQ-5 one row/file
+  - `dbReset` preserve-list fix; OQ-6 per-migration `destructive` flag gated in the
+  runner. Ready for task decomposition.
