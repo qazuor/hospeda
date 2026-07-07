@@ -361,17 +361,67 @@ describe('processPaymentUpdated', () => {
             });
 
             expect(result.success).toBe(true);
+            // distinctId is the resolved owner user id (the same id identify()
+            // uses on the web client), not the billing customer id — resolved
+            // via resolveOwnerUserId, mocked to 'usr-resolved-1' in beforeEach.
             expect(mockPostHogCapture).toHaveBeenCalledWith({
-                distinctId: 'cust-1',
+                distinctId: 'usr-resolved-1',
                 event: 'subscription_payment_succeeded',
                 properties: {
                     amount: 1000,
                     currency: 'ARS',
                     paymentMethod: 'credit_card',
                     kind: 'subscription_renewal',
-                    source: 'webhook'
+                    source: 'webhook',
+                    $set: { plan_status: 'active' }
                 }
             });
+        });
+
+        it('marks the payer active on the person profile via $set', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 1000,
+                currency: 'ARS',
+                status: 'approved',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+
+            await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            const call = mockPostHogCapture.mock.calls.find(
+                ([arg]) => (arg as { event?: string }).event === 'subscription_payment_succeeded'
+            );
+            expect(
+                (call?.[0] as { properties: { $set: Record<string, unknown> } }).properties.$set
+            ).toEqual({ plan_status: 'active' });
+        });
+
+        it('falls back to customerId as distinctId when the customer maps to no user', async () => {
+            vi.mocked(resolveOwnerUserId).mockResolvedValueOnce(null);
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 1000,
+                currency: 'ARS',
+                status: 'approved',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+
+            await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(mockPostHogCapture).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    distinctId: 'cust-1',
+                    event: 'subscription_payment_succeeded'
+                })
+            );
         });
 
         it('does NOT capture subscription_payment_succeeded for a rejected payment', async () => {
@@ -388,7 +438,9 @@ describe('processPaymentUpdated', () => {
                 billing: mockBilling
             });
 
-            expect(mockPostHogCapture).not.toHaveBeenCalled();
+            expect(mockPostHogCapture).not.toHaveBeenCalledWith(
+                expect.objectContaining({ event: 'subscription_payment_succeeded' })
+            );
         });
 
         it('does not throw and processing still succeeds when the PostHog client throws', async () => {
@@ -419,6 +471,144 @@ describe('processPaymentUpdated', () => {
                 'credit_card',
                 mockBilling
             );
+        });
+    });
+
+    // ── PostHog payment_failed capture ────────────────────────────────────
+    describe('PostHog payment_failed capture', () => {
+        it('captures payment_failed with failureReason on a rejected payment', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 500,
+                currency: 'ARS',
+                status: 'rejected',
+                statusDetail: 'cc_rejected_insufficient_amount',
+                paymentMethod: 'credit_card'
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(result.success).toBe(true);
+            // distinctId is the resolved owner user id (see approved-branch note).
+            expect(mockPostHogCapture).toHaveBeenCalledWith({
+                distinctId: 'usr-resolved-1',
+                event: 'payment_failed',
+                properties: {
+                    amount: 500,
+                    currency: 'ARS',
+                    status: 'rejected',
+                    failureReason: 'cc_rejected_insufficient_amount',
+                    source: 'webhook'
+                }
+            });
+        });
+
+        it('falls back to customerId as distinctId when the customer maps to no user', async () => {
+            vi.mocked(resolveOwnerUserId).mockResolvedValueOnce(null);
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 500,
+                currency: 'ARS',
+                status: 'rejected',
+                statusDetail: 'cc_rejected_other_reason',
+                paymentMethod: 'credit_card'
+            });
+
+            await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(mockPostHogCapture).toHaveBeenCalledWith(
+                expect.objectContaining({ distinctId: 'cust-1', event: 'payment_failed' })
+            );
+        });
+
+        it('never throws out of the webhook when resolveOwnerUserId rejects (falls back to customerId)', async () => {
+            vi.mocked(resolveOwnerUserId).mockRejectedValueOnce(new Error('DB connection lost'));
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 500,
+                currency: 'ARS',
+                status: 'rejected',
+                statusDetail: 'cc_rejected_other_reason',
+                paymentMethod: 'credit_card'
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            // Webhook resolves normally and the event is still captured, keyed on
+            // the customerId fallback.
+            expect(result.success).toBe(true);
+            expect(mockPostHogCapture).toHaveBeenCalledWith(
+                expect.objectContaining({ distinctId: 'cust-1', event: 'payment_failed' })
+            );
+        });
+
+        it('falls back to status as failureReason when statusDetail is absent', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 500,
+                currency: 'ARS',
+                status: 'cancelled',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+
+            await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            const call = mockPostHogCapture.mock.calls.find(
+                ([arg]) => (arg as { event?: string }).event === 'payment_failed'
+            );
+            expect(
+                (call?.[0] as { properties: { failureReason: string } }).properties.failureReason
+            ).toBe('cancelled');
+        });
+
+        it('does NOT capture payment_failed for an approved payment', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 1000,
+                currency: 'ARS',
+                status: 'approved',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+
+            await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(mockPostHogCapture).not.toHaveBeenCalledWith(
+                expect.objectContaining({ event: 'payment_failed' })
+            );
+        });
+
+        it('does not throw and processing still succeeds when the PostHog client throws', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 500,
+                currency: 'ARS',
+                status: 'refunded',
+                statusDetail: 'refunded',
+                paymentMethod: 'credit_card'
+            });
+            mockGetPostHogClient.mockImplementationOnce(() => {
+                throw new Error('PostHog client unavailable');
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(result.success).toBe(true);
+            expect(sendPaymentFailureNotifications).toHaveBeenCalled();
         });
     });
 

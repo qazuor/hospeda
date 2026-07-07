@@ -1451,6 +1451,23 @@ export const HOSPEDA_ENV_VARS = [
     // Testing
     // -------------------------------------------------------------------------
     {
+        name: 'HOSPEDA_TRIAL_DAYS_OVERRIDE',
+        description:
+            'Override host trial length (days) for testing. Affects every trial while set.',
+        descriptionEs:
+            'Sobrescribe la duración del trial de host (días) para testing. Afecta a todo trial mientras esté seteada.',
+        type: 'number',
+        required: false,
+        secret: false,
+        exampleValue: '1',
+        apps: ['api'],
+        category: 'testing',
+        howToObtain:
+            'Set to a positive integer (e.g. 1) to shorten the host publish trial so QA can exercise trial expiry without waiting 14 days. NOT gated by environment (NODE_ENV is "production" on both the prod and staging deployments and cannot distinguish them, and testing must be possible against production). It is an explicit ops knob: it affects EVERY trial started while it is set, so set it, run the test, then UNSET it. Unset by default in every environment.',
+        howToObtainEs:
+            'Poné un entero positivo (ej. 1) para acortar el trial de publicación de host y poder probar la expiración sin esperar 14 días. NO tiene gate de entorno (NODE_ENV es "production" tanto en la instancia de prod como en la de staging, así que no las distingue, y hay que poder testear contra producción). Es una perilla explícita de ops: afecta a TODO trial que arranque mientras esté seteada, así que la seteás, hacés la prueba y la SACÁS. Sin setear por defecto en todos los entornos.'
+    },
+    {
         name: 'HOSPEDA_DISABLE_AUTH',
         description: 'Bypass auth in tests',
         descriptionEs: 'Saltea la autenticación en tests',

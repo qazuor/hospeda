@@ -617,6 +617,13 @@ const faqSections = accommodation.faqs.map((faq) => ({
         slug={slug}
         accommodationId={accommodation.id}
         locale={locale}
+        accommodationType={accommodation.type}
+        isFeatured={accommodation.isFeatured}
+        destinationId={accommodation.destination.id}
+        destinationName={accommodation.destination.name}
+        price={accommodation.price?.price ?? null}
+        currency={accommodation.price?.currency ?? null}
+        ownerId={accommodation.owner.id}
     />
 
     <!-- AI chat widget (SPEC-200) — only for authenticated users -->
@@ -661,7 +668,13 @@ const faqSections = accommodation.faqs.map((faq) => ({
                     accommodation={{
                         id: accommodation.id,
                         lifecycleState: accommodationLifecycleState,
-                        deletedAt: accommodationDeletedAt
+                        deletedAt: accommodationDeletedAt,
+                        type: accommodation.type,
+                        destinationId: accommodation.destination.id,
+                        destinationName: accommodation.destination.name,
+                        price: accommodation.price?.price ?? null,
+                        currency: accommodation.price?.currency ?? null,
+                        ownerId: accommodation.owner.id
                     }}
                     currentUser={currentUser}
                     existingConversationId={existingConversationId}

@@ -17,8 +17,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // ─── Module mocks (must precede the import under test) ────────────────────────
 
 const trackEventMock = vi.fn();
+const associateGroupMock = vi.fn();
+const resetGroupsMock = vi.fn();
 vi.mock('@/lib/analytics/posthog-client', () => ({
-    trackEvent: (...args: unknown[]) => trackEventMock(...args)
+    trackEvent: (...args: unknown[]) => trackEventMock(...args),
+    associateGroup: (...args: unknown[]) => associateGroupMock(...args),
+    resetGroups: (...args: unknown[]) => resetGroupsMock(...args)
 }));
 
 const sendViewBeaconMock = vi.fn();
@@ -35,7 +39,14 @@ import { AccommodationViewTracker } from '@/components/analytics/AccommodationVi
 const DEFAULT_PROPS = {
     slug: 'cabana-del-rio',
     accommodationId: '550e8400-e29b-41d4-a716-446655440000',
-    locale: 'es' as const
+    locale: 'es' as const,
+    accommodationType: 'CABIN',
+    isFeatured: true,
+    destinationId: 'dest-colon',
+    destinationName: 'Colón',
+    price: 12000,
+    currency: 'ARS',
+    ownerId: 'owner-9'
 };
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -43,6 +54,8 @@ const DEFAULT_PROPS = {
 describe('AccommodationViewTracker (SPEC-159 T-012)', () => {
     beforeEach(() => {
         trackEventMock.mockClear();
+        associateGroupMock.mockClear();
+        resetGroupsMock.mockClear();
         sendViewBeaconMock.mockClear();
     });
 
@@ -85,8 +98,33 @@ describe('AccommodationViewTracker (SPEC-159 T-012)', () => {
         expect(trackEventMock).toHaveBeenCalledWith('accommodation_viewed', {
             slug: DEFAULT_PROPS.slug,
             accommodation_id: DEFAULT_PROPS.accommodationId,
-            locale: DEFAULT_PROPS.locale
+            locale: DEFAULT_PROPS.locale,
+            accommodation_type: 'CABIN',
+            is_featured: true,
+            destination_id: 'dest-colon',
+            destination_name: 'Colón',
+            price: 12000,
+            currency: 'ARS',
+            owner_id: 'owner-9'
         });
+    });
+
+    it('associates the accommodation group on mount', () => {
+        render(<AccommodationViewTracker {...DEFAULT_PROPS} />);
+
+        expect(associateGroupMock).toHaveBeenCalledWith(
+            'accommodation',
+            DEFAULT_PROPS.accommodationId
+        );
+    });
+
+    it('clears the group association on unmount (no leak onto later pages)', () => {
+        const { unmount } = render(<AccommodationViewTracker {...DEFAULT_PROPS} />);
+        expect(resetGroupsMock).not.toHaveBeenCalled();
+
+        unmount();
+
+        expect(resetGroupsMock).toHaveBeenCalledTimes(1);
     });
 
     // ── No double-fire on stable props re-render ───────────────────────────

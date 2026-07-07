@@ -41,6 +41,7 @@ import {
     isBillingProviderError,
     mapProviderErrorToServiceError
 } from '../../lib/billing-provider-error';
+import { getPostHogClient } from '../../lib/posthog';
 import { captureBillingError } from '../../lib/sentry';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
@@ -327,6 +328,47 @@ export const handleStartPaidSubscription = async (
                 'This plan is no longer available. Please choose an active plan.',
                 undefined,
                 'PLAN_DISABLED'
+            );
+        }
+
+        // Fire-and-forget product analytics for checkout initiation. Wrapped in
+        // try/catch so a misbehaving PostHog client can NEVER break the checkout
+        // — this handler must proceed to initiate the subscription regardless of
+        // analytics outcome. Mirrors the pattern in payment-logic.ts. The amount
+        // is resolved best-effort from the plan price matching the interval.
+        try {
+            const priceForInterval = targetPlan?.prices.find((p) =>
+                body.billingInterval === 'annual'
+                    ? p.billingInterval === 'year'
+                    : p.billingInterval === 'month'
+            );
+            // `unitAmount` is stored in centavos, but the payment_failed /
+            // subscription_payment_succeeded events capture MP's transaction_amount
+            // in MAJOR units (ARS pesos). Normalize to major units here so `amount`
+            // has ONE unit across the whole checkout→payment funnel.
+            const amountMajor =
+                typeof priceForInterval?.unitAmount === 'number'
+                    ? priceForInterval.unitAmount / 100
+                    : null;
+            getPostHogClient()?.capture({
+                distinctId: actor.id,
+                event: 'checkout_started',
+                properties: {
+                    planSlug: body.planSlug,
+                    billingInterval: body.billingInterval,
+                    promoCode: body.promoCode ?? null,
+                    amount: amountMajor,
+                    currency: priceForInterval?.currency ?? null
+                }
+            });
+        } catch (phErr) {
+            apiLogger.warn(
+                {
+                    userId: actor.id,
+                    planSlug: body.planSlug,
+                    error: phErr instanceof Error ? phErr.message : String(phErr)
+                },
+                'PostHog capture failed for checkout_started (non-blocking)'
             );
         }
 

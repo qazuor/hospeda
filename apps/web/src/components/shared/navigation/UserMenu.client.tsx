@@ -41,7 +41,8 @@ import type { ComponentType, JSX } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
-import { identifyUser, resetUser } from '@/lib/analytics/posthog-client';
+import { syncPlanPersonProperties } from '@/lib/analytics/plan-properties';
+import { identifyUser, resetUser, setPersonProperties } from '@/lib/analytics/posthog-client';
 import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
 import { getInitials } from '@/lib/avatar-utils';
@@ -178,6 +179,19 @@ const TEXTS = {
  */
 const STAFF_DISCRIMINATOR_PERMISSION = 'access.apiAdmin' as const;
 
+/**
+ * Permission that marks a user as a host (owner of accommodations). Same string
+ * used to gate the "Mis alojamientos" menu item. Fed to PostHog as the
+ * `is_host` person property so funnels can segment hosts vs pure tourists.
+ */
+const HOST_PERMISSION = 'accommodation.create' as const;
+
+/**
+ * Permission that marks a user as a commerce listing owner (gastronomy /
+ * experience self-service, SPEC-253). Fed to PostHog as `is_commerce_owner`.
+ */
+const COMMERCE_OWNER_PERMISSION = 'commerce.editOwn' as const;
+
 // ---------------------------------------------------------------------------
 // /auth/me fetch with sessionStorage cache
 // ---------------------------------------------------------------------------
@@ -195,6 +209,8 @@ interface AuthMeSnapshot {
     readonly isAuthenticated: boolean;
     readonly user: UserMenuUser | null;
     readonly permissions: ReadonlyArray<string>;
+    /** Actor role (e.g. USER, HOST, ADMIN). Null for guests. Fed to PostHog. */
+    readonly role: string | null;
     readonly cachedAt: number;
 }
 
@@ -228,6 +244,7 @@ async function fetchAuthMe(): Promise<AuthMeSnapshot> {
             isAuthenticated: false,
             user: null,
             permissions: [],
+            role: null,
             cachedAt: Date.now()
         };
     }
@@ -238,6 +255,7 @@ async function fetchAuthMe(): Promise<AuthMeSnapshot> {
                 name?: string;
                 email?: string;
                 image?: string;
+                role?: string;
                 permissions?: ReadonlyArray<string>;
             };
             isAuthenticated?: boolean;
@@ -267,6 +285,7 @@ async function fetchAuthMe(): Promise<AuthMeSnapshot> {
                   }
                 : null,
         permissions: actor?.permissions ?? [],
+        role: isAuthenticated && actor?.role ? actor.role : null,
         cachedAt: Date.now()
     };
 }
@@ -393,6 +412,7 @@ export function UserMenu({
     const [isOpen, setIsOpen] = useState(false);
     const [user, setUser] = useState<UserMenuUser | null>(initialUser);
     const [permissions, setPermissions] = useState<ReadonlyArray<string> | null>(null);
+    const [role, setRole] = useState<string | null>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
     const texts = TEXTS[locale] ?? TEXTS.es;
@@ -425,6 +445,7 @@ export function UserMenu({
         if (cached && cacheMatchesSsr) {
             setUser(cached.user);
             setPermissions(cached.permissions);
+            setRole(cached.role);
             document.documentElement.setAttribute(
                 'data-user-authenticated',
                 cached.isAuthenticated ? 'true' : 'false'
@@ -441,6 +462,7 @@ export function UserMenu({
                 writeCachedAuthMe(snapshot);
                 setUser(snapshot.user);
                 setPermissions(snapshot.permissions);
+                setRole(snapshot.role);
                 document.documentElement.setAttribute(
                     'data-user-authenticated',
                     snapshot.isAuthenticated ? 'true' : 'false'
@@ -467,11 +489,44 @@ export function UserMenu({
     // remount (soft nav). The counterpart `resetUser()` call lives in
     // `handleSignOut` below, not here, so a guest page load never resets an
     // anonymous visitor's distinct id.
+    //
+    // Person properties (role + segment flags) are attached once `permissions`
+    // resolve. On first mount `permissions` is null (SSR gave us the user id
+    // but not the permission set), so the initial identify carries the id
+    // alone; a second identify with the enriched props fires when /auth/me (or
+    // the cache) lands. PostHog merges person properties across identify calls,
+    // so segmenting funnels by is_host / is_commerce_owner / is_staff works
+    // without re-sending the id-only call.
     useEffect(() => {
-        if (user) {
-            identifyUser(user.id);
-        }
+        if (!user) return;
+        const props =
+            permissions === null
+                ? undefined
+                : {
+                      role,
+                      is_host: permissions.includes(HOST_PERMISSION),
+                      is_commerce_owner: permissions.includes(COMMERCE_OWNER_PERMISSION),
+                      is_staff: permissions.includes(STAFF_DISCRIMINATOR_PERMISSION)
+                  };
+        identifyUser(user.id, props);
+    }, [user, permissions, role]);
+
+    // ── PostHog plan/tier person property ────────────────────────────────
+    // Resolved from the PROTECTED entitlements endpoint (NOT /auth/me, which
+    // must stay a cheap public hot path), client-side and non-blocking, once
+    // the visitor is known. Guarded to run at most once per page load.
+    useEffect(() => {
+        if (!user) return;
+        void syncPlanPersonProperties({ apiUrl: getApiUrl() });
     }, [user]);
+
+    // ── PostHog locale person property ───────────────────────────────────
+    // The active locale is already known client-side, so this is free (no
+    // server hit) and updates if the user switches language mid-session.
+    useEffect(() => {
+        if (!user) return;
+        setPersonProperties({ locale });
+    }, [user, locale]);
 
     // ── Click-outside dismissal ─────────────────────────────────────────
     useEffect(() => {

@@ -12,7 +12,14 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { identifyUser, resetUser, trackEvent } from '@/lib/analytics/posthog-client';
+import {
+    associateGroup,
+    identifyUser,
+    resetGroups,
+    resetUser,
+    setPersonProperties,
+    trackEvent
+} from '@/lib/analytics/posthog-client';
 
 /** Set (or clear, when `granted` is false) the analytics-consent cookie. */
 function setAnalyticsConsent(granted: boolean): void {
@@ -159,6 +166,90 @@ describe('identifyUser (consent-gated)', () => {
     });
 });
 
+describe('setPersonProperties (consent-gated)', () => {
+    it('sets properties immediately when analytics consent is granted', () => {
+        setAnalyticsConsent(true);
+        const setSpy = vi.fn();
+        (window as unknown as { posthog: { setPersonProperties: typeof setSpy } }).posthog = {
+            setPersonProperties: setSpy
+        };
+
+        setPersonProperties({ plan: 'host-pro', plan_status: 'active' });
+
+        expect(setSpy).toHaveBeenCalledWith({ plan: 'host-pro', plan_status: 'active' });
+    });
+
+    it('does NOT set properties when consent is absent (privacy gate)', () => {
+        const setSpy = vi.fn();
+        (window as unknown as { posthog: { setPersonProperties: typeof setSpy } }).posthog = {
+            setPersonProperties: setSpy
+        };
+
+        setPersonProperties({ plan: 'host-pro' });
+
+        expect(setSpy).not.toHaveBeenCalled();
+    });
+
+    it('replays the deferred (merged) properties once consent flips to true', () => {
+        const setSpy = vi.fn();
+        (window as unknown as { posthog: { setPersonProperties: typeof setSpy } }).posthog = {
+            setPersonProperties: setSpy
+        };
+
+        // Two pre-consent calls should merge into a single flushed payload.
+        setPersonProperties({ plan: 'host-pro' });
+        setPersonProperties({ plan_status: 'active' });
+        expect(setSpy).not.toHaveBeenCalled();
+
+        window.dispatchEvent(
+            new CustomEvent('cookie-consent:changed', { detail: { analytics: true } })
+        );
+
+        expect(setSpy).toHaveBeenCalledWith({ plan: 'host-pro', plan_status: 'active' });
+    });
+});
+
+describe('associateGroup (consent-gated)', () => {
+    it('associates the group immediately when consent is granted', () => {
+        setAnalyticsConsent(true);
+        const groupSpy = vi.fn();
+        (window as unknown as { posthog: { group: typeof groupSpy } }).posthog = {
+            group: groupSpy
+        };
+
+        associateGroup('accommodation', 'acc-1');
+
+        expect(groupSpy).toHaveBeenCalledWith('accommodation', 'acc-1');
+    });
+
+    it('does NOT associate when consent is absent (privacy gate)', () => {
+        const groupSpy = vi.fn();
+        (window as unknown as { posthog: { group: typeof groupSpy } }).posthog = {
+            group: groupSpy
+        };
+
+        associateGroup('accommodation', 'acc-1');
+
+        expect(groupSpy).not.toHaveBeenCalled();
+    });
+
+    it('replays the deferred association once consent flips to true', () => {
+        const groupSpy = vi.fn();
+        (window as unknown as { posthog: { group: typeof groupSpy } }).posthog = {
+            group: groupSpy
+        };
+
+        associateGroup('accommodation', 'acc-1');
+        expect(groupSpy).not.toHaveBeenCalled();
+
+        window.dispatchEvent(
+            new CustomEvent('cookie-consent:changed', { detail: { analytics: true } })
+        );
+
+        expect(groupSpy).toHaveBeenCalledWith('accommodation', 'acc-1');
+    });
+});
+
 describe('resetUser', () => {
     it('should no-op when window.posthog is undefined', () => {
         expect(() => resetUser()).not.toThrow();
@@ -176,5 +267,49 @@ describe('resetUser', () => {
 
         // Assert
         expect(resetSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('drops pending person properties and group associations so they do not replay for the next user', () => {
+        // Arrange — buffer a person property and a group while consent is absent.
+        const setSpy = vi.fn();
+        const groupSpy = vi.fn();
+        (
+            window as unknown as {
+                posthog: {
+                    setPersonProperties: typeof setSpy;
+                    group: typeof groupSpy;
+                    reset: () => void;
+                };
+            }
+        ).posthog = { setPersonProperties: setSpy, group: groupSpy, reset: vi.fn() };
+        setPersonProperties({ plan: 'host-pro' });
+        associateGroup('accommodation', 'acc-1');
+
+        // Act — sign out clears the pending buffers, then consent is granted.
+        resetUser();
+        window.dispatchEvent(
+            new CustomEvent('cookie-consent:changed', { detail: { analytics: true } })
+        );
+
+        // Assert — nothing stale replays onto the next (possibly different) user.
+        expect(setSpy).not.toHaveBeenCalled();
+        expect(groupSpy).not.toHaveBeenCalled();
+    });
+});
+
+describe('resetGroups', () => {
+    it('no-ops when window.posthog is undefined', () => {
+        expect(() => resetGroups()).not.toThrow();
+    });
+
+    it('calls window.posthog.resetGroups() when the stub is present', () => {
+        const resetGroupsSpy = vi.fn();
+        (window as unknown as { posthog: { resetGroups: typeof resetGroupsSpy } }).posthog = {
+            resetGroups: resetGroupsSpy
+        };
+
+        resetGroups();
+
+        expect(resetGroupsSpy).toHaveBeenCalledTimes(1);
     });
 });

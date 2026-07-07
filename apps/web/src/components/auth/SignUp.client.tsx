@@ -15,8 +15,6 @@ import { StrongPasswordRegex } from '@repo/schemas';
 import { useEffect, useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
-import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/posthog-client';
 import { translateApiError } from '@/lib/api-errors';
 import { signIn, signUp } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
@@ -174,7 +172,10 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
                 if (!path.startsWith('/')) {
                     path = `/${path}`;
                 }
-                trackEvent(WebEvents.SignupCompleted, { provider: 'email', locale });
+                // NOTE: signup_completed is captured SERVER-SIDE in the Better
+                // Auth `databaseHooks.user.create.after` hook (apps/api) so it
+                // covers email AND OAuth signups uniformly and fires exactly once
+                // per new user. Do NOT re-emit it here or it double-counts.
                 window.location.replace(`${origin}${path}`);
             }
         } catch {

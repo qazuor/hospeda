@@ -63,6 +63,19 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+// PostHog capture spy — hoisted so it is available inside the vi.mock factory.
+// Individual tests assert on `mockPostHogCapture` for the checkout_started event.
+const { mockPostHogCapture, mockGetPostHogClient } = vi.hoisted(() => {
+    const capture = vi.fn();
+    return {
+        mockPostHogCapture: capture,
+        mockGetPostHogClient: vi.fn(() => ({ capture }))
+    };
+});
+vi.mock('../../src/lib/posthog', () => ({
+    getPostHogClient: mockGetPostHogClient
+}));
+
 vi.mock('../../src/utils/create-app', () => ({
     createRouter: vi.fn(() => ({
         use: vi.fn(),
@@ -539,6 +552,87 @@ describe('handleStartPaidSubscription (monthly)', () => {
         ).rejects.toMatchObject({ status: 422 });
 
         expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// checkout_started analytics (PostHog)
+// ---------------------------------------------------------------------------
+
+describe('handleStartPaidSubscription — checkout_started analytics', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('captures checkout_started with plan, interval, promo and price on a monthly checkout', async () => {
+        const billing = createBillingMock({
+            plans: [
+                {
+                    id: PLAN_ID,
+                    name: 'owner-premium',
+                    // unitAmount is centavos; the event normalizes to major units.
+                    prices: [{ ...MONTHLY_PRICE, unitAmount: 500_000, currency: 'ARS' }]
+                }
+            ] as unknown as ReturnType<typeof createPlan>[]
+        });
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+        await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'monthly'
+        });
+
+        expect(mockPostHogCapture).toHaveBeenCalledTimes(1);
+        expect(mockPostHogCapture).toHaveBeenCalledWith({
+            distinctId: 'user-1',
+            event: 'checkout_started',
+            properties: {
+                planSlug: 'owner-premium',
+                billingInterval: 'monthly',
+                promoCode: null,
+                // 500_000 centavos → 5_000 major units (ARS pesos), matching the
+                // unit used by payment_failed / subscription_payment_succeeded.
+                amount: 5_000,
+                currency: 'ARS'
+            }
+        });
+    });
+
+    it('forwards the promo code into checkout_started when present', async () => {
+        const billing = createBillingMock();
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+        await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'monthly',
+            promoCode: 'FREEMONTH'
+        });
+
+        const call = mockPostHogCapture.mock.calls.find(
+            ([arg]) => (arg as { event?: string }).event === 'checkout_started'
+        );
+        expect((call?.[0] as { properties: { promoCode: string } }).properties.promoCode).toBe(
+            'FREEMONTH'
+        );
+    });
+
+    it('does not break the checkout when PostHog capture throws (defensive)', async () => {
+        mockPostHogCapture.mockImplementationOnce(() => {
+            throw new Error('posthog down');
+        });
+        const billing = createBillingMock();
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+        const result = await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'monthly'
+        });
+
+        // The checkout still completes despite the analytics failure.
+        expect(result.localSubscriptionId).toBe(LOCAL_SUB_ID);
     });
 });
 

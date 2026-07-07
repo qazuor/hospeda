@@ -204,11 +204,15 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * for CSP violation reports, separate from each app's own error-tracking DSN.
  * 250 + 2 = 252.
  *
- * HOS-25 T-011 added `HOSPEDA_ALLOW_DESTRUCTIVE_MIGRATION` (production gate
- * for destructive versioned seed data-migrations, mirroring
- * `HOSPEDA_ALLOW_PROD_CLEANUP`). 252 + 1 = 253.
+ * Two independent +1 additions converge in this merge:
+ *   - HOSPEDA_TRIAL_DAYS_OVERRIDE (testing-only trial-length override, from
+ *     staging).
+ *   - HOSPEDA_ALLOW_DESTRUCTIVE_MIGRATION (HOS-25 T-011: production gate for
+ *     destructive versioned seed data-migrations, mirroring
+ *     `HOSPEDA_ALLOW_PROD_CLEANUP`).
+ * 252 + 2 = 254.
  */
-const EXPECTED_VAR_COUNT = 253;
+const EXPECTED_VAR_COUNT = 254;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

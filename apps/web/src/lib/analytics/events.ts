@@ -28,19 +28,28 @@ export const WebEvents = {
     /** User submitted the search bar. Props: `query`, `locale`. */
     AccommodationSearched: 'accommodation_searched',
 
-    /** Accommodation detail page was loaded. Props: `slug`, `locale`. */
+    /**
+     * Accommodation detail page was loaded. Props: `slug`, `accommodation_id`,
+     * `locale`, `accommodation_type`, `is_featured`, `destination_id`,
+     * `destination_name`, `price`, `currency`.
+     */
     AccommodationViewed: 'accommodation_viewed',
 
     /** Better Auth signup flow completed. Props: `provider` (email | google | facebook). */
     SignupCompleted: 'signup_completed',
 
-    /** Visitor clicked the "contact host" CTA on an accommodation detail. Props: `slug`. */
+    /**
+     * Contact-host / booking-request form was submitted (before the network
+     * call). Props: `accommodation_id`, `accommodation_type`, `destination_id`,
+     * `destination_name`, `price`, `currency`, `is_authenticated`, `locale`.
+     */
     BookingInitiated: 'booking_initiated',
 
     /**
      * Contact-host / booking-request form was sent successfully (anonymous
-     * verification-sent flow, or authenticated conversation created).
-     * Props: `accommodation_id`, `is_authenticated`, `locale`.
+     * verification-sent flow, or authenticated conversation created). Props:
+     * `accommodation_id`, `accommodation_type`, `destination_id`,
+     * `destination_name`, `price`, `currency`, `is_authenticated`, `locale`.
      */
     BookingRequestSent: 'booking_request_sent',
 
@@ -139,7 +148,24 @@ export const WebEvents = {
      * Props: `accommodation_id`, `average_rating`, `has_title: boolean`,
      * `has_content: boolean`.
      */
-    ReviewSubmitted: 'review_submitted'
+    ReviewSubmitted: 'review_submitted',
+
+    // ── Conversations (contact host) ─────────────────────────────────────────
+
+    /**
+     * A contact-host submission was blocked as a duplicate (HTTP 409
+     * CONVERSATION_DUPLICATE) — the visitor already has a conversation with
+     * this host. Signals booking-funnel friction. Props: `accommodation_id`,
+     * `accommodation_type`, `destination_id`, `is_authenticated`, `locale`.
+     */
+    ConversationDuplicate: 'conversation_duplicate',
+
+    /**
+     * A contact-host submission was rate-limited (HTTP 429). Signals
+     * booking-funnel friction. Props: `accommodation_id`, `accommodation_type`,
+     * `destination_id`, `is_authenticated`, `retry_after`, `locale`.
+     */
+    ConversationRateLimited: 'conversation_rate_limited'
 } as const;
 
 /** Union of all explicit web event names — safe to use as a function argument type. */

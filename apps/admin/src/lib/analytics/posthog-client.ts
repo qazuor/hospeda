@@ -90,7 +90,11 @@ export function initPostHog(): void {
         disable_session_recording: true,
         respect_dnt: true,
         loaded: (instance) => {
-            instance.register({ app_type: 'admin', project: 'hospeda' });
+            instance.register({
+                app_type: 'admin',
+                project: 'hospeda',
+                app_version: env.VITE_APP_VERSION
+            });
         }
     });
 

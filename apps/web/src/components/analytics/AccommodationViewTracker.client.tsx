@@ -15,7 +15,7 @@
 import { EntityTypeEnum } from '@repo/schemas';
 import { useEffect } from 'react';
 import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { associateGroup, resetGroups, trackEvent } from '@/lib/analytics/posthog-client';
 import { sendViewBeacon } from '@/lib/analytics/view-capture';
 import type { SupportedLocale } from '@/lib/i18n';
 
@@ -23,6 +23,20 @@ interface AccommodationViewTrackerProps {
     readonly slug: string;
     readonly accommodationId: string;
     readonly locale: SupportedLocale;
+    /** Accommodation type (HOTEL, CABIN, …) so funnels can segment by type. */
+    readonly accommodationType: string;
+    /** Whether the accommodation is featured (entitlement- or admin-driven). */
+    readonly isFeatured: boolean;
+    /** Destination id the accommodation belongs to. */
+    readonly destinationId: string;
+    /** Destination display name (denormalized for readable PostHog breakdowns). */
+    readonly destinationName: string;
+    /** Nightly base price in the smallest currency unit, or null when unpriced. */
+    readonly price: number | null;
+    /** ISO currency code for `price`, or null when unpriced. */
+    readonly currency: string | null;
+    /** Owner (host) id — an event dimension and PostHog group association. */
+    readonly ownerId: string;
 }
 
 /**
@@ -53,19 +67,58 @@ interface AccommodationViewTrackerProps {
 export function AccommodationViewTracker({
     slug,
     accommodationId,
-    locale
+    locale,
+    accommodationType,
+    isFeatured,
+    destinationId,
+    destinationName,
+    price,
+    currency,
+    ownerId
 }: AccommodationViewTrackerProps): null {
     useEffect(() => {
-        // PostHog event — unchanged from SPEC-140 (additive only).
+        // Associate subsequent events on this page with the accommodation group
+        // so PostHog can aggregate at the accommodation level. No-op until the
+        // group type is configured in the PostHog project (ops/plan-dependent).
+        associateGroup('accommodation', accommodationId);
+
+        // PostHog event — enriched with type/featured/destination/price/owner so
+        // funnels can segment views without a join (SPEC-140 base props kept).
         trackEvent(WebEvents.AccommodationViewed, {
             slug,
             accommodation_id: accommodationId,
-            locale
+            locale,
+            accommodation_type: accommodationType,
+            is_featured: isFeatured,
+            destination_id: destinationId,
+            destination_name: destinationName,
+            price,
+            currency,
+            owner_id: ownerId
         });
 
         // View beacon to the server-side view capture endpoint (SPEC-159).
         sendViewBeacon({ entityType: EntityTypeEnum.ACCOMMODATION, entityId: accommodationId });
-    }, [slug, accommodationId, locale]);
+
+        // Clear the accommodation group when leaving this page (unmount on
+        // navigation away) so it never leaks onto events captured on unrelated
+        // pages. Navigating to another accommodation unmounts+remounts, so the
+        // next page re-associates its own id.
+        return () => {
+            resetGroups();
+        };
+    }, [
+        slug,
+        accommodationId,
+        locale,
+        accommodationType,
+        isFeatured,
+        destinationId,
+        destinationName,
+        price,
+        currency,
+        ownerId
+    ]);
 
     return null;
 }

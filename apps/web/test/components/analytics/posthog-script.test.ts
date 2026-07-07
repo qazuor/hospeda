@@ -89,4 +89,12 @@ describe('PostHogScript.astro — snippet rendering pattern', () => {
         expect(source).toContain('const isDev = import.meta.env.DEV === true');
         expect(source).toContain('const shouldRender = !isDev && posthogKey.length > 0');
     });
+
+    it('registers app_version as a super property on load', () => {
+        // The deploy version is baked in at build time and registered as a
+        // PostHog super property so every captured event carries its release.
+        expect(source).toContain('const appVersion = import.meta.env.PUBLIC_VERSION');
+        expect(source).toMatch(/define:vars=\{\{[^}]*\bappVersion\b[^}]*\}\}/);
+        expect(source).toContain('ph.register({ app_version: appVersion })');
+    });
 });
