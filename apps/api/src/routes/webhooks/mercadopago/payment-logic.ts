@@ -872,6 +872,20 @@ export async function processPaymentUpdated({
     if (paymentInfo && customerId) {
         const { amount, currency, status, statusDetail, paymentMethod } = paymentInfo;
 
+        // Resolve the owner's Better Auth user id so PostHog events land on the
+        // SAME identified person the web app creates via identify() (which keys
+        // on the user id, not the billing customer id) and on checkout_started
+        // (which already uses the user id). Read-only, analytics-only: it never
+        // changes billing behavior and falls back to customerId if the lookup
+        // fails or the customer has no linked user, so an event is always sent.
+        let analyticsDistinctId = customerId;
+        try {
+            const resolvedUserId = await resolveOwnerUserId({ customerId });
+            if (resolvedUserId) analyticsDistinctId = resolvedUserId;
+        } catch {
+            // Non-blocking: keep customerId as the distinct id.
+        }
+
         if (status === 'approved' || status === 'accredited') {
             apiLogger.debug(
                 { customerId, amount, currency, status, source },
@@ -904,7 +918,7 @@ export async function processPaymentUpdated({
                         : 'subscription_renewal';
 
                 getPostHogClient()?.capture({
-                    distinctId: customerId,
+                    distinctId: analyticsDistinctId,
                     event: 'subscription_payment_succeeded',
                     properties: { amount, currency, paymentMethod, kind, source }
                 });
@@ -941,7 +955,7 @@ export async function processPaymentUpdated({
             // misbehaving PostHog client can NEVER break webhook processing.
             try {
                 getPostHogClient()?.capture({
-                    distinctId: customerId,
+                    distinctId: analyticsDistinctId,
                     event: 'payment_failed',
                     properties: { amount, currency, status, failureReason, source }
                 });

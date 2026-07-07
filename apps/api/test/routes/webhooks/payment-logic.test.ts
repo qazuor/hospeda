@@ -361,8 +361,11 @@ describe('processPaymentUpdated', () => {
             });
 
             expect(result.success).toBe(true);
+            // distinctId is the resolved owner user id (the same id identify()
+            // uses on the web client), not the billing customer id — resolved
+            // via resolveOwnerUserId, mocked to 'usr-resolved-1' in beforeEach.
             expect(mockPostHogCapture).toHaveBeenCalledWith({
-                distinctId: 'cust-1',
+                distinctId: 'usr-resolved-1',
                 event: 'subscription_payment_succeeded',
                 properties: {
                     amount: 1000,
@@ -372,6 +375,30 @@ describe('processPaymentUpdated', () => {
                     source: 'webhook'
                 }
             });
+        });
+
+        it('falls back to customerId as distinctId when the customer maps to no user', async () => {
+            vi.mocked(resolveOwnerUserId).mockResolvedValueOnce(null);
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 1000,
+                currency: 'ARS',
+                status: 'approved',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+
+            await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(mockPostHogCapture).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    distinctId: 'cust-1',
+                    event: 'subscription_payment_succeeded'
+                })
+            );
         });
 
         it('does NOT capture subscription_payment_succeeded for a rejected payment', async () => {
@@ -442,8 +469,9 @@ describe('processPaymentUpdated', () => {
             });
 
             expect(result.success).toBe(true);
+            // distinctId is the resolved owner user id (see approved-branch note).
             expect(mockPostHogCapture).toHaveBeenCalledWith({
-                distinctId: 'cust-1',
+                distinctId: 'usr-resolved-1',
                 event: 'payment_failed',
                 properties: {
                     amount: 500,
@@ -453,6 +481,26 @@ describe('processPaymentUpdated', () => {
                     source: 'webhook'
                 }
             });
+        });
+
+        it('falls back to customerId as distinctId when the customer maps to no user', async () => {
+            vi.mocked(resolveOwnerUserId).mockResolvedValueOnce(null);
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 500,
+                currency: 'ARS',
+                status: 'rejected',
+                statusDetail: 'cc_rejected_other_reason',
+                paymentMethod: 'credit_card'
+            });
+
+            await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(mockPostHogCapture).toHaveBeenCalledWith(
+                expect.objectContaining({ distinctId: 'cust-1', event: 'payment_failed' })
+            );
         });
 
         it('falls back to status as failureReason when statusDetail is absent', async () => {
