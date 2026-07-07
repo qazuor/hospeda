@@ -1,6 +1,6 @@
 import type { CliCommand } from './types.js';
 
-/** All 50 curated commands for the Hospeda CLI */
+/** All 51 curated commands for the Hospeda CLI */
 const CURATED_COMMANDS: readonly CliCommand[] = [
     // ── Development (5) ──────────────────────────────────────
     {
@@ -182,6 +182,33 @@ const CURATED_COMMANDS: readonly CliCommand[] = [
         dangerous: true,
         dangerMessage:
             'Pushes schema directly to the database without a migration. May cause data loss.'
+    },
+    {
+        id: 'db:seed:migrate',
+        description: 'Apply pending seed data-migrations (live deltas)',
+        category: 'database',
+        execution: { type: 'pnpm-root', script: 'db:seed:migrate' },
+        source: 'root',
+        mode: 'one-shot',
+        curated: true
+    },
+    {
+        id: 'db:seed:migrate:status',
+        description: 'Show applied vs pending seed data-migrations',
+        category: 'database',
+        execution: { type: 'pnpm-root', script: 'db:seed:migrate:status' },
+        source: 'root',
+        mode: 'one-shot',
+        curated: true
+    },
+    {
+        id: 'db:seed:make',
+        description: 'Scaffold a new numbered seed data-migration',
+        category: 'database',
+        execution: { type: 'pnpm-root', script: 'db:seed:make' },
+        source: 'root',
+        mode: 'one-shot',
+        curated: true
     },
 
     // ── Testing (5) ──────────────────────────────────────────
