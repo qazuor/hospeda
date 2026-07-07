@@ -526,6 +526,29 @@ describe('processPaymentUpdated', () => {
             );
         });
 
+        it('never throws out of the webhook when resolveOwnerUserId rejects (falls back to customerId)', async () => {
+            vi.mocked(resolveOwnerUserId).mockRejectedValueOnce(new Error('DB connection lost'));
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 500,
+                currency: 'ARS',
+                status: 'rejected',
+                statusDetail: 'cc_rejected_other_reason',
+                paymentMethod: 'credit_card'
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            // Webhook resolves normally and the event is still captured, keyed on
+            // the customerId fallback.
+            expect(result.success).toBe(true);
+            expect(mockPostHogCapture).toHaveBeenCalledWith(
+                expect.objectContaining({ distinctId: 'cust-1', event: 'payment_failed' })
+            );
+        });
+
         it('falls back to status as failureReason when statusDetail is absent', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: 500,

@@ -850,6 +850,27 @@ async function applyWebhookRefundLifecycle({
 }
 
 /**
+ * Resolve the PostHog distinct id for a payment analytics event: the owner's
+ * Better Auth user id (so the event lands on the SAME identified person the web
+ * app creates via identify() and on checkout_started), falling back to the
+ * billing customer id when the customer has no linked user or the lookup fails.
+ *
+ * Read-only and analytics-only — it never changes billing behavior and never
+ * throws (a failed lookup returns the customerId). Called only inside the
+ * capture branches so no lookup happens for payment statuses that never capture.
+ *
+ * @param customerId - The billing customer id from the payment metadata.
+ * @returns The user id if resolvable, otherwise the customerId.
+ */
+async function resolveAnalyticsDistinctId(customerId: string): Promise<string> {
+    try {
+        return (await resolveOwnerUserId({ customerId })) ?? customerId;
+    } catch {
+        return customerId;
+    }
+}
+
+/**
  * Process a payment.updated event's business logic.
  *
  * Dispatches payment success/failure notifications and confirms add-on
@@ -871,20 +892,6 @@ export async function processPaymentUpdated({
     // Dispatch payment status notifications
     if (paymentInfo && customerId) {
         const { amount, currency, status, statusDetail, paymentMethod } = paymentInfo;
-
-        // Resolve the owner's Better Auth user id so PostHog events land on the
-        // SAME identified person the web app creates via identify() (which keys
-        // on the user id, not the billing customer id) and on checkout_started
-        // (which already uses the user id). Read-only, analytics-only: it never
-        // changes billing behavior and falls back to customerId if the lookup
-        // fails or the customer has no linked user, so an event is always sent.
-        let analyticsDistinctId = customerId;
-        try {
-            const resolvedUserId = await resolveOwnerUserId({ customerId });
-            if (resolvedUserId) analyticsDistinctId = resolvedUserId;
-        } catch {
-            // Non-blocking: keep customerId as the distinct id.
-        }
 
         if (status === 'approved' || status === 'accredited') {
             apiLogger.debug(
@@ -909,6 +916,7 @@ export async function processPaymentUpdated({
             // computed from metadata already parsed further down in this
             // function — no additional DB queries.
             try {
+                const analyticsDistinctId = await resolveAnalyticsDistinctId(customerId);
                 const kind = extractAnnualSubscriptionMetadata(data.metadata)
                     ? 'annual'
                     : extractPlanChangeUpgradeMetadata(data.metadata)
@@ -968,6 +976,7 @@ export async function processPaymentUpdated({
             // approved-branch capture above and is wrapped in try/catch so a
             // misbehaving PostHog client can NEVER break webhook processing.
             try {
+                const analyticsDistinctId = await resolveAnalyticsDistinctId(customerId);
                 getPostHogClient()?.capture({
                     distinctId: analyticsDistinctId,
                     event: 'payment_failed',
