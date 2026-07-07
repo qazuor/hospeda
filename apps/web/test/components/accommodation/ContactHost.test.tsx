@@ -755,6 +755,79 @@ describe('ContactHost', () => {
             expect(captureSpy.mock.calls.some((call) => call[0] === 'booking_request_sent')).toBe(
                 false
             );
+
+            // Instead it fires conversation_duplicate with the enriched props.
+            const duplicateCall = captureSpy.mock.calls.find(
+                (call) => call[0] === 'conversation_duplicate'
+            );
+            expect(duplicateCall?.[1]).toEqual({
+                accommodation_id: ACTIVE_ACCOMMODATION.id,
+                accommodation_type: 'CABIN',
+                destination_id: 'dest-colon',
+                destination_name: 'Colón',
+                price: 12000,
+                currency: 'ARS',
+                is_authenticated: false,
+                locale: LOCALE
+            });
+        });
+
+        it('fires conversation_rate_limited on a 429 response with retry_after', async () => {
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: false,
+                    status: 429,
+                    headers: { get: (name: string) => (name === 'Retry-After' ? '90' : null) },
+                    json: async () => ({})
+                })
+            );
+
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    currentUser={null}
+                    existingConversationId={null}
+                    locale={LOCALE}
+                />
+            );
+
+            fireEvent.change(screen.getByLabelText(/name/i, { exact: false }), {
+                target: { value: 'Ana' }
+            });
+            fireEvent.change(screen.getByLabelText(/email/i, { exact: false }), {
+                target: { value: 'ana@test.com' }
+            });
+            fireEvent.change(screen.getByRole('textbox', { name: /message/i }), {
+                target: { value: 'Hola, quiero reservar' }
+            });
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form')!);
+            });
+
+            await waitFor(() => {
+                expect(
+                    captureSpy.mock.calls.some((call) => call[0] === 'conversation_rate_limited')
+                ).toBe(true);
+            });
+            const rateLimitedCall = captureSpy.mock.calls.find(
+                (call) => call[0] === 'conversation_rate_limited'
+            );
+            expect(rateLimitedCall?.[1]).toEqual({
+                accommodation_id: ACTIVE_ACCOMMODATION.id,
+                accommodation_type: 'CABIN',
+                destination_id: 'dest-colon',
+                destination_name: 'Colón',
+                price: 12000,
+                currency: 'ARS',
+                is_authenticated: false,
+                retry_after: 90,
+                locale: LOCALE
+            });
+            expect(captureSpy.mock.calls.some((call) => call[0] === 'booking_request_sent')).toBe(
+                false
+            );
         });
     });
 });

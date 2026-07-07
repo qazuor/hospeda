@@ -35,7 +35,9 @@ describe('WebEvents catalog (SPEC-140 acceptance)', () => {
             PropertyImportSucceeded: 'property_import_succeeded',
             PropertyImportFailed: 'property_import_failed',
             FavoriteToggled: 'favorite_toggled',
-            ReviewSubmitted: 'review_submitted'
+            ReviewSubmitted: 'review_submitted',
+            ConversationDuplicate: 'conversation_duplicate',
+            ConversationRateLimited: 'conversation_rate_limited'
         });
     });
 

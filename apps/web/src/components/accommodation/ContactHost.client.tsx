@@ -213,6 +213,10 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
 
                 if (res.status === 429) {
                     const retryAfter = Number(res.headers.get('Retry-After') ?? '60');
+                    trackEvent(WebEvents.ConversationRateLimited, {
+                        ...bookingProps,
+                        retry_after: retryAfter
+                    });
                     setSubmitState({ phase: 'rateLimit', retryAfter });
                     return;
                 }
@@ -254,6 +258,10 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
 
                 if (res.status === 429) {
                     const retryAfter = Number(res.headers.get('Retry-After') ?? '60');
+                    trackEvent(WebEvents.ConversationRateLimited, {
+                        ...bookingProps,
+                        retry_after: retryAfter
+                    });
                     setSubmitState({ phase: 'rateLimit', retryAfter });
                     return;
                 }
@@ -264,6 +272,7 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                 };
 
                 if (res.status === 409 && body.error?.reason === 'CONVERSATION_DUPLICATE') {
+                    trackEvent(WebEvents.ConversationDuplicate, bookingProps);
                     setSubmitState({ phase: 'duplicate' });
                     return;
                 }

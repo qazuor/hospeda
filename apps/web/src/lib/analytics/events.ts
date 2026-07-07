@@ -139,7 +139,24 @@ export const WebEvents = {
      * Props: `accommodation_id`, `average_rating`, `has_title: boolean`,
      * `has_content: boolean`.
      */
-    ReviewSubmitted: 'review_submitted'
+    ReviewSubmitted: 'review_submitted',
+
+    // ── Conversations (contact host) ─────────────────────────────────────────
+
+    /**
+     * A contact-host submission was blocked as a duplicate (HTTP 409
+     * CONVERSATION_DUPLICATE) — the visitor already has a conversation with
+     * this host. Signals booking-funnel friction. Props: `accommodation_id`,
+     * `accommodation_type`, `destination_id`, `is_authenticated`, `locale`.
+     */
+    ConversationDuplicate: 'conversation_duplicate',
+
+    /**
+     * A contact-host submission was rate-limited (HTTP 429). Signals
+     * booking-funnel friction. Props: `accommodation_id`, `accommodation_type`,
+     * `destination_id`, `is_authenticated`, `retry_after`, `locale`.
+     */
+    ConversationRateLimited: 'conversation_rate_limited'
 } as const;
 
 /** Union of all explicit web event names — safe to use as a function argument type. */
