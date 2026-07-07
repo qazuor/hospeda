@@ -192,6 +192,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Full history so the seed dual-write guard (HOS-25 T-024) can diff
+          # the PR base ref against HEAD (same reason the `security` job uses
+          # fetch-depth: 0 for its semgrep --baseline-commit diff).
+          fetch-depth: 0
       - uses: ./.github/actions/setup
       - name: Check CSP-incompatible patterns
         run: bash scripts/check-csp-patterns.sh
@@ -228,6 +233,14 @@ jobs:
         run: pnpm --filter @repo/i18n check-locales
       - name: Check schema drift (SPEC-178)
         run: bash scripts/check-schema-drift.sh
+      - name: Check seed dual-write rule (HOS-25 T-024)
+        # PR_BODY is passed via env (never inlined into `run:`) — it is
+        # untrusted, attacker-controllable text; only ever searched for a
+        # literal substring, never executed.
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: bash scripts/check-seed-dual-write.sh
       - name: Web must not call admin API tier (BETA-73)
         run: |
           if grep -rn "/api/v1/admin" apps/web/src; then
