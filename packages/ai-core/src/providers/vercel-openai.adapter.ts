@@ -86,9 +86,11 @@ const MODERATION_ENDPOINT = 'https://api.openai.com/v1/moderations' as const;
  * ... Missing '<field>'"`.
  *
  * These features opt OUT of strict JSON schema (`strictJsonSchema: false`) so the
- * model may omit slots. The result is still validated downstream — each caller
- * `safeParse`s the returned object (e.g. search-chat re-parses the entity bag) —
- * so relaxing the provider-side contract does not lose runtime type safety.
+ * model may omit slots. The result is still validated downstream — both callers
+ * `safeParse` the returned object (search-chat re-parses the entity bag and
+ * falls back to `{}`; accommodation-import re-parses its output and falls back
+ * to `null`) — so relaxing the provider-side contract does not lose runtime
+ * type safety.
  *
  * This list is intentionally OpenAI-specific: the Anthropic adapter does not
  * suffer this constraint. If you add a NEW `generateObject` feature whose output
