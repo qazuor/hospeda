@@ -23,7 +23,7 @@ export default defineConfig({
         'test-utils/index': 'src/test-utils/index.ts'
     },
     format: ['esm', 'cjs'],
-    dts: true,
+    dts: process.env.SKIP_PACKAGE_DTS !== 'true',
     sourcemap: true,
     clean: true,
     splitting: false,

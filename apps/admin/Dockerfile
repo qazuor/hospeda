@@ -80,7 +80,17 @@ ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
 COPY apps apps
 COPY packages packages
-RUN pnpm install --frozen-lockfile
+# BuildKit cache mount for the pnpm content-addressable store. PNPM_HOME=/pnpm
+# (set in the base stage) puts the store at /pnpm/store, so caching that path
+# lets repeat builds skip re-downloading + re-extracting the workspace packages.
+# Matches the official pnpm Docker guide.
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+# SKIP_PACKAGE_DTS=true skips .d.ts generation for the @repo/* workspace packages
+# during the deploy build. The admin bundle (Vite) consumes @repo/* JS from src/
+# aliases or dist/ JS — never the .d.ts (Vite build does not typecheck), so the
+# tsup DTS worker that OOM'd this build on 2026-06-06 (below) is pure waste here.
+# Unset in dev/CI so typecheck and library consumers still get declarations.
+ENV SKIP_PACKAGE_DTS=true
 # --concurrency=1 builds workspace packages sequentially. The Coolify VPS has
 # 3.8 GB of RAM shared with the running prod/staging containers; parallel tsup
 # DTS builds (4 at a time, each loading the full type graph) caused enough

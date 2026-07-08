@@ -39,7 +39,8 @@
         "build": {
             "dependsOn": ["^build"],
             "inputs": ["$TURBO_DEFAULT$", ".env*"],
-            "outputs": ["dist/**", ".astro/**"]
+            "outputs": ["dist/**", ".astro/**"],
+            "env": ["SKIP_PACKAGE_DTS"]
         },
         "admin#build": {
             "dependsOn": ["^build"],
