@@ -41,6 +41,13 @@ vi.mock('../../../src/utils/logger', () => ({
 }));
 
 describe('admin sentry.config', () => {
+    // Each test re-imports sentry.config dynamically after vi.resetModules(),
+    // which cold-resolves @sentry/react + @repo/utils on the first run. Under a
+    // loaded CI shard that resolution can exceed the default 5s test timeout
+    // (the assertions themselves are instant). Raise the budget so this is not
+    // flaky when shard distribution puts this file on a heavily loaded worker.
+    vi.setConfig({ testTimeout: 20_000 });
+
     beforeEach(() => {
         vi.resetModules();
         vi.clearAllMocks();
