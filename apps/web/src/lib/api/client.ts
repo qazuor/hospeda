@@ -2,7 +2,7 @@
  * Centralized API client for consuming apps/api public endpoints.
  * Provides typed fetch wrapper with error handling, timeout, and query serialization.
  */
-import { getApiUrl } from '../env';
+import { getApiUrl, getInternalApiUrl, getInternalRequestSecret } from '../env';
 import { getOrSetCached } from './ssr-cache';
 import type {
     ApiError,
@@ -15,9 +15,25 @@ import type {
 /** Resolved lazily on first request so module import never throws. */
 let _cachedBaseUrl: string | undefined;
 
+/**
+ * Resolves the API base URL. During SSR, prefers the internal API URL
+ * (HOS-103) so server-to-server fetches stay on the internal network; the
+ * browser bundle and any SSR call without an internal URL configured fall back
+ * to the public URL.
+ */
+function resolveBaseUrl(): string {
+    if (import.meta.env.SSR) {
+        const internal = getInternalApiUrl();
+        if (internal) {
+            return internal;
+        }
+    }
+    return getApiUrl().replace(/\/$/, '');
+}
+
 function getBaseUrl(): string {
     if (!_cachedBaseUrl) {
-        _cachedBaseUrl = getApiUrl().replace(/\/$/, '');
+        _cachedBaseUrl = resolveBaseUrl();
     }
     return _cachedBaseUrl;
 }
@@ -116,6 +132,17 @@ async function request<T>({
             }
             if (cookieHeader) {
                 headers.cookie = cookieHeader;
+            }
+            // HOS-103: over the internal URL during SSR, attach the shared secret
+            // so the API exempts this server-to-server traffic from the public
+            // per-IP rate limit. Gated on SSR + a configured internal URL so the
+            // secret never reaches the browser bundle nor travels over the public
+            // network. Fails safe: no secret configured → no header → no bypass.
+            if (import.meta.env.SSR && getInternalApiUrl()) {
+                const internalSecret = getInternalRequestSecret();
+                if (internalSecret) {
+                    headers['X-Internal-Request'] = internalSecret;
+                }
             }
 
             const response = await fetch(url, {

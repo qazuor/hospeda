@@ -212,6 +212,17 @@ export const ApiEnvBaseSchema = z.object({
     /** Trust x-forwarded-for / cf-connecting-ip. Default true — matches Cloudflare/Nginx/Coolify Traefik deploy targets. Set false ONLY for direct-exposed local dev runs. */
     API_RATE_LIMIT_TRUST_PROXY: z.coerce.boolean().default(true),
     API_RATE_LIMIT_TRUSTED_PROXIES: z.string().default(''),
+    /**
+     * Shared secret that exempts internal server-to-server SSR traffic from the
+     * public rate limit (HOS-103). The web app sends it as the `X-Internal-Request`
+     * header on SSR fetches; a request whose header matches this value bypasses
+     * `rateLimitMiddleware` entirely. MUST equal the web app's
+     * `HOSPEDA_INTERNAL_REQUEST_SECRET`. Fails safe: when unset (default empty),
+     * NO request is ever exempted — the header is ignored — so a misconfiguration
+     * degrades to normal rate limiting, never to an open bypass. Compared in
+     * constant time to avoid leaking it via timing.
+     */
+    HOSPEDA_INTERNAL_REQUEST_SECRET: z.string().default(''),
 
     // Rate Limiting - auth / public / admin tiers
     API_RATE_LIMIT_AUTH_ENABLED: z.coerce.boolean().default(true),
