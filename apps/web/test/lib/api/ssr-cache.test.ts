@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     clearSsrCache,
     getOrSetCached,
+    SSR_CACHE_MAX_ENTRIES,
     SSR_PUBLIC_CACHE_TTL_MS,
     ssrCacheSize
 } from '../../../src/lib/api/ssr-cache';
@@ -149,6 +150,16 @@ describe('ssr-cache', () => {
         expect(second.ok).toBe(true);
         expect(loader).toHaveBeenCalledTimes(2);
         expect(ssrCacheSize()).toBe(1);
+    });
+
+    it('caps the resolved store at SSR_CACHE_MAX_ENTRIES', async () => {
+        // Arrange / Act: insert more distinct keys than the cap allows.
+        for (let i = 0; i < SSR_CACHE_MAX_ENTRIES + 5; i++) {
+            await getOrSetCached({ key: `k${i}`, ttlMs: 60_000, loader: async () => i });
+        }
+
+        // Assert: eviction kept the store bounded.
+        expect(ssrCacheSize()).toBeLessThanOrEqual(SSR_CACHE_MAX_ENTRIES);
     });
 
     it('clearSsrCache empties the store', async () => {

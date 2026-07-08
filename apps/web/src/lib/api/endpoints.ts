@@ -23,6 +23,10 @@ import { apiClient } from './client';
 import { SSR_PUBLIC_CACHE_TTL_MS } from './ssr-cache';
 import type { ApiResult, PaginatedResponse } from './types';
 
+// Re-exported so call sites that opt endpoints into the SSR cache (HOS-103) can
+// import the TTL constant from the same module as the endpoint functions.
+export { SSR_PUBLIC_CACHE_TTL_MS } from './ssr-cache';
+
 /** Review item with user info (from GET /accommodations/:id/reviews). */
 interface AccommodationReviewPublicItem {
     readonly id: string;
@@ -81,13 +85,15 @@ export const testimonialsApi = {
     list(params?: {
         page?: number;
         pageSize?: number;
+        /**
+         * HOS-103: opt in to the short-TTL SSR cache. Pass
+         * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites (the homepage);
+         * never from unbounded/search contexts.
+         */
+        cacheTtlMs?: number;
     }): Promise<ApiResult<PaginatedResponse<TestimonialItem>>> {
-        // HOS-103: short-TTL SSR cache — homepage-only, safe to serve slightly stale.
-        return apiClient.getList({
-            path: `${BASE}/testimonials`,
-            params,
-            cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
-        });
+        const { cacheTtlMs, ...query } = params ?? {};
+        return apiClient.getList({ path: `${BASE}/testimonials`, params: query, cacheTtlMs });
     }
 };
 
@@ -166,15 +172,17 @@ export const accommodationsApi = {
         longitude?: number;
         /** Geo radius — radius in kilometers around (latitude, longitude). */
         radius?: number;
+        /**
+         * HOS-103: opt in to the short-TTL SSR cache. Pass
+         * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites (the homepage
+         * "featured" strip). Do NOT pass it from the filterable listing/map/search
+         * pages — their user-controlled params are high-cardinality and would
+         * churn the cache without benefit.
+         */
+        cacheTtlMs?: number;
     }): Promise<ApiResult<PaginatedResponse<AccommodationPublic>>> {
-        // HOS-103: short-TTL SSR cache. Keyed by the full param set, so each
-        // filter/bbox variant gets its own 60s entry; the homepage "featured"
-        // read and repeated listing renders collapse to one API hit per window.
-        return apiClient.getList({
-            path: `${BASE}/accommodations`,
-            params,
-            cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
-        });
+        const { cacheTtlMs, ...query } = params ?? {};
+        return apiClient.getList({ path: `${BASE}/accommodations`, params: query, cacheTtlMs });
     },
 
     /**
@@ -473,15 +481,16 @@ export const destinationsApi = {
         // Allowed values: 'name', 'createdAt', 'mostSaved'.
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
+        /**
+         * HOS-103: opt in to the short-TTL SSR cache. Pass
+         * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites (the homepage
+         * CITY list, requested twice per render — hero search + destinations
+         * section — so in-flight de-dup + TTL collapse them to one API hit).
+         */
+        cacheTtlMs?: number;
     }): Promise<ApiResult<PaginatedResponse<DestinationPublic>>> {
-        // HOS-103: short-TTL SSR cache. The homepage requests the CITY list twice
-        // per render (hero search + destinations section); in-flight de-dup +
-        // 60s TTL collapse that (and repeated renders) to one API hit per window.
-        return apiClient.getList({
-            path: `${BASE}/destinations`,
-            params,
-            cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
-        });
+        const { cacheTtlMs, ...query } = params ?? {};
+        return apiClient.getList({ path: `${BASE}/destinations`, params: query, cacheTtlMs });
     },
 
     /** Get destination by slug */
@@ -729,14 +738,15 @@ export const postsApi = {
          * @see SPEC-086 D-001, AC-F13
          */
         tags?: string;
+        /**
+         * HOS-103: opt in to the short-TTL SSR cache. Pass
+         * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites (the homepage
+         * "latest posts" strip); never from the filterable blog listing.
+         */
+        cacheTtlMs?: number;
     }): Promise<ApiResult<PaginatedResponse<PostPublic>>> {
-        // HOS-103: short-TTL SSR cache — homepage "latest posts" + blog listing
-        // renders collapse to one API hit per param set per window.
-        return apiClient.getList({
-            path: `${BASE}/posts`,
-            params,
-            cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
-        });
+        const { cacheTtlMs, ...query } = params ?? {};
+        return apiClient.getList({ path: `${BASE}/posts`, params: query, cacheTtlMs });
     },
 
     /** Get post by slug */

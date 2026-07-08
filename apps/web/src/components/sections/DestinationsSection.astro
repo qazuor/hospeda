@@ -17,7 +17,7 @@ import { getImage } from 'astro:assets';
 import { DestinationsIsland } from '@/components/sections/DestinationsIsland.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { destinationsApi, toDestinationCardProps } from '@/lib/api';
+import { destinationsApi, SSR_PUBLIC_CACHE_TTL_MS, toDestinationCardProps } from '@/lib/api';
 import type { DestinationCardData } from '@/lib/api/transforms';
 import { webLogger } from '@/lib/logger';
 import { isAllowedRemoteHost } from '@/lib/media';
@@ -39,7 +39,13 @@ const { t } = createTranslations(locale);
 // Fetch from API - empty array if unavailable
 let destinations: DestinationCardData[] = [];
 try {
-    const result = await destinationsApi.list({ destinationType: 'CITY', pageSize: 50 });
+    const result = await destinationsApi.list({
+        destinationType: 'CITY',
+        pageSize: 50,
+        // HOS-103: bounded homepage read; shares the cache key with the hero
+        // search read in index.astro so the two collapse to one API hit.
+        cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+    });
     if (result.ok) {
         destinations = result.data.items.map((raw) => toDestinationCardProps({ item: raw as Record<string, unknown>, locale }));
     }

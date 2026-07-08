@@ -124,6 +124,17 @@ const ApiEnvSchema = ApiEnvBaseSchema.superRefine((data, ctx) => {
                 'HOSPEDA_FACEBOOK_CLIENT_SECRET is required when HOSPEDA_FACEBOOK_CLIENT_ID is set'
         });
     }
+    // HOS-103: the internal-request secret, when set, must be at least 32 chars —
+    // matching the web app's floor (apps/web/src/env-schema.ts) so a strong
+    // secret is enforced symmetrically. Empty means the feature is disabled (no
+    // rate-limit bypass), so the floor only applies to non-empty values.
+    if (data.HOSPEDA_INTERNAL_REQUEST_SECRET && data.HOSPEDA_INTERNAL_REQUEST_SECRET.length < 32) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['HOSPEDA_INTERNAL_REQUEST_SECRET'],
+            message: 'HOSPEDA_INTERNAL_REQUEST_SECRET must be at least 32 characters when set'
+        });
+    }
     // Production safety: reject test/debug flags that would weaken security if accidentally set.
     // These have use-site gates today, but a future refactor could drop them silently. The
     // schema-level guard ensures the deploy fails fast at startup.

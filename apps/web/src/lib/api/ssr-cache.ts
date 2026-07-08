@@ -45,9 +45,44 @@ interface CacheEntry<T> {
  */
 export const SSR_PUBLIC_CACHE_TTL_MS = 60_000;
 
+/**
+ * Hard cap on the number of resolved entries kept at once. A safety net against
+ * unbounded growth in the long-running Astro Node SSR process if a
+ * high-cardinality call site ever opts in (mirrors the bounded in-memory store
+ * in the API's `rate-limit.ts`). Enforced synchronously on every write — no
+ * background timer to manage. Opt-in is scoped to bounded homepage reads today,
+ * so this rarely triggers; it exists so a future misuse cannot leak memory.
+ */
+export const SSR_CACHE_MAX_ENTRIES = 500;
+
 // Resolved values keyed by request key. Separate from the in-flight map so a
 // settled value survives after its promise is cleared.
 const resolvedStore = new Map<string, CacheEntry<unknown>>();
+
+/**
+ * Evicts entries when the resolved store is at capacity, right before a new
+ * write. Drops expired entries first; if still at the cap, drops the oldest
+ * entries (Map iteration is insertion order) until under it.
+ *
+ * @param nowMs - Current epoch ms (injected for testability).
+ */
+function evictIfAtCapacity(nowMs: number): void {
+    if (resolvedStore.size < SSR_CACHE_MAX_ENTRIES) {
+        return;
+    }
+    for (const [key, entry] of resolvedStore) {
+        if (entry.expiresAt <= nowMs) {
+            resolvedStore.delete(key);
+        }
+    }
+    while (resolvedStore.size >= SSR_CACHE_MAX_ENTRIES) {
+        const oldest = resolvedStore.keys().next().value;
+        if (oldest === undefined) {
+            break;
+        }
+        resolvedStore.delete(oldest);
+    }
+}
 
 // Promises for requests currently in flight, keyed by request key. Used to
 // de-duplicate concurrent identical requests within a single render.
@@ -113,6 +148,7 @@ export async function getOrSetCached<T>({
         try {
             const value = await loader();
             if (isCacheable(value)) {
+                evictIfAtCapacity(now());
                 resolvedStore.set(key, { expiresAt: now() + ttlMs, value });
             }
             return value;

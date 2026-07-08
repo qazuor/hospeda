@@ -107,10 +107,10 @@ async function request<T>({
     headers?: Record<string, string>;
     /**
      * When set (> 0), enables the short-TTL SSR cache for this request (HOS-103).
-     * Only honoured for anonymous GETs during SSR — see {@link maybeCached}. Used
-     * by public "catalog" endpoints (destinations, stats, announcements, featured
-     * accommodations, latest posts, testimonials) whose SSR fan-out otherwise
-     * exhausts the public rate-limit bucket.
+     * Only honoured for anonymous GETs during SSR (see the `cacheable` guard
+     * below). Used by public "catalog" endpoints (destinations, stats,
+     * announcements, featured accommodations, latest posts, testimonials) whose
+     * SSR fan-out otherwise exhausts the public rate-limit bucket.
      */
     cacheTtlMs?: number;
 }): Promise<ApiResult<T>> {
