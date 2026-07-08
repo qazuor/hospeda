@@ -1,9 +1,23 @@
 /**
- * SSE streaming helper for the AI chat endpoint.
+ * SSE streaming helpers for the AI Playground.
  *
- * Sends a POST to `/api/v1/protected/ai/chat` and parses the Server-Sent Events
- * stream, calling `onEvent` for each parsed event (token, done, error).
+ * Routes each request to the correct API endpoint depending on the selected
+ * `AiFeatureId`:
+ *
+ * - `search` -> `POST /api/v1/protected/ai/search-chat`. Body matches
+ *   `AiSearchChatRequestSchema` (`.strict()`, NO `accommodationId`). SSE frame
+ *   order: `filters` (once) -> `token` (N) -> `done` -> optional `error`.
+ * - every other feature (`chat`, ...) -> `POST /api/v1/protected/ai/chat`.
+ *   Body matches `AiChatRequestSchema` (`.strict()`, `accommodationId`
+ *   required for `chat`). SSE frame order: `debug` -> `token` (N) -> `done`
+ *   -> optional `error`.
+ *
+ * Both endpoints share the same transport-level shape (native `fetch` +
+ * `ReadableStream` SSE parsing), so a single parser loop is reused and simply
+ * dispatches on the `event:` line name.
  */
+
+import type { AiSearchChatFiltersEvent } from '@repo/schemas';
 
 function getApiBaseUrl(): string {
     const url = (import.meta.env as Record<string, string | undefined>).VITE_API_URL;
@@ -19,22 +33,36 @@ export type SseEvent =
     | { type: 'done'; data: Record<string, unknown> }
     | { type: 'error'; code: string; message: string }
     | { type: 'debug'; data: Record<string, unknown> }
+    | { type: 'filters'; data: AiSearchChatFiltersEvent }
     | { type: 'stream_error'; error: Error };
 
+const CHAT_ENDPOINT = '/api/v1/protected/ai/chat';
+const SEARCH_CHAT_ENDPOINT = '/api/v1/protected/ai/search-chat';
+
 /**
- * Stream a chat message via SSE and emit parsed events.
+ * Builds the `{ endpoint, body }` pair for a single playground request,
+ * routed by feature.
  *
- * For the `chat` feature an `accommodationId` is required; omitting it triggers
- * an immediate error event. The stream is aborted when the provided `signal` fires.
+ * `search` always targets `search-chat` with the `AiSearchChatRequestSchema`
+ * body shape (no `accommodationId` — that field does not exist on that
+ * schema and would fail `.strict()` validation). Every other feature keeps
+ * the pre-existing `/chat` body shape, including the `accommodationId`
+ * requirement for `chat`.
  */
-export async function streamChat(params: {
+function buildRequest(params: {
     readonly feature: string;
     readonly message: string;
     readonly accommodationId?: string;
-    readonly onEvent: (event: SseEvent) => void;
-    readonly signal?: AbortSignal;
-}): Promise<void> {
-    const baseUrl = getApiBaseUrl();
+}): { readonly endpoint: string; readonly body: Record<string, unknown> } {
+    if (params.feature === 'search') {
+        return {
+            endpoint: SEARCH_CHAT_ENDPOINT,
+            body: {
+                messages: [{ role: 'user', content: params.message }],
+                locale: 'es'
+            }
+        };
+    }
 
     const body: Record<string, unknown> = {
         messages: [{ role: 'user', content: params.message }],
@@ -45,6 +73,24 @@ export async function streamChat(params: {
         body.accommodationId = params.accommodationId;
     }
 
+    return { endpoint: CHAT_ENDPOINT, body };
+}
+
+/**
+ * Stream a chat message via SSE and emit parsed events.
+ *
+ * For the `chat` feature an `accommodationId` is required; omitting it triggers
+ * an immediate error event. The `search` feature never sends `accommodationId`
+ * (it is routed to `/search-chat` instead of `/chat`). The stream is aborted
+ * when the provided `signal` fires.
+ */
+export async function streamChat(params: {
+    readonly feature: string;
+    readonly message: string;
+    readonly accommodationId?: string;
+    readonly onEvent: (event: SseEvent) => void;
+    readonly signal?: AbortSignal;
+}): Promise<void> {
     if (params.feature === 'chat' && !params.accommodationId) {
         params.onEvent({
             type: 'error',
@@ -54,8 +100,11 @@ export async function streamChat(params: {
         return;
     }
 
+    const baseUrl = getApiBaseUrl();
+    const { endpoint, body } = buildRequest(params);
+
     try {
-        const response = await fetch(`${baseUrl}/api/v1/protected/ai/chat`, {
+        const response = await fetch(`${baseUrl}${endpoint}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -106,6 +155,11 @@ export async function streamChat(params: {
                             params.onEvent({ type: 'done', data: payload });
                         } else if (currentEvent === 'debug') {
                             params.onEvent({ type: 'debug', data: payload });
+                        } else if (currentEvent === 'filters') {
+                            params.onEvent({
+                                type: 'filters',
+                                data: payload as AiSearchChatFiltersEvent
+                            });
                         } else if (currentEvent === 'error') {
                             params.onEvent({
                                 type: 'error',
