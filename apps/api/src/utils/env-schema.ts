@@ -19,6 +19,28 @@
 import { z } from 'zod';
 
 /**
+ * String→boolean env parser.
+ *
+ * `z.coerce.boolean()` runs `Boolean(string)`, so ANY non-empty string —
+ * including the literal `'false'` — coerces to `true`; the only way to get
+ * `false` is an empty string. That footgun silently defeats every
+ * `SOMEVAR=false` an operator sets in Coolify.
+ *
+ * This helper instead treats only the literal `'true'` (case-insensitive) as
+ * `true`, everything else (`'false'`, `'0'`, `''`) as `false`, and an unset var
+ * as the provided default — matching every operator's mental model. Mirrors the
+ * transform already used for `HOSPEDA_DISABLE_AUTH` et al. Kept zod-only so this
+ * module stays import-pure (see the file header).
+ *
+ * @param defaultValue - Value used when the env var is unset.
+ */
+export const boolEnv = (defaultValue: boolean) =>
+    z
+        .string()
+        .optional()
+        .transform((v) => (v === undefined ? defaultValue : v.toLowerCase() === 'true'));
+
+/**
  * Base shape of the API environment schema.
  *
  * Exported separately from the `.superRefine`-wrapped `ApiEnvSchema` (defined
@@ -144,39 +166,44 @@ export const ApiEnvBaseSchema = z.object({
         .transform((val) => val.toLowerCase())
         .pipe(z.enum(['debug', 'info', 'warn', 'error']))
         .default('info'),
-    API_ENABLE_REQUEST_LOGGING: z.coerce.boolean().default(true),
-    API_LOG_INCLUDE_TIMESTAMPS: z.coerce.boolean().default(true),
-    API_LOG_INCLUDE_LEVEL: z.coerce.boolean().default(true),
-    API_LOG_USE_COLORS: z.coerce.boolean().default(true),
-    API_LOG_SAVE: z.coerce.boolean().default(false),
-    API_LOG_EXPAND_OBJECTS: z.coerce.boolean().default(false),
-    API_LOG_TRUNCATE_TEXT: z.coerce.boolean().default(true),
+    API_ENABLE_REQUEST_LOGGING: boolEnv(true),
+    API_LOG_INCLUDE_TIMESTAMPS: boolEnv(true),
+    API_LOG_INCLUDE_LEVEL: boolEnv(true),
+    API_LOG_USE_COLORS: boolEnv(true),
+    API_LOG_SAVE: boolEnv(false),
+    API_LOG_EXPAND_OBJECTS: boolEnv(false),
+    API_LOG_TRUNCATE_TEXT: boolEnv(true),
     API_LOG_TRUNCATE_AT: z.coerce.number().default(1000),
-    API_LOG_STRINGIFY: z.coerce.boolean().default(false),
+    API_LOG_STRINGIFY: boolEnv(false),
+    // Console output format. Left OPTIONAL (no static default) on purpose: the
+    // effective default is env-aware and resolved at bootstrap in index.ts —
+    // unset → `json` in production (clean Coolify console parsing), `pretty` in
+    // development. An explicit value always wins. This only affects the CONSOLE;
+    // the app_log_entries DB sink is a separate structured hook, unaffected.
     API_LOG_FORMAT: z
         .string()
         .transform((val) => val.toLowerCase())
         .pipe(z.enum(['pretty', 'json']))
-        .default('pretty'),
+        .optional(),
 
     // CORS
     API_CORS_ORIGINS: z.string().default('http://localhost:3000,http://localhost:4321'),
-    API_CORS_ALLOW_CREDENTIALS: z.coerce.boolean().default(true),
+    API_CORS_ALLOW_CREDENTIALS: boolEnv(true),
     API_CORS_MAX_AGE: z.coerce.number().default(86400),
     API_CORS_ALLOW_METHODS: z.string().default('GET,POST,PUT,DELETE,PATCH,OPTIONS'),
     API_CORS_ALLOW_HEADERS: z.string().default('Content-Type,Authorization,X-Requested-With'),
     API_CORS_EXPOSE_HEADERS: z.string().default('Content-Length,X-Request-ID'),
 
     // Cache
-    API_CACHE_ENABLED: z.coerce.boolean().default(true),
+    API_CACHE_ENABLED: boolEnv(true),
     API_CACHE_DEFAULT_MAX_AGE: z.coerce.number().default(300),
     API_CACHE_DEFAULT_STALE_WHILE_REVALIDATE: z.coerce.number().default(60),
     API_CACHE_DEFAULT_STALE_IF_ERROR: z.coerce.number().default(86400),
-    API_CACHE_ETAG_ENABLED: z.coerce.boolean().default(true),
-    API_CACHE_LAST_MODIFIED_ENABLED: z.coerce.boolean().default(true),
+    API_CACHE_ETAG_ENABLED: boolEnv(true),
+    API_CACHE_LAST_MODIFIED_ENABLED: boolEnv(true),
 
     // Compression
-    API_COMPRESSION_ENABLED: z.coerce.boolean().default(true),
+    API_COMPRESSION_ENABLED: boolEnv(true),
     API_COMPRESSION_LEVEL: z.coerce.number().min(1).max(9).default(6),
     API_COMPRESSION_THRESHOLD: z.coerce.number().default(1024),
     API_COMPRESSION_ALGORITHMS: z.string().default('gzip,deflate'),
@@ -189,7 +216,7 @@ export const ApiEnvBaseSchema = z.object({
     // of 100 / 15 min (≈6.7 req/min average) tripped 429 well below normal interactive use.
     // Bumped to 500 / 15 min (≈33 req/min) which comfortably absorbs human navigation while
     // still leaving headroom over the public tier ceiling.
-    API_RATE_LIMIT_ENABLED: z.coerce.boolean().default(true),
+    API_RATE_LIMIT_ENABLED: boolEnv(true),
     API_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
     API_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(500),
     API_RATE_LIMIT_KEY_GENERATOR: z.string().default('ip'),
@@ -210,23 +237,23 @@ export const ApiEnvBaseSchema = z.object({
     API_RATE_LIMIT_HEADERS: z.enum(['standard', 'legacy', 'both', 'none']).default('standard'),
     API_RATE_LIMIT_MESSAGE: z.string().default('Too many requests, please try again later.'),
     /** Trust x-forwarded-for / cf-connecting-ip. Default true — matches Cloudflare/Nginx/Coolify Traefik deploy targets. Set false ONLY for direct-exposed local dev runs. */
-    API_RATE_LIMIT_TRUST_PROXY: z.coerce.boolean().default(true),
+    API_RATE_LIMIT_TRUST_PROXY: boolEnv(true),
     API_RATE_LIMIT_TRUSTED_PROXIES: z.string().default(''),
 
     // Rate Limiting - auth / public / admin tiers
-    API_RATE_LIMIT_AUTH_ENABLED: z.coerce.boolean().default(true),
+    API_RATE_LIMIT_AUTH_ENABLED: boolEnv(true),
     API_RATE_LIMIT_AUTH_WINDOW_MS: z.coerce.number().default(300000),
     API_RATE_LIMIT_AUTH_MAX_REQUESTS: z.coerce.number().default(50),
     API_RATE_LIMIT_AUTH_MESSAGE: z
         .string()
         .default('Too many authentication requests, please try again later.'),
-    API_RATE_LIMIT_PUBLIC_ENABLED: z.coerce.boolean().default(true),
+    API_RATE_LIMIT_PUBLIC_ENABLED: boolEnv(true),
     API_RATE_LIMIT_PUBLIC_WINDOW_MS: z.coerce.number().default(3600000),
     API_RATE_LIMIT_PUBLIC_MAX_REQUESTS: z.coerce.number().default(1000),
     API_RATE_LIMIT_PUBLIC_MESSAGE: z
         .string()
         .default('Too many API requests, please try again later.'),
-    API_RATE_LIMIT_ADMIN_ENABLED: z.coerce.boolean().default(true),
+    API_RATE_LIMIT_ADMIN_ENABLED: boolEnv(true),
     API_RATE_LIMIT_ADMIN_WINDOW_MS: z.coerce.number().default(600000),
     API_RATE_LIMIT_ADMIN_MAX_REQUESTS: z.coerce.number().default(200),
     API_RATE_LIMIT_ADMIN_MESSAGE: z
@@ -234,9 +261,9 @@ export const ApiEnvBaseSchema = z.object({
         .default('Too many admin requests, please try again later.'),
 
     // Security
-    API_SECURITY_ENABLED: z.coerce.boolean().default(true),
-    API_SECURITY_CSRF_ENABLED: z.coerce.boolean().default(true),
-    API_SECURITY_HEADERS_ENABLED: z.coerce.boolean().default(true),
+    API_SECURITY_ENABLED: boolEnv(true),
+    API_SECURITY_CSRF_ENABLED: boolEnv(true),
+    API_SECURITY_HEADERS_ENABLED: boolEnv(true),
     // Default CSP for API responses. Note: security.ts middleware hardcodes its own CSP policy.
     API_SECURITY_CONTENT_SECURITY_POLICY: z
         .string()
@@ -251,15 +278,15 @@ export const ApiEnvBaseSchema = z.object({
     API_SECURITY_PERMISSIONS_POLICY: z.string().default('camera=(), microphone=(), geolocation=()'),
 
     // Response format
-    API_RESPONSE_FORMAT_ENABLED: z.coerce.boolean().default(true),
-    API_RESPONSE_INCLUDE_TIMESTAMP: z.coerce.boolean().default(true),
+    API_RESPONSE_FORMAT_ENABLED: boolEnv(true),
+    API_RESPONSE_INCLUDE_TIMESTAMP: boolEnv(true),
     /**
      * API version string injected into responses. Empty string disables version inclusion.
      * Default '1.0.0' (include version). Set to '' to omit version from response envelope and headers.
      */
     API_RESPONSE_API_VERSION: z.string().default('1.0.0'),
-    API_RESPONSE_INCLUDE_REQUEST_ID: z.coerce.boolean().default(true),
-    API_RESPONSE_INCLUDE_METADATA: z.coerce.boolean().default(true),
+    API_RESPONSE_INCLUDE_REQUEST_ID: boolEnv(true),
+    API_RESPONSE_INCLUDE_METADATA: boolEnv(true),
     API_RESPONSE_SUCCESS_MESSAGE: z.string().default('Success'),
     API_RESPONSE_ERROR_MESSAGE: z.string().default('An error occurred'),
 
@@ -270,11 +297,11 @@ export const ApiEnvBaseSchema = z.object({
         .string()
         .default('application/json,multipart/form-data'),
     API_VALIDATION_REQUIRED_HEADERS: z.string().default('user-agent'),
-    API_VALIDATION_AUTH_ENABLED: z.coerce.boolean().default(true),
+    API_VALIDATION_AUTH_ENABLED: boolEnv(true),
     API_VALIDATION_AUTH_HEADERS: z.string().default('authorization'),
-    API_VALIDATION_SANITIZE_ENABLED: z.coerce.boolean().default(true),
+    API_VALIDATION_SANITIZE_ENABLED: boolEnv(true),
     API_VALIDATION_SANITIZE_MAX_STRING_LENGTH: z.coerce.number().default(1000),
-    API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS: z.coerce.boolean().default(true),
+    API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS: boolEnv(true),
     /**
      * Allowed-chars regex for input sanitization. The default explicitly includes
      * Spanish (á é í ó ú ü ñ + uppercase), Portuguese (ã õ ç + uppercase) and
@@ -288,7 +315,7 @@ export const ApiEnvBaseSchema = z.object({
         .default('[\\w\\sáéíóúüñÁÉÍÓÚÜÑàèìòùÀÈÌÒÙâêîôûÂÊÎÔÛçÇãõÃÕ\\-.,!?@#$%&*()+=]'),
 
     // Metrics
-    API_METRICS_ENABLED: z.coerce.boolean().default(true),
+    API_METRICS_ENABLED: boolEnv(true),
     API_METRICS_SLOW_REQUEST_THRESHOLD_MS: z.coerce.number().default(1000),
     API_METRICS_SLOW_AUTH_THRESHOLD_MS: z.coerce.number().default(2000),
 

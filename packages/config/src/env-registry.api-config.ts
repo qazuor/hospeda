@@ -230,9 +230,9 @@ export const API_CONFIG_ENV_VARS = [
         apps: ['api'],
         category: 'api-config',
         howToObtain:
-            'Default "pretty" (chalk-colored, emoji, human-readable terminal output). Set "json" to emit newline-delimited JSON (one structured object per line, no colors) for log aggregators or Coolify log search. Pretty is fine for local dev; json is recommended when shipping stdout to an aggregator that parses each line.',
+            'Controls ONLY the console output format (the app_log_entries DB log sink is unaffected). Env-aware default when unset: "json" in production/staging (parseable Coolify console, no ANSI), "pretty" in development. An explicit value always wins. Set "pretty" (optionally with API_LOG_USE_COLORS=false to drop ANSI) for readable prod console output; set "json" in dev to mimic production.',
         howToObtainEs:
-            'Por defecto "pretty" (con colores, emoji, legible en terminal). Poné "json" para emitir JSON delimitado por saltos de línea (un objeto estructurado por línea, sin colores) para agregadores de logs o la búsqueda de logs de Coolify. Pretty va bien para dev local; json se recomienda cuando mandás stdout a un agregador que parsea cada línea.'
+            'Controla SOLO el formato de la consola (el sink de logs a la DB app_log_entries no se ve afectado). Default env-aware si no se setea: "json" en producción/staging (consola de Coolify parseable, sin ANSI), "pretty" en desarrollo. Un valor explícito siempre gana. Poné "pretty" (opcionalmente con API_LOG_USE_COLORS=false para quitar ANSI) para una consola de prod legible; poné "json" en dev para imitar producción.'
     },
 
     // -------------------------------------------------------------------------
