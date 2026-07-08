@@ -15,6 +15,7 @@ import { seedEvents } from './events.seed.js';
 import { seedExperiences } from './experiences.seed.js';
 import { seedGastronomies } from './gastronomies.seed.js';
 import { seedHostTrades } from './hostTrades.seed.js';
+import { seedPartners } from './partners.seed.js';
 import { seedPostSponsors } from './postSponsors.seed.js';
 import { seedPostSponsorships } from './postSponsorships.seed.js';
 import { seedPosts } from './posts.seed.js';
@@ -37,6 +38,7 @@ import { seedUserTags } from './userTags.seed.js';
  * - Accommodations with amenities and features
  * - Events with organizers and locations
  * - Posts with sponsors and sponsorships
+ * - Partners (brand/business directory — SPEC-271)
  * - Reviews for accommodations and destinations
  * - Bookmarks and tags
  *
@@ -58,11 +60,12 @@ import { seedUserTags } from './userTags.seed.js';
  * // 3. Event organizers and locations
  * // 4. Events
  * // 5. Posts (with sponsors/sponsorships)
- * // 6. Reviews
- * // 7. Host trades
- * // 8. Experiences (commerce listings — SPEC-240)
- * // 9. Bookmarks and tags
- * // 10. Tag relations (connecting tags to entities)
+ * // 6. Partners (brand/business directory)
+ * // 7. Reviews
+ * // 8. Host trades
+ * // 9. Experiences (commerce listings — SPEC-240)
+ * // 10. Bookmarks and tags
+ * // 11. Tag relations (connecting tags to entities)
  * ```
  *
  * @throws {Error} When seeding fails and continueOnError is false
@@ -86,6 +89,8 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
         context.actor = oldContextActor;
         await seedPostSponsors(context);
         await seedPostSponsorships(context);
+        // SPEC-271 — partner brand/business directory (public /partners landing)
+        await seedPartners(context);
         await seedDestinationReviews(context);
         await seedAccommodationReviews(context);
         await seedAccommodationExternalListings();

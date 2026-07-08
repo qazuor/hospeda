@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/partner.schema.json",
+    "id": "004-partner-fundacion-entre-rios-sustentable",
+    "slug": "fundacion-entre-rios-sustentable",
+    "name": "Fundación Entre Ríos Sustentable",
+    "type": "ngo",
+    "tier": "gold",
+    "logoUrl": "https://images.pexels.com/photos/1108572/pexels-photo-1108572.jpeg",
+    "websiteUrl": "https://www.entreriossustentable.org.ar",
+    "description": "Organización sin fines de lucro dedicada a la conservación del Río Uruguay y los humedales del Litoral. Impulsa programas de turismo responsable, limpieza de costas y educación ambiental junto a hospedajes y municipios de la región.",
+    "subscriptionStatus": "active",
+    "lifecycleState": "ACTIVE",
+    "startsAt": "2025-01-15T00:00:00.000Z"
+}
