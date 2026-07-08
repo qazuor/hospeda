@@ -129,6 +129,11 @@ describe('BaseLayout wiring (T-041)', () => {
 describe('announcementsApi.list (T-041)', () => {
     it('routes through apiClient.get against /api/v1/public/announcements', () => {
         expect(endpointsSrc).toContain('announcementsApi');
-        expect(endpointsSrc).toContain('apiClient.get({ path: `${BASE}/announcements`');
+        // Format-independent: the announcements list routes to the /announcements
+        // public path via apiClient.get. HOS-103 reformatted this to a multiline
+        // call adding a short-TTL SSR cache, so we assert the path + method
+        // rather than an exact one-line string.
+        expect(endpointsSrc).toContain('`${BASE}/announcements`');
+        expect(endpointsSrc).toContain('apiClient.get');
     });
 });
