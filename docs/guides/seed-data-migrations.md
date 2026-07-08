@@ -67,10 +67,21 @@ migration adds, running `db:seed:migrate` before `db:migrate` fails at the first
 `UPDATE` referencing that column. `db:apply-extras` sits in the middle because extras objects
 (e.g. a CHECK constraint) can themselves depend on the schema migration that just ran, and a
 data migration could in principle depend on an extras object (e.g. a trigger) existing.
-`hops db-migrate` already runs steps 1-2 in this order on the VPS; step 3 (`pnpm db:seed:migrate`)
-is a separate, explicit command — it is not currently wired into `hops db-migrate` — so an
-operator promoting a schema+data change together must run it as its own step after `hops
-db-migrate` completes.
+On the VPS, `hops db-migrate --target=<env>` runs steps 1-2 in this order; step 3 is a
+**separate** command — `hops db-seed-migrate --target=<env>` (HOS-101) — deliberately not
+folded into `hops db-migrate`, so a data apply is never an implicit side effect of a schema
+migration. So an operator promoting a schema+data change together runs, in order:
+
+```bash
+hops db-migrate      --target=<env>            # steps 1-2 (schema + extras)
+hops db-seed-migrate --target=<env>            # step 3 (data); --status to preview first
+```
+
+`hops db-seed-migrate` resolves and injects the target DB URL the same way `hops db-migrate`
+does (Postgres container inspection) — running `pnpm db:seed:migrate` by hand on the VPS does
+NOT work, because the seed CLI can't resolve `HOSPEDA_DATABASE_URL` there (`apps/api/.env.local`
+is dotenvx-encrypted, so the seed sees zero env vars). It never runs a full reseed and never
+wipes; a second run is a no-op via the `seed_migrations` ledger.
 
 ---
 
