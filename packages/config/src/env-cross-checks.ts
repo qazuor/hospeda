@@ -104,5 +104,21 @@ export const CROSS_CHECK_RULES: readonly CrossCheckRule[] = [
             { app: 'api', key: 'HOSPEDA_REVALIDATION_SECRET' },
             { app: 'web', key: 'HOSPEDA_REVALIDATION_SECRET' }
         ]
+    },
+    {
+        id: 'internal-request-secret-api-web-match',
+        description:
+            'HOSPEDA_INTERNAL_REQUEST_SECRET must hold the SAME value in both apps/api and ' +
+            'apps/web — web sends it as the X-Internal-Request header on SSR fetches and api ' +
+            'exempts matching requests from the public rate limit. A mismatch silently breaks ' +
+            'the exemption: SSR traffic is rate-limited again and the public tier re-exhausts, ' +
+            'with no error surfaced anywhere (HOS-103). Empty on both sides is a valid ' +
+            '"feature disabled" state, so this is only enforced when both are set (partial = pass).',
+        appliesTo: ['local', 'coolify'],
+        comparator: 'equals',
+        compare: [
+            { app: 'api', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' },
+            { app: 'web', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' }
+        ]
     }
 ];

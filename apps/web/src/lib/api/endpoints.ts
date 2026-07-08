@@ -20,7 +20,12 @@ import type {
     PostSummary
 } from '@repo/schemas';
 import { apiClient } from './client';
+import { SSR_PUBLIC_CACHE_TTL_MS } from './ssr-cache';
 import type { ApiResult, PaginatedResponse } from './types';
+
+// Re-exported so call sites that opt endpoints into the SSR cache (HOS-103) can
+// import the TTL constant from the same module as the endpoint functions.
+export { SSR_PUBLIC_CACHE_TTL_MS } from './ssr-cache';
 
 /** Review item with user info (from GET /accommodations/:id/reviews). */
 interface AccommodationReviewPublicItem {
@@ -80,8 +85,15 @@ export const testimonialsApi = {
     list(params?: {
         page?: number;
         pageSize?: number;
+        /**
+         * HOS-103: opt in to the short-TTL SSR cache. Pass
+         * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites (the homepage);
+         * never from unbounded/search contexts.
+         */
+        cacheTtlMs?: number;
     }): Promise<ApiResult<PaginatedResponse<TestimonialItem>>> {
-        return apiClient.getList({ path: `${BASE}/testimonials`, params });
+        const { cacheTtlMs, ...query } = params ?? {};
+        return apiClient.getList({ path: `${BASE}/testimonials`, params: query, cacheTtlMs });
     }
 };
 
@@ -96,7 +108,14 @@ export const testimonialsApi = {
 export const announcementsApi = {
     /** List currently active global announcements (server-side date filtered). */
     list(): Promise<ApiResult<ReadonlyArray<AnnouncementItem>>> {
-        return apiClient.get({ path: `${BASE}/announcements` });
+        // HOS-103: rendered on EVERY page via GlobalAnnouncements — short-TTL SSR
+        // cache so it hits the API at most once per TTL, not once per page render.
+        // The API already caches announcements ~5min and both server + client
+        // re-filter by date, so a 60s client cache never surfaces stale items.
+        return apiClient.get({
+            path: `${BASE}/announcements`,
+            cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+        });
     }
 };
 
@@ -153,8 +172,17 @@ export const accommodationsApi = {
         longitude?: number;
         /** Geo radius — radius in kilometers around (latitude, longitude). */
         radius?: number;
+        /**
+         * HOS-103: opt in to the short-TTL SSR cache. Pass
+         * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites (the homepage
+         * "featured" strip). Do NOT pass it from the filterable listing/map/search
+         * pages — their user-controlled params are high-cardinality and would
+         * churn the cache without benefit.
+         */
+        cacheTtlMs?: number;
     }): Promise<ApiResult<PaginatedResponse<AccommodationPublic>>> {
-        return apiClient.getList({ path: `${BASE}/accommodations`, params });
+        const { cacheTtlMs, ...query } = params ?? {};
+        return apiClient.getList({ path: `${BASE}/accommodations`, params: query, cacheTtlMs });
     },
 
     /**
@@ -453,8 +481,16 @@ export const destinationsApi = {
         // Allowed values: 'name', 'createdAt', 'mostSaved'.
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
+        /**
+         * HOS-103: opt in to the short-TTL SSR cache. Pass
+         * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites (the homepage
+         * CITY list, requested twice per render — hero search + destinations
+         * section — so in-flight de-dup + TTL collapse them to one API hit).
+         */
+        cacheTtlMs?: number;
     }): Promise<ApiResult<PaginatedResponse<DestinationPublic>>> {
-        return apiClient.getList({ path: `${BASE}/destinations`, params });
+        const { cacheTtlMs, ...query } = params ?? {};
+        return apiClient.getList({ path: `${BASE}/destinations`, params: query, cacheTtlMs });
     },
 
     /** Get destination by slug */
@@ -702,8 +738,15 @@ export const postsApi = {
          * @see SPEC-086 D-001, AC-F13
          */
         tags?: string;
+        /**
+         * HOS-103: opt in to the short-TTL SSR cache. Pass
+         * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites (the homepage
+         * "latest posts" strip); never from the filterable blog listing.
+         */
+        cacheTtlMs?: number;
     }): Promise<ApiResult<PaginatedResponse<PostPublic>>> {
-        return apiClient.getList({ path: `${BASE}/posts`, params });
+        const { cacheTtlMs, ...query } = params ?? {};
+        return apiClient.getList({ path: `${BASE}/posts`, params: query, cacheTtlMs });
     },
 
     /** Get post by slug */
@@ -783,7 +826,12 @@ interface PlatformStats {
 export const statsApi = {
     /** Get platform-wide aggregate counts */
     getPlatformStats(): Promise<ApiResult<PlatformStats>> {
-        return apiClient.get({ path: `${BASE}/stats` });
+        // HOS-103: requested on the homepage AND by the Footer on every page —
+        // short-TTL SSR cache collapses all of that to one API hit per window.
+        return apiClient.get({
+            path: `${BASE}/stats`,
+            cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+        });
     }
 };
 

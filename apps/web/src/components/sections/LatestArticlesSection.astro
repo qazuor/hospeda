@@ -16,7 +16,7 @@ import FeaturedArticleCard from '@/components/shared/cards/FeaturedArticleCard.a
 import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
-import { postsApi, toArticleCardProps } from '@/lib/api';
+import { postsApi, SSR_PUBLIC_CACHE_TTL_MS, toArticleCardProps } from '@/lib/api';
 import type { ArticleCardData } from '@/lib/api/transforms';
 import { webLogger } from '@/lib/logger';
 import { isAllowedRemoteHost } from '@/lib/media';
@@ -37,7 +37,7 @@ const isAuthenticated = Boolean(Astro.locals.user);
 // Fetch 4 posts: 1 featured + 3 secondary
 let posts: ArticleCardData[] = [];
 try {
-    const result = await postsApi.list({ sortBy: 'publishedAt', sortOrder: 'desc', pageSize: 4 });
+    const result = await postsApi.list({ sortBy: 'publishedAt', sortOrder: 'desc', pageSize: 4, cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
     if (result.ok) {
         const rawPosts = result.data.items.map((raw) => toArticleCardProps({ item: raw as Record<string, unknown>, locale }));
         // SSRF guard (SPEC-099 S-1): only call getImage() when the avatar

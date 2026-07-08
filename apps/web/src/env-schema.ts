@@ -31,6 +31,30 @@ import { z } from 'zod';
 export const serverEnvBaseSchema = z.object({
     HOSPEDA_API_URL: z.url().optional(),
     PUBLIC_API_URL: z.url().optional(),
+    /**
+     * Internal API base URL for server-to-server SSR fetches (HOS-103).
+     *
+     * When set, the API client uses it as the base URL for GET requests issued
+     * during SSR, INSTEAD of the public `PUBLIC_API_URL`. This keeps SSR traffic
+     * on the internal network (no Cloudflare round-trip) and, paired with
+     * `HOSPEDA_INTERNAL_REQUEST_SECRET`, lets the API exempt it from the public
+     * per-IP rate limit (SSR traffic from all visitors otherwise shares one
+     * egress IP → one bucket). Server-only, never shipped to the browser; browser
+     * calls always use the public URL. Leave unset in local dev (SSR hits the
+     * same localhost API as the browser).
+     */
+    HOSPEDA_INTERNAL_API_URL: z.url().optional(),
+    /**
+     * Shared secret sent as the `X-Internal-Request` header on SSR fetches
+     * (HOS-103). MUST match the API's `HOSPEDA_INTERNAL_REQUEST_SECRET`. The API
+     * skips the public rate limit only when this header matches, so SSR traffic
+     * is not counted against the anonymous per-IP bucket. Fails safe: when unset
+     * on either side, the header is not sent / not trusted and SSR traffic simply
+     * counts normally (no bypass, no security hole). Server-only — the header is
+     * added only during SSR (`import.meta.env.SSR`) and this var carries no
+     * PUBLIC_ prefix, so the secret never reaches the browser bundle.
+     */
+    HOSPEDA_INTERNAL_REQUEST_SECRET: z.string().min(32).optional(),
     HOSPEDA_SITE_URL: z.url().optional(),
     PUBLIC_SITE_URL: z.url().optional(),
     HOSPEDA_BETTER_AUTH_URL: z.url().optional(),

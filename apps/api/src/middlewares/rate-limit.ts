@@ -2,6 +2,7 @@
  * Rate limiting middleware with differentiated limits per endpoint type.
  * Uses Redis when available for multi-instance support, falls back to in-memory Map.
  */
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { getConnInfo } from '@hono/node-server/conninfo';
 import type { Context, Next } from 'hono';
 import { env, getRateLimitConfig as getBaseRateLimitConfig } from '../utils/env';
@@ -713,12 +714,51 @@ const getRateLimitConfig = (endpointType: RateLimitEndpointType) => {
 };
 
 /**
+ * Returns true when the request carries a valid internal-request secret (HOS-103).
+ *
+ * The web app sends `X-Internal-Request: <secret>` on server-to-server SSR
+ * fetches over the internal API URL. When it matches the configured
+ * `HOSPEDA_INTERNAL_REQUEST_SECRET`, the request is trusted internal traffic and
+ * is exempted from the public rate limit — otherwise all SSR traffic (from every
+ * visitor) shares one egress-IP bucket and exhausts the public tier.
+ *
+ * Fail-safe: when the secret is unset (default empty) or the header is
+ * missing/mismatched, this returns false and normal rate limiting applies — a
+ * misconfiguration can never open a bypass. Both sides are SHA-256-hashed before
+ * comparison so the constant-time check runs over fixed-length digests, leaking
+ * neither the secret's length nor its content via timing.
+ *
+ * @param c - The Hono context.
+ */
+const isTrustedInternalRequest = (c: Context): boolean => {
+    const secret = env.HOSPEDA_INTERNAL_REQUEST_SECRET;
+    if (!secret) return false;
+
+    const provided = c.req.header('x-internal-request');
+    if (!provided) return false;
+
+    const providedHash = createHash('sha256').update(provided).digest();
+    const secretHash = createHash('sha256').update(secret).digest();
+    return timingSafeEqual(providedHash, secretHash);
+};
+
+/**
  * Rate limiting middleware with environment-based configuration.
  * Uses Redis when HOSPEDA_REDIS_URL is configured, otherwise falls back to in-memory.
  */
 export const rateLimitMiddleware = async (c: Context, next: Next) => {
     // Skip rate limiting in test environment UNLESS explicitly testing it
     if (env.NODE_ENV === 'test' && !env.HOSPEDA_TESTING_RATE_LIMIT) {
+        await next();
+        return;
+    }
+
+    // (0) HOS-103: exempt trusted internal SSR traffic. Server-to-server calls
+    // from the web app carry the shared X-Internal-Request secret; without this
+    // bypass, all SSR traffic (from every visitor) collapses into a single
+    // egress-IP bucket for the whole public tier and exhausts it. Fail-safe: no
+    // secret configured → no request is ever exempted (see isTrustedInternalRequest).
+    if (isTrustedInternalRequest(c)) {
         await next();
         return;
     }
@@ -864,8 +904,6 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
 };
 
 // ─── Keyed Rate Limit Middleware ──────────────────────────────────────────────
-
-import { createHash } from 'node:crypto';
 
 /**
  * Options for the email-keyed (or any-key-keyed) rate limit middleware.
