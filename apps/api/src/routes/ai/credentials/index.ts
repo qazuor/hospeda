@@ -7,6 +7,7 @@
  * Routes:
  * - GET  /                          — paginated list of masked credentials
  * - POST /                          — create (encrypt + store) a new credential
+ * - POST /sync-models/preview       — preview a NOT-YET-SAVED key's model catalog (BETA-129)
  * - POST /{providerId}/rotate       — rotate an existing credential in-place
  * - POST /{providerId}/sync-models  — detect + merge the provider's model catalog (HOS-94)
  * - PATCH /{providerId}             — update label and metadata (no key change)
@@ -25,6 +26,7 @@ import {
     AiCredentialMutationResultSchema,
     AiCredentialRotateInputSchema,
     AiCredentialUpdateInputSchema,
+    AiSyncModelsPreflightInputSchema,
     AiSyncModelsResultSchema,
     PermissionEnum
 } from '@repo/schemas';
@@ -38,7 +40,10 @@ import {
     rotateAiProviderCredential,
     updateCredentialMetadata
 } from '../../../services/ai-credential-vault.service.js';
-import { syncAiProviderModels } from '../../../services/ai-sync-models.service.js';
+import {
+    syncAiProviderModels,
+    syncAiProviderModelsPreflight
+} from '../../../services/ai-sync-models.service.js';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { createRouter } from '../../../utils/create-app.js';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination.js';
@@ -140,6 +145,53 @@ const createCredentialRoute = createAdminRoute({
 
         // Only id + providerId — no plaintext, no ciphertext.
         return { id: result.data.id, providerId: result.data.providerId };
+    }
+});
+
+/**
+ * POST /api/v1/admin/ai/credentials/sync-models/preview
+ * Previews a NOT-YET-SAVED provider key's model catalog (BETA-129 part 1).
+ *
+ * Lets an admin sync a provider's models in the "create credential" dialog
+ * BEFORE the key is encrypted and stored — unlike
+ * `POST /{providerId}/sync-models`, there is no stored credential to decrypt
+ * yet, so the caller supplies the just-typed `plaintextKey` (and optionally
+ * `baseURL`, required by self-hosted providers like Ollama) directly in the
+ * request body. Same fetch/filter/merge core as the stored-credential route;
+ * persists NOTHING and never logs or echoes the key back.
+ *
+ * A static path (not `/{providerId}/...`) since no credential row exists yet
+ * to key off of.
+ */
+const syncModelsPreflightRoute = createAdminRoute({
+    method: 'post',
+    path: '/sync-models/preview',
+    summary: 'Preview AI provider models for a not-yet-saved key',
+    description:
+        "Calls the provider's live list-models endpoint using a just-typed, " +
+        'not-yet-saved API key from the request body, filters the response to ' +
+        'chat/text-capable models, and merges it with the curated ' +
+        'KNOWN_PROVIDERS catalog (annotated by source: detected, curated, or ' +
+        'both). Persists nothing and never returns the key. ' +
+        'Requires AI_SETTINGS_MANAGE permission.',
+    tags: ['AI Credentials'],
+    requiredPermissions: [PermissionEnum.AI_SETTINGS_MANAGE],
+    requestBody: AiSyncModelsPreflightInputSchema,
+    responseSchema: AiSyncModelsResultSchema,
+    handler: async (_c, _params, body) => {
+        const parsed = AiSyncModelsPreflightInputSchema.parse(body);
+
+        const result = await syncAiProviderModelsPreflight({
+            providerId: parsed.providerId,
+            plaintextKey: parsed.plaintextKey,
+            ...(parsed.baseURL === undefined ? {} : { baseURL: parsed.baseURL })
+        });
+
+        if (result.error) {
+            throw new ServiceError(result.error.code, result.error.message);
+        }
+
+        return result.data;
     }
 });
 
@@ -300,6 +352,7 @@ const app = createRouter();
 
 app.route('/', listCredentialsRoute);
 app.route('/', createCredentialRoute);
+app.route('/', syncModelsPreflightRoute);
 app.route('/', rotateCredentialRoute);
 app.route('/', syncModelsRoute);
 app.route('/', updateCredentialRoute);

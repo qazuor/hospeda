@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { AiProviderModelSchema, AiSyncModelsResultSchema } from '../ai-sync-models.schema.js';
+import {
+    AiProviderModelSchema,
+    AiSyncModelsPreflightInputSchema,
+    AiSyncModelsResultSchema
+} from '../ai-sync-models.schema.js';
 
 describe('AiProviderModelSchema', () => {
     it('should validate a full model entry with all optional fields', () => {
@@ -212,6 +216,79 @@ describe('AiSyncModelsResultSchema', () => {
         const result = AiSyncModelsResultSchema.safeParse({
             models: [],
             fetchedAt: '2026-07-05T12:00:00.000Z'
+        });
+        expect(result.success).toBe(false);
+    });
+});
+
+describe('AiSyncModelsPreflightInputSchema (BETA-129)', () => {
+    it('should validate a full input including baseURL', () => {
+        // Arrange
+        const input = {
+            providerId: 'ollama',
+            plaintextKey: 'not-a-real-secret',
+            baseURL: 'http://localhost:11434'
+        };
+
+        // Act
+        const result = AiSyncModelsPreflightInputSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data).toEqual(input);
+        }
+    });
+
+    it('should validate a minimal input without baseURL', () => {
+        // Arrange
+        const input = { providerId: 'openai', plaintextKey: 'sk-test-not-a-real-secret' };
+
+        // Act
+        const result = AiSyncModelsPreflightInputSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.baseURL).toBeUndefined();
+        }
+    });
+
+    it('should reject an empty providerId', () => {
+        const result = AiSyncModelsPreflightInputSchema.safeParse({
+            providerId: '',
+            plaintextKey: 'sk-test-not-a-real-secret'
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('should reject an empty plaintextKey', () => {
+        const result = AiSyncModelsPreflightInputSchema.safeParse({
+            providerId: 'openai',
+            plaintextKey: ''
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('should reject a missing plaintextKey', () => {
+        const result = AiSyncModelsPreflightInputSchema.safeParse({ providerId: 'openai' });
+        expect(result.success).toBe(false);
+    });
+
+    it('should reject a non-URL baseURL', () => {
+        const result = AiSyncModelsPreflightInputSchema.safeParse({
+            providerId: 'ollama',
+            plaintextKey: 'not-a-real-secret',
+            baseURL: 'not-a-url'
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('should reject unknown properties (.strict())', () => {
+        const result = AiSyncModelsPreflightInputSchema.safeParse({
+            providerId: 'openai',
+            plaintextKey: 'sk-test-not-a-real-secret',
+            extraField: 'nope'
         });
         expect(result.success).toBe(false);
     });
