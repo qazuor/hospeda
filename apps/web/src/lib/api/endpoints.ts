@@ -20,6 +20,7 @@ import type {
     PostSummary
 } from '@repo/schemas';
 import { apiClient } from './client';
+import { SSR_PUBLIC_CACHE_TTL_MS } from './ssr-cache';
 import type { ApiResult, PaginatedResponse } from './types';
 
 /** Review item with user info (from GET /accommodations/:id/reviews). */
@@ -81,7 +82,12 @@ export const testimonialsApi = {
         page?: number;
         pageSize?: number;
     }): Promise<ApiResult<PaginatedResponse<TestimonialItem>>> {
-        return apiClient.getList({ path: `${BASE}/testimonials`, params });
+        // HOS-103: short-TTL SSR cache — homepage-only, safe to serve slightly stale.
+        return apiClient.getList({
+            path: `${BASE}/testimonials`,
+            params,
+            cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+        });
     }
 };
 
@@ -96,7 +102,14 @@ export const testimonialsApi = {
 export const announcementsApi = {
     /** List currently active global announcements (server-side date filtered). */
     list(): Promise<ApiResult<ReadonlyArray<AnnouncementItem>>> {
-        return apiClient.get({ path: `${BASE}/announcements` });
+        // HOS-103: rendered on EVERY page via GlobalAnnouncements — short-TTL SSR
+        // cache so it hits the API at most once per TTL, not once per page render.
+        // The API already caches announcements ~5min and both server + client
+        // re-filter by date, so a 60s client cache never surfaces stale items.
+        return apiClient.get({
+            path: `${BASE}/announcements`,
+            cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+        });
     }
 };
 
@@ -154,7 +167,14 @@ export const accommodationsApi = {
         /** Geo radius — radius in kilometers around (latitude, longitude). */
         radius?: number;
     }): Promise<ApiResult<PaginatedResponse<AccommodationPublic>>> {
-        return apiClient.getList({ path: `${BASE}/accommodations`, params });
+        // HOS-103: short-TTL SSR cache. Keyed by the full param set, so each
+        // filter/bbox variant gets its own 60s entry; the homepage "featured"
+        // read and repeated listing renders collapse to one API hit per window.
+        return apiClient.getList({
+            path: `${BASE}/accommodations`,
+            params,
+            cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+        });
     },
 
     /**
@@ -454,7 +474,14 @@ export const destinationsApi = {
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
     }): Promise<ApiResult<PaginatedResponse<DestinationPublic>>> {
-        return apiClient.getList({ path: `${BASE}/destinations`, params });
+        // HOS-103: short-TTL SSR cache. The homepage requests the CITY list twice
+        // per render (hero search + destinations section); in-flight de-dup +
+        // 60s TTL collapse that (and repeated renders) to one API hit per window.
+        return apiClient.getList({
+            path: `${BASE}/destinations`,
+            params,
+            cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+        });
     },
 
     /** Get destination by slug */
@@ -703,7 +730,13 @@ export const postsApi = {
          */
         tags?: string;
     }): Promise<ApiResult<PaginatedResponse<PostPublic>>> {
-        return apiClient.getList({ path: `${BASE}/posts`, params });
+        // HOS-103: short-TTL SSR cache — homepage "latest posts" + blog listing
+        // renders collapse to one API hit per param set per window.
+        return apiClient.getList({
+            path: `${BASE}/posts`,
+            params,
+            cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+        });
     },
 
     /** Get post by slug */
@@ -783,7 +816,12 @@ interface PlatformStats {
 export const statsApi = {
     /** Get platform-wide aggregate counts */
     getPlatformStats(): Promise<ApiResult<PlatformStats>> {
-        return apiClient.get({ path: `${BASE}/stats` });
+        // HOS-103: requested on the homepage AND by the Footer on every page —
+        // short-TTL SSR cache collapses all of that to one API hit per window.
+        return apiClient.get({
+            path: `${BASE}/stats`,
+            cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+        });
     }
 };
 
