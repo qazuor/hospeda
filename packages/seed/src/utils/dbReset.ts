@@ -6,13 +6,61 @@ import { logger } from './logger.js';
 
 /**
  * Tables always excluded from the reset regardless of caller-passed
- * `exclude`. `drizzle_migrations` is Drizzle's own migration-state
- * journal — wiping it would make the next `drizzle-kit migrate` reapply
- * every migration from scratch. Hospeda uses `drizzle-kit push` rather
- * than `migrate`, so the table is not currently populated, but excluding
- * it defensively prevents a footgun if the workflow changes.
+ * `exclude`.
+ *
+ * - `drizzle_migrations`: intended as a defensive entry for Drizzle's own
+ *   migration-state journal, but note it does NOT match drizzle-kit's real
+ *   default table name (`__drizzle_migrations`, which additionally lives in
+ *   the `drizzle` schema, not `public`). This mismatch is harmless today only
+ *   because the introspection query below is scoped to `schemaname = 'public'`
+ *   — the real migrations table is never discovered in the first place, so
+ *   this entry is currently inert. Left as-is (not renamed/removed): fixing
+ *   the name is out of scope here and could surprise whoever added it.
+ * - `seed_migrations` (HOS-25): the versioned seed data-migration ledger.
+ *   Unlike `drizzle_migrations` above, this table genuinely lives in
+ *   `public` and IS discovered by the introspection query, so it needs a
+ *   real exclusion entry — without it, `--reset` would wipe the
+ *   applied-migrations record and every seed data-migration would silently
+ *   re-run from scratch on the next seed.
  */
-const ALWAYS_EXCLUDE_TABLES: ReadonlySet<string> = new Set(['drizzle_migrations']);
+const ALWAYS_EXCLUDE_TABLES: ReadonlySet<string> = new Set([
+    'drizzle_migrations',
+    'seed_migrations'
+]);
+
+/**
+ * Splits a list of discovered `public`-schema table names into those that
+ * will be truncated and those that will be preserved, given the
+ * caller-supplied `exclude` list combined with {@link ALWAYS_EXCLUDE_TABLES}.
+ *
+ * Extracted as a pure function (no DB access) so the exclude-list logic —
+ * the part that must never regress, since accidentally truncating
+ * `seed_migrations` would wipe the data-migration ledger on every reset —
+ * can be unit-tested without a live database connection.
+ *
+ * @param input - Discovered tables plus caller-supplied excludes.
+ * @returns The partitioned `tablesToReset` / `tablesSkipped` lists, in the
+ *   same relative order as `discoveredTables`.
+ *
+ * @example
+ * ```ts
+ * partitionTablesForReset({
+ *   discoveredTables: ['users', 'seed_migrations'],
+ *   exclude: ['users'],
+ * });
+ * // { tablesToReset: [], tablesSkipped: ['users', 'seed_migrations'] }
+ * ```
+ */
+export function partitionTablesForReset(input: { discoveredTables: string[]; exclude: string[] }): {
+    tablesToReset: string[];
+    tablesSkipped: string[];
+} {
+    const { discoveredTables, exclude } = input;
+    const excludeSet = new Set<string>([...exclude, ...ALWAYS_EXCLUDE_TABLES]);
+    const tablesToReset = discoveredTables.filter((name) => !excludeSet.has(name));
+    const tablesSkipped = discoveredTables.filter((name) => excludeSet.has(name));
+    return { tablesToReset, tablesSkipped };
+}
 
 /**
  * Resets the database by truncating every table in the `public` schema.
@@ -80,9 +128,10 @@ export async function resetDatabase(exclude: string[] = []): Promise<void> {
         return;
     }
 
-    const excludeSet = new Set<string>([...exclude, ...ALWAYS_EXCLUDE_TABLES]);
-    const tablesToReset = discovered.filter((name) => !excludeSet.has(name));
-    const tablesSkipped = discovered.filter((name) => excludeSet.has(name));
+    const { tablesToReset, tablesSkipped } = partitionTablesForReset({
+        discoveredTables: discovered,
+        exclude
+    });
 
     if (tablesToReset.length === 0) {
         logger.warn(

@@ -323,6 +323,20 @@ pnpm db:apply-extras   # Re-apply every extras/*.sql in lexical order
 
 Always run `db:apply-extras` after `db:migrate` on a fresh environment.
 
+> **Seed/catalog DATA changes belong in a third, separate carril (HOS-25)**: row-level seed
+> data content (a catalog fixture, a billing plan/limit value, a required-data delete) is
+> versioned in `packages/seed/src/data-migrations/NNNN-slug.ts`, applied by
+> `pnpm db:seed:migrate` and tracked in its own `seed_migrations` ledger table — NOT in
+> `src/migrations/extras/`, even though both carriles are hand-written and idempotent-by-intent.
+> See [docs/guides/seed-data-migrations.md](../../docs/guides/seed-data-migrations.md) for the
+> full boundary and worked examples. The pre-HOS-25 billing data files
+> `023-billing-plans-ai-consumer-search-limits.plan.sql`,
+> `024-billing-plans-collections-limit.plan.sql`, and
+> `025-hos16-deactivate-complex-plans.plan.sql` below are **superseded** by the ported
+> `data-migrations/0001`-`0003-*.ts` modules — left in place (not deleted) since they may
+> already have applied on a live environment; each carril's own ledger makes the other a
+> no-op wherever it already ran.
+
 ### Dev vs VPS comparison
 
 | | Dev (local) | CI + VPS (staging = prod) |

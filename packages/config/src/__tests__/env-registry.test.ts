@@ -199,18 +199,22 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * HOSPEDA_DEPLOY_ENV) — none of these needed a registry change, only a
  * Coolify-side cleanup/rename. 249 + 1 = 250.
  *
- * +2 = Sentry prod-hardening: PUBLIC_SENTRY_CSP_REPORT_URI (web) +
+ * Sentry prod-hardening added PUBLIC_SENTRY_CSP_REPORT_URI (web) +
  * VITE_SENTRY_CSP_REPORT_URI (admin) — dedicated `hospeda-csp` Sentry project
  * for CSP violation reports, separate from each app's own error-tracking DSN.
  * 250 + 2 = 252.
  *
  * +1 = HOSPEDA_TRIAL_DAYS_OVERRIDE (testing-only trial-length override). 252 + 1 = 253.
  *
+ * +1 = HOSPEDA_ALLOW_DESTRUCTIVE_MIGRATION (HOS-25 T-011: production gate for
+ * destructive versioned seed data-migrations, mirroring
+ * `HOSPEDA_ALLOW_PROD_CLEANUP`). 253 + 1 = 254.
+ *
  * +1 = HOSPEDA_SHOW_TEST_BILLING_PLAN (testing-only flag that exposes and
  * enables subscribing to the hidden daily test billing plan,
- * `owner-test-daily`). 253 + 1 = 254.
+ * `owner-test-daily`). 254 + 1 = 255.
  */
-const EXPECTED_VAR_COUNT = 254;
+const EXPECTED_VAR_COUNT = 255;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

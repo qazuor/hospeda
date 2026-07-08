@@ -793,6 +793,18 @@ The day-1 production seed must therefore be a curated `--required` run that **ex
 
     What this does NOT seed (and how to add it manually): see step 5.
 
+    **After this step, baseline-stamp the versioned seed data-migration ledger manually.**
+    This curated day-1 seed is a *partial* baseline (`--exclude=users`, no `--example`), so it
+    is not covered by `pnpm db:fresh`'s automatic baseline-stamp. Run:
+
+    ```bash
+    pnpm --filter @repo/seed seed --data-migrate --baseline-stamp
+    ```
+
+    See [docs/guides/seed-data-migrations.md](../guides/seed-data-migrations.md#production-day-1-manual-baseline-stamp-is-still-required-open-item)
+    for why this is still a manual step and the caveat about migrations that might depend on
+    the excluded `users` step.
+
 5. Create the first admin user through Better Auth signup, then promote.
 
     a. Visit `https://hospeda.com.ar/auth/sign-up` (or the staging URL during dry-runs) and complete the signup flow with the **real** admin email address. Use Google OAuth or email/password — both flows produce a row in `users` with `role = 'USER'`.

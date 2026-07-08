@@ -15,9 +15,9 @@ const REQUIRED_IDS = ['db:start', 'dev:all', 'test', 'lint', 'build', 'env:check
 const VALID_CATEGORIES = new Set<CommandCategory>(CATEGORY_DISPLAY_ORDER);
 
 describe('getCuratedCommands', () => {
-    it('should return exactly 48 commands', () => {
+    it('should return exactly 51 commands', () => {
         const commands = getCuratedCommands();
-        expect(commands).toHaveLength(48);
+        expect(commands).toHaveLength(51);
     });
 
     it('should have no duplicate IDs', () => {

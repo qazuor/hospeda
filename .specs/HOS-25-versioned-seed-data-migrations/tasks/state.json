@@ -1,0 +1,642 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-25",
+    "title": "Versioned Seed Data Migrations",
+    "created": "2026-07-07T04:35:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Define seed_migrations ledger table + generate structural migration",
+            "description": "DONE. Table packages/db/src/schemas/seed-migrations/seed_migration.dbschema.ts (name PK varchar255, group varchar20, checksum text, applied_at tstz default now, duration_ms int nullable, result varchar50). Migration 0049_tiny_firebird.sql generated. Decisions: varchar+JSDoc-union not pgEnum for group (matches app_log/audit/cron precedent); result varchar(50) matches billing_dunning_attempts.result; lean append-only table (no BaseModel/soft-delete). Test 15/15 green, @repo/db typecheck clean. Exports: seedMigrations, InsertSeedMigration, SelectSeedMigration.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-004", "T-008"],
+            "subtasks": [
+                {
+                    "title": "Declare seed_migrations dbschema + export from @repo/db",
+                    "completed": false
+                },
+                { "title": "pnpm db:generate + commit migration file", "completed": false },
+                { "title": "Schema-shape unit test", "completed": false }
+            ],
+            "tags": ["database", "schema", "migration"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add seed_migrations to dbReset preserve-list (with correct table name)",
+            "description": "DONE. packages/seed/src/utils/dbReset.ts: added 'seed_migrations' to ALWAYS_EXCLUDE_TABLES + JSDoc documenting drizzle_migrations is inert (doesn't match real __drizzle_migrations in drizzle schema; public-scoped scan never finds it; left untouched) vs seed_migrations genuinely needed (in public). Extracted pure partitionTablesForReset({discoveredTables,exclude})->{tablesToReset,tablesSkipped} from resetDatabase for unit-testability. Test 6/6 (pure helper, no DB). T-021 note: resetDatabase calls getDb() singleton so initializeDb() must run first; never call db:seed --reset CLI against shared worktree DB.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add seed_migrations to ALWAYS_EXCLUDE_TABLES", "completed": false },
+                { "title": "Document drizzle_migrations naming caveat", "completed": false },
+                { "title": "Unit test: reset excludes seed_migrations", "completed": false }
+            ],
+            "tags": ["database", "seed", "reset"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Define data-migration module contract types",
+            "description": "DONE. packages/seed/src/data-migrations/types.ts: SeedMigrationGroup, SeedMigrationMeta, SeedMigrationCtx (db: DrizzleClient from @repo/db, models/services empty interfaces for T-005 to extend via declaration-merging, helpers.safeDelete), SafeDeleteArgs/Result (discriminated union), SeedMigrationResult, SeedMigrationModule. up typed as property (strictFunctionTypes). safeDelete table/where use drizzle-orm generic Table/SQL. Test 8/8 (expectTypeOf + ts-expect-error), typecheck clean. No barrel yet (T-008/T-009 assemble).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-005", "T-006", "T-011", "T-013"],
+            "subtasks": [
+                { "title": "Define meta + ctx + result + up() types", "completed": false },
+                { "title": "Type-level contract test", "completed": false }
+            ],
+            "tags": ["types", "seed", "contract"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Implement ledger read/write layer + checksum",
+            "description": "DONE. packages/seed/src/data-migrations/ledger.ts: getAppliedMigrations({db})->{names:ReadonlySet, rows}, recordApplied({db,name,group,checksum,durationMs,result}) (single INSERT, tx-safe, no own transaction), computeChecksum({contents})->sha256 hex. Test 8/8 (3 pure + 5 real-DB incl tx-rollback discards ledger row). GOTCHA: test imports seedMigrations from @repo/db/schemas subpath (top barrel resolves undefined under Vitest module runner — see engram testing/repo-db-vitest-barrel-undefined). T-009: call recordApplied with same tx as up(). T-010: reuse recordApplied per file with result='baseline-stamp'.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-003"],
+            "blocks": ["T-008", "T-009", "T-010", "T-012"],
+            "subtasks": [
+                { "title": "getAppliedMigrations()", "completed": false },
+                { "title": "recordApplied()", "completed": false },
+                { "title": "computeChecksum() sha256", "completed": false },
+                { "title": "Unit tests: round-trip + stable checksum", "completed": false }
+            ],
+            "tags": ["database", "seed", "ledger"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Implement safeDelete step 1: inbound-FK introspection + active-ref count",
+            "description": "DONE. packages/seed/src/data-migrations/helpers/fkGuard.ts: getInboundForeignKeys({db,table})->InboundFk[] via pg_constraint + unnest(conkey,confkey) positional (composite-safe discovery, public schema); countActiveReferences({db,table,primaryKeyColumn,primaryKeyValue})->{total, byConstraint[]}. Uses sql.identifier() for dynamic identifiers. Test 4/4 (own pg.Pool+initializeDb bootstrap loading apps/api/.env.local — no seed integration harness exists). T-007 rule: total===0 -> deletable (after operator-edit check); total>0 -> skip, byConstraint gives blocking tables for reason. CAVEAT: composite-FK filter by referencedColumn===pkColumn can overcount genuine composite FKs (none in schema today) — group by constraintName + require ALL pairs if ever targeting composite-keyed table. Self-ref FK not special-cased.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                { "title": "Query pg catalog for inbound FKs to table", "completed": false },
+                { "title": "Count active referencing rows for a record", "completed": false },
+                { "title": "Unit tests: 0-ref vs N-ref, multi-FK", "completed": false }
+            ],
+            "tags": ["database", "seed", "fk-guard"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Implement safeDelete step 2: operator-edit detection + skip/warn integration",
+            "description": "DONE. packages/seed/src/data-migrations/helpers/safeDelete.ts: safeDelete({db, table, where, reason, isOperatorEdited?}) -> SafeDeleteResult. Order: resolve table+single PK (throws composite/missing) -> SELECT target row -> FK guard (countActiveReferences) -> operator-edit guard (optional predicate, default=not-edited with info log) -> DELETE on same db (tx-safe). Contract: where matches 0 rows=no-op success (idempotent); 2+ rows=throws. Predicate receives row keyed by snake_case DB cols (SELECT *). Test 7/7. Drizzle prims: getTableColumns/.primary/.name, getTableName from drizzle-orm. DESIGN: SafeDeleteArgs in types.ts extended with isOperatorEdited? so ctx.helpers.safeDelete carries the predicate uniformly (no direct-import bypass). T-020 billing delete passes Model-C COMMERCIAL_FIELDS-based predicate.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-005", "T-020"],
+            "subtasks": [
+                { "title": "safeDelete() signature + reason logging", "completed": false },
+                { "title": "Operator-edit detection (Model C reuse)", "completed": false },
+                { "title": "delete-when-safe / skip+warn decision", "completed": false },
+                { "title": "Unit tests: 4 combinations", "completed": false }
+            ],
+            "tags": ["database", "seed", "fk-guard", "billing"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Build data-migration context factory (db/models/services/helpers)",
+            "description": "DONE. packages/seed/src/data-migrations/context.ts: buildMigrationContext({db, actor?, logger?})->SeedMigrationCtx. models/services derived from barrels via PickByNameSuffix<typeof import(@repo/db),'Model'> / Service mapped type (no hand-enum, 90+/80+ auto). ctx.actor ADDED to contract (services take actor as 1st arg; loadSuperAdminAndGetActor if not injected). helpers.safeDelete closure over passed db (no getDb fallback, tx-safe). Dedup IsOperatorEditedPredicate into types.ts. Test 22/22. T-009: call buildMigrationContext({db:tx, actor}) ONCE PER MIGRATION inside its tx; resolve actor ONCE PER RUN and pass explicitly.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-007"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                { "title": "Assemble db/models/services", "completed": false },
+                { "title": "Actor bootstrap for service .create()", "completed": false },
+                { "title": "Inject helpers.safeDelete", "completed": false },
+                { "title": "Unit test: context builds with actor", "completed": false }
+            ],
+            "tags": ["seed", "context"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Implement migration discovery + ledger diff + ordering",
+            "description": "DONE. packages/seed/src/data-migrations/discover.ts: discoverMigrationFiles({dir?})->DiscoveredMigration[] (fileURLToPath dir resolution, regex ^\\d{4}-.+\\.(ts|js)$ exclusion, import via pathToFileURL, sorted by numeric prefix; THROWS on duplicate prefix or meta.name!=filename-stem to protect ledger identity); computePendingMigrations({discovered,applied,group?}) pure sync filter preserving order. Test 10/10 (fixtures __fixtures__/discover/). T-009 sequence: discoverMigrationFiles() -> getAppliedMigrations({db}) -> computePendingMigrations(). T-013 make: 4-digit zero-pad NNNN, meta.name MUST equal filename stem, check collision before write.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-009", "T-010"],
+            "subtasks": [
+                { "title": "Scan folder + load meta", "completed": false },
+                { "title": "Sort by numeric prefix", "completed": false },
+                { "title": "Diff vs ledger + group filter", "completed": false },
+                { "title": "Unit tests: ordering + pending + group", "completed": false }
+            ],
+            "tags": ["seed", "runner"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Implement prod destructive gate + destructive meta flag enforcement",
+            "description": "DONE. packages/seed/src/data-migrations/prodGate.ts: evaluateProdDataMigrationGate({env, pendingMeta, allowDestructiveFlag}) -> {allowed, reason?, destructiveNames}. Pure, mirrors evaluateProdCleanupGate. Env var HOSPEDA_ALLOW_DESTRUCTIVE_MIGRATION registered in packages/config/src/env-registry.hospeda.ts (boolean, required:false, default 'false', apps:['seed'], category 'database'); regen json + count 250->251 + snapshot updated. NO Zod schema (cleanup gate reads process.env ad hoc — mirrored). NO Coolify action (default-false refuse-by-default). Test 7/7, config guards 46/46. T-017 wiring: call once pre-run with pendingMeta from T-008 + allowDestructiveFlag=args.includes('--allow-destructive'); abort whole run if !allowed.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                { "title": "evaluateProdDataMigrationGate pure fn", "completed": false },
+                { "title": "Unit tests: 4 gate cases", "completed": false }
+            ],
+            "tags": ["seed", "safety", "prod"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Implement runner core (transaction-per-migration, record, abort)",
+            "description": "DONE. packages/seed/src/data-migrations/runner.ts: runMigrations({db?,group?,allowDestructive?,env?,dir?,actor?,logger?})->{applied[],skipped[],pendingCount}. Flow: resolve db (getDb default) -> discover -> getAppliedMigrations -> computePending -> no-op if empty -> prod gate (abort before running) -> resolve actor ONCE -> per migration db.transaction(tx): buildMigrationContext({db:tx,actor}) -> up(ctx) -> recordApplied({db:tx,...,checksum:readFile}) ; throw rolls back both + aborts run (rethrown with cause). Uses db.transaction() NOT withTransaction (honors injected db). Also exports resolvePendingMigrations({db?,group?,dir?})->{db,discovered,applied,pending} for T-010 reuse. Test 5/5. GOTCHA: ledger.name = full stem WITH numeric prefix (0003-slug), LIKE queries need leading wildcard. T-017: call runMigrations({group,allowDestructive,env:process.env}), omit db+actor; thrown .message is CLI-ready, catch+exit(1).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-005", "T-008", "T-011"],
+            "blocks": ["T-012", "T-017", "T-021"],
+            "subtasks": [
+                { "title": "Iterate pending in order", "completed": false },
+                { "title": "Transaction per migration + record on success", "completed": false },
+                { "title": "Rollback + abort on throw (no ledger row)", "completed": false },
+                { "title": "Tests: ordering/rollback/no-op/abort", "completed": false }
+            ],
+            "tags": ["seed", "runner", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Implement baseline-stamp mode",
+            "description": "DONE. packages/seed/src/data-migrations/baselineStamp.ts: baselineStamp({db?,group?,dir?})->{stamped[]}. Reuses resolvePendingMigrations from runner.ts (unmodified); per pending recordApplied({...,durationMs:0,result:'baseline-stamp'}); up() NEVER called. Idempotent + group filter. Test 3/3 (scratch table stays empty proves no up()). T-019: call baselineStamp({}) as LAST step after full reset+seed, gated to fresh-DB path only (idempotent but don't stamp a non-fresh DB). T-017: --baseline-stamp flag calls baselineStamp instead of runMigrations (no actor/gate/env args).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-008"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                { "title": "baselineStamp() marks all applied", "completed": false },
+                { "title": "Record baseline-stamp marker rows", "completed": false },
+                { "title": "Unit test: zero pending after stamp", "completed": false }
+            ],
+            "tags": ["seed", "runner"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Implement status reporter (applied vs pending)",
+            "description": "DONE. packages/seed/src/data-migrations/status.ts: computeMigrationStatus (pure), getMigrationStatus({db?,group?,dir?}) (I/O), formatMigrationStatus (pure renderer). MigrationStatus={applied[{name,group,appliedAt,result,orphaned}],pending[{name,group}],counts}. Orphan handling: ledger row whose file is gone stays in applied flagged orphaned:true. toSeedMigrationGroup() narrows varchar group defensively. Test 11/11. T-017: db:seed:migrate:status calls getMigrationStatus({group}) then console.log(formatMigrationStatus(status)).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                { "title": "Compute + format applied/pending", "completed": false },
+                { "title": "Unit test: partition correctness", "completed": false }
+            ],
+            "tags": ["seed", "cli"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Implement db:seed:make scaffold generator",
+            "description": "DONE. packages/seed/src/data-migrations/make.ts: makeMigration({slug, group?='required', destructive?=false, dir?})->{filePath,name}. normalizeSlug: trim+lowercase then ^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$ (starts with letter so never looks like prefix), throws on invalid. Prefix = max existing NNNN +1 zero-pad4 (gap-safe). Template imports types from ./types.js, meta.name=exact stem, up(ctx) stub + dual-write TODO. Test 18/18. T-017: import from ../data-migrations/make.js (no barrel), parse --group/--destructive, print filePath. NOTE: uppercase input silently lowercased, camelCase NOT auto-kebabbed (single-word passes, multiword fails) — CLI help should say so.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                { "title": "Compute next NNNN prefix", "completed": false },
+                { "title": "Emit templated module with meta + up()", "completed": false },
+                { "title": "Unit test: numbering + compiles", "completed": false }
+            ],
+            "tags": ["seed", "cli", "scaffold"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Implement deterministic UUIDv5 scheme for example fixtures (OQ-1)",
+            "description": "DONE. packages/seed/src/utils/deterministicFixtureId.ts: deterministicFixtureId({seedKey}) -> UUIDv5 via node:crypto SHA-1 (RFC 4122 §4.3) — NO uuid dep added (not in repo). SEED_FIXTURE_NAMESPACE='b17f196e-df93-4151-8e23-71487d77e4fc' (hardcoded, must never change). Exported from utils/index.ts barrel. Test 6/6 with pinned known-answer vectors. Seed-key convention for T-015/T-016: '<entity>:<fixture.id>' (prefix with entity/folder name to avoid cross-entity id collision).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-015", "T-016"],
+            "subtasks": [
+                { "title": "Fixed namespace UUID + uuidv5 wrapper", "completed": false },
+                { "title": "Unit tests: determinism + format", "completed": false }
+            ],
+            "tags": ["seed", "example", "determinism"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Add explicit-id passthrough to the seed create path",
+            "description": "DONE. CRITICAL FINDING: service.create() CANNOT honor incoming id — all @repo/schemas create schemas .omit({id:true}) and Zod strips unmodeled keys. Determinism must go model-direct (bypass service) OR change schemas. T-015 implemented model-direct capability: SeedFactoryConfig.deterministicId?:{modelClass,getId} opt-in in seedFactory.ts — when getId(item) returns a value, bypasses service.create() and calls new modelClass().create({...data,id,createdById,updatedById}); else byte-for-byte unchanged (defaultRandom). Test 16/16. TRADE-OFF for T-016 (OWNER DECISION PENDING): model-direct bypasses service lifecycle (_canCreate, service normalizers.create, _before/_afterCreate hooks e.g. slug gen) per entity — vs schema-level additive optional id (preserves lifecycle but touches @repo/schemas SSOT + exposes id to API/admin callers). T-016 blocked on this decision.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                { "title": "Thread explicit id through factory/create", "completed": false },
+                { "title": "Preserve default random when no id", "completed": false },
+                { "title": "Unit tests: explicit vs default id", "completed": false }
+            ],
+            "tags": ["seed", "example", "factory"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Apply deterministic UUIDv5 ids across example normalizers",
+            "description": "DONE (partial scope — see follow-up). Model-direct wired for: accommodations (AccommodationModel, kept fixture slug instead of stripping), accommodation_faqs (AccommodationFaqModel, seedKey accommodationFaq:<accSeedKey>:<index>), events (EventModel, kept slug). Exported helpers getAccommodationFixtureId/getAccommodationFaqFixtureId/getEventFixtureId. Test 48/48. FLAGGED-AND-SKIPPED (hooks compute DB-state-dependent values, not pure per-fixture — replicating = business-logic dup/risk): destinations (_beforeCreate computes slug/level/path/pathIds from parent DB row = hierarchy math), accommodation_reviews (_afterCreate recalcs parent accommodation aggregate stats via @internal method), destination_faqs/reviews (parents not wired), + other entities not touched (experiences, gastronomies, posts, tags, event child tables). RULE: pure-per-fixture hook -> replicate; cross-row/DB-dependent -> flag-skip. Follow-up tracked separately (T-025). OWNER DECISION 2026-07-07: model-direct not schema-level.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-014", "T-015"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Derive + assign stable ids in example normalizers",
+                    "completed": false
+                },
+                { "title": "IdMapper uses deterministic ids", "completed": false },
+                { "title": "Cover core example entities", "completed": false }
+            ],
+            "tags": ["seed", "example", "determinism"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Wire CLI commands: db:seed:migrate / :status / :make",
+            "description": "DONE. packages/seed/src/cli.ts flags (matches existing --flag convention): --data-migrate (+--required/--example/--allow-destructive) -> runMigrations; --data-migrate --baseline-stamp -> baselineStamp; --data-migrate-status -> getMigrationStatus+format; --data-migrate-make <slug> (+--group=example/--destructive) -> makeMigration. Handlers handleDataMigrate/handleMigrateStatus/handleMake exported, dynamic-import underlying fns (importing cli.ts opens no DB). Test 21/21 + 10/10 no regression. GOTCHA: cli.ts is in src/ sibling to data-migrations/ so imports are ./data-migrations/* NOT ../. T-018 scripts: db:seed:migrate=seed --data-migrate, :status=--data-migrate-status, make needs slug appended.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-012", "T-013"],
+            "blocks": ["T-018", "T-019", "T-020"],
+            "subtasks": [
+                { "title": "migrate handler + flags", "completed": false },
+                { "title": "status + make handlers", "completed": false },
+                { "title": "Unit tests: arg parsing + dispatch", "completed": false }
+            ],
+            "tags": ["seed", "cli"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Add package.json scripts + interactive CLI menu entries",
+            "description": "DONE (orchestrator inline). Root package.json: db:seed:migrate / db:seed:migrate:status / db:seed:make (map to seed --data-migrate / --data-migrate-status / --data-migrate-make). Registered 3 commands in scripts/cli/registry.ts (category database, descriptions <=60 chars per test constraint). Updated registry.test.ts count 48->51 + comment 50->51. Registry test 17/17 green.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add package.json scripts", "completed": false },
+                { "title": "Register in pnpm cli menu", "completed": false },
+                { "title": "cli-tool test", "completed": false }
+            ],
+            "tags": ["cli", "tooling"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Integrate baseline-stamp into db:fresh",
+            "description": "DONE. Both db:fresh + db:fresh-dev are shell chains in root package.json. Appended `&& pnpm --filter @repo/seed seed --data-migrate --baseline-stamp` after the baseline seed (db:fresh: at end; db:fresh-dev: after main seed, before db:seed:test-users). Test scripts/__tests__/db-fresh-baseline-stamp.test.ts (3/3) asserts wiring (stamp appears once, after seed, before test-users). OPEN ITEM (flagged, NOT wired): prod day-1 path (docs/deployment/first-time-setup.md Phase 4 `--required --exclude=users`, no --reset/--example) is a PARTIAL baseline — auto-stamping there is unsafe without verifying no required migration depends on excluded users step. Needs explicit ops decision → T-023 must document the manual stamp step for prod day-1.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-017"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "Call baselineStamp after baseline seed in db:fresh",
+                    "completed": false
+                },
+                { "title": "Integration test: zero pending post-fresh", "completed": false }
+            ],
+            "tags": ["seed", "cli", "fresh"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Port billing extras/023-025 .plan.sql into numbered TS data-migrations",
+            "description": "DONE. First REAL migrations: 0001-billing-plans-ai-consumer-search-limits.ts, 0002-billing-plans-collections-limit.ts, 0003-hos16-deactivate-complex-plans.ts (all group:required, destructive:false — none delete; 0003 flips active=false, reversible). OR-PRESERVE preserved literally (limits||jsonb_build_object guarded by NOT (limits ? key); entitlements array_append guarded by NOT = ANY). Test billing-plans-port.test.ts 8/8 (adds-when-missing, idempotent, operator-edit preserved) via db.transaction+sentinel-throw rollback isolation. Extras 023/024/025 kept + header-marked superseded (may be applied on live; separate ledgers, each guard makes other a no-op). GOTCHAS: billingPlans imports from @repo/db NOT /schemas (qzpay tables); use inArray not =ANY(jsArray); jsonb_build_object needs ::text cast. T-021 can reuse rollback idiom.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-017"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                { "title": "Port 023/024 limits-merge into TS migration", "completed": false },
+                {
+                    "title": "Port 025 deactivate-complex-plans into TS migration",
+                    "completed": false
+                },
+                { "title": "Mark extras files superseded", "completed": false },
+                { "title": "Integration test: parity + no-op re-run", "completed": false }
+            ],
+            "tags": ["seed", "billing", "migration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Integration test: full migrate lifecycle against a seeded DB",
+            "description": "DONE. packages/seed/test/data-migrations/lifecycle.integration.test.ts 4/4: (1) pending->run->applied->no-op cross-checked runner.applied vs getMigrationStatus vs getAppliedMigrations field-by-field; (2) mid-batch abort — 2nd of 3 throws, status shows 1 applied + thrower&successor pending, scratch confirms rollback; (3) baselineStamp result='baseline-stamp' durationMs=0, scratch empty (no up()); (4) real-dir discover finds ported 0001-0003, discovery<->status agree. NO carril inconsistency found — all derive from resolvePendingMigrations, mutually consistent. Isolation: namespaced fixtures + afterEach cleanup (runMigrations opens own per-migration tx, can't outer-rollback). GOTCHA: fixture names NNNN-<slug>, namespace is in slug not prefix — use .includes not .startsWith for cleanup filters.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-019"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Apply pending + ledger assertion", "completed": false },
+                { "title": "Re-run no-op assertion", "completed": false },
+                { "title": "Rollback/abort assertion", "completed": false }
+            ],
+            "tags": ["seed", "testing", "integration"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Integration test: example deterministic ids stable across reseed",
+            "description": "DONE 6/6. packages/seed/test/integration/hos25-t022-reseed-determinism.integration.test.ts. Per-mechanism: posts (top-level deterministicId factory), accommodation_faqs (child composite seed-key), destinations (hierarchy — level/path/pathIds/parentDestinationId reconstruct identical across 2 runs), accommodation_reviews (recalculateStats aggregate correct + id stable), gastronomies (raw-Drizzle bypassed), cross-entity id isolation. Method: withRealDbTransaction insert->assert persisted id==deterministicFixtureId->DELETE->reinsert->assert identical->rollback (no global reset). All persisted ids matched expected + stable across reseed. GOTCHA: had to rebuild service-core dist (Vitest served stale dist missing recalculateStats — see engram testing/vitest-stale-dist-workspace-pkg).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-016", "T-025", "T-026"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Reseed twice, capture ids", "completed": false },
+                { "title": "Assert id stability across reseed", "completed": false }
+            ],
+            "tags": ["seed", "example", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Author guide: writing data-migrations, dual-write, run order, extras boundary",
+            "description": "DONE. Created docs/guides/seed-data-migrations.md (what/why, run order, writing a migration + ctx anatomy + raw-Drizzle + safeDelete examples, dual-write + guard + paths + opt-out, extras/vs data-migrations boundary w/ 023-025->0001-0003 worked example, destructive+prod gate, baseline-stamp, PROD DAY-1 open item). Fixed seed/CLAUDE.md FALSE claims: Faker determinism (no faker dep — real = deterministicFixtureId UUIDv5; examples caveated not deleted), removed @faker-js/faker from Key Dependencies, destination hierarchy fields (computed not carried). Added 'Seed Data Migrations (HOS-25)' section to seed/CLAUDE.md. Cross-linked db/CLAUDE.md (extras superseded note). Prod day-1 documented 3 places incl first-time-setup.md Phase 4 step. lint:md:docs 0 errors (CLAUDE.md files checked separately).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017", "T-020", "T-024"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Author-guide doc", "completed": true },
+                { "title": "Run-order + extras boundary section", "completed": true },
+                {
+                    "title": "Detailed dual-write section in seed CLAUDE.md (root bullet already added)",
+                    "completed": true
+                },
+                { "title": "Document the CI drift guard (T-024)", "completed": true },
+                { "title": "Fix stale Faker claim in seed CLAUDE.md", "completed": true }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T04:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "CI drift guard: seed data change without a data-migration",
+            "_done": "scripts/check-seed-dual-write.sh (bash, decide() split for test-injection via CHANGED_FILES_OVERRIDE/MARKER_TEXT_OVERRIDE, fails-open on unresolvable BASE_SHA). Guards: data/{amenity,attraction,destination,exchangeRate*,feature,revalidationConfig,sponsorship*,postTag}/**, data/user/required/**, data/tag/{internal,system}-*.json (MIXED folder, prefix-guarded), billing/src/config/{plans,limits,entitlements,addons,promo-codes}.config.ts. New-migration = git-added NNNN-*.ts. Opt-out marker [skip-seed-migration]: <reason> in PR body/commit. Wired into .github/workflows/ci.yml guards job (fetch-depth:0 + env-passed BASE_SHA/PR_BODY). Test 10/10 + shellcheck clean. No npm alias (matches check-schema-drift.sh precedent). KNOWN GAP v1: inline-TS-constant seeders (rolePermissions/aiPrompts/aiSettings/socialAutomation/contentModeration/systemUser) NOT covered — future tightening.",
+            "description": "Enforce the dual-write rule (spec R-5) in CI. Design a guard script (e.g. scripts/check-seed-dual-write.sh or a vitest guard) that inspects the PR diff: if it modifies BASELINE seed DATA (packages/seed/src/data/**/*.json for required catalog rows, and the billing plan/limit/entitlement TS constants) WITHOUT adding a new packages/seed/src/data-migrations/NNNN-*.ts file in the same diff, FAIL with a clear message pointing at `pnpm db:seed:make`. FIRST propose the detection approach (diff-based file-pair heuristic — which data paths count, how to detect 'a new migration was added', how to allow an explicit opt-out label/marker for legit data changes that genuinely need no migration e.g. a bulk additive column) and its false-positive/negative profile, THEN implement. Wire into CI (.github/workflows) alongside the existing schema drift guard. Tests: the guard script's own logic (given a synthetic changed-files list -> pass/fail). NOTE owner-approved 2026-07-07 (dual-write enforcement = rule + CI check).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                {
+                    "title": "Study existing scripts/check-schema-drift.sh as pattern",
+                    "completed": false
+                },
+                {
+                    "title": "Propose detection approach + false-pos/neg profile",
+                    "completed": false
+                },
+                { "title": "Implement guard script (diff-based)", "completed": false },
+                {
+                    "title": "Opt-out mechanism for legit no-migration data changes",
+                    "completed": false
+                },
+                { "title": "Wire into CI workflow", "completed": false },
+                { "title": "Guard-logic unit tests", "completed": false }
+            ],
+            "tags": ["ci", "devops", "guard"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T05:45:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Complete example determinism: destinations + reviews + remaining entities",
+            "description": "DONE (destinations+reviews+event-children; experiences/gastronomies/posts split to T-026). Destinations+FAQs FULLY wired — fixtures do NOT carry level/path/pathIds (seed CLAUDE.md WRONG, correct in T-023); exported PURE hierarchy helpers (computeHierarchyLevel/Path/PathIds/isValidParentChildRelation) from service-core + reused in destinations.seed.ts preProcess (in-memory hierarchyBySeedId cache, root-first so no DB roundtrip). accommodation_reviews+destination_reviews wired: added minimal public recalculateStats(id,ctx?) on both review services (wraps existing private aggregation; @internal-style no-actor/no-Result matching updateStatsFromReview precedent — accepted), seed calls it per row in postProcess. eventLocations/eventOrganizers wired. Tests: destinations.seed.test.ts 17, determinism.test extended, service-core recalc integration test. 987 seed pass. DEFERRED to T-026: experiences/gastronomies/posts (large relation-builder work); tags N/A (empty manifest). ORIG: Owner chose FULL example determinism (2026-07-07). INVESTIGATE-THEN-IMPLEMENT, ROBUST over quick (owner pref): (1) destinations — fixtures ALREADY carry level/path/pathIds/destinationType (per seed CLAUDE.md), so pass them through model-direct + resolve parentDestinationId via idMapper; VERIFY the _beforeCreate hierarchy math (computeHierarchyLevel/Path/PathIds) isn't adding anything the fixture lacks — do NOT re-implement it if the fixture already has correct values. (2) accommodation_reviews — _afterCreate recalcs parent accommodation aggregate stats via @internal recalculateAndUpdateAccommodationStats; do NOT hand-duplicate the aggregation — EXPOSE a public recalc method on AccommodationService (e.g. recalculateStats({accommodationId})) and call it from the seed postProcess after model-direct inserts. Same pattern for destination_reviews if applicable. If exposing a service-core API is non-trivial or has wider blast radius, REPORT before committing. Use deterministicFixtureId({seedKey:'<entity>:<fixture.id>'}) with distinct prefixes. Tests: reseed-stability per entity + verify parent aggregates correct after review inserts. Scope note: if too large, prioritize destinations+accommodation_reviews and list what's deferred.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-016"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Investigate destination fixture hierarchy fields vs _beforeCreate",
+                    "completed": false
+                },
+                {
+                    "title": "Wire destinations + destination_faqs model-direct",
+                    "completed": false
+                },
+                {
+                    "title": "Expose public recalc API on AccommodationService (no dup)",
+                    "completed": false
+                },
+                {
+                    "title": "Wire accommodation_reviews + destination_reviews + recalc call",
+                    "completed": false
+                },
+                {
+                    "title": "Remaining example entities as feasible (list deferred)",
+                    "completed": false
+                },
+                {
+                    "title": "Per-entity reseed-stability + parent-aggregate tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "example", "determinism", "service-core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T05:55:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Complete example determinism: experiences + gastronomies + posts",
+            "_done": "DONE 47/47. experiences (raw-SQL, already bypassed service; getExperienceFixtureId({slug}); +idMapper.setMapping fix), gastronomies+faqs+reviews (model-direct, already bypassed; static curated reviewsCount/avg NOT recomputed — out of scope; +idMapper stale-id-on-conflict fix + FAQ idempotency), posts (all 18 fixtures carry unique curated slug so bypass is pure; kept slug in normalizer). tags N/A (manifest 0). NO service-core changes. FLAGGED: postSponsorships._afterCreate writes posts.sponsorshipId cross-row — left out of scope (top-level independent entity). determinism.test.ts extended, 47 pass.",
+            "description": "Finish the FULL example determinism owner decision (T-025 deferred these 3 large entities to avoid half-wiring). Wire deterministic model-direct ids (deterministicId opt-in, deterministicFixtureId({seedKey:'<entity>:<fixture.id>'}) distinct prefixes) for experiences, gastronomies, posts example seeders. SAME audit-first rule as T-016/T-025: for each, check the service create hooks (_beforeCreate/_afterCreate/normalizers.create) — pure-per-fixture (e.g. slug from static fields) -> replicate/passthrough; cross-row/DB-dependent (aggregates, hierarchy) -> reuse/expose a service API like T-025 did for reviews (do NOT hand-duplicate), or if truly non-trivial REPORT before committing. tags is N/A (empty manifest — confirm + note). Also handle any child tables (gastronomy faqs/reviews, post relations). Tests: per-entity reseed-stability (getId + real reseed) + any parent-aggregate correctness. Scoped verify @repo/seed + @repo/service-core if touched.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-025"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                { "title": "Audit + wire experiences", "completed": true },
+                { "title": "Audit + wire gastronomies (+ child tables)", "completed": true },
+                { "title": "Audit + wire posts (+ relations)", "completed": true },
+                { "title": "Confirm tags N/A (empty manifest)", "completed": true },
+                { "title": "Per-entity reseed-stability tests", "completed": true }
+            ],
+            "tags": ["seed", "example", "determinism", "service-core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-07T12:45:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 26,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 26,
+        "blocked": 0,
+        "averageComplexity": 2.3
+    }
+}

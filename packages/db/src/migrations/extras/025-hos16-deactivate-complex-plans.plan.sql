@@ -1,4 +1,20 @@
 -- =============================================================================
+-- SUPERSEDED (HOS-25 T-020, 2026-07-07): this data migration was ported to
+-- the versioned seed data-migration carril as
+-- packages/seed/src/data-migrations/0003-hos16-deactivate-complex-plans.ts.
+-- Per the HOS-25 OQ-3 boundary, DATA migrations (row-level UPDATE/INSERT
+-- content changes, as opposed to Drizzle-invisible DB OBJECTS like triggers,
+-- matviews, or CHECK constraints) now belong in `data-migrations/`, tracked
+-- by their own ledger (`seed_migrations` table) rather than re-applied via
+-- `pnpm db:apply-extras` on every run. This file is LEFT IN PLACE (not
+-- deleted) because it may already be applied on live environments (staging/
+-- prod) that ran `db:apply-extras` before the ported version existed — the
+-- two are tracked independently and do NOT double-apply on any single
+-- environment (this file's own `WHERE active = true` guard makes it a no-op
+-- wherever the ported TS migration already ran, and vice versa). Do not edit
+-- this file further; make future changes to the TS migration above.
+-- =============================================================================
+-- =============================================================================
 -- 025-hos16-deactivate-complex-plans.plan.sql
 --
 -- Purpose (HOS-16 — Plan Packaging Recalibration):

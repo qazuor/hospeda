@@ -1,12 +1,44 @@
+import { DestinationReviewModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { DestinationReviewService } from '@repo/service-core';
+import { computeReviewAverageRating, DestinationReviewService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
+import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
 import { STATUS_ICONS } from '../utils/icons.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { createSeedFactory } from '../utils/seedFactory.js';
 
 /**
- * Normalizer for destination review data
+ * Derives the deterministic UUIDv5 id for an `example` destination review
+ * fixture (HOS-25 T-025), from the fixture's own top-level `id` seed-key.
+ *
+ * Exported (rather than an inline lambda) so tests can assert the id is
+ * stable across calls without running the full seed pipeline, mirroring
+ * `getAccommodationReviewFixtureId` in `accommodationReviews.seed.ts`.
+ *
+ * @param item - Raw destination review fixture item (pre-normalization)
+ * @returns Stable UUIDv5 derived from the fixture's seed-key
+ */
+export const getDestinationReviewFixtureId = (item: unknown): string =>
+    deterministicFixtureId({
+        seedKey: `destinationReview:${(item as { id: string }).id}`
+    });
+
+/**
+ * Normalizer for destination review data.
+ *
+ * Also computes and sets `averageRating` (see HOS-25 T-025): every `example`
+ * review is now created via the deterministic-id, model-direct path (see
+ * `deterministicId` below), which bypasses `DestinationReviewService
+ * ._afterCreate` — the hook that would otherwise compute this same
+ * per-review average from the JSONB `rating` dimensions. Reuses the exact
+ * same pure computation (`computeReviewAverageRating`, exported from
+ * `@repo/service-core`, which already rounds to 2 decimals) instead of
+ * re-implementing it.
+ *
+ * `moderationState` is intentionally left unset here: the DB column default
+ * (`APPROVED`) is what curated seed content should have anyway (see
+ * "Seed Moderation Conventions" in `packages/seed/CLAUDE.md`), so skipping
+ * the bypassed content-moderation scoring hook is safe.
  */
 const destinationReviewNormalizer = (data: Record<string, unknown>) => {
     // First exclude metadata fields and auto-generated fields
@@ -15,7 +47,9 @@ const destinationReviewNormalizer = (data: Record<string, unknown>) => {
         id?: string;
         [key: string]: unknown;
     };
-    return cleanData;
+
+    const averageRating = computeReviewAverageRating(cleanData.rating as Record<string, unknown>);
+    return { ...cleanData, averageRating };
 };
 
 /**
@@ -88,6 +122,23 @@ const getDestinationReviewInfo = (item: unknown, context: SeedContext) => {
 };
 
 /**
+ * Recalculates the parent destination's aggregate stats (`reviewsCount`,
+ * `averageRating`, `rating`) after a model-direct review insert (HOS-25 T-025).
+ *
+ * Runs after EVERY review row — see the identical trade-off note on
+ * `postProcessReview` in `accommodationReviews.seed.ts` for why this is
+ * correct (idempotent re-aggregation) despite being called more often than
+ * strictly necessary.
+ */
+const postProcessReview = async (result: unknown) => {
+    const destinationId = (result as { data?: { destinationId?: string } })?.data?.destinationId;
+    if (!destinationId) return;
+
+    const service = new DestinationReviewService({});
+    await service.recalculateStats(destinationId);
+};
+
+/**
  * DestinationReviews seed using Seed Factory
  */
 export const seedDestinationReviews = createSeedFactory({
@@ -97,5 +148,18 @@ export const seedDestinationReviews = createSeedFactory({
     files: exampleManifest.destinationReviews,
     normalizer: destinationReviewNormalizer,
     getEntityInfo: getDestinationReviewInfo,
-    preProcess: preProcessReview
+    preProcess: preProcessReview,
+    postProcess: postProcessReview,
+
+    // HOS-25 T-025: every `example` destination review gets a stable UUIDv5
+    // derived from its fixture seed-key, so versioned data-migrations can
+    // target a specific review by a fixed id. See the audit note on
+    // `destinationReviewNormalizer` above for why this bypasses
+    // `DestinationReviewService._afterCreate` safely (the per-review average
+    // is computed inline, and the parent destination's aggregate stats are
+    // recomputed via `postProcessReview` above).
+    deterministicId: {
+        modelClass: DestinationReviewModel,
+        getId: getDestinationReviewFixtureId
+    }
 });

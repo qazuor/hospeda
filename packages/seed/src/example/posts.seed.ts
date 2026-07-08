@@ -1,19 +1,48 @@
+import { PostModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { PostService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
+import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { createSeedFactory } from '../utils/seedFactory.js';
 import { getRandomFutureDate } from '../utils/utils.js';
 
 /**
- * Normalizer for post data
+ * Derives the deterministic UUIDv5 id for an `example` post fixture
+ * (HOS-25 T-026), from the fixture's own top-level `id` seed-key.
+ *
+ * Exported (rather than an inline lambda) so tests can assert the id is
+ * stable across calls without running the full seed pipeline, mirroring
+ * `getAccommodationFixtureId` in `accommodations.seed.ts` (HOS-25 T-016).
+ *
+ * @param item - Raw post fixture item (pre-normalization)
+ * @returns Stable UUIDv5 derived from the fixture's seed-key
+ */
+export const getPostFixtureId = (item: unknown): string =>
+    deterministicFixtureId({
+        seedKey: `post:${(item as { id: string }).id}`
+    });
+
+/**
+ * Normalizer for post data.
+ *
+ * Keeps `slug` (see HOS-25 T-026): every `example` post is now created via
+ * the deterministic-id, model-direct path (see `deterministicId` below),
+ * which bypasses `PostService._beforeCreate` — the hook that would otherwise
+ * auto-generate a unique slug via `generatePostSlug(category, title, isNews, date)`
+ * (a DB-uniqueness-checking helper) when no slug is supplied. Fixture slugs are
+ * already curated and verified unique across the whole `example` post dataset,
+ * so passing them straight through is both safe and more readable than a
+ * service-generated slug. `_beforeCreate` also validates title-uniqueness-per-category
+ * and news-post `expiresAt` invariants and calls the (pure, defensive-only)
+ * `normalizeCreateInput` trim/summary-fallback helper — all no-ops for this
+ * already-curated, schema-valid fixture data, so skipping them is safe too.
  */
 const postNormalizer = (data: Record<string, unknown>) => {
     // First exclude metadata fields and auto-generated fields
     const {
         $schema,
         id,
-        slug,
         tagIds,
         likes,
         comments,
@@ -144,7 +173,12 @@ const getPostInfo = (item: unknown) => {
 };
 
 /**
- * Posts seed using Seed Factory
+ * Posts seed using Seed Factory.
+ *
+ * HOS-25 T-026: every `example` post gets a stable UUIDv5 derived from its
+ * fixture seed-key, so versioned data-migrations can target a specific post
+ * by a fixed id. See the audit note on `postNormalizer` above for why this
+ * bypasses `PostService._beforeCreate` safely.
  */
 export const seedPosts = createSeedFactory({
     entityName: 'Posts',
@@ -153,5 +187,10 @@ export const seedPosts = createSeedFactory({
     files: exampleManifest.posts,
     normalizer: postNormalizer,
     getEntityInfo: getPostInfo,
-    preProcess: preProcessPost
+    preProcess: preProcessPost,
+
+    deterministicId: {
+        modelClass: PostModel,
+        getId: getPostFixtureId
+    }
 });

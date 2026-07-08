@@ -17,6 +17,16 @@ import { summaryTracker } from './summaryTracker.js';
 type ServiceConstructor<T = unknown> = new (ctx: any, ...args: any[]) => T;
 
 /**
+ * Minimal model constructor shape required for the deterministic-id direct
+ * insert path (HOS-25 T-015). Compatible with any `@repo/db` model class
+ * extending `BaseModelImpl`, which always exposes a no-arg constructor and
+ * `create(data)`.
+ */
+type SeedModelConstructor = new () => {
+    create: (data: Record<string, unknown>) => Promise<unknown>;
+};
+
+/**
  * Service result type with optional data and error information
  */
 interface ServiceResult {
@@ -65,6 +75,57 @@ export interface SeedFactoryConfig<T = unknown, R = unknown> {
     validateBeforeCreate?: (data: Record<string, unknown> | R) => boolean | Promise<boolean>;
     /** Function to transform the result after creation */
     transformResult?: (result: unknown) => unknown;
+
+    /**
+     * Optional opt-in mechanism (HOS-25 T-015) for persisting an explicit,
+     * caller-derived id instead of letting the database assign a random one
+     * via the `defaultRandom()` column default.
+     *
+     * **Why this can't go through `service.create()`**: standard entity create
+     * schemas omit `id` by convention (e.g. `@repo/schemas`'
+     * `AccommodationCreateInputSchema = AccommodationSchema.omit({ id: true, ... })`,
+     * documented as "Omits auto-generated fields (id, audit timestamps)").
+     * `BaseCrudWrite.create()` validates its input against that schema via
+     * `schema.safeParseAsync(params)` — a plain Zod object schema strips any key
+     * that isn't part of its shape, so an `id` present in the payload is
+     * silently dropped before it ever reaches `model.create()`. There is
+     * currently no supported way to make `service.create()` honor an incoming
+     * `id` for these entities.
+     *
+     * When `getId(item)` returns a value for a given fixture, this factory
+     * bypasses `service.create()` for that item and instead performs a
+     * **direct model insert** — the same pattern `required/systemUser.seed.ts`
+     * uses for `SYSTEM_USER_ID`. `BaseModelImpl.create()` fully supports an
+     * explicit primary key on `INSERT`; the column's `defaultRandom()` only
+     * applies when the value is omitted.
+     *
+     * **Trade-off (read before enabling)**: bypassing `service.create()` also
+     * bypasses its entire lifecycle — permission checks (`_canCreate`), the
+     * *service's own* `normalizers.create`, and its `_beforeCreate`/
+     * `_afterCreate` hooks (e.g. auto-slug generation, computed defaults).
+     * This factory's own `preProcess` / `normalizer` / `validateBeforeCreate` /
+     * `postProcess` / `relationBuilder` callbacks are unaffected and still run
+     * exactly as configured. Only enable this for an entity once you've
+     * confirmed none of the bypassed service-level hooks are load-bearing for
+     * that entity's fixtures — or move any load-bearing computation into this
+     * factory's own `normalizer`/`preProcess` first.
+     *
+     * When this option is omitted entirely (the default), or `getId()` returns
+     * `undefined` for a specific item, behavior is byte-for-byte unchanged:
+     * every item goes through `service.create()` and receives a
+     * database-assigned random id.
+     */
+    deterministicId?: {
+        /** Model class to instantiate for the direct insert. Must expose a no-arg constructor and `create(data)`, like any `@repo/db` model extending `BaseModelImpl`. */
+        modelClass: SeedModelConstructor;
+        /**
+         * Derives the explicit id to persist for a given raw fixture item
+         * (the same `item` passed to `preProcess`/`normalizer`, i.e. before
+         * normalization). Return `undefined` to fall back to the default
+         * `service.create()` path for that specific item.
+         */
+        getId: (item: unknown) => string | undefined;
+    };
 }
 
 /**
@@ -244,14 +305,37 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
                     }
                 }
 
-                // Create entity with proper service context
-                const serviceContext = { logger };
-                const service = new config.serviceClass(serviceContext) as {
-                    create: (actor: Actor, data: unknown) => Promise<ServiceResult>;
-                };
-
                 const actor = validateActor(context);
-                const result = await service.create(actor, normalizedData);
+
+                // Resolve an explicit deterministic id (HOS-25 T-015), if this
+                // seed opted in. `item` is the raw fixture item (pre-normalization),
+                // matching the convention used by `getEntityInfo`/`preProcess`.
+                const deterministicIdConfig = config.deterministicId;
+                const explicitId = deterministicIdConfig?.getId(item);
+
+                let result: ServiceResult;
+                if (deterministicIdConfig && explicitId !== undefined) {
+                    // Deterministic-id path: bypass service.create() entirely and
+                    // insert directly via the model — see the `deterministicId`
+                    // JSDoc on `SeedFactoryConfig` for why this is necessary and
+                    // what lifecycle steps are skipped as a result.
+                    const model = new deterministicIdConfig.modelClass();
+                    const entity = await model.create({
+                        ...(normalizedData as Record<string, unknown>),
+                        id: explicitId,
+                        createdById: actor.id,
+                        updatedById: actor.id
+                    });
+                    result = { data: entity as { id?: string } };
+                } else {
+                    // Default path (unchanged): create entity via the service,
+                    // which assigns a database-generated random id.
+                    const serviceContext = { logger };
+                    const service = new config.serviceClass(serviceContext) as {
+                        create: (actor: Actor, data: unknown) => Promise<ServiceResult>;
+                    };
+                    result = await service.create(actor, normalizedData);
+                }
 
                 if (result.error) {
                     const error = new Error(result.error.message || 'Service creation failed');

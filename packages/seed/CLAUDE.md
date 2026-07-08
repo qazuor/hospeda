@@ -30,6 +30,52 @@ pnpm lint              # Biome linting
 pnpm format            # Format code
 ```
 
+## Seed Data Migrations (HOS-25)
+
+Versioned seed **data** migrations — the DATA counterpart to `packages/db/src/migrations/`'s
+schema migrations. Full author guide with worked examples:
+[docs/guides/seed-data-migrations.md](../../docs/guides/seed-data-migrations.md). This section
+is a package-level quick reference only.
+
+### What lives here
+
+`src/data-migrations/NNNN-slug.ts` — one file per migration, numbered like Drizzle's own
+`NNNN_name.sql`, applied once each and tracked in the `seed_migrations` ledger table
+(`packages/db/src/schemas/seed-migrations/`, preserved across `--reset`). Every module
+exports a `meta` object (`name`, `group: 'required' | 'example'`, optional `destructive`) and
+an `up(ctx)` function receiving `ctx.db` (transaction-scoped), `ctx.models`, `ctx.services`,
+`ctx.actor`, and `ctx.helpers.safeDelete` (FK-guarded, operator-edit-aware hard delete — never
+issue a raw `DELETE` from a migration).
+
+### Commands
+
+```bash
+pnpm db:seed:make <slug>          # Scaffold packages/seed/src/data-migrations/NNNN-<slug>.ts
+pnpm db:seed:migrate              # Run every pending migration
+pnpm db:seed:migrate:status       # Print applied/pending status per migration
+```
+
+`pnpm db:fresh` / `pnpm db:fresh-dev` already chain
+`pnpm --filter @repo/seed seed --data-migrate --baseline-stamp` after the main seed, so a
+fresh local DB never re-runs a migration's `up()` for real — it is stamped applied directly,
+since the baseline fixtures already reflect the post-migration end state.
+
+### The dual-write rule (MANDATORY)
+
+Editing baseline seed data that already lives on a deployed environment (a `required`
+catalog fixture, a billing plan/limit/entitlement config, or a deterministic-id `example`
+fixture) requires adding a numbered migration in the **same PR** — see the root
+[CLAUDE.md](../../CLAUDE.md) bullet "Seed dual-write rule (MANDATORY, HOS-25)" for the exact
+rule. `scripts/check-seed-dual-write.sh` enforces it in CI against a fixed set of guarded
+paths (`data/{amenity,attraction,destination,exchangeRate,exchangeRateConfig,feature,
+revalidationConfig,sponsorshipLevel,sponsorshipPackage,postTag}/**`, `data/user/required/**`,
+`data/tag/{internal,system}-*.json`, and `packages/billing/src/config/{plans,limits,
+entitlements,addons,promo-codes}.config.ts`); a PR can opt out with a literal
+`[skip-seed-migration]: <reason>` marker in its description when a change genuinely needs no
+backfill. Full guard-path list and rationale, plus the run order
+(`db:migrate` → `db:apply-extras` → `db:seed:migrate`, schema before data), are in the
+[author guide](../../docs/guides/seed-data-migrations.md).
+
 ## Test Users for Billing (SPEC-143 Block 1)
 
 A separate `--test-users` seed group creates 13 dev-only test users with **real login credentials** + billing state, so entitlement gates and limit enforcement can be exercised locally without redeploying to staging for every smoke iteration.
@@ -173,21 +219,30 @@ Required seeds include:
 
 ### Example Seeds (--example)
 
-Realistic development/demo data:
+Realistic development/demo data.
+
+> **Correction**: `@repo/seed` has **no `@faker-js/faker` dependency** — there is no
+> `faker.*` call anywhere in `src/`. Example data is **static, hand-curated JSON** under
+> `src/example/**/*.json` (accommodations, posts, events, reviews, destinations, ...),
+> loaded through `createSeedFactory` (see [`src/utils/seedFactory.ts`](src/utils/seedFactory.ts)).
+> The snippet below (and the "Using Faker for Realistic Data" / "Data Generators" examples
+> further down) are generic illustrative Node-seeding patterns kept for conceptual context
+> only — they do **not** reflect how this package actually builds example data. Do not add
+> a Faker dependency to "make them real"; see
+> [Deterministic ids, not a Faker seed](#deterministic-ids-not-a-faker-seed) below for how
+> determinism actually works here.
 
 ```ts
-// seeders/examples/accommodations.ts
-import { faker } from '@faker-js/faker';
-
+// Illustrative pattern only — NOT how @repo/seed seeds example data. See correction above.
 export async function seedAccommodations(count = 50) {
   const accommodations = Array.from({ length: count }, () => ({
-    name: faker.company.name(),
-    slug: faker.helpers.slugify(faker.company.name()),
-    description: faker.lorem.paragraphs(3),
-    address: faker.location.streetAddress(),
-    city: faker.location.city(),
-    priceRange: faker.helpers.arrayElement(['$', '$$', '$$$', '$$$$']),
-    rating: faker.number.float({ min: 3, max: 5, precision: 0.1 }),
+    name: 'Example Hotel',
+    slug: 'example-hotel',
+    description: '...',
+    address: '...',
+    city: '...',
+    priceRange: '$$',
+    rating: 4.5,
   }));
 
   await db.insert(accommodationTable).values(accommodations);
@@ -200,6 +255,18 @@ Example seeds include:
 - Demo users
 - Test events
 - Example reviews
+
+### Deterministic ids, not a Faker seed
+
+Determinism for both `required` and `example` fixtures comes from a **deterministic UUIDv5
+id** (HOS-25 T-014/T-016/T-025/T-026), not from a repeatable Faker seed (there is no Faker in
+this package — see the corrections above). [`src/utils/deterministicFixtureId.ts`](src/utils/deterministicFixtureId.ts)
+derives a stable UUID from a fixed namespace constant plus the fixture's own stable seed key
+(e.g. `accommodation:001-hotel-plaza`, `destination:103-destination-departamento-uruguay`):
+the same seed key always produces the same UUID, on any machine, in any process, with zero
+randomness involved. This lets versioned seed data migrations
+([docs/guides/seed-data-migrations.md](../../docs/guides/seed-data-migrations.md)) reference
+a specific fixture row by a fixed id instead of one that was randomly assigned at seed time.
 
 ### Accommodation Image Pool (SPEC-119)
 
@@ -264,9 +331,15 @@ export async function seedDestinations() {
 }
 ```
 
-### Using Faker for Realistic Data
+### Using Faker for Realistic Data (illustrative pattern — not what this package does)
+
+> As above: `@repo/seed` does not depend on Faker. `seedPosts` below is a hypothetical
+> example of the pattern's *shape*, not real code in this package. The real
+> `src/example/posts.seed.ts` reads static JSON fixtures via `createSeedFactory`, the same
+> as every other `example/*.seed.ts` file.
 
 ```ts
+// Hypothetical example, not real code in this package.
 import { faker } from '@faker-js/faker';
 
 export async function seedPosts(count = 100) {
@@ -316,10 +389,14 @@ export async function seedAccommodationsWithReviews() {
 
 ## Seed Utilities
 
-### Data Generators
+### Data Generators (illustrative pattern — not what this package does)
+
+> Same correction as above: there is no `utils/generators.ts` in this package and no
+> `faker.*` usage. `generateAccommodation`/`generateUser` below are hypothetical examples of
+> the pattern's shape, kept for conceptual illustration only.
 
 ```ts
-// utils/generators.ts
+// Hypothetical example, not real code in this package.
 import { faker } from '@faker-js/faker';
 
 export function generateAccommodation() {
@@ -408,9 +485,23 @@ Seeds run in specific order to respect foreign key constraints:
 
 ### Destination Hierarchy Seeds
 
-Destination seeds include hierarchy fields (`parentDestinationId`, `destinationType`, `level`, `path`, `pathIds`). Parent nodes (Argentina, Litoral, Entre Rios, Departamento Uruguay) are seeded before cities.
+**Correction (T-025 verified)**: destination fixture JSON files carry only `destinationType`
+and `parentDestinationId` — they do **not** carry `level`, `path`, or `pathIds`. Those three
+hierarchy fields are **computed**, not authored, by `preProcessDestination` in
+[`src/required/destinations.seed.ts`](src/required/destinations.seed.ts), which reuses the
+same pure helpers `@repo/service-core` exports for this purpose
+(`computeHierarchyLevel`/`computeHierarchyPath`/`computeHierarchyPathIds`/
+`isValidParentChildRelation`). A parent's already-computed hierarchy fields are read from an
+in-memory cache (`hierarchyBySeedId`, keyed by seed id, not the real DB id) built up as
+`manifest-required.json` processes destinations root-first — no DB round-trip is needed.
+Parent nodes (Argentina, Litoral, Entre Rios, Departamento Uruguay) must therefore be listed
+before their children in the manifest.
 
-The seed script uses `preProcess` to resolve `parentDestinationId` references from seed IDs to real UUIDs via `context.idMapper.getRealId('destinations', seedId)`. Hierarchy nodes must be seeded in order from root (COUNTRY) to leaf (CITY/TOWN).
+The seed script resolves `parentDestinationId` from a seed-id reference to the real
+deterministic UUID (see [Deterministic ids, not a Faker seed](#deterministic-ids-not-a-faker-seed))
+during the same pre-process step, validating the parent-child type relationship
+(`isValidParentChildRelation`) before computing this destination's own hierarchy fields.
+Hierarchy nodes must be seeded in order from root (COUNTRY) to leaf (CITY/TOWN).
 
 ### Destination FAQs (SPEC-158)
 
@@ -424,9 +515,16 @@ The 22 CITY destination seeds (`001`–`022`) carry a top-level `faqs` array:
 
 `faqs` is a 1-to-N child relation (`destination_faqs` table), NOT a column, so the
 destination seed factory **excludes it in the `normalizer`** and creates the rows in a
-`postProcess` hook that loops the array and calls `DestinationService.addFaq`. Unlike the
-accommodation factory (which drops `category`), the destination loop **forwards `category`**
-so the grouped FAQ accordion + `FAQPage` JSON-LD render correctly.
+`postProcess` hook that loops the array and calls `DestinationService.addFaq`, **forwarding
+`category`** so the grouped FAQ accordion + `FAQPage` JSON-LD render correctly.
+
+> **HOS-25 update**: accommodation FAQs now also **persist `category`**. As part of the
+> deterministic-id rework (HOS-25 T-016), the accommodation FAQ path switched from
+> `AccommodationService.addFaq` (which dropped `category`) to a deterministic model-direct
+> insert (`AccommodationFaqModel.create`) that forwards `faq.category ?? null` — so
+> accommodation and destination FAQs are now consistent on this. This is an intentional
+> behavior change (the FAQ accordion can group accommodation FAQs by category too), not an
+> oversight; the old "accommodation factory drops category" behavior is retired.
 
 Content invariants are enforced by [`test/destination-content-faqs.test.ts`](test/destination-content-faqs.test.ts):
 every CITY ships 5–7 FAQs, the baseline categories `Cómo llegar` / `Qué hacer` /
@@ -438,7 +536,7 @@ every CITY ships 5–7 FAQs, the baseline categories `Cómo llegar` / `Qué hace
 1. **Make seeds idempotent** - can run multiple times safely
 2. **Use transactions** - rollback on error
 3. **Respect foreign keys** - seed in correct order
-4. **Generate realistic data** - use Faker.js
+4. **Generate realistic data** - curate representative static JSON fixtures (this package has no Faker dependency)
 5. **Batch large inserts** - avoid memory issues
 6. **Log progress** - show what's being seeded
 7. **Handle errors gracefully** - clear error messages
@@ -496,9 +594,12 @@ pnpm seed --example --count=100
 
 ## Key Dependencies
 
-- `@faker-js/faker` - Generate realistic fake data
 - `@repo/db` - Database models and schemas
+- `@repo/service-core` - Services used for permission-checked writes and hierarchy helpers
 - `@repo/schemas` - Validation schemas
+
+> There is no `@faker-js/faker` dependency in this package. Example data is static JSON
+> under `src/example/**` — see [Deterministic ids, not a Faker seed](#deterministic-ids-not-a-faker-seed).
 
 ## Seed Data JSON Format
 
@@ -539,7 +640,7 @@ If `moderationState` is missing from a fixture, `withModerationDefault('APPROVED
 
 ## Notes
 
-- The full `pnpm db:seed` script (which expands to `pnpm --filter @repo/seed seed --reset --required --example`) is **dev-only**. It wipes the database (`--reset`) and loads Faker-generated demo content (`--example`), so it must never run against a production or shared staging database.
+- The full `pnpm db:seed` script (which expands to `pnpm --filter @repo/seed seed --reset --required --example`) is **dev-only**. It wipes the database (`--reset`) and loads static-JSON demo content (`--example`), so it must never run against a production or shared staging database.
 - **No build step required** (SPEC-189): the seed resolves all `@repo/*` dependencies from their `src/` directories via tsconfig path resolution (`tsx --tsconfig ./tsconfig.json`). Workspace deps do NOT need to be built before running the seed. Pass `--build` to `hops db-seed` as an escape hatch if a dep ever needs a `dist/` artifact.
 - A curated `--required` run that excludes the `users` step IS the documented production day-1 step. The exact command is `pnpm --filter @repo/seed seed --required --exclude=users`. See [`docs/deployment/first-time-setup.md` Phase 4](../../docs/deployment/first-time-setup.md#phase-4-database-initialization) for the full bootstrap procedure, including how to create the first real admin user via Better Auth signup and promote them.
 - The `users` step seeds [`admin-user.json`](src/data/user/required/admin-user.json) and `super-admin-user.json`, both with the well-known `admin@hospeda.com` email. Loading these on prod creates predictable admin credentials and must always be excluded.
@@ -547,9 +648,11 @@ If `moderationState` is missing from a fixture, `withModerationDefault('APPROVED
 - Use `--reset` carefully — it drops all data. Never combine with a production database URL.
 - `entity_views` is intentionally not seeded. It is an append-only telemetry table populated at runtime; seeding view counts would produce misleading dashboard KPIs.
 - Seed data uses realistic values for better testing.
-- Example data is deterministic when using the same Faker seed.
+- Example data determinism comes from stable UUIDv5 fixture ids
+  ([Deterministic ids, not a Faker seed](#deterministic-ids-not-a-faker-seed)), not from a
+  repeatable Faker seed — this package has no Faker dependency.
 
-**Last Updated**: 2026-06-10
+**Last Updated**: 2026-07-07
 
 <claude-mem-context>
 # Recent Activity
