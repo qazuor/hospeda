@@ -558,24 +558,48 @@ if (IS_CLI_ENTRY) {
         } else if (options.dataMigrateStatus) {
             // HOS-25 T-017: `db:seed:migrate:status` — print applied/pending
             // status and exit.
-            handleMigrateStatus({ group: migrationGroup }).catch((err) => {
-                logger.error(
-                    `${STATUS_ICONS.Error} Error reading data-migration status: ${String(err)}`
-                );
-                process.exit(1);
-            });
+            //
+            // HOS-101: this standalone path bypasses `runSeed` (which is what
+            // initializes the DB connection), so `getDb()` inside the status
+            // reader would throw "Database not initialized". Initialize the
+            // connection here first, then close it on completion so the open
+            // pool does not keep the process alive after the report prints.
+            const { initSeedDb, closeSeedDb } = await import('./utils/db.js');
+            initSeedDb();
+            handleMigrateStatus({ group: migrationGroup })
+                .then(() => closeSeedDb())
+                .then(() => process.exit(0))
+                .catch(async (err) => {
+                    logger.error(
+                        `${STATUS_ICONS.Error} Error reading data-migration status: ${String(err)}`
+                    );
+                    await closeSeedDb();
+                    process.exit(1);
+                });
         } else if (options.dataMigrate) {
             // HOS-25 T-017: `db:seed:migrate` — run (or, with
             // `--baseline-stamp`, stamp) pending versioned seed
             // data-migrations and exit.
+            //
+            // HOS-101: as above, initialize the DB connection before the runner
+            // (this standalone path does not go through `runSeed`), and close it
+            // on completion so the process exits cleanly.
+            const { initSeedDb, closeSeedDb } = await import('./utils/db.js');
+            initSeedDb();
             handleDataMigrate({
                 group: migrationGroup,
                 allowDestructive: options.allowDestructive,
                 baselineStamp: options.baselineStamp
-            }).catch((err) => {
-                logger.error(`${STATUS_ICONS.Error} Error running data-migrations: ${String(err)}`);
-                process.exit(1);
-            });
+            })
+                .then(() => closeSeedDb())
+                .then(() => process.exit(0))
+                .catch(async (err) => {
+                    logger.error(
+                        `${STATUS_ICONS.Error} Error running data-migrations: ${String(err)}`
+                    );
+                    await closeSeedDb();
+                    process.exit(1);
+                });
         } else if (options.validateCache) {
             // Maintenance-only mode: validate cache and exit. Runs BEFORE the
             // reset/clean branches so users can pass `--validate-cache` on its
