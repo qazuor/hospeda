@@ -24,56 +24,27 @@
  */
 
 import { createBillingRoutes } from '@qazuor/qzpay-hono';
-import type { MiddlewareHandler } from 'hono';
-import { HTTPException } from 'hono/http-exception';
 import { getQZPayBilling, requireBilling } from '../../middlewares/billing';
 import { billingAdminGuardMiddleware } from '../../middlewares/billing-admin-guard.middleware';
+import { billingAuthMiddleware } from '../../middlewares/billing-auth.middleware';
 import { billingOwnershipMiddleware } from '../../middlewares/billing-ownership.middleware';
 import { billingPermMiddleware } from '../../middlewares/billing-perm.middleware';
 import { pastDueGraceMiddleware } from '../../middlewares/past-due-grace.middleware';
 import { sentryBillingMiddleware } from '../../middlewares/sentry';
 import type { AppOpenAPI } from '../../types';
-import { isGuestActor } from '../../utils/actor';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { addonsRouter } from './addons';
 import { downgradePreviewRouter } from './downgrade-preview';
 import { planChangeRouter } from './plan-change';
 import { userPromoCodesRouter } from './promo-codes';
+import { protectedPlansListRouter } from './protected-plans-list';
 import { startPaidRouter } from './start-paid';
 import { subscriptionCancelRouter } from './subscription-cancel';
 import { subscriptionPauseRouter } from './subscription-pause';
 import { subscriptionStatusRouter } from './subscription-status';
 import { trialRouter } from './trial';
 import { usageRouter } from './usage';
-
-/**
- * Authentication middleware for billing routes.
- * Compatible with QZPay's authMiddleware requirement.
- *
- * Accepts either `user` (set by better-auth session middleware in production)
- * or `actor` (set by actorMiddleware, which is the codebase-wide auth abstraction
- * and is also populated in test mode via HOSPEDA_ALLOW_MOCK_ACTOR). The two are
- * always set together in production; the dual check exists so test setups that
- * skip the session layer still pass through.
- */
-const billingAuthMiddleware: MiddlewareHandler = async (c, next) => {
-    const user = c.get('user');
-    const actor = c.get('actor');
-
-    // A real session sets `user`; the actor abstraction sets `actor`. A GUEST
-    // actor still carries a (sentinel) id, so checking `actor?.id` alone lets
-    // unauthenticated requests through — guard against the guest explicitly.
-    const authenticated = Boolean(user?.id) || (Boolean(actor?.id) && !isGuestActor(actor));
-
-    if (!authenticated) {
-        throw new HTTPException(401, {
-            message: 'Authentication required for billing operations'
-        });
-    }
-
-    await next();
-};
 
 /**
  * Create the inner QZPay billing router with pre-built handlers.
@@ -219,6 +190,16 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // Same ordering rule the downgrade-preview and soft-cancel routes rely on above.
     // Admin promo code CRUD is mounted separately under /admin/billing/promo-codes.
     router.route('/promo-codes', userPromoCodesRouter);
+
+    // Mount the custom `GET /plans` override (billing-interval-override
+    // tooling, `protected-plans-list.ts`) BEFORE the qzpay wrapper.
+    // qzpay-hono's prebuilt `GET /plans` exposes every storage plan —
+    // including the hidden daily test plan — to any authenticated user.
+    // Hono first-match routing means this exact `GET /plans` registration
+    // wins; `POST /plans`, `GET /plans/:id`, etc. are untouched and fall
+    // through to the qzpay wrapper below. Same ordering rule the
+    // soft-cancel / downgrade-preview / promo-codes overrides above rely on.
+    router.route('/plans', protectedPlansListRouter);
 
     // Mount QZPay pre-built billing routes with ownership verification.
     // The ownership middleware ensures users can only access their own billing

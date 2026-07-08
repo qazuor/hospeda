@@ -1,0 +1,76 @@
+---
+/**
+ * @file suscriptores/plan1.astro
+ * @description Hidden, internal-only test page for the daily test billing
+ * plan (`owner-test-daily`, `TEST_DAILY_PLAN` in `@repo/billing`). NOT
+ * linked from anywhere (no nav entry, no sitemap entry) and marked
+ * `noindex, nofollow`. Deliberately NOT added to `robots.txt` — robots.txt
+ * is public and listing the path there would advertise it; noindex meta +
+ * being unlinked is the correct way to hide an internal page.
+ *
+ * Hardcoded Spanish text — this is an internal test-only page, not part of
+ * the i18n-covered public site.
+ *
+ * The actual safety gate is server-side: `HOSPEDA_SHOW_TEST_BILLING_PLAN`
+ * (checked in `resolvePlanBySlug`,
+ * `apps/api/src/services/subscription-checkout.service.ts`). This page
+ * being hidden is a SECOND, independent lock — a leaked URL alone cannot
+ * cause a real charge unless the flag is also deliberately on.
+ *
+ * @route /{lang}/suscriptores/plan1/
+ * @rendering SSR (auth state is read client-side by the island; no
+ *   server-side data dependency, but this app's pages are SSR by default)
+ */
+
+import { TestDailyPlanButton } from '@/components/billing/TestDailyPlanButton.client';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale;
+---
+
+<MarketingLayout locale={locale} title="Test — Plan diario interno" description="Página interna de testing, no indexada.">
+	<meta name="robots" content="noindex, nofollow" slot="head-extra" />
+
+	<section class="test-plan-page">
+		<div class="test-plan-page__container">
+			<h1 class="test-plan-page__title">Plan de prueba diario (interno)</h1>
+			<p class="test-plan-page__body">
+				Esta página es una herramienta interna de testing. Suscribe a la cuenta actual
+				al plan oculto <code>owner-test-daily</code>, que factura cada 1 día en lugar de
+				mensualmente. Requiere que <code>HOSPEDA_SHOW_TEST_BILLING_PLAN</code> esté
+				activo en el servidor — si no lo está, el checkout va a fallar con un error
+				esperado.
+			</p>
+			<TestDailyPlanButton client:load locale={locale} />
+		</div>
+	</section>
+</MarketingLayout>
+
+<style>
+	.test-plan-page {
+		padding: var(--space-section) 0;
+	}
+
+	.test-plan-page__container {
+		max-width: 640px;
+		margin: 0 auto;
+		padding: 0 var(--space-4);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.test-plan-page__title {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		color: var(--core-foreground);
+	}
+
+	.test-plan-page__body {
+		font-family: var(--font-sans);
+		color: var(--core-muted-foreground);
+		line-height: 1.6;
+	}
+</style>

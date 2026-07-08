@@ -1468,6 +1468,23 @@ export const HOSPEDA_ENV_VARS = [
             'Poné un entero positivo (ej. 1) para acortar el trial de publicación de host y poder probar la expiración sin esperar 14 días. NO tiene gate de entorno (NODE_ENV es "production" tanto en la instancia de prod como en la de staging, así que no las distingue, y hay que poder testear contra producción). Es una perilla explícita de ops: afecta a TODO trial que arranque mientras esté seteada, así que la seteás, hacés la prueba y la SACÁS. Sin setear por defecto en todos los entornos.'
     },
     {
+        name: 'HOSPEDA_SHOW_TEST_BILLING_PLAN',
+        description:
+            'Exposes and enables subscribing to the hidden daily test billing plan (owner-test-daily) for testing.',
+        descriptionEs:
+            'Expone y habilita la suscripción al plan de facturación diario de prueba oculto (owner-test-daily) para testing.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        exampleValue: 'false',
+        apps: ['api'],
+        category: 'testing',
+        howToObtain:
+            'Set to "true" to make the hidden owner-test-daily plan subscribable (resolvePlanBySlug in subscription-checkout.service.ts rejects it with PLAN_NOT_FOUND while unset). While ON, subscribing produces REAL MercadoPago daily charges in prod — this is an explicit ops knob, NOT gated by environment (NODE_ENV cannot distinguish prod from staging). Set it, run the test, then UNSET it. Unset (false) by default everywhere.',
+        howToObtainEs:
+            'Poné "true" para que el plan oculto owner-test-daily sea suscribible (resolvePlanBySlug en subscription-checkout.service.ts lo rechaza con PLAN_NOT_FOUND mientras esté sin setear). Mientras esté ON, suscribirse genera cargos diarios REALES de MercadoPago en prod — es una perilla explícita de ops, NO tiene gate de entorno (NODE_ENV no distingue prod de staging). Seteala, hacé la prueba y SACALA. Sin setear (false) por defecto en todos los entornos.'
+    },
+    {
         name: 'HOSPEDA_DISABLE_AUTH',
         description: 'Bypass auth in tests',
         descriptionEs: 'Saltea la autenticación en tests',
