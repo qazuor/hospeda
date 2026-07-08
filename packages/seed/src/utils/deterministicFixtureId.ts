@@ -69,9 +69,10 @@ function uuidV5(namespace: string, name: string): string {
     const namespaceBytes = uuidToBytes(namespace);
     const nameBytes = Buffer.from(name, 'utf8');
 
-    const hash = createHash('sha1')
-        .update(Buffer.concat([namespaceBytes, nameBytes]))
-        .digest();
+    const data = Buffer.concat([namespaceBytes, nameBytes]);
+
+    // Non-security SHA-1 (UUIDv5 per the JSDoc above); suppress the weak-crypto false positive.
+    const hash = createHash('sha1').update(data).digest(); // lgtm[js/weak-cryptographic-algorithm]
 
     // RFC 4122 uses only the first 16 bytes of the hash.
     const bytes = Buffer.from(hash.subarray(0, 16));
