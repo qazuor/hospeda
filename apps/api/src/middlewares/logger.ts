@@ -34,9 +34,20 @@ export const loggerMiddleware: MiddlewareHandler = async (c, next) => {
 
     const logMessage = `${method} ${url} ${status} ${duration}ms`;
 
-    // Use structured apiLogger for consistency
+    // The bare root `/` is hit by uptime/health probers (the real health check
+    // at `/health` is registered before this middleware and already exempt).
+    // Logging one line per probe is pure noise, so suppress its routine access
+    // log — server errors on it are still logged below.
+    const isHealthProbe = c.req.path === '/';
+
+    // Use structured apiLogger for consistency. Server errors (5xx) are ALWAYS
+    // logged — you never want to silently drop them. The routine access log
+    // (2xx success + 4xx client warnings) is gated by API_ENABLE_REQUEST_LOGGING
+    // and skipped for health probes.
     if (status >= 500) {
         apiLogger.error(`❌ HTTP ERROR => ${logMessage}`, 'ERROR');
+    } else if (!env.API_ENABLE_REQUEST_LOGGING || isHealthProbe) {
+        // Routine access log suppressed (request logging disabled or health probe).
     } else if (status >= 400) {
         apiLogger.warn(`⚠️ HTTP WARNING => ${logMessage}`, 'WARNING');
     } else {

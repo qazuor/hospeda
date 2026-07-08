@@ -71,12 +71,26 @@ const LOG_LEVEL_BY_NAME = {
     warn: LogLevel.WARN,
     error: LogLevel.ERROR
 } as const;
+// Forward EVERY validated API_LOG_* knob into the process-wide logger config.
+// Previously only LEVEL + FORMAT were wired; the display/format knobs below were
+// validated in env-schema but never consumed (silently ignored config). Now
+// every one takes effect (API_ENABLE_REQUEST_LOGGING is honored separately by
+// loggerMiddleware). EXPAND_OBJECT_LEVELS: -1 means "expand all", so the boolean
+// flag maps to expand-all vs the package default of 2 levels.
 configureLogger({
     LEVEL: LOG_LEVEL_BY_NAME[env.API_LOG_LEVEL],
     FORMAT:
         env.API_LOG_FORMAT === 'json' || env.NODE_ENV === 'production'
             ? LogFormat.JSON
-            : LogFormat.PRETTY
+            : LogFormat.PRETTY,
+    INCLUDE_TIMESTAMPS: env.API_LOG_INCLUDE_TIMESTAMPS,
+    INCLUDE_LEVEL: env.API_LOG_INCLUDE_LEVEL,
+    USE_COLORS: env.API_LOG_USE_COLORS,
+    SAVE: env.API_LOG_SAVE,
+    EXPAND_OBJECT_LEVELS: env.API_LOG_EXPAND_OBJECTS ? -1 : 2,
+    TRUNCATE_LONG_TEXT: env.API_LOG_TRUNCATE_TEXT,
+    TRUNCATE_LONG_TEXT_AT: env.API_LOG_TRUNCATE_AT,
+    STRINGIFY_OBJECTS: env.API_LOG_STRINGIFY
 });
 
 // Log a small, safe env summary ONCE here, after configureLogger() so it honors
