@@ -16,10 +16,13 @@
  * wrapper. Same ordering precedent as the soft-cancel / downgrade-preview /
  * promo-codes overrides in `routes/billing/index.ts`.
  *
- * The response reproduces qzpay-hono's `GET /plans` shape byte-for-byte (see
- * its `dist/index.js` `GET ${prefix}/plans` handler) — `ResponseFactory` is
- * deliberately NOT used here, since that would change the envelope shape and
- * break existing consumers of this endpoint.
+ * The response reproduces qzpay-hono's `GET /plans` envelope shape (see its
+ * `dist/index.js` `GET ${prefix}/plans` handler) — same `{ success, data,
+ * pagination }` / `{ success, data }` (active-only) fields, same pagination
+ * defaults (limit 20, clamped [1,100]). The one intentional divergence: invalid
+ * `limit`/`offset` fall back to defaults here instead of qzpay's HTTP 400
+ * (acceptable for an internal catalog shadow). `ResponseFactory` is deliberately
+ * NOT used, since that would change the envelope and break existing consumers.
  *
  * @module routes/billing/protected-plans-list
  */
@@ -74,12 +77,17 @@ export async function handleProtectedPlansList(c: Context): Promise<Response> {
         return c.json({ success: true, data: active.filter((p) => !isTestPlan(p)) });
     }
 
-    // Mirrors qzpay-hono's default (paginated) branch exactly. `total`/`hasMore`
-    // are passed through as qzpay-core computed them (pre-filter) — the same
-    // way any other post-fetch filter would behave; the one hidden test plan
+    // Mirrors qzpay-hono's default (paginated) branch. Pagination defaults match
+    // qzpay's `PaginationSchema` (default limit 20, clamped to [1,100]; offset >= 0)
+    // so this override pages identically to the endpoint it shadows — invalid
+    // values fall back to the defaults rather than qzpay's 400, which is
+    // acceptable for this internal catalog shadow. `total`/`hasMore` are passed
+    // through as qzpay-core computed them (pre-filter); the one hidden test plan
     // this ever excludes is not worth an extra query to recompute an exact count.
-    const limit = Number(c.req.query('limit')) || 50;
-    const offset = Number(c.req.query('offset')) || 0;
+    const rawLimit = Number(c.req.query('limit'));
+    const limit = Number.isInteger(rawLimit) && rawLimit >= 1 ? Math.min(rawLimit, 100) : 20;
+    const rawOffset = Number(c.req.query('offset'));
+    const offset = Number.isInteger(rawOffset) && rawOffset >= 0 ? rawOffset : 0;
     const result = await billing.plans.list({ limit, offset });
     return c.json({
         success: true,

@@ -141,11 +141,12 @@ describe('handleProtectedPlansList', () => {
 
             await handleProtectedPlansList(ctx as never);
 
-            expect(list).toHaveBeenCalledWith({ limit: 50, offset: 0 });
+            // Default limit matches qzpay-hono's PaginationSchema default (20), not 50.
+            expect(list).toHaveBeenCalledWith({ limit: 20, offset: 0 });
             expect(ctx.json).toHaveBeenCalledWith({
                 success: true,
                 data: [REAL_PLAN],
-                pagination: { limit: 50, offset: 0, hasMore: false, total: 2 }
+                pagination: { limit: 20, offset: 0, hasMore: false, total: 2 }
             });
             const [body] = ctx.json.mock.calls[0] as [{ data: Array<{ name: string }> }];
             expect(body.data.map((p) => p.name)).not.toContain('owner-test-daily');
