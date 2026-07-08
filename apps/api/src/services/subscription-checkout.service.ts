@@ -25,6 +25,7 @@ import type {
     QZPayPollingResourceType,
     QZPaySubscriptionWithHelpers
 } from '@qazuor/qzpay-core';
+import { TEST_DAILY_PLAN } from '@repo/billing';
 import {
     billingSubscriptions,
     commerceListingSubscriptions,
@@ -191,8 +192,22 @@ export class SubscriptionCheckoutError extends Error {
  * Resolve a plan by its slug. Hospeda treats `QZPayPlan.name` as the
  * slug (mirrors `trial.service.ts:124`). Returns `null` when no plan
  * matches; callers decide whether to throw or fall back.
+ *
+ * Testing-only gate: the hidden daily test plan ({@link TEST_DAILY_PLAN},
+ * slug `owner-test-daily`) always exists as a row in `billing_plans` /
+ * `billing_prices` (seeded unconditionally by `seedTestDailyPlan`), but is
+ * treated as NOT FOUND here — same as any other unresolvable slug — unless
+ * `HOSPEDA_SHOW_TEST_BILLING_PLAN` is `true`. This is the SOLE gate on
+ * whether the plan is subscribable: the plan is intentionally excluded from
+ * `ALL_PLANS` and every listing (public + protected), so this slug check is
+ * the actual safety net, not a defense-in-depth extra. Every caller of
+ * `resolvePlanBySlug` (monthly, commerce, annual) inherits the gate for
+ * free from this single choke point.
  */
 async function resolvePlanBySlug(billing: QZPayBilling, planSlug: string) {
+    if (planSlug === TEST_DAILY_PLAN.slug && !env.HOSPEDA_SHOW_TEST_BILLING_PLAN) {
+        return null;
+    }
     const plansResult = await billing.plans.list();
     return plansResult.data.find((p) => p.name === planSlug) ?? null;
 }
@@ -241,6 +256,19 @@ function findMonthlyPrice<T extends PriceShape>(prices: ReadonlyArray<T>): T | n
     return (
         prices.find((p) => p.active && p.billingInterval === 'month' && p.intervalCount === 1) ??
         null
+    );
+}
+
+/**
+ * Resolve the daily price within a plan (`billingInterval: 'day'`,
+ * `intervalCount: 1`). ONLY used for the hidden test-daily plan
+ * ({@link TEST_DAILY_PLAN}) — see the special-case in
+ * {@link initiatePaidMonthlySubscription}. No real (non-test) plan is ever
+ * expected to carry a `'day'` price row.
+ */
+function findDailyPrice<T extends PriceShape>(prices: ReadonlyArray<T>): T | null {
+    return (
+        prices.find((p) => p.active && p.billingInterval === 'day' && p.intervalCount === 1) ?? null
     );
 }
 
@@ -409,7 +437,20 @@ export async function initiatePaidMonthlySubscription(
         throw new SubscriptionCheckoutError('PLAN_NOT_FOUND', `Plan '${planSlug}' not found`);
     }
 
-    const monthlyPrice = findMonthlyPrice(plan.prices);
+    // Testing-only special case (HOSPEDA_SHOW_TEST_BILLING_PLAN): the hidden
+    // daily test plan ({@link TEST_DAILY_PLAN}) carries ONLY a `'day'` price
+    // — no `'month'` price at all (see its JSDoc in `@repo/billing`). The
+    // monthly checkout entry point is reused as-is (the client still sends
+    // `billingInterval: 'monthly'`), but for this ONE plan it resolves the
+    // DAILY price instead of a monthly one, so the MP preapproval it creates
+    // is still billed against the `'day'` price row (see
+    // `toMercadoPagoInterval` in `@qazuor/qzpay-mercadopago`). No real plan
+    // is ever affected — this branch only matches `TEST_DAILY_PLAN.slug`,
+    // which `resolvePlanBySlug` already gates behind the env flag above.
+    const monthlyPrice =
+        planSlug === TEST_DAILY_PLAN.slug
+            ? findDailyPrice(plan.prices)
+            : findMonthlyPrice(plan.prices);
     if (!monthlyPrice) {
         throw new SubscriptionCheckoutError(
             'NO_MONTHLY_PRICE',

@@ -27,6 +27,7 @@ import { seedSponsorshipLevels } from './sponsorshipLevels.seed.js';
 import { seedSponsorshipPackages } from './sponsorshipPackages.seed.js';
 import { seedSystemTags } from './systemTags.seed.js';
 import { seedSystemUser } from './systemUser.seed.js';
+import { seedTestDailyPlan } from './testDailyPlan.seed.js';
 import { seedUsers } from './users.seed.js';
 
 /**
@@ -154,6 +155,13 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
         //      ALL_PLANS so it stays excluded from accommodation plan lists;
         //      stamps billing_plans.product_domain='partner'.
         await seedPartnerPlan(context);
+
+        // 12.3 Load the hidden daily test plan (billing-interval-override
+        //      tooling). Separate from ALL_PLANS; product_domain stays
+        //      'accommodation' so loadEntitlements resolves its grants.
+        //      Always seeded — HOSPEDA_SHOW_TEST_BILLING_PLAN gates
+        //      subscribability at checkout time, not seed presence.
+        await seedTestDailyPlan(context);
 
         // 13. Load billing add-ons (after plans, uses entitlements and limits)
         await seedBillingAddons(context);

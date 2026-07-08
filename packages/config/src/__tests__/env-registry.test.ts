@@ -205,8 +205,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * 250 + 2 = 252.
  *
  * +1 = HOSPEDA_TRIAL_DAYS_OVERRIDE (testing-only trial-length override). 252 + 1 = 253.
+ *
+ * +1 = HOSPEDA_SHOW_TEST_BILLING_PLAN (testing-only flag that exposes and
+ * enables subscribing to the hidden daily test billing plan,
+ * `owner-test-daily`). 253 + 1 = 254.
  */
-const EXPECTED_VAR_COUNT = 253;
+const EXPECTED_VAR_COUNT = 254;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

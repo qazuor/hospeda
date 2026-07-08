@@ -28,6 +28,7 @@
  * @module routes/billing/start-paid
  */
 
+import { TEST_DAILY_PLAN } from '@repo/billing';
 import type { StartPaidSubscriptionResponse } from '@repo/schemas';
 import {
     ServiceErrorCode,
@@ -320,9 +321,25 @@ export const handleStartPaidSubscription = async (
         // of falling through to PLAN_NOT_FOUND or a provider error. The check
         // mirrors `resolvePlanBySlug` in subscription-checkout.service.ts —
         // QZPayPlan.active is the canonical active flag.
+        //
+        // Testing-only exemption (HOSPEDA_SHOW_TEST_BILLING_PLAN): the hidden
+        // daily test plan ({@link TEST_DAILY_PLAN}) is seeded with
+        // `active: false` on purpose — that is what keeps it off the public
+        // plans list (`/api/v1/public/plans` filters `active: true`). It MUST
+        // stay subscribable here despite being inactive; the AUTHORITATIVE
+        // gate on whether it can actually be subscribed to is
+        // `resolvePlanBySlug` in `subscription-checkout.service.ts`, which
+        // returns `null` (→ PLAN_NOT_FOUND) for this slug when the env flag
+        // is off. Exempting the active-check here does NOT make the plan
+        // subscribable when the flag is off — it only stops this earlier
+        // guard from short-circuiting BEFORE that real gate runs.
         const plansResult = await billing.plans.list();
         const targetPlan = plansResult.data.find((p) => p.name === body.planSlug) ?? null;
-        if (targetPlan !== null && targetPlan.active === false) {
+        if (
+            targetPlan !== null &&
+            targetPlan.active === false &&
+            body.planSlug !== TEST_DAILY_PLAN.slug
+        ) {
             throw new ServiceError(
                 ServiceErrorCode.PLAN_DISABLED,
                 'This plan is no longer available. Please choose an active plan.',
@@ -336,6 +353,11 @@ export const handleStartPaidSubscription = async (
         // — this handler must proceed to initiate the subscription regardless of
         // analytics outcome. Mirrors the pattern in payment-logic.ts. The amount
         // is resolved best-effort from the plan price matching the interval.
+        // Verified safe for the daily test plan too: it has only a 'day' price,
+        // so `priceForInterval` resolves to `undefined` here (no 'month'/'year'
+        // match) — `amountMajor`/`currency` fall back to `null` via optional
+        // chaining, and the whole block is already wrapped in try/catch, so
+        // this can never throw regardless of which prices a plan carries.
         try {
             const priceForInterval = targetPlan?.prices.find((p) =>
                 body.billingInterval === 'annual'

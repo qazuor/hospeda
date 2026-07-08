@@ -574,6 +574,102 @@ export const PARTNER_LISTING_PLAN: PlanDefinition = {
     limits: []
 };
 
+// ─── TEST DAILY PLAN (testing-only, HOSPEDA_SHOW_TEST_BILLING_PLAN) ────────
+
+/**
+ * Real ARS charge amount (in centavos) for the daily test plan's single
+ * price row. Chosen as ARS $1.00 — the smallest whole-currency-unit amount —
+ * to minimize the real cost of every daily test charge while staying inside
+ * MercadoPago's accepted range for a recurring `preapproval` (MP requires a
+ * positive `transaction_amount`; ARS $1.00 is the conservative floor used
+ * here absent a confirmed lower official minimum — see the JSDoc on
+ * {@link TEST_DAILY_PLAN} for the full rationale and how to raise it if MP
+ * ever rejects it in practice).
+ *
+ * Exported so the seed (`seedTestDailyPlan`) and this config share the exact
+ * same value — never duplicate the literal `100` in two places.
+ */
+export const TEST_DAILY_PLAN_UNIT_AMOUNT_CENTAVOS = 100;
+
+/**
+ * Testing-only daily-cadence plan (billing-interval-override tooling).
+ *
+ * A dedicated HIDDEN plan that bills every 1 day instead of monthly, so an
+ * operator can exercise the FULL recurring-charge lifecycle (MercadoPago
+ * preapproval creation, `subscription_authorized_payment.created` webhooks,
+ * dunning, cancellation) on a realistic cadence without waiting a month
+ * between charges. MercadoPago's recurring frequency is derived ENTIRELY
+ * from the `billing_prices` row a subscription is created against —
+ * `toMercadoPagoInterval` in `@qazuor/qzpay-mercadopago` already maps
+ * `billingInterval: 'day'` -> MP `frequency_type: 'days'` — so a plan whose
+ * ONLY price has `billingInterval: 'day', intervalCount: 1` makes MP charge
+ * daily. No qzpay change required; this is Hospeda-only config + seed +
+ * gating.
+ *
+ * **Deliberately NOT part of {@link ALL_PLANS}** — same isolation precedent
+ * as {@link COMMERCE_LISTING_PLAN} / {@link PARTNER_LISTING_PLAN}: the
+ * accommodation seed loop, the public plan list, and the grant-matrix
+ * snapshot tests all operate on `ALL_PLANS` and must never see this plan.
+ * It is seeded by its own dedicated helper (`seedTestDailyPlan` in
+ * `@repo/seed`), which stamps `metadata.testPlan = true` in the DB row for
+ * extra identifiability beyond the `owner-test-daily` slug alone.
+ *
+ * `product_domain` is EXPLICITLY `'accommodation'` — UNLIKE commerce/partner,
+ * which use their own domains — so `loadEntitlements()` (which filters
+ * `product_domain = 'accommodation'`) actually resolves this subscription's
+ * entitlements/limits. Without this the subscription would exist but grant
+ * nothing, defeating the point of testing the full paid-owner lifecycle on a
+ * fast cadence.
+ *
+ * `entitlements` / `limits` are copied VERBATIM from {@link OWNER_PREMIUM_PLAN}
+ * so a test subscription on this plan behaves identically to a real premium
+ * owner subscription for every entitlement/limit check — only the billing
+ * cadence and price differ. If `OWNER_PREMIUM_PLAN`'s grants change, this
+ * plan's grants change with it (single source of truth, not a fork).
+ *
+ * Subscribing to this plan is gated by `HOSPEDA_SHOW_TEST_BILLING_PLAN`
+ * (checked in `resolvePlanBySlug` inside
+ * `apps/api/src/services/subscription-checkout.service.ts`), NOT by this
+ * config or the seed — the row always exists in `billing_plans` /
+ * `billing_prices` once seeded (so flipping the flag back on instantly makes
+ * it subscribable again for repeat testing); the env flag is the SOLE gate
+ * on whether a checkout can resolve this plan by slug.
+ *
+ * No monthly/annual price is ever seeded for this plan — it is DAILY-ONLY.
+ * `monthlyPriceArs` below is a type-satisfying placeholder (mirrors
+ * {@link TEST_DAILY_PLAN_UNIT_AMOUNT_CENTAVOS}) that `seedTestDailyPlan`
+ * never reads to create a `'month'` price row.
+ */
+export const TEST_DAILY_PLAN: PlanDefinition = {
+    slug: 'owner-test-daily',
+    name: 'Test Daily (internal)',
+    description:
+        'Testing-only plan that bills every 1 day at the minimum ARS amount. Hidden unless HOSPEDA_SHOW_TEST_BILLING_PLAN is set. Not a real product tier.',
+    // See JSDoc: 'owner' only satisfies the PlanCategory type; product_domain
+    // (stamped by the seed as 'accommodation') is what makes entitlements load.
+    category: 'owner',
+    // PLACEHOLDER — never seeded as a 'month' price row (daily-only plan).
+    monthlyPriceArs: TEST_DAILY_PLAN_UNIT_AMOUNT_CENTAVOS,
+    annualPriceArs: null,
+    monthlyPriceUsdRef: 0,
+    hasTrial: false,
+    trialDays: 0,
+    isDefault: false,
+    sortOrder: 999,
+    // Seeded INACTIVE on purpose. The public plans endpoint
+    // (`/api/v1/public/plans` → `PlanService.list({ active: true })`) filters to
+    // active plans, so `active: false` keeps this test plan off the public
+    // pricing page WITHOUT any endpoint change. The checkout still resolves it:
+    // `resolvePlanBySlug` calls `billing.plans.list()` with no `active` filter
+    // (qzpay-drizzle `search` only filters active when asked), so the inactive
+    // plan is still found — and only when HOSPEDA_SHOW_TEST_BILLING_PLAN is on.
+    // The daily `billing_prices` row stays active (create resolves the price via
+    // `findByPlanId(activeOnly=true)`).
+    isActive: false,
+    entitlements: [...OWNER_PREMIUM_PLAN.entitlements],
+    limits: [...OWNER_PREMIUM_PLAN.limits]
+};
+
 // ─── ALL PLANS ─────────────────────────────────────────────────
 
 /** All available plans in the system */
