@@ -213,8 +213,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * +1 = HOSPEDA_SHOW_TEST_BILLING_PLAN (testing-only flag that exposes and
  * enables subscribing to the hidden daily test billing plan,
  * `owner-test-daily`). 254 + 1 = 255.
+ *
+ * +2 = HOSPEDA_INTERNAL_API_URL + HOSPEDA_INTERNAL_REQUEST_SECRET (HOS-103:
+ * internal server-to-server SSR URL + shared secret that exempts SSR traffic
+ * from the public rate limit). 255 + 2 = 257.
  */
-const EXPECTED_VAR_COUNT = 255;
+const EXPECTED_VAR_COUNT = 257;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

@@ -10,7 +10,7 @@ exports[`ENV_REGISTRY > var count per category > should match expected distribut
   "cache": 2,
   "client-admin": 28,
   "client-web": 14,
-  "core": 7,
+  "core": 9,
   "cron": 3,
   "database": 7,
   "debugging": 1,
