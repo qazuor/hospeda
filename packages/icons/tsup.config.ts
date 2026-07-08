@@ -6,6 +6,6 @@ export default defineConfig({
         resolver: 'src/resolver.ts'
     },
     format: ['esm', 'cjs'],
-    dts: true,
+    dts: process.env.SKIP_PACKAGE_DTS !== 'true',
     external: ['react']
 });

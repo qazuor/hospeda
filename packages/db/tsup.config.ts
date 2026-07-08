@@ -8,7 +8,7 @@ export default defineConfig({
     splitting: false,
     sourcemap: true,
     clean: true,
-    dts: true,
+    dts: process.env.SKIP_PACKAGE_DTS !== 'true',
     bundle: true,
     tsconfig: './tsconfig.json',
     noExternal: [/@repo\/.*/, '@repo/schemas', '@repo/utils'],
