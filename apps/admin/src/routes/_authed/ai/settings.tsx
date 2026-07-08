@@ -13,7 +13,7 @@
 import { AlertCircleIcon, LoaderIcon, SaveIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,13 +32,16 @@ import {
     type AiProviderId,
     type AiSettingsValue,
     FEATURE_LABELS,
-    getProviderLabel,
     useAiCredentialsQuery,
     useAiSettingsQuery,
     useUpdateAiSettingsMutation
 } from '@/features/ai-settings';
 import { useToast } from '@/hooks/use-toast';
 import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
+import {
+    applyProviderToAllFeatures,
+    buildProviderOptions
+} from './-components/ai-settings-provider.utils';
 
 export const Route = createFileRoute('/_authed/ai/settings')({
     component: AiSettingsPage
@@ -175,6 +178,11 @@ function AiSettingsPage() {
         return map;
     }, [credentials]);
 
+    // Selected provider for the "Apply to all features" bulk control (local
+    // UI state, not a form field — the user still reviews and clicks
+    // "Guardar" to persist).
+    const [bulkProviderId, setBulkProviderId] = useState<AiProviderId>('stub');
+
     const form = useForm({
         defaultValues: DEFAULT_SETTINGS,
         onSubmit: async ({ value }) => {
@@ -303,6 +311,69 @@ function AiSettingsPage() {
                     </Card>
                 )}
 
+                {/* ── Bulk provider apply ──────────────────────────────────────── */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Aplicar proveedor a todas las funciones</CardTitle>
+                        <CardDescription>
+                            Cambia el proveedor principal de las {ALL_FEATURES.length} funciones de
+                            una sola vez. El modelo de cada función no se modifica.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form.Subscribe selector={(state) => state.values.providers}>
+                            {(providers) => {
+                                const bulkOptions = buildProviderOptions({
+                                    knownProviders,
+                                    currentValue: bulkProviderId,
+                                    providers: providers ?? {}
+                                });
+
+                                return (
+                                    <div className="flex flex-wrap items-end gap-4">
+                                        <div>
+                                            <Label>Proveedor</Label>
+                                            <Select
+                                                value={bulkProviderId}
+                                                onValueChange={(val) =>
+                                                    setBulkProviderId(val as AiProviderId)
+                                                }
+                                            >
+                                                <SelectTrigger className="mt-2 w-56">
+                                                    <SelectValue placeholder="Seleccioná un proveedor..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {bulkOptions.map((option) => (
+                                                        <SelectItem
+                                                            key={option.value}
+                                                            value={option.value}
+                                                        >
+                                                            {option.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => {
+                                                applyProviderToAllFeatures({
+                                                    form,
+                                                    providerId: bulkProviderId,
+                                                    featureIds: ALL_FEATURES
+                                                });
+                                            }}
+                                        >
+                                            Aplicar a todas las features
+                                        </Button>
+                                    </div>
+                                );
+                            }}
+                        </form.Subscribe>
+                    </CardContent>
+                </Card>
+
                 {/* ── Feature Routing Section ────────────────────────────────── */}
                 {ALL_FEATURES.map((featureId) => (
                     <Card key={featureId}>
@@ -340,29 +411,65 @@ function AiSettingsPage() {
                                 {/* Primary provider */}
                                 <form.Field name={`features.${featureId}.primaryProvider`}>
                                     {(field) => (
-                                        <div>
-                                            <Label>Proveedor principal</Label>
-                                            <Select
-                                                value={field.state.value}
-                                                onValueChange={(val) =>
-                                                    field.handleChange(val as AiProviderId)
-                                                }
-                                            >
-                                                <SelectTrigger className="mt-2">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {knownProviders.map((p) => (
-                                                        <SelectItem
-                                                            key={p}
-                                                            value={p}
+                                        <form.Subscribe
+                                            selector={(state) => state.values.providers}
+                                        >
+                                            {(providers) => {
+                                                const providersMap = providers ?? {};
+                                                const options = buildProviderOptions({
+                                                    knownProviders,
+                                                    currentValue: field.state.value,
+                                                    providers: providersMap
+                                                });
+                                                const isStub = field.state.value === 'stub';
+                                                const isProviderDisabled =
+                                                    providersMap[field.state.value]?.enabled ===
+                                                    false;
+
+                                                return (
+                                                    <div>
+                                                        <Label>Proveedor principal</Label>
+                                                        <Select
+                                                            value={field.state.value}
+                                                            onValueChange={(val) =>
+                                                                field.handleChange(
+                                                                    val as AiProviderId
+                                                                )
+                                                            }
                                                         >
-                                                            {getProviderLabel(p)}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
+                                                            <SelectTrigger className="mt-2">
+                                                                <SelectValue placeholder="Seleccioná un proveedor..." />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {options.map((option) => (
+                                                                    <SelectItem
+                                                                        key={option.value}
+                                                                        value={option.value}
+                                                                    >
+                                                                        {option.label}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        {isProviderDisabled ? (
+                                                            <p className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
+                                                                <AlertCircleIcon className="h-3 w-3 shrink-0" />
+                                                                El proveedor seleccionado está
+                                                                deshabilitado. Habilitalo arriba o
+                                                                elegí otro.
+                                                            </p>
+                                                        ) : isStub ? (
+                                                            <p className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
+                                                                <AlertCircleIcon className="h-3 w-3 shrink-0" />
+                                                                Este feature usa el proveedor de
+                                                                prueba. Elegí un proveedor real para
+                                                                producción.
+                                                            </p>
+                                                        ) : null}
+                                                    </div>
+                                                );
+                                            }}
+                                        </form.Subscribe>
                                     )}
                                 </form.Field>
 
