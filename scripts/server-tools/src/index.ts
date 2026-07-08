@@ -44,6 +44,7 @@ import { dbMigrate } from './commands/db-migrate.ts';
 import { dbMigrateTest } from './commands/db-migrate-test.ts';
 import { dbRestore } from './commands/db-restore.ts';
 import { dbSeed } from './commands/db-seed.ts';
+import { dbSeedMigrate } from './commands/db-seed-migrate.ts';
 import { dbSeedTestUsers } from './commands/db-seed-test-users.ts';
 import { dbSuperAdminPass } from './commands/db-superadmin-pass.ts';
 import { dockerByName } from './commands/docker-by-name.ts';
@@ -207,6 +208,16 @@ const COMMANDS: ReadonlyArray<Command> = [
         // Wipes and repopulates the target DB — highly destructive.
         targetPolicy: 'explicit-required',
         run: dbSeed
+    },
+    {
+        name: 'db-seed-migrate',
+        summary:
+            'Apply pending seed data-migrations (HOS-25) against the target DB; --status to preview. Never reseeds.',
+        // Applies the seed data-migration carril + writes the seed_migrations
+        // ledger. Non-destructive (never wipes/reseeds) but still a write —
+        // require an explicit target so it can never accidentally hit prod.
+        targetPolicy: 'explicit-required',
+        run: dbSeedMigrate
     },
     {
         name: 'db-seed-test-users',
