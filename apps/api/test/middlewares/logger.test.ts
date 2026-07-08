@@ -17,11 +17,16 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
-// Mock environment
+// Mock environment via a mutable object so individual tests can flip
+// API_ENABLE_REQUEST_LOGGING without re-mocking the module.
+const { mockEnv } = vi.hoisted(() => ({
+    mockEnv: {
+        API_LOG_LEVEL: 'info' as string,
+        API_ENABLE_REQUEST_LOGGING: true as boolean
+    }
+}));
 vi.mock('../../src/utils/env', () => ({
-    env: {
-        LOG_LEVEL: 'info'
-    },
+    env: mockEnv,
     validateApiEnv: vi.fn()
 }));
 
@@ -34,6 +39,9 @@ describe('Logger Middleware', () => {
         app.get('/test', (c) => c.json({ message: 'success' }));
         app.get('/error', (c) => c.json({ error: 'test error' }, 400));
         app.get('/server-error', (c) => c.json({ error: 'server error' }, 500));
+
+        // Reset env defaults so a prior test's override does not leak.
+        mockEnv.API_ENABLE_REQUEST_LOGGING = true;
 
         // Clear all mocks
         vi.clearAllMocks();
@@ -158,6 +166,65 @@ describe('Logger Middleware', () => {
                 expect.stringMatching(/GET http:\/\/localhost\/timing-error 500 \d+ms/),
                 'ERROR'
             );
+        });
+    });
+
+    describe('Request logging gate (API_ENABLE_REQUEST_LOGGING)', () => {
+        it('suppresses the routine access log when request logging is disabled', async () => {
+            mockEnv.API_ENABLE_REQUEST_LOGGING = false;
+
+            const res = await app.request('/test');
+
+            expect(res.status).toBe(200);
+            expect(
+                vi.mocked(await import('../../src/utils/logger')).apiLogger.info
+            ).not.toHaveBeenCalled();
+        });
+
+        it('suppresses 4xx client-warning logs when request logging is disabled', async () => {
+            mockEnv.API_ENABLE_REQUEST_LOGGING = false;
+
+            await app.request('/error');
+
+            expect(
+                vi.mocked(await import('../../src/utils/logger')).apiLogger.warn
+            ).not.toHaveBeenCalled();
+        });
+
+        it('still logs 5xx server errors even when request logging is disabled', async () => {
+            mockEnv.API_ENABLE_REQUEST_LOGGING = false;
+
+            await app.request('/server-error');
+
+            expect(
+                vi.mocked(await import('../../src/utils/logger')).apiLogger.error
+            ).toHaveBeenCalledWith(
+                expect.stringContaining('GET http://localhost/server-error 500'),
+                'ERROR'
+            );
+        });
+    });
+
+    describe('Health-probe exemption (bare root path)', () => {
+        it('does not log a successful request to the bare root path', async () => {
+            app.get('/', (c) => c.json({ ok: true }));
+
+            const res = await app.request('/');
+
+            expect(res.status).toBe(200);
+            expect(
+                vi.mocked(await import('../../src/utils/logger')).apiLogger.info
+            ).not.toHaveBeenCalled();
+        });
+
+        it('still logs a 5xx on the bare root path', async () => {
+            app.get('/', (c) => c.json({ error: 'boom' }, 500));
+
+            await app.request('/');
+
+            expect(
+                vi.mocked(await import('../../src/utils/logger')).apiLogger.error
+            ).toHaveBeenCalledWith(expect.stringContaining('GET http://localhost/ 500'), 'ERROR');
         });
     });
 
