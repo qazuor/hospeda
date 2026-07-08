@@ -52,6 +52,20 @@
  *   `ListModelsError` subclass thrown by the fetcher is engineered to omit
  *   the key from its `message` (see `@repo/ai-core/providers/list-models`).
  *
+ * ## Preflight variant (BETA-129 part 1)
+ *
+ * Steps 2-4 (fetch -> filter -> merge) are pure over an in-memory API key —
+ * they never touch the DB or the credential vault. That core is factored out
+ * into `syncModelsFromKey`, shared by:
+ *
+ * - {@link syncAiProviderModels} — decrypts a STORED credential first
+ *   (step 1), then delegates to the shared core.
+ * - {@link syncAiProviderModelsPreflight} — skips step 1 entirely and calls
+ *   the shared core directly with a caller-supplied `plaintextKey`, letting
+ *   an admin preview a provider's models in the "create credential" dialog
+ *   before anything is encrypted or saved. Same R-5 hygiene applies: the key
+ *   is used once and never logged, returned, or echoed.
+ *
  * @module services/ai-sync-models
  */
 
@@ -87,6 +101,27 @@ import { mergeDetectedAndCuratedModels } from './ai-sync-models.merge.js';
 export interface SyncAiProviderModelsInput {
     /** AI provider identifier (matches `ai_provider_credentials.providerId`). */
     readonly providerId: string;
+}
+
+/**
+ * Input for {@link syncAiProviderModelsPreflight} (BETA-129 part 1).
+ */
+export interface SyncAiProviderModelsPreflightInput {
+    /** AI provider identifier (e.g. `openai`, `anthropic`, `ollama`). */
+    readonly providerId: string;
+    /** The raw, not-yet-saved API key. Used once, never persisted or logged. */
+    readonly plaintextKey: string;
+    /** Optional base URL override (required by self-hosted providers like Ollama). */
+    readonly baseURL?: string;
+}
+
+/**
+ * Input for the shared {@link syncModelsFromKey} core (internal).
+ */
+interface SyncModelsFromKeyInput {
+    readonly providerId: string;
+    readonly apiKey: string;
+    readonly baseURL?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -191,6 +226,79 @@ function mapListModelsError<T>(providerId: string, error: unknown): ServiceOutpu
 }
 
 // ---------------------------------------------------------------------------
+// Shared core (fetch -> filter -> merge), no DB coupling
+// ---------------------------------------------------------------------------
+
+/**
+ * Shared core of the sync-models flow: fetch the raw model list from the
+ * provider, filter to chat-capable models, and merge with the curated
+ * catalog. Operates purely over an in-memory `apiKey` — it never touches the
+ * DB or the credential vault, which is exactly what lets both
+ * {@link syncAiProviderModels} (stored-credential path) and
+ * {@link syncAiProviderModelsPreflight} (not-yet-saved key path, BETA-129
+ * part 1) share it.
+ *
+ * @param input - `{ providerId, apiKey, baseURL? }`.
+ * @returns `ServiceOutput` with an `AiSyncModelsResult` on success.
+ */
+async function syncModelsFromKey(
+    input: SyncModelsFromKeyInput
+): Promise<ServiceOutput<AiSyncModelsResult>> {
+    const { providerId, apiKey, baseURL } = input;
+
+    try {
+        // 1. Fetch the raw model list from the provider.
+        let fetchResult: ListProviderModelsResult;
+        try {
+            const fetchInput: ListProviderModelsInput = {
+                providerId,
+                apiKey,
+                ...(baseURL === undefined ? {} : { baseURL })
+            };
+            fetchResult = await listProviderModels(fetchInput);
+        } catch (fetchError) {
+            return mapListModelsError<AiSyncModelsResult>(providerId, fetchError);
+        }
+
+        // 2. Filter to chat-capable models (denylist + uncertain bucket).
+        //    `hiddenIds` are the raw ids the denylist excluded — surfaced so
+        //    the admin UI can auto-remove them from a previously-enabled
+        //    selection on re-sync, while telling them apart from hand-typed
+        //    custom ids the provider API never returned (owner follow-up).
+        const { models: classified, hiddenIds } = filterChatCapableModels({
+            ids: fetchResult.ids,
+            providerId
+        });
+
+        // 3. Merge with the curated `KNOWN_PROVIDERS` catalog.
+        const models = mergeDetectedAndCuratedModels({ providerId, detected: classified });
+
+        const result: AiSyncModelsResult = {
+            providerId,
+            models,
+            fetchedAt: new Date().toISOString(),
+            ...(fetchResult.warnings && fetchResult.warnings.length > 0
+                ? { warnings: fetchResult.warnings }
+                : {}),
+            ...(hiddenIds.length > 0 ? { hiddenModelIds: [...hiddenIds] } : {})
+        };
+
+        apiLogger.info({ providerId, modelCount: models.length }, 'ai-sync-models: sync completed');
+
+        return { data: result };
+    } catch (error) {
+        apiLogger.error(
+            { providerId, error: error instanceof Error ? error.message : String(error) },
+            'ai-sync-models: unexpected error in syncModelsFromKey'
+        );
+        return errorOutput<AiSyncModelsResult>(
+            ServiceErrorCode.INTERNAL_ERROR,
+            'Unexpected error while syncing provider models'
+        );
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -240,45 +348,8 @@ export async function syncAiProviderModels(
         const { plaintextKey } = credentialResult.data;
         const baseURL = await getCredentialBaseUrl(providerId);
 
-        // 2. Fetch the raw model list from the provider.
-        let fetchResult: ListProviderModelsResult;
-        try {
-            const fetchInput: ListProviderModelsInput = {
-                providerId,
-                apiKey: plaintextKey,
-                ...(baseURL === undefined ? {} : { baseURL })
-            };
-            fetchResult = await listProviderModels(fetchInput);
-        } catch (fetchError) {
-            return mapListModelsError<AiSyncModelsResult>(providerId, fetchError);
-        }
-
-        // 3. Filter to chat-capable models (denylist + uncertain bucket).
-        //    `hiddenIds` are the raw ids the denylist excluded — surfaced so
-        //    the admin UI can auto-remove them from a previously-enabled
-        //    selection on re-sync, while telling them apart from hand-typed
-        //    custom ids the provider API never returned (owner follow-up).
-        const { models: classified, hiddenIds } = filterChatCapableModels({
-            ids: fetchResult.ids,
-            providerId
-        });
-
-        // 4. Merge with the curated `KNOWN_PROVIDERS` catalog.
-        const models = mergeDetectedAndCuratedModels({ providerId, detected: classified });
-
-        const result: AiSyncModelsResult = {
-            providerId,
-            models,
-            fetchedAt: new Date().toISOString(),
-            ...(fetchResult.warnings && fetchResult.warnings.length > 0
-                ? { warnings: fetchResult.warnings }
-                : {}),
-            ...(hiddenIds.length > 0 ? { hiddenModelIds: [...hiddenIds] } : {})
-        };
-
-        apiLogger.info({ providerId, modelCount: models.length }, 'ai-sync-models: sync completed');
-
-        return { data: result };
+        // 2-4. Fetch -> filter -> merge, shared with the preflight path.
+        return await syncModelsFromKey({ providerId, apiKey: plaintextKey, baseURL });
     } catch (error) {
         apiLogger.error(
             { providerId, error: error instanceof Error ? error.message : String(error) },
@@ -289,4 +360,37 @@ export async function syncAiProviderModels(
             'Unexpected error while syncing provider models'
         );
     }
+}
+
+/**
+ * Syncs the suggested model catalog for an AI provider using a just-typed,
+ * not-yet-saved API key (BETA-129 part 1).
+ *
+ * Lets an admin preview a provider's model catalog in the "create
+ * credential" dialog BEFORE the key is encrypted and stored — there is no
+ * DB row to decrypt yet, so `plaintextKey` and (optionally) `baseURL` are
+ * supplied directly by the caller. Delegates the fetch/filter/merge core to
+ * {@link syncModelsFromKey}, the exact same logic used by the stored-
+ * credential path ({@link syncAiProviderModels}), so both surfaces stay in
+ * lockstep.
+ *
+ * Never persists anything and never logs or returns the plaintext key (R-5).
+ *
+ * @param input - `{ providerId, plaintextKey, baseURL? }`.
+ * @returns `ServiceOutput` with an `AiSyncModelsResult` on success.
+ *
+ * @example
+ * ```ts
+ * const result = await syncAiProviderModelsPreflight({
+ *   providerId: 'openai',
+ *   plaintextKey: 'sk-...' // typed into the create-credential form, not yet saved
+ * });
+ * ```
+ */
+export async function syncAiProviderModelsPreflight(
+    input: SyncAiProviderModelsPreflightInput
+): Promise<ServiceOutput<AiSyncModelsResult>> {
+    const { providerId, plaintextKey, baseURL } = input;
+
+    return syncModelsFromKey({ providerId, apiKey: plaintextKey, baseURL });
 }

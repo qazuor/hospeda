@@ -32,7 +32,7 @@ import StatsSection from "@/components/sections/StatsSection.astro";
 import TestimonialsSection from "@/components/sections/TestimonialsSection.astro";
 import type { StatItemData } from "@/data/types";
 import DefaultLayout from "@/layouts/DefaultLayout.astro";
-import { destinationsApi, statsApi } from "@/lib/api/endpoints";
+import { destinationsApi, SSR_PUBLIC_CACHE_TTL_MS, statsApi } from "@/lib/api/endpoints";
 import { BRAND_NAME, ORGANIZATION_INFO, SOCIAL_PROFILE_URLS } from "@/lib/constants";
 import { getSiteUrl } from "@/lib/env";
 import { shouldShowSocialProof } from "@/lib/home-guards";
@@ -59,6 +59,9 @@ const heroFirstSlide = await buildHeroVariants({ rawImage: HERO_RAW_SLIDES[0] })
 const destinationsResult = await destinationsApi.list({
     destinationType: "CITY",
     pageSize: 50,
+    // HOS-103: cache this bounded homepage read; shares the key with the
+    // DestinationsSection CITY read so the two collapse to one API hit.
+    cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS,
 });
 const destinations = destinationsResult.ok
     ? destinationsResult.data.items.map((d) => ({

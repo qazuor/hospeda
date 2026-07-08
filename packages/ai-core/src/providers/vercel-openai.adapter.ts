@@ -25,6 +25,7 @@
 
 import { createOpenAI } from '@ai-sdk/openai';
 import type {
+    AiFeature,
     AiIntent,
     AiProviderId,
     ExtractIntentRequest,
@@ -75,6 +76,32 @@ const DEFAULT_MODEL = 'gpt-4o-mini' as const;
 
 /** OpenAI Moderation API endpoint. */
 const MODERATION_ENDPOINT = 'https://api.openai.com/v1/moderations' as const;
+
+/**
+ * Features whose `generateObject` output schema intentionally contains optional
+ * fields (partial slot extraction). OpenAI structured-outputs *strict* mode
+ * (the AI SDK default) requires every property to appear in the JSON-Schema
+ * `required` array, so a Zod `.optional()`/`.default()` field is rejected at
+ * call time with `"Invalid schema for response_format ... 'required' is required
+ * ... Missing '<field>'"`.
+ *
+ * These features opt OUT of strict JSON schema (`strictJsonSchema: false`) so the
+ * model may omit slots. The result is still validated downstream — both callers
+ * `safeParse` the returned object (search-chat re-parses the entity bag and
+ * falls back to `{}`; accommodation-import re-parses its output and falls back
+ * to `null`) — so relaxing the provider-side contract does not lose runtime
+ * type safety.
+ *
+ * This list is intentionally OpenAI-specific: the Anthropic adapter does not
+ * suffer this constraint. If you add a NEW `generateObject` feature whose output
+ * schema has optional/default fields AND may run against OpenAI (or an
+ * OpenAI-compatible endpoint), add its feature key here — otherwise it will fail
+ * at call time against real OpenAI.
+ */
+const FEATURES_WITHOUT_STRICT_JSON_SCHEMA: ReadonlySet<AiFeature> = new Set([
+    'search',
+    'accommodation_import'
+]);
 
 // ---------------------------------------------------------------------------
 // Constructor input
@@ -347,6 +374,12 @@ export class OpenAiAdapter implements AiProvider {
         // incompatible ZodType generics and recurses infinitely (TS2589/OOM).
         // The cast is safe: zodSchema() only reads the schema's _def at runtime,
         // and both zod versions produce structurally identical _def objects.
+        // OpenAI structured-outputs strict mode (the AI SDK default) rejects any
+        // output schema with optional/default properties. Features that extract
+        // partial slots (see FEATURES_WITHOUT_STRICT_JSON_SCHEMA) opt out so the
+        // model may omit fields; callers still safeParse the result downstream.
+        const relaxStrictJsonSchema = FEATURES_WITHOUT_STRICT_JSON_SCHEMA.has(input.feature);
+
         const sdkResult = await generateObject({
             model: languageModel,
             // biome-ignore lint/suspicious/noExplicitAny: intentional cross-zod-version boundary cast
@@ -359,7 +392,10 @@ export class OpenAiAdapter implements AiProvider {
             // Without maxRetries:0 the SDK defaults to 2 retries (3 total attempts),
             // which stacks on top of the engine's MAX_ATTEMPTS_PER_PROVIDER=2 and
             // produces up to 6 provider calls per request.
-            maxRetries: 0
+            maxRetries: 0,
+            ...(relaxStrictJsonSchema
+                ? { providerOptions: { openai: { strictJsonSchema: false } } }
+                : {})
         });
 
         // The SDK's generateObject().object can be undefined (e.g. when the

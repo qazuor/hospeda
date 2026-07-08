@@ -643,6 +643,63 @@ describe('OpenAiAdapter', () => {
     });
 
     // -------------------------------------------------------------------------
+    // generateObject — OpenAI strict JSON-schema opt-out (regression)
+    // -------------------------------------------------------------------------
+
+    describe('generateObject strict JSON-schema opt-out', () => {
+        // Regression (AI search broken in prod): OpenAI structured-outputs strict
+        // mode (the AI SDK default) rejects an output schema that has optional
+        // properties with "Invalid schema for response_format ... 'required' is
+        // required ... Missing '<field>'". The `search` and `accommodation_import`
+        // features extract partial slots (all-optional schemas), so the adapter
+        // must opt them out via providerOptions.openai.strictJsonSchema:false.
+
+        it.each([
+            'search',
+            'accommodation_import'
+        ] as const)('disables strict JSON schema for the "%s" feature (all-optional output)', async (feature) => {
+            // Arrange
+            const adapter = new OpenAiAdapter({ apiKey: TEST_API_KEY });
+            const schema = z.object({ slot: z.string().optional() });
+            mockGenerateObject.mockResolvedValueOnce({
+                object: {},
+                usage: FAKE_SDK_USAGE,
+                finishReason: 'stop'
+            });
+
+            // Act
+            await adapter.generateObject({ feature, locale: 'es', prompt: 'q' }, schema);
+
+            // Assert
+            expect(mockGenerateObject).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    providerOptions: { openai: { strictJsonSchema: false } }
+                })
+            );
+        });
+
+        it('keeps strict JSON schema (no opt-out) for features not in the list, e.g. "chat"', async () => {
+            // Arrange
+            const adapter = new OpenAiAdapter({ apiKey: TEST_API_KEY });
+            const schema = z.object({ value: z.string() });
+            mockGenerateObject.mockResolvedValueOnce({
+                object: { value: 'x' },
+                usage: FAKE_SDK_USAGE,
+                finishReason: 'stop'
+            });
+
+            // Act
+            await adapter.generateObject({ feature: 'chat', locale: 'es', prompt: 'q' }, schema);
+
+            // Assert: no strict opt-out passed for non-listed features
+            const callArgs = mockGenerateObject.mock.calls[0]?.[0] as {
+                providerOptions?: unknown;
+            };
+            expect(callArgs?.providerOptions).toBeUndefined();
+        });
+    });
+
+    // -------------------------------------------------------------------------
     // extractIntent
     // -------------------------------------------------------------------------
 

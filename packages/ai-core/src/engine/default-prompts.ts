@@ -194,7 +194,7 @@ Never claim that information is real-time or guaranteed.`,
      * `${systemContent}\n\nUser request: ${prompt}`.
      */
     search: `You are a structured-data extraction assistant for a tourism search \
-engine focused on accommodations in Concepción del Uruguay and the Litoral \
+engine focused on accommodations in the Litoral \
 region of Argentina.
 
 Extract a JSON object with these top-level fields:

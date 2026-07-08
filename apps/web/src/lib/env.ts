@@ -39,6 +39,36 @@ export function getApiUrl(): string {
 }
 
 /**
+ * Get the internal API base URL for server-to-server SSR fetches (HOS-103).
+ *
+ * Server-only. Returns `HOSPEDA_INTERNAL_API_URL` (trailing slash stripped) when
+ * configured, else `undefined`. The API client uses this as the SSR base URL in
+ * preference to the public URL; when unset, SSR falls back to {@link getApiUrl}.
+ *
+ * @returns The internal API base URL without a trailing slash, or undefined
+ */
+export function getInternalApiUrl(): string | undefined {
+    const url = getEnv().HOSPEDA_INTERNAL_API_URL;
+    if (!url) {
+        return undefined;
+    }
+    return url.replace(/\/$/, '');
+}
+
+/**
+ * Get the shared internal-request secret for SSR fetches (HOS-103).
+ *
+ * Server-only. Returns `HOSPEDA_INTERNAL_REQUEST_SECRET` when configured, else
+ * `undefined`. Sent as the `X-Internal-Request` header on SSR calls so the API
+ * can exempt internal SSR traffic from the public rate limit.
+ *
+ * @returns The internal-request secret, or undefined when unset
+ */
+export function getInternalRequestSecret(): string | undefined {
+    return getEnv().HOSPEDA_INTERNAL_REQUEST_SECRET;
+}
+
+/**
  * Get the site base URL.
  *
  * @returns The site base URL

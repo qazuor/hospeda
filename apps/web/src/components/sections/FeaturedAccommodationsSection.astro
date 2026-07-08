@@ -16,7 +16,7 @@ import { AccommodationIcon } from '@repo/icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { accommodationsApi, toAccommodationCardProps } from '@/lib/api';
+import { accommodationsApi, SSR_PUBLIC_CACHE_TTL_MS, toAccommodationCardProps } from '@/lib/api';
 import type { AccommodationCardData } from '@/lib/api/transforms';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
@@ -51,7 +51,7 @@ const ACCOMMODATION_TYPES = Object.values(AccommodationTypeEnum).map((v) => {
 // Fetch from API - empty array if unavailable
 let items: AccommodationCardData[] = [];
 try {
-  const result = await accommodationsApi.list({ isFeatured: true, pageSize: 8, includeAmenities: true, includeFeatures: true, sortBy: 'averageRating', sortOrder: 'desc' });
+  const result = await accommodationsApi.list({ isFeatured: true, pageSize: 8, includeAmenities: true, includeFeatures: true, sortBy: 'averageRating', sortOrder: 'desc', cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
   if (result.ok) {
     items = result.data.items.map((raw) => toAccommodationCardProps({ item: raw as Record<string, unknown>, locale }));
   }

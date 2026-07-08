@@ -14,6 +14,7 @@
  */
 
 import { AlertCircleIcon, DeleteIcon, SaveIcon } from '@repo/icons';
+import type { AiSearchChatFiltersEvent } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
@@ -42,6 +43,10 @@ import { useToast } from '@/hooks/use-toast';
 import { AccommodationCombobox } from './-components/AccommodationCombobox';
 import { AdvancedSettingsPanel } from './-components/AdvancedSettingsPanel';
 import { MessagesArea } from './-components/MessagesArea';
+import {
+    isPlaygroundSupportedFeature,
+    PLAYGROUND_UNSUPPORTED_REASON
+} from './-components/playground-features.utils';
 import { streamChat } from './-components/stream-chat';
 
 export const Route = createFileRoute('/_authed/ai/playground')({
@@ -130,6 +135,7 @@ function AiPlaygroundPage() {
     const [currentAssistantContent, setCurrentAssistantContent] = useState('');
     const [metadata, setMetadata] = useState<StreamMetadata | null>(null);
     const [currentDebugContext, setCurrentDebugContext] = useState<DebugContext | null>(null);
+    const [searchFilters, setSearchFilters] = useState<AiSearchChatFiltersEvent | null>(null);
 
     // Queries & mutations
     const { data: prompts } = useAiPromptsQuery(selectedFeature);
@@ -178,6 +184,7 @@ function AiPlaygroundPage() {
         setCurrentAssistantContent('');
         setMetadata(null);
         setCurrentDebugContext(null);
+        setSearchFilters(null);
 
         const abortController = new AbortController();
         abortRef.current = abortController;
@@ -195,6 +202,10 @@ function AiPlaygroundPage() {
                         assistantContent += event.delta;
                         setCurrentAssistantContent(assistantContent);
                         scrollToBottom();
+                        break;
+
+                    case 'filters':
+                        setSearchFilters(event.data);
                         break;
 
                     case 'debug': {
@@ -284,6 +295,7 @@ function AiPlaygroundPage() {
         setMessages([]);
         setCurrentAssistantContent('');
         setMetadata(null);
+        setSearchFilters(null);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -404,14 +416,23 @@ function AiPlaygroundPage() {
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {ALL_FEATURES.map((f) => (
-                                                    <SelectItem
-                                                        key={f}
-                                                        value={f}
-                                                    >
-                                                        {FEATURE_LABELS[f]}
-                                                    </SelectItem>
-                                                ))}
+                                                {ALL_FEATURES.map((f) => {
+                                                    const supported =
+                                                        isPlaygroundSupportedFeature(f);
+                                                    const reason = PLAYGROUND_UNSUPPORTED_REASON[f];
+                                                    return (
+                                                        <SelectItem
+                                                            key={f}
+                                                            value={f}
+                                                            disabled={!supported}
+                                                        >
+                                                            {FEATURE_LABELS[f]}
+                                                            {!supported && reason
+                                                                ? ` (${reason})`
+                                                                : ''}
+                                                        </SelectItem>
+                                                    );
+                                                })}
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -518,6 +539,62 @@ function AiPlaygroundPage() {
                                 )}
                             </CardContent>
                         </Card>
+
+                        {/* Extracted search filters (search feature only) */}
+                        {selectedFeature === 'search' && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-lg">Filtros extraídos</CardTitle>
+                                    <CardDescription>
+                                        Intención estructurada extraída del último turno de
+                                        búsqueda.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {searchFilters ? (
+                                        <dl className="space-y-2 text-sm">
+                                            {Object.entries(searchFilters.intent).length === 0 ? (
+                                                <p className="text-muted-foreground text-sm">
+                                                    No se detectaron filtros en el último mensaje.
+                                                </p>
+                                            ) : (
+                                                Object.entries(searchFilters.intent).map(
+                                                    ([key, value]) => (
+                                                        <div
+                                                            key={key}
+                                                            className="flex items-start justify-between gap-2"
+                                                        >
+                                                            <dt className="text-muted-foreground">
+                                                                {key}
+                                                            </dt>
+                                                            <dd className="break-all text-right font-mono text-xs">
+                                                                {Array.isArray(value)
+                                                                    ? value.join(', ')
+                                                                    : String(value)}
+                                                            </dd>
+                                                        </div>
+                                                    )
+                                                )
+                                            )}
+                                            {searchFilters.confidence !== undefined && (
+                                                <div className="flex items-center justify-between gap-2 border-t pt-2">
+                                                    <dt className="text-muted-foreground">
+                                                        Confianza
+                                                    </dt>
+                                                    <dd className="font-mono text-xs">
+                                                        {searchFilters.confidence.toFixed(2)}
+                                                    </dd>
+                                                </div>
+                                            )}
+                                        </dl>
+                                    ) : (
+                                        <p className="text-muted-foreground text-sm">
+                                            Los filtros aparecerán después de la primera respuesta.
+                                        </p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
 
                         {/* System prompt display */}
                         <Card>

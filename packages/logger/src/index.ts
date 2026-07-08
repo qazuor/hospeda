@@ -13,6 +13,8 @@
 
 export type { AuditEventTypeValue } from './audit-types.js';
 export { AuditEventType } from './audit-types.js';
+export type { CapDataOptions } from './cap-data.js';
+export { capLogData, DEFAULT_CAP_OPTIONS } from './cap-data.js';
 export type { CaptureHookFn } from './capture.js';
 export {
     hasCaptureHook,

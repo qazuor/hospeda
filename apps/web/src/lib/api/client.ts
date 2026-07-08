@@ -2,7 +2,8 @@
  * Centralized API client for consuming apps/api public endpoints.
  * Provides typed fetch wrapper with error handling, timeout, and query serialization.
  */
-import { getApiUrl } from '../env';
+import { getApiUrl, getInternalApiUrl, getInternalRequestSecret } from '../env';
+import { getOrSetCached } from './ssr-cache';
 import type {
     ApiError,
     ApiErrorResponse,
@@ -14,9 +15,25 @@ import type {
 /** Resolved lazily on first request so module import never throws. */
 let _cachedBaseUrl: string | undefined;
 
+/**
+ * Resolves the API base URL. During SSR, prefers the internal API URL
+ * (HOS-103) so server-to-server fetches stay on the internal network; the
+ * browser bundle and any SSR call without an internal URL configured fall back
+ * to the public URL.
+ */
+function resolveBaseUrl(): string {
+    if (import.meta.env.SSR) {
+        const internal = getInternalApiUrl();
+        if (internal) {
+            return internal;
+        }
+    }
+    return getApiUrl().replace(/\/$/, '');
+}
+
 function getBaseUrl(): string {
     if (!_cachedBaseUrl) {
-        _cachedBaseUrl = getApiUrl().replace(/\/$/, '');
+        _cachedBaseUrl = resolveBaseUrl();
     }
     return _cachedBaseUrl;
 }
@@ -67,7 +84,8 @@ async function request<T>({
     body,
     withCredentials,
     cookieHeader,
-    headers: extraHeaders
+    headers: extraHeaders,
+    cacheTtlMs
 }: {
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     path: string;
@@ -87,96 +105,155 @@ async function request<T>({
      * enforce this via `idempotencyKeyMiddleware` — see SPEC-143 T-143-60).
      */
     headers?: Record<string, string>;
+    /**
+     * When set (> 0), enables the short-TTL SSR cache for this request (HOS-103).
+     * Only honoured for anonymous GETs during SSR (see the `cacheable` guard
+     * below). Used by public "catalog" endpoints (destinations, stats,
+     * announcements, featured accommodations, latest posts, testimonials) whose
+     * SSR fan-out otherwise exhausts the public rate-limit bucket.
+     */
+    cacheTtlMs?: number;
 }): Promise<ApiResult<T>> {
-    // SPEC-131: compute the URL inside the try block so a misconfigured
-    // env (no PUBLIC_API_URL / HOSPEDA_API_URL) returns { ok: false } instead
-    // of letting the async function throw — which would violate the ApiResult<T>
-    // return type contract and bypass the `catch` in the component's click handler.
-    let url = '';
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-
-    try {
-        url = `${getBaseUrl()}${path}${serializeParams(params)}`;
-        const headers: Record<string, string> = {
-            Accept: 'application/json',
-            ...extraHeaders
-        };
-        if (body) {
-            headers['Content-Type'] = 'application/json';
-        }
-        if (cookieHeader) {
-            headers.cookie = cookieHeader;
-        }
-
-        const response = await fetch(url, {
-            method,
-            headers,
-            body: body ? JSON.stringify(body) : undefined,
-            signal: controller.signal,
-            ...(withCredentials ? { credentials: 'include' as RequestCredentials } : {})
-        });
-
-        const responseBody: unknown = await response.json().catch(() => null);
-
-        if (!response.ok) {
-            return {
-                ok: false,
-                error: parseError({ status: response.status, body: responseBody })
+    // SPEC-131: never let this function throw — a misconfigured env or network
+    // error must resolve to { ok: false } so callers keep the ApiResult<T>
+    // contract. The fetch + parse lives in `exec`; the URL is computed inside it
+    // so a bad base URL surfaces as an error result, not a thrown exception.
+    const exec = async (): Promise<ApiResult<T>> => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+        try {
+            const url = `${getBaseUrl()}${path}${serializeParams(params)}`;
+            const headers: Record<string, string> = {
+                Accept: 'application/json',
+                ...extraHeaders
             };
-        }
-
-        // API responses are wrapped in { success, data, metadata }
-        const successBody = responseBody as ApiSuccessResponse<T>;
-        if (successBody && typeof successBody === 'object' && 'data' in successBody) {
-            return { ok: true, data: successBody.data };
-        }
-
-        // Fallback: return raw body as data
-        return { ok: true, data: responseBody as T };
-    } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') {
-            return {
-                ok: false,
-                error: { status: 408, message: `Request timeout after ${REQUEST_TIMEOUT}ms` }
-            };
-        }
-        return {
-            ok: false,
-            error: {
-                status: 0,
-                message: err instanceof Error ? err.message : 'Network error'
+            if (body) {
+                headers['Content-Type'] = 'application/json';
             }
-        };
-    } finally {
-        clearTimeout(timeoutId);
+            if (cookieHeader) {
+                headers.cookie = cookieHeader;
+            }
+            // HOS-103: over the internal URL during SSR, attach the shared secret
+            // so the API exempts this server-to-server traffic from the public
+            // per-IP rate limit. Gated on SSR + a configured internal URL so the
+            // secret never reaches the browser bundle nor travels over the public
+            // network. Fails safe: no secret configured → no header → no bypass.
+            if (import.meta.env.SSR && getInternalApiUrl()) {
+                const internalSecret = getInternalRequestSecret();
+                if (internalSecret) {
+                    headers['X-Internal-Request'] = internalSecret;
+                }
+            }
+
+            const response = await fetch(url, {
+                method,
+                headers,
+                body: body ? JSON.stringify(body) : undefined,
+                signal: controller.signal,
+                ...(withCredentials ? { credentials: 'include' as RequestCredentials } : {})
+            });
+
+            const responseBody: unknown = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                return {
+                    ok: false,
+                    error: parseError({ status: response.status, body: responseBody })
+                };
+            }
+
+            // API responses are wrapped in { success, data, metadata }
+            const successBody = responseBody as ApiSuccessResponse<T>;
+            if (successBody && typeof successBody === 'object' && 'data' in successBody) {
+                return { ok: true, data: successBody.data };
+            }
+
+            // Fallback: return raw body as data
+            return { ok: true, data: responseBody as T };
+        } catch (err) {
+            if (err instanceof DOMException && err.name === 'AbortError') {
+                return {
+                    ok: false,
+                    error: { status: 408, message: `Request timeout after ${REQUEST_TIMEOUT}ms` }
+                };
+            }
+            return {
+                ok: false,
+                error: {
+                    status: 0,
+                    message: err instanceof Error ? err.message : 'Network error'
+                }
+            };
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    };
+
+    // Route anonymous GETs through the short-TTL SSR cache when the caller opts
+    // in (HOS-103). Every other request (mutations, authenticated reads, and all
+    // browser-side calls) executes directly.
+    const cacheable =
+        method === 'GET' &&
+        !withCredentials &&
+        !cookieHeader &&
+        body === undefined &&
+        typeof cacheTtlMs === 'number' &&
+        cacheTtlMs > 0 &&
+        import.meta.env.SSR;
+
+    if (!cacheable) {
+        return exec();
     }
+
+    return getOrSetCached<ApiResult<T>>({
+        key: `GET ${path}${serializeParams(params)}`,
+        ttlMs: cacheTtlMs as number,
+        loader: exec,
+        // Only cache successful responses; errors are retried next call.
+        isCacheable: (result) => result.ok === true
+    });
 }
 
 /**
  * API client with typed HTTP methods.
  */
 export const apiClient = {
-    /** GET request returning typed data */
+    /**
+     * GET request returning typed data.
+     *
+     * @param cacheTtlMs - Optional. When set (> 0), enables the short-TTL SSR
+     *   cache for this call (HOS-103). Only public "catalog" endpoints should
+     *   opt in; never pass it for interactive (search) or personalized reads.
+     */
     get<T>({
         path,
-        params
+        params,
+        cacheTtlMs
     }: {
         path: string;
         params?: Record<string, unknown>;
+        cacheTtlMs?: number;
     }): Promise<ApiResult<T>> {
-        return request<T>({ method: 'GET', path, params });
+        return request<T>({ method: 'GET', path, params, cacheTtlMs });
     },
 
-    /** GET request returning paginated data */
+    /**
+     * GET request returning paginated data.
+     *
+     * @param cacheTtlMs - Optional. When set (> 0), enables the short-TTL SSR
+     *   cache for this call (HOS-103). Only public "catalog" endpoints should
+     *   opt in; never pass it for interactive (search) or personalized reads.
+     */
     getList<T>({
         path,
-        params
+        params,
+        cacheTtlMs
     }: {
         path: string;
         params?: Record<string, unknown>;
+        cacheTtlMs?: number;
     }): Promise<ApiResult<PaginatedResponse<T>>> {
-        return request<PaginatedResponse<T>>({ method: 'GET', path, params });
+        return request<PaginatedResponse<T>>({ method: 'GET', path, params, cacheTtlMs });
     },
 
     /** POST request */

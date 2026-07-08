@@ -8,6 +8,10 @@
  */
 export { apiClient, fetchAllPages } from './client';
 
+// --- SSR request cache (HOS-103) ---
+
+export { SSR_PUBLIC_CACHE_TTL_MS } from './ssr-cache';
+
 // --- Public endpoints ---
 
 export {

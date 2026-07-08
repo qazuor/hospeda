@@ -97,5 +97,41 @@ describe('log-entry', () => {
             // Assert
             expect(entry.message).toBe('contact me at [REDACTED]');
         });
+
+        it('should bound an oversized data payload so the entry stays small', () => {
+            // Arrange: a runaway result like the old DB full-result dump.
+            const value = {
+                items: Array.from({ length: 500 }, (_, i) => ({
+                    id: `id-${i}`,
+                    blob: 'x'.repeat(5000)
+                })),
+                total: 500
+            };
+
+            // Act
+            const entry = buildLogEntry(LogLevel.INFO, value);
+
+            // Assert: serialized entry is far smaller than the raw payload and
+            // still valid JSON.
+            const serialized = JSON.stringify(entry);
+            expect(serialized.length).toBeLessThan(100_000);
+            expect(() => JSON.parse(serialized)).not.toThrow();
+        });
+
+        it('should leave a small structured payload untouched', () => {
+            // Act
+            const entry = buildLogEntry(LogLevel.INFO, {
+                table: 'users',
+                action: 'count',
+                result: { count: 3 }
+            });
+
+            // Assert
+            expect(entry.data).toEqual({
+                table: 'users',
+                action: 'count',
+                result: { count: 3 }
+            });
+        });
     });
 });

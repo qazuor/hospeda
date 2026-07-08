@@ -11,6 +11,7 @@ import type {
     CreateAiCredentialPayload,
     CreateAiPromptPayload,
     RotateAiCredentialPayload,
+    SyncAiCredentialModelsPreflightPayload,
     UpdateAiCredentialPayload
 } from './types';
 
@@ -162,6 +163,29 @@ async function syncAiCredentialModels(providerId: string): Promise<AiSyncModelsR
     return result.data.data;
 }
 
+/**
+ * Previews a NOT-YET-SAVED provider key's model catalog (BETA-129 part 1).
+ *
+ * Lets the "create credential" dialog sync models BEFORE the key is
+ * encrypted and stored — the just-typed `plaintextKey` (and optional
+ * `baseURL`) travels in the request body. Same fetch/filter/merge result
+ * shape as {@link syncAiCredentialModels}; persists nothing server-side and
+ * never echoes the key back.
+ *
+ * @param payload - `{ providerId, plaintextKey, baseURL? }`.
+ * @returns The `AiSyncModelsResult` — ephemeral, never persisted server-side.
+ */
+async function syncAiCredentialModelsPreflight(
+    payload: SyncAiCredentialModelsPreflightPayload
+): Promise<AiSyncModelsResult> {
+    const result = await fetchApi<{ success: boolean; data: AiSyncModelsResult }>({
+        path: '/api/v1/admin/ai/credentials/sync-models/preview',
+        method: 'POST',
+        body: payload
+    });
+    return result.data.data;
+}
+
 // ---------------------------------------------------------------------------
 // Hooks — Settings
 // ---------------------------------------------------------------------------
@@ -306,6 +330,21 @@ export const useUpdateAiCredentialMutation = () => {
 export const useSyncModelsMutation = () => {
     return useMutation({
         mutationFn: (providerId: string) => syncAiCredentialModels(providerId)
+    });
+};
+
+/**
+ * Hook to preview a NOT-YET-SAVED provider key's model catalog (BETA-129
+ * part 1), used by the "create credential" dialog.
+ *
+ * Ephemeral, same as {@link useSyncModelsMutation}: the result lives in the
+ * mutation's own `data` state. Never invalidates any query — no credential
+ * exists yet to invalidate.
+ */
+export const useSyncModelsPreflightMutation = () => {
+    return useMutation({
+        mutationFn: (payload: SyncAiCredentialModelsPreflightPayload) =>
+            syncAiCredentialModelsPreflight(payload)
     });
 };
 

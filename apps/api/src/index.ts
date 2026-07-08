@@ -43,6 +43,7 @@ import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
 import { apiLogger } from './utils/logger';
 import { disconnectRedis } from './utils/redis';
+import { resolveLogFormat } from './utils/resolve-log-format';
 import {
     destroyUserPermissionsCache,
     invalidateUserPermissionsCache
@@ -61,22 +62,44 @@ validateApiEnv();
 // billing / entitlement checks, service method start/end) are silenced unless
 // the operator explicitly sets API_LOG_LEVEL=debug.
 //
-// FORMAT: JSON in production (and staging, which also runs NODE_ENV=production)
-// so logs are parseable and free of chalk ANSI escapes that render as garbage in
-// the Coolify console; PRETTY in development. An explicit API_LOG_FORMAT=json
-// still forces JSON anywhere.
+// FORMAT controls ONLY the console output. An explicit API_LOG_FORMAT always
+// wins; when unset the default is env-aware — `json` in production (and staging,
+// which also runs NODE_ENV=production) so the Coolify console is parseable and
+// free of chalk ANSI escapes, `pretty` in development. This is deliberately
+// decoupled from the app_log_entries DB sink (SPEC-184): that sink is a separate
+// logger HOOK fed by the structured `buildLogEntry`, so WARN/ERROR entries are
+// persisted for the admin log viewer regardless of the console format. An
+// operator wanting readable prod console output can set API_LOG_FORMAT=pretty
+// (optionally with API_LOG_USE_COLORS=false to drop ANSI) without affecting the
+// DB logs.
 const LOG_LEVEL_BY_NAME = {
     debug: LogLevel.DEBUG,
     info: LogLevel.INFO,
     warn: LogLevel.WARN,
     error: LogLevel.ERROR
 } as const;
+// Explicit value wins; unset falls back to json in production, pretty in dev.
+const resolvedLogFormat = resolveLogFormat({
+    explicit: env.API_LOG_FORMAT,
+    nodeEnv: env.NODE_ENV
+});
+// Forward EVERY validated API_LOG_* knob into the process-wide logger config.
+// Previously only LEVEL + FORMAT were wired; the display/format knobs below were
+// validated in env-schema but never consumed (silently ignored config). Now
+// every one takes effect (API_ENABLE_REQUEST_LOGGING is honored separately by
+// loggerMiddleware). EXPAND_OBJECT_LEVELS: -1 means "expand all", so the boolean
+// flag maps to expand-all vs the package default of 2 levels.
 configureLogger({
     LEVEL: LOG_LEVEL_BY_NAME[env.API_LOG_LEVEL],
-    FORMAT:
-        env.API_LOG_FORMAT === 'json' || env.NODE_ENV === 'production'
-            ? LogFormat.JSON
-            : LogFormat.PRETTY
+    FORMAT: resolvedLogFormat === 'json' ? LogFormat.JSON : LogFormat.PRETTY,
+    INCLUDE_TIMESTAMPS: env.API_LOG_INCLUDE_TIMESTAMPS,
+    INCLUDE_LEVEL: env.API_LOG_INCLUDE_LEVEL,
+    USE_COLORS: env.API_LOG_USE_COLORS,
+    SAVE: env.API_LOG_SAVE,
+    EXPAND_OBJECT_LEVELS: env.API_LOG_EXPAND_OBJECTS ? -1 : 2,
+    TRUNCATE_LONG_TEXT: env.API_LOG_TRUNCATE_TEXT,
+    TRUNCATE_LONG_TEXT_AT: env.API_LOG_TRUNCATE_AT,
+    STRINGIFY_OBJECTS: env.API_LOG_STRINGIFY
 });
 
 // Log a small, safe env summary ONCE here, after configureLogger() so it honors
@@ -85,7 +108,7 @@ configureLogger({
 // (~100 vars, partial secrets) is never logged (I3).
 apiLogger.info(
     `API env validated — NODE_ENV=${env.NODE_ENV}, API_PORT=${env.API_PORT}, ` +
-        `API_LOG_LEVEL=${env.API_LOG_LEVEL}, API_LOG_FORMAT=${env.API_LOG_FORMAT}`,
+        `API_LOG_LEVEL=${env.API_LOG_LEVEL}, API_LOG_FORMAT=${resolvedLogFormat}`,
     'validateApiEnv'
 );
 

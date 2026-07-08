@@ -110,7 +110,10 @@ vi.mock('../../src/utils/logger.js', () => ({
 // ---------------------------------------------------------------------------
 
 import { AiProviderModelSchema, AiSyncModelsResultSchema, ServiceErrorCode } from '@repo/schemas';
-import { syncAiProviderModels } from '../../src/services/ai-sync-models.service';
+import {
+    syncAiProviderModels,
+    syncAiProviderModelsPreflight
+} from '../../src/services/ai-sync-models.service';
 
 // ---------------------------------------------------------------------------
 // Test fixtures
@@ -351,5 +354,126 @@ describe('syncAiProviderModels', () => {
             const serializedCalls = JSON.stringify(allCalls);
             expect(serializedCalls).not.toContain(PLAINTEXT_KEY);
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// syncAiProviderModelsPreflight (BETA-129 part 1)
+// ---------------------------------------------------------------------------
+
+describe('syncAiProviderModelsPreflight', () => {
+    it('should call listProviderModels with the raw caller-supplied key and providerId, skipping decrypt', async () => {
+        // Act
+        const result = await syncAiProviderModelsPreflight({
+            providerId: PROVIDER_ID,
+            plaintextKey: PLAINTEXT_KEY
+        });
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        expect(mockGetDecryptedAiProviderCredential).not.toHaveBeenCalled();
+        expect(mockListProviderModels).toHaveBeenCalledWith(
+            expect.objectContaining({ providerId: PROVIDER_ID, apiKey: PLAINTEXT_KEY })
+        );
+    });
+
+    it('should forward a caller-supplied baseURL to listProviderModels without any DB lookup', async () => {
+        // Act
+        await syncAiProviderModelsPreflight({
+            providerId: 'ollama',
+            plaintextKey: PLAINTEXT_KEY,
+            baseURL: 'http://localhost:11434'
+        });
+
+        // Assert
+        expect(mockDbSelectLimit).not.toHaveBeenCalled();
+        expect(mockListProviderModels).toHaveBeenCalledWith(
+            expect.objectContaining({ baseURL: 'http://localhost:11434' })
+        );
+    });
+
+    it('should omit baseURL from the fetch input when the caller does not supply one', async () => {
+        // Act
+        await syncAiProviderModelsPreflight({
+            providerId: PROVIDER_ID,
+            plaintextKey: PLAINTEXT_KEY
+        });
+
+        // Assert
+        const callArgs = mockListProviderModels.mock.calls[0]?.[0];
+        expect(callArgs).toBeDefined();
+        expect(Object.hasOwn(callArgs, 'baseURL')).toBe(false);
+    });
+
+    it('should run the same fetch -> filter -> merge pipeline as the stored-credential path', async () => {
+        // Arrange
+        mockListProviderModels.mockResolvedValue({
+            ids: ['gpt-4o', 'text-embedding-3-large']
+        });
+
+        // Act
+        const result = await syncAiProviderModelsPreflight({
+            providerId: PROVIDER_ID,
+            plaintextKey: PLAINTEXT_KEY
+        });
+
+        // Assert
+        const parsed = AiSyncModelsResultSchema.safeParse(result.data);
+        expect(parsed.success).toBe(true);
+        expect(result.data?.models.some((m) => m.id === 'text-embedding-3-large')).toBe(false);
+        expect(result.data?.hiddenModelIds).toEqual(['text-embedding-3-large']);
+        expect(result.data?.models.some((m) => m.id === 'gpt-4o')).toBe(true);
+    });
+
+    it('should map an auth error to VALIDATION_ERROR without leaking the key', async () => {
+        // Arrange
+        const { ListModelsAuthError } = await import('@repo/ai-core');
+        mockListProviderModels.mockRejectedValue(new ListModelsAuthError(PROVIDER_ID, 401));
+
+        // Act
+        const result = await syncAiProviderModelsPreflight({
+            providerId: PROVIDER_ID,
+            plaintextKey: PLAINTEXT_KEY
+        });
+
+        // Assert
+        expect(result.data).toBeUndefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(result.error?.message).not.toContain(PLAINTEXT_KEY);
+    });
+
+    it('should map an upstream failure to SERVICE_UNAVAILABLE', async () => {
+        // Arrange
+        const { ListModelsUpstreamError } = await import('@repo/ai-core');
+        mockListProviderModels.mockRejectedValue(
+            new ListModelsUpstreamError(PROVIDER_ID, 500, 'HTTP 500 Internal Server Error')
+        );
+
+        // Act
+        const result = await syncAiProviderModelsPreflight({
+            providerId: PROVIDER_ID,
+            plaintextKey: PLAINTEXT_KEY
+        });
+
+        // Assert
+        expect(result.error?.code).toBe(ServiceErrorCode.SERVICE_UNAVAILABLE);
+    });
+
+    it('should never include the caller-supplied plaintext key in the success result or any logger call', async () => {
+        // Act
+        const result = await syncAiProviderModelsPreflight({
+            providerId: PROVIDER_ID,
+            plaintextKey: PLAINTEXT_KEY
+        });
+
+        // Assert
+        expect(JSON.stringify(result)).not.toContain(PLAINTEXT_KEY);
+        const allCalls = [
+            ...mockApiLogger.info.mock.calls,
+            ...mockApiLogger.warn.mock.calls,
+            ...mockApiLogger.debug.mock.calls,
+            ...mockApiLogger.error.mock.calls
+        ];
+        expect(JSON.stringify(allCalls)).not.toContain(PLAINTEXT_KEY);
     });
 });

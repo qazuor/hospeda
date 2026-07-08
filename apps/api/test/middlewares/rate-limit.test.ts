@@ -121,6 +121,7 @@ import {
     resetRateLimitStore,
     stopCleanupInterval
 } from '../../src/middlewares/rate-limit';
+import { env } from '../../src/utils/env';
 import { getRedisClient } from '../../src/utils/redis';
 
 describe('Rate Limit Middleware', () => {
@@ -1083,5 +1084,67 @@ describe('Rate Limit Middleware', () => {
                 expect(result).toBe('public');
             });
         });
+    });
+});
+
+describe('Internal request bypass (HOS-103)', () => {
+    // Mutable handle onto the mocked env so tests can toggle the secret.
+    const mutableEnv = env as unknown as { HOSPEDA_INTERNAL_REQUEST_SECRET?: string };
+    const SECRET = 'internal-request-secret-at-least-32-chars-long';
+    let app: Hono;
+
+    beforeEach(async () => {
+        await clearRateLimitStore();
+        // Freeze the clock so all requests fall in one window (general limit is
+        // 3 with a 1s window; a slow runner would otherwise straddle a boundary
+        // and reset the counter, masking the expected 429).
+        vi.useFakeTimers({ now: new Date('2026-01-01T00:00:00.000Z').getTime(), toFake: ['Date'] });
+        mutableEnv.HOSPEDA_INTERNAL_REQUEST_SECRET = SECRET;
+        app = new Hono();
+        app.use('*', rateLimitMiddleware);
+        app.get('/test', (c) => c.json({ message: 'ok' }));
+    });
+
+    afterEach(async () => {
+        mutableEnv.HOSPEDA_INTERNAL_REQUEST_SECRET = undefined;
+        vi.useRealTimers();
+        await clearRateLimitStore();
+    });
+
+    it('exempts requests carrying the valid X-Internal-Request secret', async () => {
+        // General limit is 3; make 6 requests (well over it), all with the secret.
+        for (let i = 0; i < 6; i++) {
+            const res = await app.request('/test', {
+                headers: { 'X-Forwarded-For': '203.0.113.7', 'X-Internal-Request': SECRET }
+            });
+            expect(res.status).toBe(200);
+        }
+    });
+
+    it('does NOT exempt requests with a wrong secret (normal limiting applies)', async () => {
+        for (let i = 0; i < 3; i++) {
+            const res = await app.request('/test', {
+                headers: { 'X-Forwarded-For': '203.0.113.8', 'X-Internal-Request': 'wrong-secret' }
+            });
+            expect(res.status).toBe(200);
+        }
+        const blocked = await app.request('/test', {
+            headers: { 'X-Forwarded-For': '203.0.113.8', 'X-Internal-Request': 'wrong-secret' }
+        });
+        expect(blocked.status).toBe(429);
+    });
+
+    it('ignores the header entirely when no secret is configured (fail-safe)', async () => {
+        mutableEnv.HOSPEDA_INTERNAL_REQUEST_SECRET = '';
+        for (let i = 0; i < 3; i++) {
+            const res = await app.request('/test', {
+                headers: { 'X-Forwarded-For': '203.0.113.9', 'X-Internal-Request': 'anything' }
+            });
+            expect(res.status).toBe(200);
+        }
+        const blocked = await app.request('/test', {
+            headers: { 'X-Forwarded-For': '203.0.113.9', 'X-Internal-Request': 'anything' }
+        });
+        expect(blocked.status).toBe(429);
     });
 });

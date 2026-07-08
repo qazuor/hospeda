@@ -13,7 +13,7 @@ import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import { TestimonialsCarousel } from '@/components/sections/TestimonialsCarousel.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { testimonialsApi, toTestimonialCardProps } from '@/lib/api';
+import { SSR_PUBLIC_CACHE_TTL_MS, testimonialsApi, toTestimonialCardProps } from '@/lib/api';
 import type { ReviewCardData } from '@/data/types';
 import { webLogger } from '@/lib/logger';
 import { isAllowedRemoteHost } from '@/lib/media';
@@ -30,7 +30,7 @@ const { t } = createTranslations(locale);
 let reviews: ReviewCardData[] = [];
 
 try {
-    const result = await testimonialsApi.list({ pageSize: 20 });
+    const result = await testimonialsApi.list({ pageSize: 20, cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
     if (result.ok) {
         reviews = result.data.items.map((raw) => toTestimonialCardProps({ item: raw as unknown as Record<string, unknown> }));
     }

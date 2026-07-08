@@ -6,6 +6,7 @@
  * @module logger/log-entry
  */
 
+import { capLogData } from './cap-data.js';
 import { redactSensitiveData } from './redact.js';
 import type { LoggerOptions, LogLevel, LogLevelType } from './types.js';
 
@@ -60,12 +61,18 @@ export function buildLogEntry(
     const category =
         categoryKey !== undefined && categoryKey !== 'DEFAULT' ? categoryKey : undefined;
 
+    // Bound the structured payload so a single oversized `data` value cannot
+    // flood the JSON/NDJSON log (and the DB sink) regardless of the call site.
+    // String values live in `message` and are left as-is (human message, not a
+    // payload); only non-string `data` is capped.
+    const data = isStringValue ? undefined : capLogData(redacted);
+
     return {
         ts: new Date().toISOString(),
         level: level as LogLevelType,
         ...(category === undefined ? {} : { category }),
         ...(label === undefined ? {} : { label }),
         message: isStringValue ? (redacted as string) : (label ?? ''),
-        ...(isStringValue ? {} : { data: redacted })
+        ...(isStringValue ? {} : { data })
     };
 }
