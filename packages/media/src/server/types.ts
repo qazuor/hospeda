@@ -57,6 +57,21 @@ export interface UploadOptions {
      * such as `duration` (HOS-65 — video upload fix).
      */
     readonly resourceType?: 'image' | 'video' | 'auto';
+    /**
+     * Optional per-call upload timeout in milliseconds, passed straight
+     * through to the Cloudinary SDK's own `timeout` upload option.
+     *
+     * Omit this to preserve the historical behavior for every existing
+     * caller (no explicit per-request timeout, matching the Cloudinary SDK
+     * default). Interactive, user-facing upload paths (e.g. the protected
+     * entity-upload route) SHOULD set a bounded value so a slow/hanging
+     * Cloudinary response fails fast enough for the caller to surface a
+     * clean typed JSON error before an upstream reverse-proxy timeout
+     * intervenes and returns a non-JSON error body instead (BETA-134).
+     *
+     * @default undefined (no explicit timeout — Cloudinary SDK default applies)
+     */
+    readonly timeoutMs?: number;
 }
 
 /**

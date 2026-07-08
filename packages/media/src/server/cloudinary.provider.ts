@@ -237,7 +237,8 @@ export class CloudinaryProvider implements ImageProvider {
      * @throws {Error} If Cloudinary returns an incomplete or missing response
      */
     async upload(options: UploadOptions): Promise<UploadResult> {
-        const { file, folder, publicId, tags, overwrite, transformation, resourceType } = options;
+        const { file, folder, publicId, tags, overwrite, transformation, resourceType, timeoutMs } =
+            options;
 
         if (!folder || !folder.startsWith(this.folderRoot)) {
             throw new InvalidFolderError(
@@ -262,6 +263,12 @@ export class CloudinaryProvider implements ImageProvider {
         }
         if (transformation !== undefined) {
             uploadOptions.transformation = transformation;
+        }
+        // Omitted by default (preserves the historical no-explicit-timeout
+        // behavior for every existing caller). Callers on an interactive
+        // path (BETA-134) opt in with a bounded value.
+        if (timeoutMs !== undefined) {
+            uploadOptions.timeout = timeoutMs;
         }
 
         const result = await this.uploadBuffer(file, uploadOptions);
