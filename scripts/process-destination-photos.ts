@@ -171,7 +171,11 @@ function configureCloudinary(): void {
         cloud_name: cloudName,
         api_key: apiKey,
         api_secret: apiSecret,
-        secure: true
+        secure: true,
+        // Default SDK timeout is 60s, which a slow upload link (plus the
+        // per-call `invalidate` CDN purge) can exceed. Give each request a
+        // generous ceiling; `uploadAsset` adds retry-with-backoff on top.
+        timeout: 180_000
     });
 }
 
@@ -402,20 +406,42 @@ async function uploadAsset(
     }
     const lastSlash = publicId.lastIndexOf('/');
     const assetFolder = lastSlash > 0 ? publicId.slice(0, lastSlash) : '';
-    const result: UploadApiResponse = await cloudinary.uploader.upload(localPath, {
-        public_id: publicId,
-        asset_folder: assetFolder,
-        overwrite: true,
-        resource_type: 'image',
-        invalidate: true
-    });
-    return {
-        publicId: result.public_id,
-        url: result.secure_url,
-        width: result.width,
-        height: result.height,
-        bytes: result.bytes
-    };
+
+    // Retry with exponential backoff: a single transient timeout / network
+    // blip must not abort the whole run (uploads are idempotent — same
+    // deterministic publicId + overwrite:true — so re-attempts are safe).
+    const MAX_ATTEMPTS = 4;
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        try {
+            const result: UploadApiResponse = await cloudinary.uploader.upload(localPath, {
+                public_id: publicId,
+                asset_folder: assetFolder,
+                overwrite: true,
+                resource_type: 'image',
+                invalidate: true,
+                timeout: 180_000
+            });
+            return {
+                publicId: result.public_id,
+                url: result.secure_url,
+                width: result.width,
+                height: result.height,
+                bytes: result.bytes
+            };
+        } catch (err) {
+            lastError = err;
+            if (attempt < MAX_ATTEMPTS) {
+                const backoffMs = 2_000 * 2 ** (attempt - 1);
+                const reason = err instanceof Error ? err.message : String(err);
+                console.warn(
+                    `  ⚠ upload attempt ${attempt}/${MAX_ATTEMPTS} for ${publicId} failed (${reason}); retrying in ${backoffMs}ms`
+                );
+                await new Promise((r) => setTimeout(r, backoffMs));
+            }
+        }
+    }
+    throw lastError;
 }
 
 async function uploadDestination(
