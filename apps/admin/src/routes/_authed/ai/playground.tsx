@@ -43,6 +43,10 @@ import { useToast } from '@/hooks/use-toast';
 import { AccommodationCombobox } from './-components/AccommodationCombobox';
 import { AdvancedSettingsPanel } from './-components/AdvancedSettingsPanel';
 import { MessagesArea } from './-components/MessagesArea';
+import {
+    isPlaygroundSupportedFeature,
+    PLAYGROUND_UNSUPPORTED_REASON
+} from './-components/playground-features.utils';
 import { streamChat } from './-components/stream-chat';
 
 export const Route = createFileRoute('/_authed/ai/playground')({
@@ -412,14 +416,23 @@ function AiPlaygroundPage() {
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {ALL_FEATURES.map((f) => (
-                                                    <SelectItem
-                                                        key={f}
-                                                        value={f}
-                                                    >
-                                                        {FEATURE_LABELS[f]}
-                                                    </SelectItem>
-                                                ))}
+                                                {ALL_FEATURES.map((f) => {
+                                                    const supported =
+                                                        isPlaygroundSupportedFeature(f);
+                                                    const reason = PLAYGROUND_UNSUPPORTED_REASON[f];
+                                                    return (
+                                                        <SelectItem
+                                                            key={f}
+                                                            value={f}
+                                                            disabled={!supported}
+                                                        >
+                                                            {FEATURE_LABELS[f]}
+                                                            {!supported && reason
+                                                                ? ` (${reason})`
+                                                                : ''}
+                                                        </SelectItem>
+                                                    );
+                                                })}
                                             </SelectContent>
                                         </Select>
                                     </div>
