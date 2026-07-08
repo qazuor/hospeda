@@ -111,6 +111,17 @@ export interface RotateAiCredentialPayload {
     readonly newPlaintextKey: string;
 }
 
+/**
+ * Payload for previewing a NOT-YET-SAVED provider key's model catalog
+ * (BETA-129 part 1). Used by the "create credential" dialog to sync models
+ * before the credential is encrypted and stored.
+ */
+export interface SyncAiCredentialModelsPreflightPayload {
+    readonly providerId: string;
+    readonly plaintextKey: string;
+    readonly baseURL?: string;
+}
+
 /** Payload for updating credential metadata (label, models, baseURL). */
 export interface UpdateAiCredentialPayload {
     readonly label?: string;

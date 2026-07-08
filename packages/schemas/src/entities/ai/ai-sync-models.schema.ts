@@ -92,3 +92,31 @@ export const AiSyncModelsResultSchema = z.object({
 
 /** TypeScript type for the sync-models result. */
 export type AiSyncModelsResult = z.infer<typeof AiSyncModelsResultSchema>;
+
+// ---------------------------------------------------------------------------
+// Preflight input (request for POST /sync-models/preview — BETA-129)
+// ---------------------------------------------------------------------------
+
+/**
+ * Input body for `POST /api/v1/admin/ai/credentials/sync-models/preview`.
+ *
+ * Lets an admin sync a provider's model catalog with a just-typed API key
+ * BEFORE any credential is saved (BETA-129 part 1). Unlike
+ * `POST /{providerId}/sync-models`, there is no stored credential to decrypt
+ * yet — the plaintext key travels in the request body, is used once to call
+ * the provider's live list-models endpoint, and is never persisted, logged,
+ * or echoed back.
+ */
+export const AiSyncModelsPreflightInputSchema = z
+    .object({
+        /** AI provider identifier (e.g. `openai`, `anthropic`, `ollama`). */
+        providerId: z.string().min(1),
+        /** The raw, not-yet-saved API key. Consumed once — never returned. */
+        plaintextKey: z.string().min(1),
+        /** Optional base URL override (required by self-hosted providers like Ollama). */
+        baseURL: z.string().url().optional()
+    })
+    .strict();
+
+/** TypeScript type for the sync-models preflight input. */
+export type AiSyncModelsPreflightInput = z.infer<typeof AiSyncModelsPreflightInputSchema>;

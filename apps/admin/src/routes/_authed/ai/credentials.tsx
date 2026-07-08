@@ -10,11 +10,24 @@
  */
 
 import { useTranslations } from '@repo/i18n';
-import { AddIcon, AlertCircleIcon, DeleteIcon, EditIcon, LoaderIcon } from '@repo/icons';
-import { getKnownProvider, KNOWN_PROVIDERS } from '@repo/schemas';
+import {
+    AddIcon,
+    AlertCircleIcon,
+    DeleteIcon,
+    EditIcon,
+    LoaderIcon,
+    RefreshIcon
+} from '@repo/icons';
+import {
+    type AiProviderModel,
+    getKnownProvider,
+    KNOWN_PROVIDERS,
+    type KnownProvider
+} from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -44,11 +57,12 @@ import {
     useCreateAiCredentialMutation,
     useDeleteAiCredentialMutation,
     useRotateAiCredentialMutation,
+    useSyncModelsPreflightMutation,
     useUpdateAiCredentialMutation
 } from '@/features/ai-settings';
 import { useToast } from '@/hooks/use-toast';
 import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
-import { SyncModelsSection } from './-components/SyncModelsSection';
+import { describeSyncError, SyncModelsSection } from './-components/SyncModelsSection';
 
 export const Route = createFileRoute('/_authed/ai/credentials')({
     component: AiCredentialsPage
@@ -65,13 +79,70 @@ export const Route = createFileRoute('/_authed/ai/credentials')({
 const CUSTOM_OPTION_ID = '__custom__';
 
 // ---------------------------------------------------------------------------
+// Preflight sync helpers (BETA-129 part 1)
+// ---------------------------------------------------------------------------
+//
+// Small local duplicates of `SyncModelsSection`'s badge/sort helpers — kept
+// here rather than exported from that module so the edit-only component
+// stays untouched. `describeSyncError` (the error-mapping logic) IS reused
+// via import, since it is already exported and provider-agnostic.
+
+/** Badge variant per merge source (mirrors `SyncModelsSection`'s mapping). */
+function preflightBadgeVariant(
+    source: AiProviderModel['source']
+): 'default' | 'secondary' | 'success' {
+    if (source === 'detected') return 'success';
+    if (source === 'both') return 'default';
+    return 'secondary';
+}
+
+/** Spanish badge label per merge source. */
+function preflightBadgeLabel(source: AiProviderModel['source']): string {
+    if (source === 'detected') return 'Nuevo';
+    if (source === 'both') return 'Detectado + catálogo';
+    return 'Catálogo';
+}
+
+/** Sorts the merged catalog curated-first (curated/both), then newly-detected-only. */
+function sortPreflightModels(models: readonly AiProviderModel[]): AiProviderModel[] {
+    return [...models].sort((a, b) => {
+        const rank = (m: AiProviderModel) => (m.source === 'detected' ? 1 : 0);
+        return rank(a) - rank(b);
+    });
+}
+
+/**
+ * Whether the "Sincronizar modelos" button should be enabled for the
+ * create-credential form's current state.
+ *
+ * A key-requiring provider (or a fully custom one, which is treated the
+ * same way since its requirements are unknown) needs a non-empty `apiKey`.
+ * A known key-less provider (e.g. Ollama) needs a non-empty `baseURL`
+ * instead, since that is how the request reaches it.
+ */
+function canSyncPreflightModels(input: {
+    readonly known: KnownProvider | undefined;
+    readonly apiKey: string;
+    readonly baseURL: string;
+}): boolean {
+    const { known, apiKey, baseURL } = input;
+    const needsApiKey = known ? known.needsApiKey : true;
+    if (needsApiKey) {
+        return apiKey.trim().length > 0;
+    }
+    return baseURL.trim().length > 0;
+}
+
+// ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
 
 /** Create credential dialog state. */
 function CreateCredentialDialog() {
+    const { t } = useTranslations();
     const { addToast } = useToast();
     const createMutation = useCreateAiCredentialMutation();
+    const preflightMutation = useSyncModelsPreflightMutation();
     const [open, setOpen] = useState(false);
     const [selectedProvider, setSelectedProvider] = useState('');
     const [customProvider, setCustomProvider] = useState('');
@@ -97,6 +168,7 @@ function CreateCredentialDialog() {
             setBaseURL('');
             setSelectedModels([]);
             setDisabledModels([]);
+            preflightMutation.reset();
         }
     };
 
@@ -113,10 +185,26 @@ function CreateCredentialDialog() {
             setLabel('');
             setSelectedModels([]);
         }
+        // A synced preview from a previously-selected provider must never leak
+        // into the newly-selected one's model list.
+        preflightMutation.reset();
     };
 
     const toggleModel = (model: string) => {
         setDisabledModels((prev) =>
+            prev.includes(model) ? prev.filter((m) => m !== model) : [...prev, model]
+        );
+    };
+
+    /**
+     * Toggles a model's enabled state in the POST-sync merged catalog
+     * (BETA-129). Unlike `toggleModel` (pre-sync, `disabledModels`-driven),
+     * this operates directly on `selectedModels` — the same
+     * "membership = enabled" convention `SyncModelsSection` uses, and the one
+     * actually persisted by `handleSubmit`'s `metadata.models`.
+     */
+    const togglePreflightModel = (model: string) => {
+        setSelectedModels((prev) =>
             prev.includes(model) ? prev.filter((m) => m !== model) : [...prev, model]
         );
     };
@@ -127,6 +215,31 @@ function CreateCredentialDialog() {
         setSelectedModels((prev) => [...prev, m]);
         setNewModel('');
     };
+
+    // ---------------------------------------------------------------------
+    // Sync models BEFORE the credential is saved (BETA-129 part 1)
+    // ---------------------------------------------------------------------
+
+    const canSyncModels = canSyncPreflightModels({ known, apiKey, baseURL });
+
+    const handleSyncModels = async () => {
+        if (!effectiveProvider || !canSyncModels) return;
+        try {
+            await preflightMutation.mutateAsync({
+                providerId: effectiveProvider,
+                plaintextKey: apiKey.trim() || 'no-key-needed',
+                ...(baseURL.trim() ? { baseURL: baseURL.trim() } : {})
+            });
+        } catch (err) {
+            const { message } = describeSyncError(err, t);
+            addToast({ title: 'Error al sincronizar modelos', message, variant: 'error' });
+        }
+    };
+
+    const preflightResult = preflightMutation.data;
+    const mergedPreflightModels = preflightResult
+        ? sortPreflightModels(preflightResult.models)
+        : null;
 
     const handleSubmit = async () => {
         if (!effectiveProvider) return;
@@ -282,75 +395,211 @@ function CreateCredentialDialog() {
                     {/* Model selector (only for known providers) */}
                     {known && (
                         <div className="border-t pt-4">
-                            <Label>Modelos habilitados</Label>
-                            <p className="mb-3 text-muted-foreground text-xs">
-                                Activá los modelos que querés habilitar para este proveedor.
-                            </p>
+                            <div className="mb-3 flex items-center justify-between gap-4">
+                                <div>
+                                    <Label>Modelos habilitados</Label>
+                                    <p className="mt-1 text-muted-foreground text-xs">
+                                        {mergedPreflightModels
+                                            ? 'Resultado de la sincronización con el proveedor.'
+                                            : 'Activá los modelos que querés habilitar para este proveedor.'}
+                                    </p>
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleSyncModels}
+                                    disabled={!canSyncModels || preflightMutation.isPending}
+                                >
+                                    {preflightMutation.isPending ? (
+                                        <LoaderIcon className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                        <RefreshIcon className="mr-2 h-3.5 w-3.5" />
+                                    )}
+                                    Sincronizar modelos
+                                </Button>
+                            </div>
+
+                            {preflightMutation.isPending && (
+                                <p className="mb-3 text-muted-foreground text-xs">
+                                    Sincronizando modelos con el proveedor...
+                                </p>
+                            )}
+
                             <div className="grid gap-2">
-                                {/* Predefined models */}
-                                {known.models.map((model) => {
-                                    const isEnabled = !disabledModels.includes(model);
-                                    return (
-                                        <div
-                                            key={model}
-                                            className="flex items-center justify-between rounded-md border p-2 hover:bg-muted/50"
-                                        >
-                                            <span className="font-mono text-xs">{model}</span>
-                                            <div className="flex items-center gap-2">
-                                                <Switch
-                                                    checked={isEnabled}
-                                                    onCheckedChange={() => toggleModel(model)}
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                                                    onClick={() =>
-                                                        setSelectedModels((prev) =>
-                                                            prev.filter((m) => m !== model)
-                                                        )
-                                                    }
+                                {mergedPreflightModels ? (
+                                    <>
+                                        {/* Post-sync: merged detected/curated/both catalog (BETA-129) */}
+                                        {mergedPreflightModels.map((model) => {
+                                            const isEnabled = selectedModels.includes(model.id);
+                                            return (
+                                                <div
+                                                    key={model.id}
+                                                    className="flex items-center justify-between rounded-md border p-2 hover:bg-muted/50"
                                                 >
-                                                    <DeleteIcon className="h-3 w-3" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                                {/* Custom models (added by user) */}
-                                {selectedModels
-                                    .filter((m) => !known.models.includes(m))
-                                    .map((model) => {
-                                        const isEnabled = !disabledModels.includes(model);
-                                        return (
-                                            <div
-                                                key={model}
-                                                className="flex items-center justify-between rounded-md border border-dashed p-2"
-                                            >
-                                                <span className="font-mono text-xs">{model}</span>
-                                                <div className="flex items-center gap-2">
-                                                    <Switch
-                                                        checked={isEnabled}
-                                                        onCheckedChange={() => toggleModel(model)}
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                                                        onClick={() =>
-                                                            setSelectedModels((prev) =>
-                                                                prev.filter((m) => m !== model)
-                                                            )
-                                                        }
-                                                    >
-                                                        <DeleteIcon className="h-3 w-3" />
-                                                    </Button>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-mono text-xs">
+                                                            {model.id}
+                                                        </span>
+                                                        <Badge
+                                                            variant={preflightBadgeVariant(
+                                                                model.source
+                                                            )}
+                                                            className="text-[10px]"
+                                                        >
+                                                            {preflightBadgeLabel(model.source)}
+                                                        </Badge>
+                                                        {model.capabilityHint === 'uncertain' && (
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="text-[10px] text-muted-foreground"
+                                                            >
+                                                                Sin confirmar
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Switch
+                                                            checked={isEnabled}
+                                                            onCheckedChange={() =>
+                                                                togglePreflightModel(model.id)
+                                                            }
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                                            onClick={() =>
+                                                                setSelectedModels((prev) =>
+                                                                    prev.filter(
+                                                                        (m) => m !== model.id
+                                                                    )
+                                                                )
+                                                            }
+                                                        >
+                                                            <DeleteIcon className="h-3 w-3" />
+                                                        </Button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })}
+                                            );
+                                        })}
+                                        {/* Custom models not covered by the merged catalog */}
+                                        {selectedModels
+                                            .filter(
+                                                (m) =>
+                                                    !mergedPreflightModels.some((mm) => mm.id === m)
+                                            )
+                                            .map((model) => (
+                                                <div
+                                                    key={model}
+                                                    className="flex items-center justify-between rounded-md border border-dashed p-2"
+                                                >
+                                                    <span className="font-mono text-xs">
+                                                        {model}
+                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <Switch
+                                                            checked={true}
+                                                            onCheckedChange={() =>
+                                                                togglePreflightModel(model)
+                                                            }
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                                            onClick={() =>
+                                                                setSelectedModels((prev) =>
+                                                                    prev.filter((m) => m !== model)
+                                                                )
+                                                            }
+                                                        >
+                                                            <DeleteIcon className="h-3 w-3" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* Pre-sync: curated fallback (unchanged existing behavior) */}
+                                        {known.models.map((model) => {
+                                            const isEnabled = !disabledModels.includes(model);
+                                            return (
+                                                <div
+                                                    key={model}
+                                                    className="flex items-center justify-between rounded-md border p-2 hover:bg-muted/50"
+                                                >
+                                                    <span className="font-mono text-xs">
+                                                        {model}
+                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <Switch
+                                                            checked={isEnabled}
+                                                            onCheckedChange={() =>
+                                                                toggleModel(model)
+                                                            }
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                                            onClick={() =>
+                                                                setSelectedModels((prev) =>
+                                                                    prev.filter((m) => m !== model)
+                                                                )
+                                                            }
+                                                        >
+                                                            <DeleteIcon className="h-3 w-3" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        {/* Custom models (added by user) */}
+                                        {selectedModels
+                                            .filter((m) => !known.models.includes(m))
+                                            .map((model) => {
+                                                const isEnabled = !disabledModels.includes(model);
+                                                return (
+                                                    <div
+                                                        key={model}
+                                                        className="flex items-center justify-between rounded-md border border-dashed p-2"
+                                                    >
+                                                        <span className="font-mono text-xs">
+                                                            {model}
+                                                        </span>
+                                                        <div className="flex items-center gap-2">
+                                                            <Switch
+                                                                checked={isEnabled}
+                                                                onCheckedChange={() =>
+                                                                    toggleModel(model)
+                                                                }
+                                                            />
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                                                onClick={() =>
+                                                                    setSelectedModels((prev) =>
+                                                                        prev.filter(
+                                                                            (m) => m !== model
+                                                                        )
+                                                                    )
+                                                                }
+                                                            >
+                                                                <DeleteIcon className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                    </>
+                                )}
                             </div>
                             {/* Add custom model */}
                             <div className="mt-3 flex items-end gap-2">
