@@ -9,20 +9,33 @@ import { describe, expect, it } from 'vitest';
 import { CROSS_CHECK_RULES } from '../env-cross-checks.js';
 
 describe('CROSS_CHECK_RULES', () => {
-    it('should contain exactly one seeded rule', () => {
-        expect(CROSS_CHECK_RULES).toHaveLength(1);
+    it('should contain the two seeded rules', () => {
+        expect(CROSS_CHECK_RULES).toHaveLength(2);
     });
 
     it('should seed the HOSPEDA_REVALIDATION_SECRET api/web equality rule with the exact shape', () => {
-        const rule = CROSS_CHECK_RULES[0];
+        const rule = CROSS_CHECK_RULES.find((r) => r.id === 'revalidation-secret-api-web-match');
 
         expect(rule).toBeDefined();
-        expect(rule?.id).toBe('revalidation-secret-api-web-match');
         expect(rule?.comparator).toBe('equals');
         expect(rule?.appliesTo).toEqual(['local', 'coolify']);
         expect(rule?.compare).toEqual([
             { app: 'api', key: 'HOSPEDA_REVALIDATION_SECRET' },
             { app: 'web', key: 'HOSPEDA_REVALIDATION_SECRET' }
+        ]);
+    });
+
+    it('should seed the HOSPEDA_INTERNAL_REQUEST_SECRET api/web equality rule with the exact shape', () => {
+        const rule = CROSS_CHECK_RULES.find(
+            (r) => r.id === 'internal-request-secret-api-web-match'
+        );
+
+        expect(rule).toBeDefined();
+        expect(rule?.comparator).toBe('equals');
+        expect(rule?.appliesTo).toEqual(['local', 'coolify']);
+        expect(rule?.compare).toEqual([
+            { app: 'api', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' },
+            { app: 'web', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' }
         ]);
     });
 
