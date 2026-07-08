@@ -10,7 +10,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Module mocks (hoisted — must appear before any imports that depend on them)
@@ -99,6 +99,7 @@ vi.mock('../../src/utils/logger', () => ({
 }));
 
 import { TrialService } from '../../src/services/trial.service';
+import { env } from '../../src/utils/env';
 
 // Mock QZPay billing
 const createMockBilling = () => {
@@ -172,6 +173,68 @@ describe('TrialService', () => {
                     })
                 })
             );
+        });
+
+        // HOSPEDA_TRIAL_DAYS_OVERRIDE (testing-only): when set to a positive integer
+        // it replaces OWNER_TRIAL_DAYS (14) so QA can exercise trial expiry after
+        // e.g. 1 day. It is intentionally NOT gated by environment (NODE_ENV is
+        // 'production' on both the prod and staging deployments, and testing must be
+        // possible against production), so these tests assert the override applies
+        // whenever set and falls back to the constant when unset.
+        describe('HOSPEDA_TRIAL_DAYS_OVERRIDE', () => {
+            // `env` is a live binding populated at runtime by validateApiEnv(), so
+            // snapshot it inside beforeEach (not in the describe body, where it is
+            // still undefined during collection).
+            let originalOverride: typeof env.HOSPEDA_TRIAL_DAYS_OVERRIDE;
+
+            beforeEach(() => {
+                originalOverride = env.HOSPEDA_TRIAL_DAYS_OVERRIDE;
+            });
+
+            afterEach(() => {
+                env.HOSPEDA_TRIAL_DAYS_OVERRIDE = originalOverride;
+            });
+
+            const arrangeHappyPath = () => {
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [mockPlan]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(
+                    [] as never
+                );
+                vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                    id: 'sub-override'
+                } as never);
+            };
+
+            it('uses the override trial length when set to a positive integer', async () => {
+                // Arrange
+                env.HOSPEDA_TRIAL_DAYS_OVERRIDE = 1;
+                arrangeHappyPath();
+
+                // Act
+                await trialService.startTrial({ customerId: 'customer-override-set' });
+
+                // Assert — the shortened trial length flows into subscriptions.create
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({ trialDays: 1 })
+                );
+            });
+
+            it('falls back to OWNER_TRIAL_DAYS (14) when the override is unset', async () => {
+                // Arrange
+                env.HOSPEDA_TRIAL_DAYS_OVERRIDE = undefined;
+                arrangeHappyPath();
+
+                // Act
+                await trialService.startTrial({ customerId: 'customer-override-unset' });
+
+                // Assert
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({ trialDays: 14 })
+                );
+            });
         });
 
         // SPEC-222 Part 2 (AC-3): the MercadoPago creation payload is enriched AT

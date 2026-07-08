@@ -32,6 +32,7 @@ import {
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
+import { getPostHogClient } from '../../../lib/posthog';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { AddonService } from '../../../services/addon.service';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
@@ -849,6 +850,27 @@ async function applyWebhookRefundLifecycle({
 }
 
 /**
+ * Resolve the PostHog distinct id for a payment analytics event: the owner's
+ * Better Auth user id (so the event lands on the SAME identified person the web
+ * app creates via identify() and on checkout_started), falling back to the
+ * billing customer id when the customer has no linked user or the lookup fails.
+ *
+ * Read-only and analytics-only — it never changes billing behavior and never
+ * throws (a failed lookup returns the customerId). Called only inside the
+ * capture branches so no lookup happens for payment statuses that never capture.
+ *
+ * @param customerId - The billing customer id from the payment metadata.
+ * @returns The user id if resolvable, otherwise the customerId.
+ */
+async function resolveAnalyticsDistinctId(customerId: string): Promise<string> {
+    try {
+        return (await resolveOwnerUserId({ customerId })) ?? customerId;
+    } catch {
+        return customerId;
+    }
+}
+
+/**
  * Process a payment.updated event's business logic.
  *
  * Dispatches payment success/failure notifications and confirms add-on
@@ -884,6 +906,54 @@ export async function processPaymentUpdated({
                 paymentMethod,
                 billing
             );
+
+            // Fire-and-forget product analytics (no DB, no await). Wrapped in
+            // try/catch so a misbehaving PostHog client can NEVER break webhook
+            // processing — this handler must always resolve normally regardless
+            // of analytics outcome. `kind` distinguishes which downstream flow
+            // this approved charge will dispatch to below (annual activation,
+            // plan-change upgrade, addon purchase, or a plain recurring renewal);
+            // computed from metadata already parsed further down in this
+            // function — no additional DB queries.
+            try {
+                const analyticsDistinctId = await resolveAnalyticsDistinctId(customerId);
+                const kind = extractAnnualSubscriptionMetadata(data.metadata)
+                    ? 'annual'
+                    : extractPlanChangeUpgradeMetadata(data.metadata)
+                      ? 'plan_upgrade'
+                      : extractAddonMetadata(data.metadata)
+                        ? 'addon'
+                        : 'subscription_renewal';
+
+                getPostHogClient()?.capture({
+                    distinctId: analyticsDistinctId,
+                    event: 'subscription_payment_succeeded',
+                    // `$set` updates the person profile server-side: an approved
+                    // payment means the subscription is active, so mark the payer
+                    // as such immediately (feeds the "Paying users" cohort) without
+                    // waiting for their next web visit. The exact plan slug is set
+                    // client-side from the entitlements endpoint (plan-properties.ts)
+                    // — resolving it here would need extra billing lookups, out of
+                    // scope for analytics-only changes.
+                    properties: {
+                        amount,
+                        currency,
+                        paymentMethod,
+                        kind,
+                        source,
+                        $set: { plan_status: 'active' }
+                    }
+                });
+            } catch (phErr) {
+                apiLogger.warn(
+                    {
+                        customerId,
+                        source,
+                        error: phErr instanceof Error ? phErr.message : String(phErr)
+                    },
+                    'PostHog capture failed for subscription_payment_succeeded (non-blocking)'
+                );
+            }
         }
 
         if (status === 'rejected' || status === 'cancelled' || status === 'refunded') {
@@ -901,6 +971,27 @@ export async function processPaymentUpdated({
                 failureReason,
                 billing
             );
+
+            // Fire-and-forget product analytics (no DB, no await). Mirrors the
+            // approved-branch capture above and is wrapped in try/catch so a
+            // misbehaving PostHog client can NEVER break webhook processing.
+            try {
+                const analyticsDistinctId = await resolveAnalyticsDistinctId(customerId);
+                getPostHogClient()?.capture({
+                    distinctId: analyticsDistinctId,
+                    event: 'payment_failed',
+                    properties: { amount, currency, status, failureReason, source }
+                });
+            } catch (phErr) {
+                apiLogger.warn(
+                    {
+                        customerId,
+                        source,
+                        error: phErr instanceof Error ? phErr.message : String(phErr)
+                    },
+                    'PostHog capture failed for payment_failed (non-blocking)'
+                );
+            }
         }
     }
 

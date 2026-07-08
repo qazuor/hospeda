@@ -127,6 +127,30 @@
     background-color: var(--core-card);
 }
 
+/*
+ * Destination-popup thumbnail. `aspect-ratio` on the WRAPPER reserves the
+ * image's height BEFORE the (async) image loads, so the popup has its final
+ * height at render time. Without this the popup opened short, Leaflet's autoPan
+ * fired on the short height, then the image loaded and grew the popup upward —
+ * pushing its top back out of view (HOS-95: "not always 100% visible"). With
+ * the space reserved, autoPan computes the correct height once and the image
+ * loads into the fixed box with no reflow.
+ */
+.popupImageWrapper {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background-color: var(--surface-warm, #faf6f0);
+    flex-shrink: 0;
+}
+
+.popupImage {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 /* Header row inside the body: type chip + featured badge on the left,
  * favorite button on the right (the thumbnail used to host these — now
  * they live in the body so the popup stays compact). The trailing
@@ -480,4 +504,69 @@
 
 :global(.marker-cluster span) {
     line-height: 50px;
+}
+
+/*
+ * HOS-95 destination-pin styles. `.destPinReset` strips Leaflet's default white
+ * divIcon box; `.destPin` adds a drop shadow to the SVG pin. Colours come from
+ * CSS custom properties (set on the SVG fills), so dark mode applies
+ * automatically.
+ */
+.destPinReset {
+    background: transparent;
+    border: 0;
+}
+
+.destPin {
+    display: block;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+
+.destPin svg {
+    display: block;
+}
+
+/*
+ * HOS-95 accommodation floating card — a portal card positioned within the map
+ * WITHOUT moving it (see AccommodationCardPopup). It is NOT a Leaflet popup, so
+ * the rounded/shadowed frame that `.leaflet-popup-content-wrapper` used to give
+ * lives here. `.floatingCardClose` mirrors the Leaflet close-button placement
+ * (top:16/right:8) that the popup header already reserves space for.
+ */
+.floatingCard {
+    position: absolute;
+    z-index: 1000;
+    border-radius: var(--radius-card, 14px);
+    box-shadow: var(--shadow-card, 0 8px 30px rgb(0 0 0 / 0.18));
+    overflow: hidden;
+    background-color: var(--core-card);
+}
+
+.floatingCardClose {
+    position: absolute;
+    top: 16px;
+    right: 8px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 9999px;
+    background-color: rgb(255 255 255 / 0.95);
+    color: var(--core-foreground);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px oklch(0 0 0 / 0.18);
+    transition:
+        background-color 150ms ease-out,
+        transform 150ms ease-out;
+}
+
+.floatingCardClose:hover {
+    background-color: #fff;
+    transform: scale(1.05);
 }

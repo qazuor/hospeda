@@ -145,6 +145,22 @@
       "howToObtainEs": "Elegí una contraseña fuerte; se convierte en la contraseña del usuario super-admin que crea db:seed. Solo se usa al sembrar la DB; después la podés cambiar desde la UI del admin."
     },
     {
+      "name": "HOSPEDA_ALLOW_DESTRUCTIVE_MIGRATION",
+      "description": "Safety flag required to allow destructive versioned seed data-migrations (deletes/irreversible updates) to run in production environments. Must be exactly \"true\".",
+      "descriptionEs": "Flag de seguridad requerido para permitir que las data-migrations de seed versionadas destructivas (deletes/updates irreversibles) corran en entornos de producción. Debe ser exactamente \"true\".",
+      "type": "boolean",
+      "required": false,
+      "secret": false,
+      "defaultValue": "false",
+      "exampleValue": "false",
+      "apps": [
+        "seed"
+      ],
+      "category": "database",
+      "howToObtain": "Hard guard (HOS-25 T-011). Keep \"false\". Set to \"true\" ONLY for the duration of an authorized, reviewed run of a destructive data-migration in production, then revert to false immediately. Equivalent to passing --allow-destructive to the seed CLI.",
+      "howToObtainEs": "Guarda dura (HOS-25 T-011). Dejalo en \"false\". Ponelo en \"true\" SOLO durante una corrida autorizada y revisada de una data-migration destructiva en producción; después volvelo a false inmediatamente. Equivalente a pasar --allow-destructive al CLI de seed."
+    },
+    {
       "name": "HOSPEDA_BETTER_AUTH_SECRET",
       "description": "Better Auth session signing secret. Min 32 chars enforced by Zod (apps/api/src/utils/env.ts).",
       "descriptionEs": "Secreto de firma de sesiones de Better Auth. Mínimo 32 caracteres (validado por Zod en apps/api/src/utils/env.ts).",
@@ -1280,6 +1296,51 @@
       "helpUrl": "https://docs.sentry.io/account/auth-tokens/",
       "howToObtain": "Sentry → Settings → Account → User Auth Tokens → Create New Token. Required scopes: `project:releases`, `org:read`, `project:read`. Used by @sentry/astro (web), @sentry/vite-plugin (admin), and @sentry/esbuild-plugin (api) at build time to upload source maps so production stack traces are symbolicated. Build skips upload silently if missing. Org slug `qazuor` and per-app project slugs (`hospeda-web`, `hospeda-admin`, `hospeda-api`) are hardcoded in each app build config — the same org-scoped token works for all three.",
       "howToObtainEs": "Sentry → Settings → Account → User Auth Tokens → Create New Token. Scopes mínimos: `project:releases`, `org:read`, `project:read`. Lo usan @sentry/astro (web), @sentry/vite-plugin (admin) y @sentry/esbuild-plugin (api) en build-time para subir los source maps y así los stack traces en producción salgan simbolicados. Si falta, el upload se saltea en silencio. El org slug `qazuor` y los project slugs por app (`hospeda-web`, `hospeda-admin`, `hospeda-api`) están hardcoded en cada config de build — el mismo token (org-scoped) sirve para los tres."
+    },
+    {
+      "name": "WEEKLY_RESTART_HEARTBEAT_URL",
+      "description": "Optional heartbeat-ping URL (e.g. healthchecks.io / Cronitor) hit by scripts/server-tools/weekly-restart.sh after a successful weekly app-restart + Docker prune cycle, so an external monitor can alert if the cron stops firing. NOT read by any Node app process — read directly by the bash script from the crontab environment on the VPS host. Setting it in a Coolify app's env vars panel has no effect for this purpose; it must be exported in the operator's crontab (or a sourced env file the cron job loads) on the host.",
+      "descriptionEs": "URL opcional de heartbeat (ej. healthchecks.io / Cronitor) que pingea scripts/server-tools/weekly-restart.sh tras un ciclo semanal exitoso de restart de apps + prune de Docker, para que un monitor externo alerte si el cron deja de correr. NO la lee ningún proceso Node — la lee directamente el script bash desde el entorno del crontab en el host del VPS. Setearla en el panel de env vars de una app de Coolify no tiene efecto para este propósito; debe exportarse en el crontab del operador (o un archivo de env que el cron cargue) en el host.",
+      "type": "url",
+      "required": false,
+      "secret": false,
+      "exampleValue": "https://hc-ping.com/00000000-0000-0000-0000-000000000000",
+      "apps": [
+        "api"
+      ],
+      "category": "monitoring",
+      "howToObtain": "Create a check at healthchecks.io (or Cronitor) for \"hospeda weekly restart\", copy its ping URL, and export WEEKLY_RESTART_HEARTBEAT_URL in the crontab entry (or a file it sources) that runs weekly-restart.sh on the VPS host — NOT in Coolify. Leave unset to skip the heartbeat ping (the restart itself still runs and is logged).",
+      "howToObtainEs": "Creá un check en healthchecks.io (o Cronitor) para \"hospeda weekly restart\", copiá su ping URL, y exportá WEEKLY_RESTART_HEARTBEAT_URL en la entrada de crontab (o un archivo que esta cargue) que corre weekly-restart.sh en el host del VPS — NO en Coolify. Dejala sin setear para saltear el ping de heartbeat (el restart en sí igual corre y queda logueado)."
+    },
+    {
+      "name": "HOSPEDA_TRIAL_DAYS_OVERRIDE",
+      "description": "Override host trial length (days) for testing. Affects every trial while set.",
+      "descriptionEs": "Sobrescribe la duración del trial de host (días) para testing. Afecta a todo trial mientras esté seteada.",
+      "type": "number",
+      "required": false,
+      "secret": false,
+      "exampleValue": "1",
+      "apps": [
+        "api"
+      ],
+      "category": "testing",
+      "howToObtain": "Set to a positive integer (e.g. 1) to shorten the host publish trial so QA can exercise trial expiry without waiting 14 days. NOT gated by environment (NODE_ENV is \"production\" on both the prod and staging deployments and cannot distinguish them, and testing must be possible against production). It is an explicit ops knob: it affects EVERY trial started while it is set, so set it, run the test, then UNSET it. Unset by default in every environment.",
+      "howToObtainEs": "Poné un entero positivo (ej. 1) para acortar el trial de publicación de host y poder probar la expiración sin esperar 14 días. NO tiene gate de entorno (NODE_ENV es \"production\" tanto en la instancia de prod como en la de staging, así que no las distingue, y hay que poder testear contra producción). Es una perilla explícita de ops: afecta a TODO trial que arranque mientras esté seteada, así que la seteás, hacés la prueba y la SACÁS. Sin setear por defecto en todos los entornos."
+    },
+    {
+      "name": "HOSPEDA_SHOW_TEST_BILLING_PLAN",
+      "description": "Exposes and enables subscribing to the hidden daily test billing plan (owner-test-daily) for testing.",
+      "descriptionEs": "Expone y habilita la suscripción al plan de facturación diario de prueba oculto (owner-test-daily) para testing.",
+      "type": "boolean",
+      "required": false,
+      "secret": false,
+      "exampleValue": "false",
+      "apps": [
+        "api"
+      ],
+      "category": "testing",
+      "howToObtain": "Set to \"true\" to make the hidden owner-test-daily plan subscribable (resolvePlanBySlug in subscription-checkout.service.ts rejects it with PLAN_NOT_FOUND while unset). While ON, subscribing produces REAL MercadoPago daily charges in prod — this is an explicit ops knob, NOT gated by environment (NODE_ENV cannot distinguish prod from staging). Set it, run the test, then UNSET it. Unset (false) by default everywhere.",
+      "howToObtainEs": "Poné \"true\" para que el plan oculto owner-test-daily sea suscribible (resolvePlanBySlug en subscription-checkout.service.ts lo rechaza con PLAN_NOT_FOUND mientras esté sin setear). Mientras esté ON, suscribirse genera cargos diarios REALES de MercadoPago en prod — es una perilla explícita de ops, NO tiene gate de entorno (NODE_ENV no distingue prod de staging). Seteala, hacé la prueba y SACALA. Sin setear (false) por defecto en todos los entornos."
     },
     {
       "name": "HOSPEDA_DISABLE_AUTH",
@@ -3315,6 +3376,22 @@
       "howToObtainEs": "Número flotante entre 0.0 y 1.0 que controla qué fracción de transacciones web Sentry registra para trazas de performance. 0.1 (10%) es el default de prod — suficiente para tendencias CWV a bajo costo. Setealo en 1.0 en hospeda-web-staging para que cada request sea traceado y los datos de Core Web Vitals nunca queden sin muestra. Aumentá temporalmente en prod solo cuando estés debuggeando una regresión de performance."
     },
     {
+      "name": "PUBLIC_SENTRY_CSP_REPORT_URI",
+      "description": "CSP violation report endpoint for a dedicated Sentry project (hospeda-csp), separate from PUBLIC_SENTRY_DSN (app errors)",
+      "descriptionEs": "Endpoint de reporte de violaciones CSP para un proyecto Sentry dedicado (hospeda-csp), separado de PUBLIC_SENTRY_DSN (errores de la app)",
+      "type": "url",
+      "required": false,
+      "secret": false,
+      "exampleValue": "https://o4508855548313600.ingest.us.sentry.io/api/4511691304796160/security/?sentry_key=aee8ea28124af13fd58a4c965a0b8713",
+      "apps": [
+        "web"
+      ],
+      "category": "client-web",
+      "helpUrl": "https://docs.sentry.io/product/security-policy-reporting/",
+      "howToObtain": "Sentry → the dedicated `hospeda-csp` project (NOT the app error-tracking project) → Settings → Security Headers → copy the full report endpoint URL (already includes `/api/<project_id>/security/?sentry_key=<key>`, unlike a normal DSN). Routes browser-emitted CSP violation reports to their own project so they never pollute the app error stream. When unset, the web CSP falls back to deriving the report-uri from PUBLIC_SENTRY_DSN (previous behavior) — CSP enforcement itself is unaffected either way.",
+      "howToObtainEs": "Sentry → el proyecto dedicado `hospeda-csp` (NO el proyecto de tracking de errores de la app) → Settings → Security Headers → copiá la URL completa del endpoint de reporte (ya incluye `/api/<project_id>/security/?sentry_key=<key>`, a diferencia de un DSN normal). Enruta los reportes de violación de CSP emitidos por el browser a su propio proyecto para que nunca contaminen el stream de errores de la app. Si no está seteada, el CSP de la web cae de vuelta a derivar el report-uri desde PUBLIC_SENTRY_DSN (comportamiento previo) — la aplicación del CSP en sí no se ve afectada de ninguna forma."
+    },
+    {
       "name": "PUBLIC_ENABLE_LOGGING",
       "description": "Enable verbose client-side logging in the web app",
       "descriptionEs": "Activa el logging verboso del lado cliente en la web",
@@ -3601,6 +3678,7 @@
       "descriptionEs": "DSN de Sentry para tracking de errores en el dashboard del admin",
       "type": "url",
       "required": false,
+      "requiredScope": "production",
       "secret": false,
       "exampleValue": "https://abc123def456@o123456.ingest.sentry.io/7890123",
       "apps": [
@@ -3655,6 +3733,22 @@
       "category": "client-admin",
       "howToObtain": "Free-text label applied to all Sentry events from the admin. Set to `production` on hospeda-admin-prod and `staging` on hospeda-admin-staging. Takes precedence over import.meta.env.MODE in the Sentry init — without it, Vite production builds always tag events as `production` regardless of which deployment they came from, mixing staging and prod in the same Sentry environment bucket. NOTE: must be passed as a Docker build-arg too (the admin Dockerfile bakes VITE_* into the bundle at build time). Mirror of HOSPEDA_SENTRY_ENVIRONMENT (API).",
       "howToObtainEs": "Etiqueta libre que se aplica a todos los eventos de Sentry del admin. Poné `production` en hospeda-admin-prod y `staging` en hospeda-admin-staging. Tiene precedencia sobre import.meta.env.MODE en el init de Sentry — sin esto, los builds de Vite en producción siempre etiquetan los eventos como `production` sin importar de qué deploy vinieron, mezclando staging y prod en el mismo bucket en Sentry. OJO: hay que pasarla también como build-arg de Docker (el Dockerfile del admin embebe los VITE_* en el bundle en build-time). Mirror de HOSPEDA_SENTRY_ENVIRONMENT (API)."
+    },
+    {
+      "name": "VITE_SENTRY_CSP_REPORT_URI",
+      "description": "CSP violation report endpoint for a dedicated Sentry project (hospeda-csp), separate from VITE_SENTRY_DSN (admin app errors)",
+      "descriptionEs": "Endpoint de reporte de violaciones CSP para un proyecto Sentry dedicado (hospeda-csp), separado de VITE_SENTRY_DSN (errores del admin)",
+      "type": "url",
+      "required": false,
+      "secret": false,
+      "exampleValue": "https://o4508855548313600.ingest.us.sentry.io/api/4511691304796160/security/?sentry_key=aee8ea28124af13fd58a4c965a0b8713",
+      "apps": [
+        "admin"
+      ],
+      "category": "client-admin",
+      "helpUrl": "https://docs.sentry.io/product/security-policy-reporting/",
+      "howToObtain": "Sentry → the dedicated `hospeda-csp` project (NOT the admin error-tracking project) → Settings → Security Headers → copy the full report endpoint URL (already includes `/api/<project_id>/security/?sentry_key=<key>`, unlike a normal DSN). Routes browser-emitted CSP violation reports to their own project so they never pollute the admin error stream. When unset, the admin CSP falls back to deriving the report-uri from VITE_SENTRY_DSN (previous behavior) — CSP enforcement itself is unaffected either way. NOTE: must be passed as a Docker build-arg too (the admin Dockerfile bakes VITE_* into the bundle at build time), same as VITE_SENTRY_DSN.",
+      "howToObtainEs": "Sentry → el proyecto dedicado `hospeda-csp` (NO el proyecto de tracking de errores del admin) → Settings → Security Headers → copiá la URL completa del endpoint de reporte (ya incluye `/api/<project_id>/security/?sentry_key=<key>`, a diferencia de un DSN normal). Enruta los reportes de violación de CSP emitidos por el browser a su propio proyecto para que nunca contaminen el stream de errores del admin. Si no está seteada, el CSP del admin cae de vuelta a derivar el report-uri desde VITE_SENTRY_DSN (comportamiento previo) — la aplicación del CSP en sí no se ve afectada. OJO: hay que pasarla también como build-arg de Docker (el Dockerfile del admin embebe los VITE_* en el bundle en build-time), igual que VITE_SENTRY_DSN."
     },
     {
       "name": "VITE_DEBUG_LAZY_SECTIONS",
@@ -4243,6 +4337,12 @@
         "memory",
         "redis"
       ]
+    },
+    "HOSPEDA_TRIAL_DAYS_OVERRIDE": {
+      "numeric": {
+        "min": 0,
+        "max": 9007199254740991
+      }
     },
     "HOSPEDA_EXTREP_GOOGLE_SNIPPET_TTL_DAYS": {
       "numeric": {

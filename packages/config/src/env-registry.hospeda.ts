@@ -166,6 +166,24 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Elegí una contraseña fuerte; se convierte en la contraseña del usuario super-admin que crea db:seed. Solo se usa al sembrar la DB; después la podés cambiar desde la UI del admin.'
     },
+    {
+        name: 'HOSPEDA_ALLOW_DESTRUCTIVE_MIGRATION',
+        description:
+            'Safety flag required to allow destructive versioned seed data-migrations (deletes/irreversible updates) to run in production environments. Must be exactly "true".',
+        descriptionEs:
+            'Flag de seguridad requerido para permitir que las data-migrations de seed versionadas destructivas (deletes/updates irreversibles) corran en entornos de producción. Debe ser exactamente "true".',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'false',
+        apps: ['seed'],
+        category: 'database',
+        howToObtain:
+            'Hard guard (HOS-25 T-011). Keep "false". Set to "true" ONLY for the duration of an authorized, reviewed run of a destructive data-migration in production, then revert to false immediately. Equivalent to passing --allow-destructive to the seed CLI.',
+        howToObtainEs:
+            'Guarda dura (HOS-25 T-011). Dejalo en "false". Ponelo en "true" SOLO durante una corrida autorizada y revisada de una data-migration destructiva en producción; después volvelo a false inmediatamente. Equivalente a pasar --allow-destructive al CLI de seed.'
+    },
 
     // -------------------------------------------------------------------------
     // Auth
@@ -1411,10 +1429,61 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Sentry → Settings → Account → User Auth Tokens → Create New Token. Scopes mínimos: `project:releases`, `org:read`, `project:read`. Lo usan @sentry/astro (web), @sentry/vite-plugin (admin) y @sentry/esbuild-plugin (api) en build-time para subir los source maps y así los stack traces en producción salgan simbolicados. Si falta, el upload se saltea en silencio. El org slug `qazuor` y los project slugs por app (`hospeda-web`, `hospeda-admin`, `hospeda-api`) están hardcoded en cada config de build — el mismo token (org-scoped) sirve para los tres.'
     },
+    {
+        name: 'WEEKLY_RESTART_HEARTBEAT_URL',
+        description:
+            "Optional heartbeat-ping URL (e.g. healthchecks.io / Cronitor) hit by scripts/server-tools/weekly-restart.sh after a successful weekly app-restart + Docker prune cycle, so an external monitor can alert if the cron stops firing. NOT read by any Node app process — read directly by the bash script from the crontab environment on the VPS host. Setting it in a Coolify app's env vars panel has no effect for this purpose; it must be exported in the operator's crontab (or a sourced env file the cron job loads) on the host.",
+        descriptionEs:
+            'URL opcional de heartbeat (ej. healthchecks.io / Cronitor) que pingea scripts/server-tools/weekly-restart.sh tras un ciclo semanal exitoso de restart de apps + prune de Docker, para que un monitor externo alerte si el cron deja de correr. NO la lee ningún proceso Node — la lee directamente el script bash desde el entorno del crontab en el host del VPS. Setearla en el panel de env vars de una app de Coolify no tiene efecto para este propósito; debe exportarse en el crontab del operador (o un archivo de env que el cron cargue) en el host.',
+        type: 'url',
+        required: false,
+        secret: false,
+        exampleValue: 'https://hc-ping.com/00000000-0000-0000-0000-000000000000',
+        apps: ['api'],
+        category: 'monitoring',
+        howToObtain:
+            'Create a check at healthchecks.io (or Cronitor) for "hospeda weekly restart", copy its ping URL, and export WEEKLY_RESTART_HEARTBEAT_URL in the crontab entry (or a file it sources) that runs weekly-restart.sh on the VPS host — NOT in Coolify. Leave unset to skip the heartbeat ping (the restart itself still runs and is logged).',
+        howToObtainEs:
+            'Creá un check en healthchecks.io (o Cronitor) para "hospeda weekly restart", copiá su ping URL, y exportá WEEKLY_RESTART_HEARTBEAT_URL en la entrada de crontab (o un archivo que esta cargue) que corre weekly-restart.sh en el host del VPS — NO en Coolify. Dejala sin setear para saltear el ping de heartbeat (el restart en sí igual corre y queda logueado).'
+    },
 
     // -------------------------------------------------------------------------
     // Testing
     // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_TRIAL_DAYS_OVERRIDE',
+        description:
+            'Override host trial length (days) for testing. Affects every trial while set.',
+        descriptionEs:
+            'Sobrescribe la duración del trial de host (días) para testing. Afecta a todo trial mientras esté seteada.',
+        type: 'number',
+        required: false,
+        secret: false,
+        exampleValue: '1',
+        apps: ['api'],
+        category: 'testing',
+        howToObtain:
+            'Set to a positive integer (e.g. 1) to shorten the host publish trial so QA can exercise trial expiry without waiting 14 days. NOT gated by environment (NODE_ENV is "production" on both the prod and staging deployments and cannot distinguish them, and testing must be possible against production). It is an explicit ops knob: it affects EVERY trial started while it is set, so set it, run the test, then UNSET it. Unset by default in every environment.',
+        howToObtainEs:
+            'Poné un entero positivo (ej. 1) para acortar el trial de publicación de host y poder probar la expiración sin esperar 14 días. NO tiene gate de entorno (NODE_ENV es "production" tanto en la instancia de prod como en la de staging, así que no las distingue, y hay que poder testear contra producción). Es una perilla explícita de ops: afecta a TODO trial que arranque mientras esté seteada, así que la seteás, hacés la prueba y la SACÁS. Sin setear por defecto en todos los entornos.'
+    },
+    {
+        name: 'HOSPEDA_SHOW_TEST_BILLING_PLAN',
+        description:
+            'Exposes and enables subscribing to the hidden daily test billing plan (owner-test-daily) for testing.',
+        descriptionEs:
+            'Expone y habilita la suscripción al plan de facturación diario de prueba oculto (owner-test-daily) para testing.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        exampleValue: 'false',
+        apps: ['api'],
+        category: 'testing',
+        howToObtain:
+            'Set to "true" to make the hidden owner-test-daily plan subscribable (resolvePlanBySlug in subscription-checkout.service.ts rejects it with PLAN_NOT_FOUND while unset). While ON, subscribing produces REAL MercadoPago daily charges in prod — this is an explicit ops knob, NOT gated by environment (NODE_ENV cannot distinguish prod from staging). Set it, run the test, then UNSET it. Unset (false) by default everywhere.',
+        howToObtainEs:
+            'Poné "true" para que el plan oculto owner-test-daily sea suscribible (resolvePlanBySlug en subscription-checkout.service.ts lo rechaza con PLAN_NOT_FOUND mientras esté sin setear). Mientras esté ON, suscribirse genera cargos diarios REALES de MercadoPago en prod — es una perilla explícita de ops, NO tiene gate de entorno (NODE_ENV no distingue prod de staging). Seteala, hacé la prueba y SACALA. Sin setear (false) por defecto en todos los entornos.'
+    },
     {
         name: 'HOSPEDA_DISABLE_AUTH',
         description: 'Bypass auth in tests',

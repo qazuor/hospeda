@@ -31,6 +31,14 @@ export interface SortPopoverProps {
     readonly onChange: (value: string) => void;
     /** Locale used to render translated labels. */
     readonly locale: SupportedLocale;
+    /**
+     * True when this popover is rendered inside the mobile filter drawer.
+     * The dropdown portals to `document.body`, so it needs a higher z-index
+     * (`--z-popover-in-overlay`) to clear the drawer panel; otherwise the
+     * `.overlay-surface` default `--z-popover` would place it behind the
+     * drawer. Defaults to false (desktop sidebar → clean `--z-popover`).
+     */
+    readonly inDrawer?: boolean;
 }
 
 /** Computed position for the popover dropdown. */
@@ -69,7 +77,13 @@ function computePosition(triggerEl: HTMLButtonElement): PopoverPosition {
  *
  * @param props - See {@link SortPopoverProps}.
  */
-export function SortPopover({ options, value, onChange, locale }: SortPopoverProps) {
+export function SortPopover({
+    options,
+    value,
+    onChange,
+    locale,
+    inDrawer = false
+}: SortPopoverProps) {
     const { t } = createTranslations(locale);
     const [isOpen, setIsOpen] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
@@ -131,12 +145,6 @@ export function SortPopover({ options, value, onChange, locale }: SortPopoverPro
         [onChange]
     );
 
-    // Resolve theme-aware colors at render time (cannot use CSS vars in inline styles directly)
-    const isDark =
-        typeof document !== 'undefined' && document.documentElement.dataset.theme === 'dark';
-    const bgColor = isDark ? 'oklch(0.25 0.01 210)' : 'oklch(0.99 0.002 210)';
-    const borderColor = isDark ? 'oklch(0.35 0.01 210)' : 'oklch(0.85 0.01 210)';
-
     return (
         <>
             <button
@@ -159,31 +167,52 @@ export function SortPopover({ options, value, onChange, locale }: SortPopoverPro
 
             {isOpen &&
                 createPortal(
-                    <div
-                        ref={dropdownRef}
-                        className={styles.sortPopoverDropdown}
-                        style={{
-                            top: `${pos.top}px`,
-                            right: `${pos.right}px`,
-                            backgroundColor: bgColor,
-                            border: `1px solid ${borderColor}`
-                        }}
-                    >
-                        {options.map((opt) => (
-                            <button
-                                key={opt.value}
-                                type="button"
-                                className={cn(
-                                    styles.sortPopoverOption,
-                                    opt.value === value && styles.sortPopoverOptionActive
-                                )}
-                                onClick={() => handleSelect(opt.value)}
-                            >
-                                {opt.label}
-                                {opt.value === value && <span aria-hidden="true">✓</span>}
-                            </button>
-                        ))}
-                    </div>,
+                    <>
+                        {/* Full-viewport dismiss scrim behind the dropdown.
+                            This is a behavior change, not just decoration:
+                            because it covers the whole viewport above the
+                            page (only the dropdown sits higher), a click
+                            anywhere outside the dropdown lands on the scrim
+                            and dismisses — dismiss-only, with NO click-
+                            through, so clicking a link/button while the
+                            dropdown is open closes it without also activating
+                            that target (a second click is then needed). The
+                            pre-existing document-level click-outside listener
+                            still runs; this scrim intercepts the click first
+                            by design. */}
+                        <div
+                            className="overlay-base overlay-scrim"
+                            aria-hidden="true"
+                            onClick={() => setIsOpen(false)}
+                        />
+                        <div
+                            ref={dropdownRef}
+                            className={cn(
+                                styles.sortPopoverDropdown,
+                                'overlay-surface',
+                                inDrawer && styles.sortPopoverDropdownInDrawer
+                            )}
+                            style={{
+                                top: `${pos.top}px`,
+                                right: `${pos.right}px`
+                            }}
+                        >
+                            {options.map((opt) => (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    className={cn(
+                                        styles.sortPopoverOption,
+                                        opt.value === value && styles.sortPopoverOptionActive
+                                    )}
+                                    onClick={() => handleSelect(opt.value)}
+                                >
+                                    {opt.label}
+                                    {opt.value === value && <span aria-hidden="true">✓</span>}
+                                </button>
+                            ))}
+                        </div>
+                    </>,
                     document.body
                 )}
         </>

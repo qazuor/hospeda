@@ -15,7 +15,11 @@ FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
 COPY apps apps
 COPY packages packages
-RUN pnpm install --frozen-lockfile
+# BuildKit cache mount for the pnpm content-addressable store. PNPM_HOME=/pnpm
+# (set in the base stage) puts the store at /pnpm/store, so caching that path
+# lets repeat builds skip re-downloading + re-extracting the workspace packages.
+# Matches the official pnpm Docker guide.
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
 # ----- build stage -----------------------------------------------------------
 # Astro/Vite bake URL env vars into the bundle at build time, so they MUST be
@@ -59,6 +63,13 @@ ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     PUBLIC_SENTRY_ENVIRONMENT=$PUBLIC_SENTRY_ENVIRONMENT \
     HOSPEDA_GIT_SHA=$HOSPEDA_GIT_SHA
 COPY --from=deps /repo /repo
+# SKIP_PACKAGE_DTS=true skips .d.ts generation for the @repo/* workspace packages
+# during the deploy build. Astro/Vite consumes @repo/* JS, never the .d.ts (the
+# build does not typecheck — that's a separate `astro check` in dev/CI), so the
+# tsup DTS worker (schemas' .d.ts alone is ~4.7 MB / ~47s, the same class that
+# OOM'd the api/admin deploys) is pure waste here. Unset in dev/CI so typecheck
+# and library consumers still get declarations.
+ENV SKIP_PACKAGE_DTS=true
 # --concurrency=1: sequential package builds to cap memory peak on the 3.8 GB
 # Coolify VPS (see apps/admin/Dockerfile for the 2026-06-06 incident rationale).
 RUN echo "[build] Sentry release: ${PUBLIC_SENTRY_RELEASE:-(empty, falling back to 'development' in code)}" && \

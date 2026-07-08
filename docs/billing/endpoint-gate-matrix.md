@@ -195,7 +195,7 @@
 | `GET /api/v1/protected/billing/subscriptions/{id}` | `billing/index.ts (qzpay)` | none | - | n/a | Self-billing access; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
 | `PUT /api/v1/protected/billing/subscriptions/{id}` | `billing/index.ts (qzpay)` | none | - | n/a | Self-billing access; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
 | `DELETE /api/v1/protected/billing/subscriptions/{id}` | `billing/index.ts (qzpay)` | none | - | n/a | Cancel own subscription; always allowed |
-| `GET /api/v1/protected/billing/plans` | `billing/index.ts (qzpay)` | none | - | n/a | Plan catalog read; always accessible |
+| `GET /api/v1/protected/billing/plans` | `billing/protected-plans-list.ts` | none | - | n/a | Plan catalog read; always accessible. Custom override of the qzpay-hono list (mounted before it) that filters out `metadata.testPlan` plans (hidden daily test plan); same auth as the qzpay route, no entitlement gate |
 | `POST /api/v1/protected/billing/plans` | `billing/index.ts (qzpay)` | none | - | n/a | Plan management; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
 | `GET /api/v1/protected/billing/plans/{id}` | `billing/index.ts (qzpay)` | none | - | n/a | Plan catalog read; always accessible |
 | `PUT /api/v1/protected/billing/plans/{id}` | `billing/index.ts (qzpay)` | none | - | n/a | Plan management; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |

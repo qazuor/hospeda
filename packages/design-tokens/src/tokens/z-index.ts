@@ -25,10 +25,29 @@ export const zIndex = {
     nav: 50,
     /** Dropdown menus, popovers. Web `--z-dropdown`. */
     dropdown: 60,
+    /**
+     * Floating overlay surfaces (toasts' non-ephemeral cousins: contextual
+     * popovers, portal-mounted dropdowns) that must sit above in-page
+     * dropdowns/navigation but below modals. Web `--z-popover`. Introduced
+     * to replace the ad-hoc `500`/`1000` z-index literals scattered across
+     * web's popover CSS modules (toast/popover contrast fix).
+     */
+    popover: 70,
     /** Modal dialogs. Web `--z-modal`. */
     modal: 100,
     /** Toast notifications — above modals so confirmations remain visible. Web `--z-toast`. */
     toast: 200,
+    /**
+     * A popover/dropdown that is itself rendered INSIDE an in-page overlay
+     * (today: the mobile filter drawer, whose untokenized panel sits at
+     * z-index 400 / its backdrop at 300). Such a popover portals to
+     * `document.body` and would otherwise fall back to `--z-popover` (70),
+     * landing BEHIND the very drawer it was opened from. This tier lifts it
+     * just above that drawer panel. Deliberately NOT reusing the ad-hoc 500
+     * literal the old SortPopover used — kept in the tokened ladder instead.
+     * Web `--z-popover-in-overlay`.
+     */
+    popoverInOverlay: 410,
     /** Cookie consent banner — above all in-page content. Web `--z-cookie-banner`. */
     cookieBanner: 9000,
     /**

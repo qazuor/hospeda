@@ -12,13 +12,14 @@ import { describe, expect, it } from 'vitest';
 import { WebEvents } from '@/lib/analytics/events';
 
 describe('WebEvents catalog (SPEC-140 acceptance)', () => {
-    it('should include the SPEC-140 events, the SPEC-191 contribution events, the SPEC-159 entity-view events, and the SPEC-258 import events', () => {
+    it('should include the SPEC-140, SPEC-191 contribution, SPEC-159 entity-view, SPEC-258 import, and business-instrumentation (booking-sent / favorite / review) events', () => {
         // Assert
         expect(WebEvents).toEqual({
             AccommodationSearched: 'accommodation_searched',
             AccommodationViewed: 'accommodation_viewed',
             SignupCompleted: 'signup_completed',
             BookingInitiated: 'booking_initiated',
+            BookingRequestSent: 'booking_request_sent',
             NewsletterSubscribed: 'newsletter_subscribed',
             ContributionBannerClicked: 'contribution_banner_clicked',
             ContributionReportSubmitted: 'contribution_report_submitted',
@@ -32,7 +33,11 @@ describe('WebEvents catalog (SPEC-140 acceptance)', () => {
             AiSearchLoginPrompted: 'ai_search_login_prompted',
             PropertyImportAttempted: 'property_import_attempted',
             PropertyImportSucceeded: 'property_import_succeeded',
-            PropertyImportFailed: 'property_import_failed'
+            PropertyImportFailed: 'property_import_failed',
+            FavoriteToggled: 'favorite_toggled',
+            ReviewSubmitted: 'review_submitted',
+            ConversationDuplicate: 'conversation_duplicate',
+            ConversationRateLimited: 'conversation_rate_limited'
         });
     });
 

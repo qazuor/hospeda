@@ -20,7 +20,7 @@ describe('social automation settings seed (HOS-64 T-003)', () => {
             max_retry_count: { value: '3', type: 'number' },
             make_webhook_timeout_ms: { value: '40000', type: 'number' },
             download_timeout_ms: { value: '15000', type: 'number' },
-            social_assets_folder: { value: 'hospeda/social/assets', type: 'string' },
+            social_assets_folder: { value: 'hospeda/social', type: 'string' },
             dispatch_cron_cadence: { value: '*/5 * * * *', type: 'string' }
         };
 

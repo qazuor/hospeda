@@ -281,8 +281,10 @@ export const webLight: Theme = {
     'z-content': String(zIndex.content),
     'z-nav': String(zIndex.nav),
     'z-dropdown': String(zIndex.dropdown),
+    'z-popover': String(zIndex.popover),
     'z-modal': String(zIndex.modal),
     'z-toast': String(zIndex.toast),
+    'z-popover-in-overlay': String(zIndex.popoverInOverlay),
     'z-cookie-banner': String(zIndex.cookieBanner),
     'z-mobile-menu': String(zIndex.mobileMenu),
 
@@ -307,6 +309,31 @@ export const webLight: Theme = {
     'overlay-bg-strong': 'oklch(0 0 0 / 0.7)',
     'overlay-bg-light': 'oklch(0 0 0 / 0.45)',
     'overlay-blur': '4px',
+
+    // ========================================================================
+    // Overlay surface — toast/popover contrast fix.
+    //
+    // Raised-surface elevation for floating UI that must read clearly above
+    // ANY page background (toasts, contextual popovers, portal-mounted
+    // dropdowns). Distinct from `--core-card` because cards sit flush on the
+    // page and rely on the page's own contrast; these surfaces float free and
+    // need their own border + shadow to read as elevated in every context.
+    //
+    // In light mode a pure white surface plus a soft foreground-tinted shadow
+    // (relative-color, so it self-adjusts) is enough contrast — no separate
+    // dark-mode-style black shadow needed here (see web-dark.ts for why dark
+    // needs a fundamentally different shadow recipe, not just a tint swap).
+    // ========================================================================
+    'surface-overlay': oklchValue(1, 0, 0),
+    'overlay-ring': 'oklch(0.2 0.02 220 / 0.12)',
+    'shadow-overlay':
+        '0 26px 54px -8px oklch(from var(--core-foreground) l c h / 0.28), 0 8px 18px -4px oklch(from var(--core-foreground) l c h / 0.16), 0 0 44px 4px oklch(from var(--core-foreground) l c h / 0.08)',
+    // Subtle dismiss-on-click scrim behind an open popover (NOT used by
+    // toasts — they're ephemeral and never gate interaction). Kept far
+    // lighter than `--overlay-bg-light` (which backs full drawers/sheets)
+    // since a popover scrim only needs to hint "click outside to close",
+    // not dim the page.
+    'popover-scrim': 'oklch(0 0 0 / 0.12)',
 
     // ========================================================================
     // Frosted surfaces (relative-color expressions) — global.css lines 213–216

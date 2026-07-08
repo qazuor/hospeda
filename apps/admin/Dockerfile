@@ -39,6 +39,10 @@ ARG VITE_ADMIN_URL=https://admin.placeholder.local
 ARG VITE_BETTER_AUTH_URL=https://api.placeholder.local/api/auth
 ARG VITE_SENTRY_DSN
 ARG VITE_SENTRY_ENVIRONMENT
+# Dedicated `hospeda-csp` Sentry project for CSP violation reports (Sentry
+# prod-hardening), kept separate from VITE_SENTRY_DSN (admin app errors).
+# Falls back to the VITE_SENTRY_DSN-derived report-uri when unset.
+ARG VITE_SENTRY_CSP_REPORT_URI
 # SPEC-180 BETA-66: SENTRY_AUTH_TOKEN is a build-time secret used by the
 # Sentry Vite plugin to upload source maps during `vite build`. It must
 # NOT be forwarded to the runner stage — it is only needed at build time.
@@ -68,6 +72,7 @@ ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     VITE_SENTRY_DSN=$VITE_SENTRY_DSN \
     VITE_SENTRY_RELEASE=$VITE_SENTRY_RELEASE \
     VITE_SENTRY_ENVIRONMENT=$VITE_SENTRY_ENVIRONMENT \
+    VITE_SENTRY_CSP_REPORT_URI=$VITE_SENTRY_CSP_REPORT_URI \
     VITE_POSTHOG_KEY=$VITE_POSTHOG_KEY \
     VITE_POSTHOG_HOST=$VITE_POSTHOG_HOST \
     HOSPEDA_GIT_SHA=$HOSPEDA_GIT_SHA \
@@ -75,7 +80,17 @@ ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
 COPY apps apps
 COPY packages packages
-RUN pnpm install --frozen-lockfile
+# BuildKit cache mount for the pnpm content-addressable store. PNPM_HOME=/pnpm
+# (set in the base stage) puts the store at /pnpm/store, so caching that path
+# lets repeat builds skip re-downloading + re-extracting the workspace packages.
+# Matches the official pnpm Docker guide.
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+# SKIP_PACKAGE_DTS=true skips .d.ts generation for the @repo/* workspace packages
+# during the deploy build. The admin bundle (Vite) consumes @repo/* JS from src/
+# aliases or dist/ JS — never the .d.ts (Vite build does not typecheck), so the
+# tsup DTS worker that OOM'd this build on 2026-06-06 (below) is pure waste here.
+# Unset in dev/CI so typecheck and library consumers still get declarations.
+ENV SKIP_PACKAGE_DTS=true
 # --concurrency=1 builds workspace packages sequentially. The Coolify VPS has
 # 3.8 GB of RAM shared with the running prod/staging containers; parallel tsup
 # DTS builds (4 at a time, each loading the full type graph) caused enough

@@ -2,6 +2,7 @@
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { SeedMigrationGroup } from './data-migrations/types.js';
 
 /**
  * Result of evaluating the production safety gate for destructive cleanup
@@ -88,6 +89,293 @@ export function coerceResetImpliesCleanImages(input: ResetCoercionInput): ResetC
     return { reset, cleanImages, coerced: false };
 }
 
+/**
+ * Recognized values for {@link SeedMigrationGroup}, used at runtime to
+ * validate the `--group=` flag (see {@link parseGroupFlag}).
+ */
+const SEED_MIGRATION_GROUPS = ['required', 'example'] as const;
+
+/**
+ * Narrows a raw CLI string to {@link SeedMigrationGroup}.
+ */
+function isSeedMigrationGroup(value: string): value is SeedMigrationGroup {
+    return (SEED_MIGRATION_GROUPS as readonly string[]).includes(value);
+}
+
+/**
+ * Input for {@link deriveMigrationGroup}.
+ */
+export interface DeriveMigrationGroupInput {
+    /** Parsed value of `--required`. */
+    readonly required: boolean;
+    /** Parsed value of `--example`. */
+    readonly example: boolean;
+}
+
+/**
+ * HOS-25 T-017 — derives the `group` filter for `db:seed:migrate` /
+ * `db:seed:migrate:status` from the CLI's existing `--required`/`--example`
+ * toggle pair (the same flags the main seed command already parses).
+ *
+ * Passing exactly one of the two flags scopes the command to that single
+ * group. Passing neither, or both, runs/reports on every group — mirroring
+ * the main seed command's own "no group flags = do everything" default.
+ *
+ * @param input - See {@link DeriveMigrationGroupInput}.
+ * @returns `'required'` or `'example'` when exactly one flag is set,
+ *   otherwise `undefined` (no group filter — every group is included).
+ *
+ * @example
+ * ```ts
+ * deriveMigrationGroup({ required: true, example: false });  // 'required'
+ * deriveMigrationGroup({ required: false, example: false }); // undefined
+ * deriveMigrationGroup({ required: true, example: true });   // undefined
+ * ```
+ */
+export function deriveMigrationGroup(
+    input: DeriveMigrationGroupInput
+): SeedMigrationGroup | undefined {
+    const { required, example } = input;
+    if (required && !example) {
+        return 'required';
+    }
+    if (example && !required) {
+        return 'example';
+    }
+    return undefined;
+}
+
+/**
+ * HOS-25 T-017 — parses an explicit `--group=required|example` CLI flag.
+ *
+ * Used only by `db:seed:make`, which (unlike `db:seed:migrate` /
+ * `db:seed:migrate:status`) needs a single definite group to stamp into the
+ * scaffolded migration's `meta.group` rather than a run/report filter — so it
+ * uses its own `--group=` value flag instead of the `--required`/`--example`
+ * toggle pair (see {@link deriveMigrationGroup}).
+ *
+ * @param args - Raw `process.argv.slice(2)` arguments.
+ * @returns The parsed group, or `undefined` when the flag is absent (callers
+ *   should fall back to `makeMigration`'s own `'required'` default in that
+ *   case).
+ * @throws {Error} If the flag is present with a value other than
+ *   `'required'` or `'example'`.
+ */
+export function parseGroupFlag(args: readonly string[]): SeedMigrationGroup | undefined {
+    const groupArg = args.find((arg) => arg.startsWith('--group='));
+    if (!groupArg) {
+        return undefined;
+    }
+    const value = groupArg.slice('--group='.length);
+    if (!isSeedMigrationGroup(value)) {
+        throw new Error(`Invalid --group value '${value}'. Expected 'required' or 'example'.`);
+    }
+    return value;
+}
+
+/**
+ * HOS-25 T-017 — extracts the positional value immediately following a given
+ * flag token, e.g. `parsePositionalAfterFlag(['--data-migrate-make',
+ * 'my-slug'], '--data-migrate-make') === 'my-slug'`.
+ *
+ * Used for `db:seed:make <slug>`, whose slug is a bare positional argument
+ * rather than a `--flag=value` pair — every other flag in this CLI is either
+ * a boolean toggle (`args.includes(...)`) or a `--key=value` pair
+ * (`--exclude=`, `--group=`), so this is the one place a positional value is
+ * needed.
+ *
+ * @param args - Raw `process.argv.slice(2)` arguments.
+ * @param flag - The flag token to look for (e.g. `'--data-migrate-make'`).
+ * @returns The next argument after `flag`, or `undefined` when `flag` is
+ *   absent, is the last argument, or is immediately followed by another flag
+ *   (starting with `--`).
+ */
+export function parsePositionalAfterFlag(
+    args: readonly string[],
+    flag: string
+): string | undefined {
+    const flagIndex = args.indexOf(flag);
+    if (flagIndex === -1) {
+        return undefined;
+    }
+    const next = args[flagIndex + 1];
+    if (!next || next.startsWith('--')) {
+        return undefined;
+    }
+    return next;
+}
+
+/**
+ * Options accepted by {@link handleDataMigrate}.
+ */
+export interface DataMigrateOptions {
+    /** Scopes the run to a single group. Omit to run every pending migration. */
+    readonly group?: SeedMigrationGroup;
+
+    /**
+     * Explicit opt-in to run destructive migrations in production. Wired to
+     * the CLI's `--allow-destructive` flag.
+     */
+    readonly allowDestructive: boolean;
+
+    /**
+     * When `true`, records every currently pending migration as applied (via
+     * `baselineStamp`) INSTEAD of running it — for use right after a fresh
+     * `--reset --required --example` baseline seed, where the baseline
+     * already produced the post-migration end state directly. Wired to the
+     * CLI's `--baseline-stamp` flag.
+     */
+    readonly baselineStamp: boolean;
+}
+
+/**
+ * HOS-25 T-017 — handles `db:seed:migrate` (`--data-migrate`): runs every
+ * pending versioned seed data-migration, or (with `--baseline-stamp`)
+ * records them as applied without ever calling their `up()`.
+ *
+ * Dynamically imports the underlying `runMigrations`/`baselineStamp`
+ * functions (both of which transitively pull in `@repo/db`) so importing
+ * this module as a library — e.g. from a unit test exercising
+ * {@link deriveMigrationGroup} — never opens a database connection as a side
+ * effect. Kept as an exported, pure-input function (rather than an inline
+ * closure inside the `IS_CLI_ENTRY` block) so its dispatch logic is
+ * unit-testable by mocking the two imported modules.
+ *
+ * @param options - See {@link DataMigrateOptions}.
+ *
+ * @example
+ * ```ts
+ * // CLI: pnpm --filter @repo/seed seed --data-migrate --required
+ * await handleDataMigrate({ group: 'required', allowDestructive: false, baselineStamp: false });
+ * ```
+ */
+export async function handleDataMigrate(options: DataMigrateOptions): Promise<void> {
+    const { logger } = await import('./utils/logger.js');
+
+    try {
+        if (options.baselineStamp) {
+            const { baselineStamp: runBaselineStamp } = await import(
+                './data-migrations/baselineStamp.js'
+            );
+            const result = await runBaselineStamp({ group: options.group });
+            logger.success({
+                msg: `Baseline-stamped ${result.stamped.length} data-migration(s).`
+            });
+            return;
+        }
+
+        const { runMigrations } = await import('./data-migrations/runner.js');
+        const result = await runMigrations({
+            group: options.group,
+            allowDestructive: options.allowDestructive,
+            env: process.env
+        });
+        logger.success({
+            msg: `Applied ${result.applied.length} data-migration(s) (${result.skipped.length} already up to date).`
+        });
+    } catch (error) {
+        logger.error(error instanceof Error ? error.message : String(error));
+        process.exit(1);
+    }
+}
+
+/**
+ * Options accepted by {@link handleMigrateStatus}.
+ */
+export interface MigrateStatusOptions {
+    /** Scopes the report to a single group. Omit to report on every group. */
+    readonly group?: SeedMigrationGroup;
+}
+
+/**
+ * HOS-25 T-017 — handles `db:seed:migrate:status` (`--data-migrate-status`):
+ * prints the applied/pending status of every versioned seed data-migration.
+ *
+ * Uses `console.log` directly (rather than the seed logger) so the rendered
+ * report is plain, unprefixed, script-friendly output.
+ *
+ * @param options - See {@link MigrateStatusOptions}.
+ *
+ * @example
+ * ```ts
+ * // CLI: pnpm --filter @repo/seed seed --data-migrate-status
+ * await handleMigrateStatus({ group: undefined });
+ * ```
+ */
+export async function handleMigrateStatus(options: MigrateStatusOptions): Promise<void> {
+    const { getMigrationStatus, formatMigrationStatus } = await import(
+        './data-migrations/status.js'
+    );
+    const status = await getMigrationStatus({ group: options.group });
+    // biome-ignore lint/suspicious/noConsole: db:seed:migrate:status is a plain script-friendly report, not seed-logger output
+    console.log(formatMigrationStatus(status));
+}
+
+/**
+ * Options accepted by {@link handleMake}.
+ */
+export interface MakeOptions {
+    /**
+     * The migration's slug (kebab-case, e.g. `'remove-legacy-feature'`).
+     * `undefined` when the CLI invocation omitted the positional argument —
+     * the handler reports usage and exits rather than calling `makeMigration`
+     * with a missing slug.
+     */
+    readonly slug: string | undefined;
+
+    /**
+     * Which data track to scaffold into. Omit to use `makeMigration`'s own
+     * `'required'` default.
+     */
+    readonly group?: SeedMigrationGroup;
+
+    /** Whether to scaffold the migration as destructive. */
+    readonly destructive: boolean;
+}
+
+/**
+ * HOS-25 T-017 — handles `db:seed:make <slug>` (`--data-migrate-make
+ * <slug>`): scaffolds a new versioned seed data-migration file.
+ *
+ * Slugs must be kebab-case (lowercase, hyphen-separated, e.g.
+ * `'remove-legacy-feature'`) — `makeMigration` silently lowercases uppercase
+ * input but does NOT auto-convert camelCase or spaces, so a slug like
+ * `'removeLegacyFeature'` is rejected rather than rewritten to
+ * `'remove-legacy-feature'`.
+ *
+ * @param options - See {@link MakeOptions}.
+ *
+ * @example
+ * ```ts
+ * // CLI: pnpm --filter @repo/seed seed --data-migrate-make remove-legacy-feature --group=example
+ * await handleMake({ slug: 'remove-legacy-feature', group: 'example', destructive: false });
+ * ```
+ */
+export async function handleMake(options: MakeOptions): Promise<void> {
+    const { logger } = await import('./utils/logger.js');
+
+    if (!options.slug) {
+        logger.error(
+            "Usage: pnpm db:seed:make <slug> [--group=example] [--destructive]. Slugs must be kebab-case (lowercase, hyphen-separated, e.g. 'remove-legacy-feature') — uppercase input is silently lowercased, but camelCase/spaces are NOT auto-converted."
+        );
+        process.exit(1);
+        return;
+    }
+
+    try {
+        const { makeMigration } = await import('./data-migrations/make.js');
+        const result = await makeMigration({
+            slug: options.slug,
+            group: options.group,
+            destructive: options.destructive
+        });
+        logger.success({ msg: `Created data-migration: ${result.filePath}` });
+    } catch (error) {
+        logger.error(error instanceof Error ? error.message : String(error));
+        process.exit(1);
+    }
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -134,7 +422,14 @@ if (IS_CLI_ENTRY) {
         cleanImages: args.includes('--clean-images'),
         validateCache: args.includes('--validate-cache'),
         allowRequiredFallback: args.includes('--allow-required-fallback'),
-        exclude: [] as string[]
+        exclude: [] as string[],
+        // HOS-25 T-017: versioned seed data-migration CLI surface.
+        dataMigrate: args.includes('--data-migrate'),
+        dataMigrateStatus: args.includes('--data-migrate-status'),
+        dataMigrateMake: args.includes('--data-migrate-make'),
+        baselineStamp: args.includes('--baseline-stamp'),
+        allowDestructive: args.includes('--allow-destructive'),
+        destructive: args.includes('--destructive')
     };
 
     // Validate incompatible flags
@@ -166,6 +461,16 @@ if (IS_CLI_ENTRY) {
         const list = excludeArg.replace('--exclude=', '');
         options.exclude = list.split(',').map((s) => s.trim());
     }
+
+    // HOS-25 T-017: `--data-migrate` / `--data-migrate-status` reuse the
+    // existing --required/--example toggle pair to scope the group; `make`
+    // uses its own `--group=` value flag plus a bare positional slug.
+    const migrationGroup = deriveMigrationGroup({
+        required: options.required,
+        example: options.example
+    });
+    const makeGroup = parseGroupFlag(args);
+    const makeSlug = parsePositionalAfterFlag(args, '--data-migrate-make');
 
     /**
      * Handles the --clean-images flag.
@@ -236,7 +541,66 @@ if (IS_CLI_ENTRY) {
     };
 
     try {
-        if (options.validateCache) {
+        if (options.dataMigrateMake) {
+            // HOS-25 T-017: `db:seed:make <slug>` — scaffold a new migration
+            // file and exit. Runs before every other mode, since it never
+            // touches the database or the seed pipeline.
+            handleMake({
+                slug: makeSlug,
+                group: makeGroup,
+                destructive: options.destructive
+            }).catch((err) => {
+                logger.error(
+                    `${STATUS_ICONS.Error} Error scaffolding data-migration: ${String(err)}`
+                );
+                process.exit(1);
+            });
+        } else if (options.dataMigrateStatus) {
+            // HOS-25 T-017: `db:seed:migrate:status` — print applied/pending
+            // status and exit.
+            //
+            // HOS-101: this standalone path bypasses `runSeed` (which is what
+            // initializes the DB connection), so `getDb()` inside the status
+            // reader would throw "Database not initialized". Initialize the
+            // connection here first, then close it on completion so the open
+            // pool does not keep the process alive after the report prints.
+            const { initSeedDb, closeSeedDb } = await import('./utils/db.js');
+            initSeedDb();
+            handleMigrateStatus({ group: migrationGroup })
+                .then(() => closeSeedDb())
+                .then(() => process.exit(0))
+                .catch(async (err) => {
+                    logger.error(
+                        `${STATUS_ICONS.Error} Error reading data-migration status: ${String(err)}`
+                    );
+                    await closeSeedDb();
+                    process.exit(1);
+                });
+        } else if (options.dataMigrate) {
+            // HOS-25 T-017: `db:seed:migrate` — run (or, with
+            // `--baseline-stamp`, stamp) pending versioned seed
+            // data-migrations and exit.
+            //
+            // HOS-101: as above, initialize the DB connection before the runner
+            // (this standalone path does not go through `runSeed`), and close it
+            // on completion so the process exits cleanly.
+            const { initSeedDb, closeSeedDb } = await import('./utils/db.js');
+            initSeedDb();
+            handleDataMigrate({
+                group: migrationGroup,
+                allowDestructive: options.allowDestructive,
+                baselineStamp: options.baselineStamp
+            })
+                .then(() => closeSeedDb())
+                .then(() => process.exit(0))
+                .catch(async (err) => {
+                    logger.error(
+                        `${STATUS_ICONS.Error} Error running data-migrations: ${String(err)}`
+                    );
+                    await closeSeedDb();
+                    process.exit(1);
+                });
+        } else if (options.validateCache) {
             // Maintenance-only mode: validate cache and exit. Runs BEFORE the
             // reset/clean branches so users can pass `--validate-cache` on its
             // own without kicking off a full seed.

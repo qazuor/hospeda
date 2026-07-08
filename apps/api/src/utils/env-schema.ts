@@ -538,6 +538,48 @@ export const ApiEnvBaseSchema = z.object({
      */
     HOSPEDA_ALERT_PRICE_DROP_THRESHOLD_PCT: z.coerce.number().default(5),
 
+    /**
+     * Testing-only override for the host publish-flow trial length, in days.
+     * When set to a positive integer it replaces the `OWNER_TRIAL_DAYS` (14)
+     * constant used by `TrialService.startTrial`, so a QA run can exercise trial
+     * expiry after e.g. 1 day instead of waiting 14.
+     *
+     * Deliberately NOT gated by environment: `NODE_ENV` is `'production'` on BOTH
+     * the prod and staging deployments (so it cannot distinguish them), and testing
+     * must be possible against production. It is an explicit ops knob — it affects
+     * EVERY trial started while it is set, so the operator sets it, runs the test,
+     * then UNSETS it. Optional (no default) so the absence of the var yields
+     * `undefined` and the constant path is taken. Unset by default everywhere.
+     */
+    HOSPEDA_TRIAL_DAYS_OVERRIDE: z.coerce.number().int().positive().optional(),
+
+    /**
+     * Testing-only flag that exposes and enables subscribing to the hidden
+     * daily test billing plan (`owner-test-daily`, `@repo/billing`
+     * `TEST_DAILY_PLAN`). When `false` (default), `resolvePlanBySlug` in
+     * `apps/api/src/services/subscription-checkout.service.ts` rejects the
+     * plan slug with `PLAN_NOT_FOUND` even though the row always exists in
+     * `billing_plans`/`billing_prices` (seeded unconditionally). When `true`,
+     * the plan resolves normally and a checkout against it creates a REAL
+     * MercadoPago recurring preapproval that charges every 1 day.
+     *
+     * Deliberately NOT gated by environment: `NODE_ENV` is `'production'` on
+     * BOTH the prod and staging deployments (so it cannot distinguish them),
+     * and testing the full recurring-charge lifecycle must be possible
+     * against production (the MP sandbox on staging is unreliable). It is an
+     * explicit ops knob — while it is `true`, ANY authenticated caller who
+     * knows the `owner-test-daily` slug can trigger a REAL daily charge in
+     * prod. Set it, run the test, then UNSET it. Unset by default everywhere.
+     *
+     * Uses the string→boolean transform (NOT z.coerce.boolean()) so the
+     * literal 'false' evaluates to false — see the footgun note on
+     * HOSPEDA_DISABLE_AUTH.
+     */
+    HOSPEDA_SHOW_TEST_BILLING_PLAN: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
+
     // AI / Credential Vault
     // Decision (owner-approved 2026-06-04): base-optional so non-production envs
     // (local dev / test / CI) where the AI feature is not yet active do not fail

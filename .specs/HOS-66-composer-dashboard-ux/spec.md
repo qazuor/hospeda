@@ -71,6 +71,13 @@ page unifying social + newsletter navigation.
   sharing the base caption by default with a "customize for this platform"
   affordance that sets that target's `captionOverride` — the schema already
   supports this (SPEC-254), zero data-model work here.
+  > **⚠ 2026-07-06 — MOVED TO [HOS-98](https://linear.app/hospeda-beta/issue/HOS-98).**
+  > The "zero data-model work / API side ships in HOS-65" premise proved false: (Gap 1)
+  > no admin-tier create-post endpoint exists (only the GPT api-key route
+  > `/api/v1/ai/social/drafts`, which HOS-65 deliberately left admin-inaccessible), and
+  > (Gap 2) per-target overrides have no HTTP write path. G-8 (T-013..T-016) + both
+  > backend gaps + the architecture decision now live in HOS-98. See `tasks/TODOs.md`
+  > header for detail.
 - **G-9 — Icon audit.** Replace inline SVG / direct phosphor imports across social
   admin components with `@repo/icons` references. Pure consumer change, no
   `@repo/icons` package changes.

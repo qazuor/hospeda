@@ -22,21 +22,27 @@
  * provided by CSS Modules.
  */
 
+/*
+ * background-color / border / box-shadow / border-radius / z-index come
+ * from the shared `.overlay-surface` primitive (see apps/web/src/styles/
+ * components.css) — CollectionPickerPopover.tsx adds that class alongside
+ * this one.
+ */
 .collection-picker {
     position: fixed;
-    z-index: 1000;
     width: min(17.5rem, calc(100vw - 16px));
-    background-color: var(--surface-elevated);
-    border: 1px solid var(--brand-primary-a20);
-    border-radius: var(--radius-md, 10px);
-    box-shadow:
-        0 10px 28px -8px var(--core-foreground-a25),
-        0 4px 10px -4px var(--core-foreground-a15);
     font-family: var(--font-sans);
     color: var(--core-foreground);
     transition:
         opacity 0.18s ease,
         transform 0.18s ease;
+}
+
+/* This popover keeps its smaller corner radius and brand-tinted border
+   instead of the primitive's defaults (`--radius-card` / `--overlay-ring`). */
+.collection-picker.overlay-surface {
+    border-radius: var(--radius-md, 10px);
+    border-color: var(--brand-primary-a20);
 }
 
 .collection-picker--hidden {
@@ -54,6 +60,17 @@
 .collection-picker--visible {
     opacity: 1;
     transform: translateY(0) scale(1);
+}
+
+/* Reduced motion: drop the slide + scale, keep a plain opacity crossfade. */
+@media (prefers-reduced-motion: reduce) {
+    .collection-picker {
+        transition: opacity 0.18s ease;
+    }
+    .collection-picker[data-placement="bottom"].collection-picker--hidden,
+    .collection-picker[data-placement="top"].collection-picker--hidden {
+        transform: none;
+    }
 }
 
 /* ---- Arrow ---- */
@@ -75,7 +92,9 @@
 
 .collection-picker[data-placement="top"] .collection-picker__arrow {
     bottom: -0.375rem;
-    background-color: var(--surface-elevated);
+    /* Matches the popover's own `.overlay-surface` background so the arrow
+       tip blends seamlessly into the panel it points from. */
+    background-color: var(--surface-overlay);
     border-bottom: 1px solid var(--brand-primary-a20);
     border-right: 1px solid var(--brand-primary-a20);
 }

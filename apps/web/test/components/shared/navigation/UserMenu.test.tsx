@@ -10,11 +10,29 @@ import type {
     UserMenuUser
 } from '../../../../src/components/shared/navigation/UserMenu.client';
 import { UserMenu } from '../../../../src/components/shared/navigation/UserMenu.client';
+import { syncPlanPersonProperties } from '../../../../src/lib/analytics/plan-properties';
+import {
+    identifyUser,
+    resetUser,
+    setPersonProperties
+} from '../../../../src/lib/analytics/posthog-client';
 import { AUTH_ME_CACHE_KEY } from '../../../../src/lib/auth-cache';
 import { signOut } from '../../../../src/lib/auth-client';
 
 vi.mock('../../../../src/lib/auth-client', () => ({
     signOut: vi.fn().mockResolvedValue(undefined)
+}));
+
+vi.mock('../../../../src/lib/analytics/posthog-client', () => ({
+    identifyUser: vi.fn(),
+    resetUser: vi.fn(),
+    setPersonProperties: vi.fn()
+}));
+
+// The plan/tier sync fires its own protected fetch on mount; mock it so it
+// doesn't interfere with the /auth/me fetch assertions in this suite.
+vi.mock('../../../../src/lib/analytics/plan-properties', () => ({
+    syncPlanPersonProperties: vi.fn().mockResolvedValue(undefined)
 }));
 
 vi.mock('../../../../src/lib/env', () => ({
@@ -467,6 +485,140 @@ describe('UserMenu — sign out', () => {
         fireEvent.click(signOutBtn);
         await waitFor(() => {
             expect(signOut).toHaveBeenCalled();
+        });
+    });
+});
+
+describe('UserMenu — PostHog identify/reset', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: { actor: { id: 'user-1', permissions: [] }, isAuthenticated: true }
+            })
+        }) as unknown as typeof fetch;
+        sessionStorage.clear();
+        // handleSignOut assigns window.location.href — jsdom blocks direct
+        // assignment, so stub it like other suites that exercise sign-out.
+        Object.defineProperty(window, 'location', {
+            value: { href: '' },
+            writable: true,
+            configurable: true
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        sessionStorage.clear();
+    });
+
+    it('calls identifyUser with the resolved user id when authenticated', async () => {
+        renderMenu();
+        await waitFor(() => {
+            expect(identifyUser).toHaveBeenCalledWith('user-1', expect.any(Object));
+        });
+    });
+
+    it('attaches segment person properties once permissions resolve', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: {
+                    actor: {
+                        id: 'user-1',
+                        role: 'HOST',
+                        permissions: ['accommodation.create', 'commerce.editOwn']
+                    },
+                    isAuthenticated: true
+                }
+            })
+        }) as unknown as typeof fetch;
+
+        renderMenu();
+
+        await waitFor(() => {
+            expect(identifyUser).toHaveBeenCalledWith('user-1', {
+                role: 'HOST',
+                is_host: true,
+                is_commerce_owner: true,
+                is_staff: false
+            });
+        });
+    });
+
+    it('marks platform staff via is_staff when access.apiAdmin is present', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: {
+                    actor: {
+                        id: 'user-1',
+                        role: 'ADMIN',
+                        permissions: ['access.panelAdmin', 'access.apiAdmin']
+                    },
+                    isAuthenticated: true
+                }
+            })
+        }) as unknown as typeof fetch;
+
+        renderMenu();
+
+        await waitFor(() => {
+            expect(identifyUser).toHaveBeenCalledWith('user-1', {
+                role: 'ADMIN',
+                is_host: false,
+                is_commerce_owner: false,
+                is_staff: true
+            });
+        });
+    });
+
+    it('does NOT call identifyUser when the visitor is a guest', () => {
+        render(
+            <UserMenu
+                initialUser={null}
+                locale="es"
+                currentPath="/es/"
+                adminPanelUrl="https://admin.test"
+            />
+        );
+        expect(identifyUser).not.toHaveBeenCalled();
+    });
+
+    it('sets the locale person property for an authenticated visitor', async () => {
+        renderMenu();
+        await waitFor(() => {
+            expect(setPersonProperties).toHaveBeenCalledWith({ locale: 'es' });
+        });
+    });
+
+    it('syncs the plan person property from the entitlements endpoint for an authenticated visitor', async () => {
+        renderMenu();
+        await waitFor(() => {
+            expect(syncPlanPersonProperties).toHaveBeenCalledWith({ apiUrl: 'https://api.test' });
+        });
+    });
+
+    it('does NOT set person properties for a guest', () => {
+        render(
+            <UserMenu
+                initialUser={null}
+                locale="es"
+                currentPath="/es/"
+                adminPanelUrl="https://admin.test"
+            />
+        );
+        expect(setPersonProperties).not.toHaveBeenCalled();
+    });
+
+    it('calls resetUser when "Cerrar sesión" is clicked', async () => {
+        renderMenu();
+        open();
+        const signOutBtn = screen.getByRole('menuitem', { name: /cerrar sesión/i });
+        fireEvent.click(signOutBtn);
+        await waitFor(() => {
+            expect(resetUser).toHaveBeenCalled();
         });
     });
 });

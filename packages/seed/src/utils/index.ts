@@ -11,6 +11,8 @@
  */
 
 export * from './actor';
+// Deterministic fixture ids (HOS-25)
+export { deterministicFixtureId, SEED_FIXTURE_NAMESPACE } from './deterministicFixtureId.js';
 // Error handlers
 export {
     createContinueOnErrorHandler,

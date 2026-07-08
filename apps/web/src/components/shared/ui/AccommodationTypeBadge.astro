@@ -10,14 +10,15 @@
  * i18n label (`getAccommodationTypeLabel`), on the brand-primary surface.
  *
  * The INTERACTIVE variant (`href` provided, rendered as an `<a>`) is the
- * accommodation quick-filter chip used above the /alojamientos/ listing and
- * the homepage featured-accommodations row. Per BETA-113 (visual
- * unification of every quick-filter chip row across the app — see
- * `dest-attractions-filter__badge` in destinos/index.astro and
- * `tag-chips__chip` in TagChips.astro for the other two surfaces that share
- * this canonical look), this variant uses the canonical neutral-rest /
+ * accommodation quick-filter chip used by the homepage featured-accommodations
+ * row (the /alojamientos/ listing itself moved to the canonical
+ * `FilterChips.astro` in HOS-97 — see that component's own `filter-chips__chip`
+ * class). Per BETA-113 (visual unification of every quick-filter chip row
+ * across the app — see `dest-attractions-filter__badge` in destinos/index.astro
+ * and `filter-chips__chip` in FilterChips.astro for the other surfaces that
+ * share this canonical look), this variant uses the canonical neutral-rest /
  * brand-accent-hover treatment (instead of the solid brand-primary pill) at
- * the SAME size/font as the other two surfaces (`--text-body-sm` / `6px
+ * the SAME size/font as the other surfaces (`--text-body-sm` / `6px
  * 16px`, overriding the decorative variant's own `--acc-type-font-size` /
  * `--acc-type-padding` tokens), and keeps its own per-type leading icon
  * (owner decision: every quick-filter chip gets an icon — "icono en

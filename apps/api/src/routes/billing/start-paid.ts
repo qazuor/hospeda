@@ -28,6 +28,7 @@
  * @module routes/billing/start-paid
  */
 
+import { TEST_DAILY_PLAN } from '@repo/billing';
 import type { StartPaidSubscriptionResponse } from '@repo/schemas';
 import {
     ServiceErrorCode,
@@ -41,6 +42,7 @@ import {
     isBillingProviderError,
     mapProviderErrorToServiceError
 } from '../../lib/billing-provider-error';
+import { getPostHogClient } from '../../lib/posthog';
 import { captureBillingError } from '../../lib/sentry';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
@@ -319,14 +321,76 @@ export const handleStartPaidSubscription = async (
         // of falling through to PLAN_NOT_FOUND or a provider error. The check
         // mirrors `resolvePlanBySlug` in subscription-checkout.service.ts —
         // QZPayPlan.active is the canonical active flag.
+        //
+        // Testing-only exemption (HOSPEDA_SHOW_TEST_BILLING_PLAN): the hidden
+        // daily test plan ({@link TEST_DAILY_PLAN}) is seeded with
+        // `active: false` on purpose — that is what keeps it off the public
+        // plans list (`/api/v1/public/plans` filters `active: true`). It MUST
+        // stay subscribable here despite being inactive; the AUTHORITATIVE
+        // gate on whether it can actually be subscribed to is
+        // `resolvePlanBySlug` in `subscription-checkout.service.ts`, which
+        // returns `null` (→ PLAN_NOT_FOUND) for this slug when the env flag
+        // is off. Exempting the active-check here does NOT make the plan
+        // subscribable when the flag is off — it only stops this earlier
+        // guard from short-circuiting BEFORE that real gate runs.
         const plansResult = await billing.plans.list();
         const targetPlan = plansResult.data.find((p) => p.name === body.planSlug) ?? null;
-        if (targetPlan !== null && targetPlan.active === false) {
+        if (
+            targetPlan !== null &&
+            targetPlan.active === false &&
+            body.planSlug !== TEST_DAILY_PLAN.slug
+        ) {
             throw new ServiceError(
                 ServiceErrorCode.PLAN_DISABLED,
                 'This plan is no longer available. Please choose an active plan.',
                 undefined,
                 'PLAN_DISABLED'
+            );
+        }
+
+        // Fire-and-forget product analytics for checkout initiation. Wrapped in
+        // try/catch so a misbehaving PostHog client can NEVER break the checkout
+        // — this handler must proceed to initiate the subscription regardless of
+        // analytics outcome. Mirrors the pattern in payment-logic.ts. The amount
+        // is resolved best-effort from the plan price matching the interval.
+        // Verified safe for the daily test plan too: it has only a 'day' price,
+        // so `priceForInterval` resolves to `undefined` here (no 'month'/'year'
+        // match) — `amountMajor`/`currency` fall back to `null` via optional
+        // chaining, and the whole block is already wrapped in try/catch, so
+        // this can never throw regardless of which prices a plan carries.
+        try {
+            const priceForInterval = targetPlan?.prices.find((p) =>
+                body.billingInterval === 'annual'
+                    ? p.billingInterval === 'year'
+                    : p.billingInterval === 'month'
+            );
+            // `unitAmount` is stored in centavos, but the payment_failed /
+            // subscription_payment_succeeded events capture MP's transaction_amount
+            // in MAJOR units (ARS pesos). Normalize to major units here so `amount`
+            // has ONE unit across the whole checkout→payment funnel.
+            const amountMajor =
+                typeof priceForInterval?.unitAmount === 'number'
+                    ? priceForInterval.unitAmount / 100
+                    : null;
+            getPostHogClient()?.capture({
+                distinctId: actor.id,
+                event: 'checkout_started',
+                properties: {
+                    planSlug: body.planSlug,
+                    billingInterval: body.billingInterval,
+                    promoCode: body.promoCode ?? null,
+                    amount: amountMajor,
+                    currency: priceForInterval?.currency ?? null
+                }
+            });
+        } catch (phErr) {
+            apiLogger.warn(
+                {
+                    userId: actor.id,
+                    planSlug: body.planSlug,
+                    error: phErr instanceof Error ? phErr.message : String(phErr)
+                },
+                'PostHog capture failed for checkout_started (non-blocking)'
             );
         }
 

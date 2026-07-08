@@ -17,7 +17,7 @@
 
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Module mocks (declared BEFORE imports of the route file).
@@ -75,7 +75,10 @@ vi.mock('../../../src/utils/env', () => ({
     env: {
         HOSPEDA_SITE_URL: 'https://hospeda.test',
         HOSPEDA_API_URL: 'https://api.hospeda.test',
-        HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: 'HOSPEDA'
+        HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: 'HOSPEDA',
+        // Mutated per-test in the "test-daily-plan exemption" describe block
+        // below — starts false/unset like every other environment.
+        HOSPEDA_SHOW_TEST_BILLING_PLAN: false
     }
 }));
 
@@ -94,6 +97,7 @@ vi.mock('@repo/db', () => {
 import { captureBillingError } from '../../../src/lib/sentry';
 import { getQZPayBilling } from '../../../src/middlewares/billing';
 import { handleStartPaidSubscription } from '../../../src/routes/billing/start-paid';
+import { env } from '../../../src/utils/env';
 
 // ---------------------------------------------------------------------------
 // Fixtures / helpers
@@ -316,6 +320,114 @@ describe('handleStartPaidSubscription — plan-disabled guard (SPEC-148 T-006)',
             // Must be ServiceError, not wrapped in HTTPException
             expect(err).toBeInstanceOf(ServiceError);
             expect(err).not.toMatchObject({ status: 500 });
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Test-daily-plan exemption (billing-interval-override tooling).
+    //
+    // TEST_DAILY_PLAN (`owner-test-daily`) is seeded `active: false` on purpose
+    // (keeps it off the PUBLIC plans list) but MUST remain exempt from this
+    // PLAN_DISABLED guard — the real gate is `resolvePlanBySlug` inside
+    // `subscription-checkout.service.ts`, which returns `null` (→
+    // PLAN_NOT_FOUND) for this slug when `HOSPEDA_SHOW_TEST_BILLING_PLAN` is
+    // off. These tests exercise the REAL (unmocked) `initiatePaidMonthlySubscription`
+    // path end-to-end, same as the "active plan passes through" tests above.
+    // -------------------------------------------------------------------------
+    describe('test-daily-plan exemption (billing-interval-override)', () => {
+        const TEST_DAILY_SLUG = 'owner-test-daily';
+
+        function makeTestDailyBillingMock() {
+            const plan = {
+                id: 'plan_test_daily',
+                name: TEST_DAILY_SLUG,
+                active: false,
+                // ONLY a 'day' price — no 'month'/'year' price at all, mirrors
+                // TEST_DAILY_PLAN's real seeded shape.
+                prices: [
+                    {
+                        id: 'price_test_daily',
+                        billingInterval: 'day',
+                        intervalCount: 1,
+                        active: true,
+                        unitAmount: 100,
+                        currency: 'ARS'
+                    }
+                ],
+                metadata: { testPlan: true }
+            };
+
+            return {
+                subscriptions: {
+                    getByCustomerId: vi.fn().mockResolvedValue([]),
+                    create: vi.fn().mockResolvedValue({
+                        id: 'sub_test_daily',
+                        providerInitPoint: 'https://mp.test/checkout/daily',
+                        providerSandboxInitPoint: null
+                    })
+                },
+                plans: {
+                    list: vi.fn().mockResolvedValue({ data: [plan] })
+                }
+            };
+        }
+
+        afterEach(() => {
+            // Restore to the module-mock default (false) so other describe
+            // blocks in this file never see the flag left on.
+            (env as unknown as Record<string, unknown>).HOSPEDA_SHOW_TEST_BILLING_PLAN = false;
+        });
+
+        it('does NOT throw PLAN_DISABLED for owner-test-daily despite active:false', async () => {
+            mockBillingWith(makeTestDailyBillingMock());
+
+            const ctx = makeContext();
+            const err = await handleStartPaidSubscription(ctx as never, {
+                planSlug: TEST_DAILY_SLUG,
+                billingInterval: 'monthly'
+            }).catch((e: unknown) => e);
+
+            expect(err).not.toSatisfy(
+                (e: unknown) =>
+                    e instanceof ServiceError && e.code === ServiceErrorCode.PLAN_DISABLED
+            );
+        });
+
+        it('the analytics price-lookup block does not throw for a day-only-price plan (flag off -> PLAN_NOT_FOUND downstream)', async () => {
+            (env as unknown as Record<string, unknown>).HOSPEDA_SHOW_TEST_BILLING_PLAN = false;
+            mockBillingWith(makeTestDailyBillingMock());
+
+            const ctx = makeContext();
+            // Flag is off, so the REAL gate (resolvePlanBySlug in
+            // subscription-checkout.service.ts) rejects with PLAN_NOT_FOUND —
+            // but critically NOT because the analytics block (which looks up a
+            // 'month'/'year' price this plan does not have) threw first.
+            const err = await handleStartPaidSubscription(ctx as never, {
+                planSlug: TEST_DAILY_SLUG,
+                billingInterval: 'monthly'
+            }).catch((e: unknown) => e);
+
+            expect(err).not.toSatisfy(
+                (e: unknown) =>
+                    e instanceof ServiceError && e.code === ServiceErrorCode.PLAN_DISABLED
+            );
+        });
+
+        it('succeeds end-to-end (real subscriptions.create call) when the flag is on', async () => {
+            (env as unknown as Record<string, unknown>).HOSPEDA_SHOW_TEST_BILLING_PLAN = true;
+            const billing = makeTestDailyBillingMock();
+            mockBillingWith(billing);
+
+            const ctx = makeContext();
+            const result = await handleStartPaidSubscription(ctx as never, {
+                planSlug: TEST_DAILY_SLUG,
+                billingInterval: 'monthly'
+            });
+
+            expect(result).toMatchObject({ localSubscriptionId: 'sub_test_daily' });
+            expect(billing.subscriptions.create).toHaveBeenCalledWith(
+                expect.objectContaining({ priceId: 'price_test_daily' })
+            );
         });
     });
 });

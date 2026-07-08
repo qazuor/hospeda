@@ -35,6 +35,9 @@
  * by hand, ahead of the registry PR) or after a registry entry is removed
  * but the Coolify value was never cleaned up; neither case is this
  * command's job to fail the run over (that's a manual cleanup decision).
+ * Platform/build/runtime-injected keys (see {@link PLATFORM_INJECTED_KEYS})
+ * are excluded from this "extras" list entirely — they are never app
+ * configuration, so surfacing them as a registry gap would just be noise.
  */
 
 import * as p from '@clack/prompts';
@@ -77,6 +80,33 @@ Notes:
 function isApp(value: string): value is App {
     return (KINDS as ReadonlyArray<string>).includes(value);
 }
+
+/**
+ * Env var keys injected by the platform/build/runtime that are NOT app
+ * configuration and therefore must never be reported as "present on Coolify
+ * but absent from the registry" (that informational bucket exists to flag
+ * genuine registry gaps, not framework/runtime noise).
+ *
+ * - `HOST` / `PORT` — generic server-bind vars some PaaS platforms (including
+ *   Coolify itself) inject into every container regardless of app config.
+ * - `HUSKY` — set by CI/build tooling to disable git hooks in non-interactive
+ *   environments; never app config.
+ * - `NITRO_PRESET` — injected by the Nitro/TanStack Start build for the admin
+ *   app's server target; not a runtime knob the app itself reads via env.ts.
+ * - `HOSPEDA_GIT_SHA` — injected by the CI/deploy pipeline (see the `build`
+ *   category vars in the registry's own history) for release tagging; already
+ *   platform-injected by convention even where it does have a registry entry
+ *   elsewhere, so it is excluded here too to avoid double-reporting.
+ *
+ * (env-registry-hygiene, follow-up to HOS-79.)
+ */
+const PLATFORM_INJECTED_KEYS: ReadonlySet<string> = new Set([
+    'HOST',
+    'PORT',
+    'HUSKY',
+    'NITRO_PRESET',
+    'HOSPEDA_GIT_SHA'
+]);
 
 /**
  * Whether a registry entry is required for a deployed hops target (`prod`
@@ -156,7 +186,7 @@ export function diffRegistryVsCoolify(
 
     const registryNames = new Set(appEntries.map((entry) => entry.name));
     const unexpected = [...coolifySet]
-        .filter((key) => !registryNames.has(key))
+        .filter((key) => !registryNames.has(key) && !PLATFORM_INJECTED_KEYS.has(key))
         .sort((a, b) => a.localeCompare(b));
 
     return { missing, unexpected, conditionalUnset };

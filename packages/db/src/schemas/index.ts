@@ -28,6 +28,7 @@ export * from './partner/index.ts';
 export * from './platform/index.ts';
 export * from './post/index.ts';
 export * from './revalidation/index.ts';
+export * from './seed-migrations/index.ts';
 export * from './social/index.ts';
 export * from './sponsorship/index.ts';
 export * from './tag/index.ts';

@@ -23,7 +23,8 @@ import {
     isProtectedRoute,
     isServerIslandRoute,
     isSetPasswordRoute,
-    isStaticAssetRoute
+    isStaticAssetRoute,
+    resolveSentryReportUri
 } from '../../src/lib/middleware-helpers';
 
 describe('extractLocaleFromPath', () => {
@@ -496,6 +497,33 @@ describe('buildCspHeader', () => {
         const connectSrc = header.split('; ').find((d) => d.startsWith('connect-src '));
         expect(connectSrc).toBeDefined();
         expect(connectSrc).toContain('https://cloudflareinsights.com');
+    });
+});
+
+describe('resolveSentryReportUri (Sentry prod hardening — dedicated hospeda-csp project)', () => {
+    it('prefers the dedicated CSP report-uri when set', () => {
+        const result = resolveSentryReportUri({
+            sentryDsn: 'https://key@o123.ingest.sentry.io/456',
+            dedicatedCspReportUri:
+                'https://o999.ingest.us.sentry.io/api/789/security/?sentry_key=abc'
+        });
+        expect(result).toBe('https://o999.ingest.us.sentry.io/api/789/security/?sentry_key=abc');
+    });
+
+    it('falls back to the app DSN-derived report-uri when the dedicated var is unset', () => {
+        const result = resolveSentryReportUri({
+            sentryDsn: 'https://key@o123.ingest.sentry.io/456',
+            dedicatedCspReportUri: undefined
+        });
+        expect(result).toBe('https://o123.ingest.sentry.io/api/456/security/?sentry_key=key');
+    });
+
+    it('returns null when neither is configured (CSP still emitted, just without report-uri)', () => {
+        const result = resolveSentryReportUri({
+            sentryDsn: undefined,
+            dedicatedCspReportUri: undefined
+        });
+        expect(result).toBeNull();
     });
 });
 

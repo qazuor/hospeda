@@ -161,7 +161,7 @@ describe('AccommodationTypeBadge.astro', () => {
             expect(anchorBranch).toContain('acc-type-badge__label');
         });
 
-        it('uses the canonical size (font-size + padding) for the anchor variant, matching TagChips/destinos', () => {
+        it('uses the canonical size (font-size + padding) for the anchor variant, matching FilterChips/destinos', () => {
             expect(src).toMatch(/a\.acc-type-badge\s*\{[^}]*font-size:\s*var\(--text-body-sm\)/);
             expect(src).toMatch(/a\.acc-type-badge\s*\{[^}]*padding:\s*6px 16px/);
         });

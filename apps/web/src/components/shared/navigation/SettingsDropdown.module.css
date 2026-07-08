@@ -47,16 +47,17 @@
     transform: rotate(180deg);
 }
 
+/*
+ * background-color / border / box-shadow / border-radius / z-index come
+ * from the shared `.overlay-surface` primitive (see apps/web/src/styles/
+ * components.css) — SettingsDropdown.client.tsx adds that class alongside
+ * this one.
+ */
 .popover {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    z-index: var(--z-dropdown, 60);
     min-width: 280px;
-    background-color: var(--core-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-card);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -72,6 +73,12 @@
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .popover {
+        animation: none;
     }
 }
 

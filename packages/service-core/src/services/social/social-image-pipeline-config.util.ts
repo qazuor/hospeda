@@ -69,8 +69,56 @@ export const DOWNLOAD_TIMEOUT_MS_KEY = 'download_timeout_ms';
 /** Fallback for `download_timeout_ms` when the setting is missing or invalid. */
 export const DOWNLOAD_TIMEOUT_MS_FALLBACK = 15_000;
 
-/** `social_settings` key for the Cloudinary upload folder path. */
+/** `social_settings` key for the Cloudinary upload folder BASE prefix. */
 export const SOCIAL_ASSETS_FOLDER_KEY = 'social_assets_folder';
 
-/** Fallback for `social_assets_folder` when the setting is missing or empty. */
-export const SOCIAL_ASSETS_FOLDER_FALLBACK = 'hospeda/social/assets';
+/**
+ * Fallback BASE prefix for `social_assets_folder` when the setting is missing
+ * or empty.
+ *
+ * This is a PREFIX only — the environment segment and `/assets` suffix are
+ * always appended by {@link buildSocialAssetsFolder}, never sourced from this
+ * setting. This guarantees environment isolation (staging vs. prod share one
+ * Cloudinary account) regardless of what an admin configures here.
+ */
+export const SOCIAL_ASSETS_FOLDER_BASE_FALLBACK = 'hospeda/social';
+
+/** Input for {@link buildSocialAssetsFolder}. */
+export interface BuildSocialAssetsFolderInput {
+    /**
+     * The configured (or fallback) BASE prefix, e.g. `hospeda/social`. Must
+     * NOT already include an environment segment or the `assets` suffix —
+     * this function always appends both.
+     */
+    base: string;
+    /** Resolved deploy environment (`'dev' | 'test' | 'preview' | 'prod'`). */
+    environment: string;
+}
+
+/**
+ * Composes the final Cloudinary folder for social-pipeline uploads as
+ * `${base}/${environment}/assets`, so that every upload is ALWAYS
+ * environment-isolated regardless of the admin-configured base prefix.
+ *
+ * This guarantees separation between environments (e.g. staging and prod,
+ * which share a single Cloudinary account) — the admin-controlled
+ * `social_assets_folder` setting only controls the base prefix; the
+ * environment segment and `assets` suffix are never influenced by DB/seed
+ * data.
+ *
+ * @param input - The base prefix and resolved environment.
+ * @returns The composed Cloudinary folder path.
+ *
+ * @example
+ * ```ts
+ * buildSocialAssetsFolder({ base: 'hospeda/social', environment: 'prod' });
+ * // "hospeda/social/prod/assets"
+ *
+ * buildSocialAssetsFolder({ base: 'hospeda/social', environment: 'preview' });
+ * // "hospeda/social/preview/assets"
+ * ```
+ */
+export function buildSocialAssetsFolder(input: BuildSocialAssetsFolderInput): string {
+    const { base, environment } = input;
+    return `${base}/${environment}/assets`;
+}

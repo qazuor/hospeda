@@ -79,6 +79,42 @@ describe('buildCspDirectives', () => {
         expect(result).not.toContain('report-uri');
     });
 
+    describe('cspReportUri override (Sentry prod hardening — dedicated hospeda-csp project)', () => {
+        it('uses the dedicated cspReportUri instead of the DSN-derived one when both are provided', () => {
+            const result = buildCspDirectives({
+                nonce: 'test',
+                sentryDsn: 'https://abc123@o456789.ingest.sentry.io/789',
+                cspReportUri: 'https://o999.ingest.us.sentry.io/api/111/security/?sentry_key=xyz'
+            });
+            expect(result).toContain(
+                'report-uri https://o999.ingest.us.sentry.io/api/111/security/?sentry_key=xyz'
+            );
+            expect(result).not.toContain('o456789.ingest.sentry.io/api/789/security');
+        });
+
+        it('falls back to the DSN-derived report-uri when cspReportUri is not provided', () => {
+            const result = buildCspDirectives({
+                nonce: 'test',
+                sentryDsn: 'https://abc123@o456789.ingest.sentry.io/789'
+            });
+            expect(result).toContain('o456789.ingest.sentry.io/api/789/security');
+        });
+
+        it('falls back to the DSN-derived report-uri when cspReportUri is an empty string', () => {
+            const result = buildCspDirectives({
+                nonce: 'test',
+                sentryDsn: 'https://abc123@o456789.ingest.sentry.io/789',
+                cspReportUri: ''
+            });
+            expect(result).toContain('o456789.ingest.sentry.io/api/789/security');
+        });
+
+        it('omits report-uri entirely when neither sentryDsn nor cspReportUri is set', () => {
+            const result = buildCspDirectives({ nonce: 'test', sentryDsn: '' });
+            expect(result).not.toContain('report-uri');
+        });
+    });
+
     it('should include frame-ancestors none', () => {
         const result = buildCspDirectives({ nonce: 'test', sentryDsn: '' });
         expect(result).toContain("frame-ancestors 'none'");

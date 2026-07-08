@@ -126,17 +126,17 @@
 
 /* ── Dropdown menu ──────────────────────────────────────────────────── */
 
+/*
+ * background-color / border / box-shadow / border-radius / z-index come
+ * from the shared `.overlay-surface` primitive (see apps/web/src/styles/
+ * components.css) — UserMenu.client.tsx adds that class alongside this one.
+ */
 .menu {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    z-index: var(--z-dropdown, 60);
     min-width: 280px;
     max-width: 340px;
-    background-color: var(--core-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-card);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
     overflow: hidden;
     animation: menu-in 0.15s ease-out;
 }
@@ -149,6 +149,12 @@
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .menu {
+        animation: none;
     }
 }
 

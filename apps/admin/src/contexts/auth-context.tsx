@@ -9,9 +9,11 @@
  */
 
 import { createContext, type ReactNode, useCallback, useEffect, useState } from 'react';
+import { identifyUser, resetUser } from '@/lib/analytics/posthog-client';
 import { fetchApi } from '@/lib/api/client';
 import { signOut as authSignOut, useSession } from '@/lib/auth-client';
 import type { AuthState as ServerAuthState } from '@/lib/auth-session';
+import { isSentryInitialized, setSentryUser } from '@/lib/sentry';
 import { adminLogger } from '../utils/logger';
 
 /**
@@ -293,6 +295,7 @@ export function AuthProvider({ children, initialAuthState }: AuthProviderProps) 
     const handleSignOut = async (): Promise<void> => {
         try {
             clearSession();
+            resetUser();
             await authSignOut();
         } catch (error) {
             adminLogger.error('Sign out error', error);
@@ -374,6 +377,27 @@ export function AuthProvider({ children, initialAuthState }: AuthProviderProps) 
     ]);
 
     /**
+     * Attach the authenticated user (id + anonymized email) to Sentry so
+     * error events can be cross-referenced with a user id during support/bug
+     * triage, without ever attaching a real email address. Clears the Sentry
+     * user context on logout (`isAuthenticated` flips back to false).
+     * No-ops when Sentry is not initialized (dev, or missing DSN).
+     */
+    useEffect(() => {
+        if (!isSentryInitialized()) return;
+
+        if (authState.isAuthenticated && authState.user) {
+            setSentryUser({
+                id: authState.user.id,
+                email: authState.user.email,
+                username: authState.user.displayName
+            });
+        } else {
+            setSentryUser(null);
+        }
+    }, [authState.isAuthenticated, authState.user]);
+
+    /**
      * Handle session expiration
      */
     useEffect(() => {
@@ -389,6 +413,23 @@ export function AuthProvider({ children, initialAuthState }: AuthProviderProps) 
         const interval = setInterval(checkSessionExpiration, 60 * 1000);
         return () => clearInterval(interval);
     }, [authState.isAuthenticated, refreshSession]);
+
+    /**
+     * PostHog identify — fires once the authenticated staff user is fully
+     * resolved (role + email already enriched by the sync effect above).
+     * Only non-sensitive traits are sent: `role`, and the email's domain
+     * (never the full address). The counterpart `resetUser()` call lives in
+     * `handleSignOut`, not here, so this effect never needs to distinguish
+     * "not yet loaded" from "signed out".
+     */
+    useEffect(() => {
+        if (authState.isAuthenticated && authState.user) {
+            identifyUser(authState.user.id, {
+                role: authState.user.role,
+                emailDomain: authState.user.email?.split('@')[1]
+            });
+        }
+    }, [authState.isAuthenticated, authState.user]);
 
     const contextValue: AuthContextValue = {
         ...authState,

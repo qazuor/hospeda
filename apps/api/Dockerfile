@@ -43,7 +43,20 @@ ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
 COPY apps apps
 COPY packages packages
-RUN pnpm install --frozen-lockfile
+# BuildKit cache mount for the pnpm content-addressable store. PNPM_HOME=/pnpm
+# (set in the base stage) puts the store at /pnpm/store, so caching that path
+# lets repeat builds skip re-downloading + re-extracting the ~1941 packages
+# (the concurrent tarball extraction is itself CPU/memory heavy). Matches the
+# official pnpm Docker guide.
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+# SKIP_PACKAGE_DTS=true skips .d.ts generation for the @repo/* workspace
+# packages during the deploy build. The API bundle resolves @repo/* from source
+# via tsconfig paths (apps/api/tsup.config.ts noExternal) and never reads those
+# .d.ts, so generating them is pure memory/time cost — the tsup DTS worker holds
+# the full TS type graph and is the peak that pushed the VPS into swap (schemas'
+# .d.ts alone is ~4.7 MB / ~47s). Unset in dev/CI so typecheck and library
+# consumers still get declarations.
+ENV SKIP_PACKAGE_DTS=true
 # --concurrency=1: sequential package builds to cap memory peak on the 3.8 GB
 # Coolify VPS (see apps/admin/Dockerfile for the 2026-06-06 incident rationale).
 RUN echo "[build] Sentry release: ${HOSPEDA_SENTRY_RELEASE:-(empty, falling back to 'development' in code)}" && \

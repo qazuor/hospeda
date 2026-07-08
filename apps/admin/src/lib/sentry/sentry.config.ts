@@ -16,6 +16,7 @@
  * ```
  */
 
+import { anonymizeEmail } from '@repo/utils';
 import * as Sentry from '@sentry/react';
 import { env } from '@/env';
 import { adminLogger } from '../../utils/logger';
@@ -143,10 +144,12 @@ export function initSentry(): void {
         integrations: [
             Sentry.browserTracingIntegration(),
             Sentry.replayIntegration({
-                // Mask all text content for privacy
-                maskAllText: false,
-                // Block all media (images, videos)
-                blockAllMedia: false
+                // Privacy hardening (production launch, real users' PII):
+                // mask all text content for privacy
+                maskAllText: true,
+                // Block all media (images, videos) — may include user uploads
+                // (accommodation photos, avatars) or other sensitive content
+                blockAllMedia: true
             })
         ],
 
@@ -188,7 +191,11 @@ export function isSentryInitialized(): boolean {
 }
 
 /**
- * Set user context in Sentry
+ * Set user context in Sentry.
+ *
+ * The email is anonymized (domain-only) before being attached to the Sentry
+ * scope — never the raw address — so Sentry issues never leak PII while
+ * still letting support cross-reference the user id.
  */
 export function setSentryUser(
     user: { id: string; email?: string; username?: string } | null
@@ -198,7 +205,7 @@ export function setSentryUser(
     if (user) {
         Sentry.setUser({
             id: user.id,
-            email: user.email,
+            email: user.email ? anonymizeEmail(user.email) : undefined,
             username: user.username
         });
     } else {
