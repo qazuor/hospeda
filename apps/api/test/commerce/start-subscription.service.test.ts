@@ -22,7 +22,12 @@ vi.mock('../../src/utils/env', () => ({
 }));
 
 vi.mock('@repo/billing', () => ({
-    resolveFreeTrialExtensionPromo: vi.fn(() => null)
+    resolveFreeTrialExtensionPromo: vi.fn(() => null),
+    // `resolvePlanBySlug` in subscription-checkout.service.ts (shared by the
+    // commerce path) references TEST_DAILY_PLAN.slug; this minimal mock must
+    // provide it. The commerce slug never equals it, so the test-plan gate is
+    // a no-op for these cases.
+    TEST_DAILY_PLAN: { slug: 'owner-test-daily' }
 }));
 
 const dbExecute = vi.fn((_query: unknown) => Promise.resolve(undefined));
