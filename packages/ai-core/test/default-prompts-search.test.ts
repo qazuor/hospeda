@@ -37,6 +37,15 @@ describe("DEFAULT_PROMPTS['search'] — SPEC-199 slot-extraction contract (uncha
         }
     });
 
+    it('does not bias extraction toward a specific city (Concepción del Uruguay removed)', () => {
+        // Destination de-bias: the prompt must not name a single city, otherwise
+        // the model tends to default an ambiguous query to that city. The regional
+        // framing ("Litoral region of Argentina") is intentionally kept.
+        expect(prompt).not.toContain('Concepción del Uruguay');
+        expect(prompt).not.toContain('Concepcion del Uruguay');
+        expect(prompt).toContain('Litoral region of Argentina');
+    });
+
     it('keeps the output-discipline and safety rules (in DEFAULT_RULES after SPEC-214)', () => {
         // The Rules: block was extracted to DEFAULT_RULES.search in SPEC-214.
         const rules = DEFAULT_RULES.search;
