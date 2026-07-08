@@ -62,6 +62,7 @@ import {
 } from '@/features/ai-settings';
 import { useToast } from '@/hooks/use-toast';
 import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
+import { resolveCredentialModelsToPersist } from './-components/credential-models.utils';
 import { describeSyncError, SyncModelsSection } from './-components/SyncModelsSection';
 
 export const Route = createFileRoute('/_authed/ai/credentials')({
@@ -244,6 +245,12 @@ function CreateCredentialDialog() {
     const handleSubmit = async () => {
         if (!effectiveProvider) return;
         if (known ? known.needsApiKey && !apiKey : !apiKey) return;
+        const modelsToPersist = resolveCredentialModelsToPersist({
+            curatedModels: known?.models ?? [],
+            selectedModels,
+            disabledModels,
+            hasSyncedPreview: Boolean(preflightMutation.data)
+        });
         try {
             await createMutation.mutateAsync({
                 providerId: effectiveProvider,
@@ -251,7 +258,7 @@ function CreateCredentialDialog() {
                 label: label || undefined,
                 metadata: {
                     ...(baseURL ? { baseURL } : {}),
-                    ...(selectedModels.length > 0 ? { models: selectedModels } : {})
+                    ...(modelsToPersist.length > 0 ? { models: modelsToPersist } : {})
                 }
             });
             addToast({
