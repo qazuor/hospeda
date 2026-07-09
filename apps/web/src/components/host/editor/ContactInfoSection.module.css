@@ -61,3 +61,39 @@
     color: oklch(0.55 0.22 25);
     margin-top: var(--space-1, 0.25rem);
 }
+
+.phoneFieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+.fieldSubLabel {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    margin-bottom: var(--space-1, 0.25rem);
+}
+
+.phoneRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+}
+
+.phoneCountryField {
+    flex: 1 1 160px;
+    min-width: 140px;
+}
+
+.phoneNumberField {
+    flex: 2 1 220px;
+    min-width: 180px;
+}
+
+.phoneCountryInput,
+.phoneNumberInput {
+    width: 100%;
+}

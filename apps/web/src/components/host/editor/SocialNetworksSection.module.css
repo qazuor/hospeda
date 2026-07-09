@@ -61,3 +61,29 @@
     color: oklch(0.55 0.22 25);
     margin-top: var(--space-1, 0.25rem);
 }
+
+.urlInputGroup {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+}
+
+.urlPrefix {
+    display: flex;
+    align-items: center;
+    padding: 0.625rem 0 0.625rem 0.75rem;
+    border: 1px solid var(--border);
+    border-right: none;
+    border-radius: var(--radius-md, 10px) 0 0 var(--radius-md, 10px);
+    background-color: var(--surface-warm);
+    color: var(--core-muted-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+.urlHandleInput {
+    border-radius: 0 var(--radius-md, 10px) var(--radius-md, 10px) 0;
+    flex: 1 1 auto;
+    min-width: 0;
+}
