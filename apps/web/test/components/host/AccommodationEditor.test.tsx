@@ -147,15 +147,38 @@ describe('AccommodationEditor', () => {
     });
 
     it('should render all section headings', () => {
+        // BETA-138: each heading now also appears as a link label in the
+        // sticky section nav, so these assertions scope to the <legend> to
+        // disambiguate from the nav's <a> with the same text.
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
-        expect(screen.getByText('Información básica')).toBeInTheDocument();
-        expect(screen.getByText('Capacidad')).toBeInTheDocument();
-        expect(screen.getByText('Precio')).toBeInTheDocument();
-        expect(screen.getByText('Ubicación')).toBeInTheDocument();
-        expect(screen.getByText('Contacto')).toBeInTheDocument();
-        expect(screen.getByText('Redes sociales')).toBeInTheDocument();
-        expect(screen.getByText('Servicios y comodidades')).toBeInTheDocument();
+        expect(screen.getByText('Información básica', { selector: 'legend' })).toBeInTheDocument();
+        expect(screen.getByText('Capacidad', { selector: 'legend' })).toBeInTheDocument();
+        expect(screen.getByText('Precio', { selector: 'legend' })).toBeInTheDocument();
+        expect(screen.getByText('Ubicación', { selector: 'legend' })).toBeInTheDocument();
+        expect(screen.getByText('Contacto', { selector: 'legend' })).toBeInTheDocument();
+        expect(screen.getByText('Redes sociales', { selector: 'legend' })).toBeInTheDocument();
+        expect(
+            screen.getByText('Servicios y comodidades', { selector: 'legend' })
+        ).toBeInTheDocument();
+    });
+
+    it('should render the sticky section nav with a link per card section', () => {
+        render(<AccommodationEditor {...DEFAULT_PROPS} />);
+
+        expect(screen.getByRole('navigation')).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'Información básica' })).toHaveAttribute(
+            'href',
+            '#editor-basicInfo'
+        );
+        expect(screen.getByRole('link', { name: 'Reputación externa' })).toHaveAttribute(
+            'href',
+            '#editor-externalReputation'
+        );
+        expect(screen.getByRole('link', { name: 'Destacado' })).toHaveAttribute(
+            'href',
+            '#editor-featuredToggle'
+        );
     });
 
     it('should render form fields with initial data values', () => {
