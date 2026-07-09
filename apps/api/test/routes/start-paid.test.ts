@@ -1313,3 +1313,99 @@ describe('handleStartPaidSubscription — no server-side retry (SPEC-149 descope
         expect(billing.checkout.create).toHaveBeenCalledTimes(1);
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-115 T-012 — checkout_started analytics for the annual trial branch
+// (AC-10 / OQ-2: "reuse the existing event" — no new event/property).
+// ---------------------------------------------------------------------------
+
+describe('handleStartPaidSubscription — checkout_started analytics on the ANNUAL trial branch (HOS-115 T-012)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    /**
+     * A trial-declaring annual plan + a fully-wired billing mock so the
+     * request drives ALL THE WAY through `initiatePaidAnnualSubscription`'s
+     * TRIAL branch (COMP check -> plan-level hasTrial/trialDays -> zero-prior
+     * -subs eligibility -> `TrialService.startTrial()`), exactly like the
+     * route-level e2e coverage in
+     * `test/e2e/flows/billing/annual-trial-checkout.test.ts`, but here fully
+     * mocked so we can inspect the `checkout_started` PostHog capture in
+     * isolation.
+     */
+    function createAnnualTrialBillingMock() {
+        const trialPlan = {
+            id: PLAN_ID,
+            name: 'owner-premium',
+            prices: [{ ...ANNUAL_PRICE, unitAmount: 5_000_000, currency: 'ARS' }],
+            // resolvePlanTrialConfig() reads these two fields off plan.metadata.
+            metadata: { hasTrial: true, trialDays: 14 }
+        } as unknown as ReturnType<typeof createPlan>;
+
+        const trialSubscription = {
+            id: 'trial-sub-annual-1',
+            status: 'trialing',
+            trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+        };
+
+        return {
+            plans: { list: vi.fn().mockResolvedValue({ data: [trialPlan] }) },
+            customers: { get: vi.fn().mockResolvedValue(ANNUAL_CUSTOMER_FIXTURE) },
+            checkout: { create: vi.fn() }, // must NOT be called on the trial branch
+            subscriptions: {
+                // No prior subscriptions -> trial-eligible.
+                getByCustomerId: vi.fn().mockResolvedValue([]),
+                create: vi.fn().mockResolvedValue(trialSubscription),
+                get: vi.fn().mockResolvedValue(trialSubscription)
+            }
+        };
+    }
+
+    it('AC-10: a trial-eligible ANNUAL checkout resolves appliedEffect="trial", but checkout_started (captured BEFORE the trial/paid decision) does NOT currently carry appliedEffect', async () => {
+        // ARRANGE — a trial-eligible customer on a trial-declaring plan,
+        // selecting the ANNUAL toggle. This must resolve to the TRIAL branch
+        // (verified independently below), matching AC-1/AC-10's premise.
+        const billing = createAnnualTrialBillingMock();
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+
+        // ACT
+        const result = await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'annual'
+        });
+
+        // SANITY — the checkout really did resolve to the trial branch (no MP
+        // checkout object created), establishing the premise AC-10 is about.
+        expect(result.appliedEffect).toBe('trial');
+        expect(billing.checkout.create).not.toHaveBeenCalled();
+
+        // ASSERT — checkout_started WAS captured, with billingInterval='annual'
+        // (the part of AC-10 the current implementation satisfies).
+        expect(mockPostHogCapture).toHaveBeenCalledTimes(1);
+        const call = mockPostHogCapture.mock.calls.find(
+            ([arg]) => (arg as { event?: string }).event === 'checkout_started'
+        );
+        expect(call).toBeDefined();
+        const properties = (call?.[0] as { properties: Record<string, unknown> }).properties;
+        expect(properties.billingInterval).toBe('annual');
+
+        // FINDING (HOS-115 gap vs spec.md AC-10 / OQ-2): `checkout_started` is
+        // captured in start-paid.ts BEFORE `initiatePaidAnnualSubscription` is
+        // invoked (the capture block runs first, then `result = await
+        // initiatePaidAnnualSubscription(...)` — see start-paid.ts ~L361-424).
+        // At capture time the trial-vs-paid decision has not been made yet, so
+        // `appliedEffect` is NEVER included in the event payload for EITHER
+        // interval, not just annual. AC-10 requires
+        // `billingInterval='annual' AND appliedEffect='trial'` on the SAME
+        // captured event -- that is not what the current code does.
+        //
+        // This assertion pins the ACTUAL (gap) behavior rather than the
+        // spec'd one, per this task's test-only scope (no source changes):
+        // `appliedEffect` is absent from the captured properties even though
+        // the checkout itself resolved to a trial.
+        expect(properties).not.toHaveProperty('appliedEffect');
+    });
+});

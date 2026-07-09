@@ -9,6 +9,12 @@
  */
 
 /**
+ * The billing interval a customer selected on the pricing toggle when they
+ * started a trial (HOS-115 §5). See {@link resolveIntendedInterval}.
+ */
+export type TrialIntendedInterval = 'monthly' | 'annual';
+
+/**
  * Trial status information
  */
 export interface TrialStatus {
@@ -24,6 +30,16 @@ export interface TrialStatus {
     readonly daysRemaining: number;
     /** Current plan slug */
     readonly planSlug: string | null;
+    /**
+     * The billing interval the customer selected when they started this
+     * trial (HOS-115 §5, nudge delivery path 2 — logged-in lookup for direct
+     * navigation to the pricing page, no `?interval=` query param). Read back
+     * from the most-recent trial subscription's `metadata.intendedInterval`
+     * via {@link resolveIntendedInterval}. `null` when there is no trial, or
+     * the trial recorded no interval (e.g. the accommodation-publish
+     * auto-start flow, which never records an intent).
+     */
+    readonly intendedInterval: TrialIntendedInterval | null;
 }
 
 /**
@@ -75,6 +91,18 @@ export interface StartTrialInput {
      * the base plan length is used unchanged.
      */
     readonly extraTrialDays?: number;
+    /**
+     * The billing interval the customer selected on the pricing toggle when
+     * they started this trial (HOS-115 §5). The trial subscription itself is
+     * interval-agnostic (no price, no interval) — this value is stamped
+     * as-is into the created subscription's `metadata.intendedInterval` so
+     * it can survive as the source of truth for the post-trial conversion
+     * nudge (pre-selecting the pricing toggle) and as an analytics
+     * dimension. Optional because non-checkout trial-start paths (e.g. the
+     * accommodation-publish auto-start flow) have no interval choice to
+     * record.
+     */
+    readonly intendedInterval?: 'monthly' | 'annual';
 }
 
 /**
@@ -127,6 +155,18 @@ export interface TrialEndingSubscription {
     readonly trialEnd: Date;
     /** Days remaining */
     readonly daysRemaining: number;
+    /**
+     * The billing interval the customer originally selected when this trial
+     * started (HOS-115 §5), read back from `metadata.intendedInterval` on the
+     * QZPay subscription. Untyped/raw at the source — the QZPay SDK does not
+     * narrow subscription metadata — so this may be `undefined` (trial-start
+     * paths that never recorded an interval, e.g. the accommodation-publish
+     * auto-start flow) or any string value. Consumers must validate before
+     * trusting it (see {@link buildTrialUpgradeUrl} in `trial.service.ts`,
+     * which degrades gracefully for anything other than `'monthly'` /
+     * `'annual'`).
+     */
+    readonly intendedInterval?: string;
 }
 
 /**
@@ -170,6 +210,32 @@ export function resolvePlanTrialConfig(metadata: unknown): PlanTrialConfig {
         hasTrial: typeof meta.hasTrial === 'boolean' ? meta.hasTrial : false,
         trialDays: typeof meta.trialDays === 'number' ? meta.trialDays : 0
     };
+}
+
+/**
+ * Validates a raw `metadata.intendedInterval` value read off a trial
+ * subscription (HOS-115 §5). Untyped/raw at the source — the QZPay SDK does
+ * not narrow subscription metadata — so this is the single source of truth
+ * for turning that raw value into a trusted {@link TrialIntendedInterval},
+ * used both by `buildTrialUpgradeUrl` (nudge delivery path 1, the
+ * `TRIAL_EXPIRED` notification link) and `TrialService.getTrialStatus`
+ * (nudge delivery path 2, the logged-in lookup for direct navigation).
+ *
+ * @param rawValue - The raw `metadata.intendedInterval` value (or `undefined`
+ *   when the trial never recorded one).
+ * @returns The validated interval, or `null` for anything other than the two
+ *   known values — degrades gracefully instead of throwing on malformed or
+ *   missing metadata.
+ *
+ * @example
+ * ```ts
+ * const intendedInterval = resolveIntendedInterval(
+ *   (subscription.metadata as Record<string, string> | undefined)?.intendedInterval
+ * );
+ * ```
+ */
+export function resolveIntendedInterval(rawValue: unknown): TrialIntendedInterval | null {
+    return rawValue === 'monthly' || rawValue === 'annual' ? rawValue : null;
 }
 
 /**

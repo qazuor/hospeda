@@ -299,17 +299,26 @@ interval-agnostic, this rule is explicitly cross-interval:
 There is no per-interval trial allotment. "Annual" vs "monthly" only describes
 which checkout the user completes at conversion, never a separate trial grant.
 
-## Analytics (OQ-2 resolved: reuse the existing event)
+## Analytics (OQ-2 — partially met; appliedEffect deferred to a follow-up)
 
-No new analytics event or property is introduced. The existing `checkout_started`
-event already captures `billingInterval`; the annual trial branch additionally
-sets `appliedEffect='trial'`. "Annual → trial" is therefore the cross-tab of
-`billingInterval='annual'` × `appliedEffect='trial'`, and "annual → paid" is
-`billingInterval='annual'` × `appliedEffect` in (`discount`, absent). Because
-`intendedInterval` is persisted on the trial (OQ-1), post-trial conversion events
-can be attributed back to the interval the user originally chose without a
-dedicated event. A separate "annual→trial" event was considered and rejected as
-unnecessary analytics surface.
+The existing `checkout_started` PostHog event already captures `billingInterval`,
+so "how many started an annual checkout" is measurable today. However, during
+implementation (T-012) we found that `checkout_started` is captured at the START
+of `handleStartPaidSubscription` — BEFORE `initiatePaidAnnualSubscription` runs and
+the trial-vs-paid decision is made — so `appliedEffect` is structurally absent from
+that event for every interval, not just annual. OQ-2's original "reuse the existing
+event, carry billingInterval × appliedEffect" is therefore NOT cleanly
+implementable: the outcome (`appliedEffect`) is only known after the event already
+fired, and moving the capture later would drop the "attempted checkout" signal for
+flows that error before resolving.
+
+**Decision (2026-07-09):** ship HOS-115 with `checkout_started` carrying
+`billingInterval` only (unchanged). Designing the outcome-side analytics
+(`appliedEffect='trial'` vs `paid`, e.g. a dedicated result event or a
+post-result property) is deferred to a follow-up so it can be modelled correctly
+rather than forced into the wrong event. `intendedInterval` is still persisted on
+the trial (OQ-1), so a future outcome event can attribute back to the interval the
+user originally chose. The T-012 test documents the current (partial) state.
 
 ## Testability
 
@@ -425,13 +434,15 @@ Then the billing toggle opens on 'annual' (data-billing='annual'), not the
   And a user who manually flips the toggle is never overridden.
 ```
 
-### AC-10 — Analytics reuses the existing event
+### AC-10 — Analytics carries the interval (appliedEffect deferred)
 
 ```
 Given a trial-eligible user starts an annual trial
 When the checkout_started analytics event is emitted
-Then it carries billingInterval='annual' AND appliedEffect='trial'
-  And NO new analytics event or property is introduced for the annual→trial case.
+Then it carries billingInterval='annual'
+  And appliedEffect is NOT on this event — it is captured before the
+      trial-vs-paid decision; the outcome dimension is a deferred analytics
+      follow-up (see Analytics section).
 ```
 
 ## Resolved product decisions
@@ -441,9 +452,10 @@ Then it carries billingInterval='annual' AND appliedEffect='trial'
   toggle at conversion (notification deep-link primary; logged-in lookup
   secondary / fast-follow). See Design §5. Chosen over "no nudge" to protect the
   annual upsell for a user who deliberately picked annual before the trial.
-- **OQ-2 — Analytics dimension — RESOLVED (2026-07-09): reuse the existing event.**
-  No new event/property. "Annual → trial" is `billingInterval='annual'` ×
-  `appliedEffect='trial'` on the existing `checkout_started` event. See Analytics.
+- **OQ-2 — Analytics dimension — PARTIALLY RESOLVED (2026-07-09).** `checkout_started`
+  carries `billingInterval` (shipped); the `appliedEffect` outcome dimension turned
+  out not to fit that event (it is captured pre-decision) and is DEFERRED to an
+  analytics follow-up to be modelled correctly. See the Analytics section.
 
 ## Smoke labels
 

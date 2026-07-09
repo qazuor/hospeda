@@ -806,6 +806,14 @@ export const billingApi = {
      * `planSlug` for users whose trial expired and subscription was cancelled.
      * Returns `isOnTrial: true` with `daysRemaining` for active trial users.
      *
+     * `intendedInterval` (HOS-115 §5, nudge delivery path 2) is the billing
+     * interval the customer selected when they started their most recent
+     * trial — `null` when there is no trial, or the trial recorded no
+     * interval. The pricing page uses this to pre-select the monthly/annual
+     * toggle for a logged-in user who navigates there directly (no
+     * `?interval=` query param).
+     *
+     * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
      * @returns Trial status information for the current user.
      *
      * @example
@@ -814,7 +822,7 @@ export const billingApi = {
      * if (result.ok && result.data.isExpired) { ... }
      * ```
      */
-    getTrialStatus(): Promise<
+    getTrialStatus(params?: { readonly cookieHeader?: string }): Promise<
         ApiResult<{
             readonly isOnTrial: boolean;
             readonly isExpired: boolean;
@@ -822,10 +830,12 @@ export const billingApi = {
             readonly startedAt: string | null;
             readonly expiresAt: string | null;
             readonly planSlug: string | null;
+            readonly intendedInterval: 'monthly' | 'annual' | null;
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/billing/trial/status`
+            path: `${PROTECTED}/billing/trial/status`,
+            cookieHeader: params?.cookieHeader
         });
     },
 
