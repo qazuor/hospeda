@@ -12,6 +12,7 @@ import { CommerceFaqManager } from '@/components/commerce/CommerceFaqManager.cli
 import type { CommerceFaq } from '@/components/commerce/CommerceFaqManager.client';
 import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { transformAmenityList } from '@/lib/api/transforms';
 import { isCommerceOwnerRole } from '@/lib/account-roles';
 import {
@@ -110,26 +111,38 @@ const initialFaqs: CommerceFaq[] = Array.isArray(rawFaqs)
         {readOnlyNotice && <p class="ce-identity__notice">{readOnlyNotice}</p>}
     </div>
 
-    <CommerceListingEditor
-        client:load
-        vertical={vertical}
-        listingId={id}
-        locale={locale}
-        initialData={detail}
-        amenities={amenities}
-        features={features}
-    />
+    <AccountSectionCard>
+        <CommerceListingEditor
+            client:load
+            vertical={vertical}
+            listingId={id}
+            locale={locale}
+            initialData={detail}
+            amenities={amenities}
+            features={features}
+        />
+    </AccountSectionCard>
 
-    <CommerceFaqManager
-        client:idle
-        vertical={vertical}
-        listingId={id}
-        locale={locale}
-        initialFaqs={initialFaqs}
-    />
+    <div class="ce-faq-gap">
+        <AccountSectionCard>
+            <CommerceFaqManager
+                client:idle
+                vertical={vertical}
+                listingId={id}
+                locale={locale}
+                initialFaqs={initialFaqs}
+            />
+        </AccountSectionCard>
+    </div>
 </AccountLayout>
 
 <style>
+    /* Stacked-card spacing: two AccountSectionCard blocks in a row need an
+       explicit gap since the card recipe carries no outer margin. */
+    .ce-faq-gap {
+        margin-top: var(--space-6);
+    }
+
     .ce-identity {
         margin-bottom: var(--space-6);
         padding-bottom: var(--space-4);

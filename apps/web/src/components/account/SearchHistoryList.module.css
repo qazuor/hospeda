@@ -33,20 +33,8 @@
 }
 
 .search-history__retry-btn {
+    composes: ghost from "./AccountButton.module.css";
     align-self: flex-start;
-    padding: var(--space-2) var(--space-4);
-    border: 1px solid var(--core-foreground-a20);
-    border-radius: var(--radius-button);
-    background: transparent;
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--core-foreground);
-    cursor: pointer;
-    transition: background-color var(--duration-fast) ease;
-}
-
-.search-history__retry-btn:hover {
-    background-color: var(--core-foreground-a08);
 }
 
 /* ─── Opt-out preference toggle ────────────────────────────────────────────── */
@@ -148,25 +136,7 @@
 }
 
 .search-history__clear-btn {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--destructive, oklch(0.6 0.22 25));
-    background: transparent;
-    border: 1px solid var(--destructive-a25);
-    border-radius: var(--radius-button);
-    padding: var(--space-2) var(--space-3);
-    cursor: pointer;
-    transition: background-color var(--duration-fast) ease;
-}
-
-.search-history__clear-btn:hover:enabled {
-    background-color: var(--destructive-a08);
-}
-
-.search-history__clear-btn:disabled {
-    opacity: 0.6;
-    cursor: default;
+    composes: danger from "./AccountButton.module.css";
 }
 
 /* Inline confirmation row */
@@ -325,79 +295,24 @@
     color: var(--primary-foreground, #fff);
 }
 
+/* Converged to `.ghost` (not `.danger`) for the same reason as
+ * AlertsList's `.alertsDeleteBtn` — a soft, muted-until-hover trigger for
+ * a two-step inline confirm. Local hover override keeps the destructive
+ * tint instead of ghost's neutral hover. */
 .search-history__delete-btn {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--core-muted-foreground);
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: var(--radius-button);
-    padding: var(--space-2) var(--space-3);
-    cursor: pointer;
-    white-space: nowrap;
-    transition:
-        color var(--duration-fast) ease,
-        border-color var(--duration-fast) ease;
+    composes: ghost from "./AccountButton.module.css";
 }
 
 .search-history__delete-btn:hover:enabled {
-    color: var(--destructive, oklch(0.6 0.22 25));
+    background-color: var(--destructive-a08);
     border-color: var(--destructive-a25);
-}
-
-.search-history__delete-btn:disabled {
-    opacity: 0.4;
-    cursor: default;
+    color: var(--destructive, oklch(0.6 0.22 25));
 }
 
 .search-history__delete-confirm {
     display: flex;
     align-items: center;
     gap: var(--space-1);
-}
-
-/* ─── Empty state ────────────────────────────────────────────────────────── */
-
-.search-history__empty {
-    padding: var(--space-12) var(--space-4);
-    text-align: center;
-}
-
-.search-history__empty-title {
-    font-family: var(--font-heading);
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--core-foreground);
-    margin: 0 0 var(--space-3);
-}
-
-.search-history__empty-body {
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;
-    color: var(--core-muted-foreground);
-    max-width: 36ch;
-    margin: 0 auto;
-}
-
-.search-history__empty-cta {
-    display: inline-block;
-    margin-top: var(--space-4);
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--brand-primary);
-    border: 1px solid var(--brand-primary-a30);
-    border-radius: var(--radius-button);
-    padding: var(--space-2) var(--space-4);
-    text-decoration: none;
-    transition:
-        background-color var(--duration-fast) ease,
-        color var(--duration-fast) ease;
-}
-
-.search-history__empty-cta:hover {
-    background-color: var(--brand-primary);
-    color: var(--primary-foreground, #fff);
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */

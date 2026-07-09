@@ -122,7 +122,7 @@ export function CollectionDetailActions({
         <div className={styles.actions}>
             <button
                 type="button"
-                className={`${styles.btn} ${styles.editBtn}`}
+                className={styles.editBtn}
                 onClick={handleEditOpen}
                 disabled={isDeleting}
                 aria-label={t('account.favorites.collections.edit', 'Editar colección')}
@@ -132,7 +132,7 @@ export function CollectionDetailActions({
             </button>
 
             <LoadingButton
-                className={`${styles.btn} ${styles.deleteBtn}`}
+                className={styles.deleteBtn}
                 onClick={() => void handleDelete()}
                 loading={isDeleting}
                 loadingLabel={deletingLabel}

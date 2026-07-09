@@ -9,6 +9,7 @@
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { PreferenceToggles } from '@/components/account/PreferenceToggles.client';
 import { RestartTour } from '@/components/account/RestartTour.client';
 import { createTranslations } from '@/lib/i18n';
@@ -37,18 +38,19 @@ const apiUrl = getApiUrl();
 		apiUrl={apiUrl}
 	/>
 
-	<section class="account-tour-card">
-		<RestartTour client:idle locale={locale} userRole={user.role} />
-	</section>
+	<div class="preferencias-tour-gap">
+		<AccountSectionCard>
+			<RestartTour client:idle locale={locale} userRole={user.role} />
+		</AccountSectionCard>
+	</div>
 </AccountLayout>
 
 <style>
-	.account-tour-card {
+	/* Stacked-card spacing: PreferenceToggles renders its own card (no outer
+	   margin, same as every other AccountSection.module.css consumer), so this
+	   page needs an explicit gap before the RestartTour card below it. */
+	.preferencias-tour-gap {
 		margin-top: var(--space-6);
-		padding: var(--space-5);
-		border: 1px solid var(--core-foreground-a08);
-		border-radius: var(--radius-card);
-		background-color: var(--core-card);
 	}
 
 	:global(.restart-tour) {
@@ -57,12 +59,36 @@ const apiUrl = getApiUrl();
 		gap: var(--space-3);
 	}
 
+	/*
+	 * Same dot-bullet + divider treatment as AccountSection.module.css's
+	 * `.cardTitle` (BETA-143c nitpick), so this heading matches every other
+	 * section card title. `margin` stays 0 (unlike `.cardTitle`'s
+	 * `margin: 0 0 var(--space-5)`) because `.restart-tour` already provides
+	 * vertical rhythm via its own flex `gap`.
+	 */
 	:global(.restart-tour__title) {
+		position: relative;
 		margin: 0;
+		padding-bottom: var(--space-3);
+		border-bottom: 1px solid var(--core-foreground-a05);
 		font-family: var(--font-heading);
 		font-size: 1.125rem;
-		font-weight: 600;
+		font-weight: 700;
 		color: var(--core-foreground);
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	:global(.restart-tour__title)::before {
+		content: "";
+		display: inline-block;
+		width: 8px;
+		height: 8px;
+		border-radius: var(--radius-pill);
+		background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+		flex-shrink: 0;
+		box-shadow: 0 0 0 3px var(--brand-primary-a12);
 	}
 
 	:global(.restart-tour__desc) {

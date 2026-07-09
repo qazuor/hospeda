@@ -15,6 +15,7 @@
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import WhatsAppCTA from '@/components/newsletter/WhatsAppCTA.astro';
 import { NewsletterPreferences } from '@/components/newsletter/NewsletterPreferences.client';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -45,11 +46,13 @@ const apiUrl = getApiUrl();
 <AccountLayout locale={locale} title={pageTitle} activeSection="newsletter">
     <AccountPageHeader title={pageTitle} />
 
-    <NewsletterPreferences
-        client:load
-        locale={locale}
-        apiUrl={apiUrl}
-    />
+    <AccountSectionCard>
+        <NewsletterPreferences
+            client:load
+            locale={locale}
+            apiUrl={apiUrl}
+        />
+    </AccountSectionCard>
 
     <WhatsAppCTA locale={locale} source="account_preferences" />
 </AccountLayout>

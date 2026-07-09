@@ -1,6 +1,7 @@
 /* FavoritesWidget.module.css — horizontal bar breakdown of favorites */
 
 .widget {
+    composes: branded from '../account/AccountSection.module.css';
     display: flex;
     flex-direction: column;
     gap: var(--space-3, 0.75rem);

@@ -31,20 +31,16 @@
 }
 
 /* ── Section card ──────────────────────────────────────────────────────── */
+/* Converged onto the canonical "section card" recipe (BETA-143 5c) — this */
+/* card serves the same page-level role as ProfileEditForm's sections, so it */
+/* reuses AccountSection.module.css instead of a divergent local recipe. */
 
 .section {
-    background-color: var(--core-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-card);
-    padding: var(--space-6, 24px);
+    composes: card from './AccountSection.module.css';
 }
 
 .sectionTitle {
-    font-family: var(--font-heading);
-    font-weight: 600;
-    font-size: 1rem;
-    color: var(--core-muted-foreground);
-    margin: 0 0 var(--space-5, 20px);
+    composes: cardTitle from './AccountSection.module.css';
 }
 
 /* ── Preference row ────────────────────────────────────────────────────── */

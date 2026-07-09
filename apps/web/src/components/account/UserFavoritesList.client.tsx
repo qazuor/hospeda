@@ -595,9 +595,10 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
 
                 {uncollectedBookmarks.length === 0 ? (
                     <EmptyFavorites
-                        label={t(
-                            'account.favorites.empty',
-                            'No tenés favoritos en esta categoría.'
+                        title={t('account.favorites.empty', 'No tenés favoritos en esta categoría')}
+                        description={t(
+                            'account.favorites.emptyAction',
+                            'Empezá explorando contenido para guardar tus favoritos'
                         )}
                     />
                 ) : (
@@ -683,7 +684,11 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                     </div>
                 ) : collections.length === 0 ? (
                     <EmptyFavorites
-                        label={t('account.favorites.collections.empty', 'Aún no tenés colecciones')}
+                        title={t('account.favorites.collections.empty', 'Aún no tenés colecciones')}
+                        description={t(
+                            'account.favorites.emptyAction',
+                            'Empezá explorando contenido para guardar tus favoritos'
+                        )}
                     />
                 ) : (
                     <ul

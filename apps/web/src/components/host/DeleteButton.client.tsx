@@ -47,7 +47,9 @@ export interface DeleteButtonProps {
 /**
  * DeleteButton — danger action island that soft-deletes an accommodation.
  *
- * Renders inline reusing the PropertyCard's existing action button styles.
+ * Renders inline using the shared AccountButton compact variants (BETA-143e)
+ * composed by `./UnpublishButton.module.css`, matching PropertyCard's other
+ * per-row action links.
  *
  * @param props - See `DeleteButtonProps`.
  */
@@ -98,7 +100,7 @@ export function DeleteButton({
             <span style={{ display: 'contents' }}>
                 <button
                     type="button"
-                    className={`${styles.action} ${styles.danger}`}
+                    className={styles.danger}
                     onClick={handleRequestConfirm}
                 >
                     {label}
@@ -143,14 +145,14 @@ export function DeleteButton({
                 </span>
                 <button
                     type="button"
-                    className={`${styles.action} ${styles.danger}`}
+                    className={styles.danger}
                     onClick={handleConfirm}
                 >
                     {confirmYes}
                 </button>
                 <button
                     type="button"
-                    className={`${styles.action} ${styles.secondary}`}
+                    className={styles.secondary}
                     onClick={handleCancel}
                 >
                     {confirmNo}
@@ -163,7 +165,7 @@ export function DeleteButton({
     return (
         <button
             type="button"
-            className={`${styles.action} ${styles.danger}`}
+            className={styles.danger}
             disabled
             aria-busy="true"
         >
