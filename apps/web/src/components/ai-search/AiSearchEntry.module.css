@@ -395,14 +395,9 @@
 
 .drawerBody > * {
     /* SearchChatPanel has its own border/shadow — override to fill the drawer */
-    /* biome-ignore lint/complexity/noImportantStyles: override nested SearchChatPanel's own border/shadow so it fills the drawer (see rule comment) */
     border: none !important;
-    /* biome-ignore lint/complexity/noImportantStyles: override nested SearchChatPanel's own border/shadow so it fills the drawer (see rule comment) */
     border-radius: 0 !important;
-    /* biome-ignore lint/complexity/noImportantStyles: override nested SearchChatPanel's own border/shadow so it fills the drawer (see rule comment) */
     box-shadow: none !important;
-    /* biome-ignore lint/complexity/noImportantStyles: override nested SearchChatPanel's own border/shadow so it fills the drawer (see rule comment) */
     min-height: 100% !important;
-    /* biome-ignore lint/complexity/noImportantStyles: override nested SearchChatPanel's own border/shadow so it fills the drawer (see rule comment) */
     max-height: none !important;
 }

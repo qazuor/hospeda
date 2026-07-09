@@ -490,9 +490,7 @@
     .submitButton,
     .successBadge,
     .spinner {
-        /* biome-ignore lint/complexity/noImportantStyles: prefers-reduced-motion override; must beat component animation/transition */
         animation: none !important;
-        /* biome-ignore lint/complexity/noImportantStyles: prefers-reduced-motion override; must beat component animation/transition */
         transition: none !important;
     }
 }

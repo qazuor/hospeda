@@ -133,7 +133,6 @@
 }
 
 /** Image inside any cell. */
-/* biome-ignore lint/style/noDescendingSpecificity: `.moreOverlay .cellImg` intentionally raises specificity to dim the image behind the "+N more" overlay; base `.cellImg` must stay declared where it is */
 .cellImg {
     width: 100%;
     height: 100%;
@@ -152,7 +151,6 @@
 }
 
 /** Dim the background image to make the count label legible. */
-/* biome-ignore lint/style/noDescendingSpecificity: `.moreOverlay .cellImg` intentionally raises specificity to dim the image behind the "+N more" overlay; base `.cellImg` must stay declared where it is */
 .moreOverlay .cellImg {
     filter: brightness(0.45);
 }
@@ -717,7 +715,6 @@
     /* Thumb grid: switch to horizontal row of equal columns */
     .thumbGrid {
         grid-row: auto;
-        /* biome-ignore lint/complexity/noImportantStyles: responsive override forcing single-row thumb strip; must beat the base grid-template-rows */
         grid-template-rows: unset !important;
         height: 100px;
     }
