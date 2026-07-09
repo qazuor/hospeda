@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0005-owner-test-daily-trial
+ * Data migration: 0006-owner-test-daily-trial
  *
  * Dual-write counterpart (HOS-25) for the HOS-110 baseline change: the
  * `owner-test-daily` testing plan (billing-interval-override tooling, see
@@ -55,7 +55,7 @@ import { and, billingPlans, eq, sql } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0005-owner-test-daily-trial',
+    name: '0006-owner-test-daily-trial',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
