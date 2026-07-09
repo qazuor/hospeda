@@ -483,7 +483,7 @@ be deleted outright.
 
 `GET /api/v1/protected/billing/trial/status` already existed pre-HOS-115 with gate
 `none` ("Trial status self-read; always accessible") in
-[`docs/billing/endpoint-gate-matrix.md`](../../docs/billing/endpoint-gate-matrix.md).
+[`docs/billing/endpoint-gate-matrix.md`](../../../docs/billing/endpoint-gate-matrix.md).
 HOS-115 only added a field (`intendedInterval`) to its response — it did not change the
 gate decision, and no new route was added. **No gate-matrix row change was required.**
 
