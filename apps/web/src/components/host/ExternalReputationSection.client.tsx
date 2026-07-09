@@ -576,6 +576,13 @@ export function ExternalReputationSection({
                     </select>
                 </div>
 
+                <p
+                    className={styles.fieldHint}
+                    data-testid="ext-rep-url-hint"
+                >
+                    {urlHint}
+                </p>
+
                 <div className={styles.addFormRow}>
                     <label
                         htmlFor="ext-rep-url"
@@ -592,13 +599,6 @@ export function ExternalReputationSection({
                         placeholder={'https://...'}
                     />
                 </div>
-
-                <p
-                    className={styles.fieldHint}
-                    data-testid="ext-rep-url-hint"
-                >
-                    {urlHint}
-                </p>
 
                 <div className={styles.addFormCheckboxRow}>
                     <label className={styles.addFormCheckbox}>
