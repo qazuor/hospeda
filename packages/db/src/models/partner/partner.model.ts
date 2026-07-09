@@ -52,7 +52,7 @@ export class PartnerModel extends BaseModelImpl<Partner> {
             conditions.push(
                 and(
                     eq(partners.lifecycleState, 'ACTIVE'),
-                    eq(partners.subscriptionStatus, 'ACTIVE')
+                    eq(partners.subscriptionStatus, 'active')
                 )
             );
         }
@@ -128,7 +128,7 @@ export class PartnerModel extends BaseModelImpl<Partner> {
         const db = getDb();
         const conditions = [
             eq(partners.lifecycleState, 'ACTIVE'),
-            eq(partners.subscriptionStatus, 'ACTIVE'),
+            eq(partners.subscriptionStatus, 'active'),
             isNull(partners.deletedAt)
         ];
 
@@ -208,7 +208,7 @@ export class PartnerModel extends BaseModelImpl<Partner> {
             .where(
                 and(
                     eq(partners.lifecycleState, 'ACTIVE'),
-                    eq(partners.subscriptionStatus, 'ACTIVE'),
+                    eq(partners.subscriptionStatus, 'active'),
                     isNull(partners.deletedAt),
                     gte(partners.endsAt, new Date()),
                     lte(partners.endsAt, cutoffDate)
@@ -231,7 +231,7 @@ export class PartnerModel extends BaseModelImpl<Partner> {
             .where(
                 and(
                     eq(partners.lifecycleState, 'ACTIVE'),
-                    eq(partners.subscriptionStatus, 'ACTIVE'),
+                    eq(partners.subscriptionStatus, 'active'),
                     isNull(partners.deletedAt),
                     lte(partners.endsAt, now)
                 )

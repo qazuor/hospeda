@@ -24,6 +24,7 @@ const ENTITY_FOLDER_MAP: Record<string, string> = {
     destinationReviews: 'destinationReview',
     postSponsorships: 'postSponsorship',
     postSponsors: 'postSponsor',
+    partners: 'partner',
     eventOrganizers: 'eventOrganizer',
     eventLocations: 'eventLocation',
     userBookmarkCollections: 'userBookmarkCollection',

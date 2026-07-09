@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/partner.schema.json",
+    "id": "003-partner-panaderia-la-espiga",
+    "slug": "panaderia-la-espiga",
+    "name": "Panadería La Espiga",
+    "type": "commerce",
+    "tier": "bronze",
+    "logoUrl": "https://images.pexels.com/photos/1857343/pexels-photo-1857343.jpeg",
+    "websiteUrl": "https://www.panaderialaespiga.com.ar",
+    "description": "Panadería artesanal de Concepción del Uruguay, especializada en pan casero, facturas y productos regionales entrerrianos. Reparto diario a cabañas y hospedajes de la ciudad.",
+    "subscriptionStatus": "active",
+    "lifecycleState": "ACTIVE",
+    "startsAt": "2025-08-20T00:00:00.000Z"
+}

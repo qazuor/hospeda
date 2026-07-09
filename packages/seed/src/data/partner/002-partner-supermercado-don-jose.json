@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/partner.schema.json",
+    "id": "002-partner-supermercado-don-jose",
+    "slug": "supermercado-don-jose",
+    "name": "Supermercado Don José",
+    "type": "commerce",
+    "tier": "silver",
+    "logoUrl": "https://images.pexels.com/photos/264636/pexels-photo-264636.jpeg",
+    "websiteUrl": "https://www.donjosesupermercados.com.ar",
+    "description": "Supermercado familiar entrerriano con más de 40 años de trayectoria en el Litoral. Ofrece productos regionales, almacén completo y despensa para turistas que llegan a cabañas y complejos de la zona.",
+    "subscriptionStatus": "active",
+    "lifecycleState": "ACTIVE",
+    "startsAt": "2025-05-10T00:00:00.000Z"
+}
