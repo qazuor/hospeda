@@ -41,28 +41,53 @@ vi.mock('../../src/services/subscription-discount-signup.service', () => ({
 const resolveFullPlanPriceCentavosMock = vi.fn();
 const calculatePromoCodeEffectMock = vi.fn();
 const redeemAndRecordUsageMock = vi.fn();
-vi.mock('@repo/service-core', () => ({
-    resolveFullPlanPriceCentavos: (...args: unknown[]) => resolveFullPlanPriceCentavosMock(...args),
-    calculatePromoCodeEffect: (...args: unknown[]) => calculatePromoCodeEffectMock(...args),
-    redeemAndRecordUsage: (...args: unknown[]) => redeemAndRecordUsageMock(...args)
-}));
+// HOS-110: keep the rest of the real module (PlanService, resolvePlanTrialConfig,
+// withServiceTransaction, etc.) intact via importActual — subscription-checkout.service.ts
+// now transitively imports TrialService (./trial.service.js), which imports
+// clearEntitlementCache from '../middlewares/entitlement', which constructs a
+// module-level `new PlanService()` from `@repo/service-core` at import time. A
+// fully-replaced mock (no importActual) leaves PlanService undefined and breaks
+// that construction for every test in this file, not just the new trial ones.
+vi.mock('@repo/service-core', async () => {
+    const actual = await vi.importActual('@repo/service-core');
+    return {
+        ...actual,
+        resolveFullPlanPriceCentavos: (...args: unknown[]) =>
+            resolveFullPlanPriceCentavosMock(...args),
+        calculatePromoCodeEffect: (...args: unknown[]) => calculatePromoCodeEffectMock(...args),
+        redeemAndRecordUsage: (...args: unknown[]) => redeemAndRecordUsageMock(...args)
+    };
+});
 
 const dbExecuteMock = vi.fn();
 const dbInsertValuesMock = vi.fn();
-vi.mock('@repo/db', () => ({
-    getDb: vi.fn(() => ({
-        execute: dbExecuteMock,
-        insert: vi.fn(() => ({ values: dbInsertValuesMock }))
-    })),
-    billingSubscriptions: { __table: 'billing_subscriptions' },
-    commerceListingSubscriptions: { __table: 'commerce_listing_subscriptions' },
-    sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
-    withTransaction: vi.fn()
-}));
+// HOS-110: importActual (not a full replace) for the same reason as the
+// @repo/service-core mock above — the real @repo/service-core module graph
+// pulled in transitively via TrialService needs real @repo/db exports too.
+vi.mock('@repo/db', async () => {
+    const actual = await vi.importActual('@repo/db');
+    return {
+        ...actual,
+        getDb: vi.fn(() => ({
+            execute: dbExecuteMock,
+            insert: vi.fn(() => ({ values: dbInsertValuesMock }))
+        })),
+        billingSubscriptions: { __table: 'billing_subscriptions' },
+        commerceListingSubscriptions: { __table: 'commerce_listing_subscriptions' },
+        sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
+        withTransaction: vi.fn()
+    };
+});
 
-vi.mock('@repo/schemas', () => ({
-    ProductDomainEnum: { ACCOMMODATION: 'accommodation', COMMERCE: 'commerce' }
-}));
+// HOS-110: importActual for the same transitive reason (permission.ts, imported
+// via @repo/service-core, needs the real PermissionEnum and friends).
+vi.mock('@repo/schemas', async () => {
+    const actual = await vi.importActual('@repo/schemas');
+    return {
+        ...actual,
+        ProductDomainEnum: { ACCOMMODATION: 'accommodation', COMMERCE: 'commerce' }
+    };
+});
 
 vi.mock('../../src/utils/env', () => ({ env: { HOSPEDA_BILLING_POLLING_ENABLED: false } }));
 vi.mock('../../src/utils/logger', () => ({
@@ -163,6 +188,198 @@ const ANNUAL_BASE = {
     planSlug: 'owner-premium',
     urls: ANNUAL_URLS
 } as const;
+
+// --- HOS-110 W1 fixtures: a plan that declares a trial ---------------------
+
+/** Same slug as PLAN/MONTHLY_BASE.planSlug, but declares a 14-day trial. */
+const TRIAL_PLAN = {
+    id: 'plan-uuid-trial',
+    name: 'owner-premium',
+    metadata: { hasTrial: true, trialDays: 14 },
+    prices: [
+        {
+            id: 'price-m',
+            billingInterval: 'month',
+            intervalCount: 1,
+            active: true,
+            unitAmount: 10000
+        }
+    ]
+};
+
+/**
+ * Billing stub for the HOS-110 W1 trial-vs-promo branch tests. Extends
+ * `makeBilling`'s shape with the two extra calls the TRIAL branch (and the
+ * real `TrialService` it constructs) needs: `subscriptions.getByCustomerId`
+ * (trial-eligibility check) and `subscriptions.get` (post-create trialEnd
+ * lookup). `plans.list()` resolves {@link TRIAL_PLAN} so both
+ * `resolvePlanBySlug` and `TrialService.startTrial`'s own internal plan
+ * lookup agree on the same trial-declaring plan.
+ */
+function makeTrialBilling(
+    opts: {
+        existingSubscriptions?: readonly unknown[];
+        trialSubscription?: Record<string, unknown> | null;
+        createdTrialId?: string;
+    } = {}
+) {
+    const createdTrialId = opts.createdTrialId ?? 'trial-sub-1';
+    return {
+        plans: { list: vi.fn().mockResolvedValue({ data: [TRIAL_PLAN] }) },
+        customers: {
+            get: vi.fn().mockResolvedValue({
+                id: 'cust-1',
+                email: 'a@b.test',
+                name: 'A B',
+                livemode: false
+            })
+        },
+        subscriptions: {
+            create: vi.fn().mockResolvedValue({ id: createdTrialId }),
+            cancel: vi.fn().mockResolvedValue(undefined),
+            getByCustomerId: vi.fn().mockResolvedValue(opts.existingSubscriptions ?? []),
+            get: vi
+                .fn()
+                .mockResolvedValue(
+                    opts.trialSubscription === undefined
+                        ? { id: createdTrialId, trialEnd: null }
+                        : opts.trialSubscription
+                )
+        },
+        checkout: { create: vi.fn() },
+        getStorage: vi.fn(() => ({}))
+    };
+}
+
+describe('HOS-110 W1: promo effect_kind reordered BEFORE the trial branch', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('comp wins over trial: comp branch resolves first, trial is never attempted', async () => {
+        resolveCheckoutPromoPlanMock.mockResolvedValue({
+            kind: 'comp',
+            promoCodeId: 'pc-1',
+            code: 'COMPVIP'
+        });
+        createCompSubscriptionMock.mockResolvedValue({ localSubscriptionId: 'comp-sub-1' });
+        const billing = makeTrialBilling();
+
+        const result = await initiatePaidMonthlySubscription({
+            ...MONTHLY_BASE,
+            // biome-ignore lint/suspicious/noExplicitAny: test billing stub
+            billing: billing as any,
+            promoCode: 'COMPVIP'
+        });
+
+        expect(result.appliedEffect).toBe('comp');
+        expect(result.localSubscriptionId).toBe('comp-sub-1');
+        expect(createCompSubscriptionMock).toHaveBeenCalledOnce();
+        // The trial branch never ran: no eligibility check, no trial create.
+        expect(billing.subscriptions.getByCustomerId).not.toHaveBeenCalled();
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+
+    it('trial_extension: the granted trial length is base + the code freeTrialDays', async () => {
+        resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'trial', freeTrialDays: 7 });
+        const billing = makeTrialBilling({
+            trialSubscription: { id: 'trial-sub-1', trialEnd: null }
+        });
+
+        const before = Date.now();
+        const result = await initiatePaidMonthlySubscription({
+            ...MONTHLY_BASE,
+            // biome-ignore lint/suspicious/noExplicitAny: test billing stub
+            billing: billing as any,
+            promoCode: 'EXTEND7'
+        });
+        const after = Date.now();
+
+        expect(result.appliedEffect).toBe('trial');
+        expect(result.promoCodeIgnored).toBeUndefined();
+        // TrialService.startTrial receives the combined length: 14 base + 7 extension.
+        expect(billing.subscriptions.create).toHaveBeenCalledWith(
+            expect.objectContaining({ trialDays: 21 })
+        );
+        const expiresAtMs = new Date(result.expiresAt).getTime();
+        expect(expiresAtMs).toBeGreaterThanOrEqual(before + 21 * 24 * 60 * 60 * 1000 - 5000);
+        expect(expiresAtMs).toBeLessThanOrEqual(after + 21 * 24 * 60 * 60 * 1000 + 5000);
+    });
+
+    it('discount: the trial wins outright and the discount is discarded (promoCodeIgnored=true)', async () => {
+        resolveCheckoutPromoPlanMock.mockResolvedValue({
+            kind: 'discount',
+            promoCodeId: 'pc-1',
+            code: 'LANZA50',
+            effect: { kind: 'discount', valueKind: 'percentage', value: 50, durationCycles: 3 }
+        });
+        const billing = makeTrialBilling({
+            trialSubscription: { id: 'trial-sub-1', trialEnd: '2027-01-01T00:00:00.000Z' }
+        });
+
+        const result = await initiatePaidMonthlySubscription({
+            ...MONTHLY_BASE,
+            // biome-ignore lint/suspicious/noExplicitAny: test billing stub
+            billing: billing as any,
+            promoCode: 'LANZA50'
+        });
+
+        expect(result.appliedEffect).toBe('trial');
+        expect(result.promoCodeIgnored).toBe(true);
+        expect(result.expiresAt).toBe('2027-01-01T00:00:00.000Z');
+        // No extension — the trial is granted at its base length, unchanged.
+        expect(billing.subscriptions.create).toHaveBeenCalledWith(
+            expect.objectContaining({ trialDays: 14 })
+        );
+        // The discount machinery is never invoked — the code was discarded,
+        // not persisted anywhere (no post-trial discount, per owner decision).
+        expect(applySignupDiscountToMonthlyMock).not.toHaveBeenCalled();
+        expect(calculatePromoCodeEffectMock).not.toHaveBeenCalled();
+        expect(resolveFullPlanPriceCentavosMock).not.toHaveBeenCalled();
+    });
+
+    it('none: no promo code supplied → unchanged trial, no promoCodeIgnored flag', async () => {
+        resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'none' });
+        const billing = makeTrialBilling({
+            trialSubscription: { id: 'trial-sub-1', trialEnd: '2027-02-01T00:00:00.000Z' }
+        });
+
+        const result = await initiatePaidMonthlySubscription({
+            ...MONTHLY_BASE,
+            // biome-ignore lint/suspicious/noExplicitAny: test billing stub
+            billing: billing as any
+        });
+
+        expect(result.appliedEffect).toBe('trial');
+        expect(result.promoCodeIgnored).toBeUndefined();
+        expect(billing.subscriptions.create).toHaveBeenCalledWith(
+            expect.objectContaining({ trialDays: 14 })
+        );
+    });
+
+    it('an invalid promo code always throws INVALID_PROMO_CODE, even for a trial-eligible customer', async () => {
+        resolveCheckoutPromoPlanMock.mockResolvedValue({
+            kind: 'invalid',
+            message: 'This promo code has expired'
+        });
+        const billing = makeTrialBilling();
+
+        let thrown: unknown;
+        try {
+            await initiatePaidMonthlySubscription({
+                ...MONTHLY_BASE,
+                // biome-ignore lint/suspicious/noExplicitAny: test billing stub
+                billing: billing as any,
+                promoCode: 'EXPIRED'
+            });
+        } catch (e) {
+            thrown = e;
+        }
+
+        expect((thrown as SubscriptionCheckoutError).code).toBe('INVALID_PROMO_CODE');
+        // Neither the comp/trial branches nor the paid path ever ran.
+        expect(billing.subscriptions.getByCustomerId).not.toHaveBeenCalled();
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+});
 
 describe('monthly comp branch', () => {
     beforeEach(() => vi.clearAllMocks());
