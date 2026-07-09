@@ -46,7 +46,7 @@
     width: 36px;
     height: 36px;
     border: 3px solid var(--border, oklch(0.8 0 0));
-    border-top-color: var(--primary, oklch(0.5 0.18 260));
+    border-top-color: var(--brand-primary, oklch(0.5 0.18 260));
     border-radius: 50%;
     animation: spin 0.75s linear infinite;
 }
@@ -80,7 +80,7 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--primary, oklch(0.5 0.18 260));
+    color: var(--brand-primary, oklch(0.5 0.18 260));
     cursor: pointer;
     text-decoration: underline;
     padding: 0;
@@ -142,8 +142,8 @@
     font-family: var(--font-sans);
     font-size: 0.9rem;
     font-weight: 500;
-    color: white;
-    background-color: var(--primary, oklch(0.5 0.18 260));
+    color: var(--primary-foreground);
+    background-color: var(--brand-primary, oklch(0.5 0.18 260));
     border: none;
     border-radius: var(--radius-button, 8px);
     cursor: pointer;

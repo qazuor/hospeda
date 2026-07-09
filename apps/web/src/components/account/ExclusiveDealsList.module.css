@@ -83,7 +83,7 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     font-weight: 600;
-    color: #fff;
+    color: var(--primary-foreground);
     background-color: var(--brand-primary);
     border-radius: var(--radius-button);
     padding: var(--space-2) var(--space-4);

@@ -11,18 +11,10 @@
 
 .header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     gap: var(--space-4, 1rem);
     flex-wrap: wrap;
-}
-
-.title {
-    margin: 0;
-    font-family: var(--font-heading);
-    font-weight: 700;
-    font-size: 1.5rem;
-    color: var(--core-foreground);
 }
 
 .createButton {
