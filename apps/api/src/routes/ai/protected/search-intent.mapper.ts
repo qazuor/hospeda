@@ -54,15 +54,23 @@ type MappedParams = Record<string, string | string[]>;
  * query params, URL-serialised and ready to append to a `URLSearchParams` instance.
  *
  * Rules applied (§5.3):
- * - Location priority (exclusive): `destinationId` > geo (`lat`+`lng`) > `city` as `q`.
+ * - Location priority (exclusive): `resolvedDestinationId` (server-resolved from
+ *   `entities.city`) > `entities.destinationId` > geo (`lat`+`lng`) > `city` as `q`.
  * - `radius` is only emitted when both `latitude` and `longitude` are present.
  *   Clamped to {@link MAX_RADIUS_KM} km.
- * - Guests: if `minGuests > maxGuests`, `maxGuests` is dropped.
- * - Bedrooms: if `minBedrooms > maxBedrooms`, `maxBedrooms` is dropped.
- * - Bathrooms: if `minBathrooms > maxBathrooms`, `maxBathrooms` is dropped.
- * - Price: if `minPrice > maxPrice` (both present), both are dropped.
+ * - Guests: if `minGuests > maxGuests`, `maxGuests` is dropped. If
+ *   `minGuests === maxGuests`, `maxGuests` is ALSO dropped — an accommodation has
+ *   a single `capacity` value filtered by `capacity >= minGuests` /
+ *   `capacity <= maxGuests`, so "for N people" must collapse to `capacity >= N`,
+ *   not an exact-match range (see the NOTE above the guest-capacity block below).
+ * - Bedrooms / Bathrooms: same collapse-to-min rule as guests (min === max → only
+ *   min emitted; min > max → max dropped as a conflict).
+ * - Price: if `minPrice > maxPrice` (both present), both are dropped. Equal
+ *   min/max IS kept (an exact price point is a legitimate query) — unlike
+ *   guests/bedrooms/bathrooms, price has no capacity-style range semantics.
  * - Currency: only emitted when at least one price param was emitted.
  * - Rating: clamped to [0, 5]. If after clamping `minRating > maxRating`, `maxRating` is dropped.
+ *   Equal min/max IS kept, same rationale as price.
  * - Booleans (`hasPool`, `hasWifi`, `allowsPets`, `hasParking`): emitted as the
  *   **string** `'true'` — never as a native boolean.
  * - Amenities: forwarded from `resolvedAmenityIds` only when non-empty.
@@ -76,19 +84,33 @@ type MappedParams = Record<string, string | string[]>;
  *   by the route handler (§5.4). Empty array → field omitted.
  * @param resolvedFeatureIds - UUID strings resolved from `entities.featureSlugs`
  *   by the route handler (§5.4). Empty array → field omitted.
+ * @param resolvedDestinationId - Destination UUID resolved server-side from
+ *   `entities.city` by the route handler (mirrors the amenity/feature slug
+ *   resolution pattern). When present, wins over `entities.destinationId`, geo,
+ *   and `city` — it is a strictly better match than a raw keyword search because
+ *   it targets the `destinationId` filter directly instead of a free-text ILIKE
+ *   on name/description. `undefined` when the city could not be resolved to a
+ *   known destination, in which case the existing priority order applies.
  * @returns URL-ready params — pass directly to `URLSearchParams` without
  *   further conversion.
  */
 export function mapIntentToSearchParams(
     entities: SearchIntentEntities,
     resolvedAmenityIds: readonly string[] = [],
-    resolvedFeatureIds: readonly string[] = []
+    resolvedFeatureIds: readonly string[] = [],
+    resolvedDestinationId?: string
 ): MappedParams {
     const params: MappedParams = {};
 
     // ── Location (exclusive, priority order) ─────────────────────────────────
-    if (entities.destinationId !== undefined) {
-        // Priority 1: known destination UUID — wins over all other location strategies.
+    if (resolvedDestinationId !== undefined) {
+        // Priority 0: server-resolved destination (from entities.city via the
+        // route handler's DB lookup) — wins over everything, including a
+        // model-hallucinated entities.destinationId, because it is verified
+        // against the destinations table.
+        params.destinationId = resolvedDestinationId;
+    } else if (entities.destinationId !== undefined) {
+        // Priority 1: known destination UUID — wins over geo and city.
         params.destinationId = entities.destinationId;
     } else if (entities.latitude !== undefined && entities.longitude !== undefined) {
         // Priority 2: geo coords. Both lat + lng must be present together.
@@ -101,7 +123,8 @@ export function mapIntentToSearchParams(
             params.radius = String(clampedRadius);
         }
     } else if (entities.city !== undefined) {
-        // Priority 3: city name as keyword search fallback.
+        // Priority 3: city name as keyword search fallback (the city did not
+        // resolve to a known destination — falls back to free-text search).
         params.q = entities.city;
     }
 
@@ -111,14 +134,22 @@ export function mapIntentToSearchParams(
     }
 
     // ── Guest capacity ────────────────────────────────────────────────────────
+    // NOTE: an accommodation has a single `capacity` value (extraInfo.capacity);
+    // minGuests filters `capacity >= min` and maxGuests filters `capacity <= max`.
+    // "for N people" therefore means `capacity >= N`, NOT `capacity === N` — so
+    // when min === max (the model expressed an exact headcount, not a range) only
+    // minGuests is emitted; emitting maxGuests too would wrongly exclude larger
+    // accommodations that comfortably fit N guests. An explicit range (min < max,
+    // e.g. "between 4 and 6") still emits both.
     if (entities.minGuests !== undefined || entities.maxGuests !== undefined) {
         const min = entities.minGuests;
         const max = entities.maxGuests;
 
         if (min !== undefined && max !== undefined) {
-            // Both present: drop maxGuests if it's less than minGuests.
+            // Both present: drop maxGuests if it's less than minGuests, or if it
+            // equals minGuests (exact headcount collapses to min-only).
             params.minGuests = String(min);
-            if (max >= min) {
+            if (max > min) {
                 params.maxGuests = String(max);
             }
         } else if (min !== undefined) {
@@ -129,13 +160,14 @@ export function mapIntentToSearchParams(
     }
 
     // ── Bedroom count ─────────────────────────────────────────────────────────
+    // Same min-only collapse rule as guest capacity — see NOTE above.
     if (entities.minBedrooms !== undefined || entities.maxBedrooms !== undefined) {
         const min = entities.minBedrooms;
         const max = entities.maxBedrooms;
 
         if (min !== undefined && max !== undefined) {
             params.minBedrooms = String(min);
-            if (max >= min) {
+            if (max > min) {
                 params.maxBedrooms = String(max);
             }
         } else if (min !== undefined) {
@@ -146,13 +178,14 @@ export function mapIntentToSearchParams(
     }
 
     // ── Bathroom count ────────────────────────────────────────────────────────
+    // Same min-only collapse rule as guest capacity — see NOTE above.
     if (entities.minBathrooms !== undefined || entities.maxBathrooms !== undefined) {
         const min = entities.minBathrooms;
         const max = entities.maxBathrooms;
 
         if (min !== undefined && max !== undefined) {
             params.minBathrooms = String(min);
-            if (max >= min) {
+            if (max > min) {
                 params.maxBathrooms = String(max);
             }
         } else if (min !== undefined) {
