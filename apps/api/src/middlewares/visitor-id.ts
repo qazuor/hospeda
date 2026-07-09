@@ -84,10 +84,25 @@ export function visitorIdMiddleware(): MiddlewareHandler {
         const incoming = getCookie(c, VISITOR_ID_COOKIE_NAME);
         // Only trust a value we minted; a malformed/attacker-supplied cookie is
         // regenerated rather than propagated into logs.
-        let visitorId = isValidVisitorId(incoming) ? incoming : undefined;
+        const hadValidCookie = isValidVisitorId(incoming);
+        const visitorId = hadValidCookie ? incoming : crypto.randomUUID();
 
-        if (visitorId === undefined) {
-            visitorId = crypto.randomUUID();
+        // Populate the ALS store BEFORE next() so every log line emitted while
+        // handling this request carries the visitorId.
+        setRequestContextVisitor({ visitorId });
+
+        await next();
+
+        // Persist the cookie AFTER next(), onto the FINAL response — never
+        // before. A downstream handler that returns its own Response replaces
+        // `c.res`; notably the Better Auth catch-all (`routes/auth/handler.ts`)
+        // returns `auth.handler(...)`'s Response verbatim. Writing Set-Cookie
+        // before next() attached it to the soon-to-be-replaced `c.res`, and the
+        // header merge corrupted Better Auth's own session Set-Cookie — logging
+        // in with 200 but no persisted session (401 on every protected route).
+        // Appending here, after the real response exists, leaves Better Auth's
+        // cookies untouched. Only write when we minted a fresh id.
+        if (!hadValidCookie) {
             setCookie(c, VISITOR_ID_COOKIE_NAME, visitorId, {
                 // No maxAge/expires: session cookie, dies on browser close.
                 httpOnly: true,
@@ -98,9 +113,5 @@ export function visitorIdMiddleware(): MiddlewareHandler {
                 path: '/'
             });
         }
-
-        setRequestContextVisitor({ visitorId });
-
-        await next();
     };
 }

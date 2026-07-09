@@ -141,6 +141,38 @@ describe('visitorIdMiddleware', () => {
         });
     });
 
+    describe('downstream Set-Cookie preservation (Better Auth regression)', () => {
+        it('should not drop a handler-issued Set-Cookie when it returns its own Response', async () => {
+            // Arrange — a handler that returns a FRESH Response carrying its own
+            // Set-Cookie, exactly like Better Auth's `return auth.handler(...)`
+            // in routes/auth/handler.ts. Writing the visitor cookie BEFORE
+            // next() used to attach it to a c.res this Response then replaced,
+            // corrupting the session cookie and 401-ing every protected route.
+            const app = new Hono();
+            app.use(requestId());
+            app.use(requestContextMiddleware());
+            app.use(visitorIdMiddleware());
+            app.get(
+                '/login',
+                () =>
+                    new Response('ok', {
+                        headers: {
+                            'set-cookie': 'better-auth.session_token=abc123; Path=/; HttpOnly'
+                        }
+                    })
+            );
+
+            // Act
+            const res = await app.request('/login');
+
+            // Assert — BOTH cookies survive on the final response
+            const setCookies = res.headers.getSetCookie();
+            const joined = setCookies.join(' || ');
+            expect(joined).toContain('better-auth.session_token=abc123');
+            expect(joined).toContain(`${VISITOR_ID_COOKIE_NAME}=`);
+        });
+    });
+
     describe('cookie attributes', () => {
         it('should set HttpOnly, SameSite=Lax, Path=/, and no Max-Age/Expires', async () => {
             // Arrange
