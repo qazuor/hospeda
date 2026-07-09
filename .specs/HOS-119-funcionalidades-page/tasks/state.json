@@ -1,0 +1,311 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-119",
+    "title": "Página pública /funcionalidades — catálogo human-friendly de features (marketing)",
+    "created": "2026-07-09T19:15:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create i18n namespace `features` (es/en/pt + config + types)",
+            "description": "Create packages/i18n/src/locales/{es,en,pt}/features.json with ALL brochure copy (hero, subnav labels, Un vistazo pilares, Viajeros, Anfitriones, Gastronomía y Experiencias, Marcas, Y además, Próximamente, CTA, footer note) — extract exact copy from .specs/HOS-119-funcionalidades-page/docs/brochure-reference.html. en/pt are copies of es (fallback). Register in packages/i18n/src/config.shared.ts: add 'features' to webNamespaces, the 3 imports, and the 3 spreads into trans. Run `pnpm gen:i18n-types` and `pnpm check-locales`.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003", "T-011"],
+            "subtasks": [
+                { "title": "es/features.json with full copy", "completed": false },
+                { "title": "en + pt features.json (copies of es)", "completed": false },
+                {
+                    "title": "register namespace in config.shared.ts (array + imports + spreads)",
+                    "completed": false
+                },
+                { "title": "gen:i18n-types + check-locales green", "completed": false }
+            ],
+            "tags": ["i18n", "content"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T19:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Create features-content.ts (structure, no prices)",
+            "description": "apps/web/src/lib/features-content.ts (named export, RO-RO). Structured data for the page: audience sections, plan-table rows with per-plan cells (cupos exactly as in the brochure: Viajeros Gratis/Plus/VIP, Anfitriones Básico/Pro/Premium), the 8 Próximamente items, and the icon component name (@repo/icons export) per row/card. NO prices. NO copy literals — reference i18n keys under `features.*`. Icons mapped per spec (ForkKnifeIcon, GalleryIcon for review photos, etc.).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-009"],
+            "subtasks": [
+                { "title": "audience sections + pilares structure", "completed": false },
+                { "title": "plan-table rows + cells (no prices)", "completed": false },
+                { "title": "8 Próximamente items", "completed": false },
+                { "title": "icon mapping to @repo/icons exports", "completed": false }
+            ],
+            "tags": ["web", "content"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T19:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Build page index.astro with all sections + scoped styles on tokens",
+            "description": "apps/web/src/pages/[lang]/funcionalidades/index.astro — SSR (no prerender), MarketingLayout, locale from Astro.locals.locale, createTranslations. Render the 10 sections in order (hero, subnav, Un vistazo, Viajeros, Anfitriones, Gastronomía y Experiencias, Marcas, Y además, Próximamente, CTA) consuming features-content.ts + t(). Port the brochure CSS to a scoped <style> replacing EVERY color/radius/font value with global.css tokens (mapeo in spec §3). Icons from @repo/icons (no inline svg). Section anchors/ids for the subnav.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-004", "T-005", "T-006", "T-007", "T-008", "T-012"],
+            "subtasks": [
+                { "title": "page shell + MarketingLayout + SSR + locale", "completed": false },
+                { "title": "hero + Un vistazo + audience sections markup", "completed": false },
+                { "title": "Próximamente + CTA markup", "completed": false },
+                {
+                    "title": "scoped styles ported to tokens (no hardcoded colors)",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "astro"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T19:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Hero animated blobs in CSS + reduced-motion",
+            "description": "Recreate the brochure hero's ambient color blobs with CSS radial-gradients + slow @keyframes using tokens (--brand-primary, --brand-accent, --hospeda-forest, --hospeda-sky). Wrap animation in @media (prefers-reduced-motion: reduce) that disables it. Verify contrast/legibility of hero text over blobs in BOTH light and dark themes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "CSS blobs on tokens", "completed": false },
+                { "title": "reduced-motion disables animation", "completed": false }
+            ],
+            "tags": ["web", "css"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T19:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Responsive plan tables (overflow-x, tabular-nums)",
+            "description": "Plan comparison tables scroll horizontally inside their own container (overflow-x: auto) on narrow viewports without breaking page width. Use font-variant-numeric: tabular-nums for cupo columns. Mark the middle plan (Plus / Pro) as 'popular'. No prices anywhere.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "overflow-x container per table", "completed": false },
+                { "title": "popular marker on middle plan", "completed": false }
+            ],
+            "tags": ["web", "css"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T19:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Audience subnav scroll-spy island",
+            "description": "apps/web/src/components/features/FeaturesSubnav.client.tsx (client:idle) reusing the PostTocActive.client.tsx pattern: IntersectionObserver toggles data-active on the static anchor links matching the section in view. Static subnav markup lives in the page; island only toggles active state. Smooth scroll on click respecting scroll-margin-top for the sticky header; instant under prefers-reduced-motion.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-010", "T-013"],
+            "subtasks": [
+                {
+                    "title": "island: IntersectionObserver + data-active toggle",
+                    "completed": false
+                },
+                { "title": "smooth scroll + reduced-motion", "completed": false }
+            ],
+            "tags": ["web", "react-island"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T19:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "SEO wiring + JSON-LD (CollectionPage + ItemList + Breadcrumb)",
+            "description": "Wire MarketingLayout title/description/canonicalPath from features namespace. In slot=\"head-extra\": CollectionPageJsonLd (name/description/url), ItemListJsonLd (the 4 audiences + Próximamente as items), BreadcrumbJsonLd (Inicio → Funcionalidades). Page indexable by default (no noindex) per OQ-1.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-008", "T-013"],
+            "subtasks": [
+                { "title": "SEOHead via layout props", "completed": false },
+                { "title": "3 JSON-LD nodes in head-extra", "completed": false }
+            ],
+            "tags": ["web", "seo"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T19:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Page test (source-string assertions)",
+            "description": "apps/web/test/pages/funcionalidades/index.test.ts — readFileSync + toContain/toMatch: uses MarketingLayout; no prerender=true; uses var(--) and NO hardcoded colors (#, rgb(, literal oklch); uses createTranslations + t('features.; imports icons from @repo/icons and NO inline <svg; renders the 10 section anchors; includes the 3 JSON-LD; hero respects prefers-reduced-motion.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-007"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                { "title": "layout/SSR/token/i18n/icon assertions", "completed": false },
+                { "title": "sections + JSON-LD + reduced-motion assertions", "completed": false }
+            ],
+            "tags": ["web", "test"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T19:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "features-content.ts unit test",
+            "description": "Unit test the content module: correct number of plan-table rows, correct cupos per plan (Viajeros + Anfitriones), 8 Próximamente items, and every referenced i18n key exists under features.* (guard against typos). No prices present in the data.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "rows/cupos/items assertions", "completed": false },
+                { "title": "i18n key existence guard", "completed": false }
+            ],
+            "tags": ["web", "test"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T19:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Subnav island test (testing-library)",
+            "description": "apps/web/test/components/features/FeaturesSubnav.test.tsx with @testing-library/react: toggles data-active on the correct anchor per in-view section; SSR-safe (no crash without IntersectionObserver); reduced-motion path.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "active-state toggle test", "completed": false },
+                { "title": "SSR-safe / no-IO guard", "completed": false }
+            ],
+            "tags": ["web", "test"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T19:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "check-locales + a11y sweep (both themes)",
+            "description": "pnpm check-locales green for the features namespace (es/en/pt parity). Page enters the existing axe a11y sweep with no new violations: contrast of badges/hero in light AND dark, visible focus on the subnav, accessible table scroll. Verify manually in both themes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-008"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "check-locales parity", "completed": false },
+                { "title": "axe sweep + manual contrast both themes", "completed": false }
+            ],
+            "tags": ["web", "a11y", "i18n"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T19:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Docs note (unlinked / share-manual page)",
+            "description": "Short note in apps/web/docs (and/or the page docblock) documenting that /funcionalidades/ is a public but intentionally unlinked marketing page shared manually by the owner; indexable by default; content is static (no billing/plans API).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-013"],
+            "subtasks": [],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T19:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Final gate: typecheck + lint + test + visual review",
+            "description": "pnpm typecheck, pnpm lint, pnpm test green (web scope). Visual review of the page in both light and dark themes against the approved brochure. Confirm no prices, no nav link, no hardcoded colors. Prepare PR to staging (title [HOS-119] feat(web): ...).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [
+                "T-004",
+                "T-005",
+                "T-006",
+                "T-007",
+                "T-008",
+                "T-009",
+                "T-010",
+                "T-011",
+                "T-012"
+            ],
+            "blocks": [],
+            "subtasks": [
+                { "title": "typecheck + lint + test green", "completed": false },
+                { "title": "visual review both themes", "completed": false }
+            ],
+            "tags": ["web", "verification"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T19:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 13,
+        "pending": 13,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.2
+    }
+}

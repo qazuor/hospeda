@@ -1,0 +1,638 @@
+<!-- REFERENCE ONLY: approved brochure for HOS-119. Embedded webfonts (Geologica/Roboto/Caveat) stripped; the real page uses the globally-loaded fonts. Colors here are literal for the artifact; the real page uses global.css tokens. -->
+<title>Hospeda · Todo lo que la plataforma hace por vos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+
+:root{
+  /* light — river, sun, forest, sand (real Hospeda tokens) */
+  --paper:oklch(0.99 0.004 240);
+  --paper-2:oklch(0.965 0.01 250);
+  --band-sand:oklch(0.955 0.022 82);
+  --card:oklch(1 0 0);
+  --ink:oklch(0.24 0.03 250);
+  --ink-2:oklch(0.45 0.03 255);
+  --ink-3:oklch(0.6 0.025 258);
+  --line:oklch(0.9 0.015 248);
+  --line-2:oklch(0.85 0.02 250);
+
+  --river:oklch(0.6 0.17 256);
+  --river-ink:oklch(0.47 0.15 258);
+  --river-soft:oklch(0.95 0.03 256);
+  --sun:oklch(0.68 0.17 52);
+  --sun-ink:oklch(0.55 0.16 48);
+  --sun-soft:oklch(0.95 0.04 72);
+  --forest:oklch(0.53 0.13 155);
+  --forest-ink:oklch(0.46 0.12 155);
+  --forest-soft:oklch(0.94 0.045 155);
+  --sky:oklch(0.8 0.08 259);
+  --gold:oklch(0.7 0.14 85);
+
+  --r-card:20px; --r-md:12px; --r-pill:999px;
+  --shadow:0 1px 2px oklch(0.4 0.05 255/.06),0 8px 30px oklch(0.4 0.08 255/.08);
+  --shadow-sm:0 1px 2px oklch(0.4 0.05 255/.06),0 3px 12px oklch(0.4 0.08 255/.06);
+  --maxw:1120px;
+  --sans:'Roboto',system-ui,-apple-system,Segoe UI,sans-serif;
+  --head:'Geologica','Roboto',system-ui,sans-serif;
+  --hand:'Caveat','Segoe Script',cursive;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:oklch(0.17 0.02 252);
+    --paper-2:oklch(0.205 0.025 252);
+    --band-sand:oklch(0.215 0.02 92);
+    --card:oklch(0.225 0.026 253);
+    --ink:oklch(0.95 0.01 240);
+    --ink-2:oklch(0.74 0.02 246);
+    --ink-3:oklch(0.62 0.02 248);
+    --line:oklch(0.33 0.02 252);
+    --line-2:oklch(0.4 0.025 252);
+    --river:oklch(0.74 0.14 258);
+    --river-ink:oklch(0.82 0.12 258);
+    --river-soft:oklch(0.29 0.055 256);
+    --sun:oklch(0.76 0.15 55);
+    --sun-ink:oklch(0.82 0.13 58);
+    --sun-soft:oklch(0.31 0.06 60);
+    --forest:oklch(0.7 0.13 155);
+    --forest-ink:oklch(0.78 0.12 155);
+    --forest-soft:oklch(0.3 0.06 155);
+    --sky:oklch(0.7 0.09 259);
+    --gold:oklch(0.8 0.13 88);
+    --shadow:0 1px 2px oklch(0 0 0/.4),0 10px 34px oklch(0 0 0/.45);
+    --shadow-sm:0 1px 2px oklch(0 0 0/.35),0 4px 14px oklch(0 0 0/.4);
+  }
+}
+:root[data-theme="light"]{
+  --paper:oklch(0.99 0.004 240);--paper-2:oklch(0.965 0.01 250);--band-sand:oklch(0.955 0.022 82);
+  --card:oklch(1 0 0);--ink:oklch(0.24 0.03 250);--ink-2:oklch(0.45 0.03 255);--ink-3:oklch(0.6 0.025 258);
+  --line:oklch(0.9 0.015 248);--line-2:oklch(0.85 0.02 250);
+  --river:oklch(0.6 0.17 256);--river-ink:oklch(0.47 0.15 258);--river-soft:oklch(0.95 0.03 256);
+  --sun:oklch(0.68 0.17 52);--sun-ink:oklch(0.55 0.16 48);--sun-soft:oklch(0.95 0.04 72);
+  --forest:oklch(0.53 0.13 155);--forest-ink:oklch(0.46 0.12 155);--forest-soft:oklch(0.94 0.045 155);
+  --sky:oklch(0.8 0.08 259);--gold:oklch(0.7 0.14 85);
+  --shadow:0 1px 2px oklch(0.4 0.05 255/.06),0 8px 30px oklch(0.4 0.08 255/.08);
+  --shadow-sm:0 1px 2px oklch(0.4 0.05 255/.06),0 3px 12px oklch(0.4 0.08 255/.06);
+}
+:root[data-theme="dark"]{
+  --paper:oklch(0.17 0.02 252);--paper-2:oklch(0.205 0.025 252);--band-sand:oklch(0.215 0.02 92);
+  --card:oklch(0.225 0.026 253);--ink:oklch(0.95 0.01 240);--ink-2:oklch(0.74 0.02 246);--ink-3:oklch(0.62 0.02 248);
+  --line:oklch(0.33 0.02 252);--line-2:oklch(0.4 0.025 252);
+  --river:oklch(0.74 0.14 258);--river-ink:oklch(0.82 0.12 258);--river-soft:oklch(0.29 0.055 256);
+  --sun:oklch(0.76 0.15 55);--sun-ink:oklch(0.82 0.13 58);--sun-soft:oklch(0.31 0.06 60);
+  --forest:oklch(0.7 0.13 155);--forest-ink:oklch(0.78 0.12 155);--forest-soft:oklch(0.3 0.06 155);
+  --sky:oklch(0.7 0.09 259);--gold:oklch(0.8 0.13 88);
+  --shadow:0 1px 2px oklch(0 0 0/.4),0 10px 34px oklch(0 0 0/.45);
+  --shadow-sm:0 1px 2px oklch(0 0 0/.35),0 4px 14px oklch(0 0 0/.4);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;display:block}
+a{color:inherit}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+
+/* ---------- top bar / subnav ---------- */
+.bar{position:sticky;top:0;z-index:50;background:color-mix(in oklab,var(--paper) 86%,transparent);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.bar__in{display:flex;align-items:center;gap:16px;height:60px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--head);font-weight:700;
+  font-size:19px;letter-spacing:-.01em;text-decoration:none;color:var(--ink);flex:none}
+.brand img{width:30px;height:30px}
+.navlinks{display:flex;gap:4px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+.navlinks::-webkit-scrollbar{display:none}
+.navlinks a{font-size:14px;font-weight:500;color:var(--ink-2);text-decoration:none;
+  padding:8px 12px;border-radius:var(--r-pill);white-space:nowrap;transition:.15s}
+.navlinks a:hover{color:var(--ink);background:var(--river-soft)}
+.navlinks a.on{color:var(--river-ink);background:var(--river-soft);font-weight:600}
+.themebtn{flex:none;width:38px;height:38px;border-radius:var(--r-md);border:1px solid var(--line-2);
+  background:var(--card);color:var(--ink-2);cursor:pointer;display:grid;place-items:center}
+.themebtn:hover{color:var(--river-ink);border-color:var(--river)}
+.themebtn svg{width:18px;height:18px}
+:focus-visible{outline:2.5px solid var(--river);outline-offset:2px;border-radius:4px}
+
+/* ---------- hero ---------- */
+.hero{position:relative;overflow:hidden;padding:clamp(48px,9vw,104px) 0 clamp(40px,7vw,80px)}
+.hero__blobs{position:absolute;inset:-10% -5% auto;height:120%;z-index:0;filter:blur(46px);opacity:.6;pointer-events:none}
+.blob{position:absolute;border-radius:50%}
+.blob.b1{width:46vw;height:46vw;max-width:560px;max-height:560px;left:-8%;top:-14%;
+  background:radial-gradient(circle at 40% 40%,var(--river),transparent 68%);animation:drift1 22s ease-in-out infinite}
+.blob.b2{width:38vw;height:38vw;max-width:460px;max-height:460px;right:-6%;top:2%;
+  background:radial-gradient(circle at 50% 50%,var(--sky),transparent 66%);animation:drift2 26s ease-in-out infinite}
+.blob.b3{width:26vw;height:26vw;max-width:320px;max-height:320px;right:14%;top:-8%;
+  background:radial-gradient(circle at 50% 50%,var(--sun),transparent 60%);animation:drift3 18s ease-in-out infinite}
+.blob.b4{width:34vw;height:34vw;max-width:420px;max-height:420px;left:26%;top:34%;
+  background:radial-gradient(circle at 50% 50%,var(--forest),transparent 66%);animation:drift1 30s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translate(0,0)}50%{transform:translate(3%,4%)}}
+@keyframes drift2{0%,100%{transform:translate(0,0)}50%{transform:translate(-4%,3%)}}
+@keyframes drift3{0%,100%{transform:translate(0,0)}50%{transform:translate(-3%,5%)}}
+@media (prefers-reduced-motion:reduce){.blob{animation:none!important}}
+.hero__in{position:relative;z-index:1;max-width:760px}
+.hero__logo{width:66px;height:66px;margin-bottom:22px;filter:drop-shadow(0 6px 16px oklch(0.5 0.1 255/.25))}
+.hand{font-family:var(--hand);color:var(--sun-ink);font-weight:600;font-size:clamp(26px,4vw,38px);
+  line-height:1;display:block;margin-bottom:6px}
+h1{font-family:var(--head);font-weight:700;font-size:clamp(34px,6.2vw,62px);line-height:1.02;
+  letter-spacing:-.025em;margin:.1em 0 0;text-wrap:balance}
+h1 em{font-style:normal;color:var(--river-ink)}
+.hero__lede{font-size:clamp(17px,2.1vw,20px);color:var(--ink-2);max-width:60ch;margin:22px 0 0;line-height:1.55}
+.hero__lede b{color:var(--ink);font-weight:600}
+.hero__stats{display:flex;flex-wrap:wrap;gap:10px;margin-top:30px}
+.pill{display:inline-flex;align-items:baseline;gap:8px;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r-pill);padding:9px 16px;box-shadow:var(--shadow-sm);font-size:14px;color:var(--ink-2)}
+.pill b{font-family:var(--head);font-weight:700;font-size:18px;color:var(--ink);
+  font-variant-numeric:tabular-nums}
+.pill.r b{color:var(--river-ink)} .pill.s b{color:var(--sun-ink)} .pill.f b{color:var(--forest-ink)}
+
+/* ---------- generic section ---------- */
+.sec{padding:clamp(52px,8vw,96px) 0;position:relative}
+.sec--warm{background:var(--paper-2)}
+.sec--sand{background:var(--band-sand)}
+.eyebrow{font-family:var(--hand);font-size:26px;font-weight:600;line-height:1;color:var(--sun-ink)}
+.sec--forest .eyebrow{color:var(--forest-ink)} .sec--river .eyebrow{color:var(--river-ink)}
+.sec__head{max-width:64ch;margin-bottom:38px}
+.sec__head h2{font-family:var(--head);font-weight:700;font-size:clamp(26px,4vw,40px);letter-spacing:-.02em;
+  line-height:1.08;margin:8px 0 0;text-wrap:balance}
+.sec__head p{font-size:clamp(16px,1.8vw,18px);color:var(--ink-2);margin:14px 0 0;max-width:62ch}
+.who{display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:600;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--river-ink);background:var(--river-soft);
+  padding:6px 13px;border-radius:var(--r-pill)}
+.who svg{width:15px;height:15px}
+.who.sun{color:var(--sun-ink);background:var(--sun-soft)}
+.who.forest{color:var(--forest-ink);background:var(--forest-soft)}
+
+/* ---------- pillar cards ---------- */
+.grid{display:grid;gap:18px}
+.grid.g3{grid-template-columns:repeat(3,1fr)}
+.grid.g4{grid-template-columns:repeat(4,1fr)}
+.grid.g2{grid-template-columns:repeat(2,1fr)}
+@media (max-width:860px){.grid.g3,.grid.g4{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.grid.g2,.grid.g3,.grid.g4{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);
+  padding:24px;box-shadow:var(--shadow-sm);transition:transform .2s,box-shadow .2s,border-color .2s}
+.card:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--line-2)}
+.ico{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;margin-bottom:16px;
+  background:var(--river-soft);color:var(--river-ink)}
+.ico svg{width:23px;height:23px}
+.ico.sun{background:var(--sun-soft);color:var(--sun-ink)}
+.ico.forest{background:var(--forest-soft);color:var(--forest-ink)}
+.card h3{font-family:var(--head);font-weight:600;font-size:19px;margin:0 0 7px;letter-spacing:-.01em}
+.card p{margin:0;color:var(--ink-2);font-size:14.5px;line-height:1.55}
+
+/* ---------- feature list (benefit rows) ---------- */
+.flist{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}
+@media (max-width:640px){.flist{grid-template-columns:1fr}}
+.frow{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r-md);padding:15px 17px}
+.frow .tick{flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
+  background:var(--forest-soft);color:var(--forest-ink);margin-top:1px}
+.frow .tick svg{width:15px;height:15px}
+.frow.sun .tick{background:var(--sun-soft);color:var(--sun-ink)}
+.frow.river .tick{background:var(--river-soft);color:var(--river-ink)}
+.frow b{font-weight:600;font-size:15px;display:block}
+.frow span{color:var(--ink-2);font-size:13.5px;line-height:1.5;display:block;margin-top:2px}
+
+/* ---------- highlight banner ---------- */
+.banner{display:flex;gap:24px;align-items:center;flex-wrap:wrap;
+  background:linear-gradient(120deg,var(--river-soft),var(--sun-soft));
+  border:1px solid var(--line);border-radius:var(--r-card);padding:26px 30px;margin-bottom:34px}
+.banner__ic{flex:none;width:56px;height:56px;border-radius:16px;background:var(--card);
+  display:grid;place-items:center;color:var(--sun-ink);box-shadow:var(--shadow-sm)}
+.banner__ic svg{width:28px;height:28px}
+.banner__tx{flex:1 1 300px}
+.banner__tx h3{font-family:var(--head);font-weight:700;font-size:clamp(19px,2.4vw,24px);margin:0 0 4px;letter-spacing:-.01em}
+.banner__tx p{margin:0;color:var(--ink-2);font-size:15px}
+
+/* ---------- plan table ---------- */
+.tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-card);background:var(--card);
+  box-shadow:var(--shadow-sm);-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:14.5px}
+thead th{text-align:left;padding:18px 18px 16px;border-bottom:1px solid var(--line);vertical-align:bottom;
+  background:color-mix(in oklab,var(--paper-2) 60%,var(--card))}
+thead th.c{text-align:center}
+.pname{font-family:var(--head);font-weight:700;font-size:16px;display:block;letter-spacing:-.01em}
+.pprice{font-size:12.5px;color:var(--ink-3);font-weight:500;display:block;margin-top:3px;
+  font-variant-numeric:tabular-nums}
+th.hi .pname{color:var(--sun-ink)}
+th.hi{position:relative}
+th.hi:after{content:"popular";position:absolute;top:10px;right:12px;font-size:9.5px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--sun-ink);background:var(--sun-soft);
+  padding:3px 7px;border-radius:var(--r-pill)}
+tbody td{padding:13px 18px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:color-mix(in oklab,var(--river-soft) 45%,transparent)}
+td.feat{font-weight:500;min-width:210px}
+td.feat small{display:block;color:var(--ink-3);font-weight:400;font-size:12.5px;margin-top:2px}
+td.c{text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+.yes{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:7px;
+  background:var(--forest-soft);color:var(--forest-ink)}
+.yes svg{width:14px;height:14px}
+.no{color:var(--line-2);font-weight:700}
+.lim{display:inline-block;background:var(--river-soft);color:var(--river-ink);font-weight:600;
+  font-size:12.5px;padding:3px 9px;border-radius:var(--r-pill)}
+.inf{font-size:16px;font-weight:700;color:var(--river-ink)}
+.addon-c{display:inline-block;background:var(--sun-soft);color:var(--sun-ink);font-weight:600;
+  font-size:11.5px;padding:3px 9px;border-radius:var(--r-pill)}
+.tnote{font-size:13px;color:var(--ink-3);margin:12px 2px 0;line-height:1.5}
+
+/* ---------- addon cards ---------- */
+.addon{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:18px 20px}
+.addon .price{font-family:var(--head);font-weight:700;color:var(--sun-ink);font-size:16px;
+  font-variant-numeric:tabular-nums}
+.addon h4{font-family:var(--head);font-weight:600;font-size:16px;margin:0 0 4px}
+.addon p{margin:8px 0 0;color:var(--ink-2);font-size:13.5px;line-height:1.5}
+
+/* ---------- "y además" chips ---------- */
+.extras{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:820px){.extras{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:520px){.extras{grid-template-columns:1fr}}
+.extra{display:flex;gap:13px;align-items:flex-start}
+.extra .ei{flex:none;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+  background:var(--river-soft);color:var(--river-ink)}
+.extra .ei svg{width:19px;height:19px}
+.extra:nth-child(3n+2) .ei{background:var(--sun-soft);color:var(--sun-ink)}
+.extra:nth-child(3n) .ei{background:var(--forest-soft);color:var(--forest-ink)}
+.extra b{font-family:var(--head);font-weight:600;font-size:15px}
+.extra span{display:block;color:var(--ink-2);font-size:13.5px;line-height:1.5;margin-top:2px}
+
+/* ---------- closing CTA ---------- */
+.cta{background:oklch(0.24 0.04 252);color:oklch(0.96 0.01 240);border-radius:var(--r-card);
+  padding:clamp(34px,5vw,56px);text-align:center;position:relative;overflow:hidden}
+:root[data-theme="dark"] .cta{background:oklch(0.28 0.04 252)}
+.cta__sun{position:absolute;width:180px;height:180px;border-radius:50%;top:-60px;right:-40px;
+  background:radial-gradient(circle,var(--sun),transparent 70%);opacity:.5;filter:blur(8px)}
+.cta .hand{color:var(--sky);position:relative}
+.cta h2{font-family:var(--head);font-weight:700;font-size:clamp(24px,3.6vw,38px);margin:6px 0 12px;
+  letter-spacing:-.02em;color:oklch(0.98 0.01 240);position:relative}
+.cta p{color:oklch(0.82 0.02 245);max-width:52ch;margin:0 auto 26px;position:relative}
+.btn{display:inline-flex;align-items:center;gap:9px;background:var(--sun);color:oklch(0.2 0.03 60);
+  font-family:var(--head);font-weight:600;font-size:16px;text-decoration:none;padding:14px 26px;
+  border-radius:var(--r-pill);position:relative;transition:transform .18s,filter .18s}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.05)}
+.btn svg{width:18px;height:18px}
+
+/* ---------- footer ---------- */
+footer{padding:44px 0 56px;border-top:1px solid var(--line);color:var(--ink-3);font-size:13.5px;line-height:1.7}
+footer .frow-top{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+footer .brand{font-size:17px}
+footer b{color:var(--ink-2)}
+
+.soon{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--gold);background:color-mix(in oklab,var(--gold) 16%,transparent);padding:4px 9px;border-radius:var(--r-pill)}
+.soonsec .sec__head h2 em{color:var(--gold);font-style:normal}
+.soon-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:860px){.soon-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.soon-grid{grid-template-columns:1fr}}
+.soon-card{position:relative;background:var(--card);border:1.5px dashed var(--line-2);border-radius:var(--r-md);padding:20px}
+.soon-card>.soon{position:absolute;top:15px;right:15px}
+.soon-ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:color-mix(in oklab,var(--gold) 15%,transparent);color:var(--gold);margin-bottom:13px}
+.soon-ic svg{width:19px;height:19px}
+.soon-card h4{font-family:var(--head);font-weight:600;font-size:15.5px;margin:0 0 6px;padding-right:56px;letter-spacing:-.01em}
+.soon-card p{margin:0;color:var(--ink-2);font-size:13.5px;line-height:1.5}
+.reveal{opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+</style>
+
+<div class="bar">
+  <div class="wrap bar__in">
+    <a class="brand" href="#top"><img src="data:image/webp;base64,UklGRjgRAABXRUJQVlA4WAoAAAAQAAAAxwAA1wAAQUxQSEoJAAAB8BsBbN7a2rZxBiWwBLXgTIVYlXgcuwVnqsGZG1AHypmdc65LoSJnlIgZEfwDSaw0ImRBshu2DQiEj48ApLiOSMmU3G/VZgHwcfr2fK/bhojb+n1PN7pDkhbw/O25bpgov/VNCFHR7U36zuNwYTmOExHX6VIxkX6uvo/4RmvfdQZASLRRBrOKwwt8QYGQ6EDK5IPtxqsQK50g/+t5FPiXgANxYtP0a3Z1dcHe1hDxKN+gMU6v1+vzek3jQPem/agv4nkhlnLp1cmBYHx9XLSYz+S7oG17/vBEj7h00wy/yfAyzuF5WmsR0drzxKvrM3nQeFQMsXS+FZSij2cspoo9r/CpUQVQ8A6iOJVQJQYv5y4mr1zhZrxAi+y0RVlG6qug5DcxDgnKB59r7Gsv6htBzNVPK8j+VV5plJPGDApaO64koli7/RZy3T7uxOJinbvGvnaPK8wduU1Q2uSYzVH02tZxxaNKuuWbZdpzom0dV6rJmduRMJvhYZPaAqsDtqJkJQX1cZZ1369kLbDkuNKYgHrFsrEEOAP12fRBvlpg0gYXe7nKoiP6UlCZ/RG2BSnlGF7M040VNcZWl3QD1FQ8YOVRreRsjTYceW2y8glr2ZuyrUh2zZrQVNoamTik2LrjVkbN2W+jVa1ZXBq1Mo8ANdJ+/u6Pgmpba0bWjDHLJv/ZbS5pU926gtvm2WYKmZ9mtTm7o01+t6MlI2fUFdo2Zx98k9XgcsOENTH8pqItVimWNzjt1k6uZA9nmE10cOaYEm5N5gL1ibw22SnL5kRVcjQUWThqWcZw6x0Zc4So4UhtqoxarAJKr7EcbUWyis07M42fNLDnbznSC++fo+WW3PxNzk69ZM0YeF5ML+1Ypct/KiU1hiw+Gq5NRkrrkQBJscwuxfZOb7LlWZ0q+2HLxy0+azQye/xFy3TAjMmgoNjOwNqNLJsPMboaUGzWcCTDPNuyvJifwjaXNXUxVrv88wIOzyq4rZPpdIdFzgSJnsKtems6F2QMkaTDcgdYNFzWdq50M+OfvvACgS2fDYGaItZ6ruxg3hNSo4umpB63Ls8sGRzyXh4vrkHpHx6BNT5s5VUVfgVdcrq24uG6FAXxbqZUZ1n99RvsRzIv9PPNjKwzRdm9dSTsH7wk98pPTYszdOBS/CmxZbuEmZ9hC62fROnZHcvYG9qnyCmWoYvxN9OH8wo/m1Pj8yEoGPtdev5gM3sv43Rq/HyhQJ1lYAPLLmsw8HbkmBtg3Fmaw6J7XVbM9dXMX2lUtAwE7RmsMirlumkWvAIQX8Bm47PtCProspOEL+H6qbbShRqv9LJIyhA0qjKbCNdT9S48D76AIUQALV2pGiAoevG3FrgaKzzLAEwfQ+8xOE+yqxfzGkJUGNNZ2XTpBS/Pj9PrY4xxxnw+r1FzLOTWP+zN3FGq5KUKF3Tr1ML6wusyh8NetZQgEuwBy4dEZBM96o1/wT9HjdilYoXF5Rz9vepXs4PCLMn+vsav31NxB3GMWd2SK/c9GBxTiG7JEEB9WbHv4ijQHlS2W191wX2A2/tG3OtnlsABv5MmRF1vCcBxEb+QgNre3ac+ME7Ua8vhjpsnyDu7Rlsc4vd93ngJgCBaGALp3eXvWzDDZm1LRWycf6Rroi3SO5trFNC0LR7xZCAmOsWWjIiNAmUg7BGQiEyYCntEJMiRc4JsoLekiPc3uj11JghGLTEJDABAgaec7h5MF5npKS9Yb2nwxauIDJ6XthbZ8XWqhJJIkUH6MTJIRGjyd2lapPaKalvDVqefE0RFcl1V+ofYyZ4KYrTkSnyEknqPkdlalQ7XMazCC2IQQhZP/A3V8xLhlVbkovLfUGniKH+S5k98ulrTBxMe0jfJmj76kb38zuGytT+h2finq10tFqXVH9CEYF2n9PLTkSV40gdPkXXP0ne8w4UUKHyF3+iNcbLLBtEbFUUfuX63+J36TvS5durJCZKPwNFVU79ro4IHxtfkr5KT38T6b/ocYqFPqjMfNS5yqtyHrjqBJetR/D+BgcNf2VcjyHp9OfMmCf1cyVHUiS7BIpjb9xd86YbgQhbBJL4/RE4pcCcEHodzIoYVE99fmFY24fnKjOm7IeJJuiSbRzDdGHV7rjQtOifXiSgLQYaz6b2iVG/tg0NSN9rd6FsbD2m6DnyyfzuYVG9tesEpJJjf2rIMBO5Ecl2gQpdPGx0IJAA/XfUL6EBPhJDgjR3LVSltMKZJ4E4imyD8lrBrwBfJMWmi7v1KlidkFCYCprVrsOn0yFQwJ2Jx/2am6fCpOHQfhvtjnhda5vlxHwfNdOs8QABcpz2QQONsMKPs5ko3cLwhIPJ9Q132QNTuhs4NEjONcDcu11GXugIE34LRn/yTegoOFnwaFrjuy3wfIHUcSu2CgmHusf1WELFHDHG4jjoP6uE+m16zQsQiM1ouV7OQY88waIArbrw/5mUP/hw6bOsIvjNOz1Ov0Y67MXtifzpvmzonG9exJ70LncpdQYRr8Nc/emrHjhELil4ekXqQ3f4Zot6H5DIr+CNkSIjw/X+C/KPjUzo8RK9jqnfB69TMcpFbwuflFswjpJxWvJPn0YPYXPKsBcRu3sJa+qRvYkln2bn40CUzl6dzR4/8bexaWQ4w4i5YI/YHUP9AQpKDsLhnCdm6SKr3y/JFVJ+HtxIddlFPoct0lNI4Ps+6d7l2gF9MInt+8g5xJSuHdD4hm/uuL2Mpwm3vwH1g+1LWvvUo363AOFVUXDYOd69H5o4caEgEp+pLRcILhCZ7Z2B/gM7KWwWd5ZmSEpNej/AEoY6ST/KlOc5XA+Muhi66isVvnFtEcEvnr5fi6N/tTqy2SuC1DBTVB7pr8ogf5hsg7z1fLWjqP2wEASkD20LK5QL9oWWMWztBpjuwp9iGguDhQU9j1RCx5sgA9BbVLLgveBHtI+NH3BYttbKYgMbRAwLUOhgexhMto3aiOFbQj/PuibZRN0DfKXG0dWlmuasQ9UbQ9eutMPs8RlB/BIyPYNFzA/6P2Lc9dUnQtEulxc+xnTXzoPpFiXtRhqtr53WN7qOZR389LMF0nVbp8TEbDFzZ+vblkfV/DhQgLajBu+7JO1Yw8z6WfSH3sUCUEcSV+unxPi9mL5lBm2W+D9rvI0jAFN+IBvQWjsWY2EmlWehNHnSMba1PAVZQOCDIBwAAsDAAnQEqyADYAD6RRptJqaajI6mV6iCwEglibsuN4gBmYu7jkzRCtDf7DsptzeY/t3Mu8+fSOH6Rd3ZZyfQr+gPYA/XTpleYj9yPW/9IX+L9QD/e9RV6Evl4+yR/cf/T1AH//4GXq9vy/caAaSK4+vupsaBMjshdm4ZRemKQK7z4nocvJpKadYDoOdgxdSslpDEQmMOtpahnCVXRch+JAKH9YSE3zYkjJ9cGMSY4ZjCPT4/kN76IVLzbq2wydETyohOlkzjTqI1P8jShWxGnC1NYRBTVxIJgLt1oXKZTkqwx2HfwY4735X6BLdYGkzxeqCTeGl3oNXrTqMlHhEtif/oTXsCpOBNub5SuUeewSBX/SyEmqZ1XKWFdG6WpZ3iLAkWzynAB/6d93zfHiBbZNL9kmXWPV9V9I1Cw/Qjq1Bs3g3L0U43HSQo0ImC0Hle/R/lupX6VsIUZzF6U/sCNMV7/8jnp6LwQbjgDObFVjZXdfI+/9mTGA0tON5NltzyfNtKl6abIHUOgqTbyk6AA/gJg8KkJzdgdXhxbPWhVKKRsBfme1TraPAlol2XuwzJr+HpII51HV1VeGv63JTf+tfBRKpjRYB0VJyQSwTvoN4vaexOoKp/WJGARcIfXaDNbuBfKq2oCFCvd7ofBSI3guAf3CDWTP9//zn//PAEHY+U8g7Ft7tf4Bl4m/KrxJwwY26iBWuuMI76/pBNX4MtrAzEQl6pZ9yHhGTCfAkF/O1fewZ+z4ltHQC2v9LpIKmbzBDUtCqqaqbrq+osVrNMczRrO5tWJV+XnSQCKcYdEfRd//mkSAnFjV9bUoSeHrY7c8Se2kbQ7t7J7nJH5mEy/zaogJpeZu+r12nYBhu2I/8kF8W0nG1pvsilzHI0mwS+lYtrew7C2G5YD/fPIr8jwr1zpgeXNmH1/nli7KKQEJM2DknD9CLbBE4i+lqWsYlT+hk6d2x2jNGYLoOzby7c/Wh8BD6WqWZWy1b2XW7cNkHCq4DT8gCcWQquC8Uvslb6ricqiUKsRwwCWR1G/m5wJxWhVQwC11lZ28WWWOLqt6EM7YV0ye++bGkq94iqlF1hg/tPVQcNHKbvGFIeDVm6EPwcl9LHz1ctSjNahjqlGYft0OnaKdLPDhsCAAiWX+5Y6/rs5IzdHQUUv4p9MC1kd79x96tnpRzadAyT2cAArgUHLyy6A17xVjuWoVmimDl0/ufzL5S1ubxSGytXBq5YksyVIwLCgB0lQ4zx0p3mm5n4ISwUcHpHfu3mi4TYlcyq3b1QH0S8LYVOg/jl7bGUMTCojEyOgqx4zyadaI9E+2L/9sF5kas9hFSznblyrBIjpuCZFzgIK2pz+8Rf/rar411VlFhUIBvmxQbACZw8s1eUKMVob169e9/5GExCA43XsHemBeAE1uH1RYbhEic8KZ8r7w5vn7G0xZwDiG/mw5ouc5a44fjE//9fiLK2uxCSMII3TGP4jA8qjXvyPFvwVtvDlCDiojHPpJ95+JD6Ti7mXl4iUY8RSYAAAEDxczt+bDzlUxhZ7olGqwy8msiCyvwf5cIZhpR3D+lbrmlA0lVNIvAm9IOyivQAAAC7VU0yEt07jHne5okqSEJ5PjjaMkzkS2tKRRw7PQnImbjAHOHfBSW9fkYAypnXwApXz2Ju8MAAZBRVKgbY97W7K8Iwg91f6KlBuIt5hIOZSNe4SXB292kH+764/p4cXocMGQn9cHBD0BQmwTElyr8z6184MLVzEtHRHzO3Hw3LyFzEGr6FDxyajMUscARFzZEMK/wT/v2IhG56LSyKnSs6mV5WVGh4WMJhFqJ9oUCtYU70Keuv4sV4BWtNT61qU9ZkAADbz7Nq0FpXzGavWIpe4p7jk3FCH+D/CbjivtEBBsgY6BU7gAz7Zr4+YWerCLU28gnTQUsnaysVU+zAZ4ZfEAR2gdWAWG2Cxn6mjim/I8yV954JScJFl4uR820ZZOKOv+jH9oL6d7eRJ2oPkIaXbZNDwzRv6u2+uJlrOYD7h5uWGnk7FARoivGh0yxJaRnN4K2PGzpgB3cgAHw5wLgINFs6WSxFXQSewSb0xa7bQKRv7njGtgAPGp0Hhs8lkkFeNNKBwBaistSZMk+6EoAABRHwPsOHxde8bVQ+RxL2MXVxAmtv8M/Zg9CgfBzouJZ6/qX2OCrDEZPEqLUphzEVsN9uUUvt60DgtdfROWB8/k8ZDupBhf/+1l0iuR+jiuuK3L1AE9y3mtBYRLDD3PHe6mzBgALuaadP8rH3Ns8uflZfRzbVfFy9uE7LauaL2S1dZU6TBI0KNv/8NnXwSvxw4z4RMRi/NHX/co5jIgvWLIpsf7lTcnhjoeecTKy9nkErUODFDw96wh/qbyI8Dx6/lmfgYm2SrrWSCJ7lgxhgbjasTaRpA+UuWVcvaNN9hl1WbKFXuaTIIRNnvTwx0AMe/Mi5ALC0xRmXv8FObOXzBoynSAYmEnPTj8tgdurYAZpAaf6njjQIgLJz06HnxxReGWwiTE7aMfwKhtM0cYiJQxAgS6NaNvfGzVv0jGvBn0Fxpaa6nXCfd8078RQMjdoyCgJqXBxvDMVOLP/tyyrEm9Fm0K+Y2H9RPOx+JRRgo7y1jxzB290GgCsCe7AxeDl9Ox39A5LSaAvOfAAAA" alt="" width="30" height="30">Hospeda</a>
+    <nav class="navlinks" id="nav">
+      <a href="#viajeros">Viajeros</a>
+      <a href="#anfitriones">Anfitriones</a>
+      <a href="#gastro">Gastronomía y experiencias</a>
+      <a href="#marcas">Marcas</a>
+      <a href="#ademas">Y además</a>
+      <a href="#proximamente">Próximamente</a>
+    </nav>
+    <button class="themebtn" id="theme" aria-label="Cambiar tema" title="Cambiar tema">
+      <svg id="sun-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+    </button>
+  </div>
+</div>
+
+<a id="top"></a>
+<header class="hero">
+  <div class="hero__blobs" aria-hidden="true">
+    <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="blob b4"></span>
+  </div>
+  <div class="wrap hero__in">
+    <img class="hero__logo" src="data:image/webp;base64,UklGRjgRAABXRUJQVlA4WAoAAAAQAAAAxwAA1wAAQUxQSEoJAAAB8BsBbN7a2rZxBiWwBLXgTIVYlXgcuwVnqsGZG1AHypmdc65LoSJnlIgZEfwDSaw0ImRBshu2DQiEj48ApLiOSMmU3G/VZgHwcfr2fK/bhojb+n1PN7pDkhbw/O25bpgov/VNCFHR7U36zuNwYTmOExHX6VIxkX6uvo/4RmvfdQZASLRRBrOKwwt8QYGQ6EDK5IPtxqsQK50g/+t5FPiXgANxYtP0a3Z1dcHe1hDxKN+gMU6v1+vzek3jQPem/agv4nkhlnLp1cmBYHx9XLSYz+S7oG17/vBEj7h00wy/yfAyzuF5WmsR0drzxKvrM3nQeFQMsXS+FZSij2cspoo9r/CpUQVQ8A6iOJVQJQYv5y4mr1zhZrxAi+y0RVlG6qug5DcxDgnKB59r7Gsv6htBzNVPK8j+VV5plJPGDApaO64koli7/RZy3T7uxOJinbvGvnaPK8wduU1Q2uSYzVH02tZxxaNKuuWbZdpzom0dV6rJmduRMJvhYZPaAqsDtqJkJQX1cZZ1369kLbDkuNKYgHrFsrEEOAP12fRBvlpg0gYXe7nKoiP6UlCZ/RG2BSnlGF7M040VNcZWl3QD1FQ8YOVRreRsjTYceW2y8glr2ZuyrUh2zZrQVNoamTik2LrjVkbN2W+jVa1ZXBq1Mo8ANdJ+/u6Pgmpba0bWjDHLJv/ZbS5pU926gtvm2WYKmZ9mtTm7o01+t6MlI2fUFdo2Zx98k9XgcsOENTH8pqItVimWNzjt1k6uZA9nmE10cOaYEm5N5gL1ibw22SnL5kRVcjQUWThqWcZw6x0Zc4So4UhtqoxarAJKr7EcbUWyis07M42fNLDnbznSC++fo+WW3PxNzk69ZM0YeF5ML+1Ypct/KiU1hiw+Gq5NRkrrkQBJscwuxfZOb7LlWZ0q+2HLxy0+azQye/xFy3TAjMmgoNjOwNqNLJsPMboaUGzWcCTDPNuyvJifwjaXNXUxVrv88wIOzyq4rZPpdIdFzgSJnsKtems6F2QMkaTDcgdYNFzWdq50M+OfvvACgS2fDYGaItZ6ruxg3hNSo4umpB63Ls8sGRzyXh4vrkHpHx6BNT5s5VUVfgVdcrq24uG6FAXxbqZUZ1n99RvsRzIv9PPNjKwzRdm9dSTsH7wk98pPTYszdOBS/CmxZbuEmZ9hC62fROnZHcvYG9qnyCmWoYvxN9OH8wo/m1Pj8yEoGPtdev5gM3sv43Rq/HyhQJ1lYAPLLmsw8HbkmBtg3Fmaw6J7XVbM9dXMX2lUtAwE7RmsMirlumkWvAIQX8Bm47PtCProspOEL+H6qbbShRqv9LJIyhA0qjKbCNdT9S48D76AIUQALV2pGiAoevG3FrgaKzzLAEwfQ+8xOE+yqxfzGkJUGNNZ2XTpBS/Pj9PrY4xxxnw+r1FzLOTWP+zN3FGq5KUKF3Tr1ML6wusyh8NetZQgEuwBy4dEZBM96o1/wT9HjdilYoXF5Rz9vepXs4PCLMn+vsav31NxB3GMWd2SK/c9GBxTiG7JEEB9WbHv4ijQHlS2W191wX2A2/tG3OtnlsABv5MmRF1vCcBxEb+QgNre3ac+ME7Ua8vhjpsnyDu7Rlsc4vd93ngJgCBaGALp3eXvWzDDZm1LRWycf6Rroi3SO5trFNC0LR7xZCAmOsWWjIiNAmUg7BGQiEyYCntEJMiRc4JsoLekiPc3uj11JghGLTEJDABAgaec7h5MF5npKS9Yb2nwxauIDJ6XthbZ8XWqhJJIkUH6MTJIRGjyd2lapPaKalvDVqefE0RFcl1V+ofYyZ4KYrTkSnyEknqPkdlalQ7XMazCC2IQQhZP/A3V8xLhlVbkovLfUGniKH+S5k98ulrTBxMe0jfJmj76kb38zuGytT+h2finq10tFqXVH9CEYF2n9PLTkSV40gdPkXXP0ne8w4UUKHyF3+iNcbLLBtEbFUUfuX63+J36TvS5durJCZKPwNFVU79ro4IHxtfkr5KT38T6b/ocYqFPqjMfNS5yqtyHrjqBJetR/D+BgcNf2VcjyHp9OfMmCf1cyVHUiS7BIpjb9xd86YbgQhbBJL4/RE4pcCcEHodzIoYVE99fmFY24fnKjOm7IeJJuiSbRzDdGHV7rjQtOifXiSgLQYaz6b2iVG/tg0NSN9rd6FsbD2m6DnyyfzuYVG9tesEpJJjf2rIMBO5Ecl2gQpdPGx0IJAA/XfUL6EBPhJDgjR3LVSltMKZJ4E4imyD8lrBrwBfJMWmi7v1KlidkFCYCprVrsOn0yFQwJ2Jx/2am6fCpOHQfhvtjnhda5vlxHwfNdOs8QABcpz2QQONsMKPs5ko3cLwhIPJ9Q132QNTuhs4NEjONcDcu11GXugIE34LRn/yTegoOFnwaFrjuy3wfIHUcSu2CgmHusf1WELFHDHG4jjoP6uE+m16zQsQiM1ouV7OQY88waIArbrw/5mUP/hw6bOsIvjNOz1Ov0Y67MXtifzpvmzonG9exJ70LncpdQYRr8Nc/emrHjhELil4ekXqQ3f4Zot6H5DIr+CNkSIjw/X+C/KPjUzo8RK9jqnfB69TMcpFbwuflFswjpJxWvJPn0YPYXPKsBcRu3sJa+qRvYkln2bn40CUzl6dzR4/8bexaWQ4w4i5YI/YHUP9AQpKDsLhnCdm6SKr3y/JFVJ+HtxIddlFPoct0lNI4Ps+6d7l2gF9MInt+8g5xJSuHdD4hm/uuL2Mpwm3vwH1g+1LWvvUo363AOFVUXDYOd69H5o4caEgEp+pLRcILhCZ7Z2B/gM7KWwWd5ZmSEpNej/AEoY6ST/KlOc5XA+Muhi66isVvnFtEcEvnr5fi6N/tTqy2SuC1DBTVB7pr8ogf5hsg7z1fLWjqP2wEASkD20LK5QL9oWWMWztBpjuwp9iGguDhQU9j1RCx5sgA9BbVLLgveBHtI+NH3BYttbKYgMbRAwLUOhgexhMto3aiOFbQj/PuibZRN0DfKXG0dWlmuasQ9UbQ9eutMPs8RlB/BIyPYNFzA/6P2Lc9dUnQtEulxc+xnTXzoPpFiXtRhqtr53WN7qOZR389LMF0nVbp8TEbDFzZ+vblkfV/DhQgLajBu+7JO1Yw8z6WfSH3sUCUEcSV+unxPi9mL5lBm2W+D9rvI0jAFN+IBvQWjsWY2EmlWehNHnSMba1PAVZQOCDIBwAAsDAAnQEqyADYAD6RRptJqaajI6mV6iCwEglibsuN4gBmYu7jkzRCtDf7DsptzeY/t3Mu8+fSOH6Rd3ZZyfQr+gPYA/XTpleYj9yPW/9IX+L9QD/e9RV6Evl4+yR/cf/T1AH//4GXq9vy/caAaSK4+vupsaBMjshdm4ZRemKQK7z4nocvJpKadYDoOdgxdSslpDEQmMOtpahnCVXRch+JAKH9YSE3zYkjJ9cGMSY4ZjCPT4/kN76IVLzbq2wydETyohOlkzjTqI1P8jShWxGnC1NYRBTVxIJgLt1oXKZTkqwx2HfwY4735X6BLdYGkzxeqCTeGl3oNXrTqMlHhEtif/oTXsCpOBNub5SuUeewSBX/SyEmqZ1XKWFdG6WpZ3iLAkWzynAB/6d93zfHiBbZNL9kmXWPV9V9I1Cw/Qjq1Bs3g3L0U43HSQo0ImC0Hle/R/lupX6VsIUZzF6U/sCNMV7/8jnp6LwQbjgDObFVjZXdfI+/9mTGA0tON5NltzyfNtKl6abIHUOgqTbyk6AA/gJg8KkJzdgdXhxbPWhVKKRsBfme1TraPAlol2XuwzJr+HpII51HV1VeGv63JTf+tfBRKpjRYB0VJyQSwTvoN4vaexOoKp/WJGARcIfXaDNbuBfKq2oCFCvd7ofBSI3guAf3CDWTP9//zn//PAEHY+U8g7Ft7tf4Bl4m/KrxJwwY26iBWuuMI76/pBNX4MtrAzEQl6pZ9yHhGTCfAkF/O1fewZ+z4ltHQC2v9LpIKmbzBDUtCqqaqbrq+osVrNMczRrO5tWJV+XnSQCKcYdEfRd//mkSAnFjV9bUoSeHrY7c8Se2kbQ7t7J7nJH5mEy/zaogJpeZu+r12nYBhu2I/8kF8W0nG1pvsilzHI0mwS+lYtrew7C2G5YD/fPIr8jwr1zpgeXNmH1/nli7KKQEJM2DknD9CLbBE4i+lqWsYlT+hk6d2x2jNGYLoOzby7c/Wh8BD6WqWZWy1b2XW7cNkHCq4DT8gCcWQquC8Uvslb6ricqiUKsRwwCWR1G/m5wJxWhVQwC11lZ28WWWOLqt6EM7YV0ye++bGkq94iqlF1hg/tPVQcNHKbvGFIeDVm6EPwcl9LHz1ctSjNahjqlGYft0OnaKdLPDhsCAAiWX+5Y6/rs5IzdHQUUv4p9MC1kd79x96tnpRzadAyT2cAArgUHLyy6A17xVjuWoVmimDl0/ufzL5S1ubxSGytXBq5YksyVIwLCgB0lQ4zx0p3mm5n4ISwUcHpHfu3mi4TYlcyq3b1QH0S8LYVOg/jl7bGUMTCojEyOgqx4zyadaI9E+2L/9sF5kas9hFSznblyrBIjpuCZFzgIK2pz+8Rf/rar411VlFhUIBvmxQbACZw8s1eUKMVob169e9/5GExCA43XsHemBeAE1uH1RYbhEic8KZ8r7w5vn7G0xZwDiG/mw5ouc5a44fjE//9fiLK2uxCSMII3TGP4jA8qjXvyPFvwVtvDlCDiojHPpJ95+JD6Ti7mXl4iUY8RSYAAAEDxczt+bDzlUxhZ7olGqwy8msiCyvwf5cIZhpR3D+lbrmlA0lVNIvAm9IOyivQAAAC7VU0yEt07jHne5okqSEJ5PjjaMkzkS2tKRRw7PQnImbjAHOHfBSW9fkYAypnXwApXz2Ju8MAAZBRVKgbY97W7K8Iwg91f6KlBuIt5hIOZSNe4SXB292kH+764/p4cXocMGQn9cHBD0BQmwTElyr8z6184MLVzEtHRHzO3Hw3LyFzEGr6FDxyajMUscARFzZEMK/wT/v2IhG56LSyKnSs6mV5WVGh4WMJhFqJ9oUCtYU70Keuv4sV4BWtNT61qU9ZkAADbz7Nq0FpXzGavWIpe4p7jk3FCH+D/CbjivtEBBsgY6BU7gAz7Zr4+YWerCLU28gnTQUsnaysVU+zAZ4ZfEAR2gdWAWG2Cxn6mjim/I8yV954JScJFl4uR820ZZOKOv+jH9oL6d7eRJ2oPkIaXbZNDwzRv6u2+uJlrOYD7h5uWGnk7FARoivGh0yxJaRnN4K2PGzpgB3cgAHw5wLgINFs6WSxFXQSewSb0xa7bQKRv7njGtgAPGp0Hhs8lkkFeNNKBwBaistSZMk+6EoAABRHwPsOHxde8bVQ+RxL2MXVxAmtv8M/Zg9CgfBzouJZ6/qX2OCrDEZPEqLUphzEVsN9uUUvt60DgtdfROWB8/k8ZDupBhf/+1l0iuR+jiuuK3L1AE9y3mtBYRLDD3PHe6mzBgALuaadP8rH3Ns8uflZfRzbVfFy9uE7LauaL2S1dZU6TBI0KNv/8NnXwSvxw4z4RMRi/NHX/co5jIgvWLIpsf7lTcnhjoeecTKy9nkErUODFDw96wh/qbyI8Dx6/lmfgYm2SrrWSCJ7lgxhgbjasTaRpA+UuWVcvaNN9hl1WbKFXuaTIIRNnvTwx0AMe/Mi5ALC0xRmXv8FObOXzBoynSAYmEnPTj8tgdurYAZpAaf6njjQIgLJz06HnxxReGWwiTE7aMfwKhtM0cYiJQxAgS6NaNvfGzVv0jGvBn0Fxpaa6nXCfd8078RQMjdoyCgJqXBxvDMVOLP/tyyrEm9Fm0K+Y2H9RPOx+JRRgo7y1jxzB290GgCsCe7AxeDl9Ox39A5LSaAvOfAAAA" alt="Hospeda">
+    <span class="hand">descubrí, hospedate, crecé</span>
+    <h1>Todo lo que <em>Hospeda</em> hace por vos.</h1>
+    <p class="hero__lede">La plataforma para descubrir y gestionar turismo en Concepción del Uruguay
+      y el Litoral argentino. <b>Para el que viaja</b>, para <b>el que recibe huéspedes</b>, y para
+      <b>los negocios y marcas</b> que quieren estar donde se planean las escapadas. Esto es, en
+      criollo, todo lo que vas a encontrar adentro.</p>
+    <div class="hero__stats">
+      <span class="pill r"><b>+120</b> funcionalidades</span>
+      <span class="pill f"><b>3</b> idiomas · es · en · pt</span>
+      <span class="pill s"><b>14</b> días gratis para anfitriones</span>
+      <span class="pill"><b>3</b> mundos: alojamientos · gastronomía · experiencias</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===== UN VISTAZO ===== -->
+<section class="sec">
+  <div class="wrap">
+    <div class="sec__head reveal">
+      <span class="eyebrow">un vistazo</span>
+      <h2>Una sola plataforma, cuatro maneras de usarla.</h2>
+      <p>No hace falta ser experto en nada. Cada persona entra por su puerta y encuentra
+        justo lo que necesita — el resto queda ahí, esperando cuando lo quieras.</p>
+    </div>
+    <div class="grid g4">
+      <div class="card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7.5"/><path d="m21 21-4.3-4.3"/></svg></div>
+        <h3>Descubrir</h3>
+        <p>Buscá alojamientos, destinos, eventos, gastronomía y experiencias del Litoral. Con mapa,
+          filtros, clima y hasta un buscador que entiende lenguaje natural.</p>
+      </div>
+      <div class="card reveal">
+        <div class="ico forest"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V10l9-6 9 6v11"/><path d="M9 21v-6h6v6"/></svg></div>
+        <h3>Hospedarse</h3>
+        <p>Guardá favoritos, compará opciones, recibí alertas de precio y hablá directo con el
+          anfitrión. Tu próxima escapada, organizada en un lugar.</p>
+      </div>
+      <div class="card reveal">
+        <div class="ico sun"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 8l7-5 7 5"/><rect x="5" y="11" width="14" height="10" rx="2"/></svg></div>
+        <h3>Publicar y crecer</h3>
+        <p>Si alquilás, mostrá tu propiedad con fotos, promociones y estadísticas. Herramientas de
+          IA que te escriben, traducen e importan la ficha por vos.</p>
+      </div>
+      <div class="card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3h16M6 3v6a6 6 0 0 0 12 0V3M12 15v6M8 21h8"/></svg></div>
+        <h3>Sumar tu negocio</h3>
+        <p>Restaurantes, experiencias, auspiciantes y marcas: un lugar en el mapa turístico de la
+          región, con ficha propia, reseñas y visibilidad.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== VIAJEROS ===== -->
+<section class="sec sec--warm sec--river" id="viajeros">
+  <div class="wrap">
+    <div class="sec__head reveal">
+      <span class="who"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Para el que viaja</span>
+      <span class="eyebrow" style="display:block;margin-top:16px">tu escapada, más fácil</span>
+      <h2>Explorá gratis. Guardá lo que te gusta. Cuando querés más, hay más.</h2>
+      <p>Todo el catálogo es público y navegable sin cuenta. Con una cuenta gratis ya guardás
+        favoritos, dejás reseñas y le escribís a los anfitriones. Y si viajás seguido, los planes
+        <b>Plus</b> y <b>VIP</b> te suman comparador, alertas de precio, colecciones y ofertas exclusivas.</p>
+    </div>
+
+    <div class="flist reveal" style="margin-bottom:36px">
+      <div class="frow river"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Buscá sin vueltas</b><span>Lista o mapa, con filtros por precio, tipo, huéspedes, amenities, pileta, pet-friendly y radio en el mapa.</span></div></div>
+      <div class="frow river"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Preguntá en tu idioma</b><span>El buscador con IA entiende "cabaña con pileta para 4 cerca del río" y te trae resultados de verdad.</span></div></div>
+      <div class="frow river"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>El clima, antes de reservar</b><span>Pronóstico a 16 días y condiciones en vivo de cada destino, para elegir bien la fecha.</span></div></div>
+      <div class="frow river"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Hablá con el anfitrión</b><span>Consultá directo desde la ficha, incluso sin cuenta. Seguí y respondé desde tu mail con un enlace mágico, o desde tu bandeja si tenés cuenta.</span></div></div>
+      <div class="frow river"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Reseñas de verdad</b><span>Leé opiniones aprobadas y sumá la reputación externa de Booking, Airbnb y Google, todo junto.</span></div></div>
+      <div class="frow river"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Eventos, agenda y notas</b><span>Qué pasa en cada destino: eventos, atracciones y un blog de tips y noticias turísticas.</span></div></div>
+      <div class="frow river"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Ordená a tu manera</b><span>Por precio, rating, distancia o «lo más guardado», combinando varios criterios a la vez.</span></div></div>
+      <div class="frow river"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Descubrí parecidos</b><span>Alojamientos similares y los mejor puntuados de cada destino, a un clic.</span></div></div>
+      <div class="frow river"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Lo que otros ya eligieron</b><span>Mirá cuántas personas guardaron cada alojamiento antes de decidir.</span></div></div>
+    </div>
+
+    <div class="tscroll reveal">
+      <table>
+        <thead><tr>
+          <th>Con tu cuenta</th>
+          <th class="c"><span class="pname">Gratis</span></th>
+          <th class="c hi"><span class="pname">Plus</span></th>
+          <th class="c"><span class="pname">VIP</span></th>
+        </tr></thead>
+        <tbody>
+          <tr><td class="feat">Guardar favoritos</td><td class="c"><span class="lim">5</span></td><td class="c"><span class="lim">25</span></td><td class="c"><span class="inf">∞</span></td></tr>
+          <tr><td class="feat">Colecciones<small>agrupá favoritos en listas temáticas</small></td><td class="c"><span class="no">–</span></td><td class="c"><span class="lim">10</span></td><td class="c"><span class="lim">25</span></td></tr>
+          <tr><td class="feat">Comparar alojamientos<small>lado a lado</small></td><td class="c"><span class="no">–</span></td><td class="c"><span class="lim">3</span></td><td class="c"><span class="lim">5</span></td></tr>
+          <tr><td class="feat">Alertas de precio<small>te avisamos cuando baja</small></td><td class="c"><span class="no">–</span></td><td class="c"><span class="lim">5</span></td><td class="c"><span class="inf">∞</span></td></tr>
+          <tr><td class="feat">Recomendaciones para vos</td><td class="c"><span class="no">–</span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td></tr>
+          <tr><td class="feat">Escribir y leer reseñas</td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td></tr>
+          <tr><td class="feat">Ofertas exclusivas</td><td class="c"><span class="no">–</span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td></tr>
+          <tr><td class="feat">WhatsApp del anfitrión</td><td class="c"><span class="no">–</span></td><td class="c">ver</td><td class="c">directo</td></tr>
+          <tr><td class="feat">Buscador con IA<small>consultas por mes</small></td><td class="c"><span class="lim">10</span></td><td class="c"><span class="lim">50</span></td><td class="c"><span class="lim">200</span></td></tr>
+          <tr><td class="feat">Chat con el alojamiento<small>consultas por mes</small></td><td class="c"><span class="lim">10</span></td><td class="c"><span class="lim">50</span></td><td class="c"><span class="lim">200</span></td></tr>
+          <tr><td class="feat">Soporte prioritario VIP</td><td class="c"><span class="no">–</span></td><td class="c"><span class="no">–</span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tnote">Los mensajes con anfitriones, tu perfil, las reseñas y las novedades son siempre gratis, en cualquier plan.</p>
+  </div>
+</section>
+
+<!-- ===== ANFITRIONES ===== -->
+<section class="sec sec--forest" id="anfitriones">
+  <div class="wrap">
+    <div class="sec__head reveal">
+      <span class="who forest"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V10l9-6 9 6v11"/><path d="M9 21v-6h6v6"/></svg>Para el que recibe</span>
+      <span class="eyebrow" style="display:block;margin-top:16px">tu propiedad, bien mostrada</span>
+      <h2>Publicá tu alojamiento y hacelo crecer.</h2>
+      <p>Cargá tu propiedad, mostrala con buenas fotos, creá promociones y mirá cómo rinde con
+        estadísticas claras. Y cuando no tenés ganas de escribir, la IA te importa la ficha desde
+        Airbnb o Booking, te mejora los textos y los traduce a tres idiomas.</p>
+    </div>
+
+    <div class="banner reveal">
+      <div class="banner__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 2 9 5M12 2l3 3"/><circle cx="12" cy="14" r="8"/><path d="M12 10v4l2.5 2"/></svg></div>
+      <div class="banner__tx">
+        <h3>14 días gratis, sin poner la tarjeta.</h3>
+        <p>Empezás a probar todo hoy mismo. No pedimos método de pago para arrancar, y tus datos quedan guardados aunque decidas esperar. Con el código <b>FREEMONTH</b>, 30 días más.</p>
+      </div>
+    </div>
+
+    <div class="flist reveal" style="margin-bottom:36px">
+      <div class="frow"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Importá la ficha en segundos</b><span>Pegá el link de Airbnb, Booking, MercadoLibre o Google y la IA completa los datos por vos.</span></div></div>
+      <div class="frow"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Que la IA te ayude a escribir</b><span>Mejora tus descripciones y las traduce a español, inglés y portugués con un clic.</span></div></div>
+      <div class="frow"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Promociones que se ven</b><span>Creá ofertas con badge en el listado y la ficha, visibles a todos los que buscan.</span></div></div>
+      <div class="frow"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Estadísticas que se entienden</b><span>Vistas, tasa de respuesta y consultas. En planes superiores, desglose de favoritos y comparación de mercado.</span></div></div>
+      <div class="frow"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Reputación de todos lados, en un lugar</b><span>Conectá tus ratings de Google, Booking y más para mostrarlos en tu ficha.</span></div></div>
+      <div class="frow"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Además, sos VIP viajando</b><span>Todo anfitrión tiene gratis el pack completo de viajero VIP: favoritos ∞, comparador, alertas y más.</span></div></div>
+      <div class="frow "><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Chat con IA para tus huéspedes</b><span>Sumá un asistente que responde consultas sobre tu alojamiento a cualquier hora.</span></div></div>
+      <div class="frow "><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Tu ficha, lista para Google</b><span>SEO editable —título y descripción— en cada alojamiento, incluido en todos los planes.</span></div></div>
+      <div class="frow "><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Directorio de proveedores a mano</b><span>Plomería, electricidad, gas, cerrajería, climatización, limpieza y más: oficios locales de confianza para llamar cuando algo falla en tu alojamiento.</span></div></div>
+    </div>
+
+    <div class="tscroll reveal">
+      <table>
+        <thead><tr>
+          <th>Tu plan de anfitrión</th>
+          <th class="c"><span class="pname">Básico</span></th>
+          <th class="c hi"><span class="pname">Pro</span></th>
+          <th class="c"><span class="pname">Premium</span></th>
+        </tr></thead>
+        <tbody>
+          <tr><td class="feat">Alojamientos publicables<small>+5 con addon</small></td><td class="c"><span class="lim">1</span></td><td class="c"><span class="lim">3</span></td><td class="c"><span class="lim">10</span></td></tr>
+          <tr><td class="feat">Fotos por alojamiento<small>+20 con addon</small></td><td class="c"><span class="lim">15</span></td><td class="c"><span class="lim">30</span></td><td class="c"><span class="lim">50</span></td></tr>
+          <tr><td class="feat">Promociones activas</td><td class="c"><span class="lim">2</span></td><td class="c"><span class="lim">5</span></td><td class="c"><span class="inf">∞</span></td></tr>
+          <tr><td class="feat">Descripción enriquecida y video</td><td class="c"><span class="no">–</span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td></tr>
+          <tr><td class="feat">Estadísticas avanzadas</td><td class="c"><span class="no">–</span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td></tr>
+          <tr><td class="feat">Listado destacado</td><td class="c"><span class="addon-c">con addon</span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td></tr>
+          <tr><td class="feat">Insignia de verificación</td><td class="c"><span class="no">–</span></td><td class="c"><span class="no">–</span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td></tr>
+          <tr><td class="feat">Branding personalizado</td><td class="c"><span class="no">–</span></td><td class="c"><span class="no">–</span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td></tr>
+          <tr><td class="feat">Soporte prioritario</td><td class="c"><span class="no">–</span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td><td class="c"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span></td></tr>
+          <tr><td class="feat">Importar ficha con IA<small>por mes</small></td><td class="c"><span class="lim">10</span></td><td class="c"><span class="lim">50</span></td><td class="c"><span class="lim">250</span></td></tr>
+          <tr><td class="feat">IA para mejorar textos<small>por mes</small></td><td class="c"><span class="lim">50</span></td><td class="c"><span class="lim">250</span></td><td class="c"><span class="lim">1.250</span></td></tr>
+          <tr><td class="feat">IA para traducir<small>por mes</small></td><td class="c"><span class="lim">200</span></td><td class="c"><span class="lim">1.000</span></td><td class="c"><span class="lim">5.000</span></td></tr>
+          <tr><td class="feat">IA: chat para tus huéspedes<small>por mes</small></td><td class="c"><span class="lim">50</span></td><td class="c"><span class="lim">250</span></td><td class="c"><span class="lim">1.250</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tnote">Editar tu propiedad, cargar amenities, FAQs, ubicación y SEO va incluido en todos los planes.</p>
+
+    <h3 style="font-family:var(--head);font-weight:700;font-size:20px;margin:40px 0 16px;letter-spacing:-.01em">¿Necesitás un poco más? Sumá un addon.</h3>
+    <div class="grid g3 reveal">
+      <div class="addon"><h4>Visibility Boost</h4><p>Destacá un alojamiento por 7 o 30 días. Pago único, cuando lo necesitás.</p></div>
+      <div class="addon"><h4>Fotos extra (+20)</h4><p>Veinte fotos más por alojamiento, para mostrarlo completo.</p></div>
+      <div class="addon"><h4>Alojamientos extra (+5)</h4><p>Cinco propiedades más para publicar, si tu portfolio crece.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== GASTRO Y EXPERIENCIAS ===== -->
+<section class="sec sec--sand" id="gastro">
+  <div class="wrap">
+    <div class="sec__head reveal">
+      <span class="who sun"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3h16M6 3v6a6 6 0 0 0 12 0V3M12 15v6M8 21h8"/></svg>Para tu restaurante o experiencia</span>
+      <span class="eyebrow" style="display:block;margin-top:16px">tu negocio, en el mapa turístico</span>
+      <h2>Gastronomía y experiencias, donde la gente planea su viaje.</h2>
+      <p>Un restaurante, una bodega, un paseo en kayak o una cata: tu negocio tiene ficha propia
+        dentro de Hospeda, visible para todos los que están armando su escapada por el Litoral.
+        Vos mantenés el contenido; nosotros lo ponemos en la vidriera.</p>
+    </div>
+    <div class="flist reveal">
+      <div class="frow sun"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Ficha pública propia</b><span>Con fotos, descripción rica, horarios, contacto, redes y menú o precios. Aparecés en listados y búsquedas.</span></div></div>
+      <div class="frow sun"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Reseñas y FAQs</b><span>Recibí opiniones moderadas y respondé las preguntas frecuentes de tus clientes.</span></div></div>
+      <div class="frow sun"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Vos editás el contenido</b><span>Actualizás horarios, contacto, media y menú cuando quieras, desde tu panel. Sin depender de nadie.</span></div></div>
+      <div class="frow sun"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><div><b>Buen SEO incluido</b><span>Tu ficha está pensada para aparecer bien en Google, con editor de título y descripción.</span></div></div>
+    </div>
+    <p class="tnote">Mientras tu suscripción está activa, tu ficha es pública. ¿Querés sumarte? Se hace desde "sumar mi negocio" y nuestro equipo te da el alta.</p>
+  </div>
+</section>
+
+<!-- ===== MARCAS ===== -->
+<section class="sec" id="marcas">
+  <div class="wrap">
+    <div class="sec__head reveal">
+      <span class="who"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5 4 8 9 9 5-1 9-4 9-9V7z"/></svg>Para marcas y auspiciantes</span>
+      <span class="eyebrow" style="display:block;margin-top:16px">acompañá al turismo de la región</span>
+      <h2>Poné tu marca donde el turismo del Litoral se encuentra.</h2>
+      <p>Dos formas de estar presente: como <b>partner auspiciante</b> en el directorio de la
+        plataforma, o <b>patrocinando</b> los posts y eventos que la gente lee cada día.</p>
+    </div>
+    <div class="grid g2 reveal">
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5 4 8 9 9 5-1 9-4 9-9V7z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <h3>Partners auspiciantes</h3>
+        <p>Instituciones y empresas en el directorio público de partners, con niveles bronce, plata
+          y oro. El alta y la gestión las hace nuestro equipo por vos.</p>
+      </div>
+      <div class="card">
+        <div class="ico sun"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6m0 8v6M4.9 4.9l4.2 4.2m5.8 5.8 4.2 4.2M2 12h6m8 0h6M4.9 19.1l4.2-4.2m5.8-5.8 4.2-4.2"/></svg></div>
+        <h3>Patrocinio de contenido</h3>
+        <p>Como Sponsor tenés un panel propio para crear y editar tus patrocinios de posts y
+          eventos, con niveles y paquetes a elegir, analíticas y facturas a la vista. Autogestionado.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Y ADEMÁS ===== -->
+<section class="sec sec--warm" id="ademas">
+  <div class="wrap">
+    <div class="sec__head reveal">
+      <span class="eyebrow">y además, siempre</span>
+      <h2>Detalles que hacen que todo funcione mejor.</h2>
+      <p>Cosas que no ves en un plan pero que están en cada rincón de la plataforma, para todos.</p>
+    </div>
+    <div class="extras reveal">
+      <div class="extra"><span class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3.2 3 15.8 0 19M12 2.5c-3 3.2-3 15.8 0 19"/></svg></span><div><b>Tres idiomas</b><span>Español, inglés y portugués en toda la plataforma. Español por defecto para el mercado argentino.</span></div></div>
+      <div class="extra"><span class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 18a5 5 0 0 0-.5-9.98A7 7 0 0 0 4 10a4 4 0 0 0 0 8z"/><circle cx="18" cy="5" r="2.5"/></svg></span><div><b>Clima y pronóstico</b><span>Condiciones en vivo y a 16 días para cada destino, para elegir la mejor fecha.</span></div></div>
+      <div class="extra"><span class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg></span><div><b>Eventos y agenda</b><span>Qué pasa en cada destino, con organizadores, ubicaciones y comentarios.</span></div></div>
+      <div class="extra"><span class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M4 12h16M4 19h10"/></svg></span><div><b>Blog y notas turísticas</b><span>Tips, noticias y recomendaciones para descubrir el Litoral de otra manera.</span></div></div>
+      <div class="extra"><span class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="m3 7 9 6 9-6"/></svg></span><div><b>Newsletter</b><span>Novedades y ofertas a tu correo, con alta y baja en un clic. Sin spam.</span></div></div>
+      <div class="extra"><span class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 12 22l-8.6-8.6a5 5 0 0 1 0-7.1 5 5 0 0 1 7.1 0l1.5 1.5 1.5-1.5a5 5 0 0 1 7.1 0 5 5 0 0 1 0 7.1z"/></svg></span><div><b>Códigos promocionales</b><span>Descuentos de bienvenida y campañas como LANZAMIENTO50 o BIENVENIDO30, y meses gratis con FREEMONTH.</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PROXIMAMENTE ===== -->
+<section class="sec sec--sand soonsec" id="proximamente">
+  <div class="wrap">
+    <div class="sec__head reveal">
+      <span class="eyebrow" style="color:var(--gold)">lo que se viene</span>
+      <h2>En camino: lo próximo que vas a ver en Hospeda.</h2>
+      <p>Somos honestos: esto todavía no está disponible, pero ya lo estamos construyendo. Te lo contamos para que sepas hacia dónde va la plataforma.</p>
+    </div>
+    <div class="soon-grid">
+      <div class="soon-card reveal"><span class="soon">Pronto</span><span class="soon-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg></span><h4>Tarjeta turista</h4><p>Beneficios y descuentos para viajeros en alojamientos, gastronomía y experiencias.</p></div>
+      <div class="soon-card reveal"><span class="soon">Pronto</span><span class="soon-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="8" height="13" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/><path d="M6.5 12h1M6.5 16h1M16.5 7h1M16.5 11h1M16.5 15h1"/></svg></span><h4>Alojamientos multi-propiedad</h4><p>Planes pensados para hoteles y operaciones grandes, con gestión centralizada del portfolio.</p></div>
+      <div class="soon-card reveal"><span class="soon">Pronto</span><span class="soon-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></span><h4>Perfil público del anfitrión</h4><p>Una página propia para cada anfitrión, con todos sus alojamientos en un solo lugar.</p></div>
+      <div class="soon-card reveal"><span class="soon">Pronto</span><span class="soon-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><h4>Responder reseñas</h4><p>Que el anfitrión responda públicamente las opiniones de sus huéspedes.</p></div>
+      <div class="soon-card reveal"><span class="soon">Pronto</span><span class="soon-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg></span><h4>Calendario de disponibilidad</h4><p>Con sincronización a Google Calendar e iCal para no repetir fechas.</p></div>
+      <div class="soon-card reveal"><span class="soon">Pronto</span><span class="soon-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.5 7.5L3 21l2-5.5A8.5 8.5 0 1 1 21 11.5z"/><path d="M9 10c0 3 2 5 5 5"/></svg></span><h4>WhatsApp en la ficha</h4><p>Contacto directo por WhatsApp con el anfitrión, desde la misma página.</p></div>
+      <div class="soon-card reveal"><span class="soon">Pronto</span><span class="soon-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2.5h7L17 8h3a1.5 1.5 0 0 1 1.5 1.5V18A1.5 1.5 0 0 1 20 19.5H4A1.5 1.5 0 0 1 2.5 18V9.5A1.5 1.5 0 0 1 4 8z"/><circle cx="12" cy="13" r="3.2"/></svg></span><h4>Fotos en las reseñas</h4><p>Que los huéspedes sumen sus propias fotos a las opiniones.</p></div>
+      <div class="soon-card reveal"><span class="soon">Pronto</span><span class="soon-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v6m0 6v6M4.9 4.9l4.2 4.2m5.8 5.8 4.2 4.2M2 12h6m8 0h6M4.9 19.1l4.2-4.2m5.8-5.8 4.2-4.2"/></svg></span><h4>Asistente de IA para soporte</h4><p>Ayuda automática para resolver dudas al instante, en cualquier momento.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section class="sec">
+  <div class="wrap">
+    <div class="cta reveal">
+      <span class="cta__sun" aria-hidden="true"></span>
+      <span class="hand">¿arrancamos?</span>
+      <h2>Sumá tu alojamiento o tu negocio a Hospeda.</h2>
+      <p>Probá 14 días gratis si alquilás, o escribinos para poner tu restaurante, experiencia o
+        marca en el mapa turístico del Litoral. Sin compromiso, sin tarjeta para empezar.</p>
+      <a class="btn" href="https://hospeda.com.ar" target="_blank" rel="noopener">
+        Conocer Hospeda
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="frow-top">
+      <a class="brand" href="#top"><img src="data:image/webp;base64,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" alt="" width="26" height="26" style="width:26px;height:26px">Hospeda</a>
+      <span>Turismo del Litoral · Concepción del Uruguay, Entre Ríos</span>
+    </div>
+    <p>Este es un resumen en criollo de lo que ofrece la plataforma hoy. <b>hospeda.com.ar</b></p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  // theme
+  var btn=document.getElementById('theme');
+  function set(t){root.setAttribute('data-theme',t);try{localStorage.setItem('hosp-brochure-theme',t);}catch(e){}}
+  try{var s=localStorage.getItem('hosp-brochure-theme');if(s)root.setAttribute('data-theme',s);}catch(e){}
+  btn.addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme');
+    var dark=cur?cur==='dark':matchMedia('(prefers-color-scheme:dark)').matches;
+    set(dark?'light':'dark');
+  });
+  // reveal
+  var rm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var els=[].slice.call(document.querySelectorAll('.reveal'));
+  if(rm||!('IntersectionObserver'in window)){els.forEach(function(e){e.classList.add('in');});}
+  else{
+    var io=new IntersectionObserver(function(en){en.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target);}});},{rootMargin:'0px 0px -8% 0px',threshold:.08});
+    els.forEach(function(e){io.observe(e);});
+  }
+  // active subnav
+  var links=[].slice.call(document.querySelectorAll('#nav a'));
+  var map=links.map(function(a){var id=a.getAttribute('href').slice(1);return{a:a,el:document.getElementById(id)};}).filter(function(x){return x.el;});
+  function onScroll(){
+    var y=window.scrollY+120,cur=null;
+    map.forEach(function(x){if(x.el.offsetTop<=y)cur=x;});
+    links.forEach(function(a){a.classList.remove('on');});
+    if(cur)cur.a.classList.add('on');
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+})();
+</script>
