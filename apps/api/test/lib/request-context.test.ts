@@ -11,7 +11,8 @@ import { describe, expect, it } from 'vitest';
 import {
     getRequestContext,
     runWithRequestContext,
-    setRequestContextActor
+    setRequestContextActor,
+    setRequestContextVisitor
 } from '../../src/lib/request-context';
 
 // ---------------------------------------------------------------------------
@@ -140,6 +141,116 @@ describe('setRequestContextActor', () => {
         expect(captured?.requestId).toBe('field-isolation');
         expect(captured?.path).toBe('/test');
         expect(captured?.method).toBe('GET');
+    });
+
+    it('should set sessionId when provided', async () => {
+        // Arrange
+        const store = makeStore();
+        let captured: ReturnType<typeof getRequestContext>;
+
+        // Act
+        await runWithRequestContext({
+            store,
+            fn: async () => {
+                setRequestContextActor({
+                    userId: 'user-uuid-002',
+                    role: 'HOST',
+                    sessionId: 'session-uuid-001'
+                });
+                captured = getRequestContext();
+            }
+        });
+
+        // Assert
+        expect(captured?.userId).toBe('user-uuid-002');
+        expect(captured?.sessionId).toBe('session-uuid-001');
+    });
+
+    it('should leave sessionId undefined when not provided', async () => {
+        // Arrange
+        const store = makeStore();
+        let captured: ReturnType<typeof getRequestContext>;
+
+        // Act
+        await runWithRequestContext({
+            store,
+            fn: async () => {
+                setRequestContextActor({ userId: 'u2', role: 'USER' });
+                captured = getRequestContext();
+            }
+        });
+
+        // Assert
+        expect(captured?.sessionId).toBeUndefined();
+    });
+});
+
+describe('setRequestContextVisitor', () => {
+    it('should mutate the active store with visitorId', async () => {
+        // Arrange
+        const store = makeStore();
+        let captured: ReturnType<typeof getRequestContext>;
+
+        // Act
+        await runWithRequestContext({
+            store,
+            fn: async () => {
+                setRequestContextVisitor({ visitorId: 'visitor-uuid-001' });
+                captured = getRequestContext();
+            }
+        });
+
+        // Assert
+        expect(captured?.visitorId).toBe('visitor-uuid-001');
+    });
+
+    it('should be a no-op when called outside any active scope', () => {
+        // Arrange — no active scope
+        // Act — must not throw
+        expect(() => setRequestContextVisitor({ visitorId: 'x' })).not.toThrow();
+        // Assert — no store leaked
+        expect(getRequestContext()).toBeUndefined();
+    });
+
+    it('should not affect other store fields when setting visitorId', async () => {
+        // Arrange
+        const store = makeStore({ requestId: 'visitor-isolation' });
+        let captured: ReturnType<typeof getRequestContext>;
+
+        // Act
+        await runWithRequestContext({
+            store,
+            fn: async () => {
+                setRequestContextActor({ userId: 'u3', role: 'HOST' });
+                setRequestContextVisitor({ visitorId: 'visitor-uuid-002' });
+                captured = getRequestContext();
+            }
+        });
+
+        // Assert — actor fields untouched by visitor mutation
+        expect(captured?.userId).toBe('u3');
+        expect(captured?.role).toBe('HOST');
+        expect(captured?.visitorId).toBe('visitor-uuid-002');
+    });
+
+    it('should coexist with an authenticated actor on the same store', async () => {
+        // Arrange — anonymous request that later authenticates in the same session
+        const store = makeStore();
+        let captured: ReturnType<typeof getRequestContext>;
+
+        // Act
+        await runWithRequestContext({
+            store,
+            fn: async () => {
+                setRequestContextVisitor({ visitorId: 'visitor-before-login' });
+                setRequestContextActor({ userId: 'u4', role: 'USER' });
+                captured = getRequestContext();
+            }
+        });
+
+        // Assert — both identities present simultaneously
+        expect(captured?.visitorId).toBe('visitor-before-login');
+        expect(captured?.userId).toBe('u4');
     });
 });
 

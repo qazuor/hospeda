@@ -28,6 +28,7 @@ import { registerAppLogDbSink } from './lib/app-log-sink';
 import { registerAuditLogPersistence } from './lib/audit-log-sink';
 import { createEntityResolver } from './lib/entity-resolver';
 import { shutdownPostHog } from './lib/posthog';
+import { getRequestContext } from './lib/request-context';
 import { closeSentry, initializeSentry } from './lib/sentry';
 import { getDecryptedAiProviderCredential } from './services/ai-credential-vault.service';
 import { initializeMediaProvider } from './services/media';
@@ -89,6 +90,17 @@ const resolvedLogFormat = resolveLogFormat({
 // every one takes effect (API_ENABLE_REQUEST_LOGGING is honored separately by
 // loggerMiddleware). EXPAND_OBJECT_LEVELS: -1 means "expand all", so the boolean
 // flag maps to expand-all vs the package default of 2 levels.
+// Inject the AsyncLocalStorage-based request context (SPEC-184) into every
+// STDOUT log line. This makes requestId/userId/role/sessionId/visitorId
+// grep-able in `hops logs`. Note: the `app_log_entries` DB sink is NOT
+// affected by this seam — it builds its own narrower context payload
+// (requestId/method/path/userId only) in app-log-sink.ts and has no
+// session_id/visitor_id columns, so filtering by session/visitor is a
+// stdout-only capability for now (DB-sink enrichment would be a follow-up).
+// `getRequestContext()` returns `undefined` outside an active request scope
+// (startup, crons, background workers), so those logs stay clean with no
+// context fields. `@repo/logger` never imports this app's code directly —
+// this callback is the seam.
 configureLogger({
     LEVEL: LOG_LEVEL_BY_NAME[env.API_LOG_LEVEL],
     FORMAT: resolvedLogFormat === 'json' ? LogFormat.JSON : LogFormat.PRETTY,
@@ -99,7 +111,15 @@ configureLogger({
     EXPAND_OBJECT_LEVELS: env.API_LOG_EXPAND_OBJECTS ? -1 : 2,
     TRUNCATE_LONG_TEXT: env.API_LOG_TRUNCATE_TEXT,
     TRUNCATE_LONG_TEXT_AT: env.API_LOG_TRUNCATE_AT,
-    STRINGIFY_OBJECTS: env.API_LOG_STRINGIFY
+    STRINGIFY_OBJECTS: env.API_LOG_STRINGIFY,
+    // Spread into a plain object: RequestContextStore is a named interface
+    // (no index signature), while the logger seam expects
+    // `Record<string, unknown>`. The spread is cheap (a handful of scalar
+    // fields) and keeps @repo/logger decoupled from this app's store shape.
+    getContext: () => {
+        const ctx = getRequestContext();
+        return ctx === undefined ? undefined : { ...ctx };
+    }
 });
 
 // Log a small, safe env summary ONCE here, after configureLogger() so it honors
