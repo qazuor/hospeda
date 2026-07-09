@@ -52,6 +52,22 @@ function authHeaders(): Record<string, string> {
     };
 }
 
+/**
+ * Auth headers for a plain USER (pre-host): authenticated, but with NO
+ * accommodation permissions — the exact state of a tourist publishing their
+ * first listing, before the USER -> HOST promotion. See BETA-153.
+ */
+function plainUserHeaders(): Record<string, string> {
+    return {
+        'content-type': 'application/json',
+        accept: 'application/json',
+        'user-agent': 'vitest',
+        'x-mock-actor-id': ACTOR_ID,
+        'x-mock-actor-role': 'USER',
+        'x-mock-actor-permissions': JSON.stringify([])
+    };
+}
+
 /** A Hotel JSON-LD page WITH rating/review fields (which must be stripped). */
 const RICH_JSONLD_HTML = `<!doctype html><html><head>
 <script type="application/ld+json">${JSON.stringify({
@@ -174,6 +190,28 @@ describe('POST /api/v1/protected/accommodations/import-from-url', () => {
             (call) => call[0].event === 'accommodation_import_started'
         );
         expect(startedCall?.[0].properties.host).toBe('example.com');
+    });
+
+    it('allows a plain USER (pre-host, no accommodation permissions) to import — never 403 (BETA-153)', async () => {
+        // Arrange: a tourist publishing their first listing. They have NO
+        // accommodation permissions yet (promotion to HOST happens later, on the
+        // mini-form submit), but the import helper must work regardless — it is a
+        // stateless pre-creation scrape, gated only by auth + rate limit.
+        mockFetch.mockResolvedValue(fetchSuccess(RICH_JSONLD_HTML));
+
+        // Act
+        const res = await app.request(ENDPOINT, {
+            method: 'POST',
+            headers: plainUserHeaders(),
+            body: JSON.stringify({ url: 'https://example.com/listing/1', legalConfirmed: true })
+        });
+
+        // Assert: the old permission gate returned 403 here; the fix returns 200.
+        expect(res.status).not.toBe(403);
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.success).toBe(true);
+        expect(body.data.source).toBe('generic');
     });
 
     it('returns 401 for an unauthenticated request', async () => {
