@@ -210,12 +210,18 @@
                 "confirmNo": "Cancelar",
                 "delete": "Excluir",
                 "deleteConfirm": "Excluir este imóvel? Ele será removido da sua lista e do site.",
-                "deleteYes": "Sim, excluir"
+                "deleteYes": "Sim, excluir",
+                "publishConfirmTitle": "14 dias grátis ao publicar",
+                "publishConfirmNote": "Ao publicar começa seu período de avaliação gratuito de 14 dias. Sem cartão, sem compromisso.",
+                "publishYes": "Sim, publicar"
             },
             "pricePerNight": "[TODO]",
             "unpublishSuccess": "Imóvel despublicado",
             "unpublishError": "Não foi possível despublicar. Tente novamente.",
             "deleteError": "Não foi possível excluir. Tente novamente.",
+            "publishError": "Não foi possível publicar. Tente novamente.",
+            "publishSubscriptionRequiredMessage": "Você já usou seu período de avaliação gratuito de 14 dias. Assine um plano para publicar este imóvel.",
+            "publishSubscriptionRequiredCta": "Ver planos",
             "priceOnRequest": "Preço a consultar"
         },
         "editor": {

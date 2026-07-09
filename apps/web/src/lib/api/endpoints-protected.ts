@@ -665,7 +665,19 @@ export const billingApi = {
     }): Promise<
         ApiResult<{
             readonly checkoutUrl: string;
-            readonly appliedEffect?: 'comp' | 'discount';
+            // 'trial' (HOS-110): the plan's no-card trial was granted instead of a
+            // paid checkout — no MercadoPago redirect, same as 'comp'. Type-only
+            // widening; PlanPurchaseButton's unconditional redirect already handles
+            // this shape (see subscription-checkout.service.ts CheckoutAppliedEffect).
+            readonly appliedEffect?: 'comp' | 'discount' | 'trial';
+            /**
+             * HOS-110 W1: `true` when a `discount` promo code was supplied
+             * alongside a trial-eligible checkout and was DISCARDED because the
+             * free trial takes priority. Only ever present together with
+             * `appliedEffect: 'trial'` — PlanPurchaseButton uses it to flag the
+             * dropped code to the user via the success-page query param.
+             */
+            readonly promoCodeIgnored?: true;
         }>
     > {
         const body: Record<string, unknown> = { planSlug, billingInterval };
@@ -1977,6 +1989,32 @@ export const accommodationEditApi = {
     unpublish({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/accommodations/${id}/unpublish`
+        });
+    },
+
+    /**
+     * Publish an accommodation (DRAFT → ACTIVE), starting the no-card 14-day
+     * trial for first-time publishers.
+     *
+     * Calls the dedicated `/publish` endpoint (HOS-110) instead of the
+     * generic `update()` PATCH — the general update schema strips
+     * `lifecycleState`, so sending it via `update()` is a silent no-op.
+     * Only the owner or a user with ACCOMMODATION_UPDATE_ANY can call this.
+     *
+     * @param params - Accommodation ID to publish
+     * @returns The updated accommodation record, or an `ApiError` with
+     *   `status: 403` and `message: 'subscription_required'` when the owner
+     *   already consumed their one-per-life trial and has no active plan.
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationEditApi.publish({ id: 'acc-uuid' });
+     * if (result.ok) console.log('Accommodation is now live');
+     * ```
+     */
+    publish({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/accommodations/${id}/publish`
         });
     },
 

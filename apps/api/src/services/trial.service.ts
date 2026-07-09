@@ -16,7 +16,6 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import { NotificationType, type TrialEventPayload } from '@repo/notifications';
@@ -25,9 +24,11 @@ import {
     BILLING_EVENT_TYPES,
     calculateTrialDaysRemaining,
     checkSubscriptionStatusTransition,
+    DEFAULT_TRIAL_PLAN_SLUG,
     type ReactivateFromTrialInput,
     type ReactivateSubscriptionInput,
     type ReactivateSubscriptionResult,
+    resolvePlanTrialConfig,
     type StartTrialInput,
     type TrialEndingSubscription,
     type TrialStatus,
@@ -96,11 +97,34 @@ export class TrialService {
     ) {}
 
     /**
-     * Start a trial for a new user
-     * Creates a trial subscription with appropriate plan (Basico)
+     * Start a trial for a user (HOS-110).
+     *
+     * Creates a trial subscription on the plan identified by
+     * `input.planSlug` (defaults to {@link DEFAULT_TRIAL_PLAN_SLUG},
+     * `'owner-basico'`, when omitted — preserving the original
+     * accommodation-publish behavior, where the accommodation type is an
+     * attribute of the accommodation entity, not the trial plan).
+     *
+     * The trial length is read from the RESOLVED plan's own declared trial
+     * config (`billing_plans.metadata.trialDays` / `.hasTrial`), not a
+     * hardcoded constant — different plans can declare different trial
+     * lengths (e.g. `owner-test-daily`: 1 day vs `owner-basico`: 14 days).
+     * If the resolved plan does not declare a trial (`hasTrial !== true` or
+     * `trialDays <= 0`), this is a no-op that returns `null` — starting a
+     * 0-day "trial" on a no-trial plan would be a bug, not a feature.
+     *
+     * `input.extraTrialDays` (HOS-110 W1) adds on top of the resolved base
+     * length (plan `trialDays`, or `HOSPEDA_TRIAL_DAYS_OVERRIDE` when set) —
+     * sourced from a `trial_extension` promo code applied by a trial-eligible
+     * customer at checkout. The base-length guard above is evaluated BEFORE
+     * the extension is added, so the ops kill-switch
+     * (`HOSPEDA_TRIAL_DAYS_OVERRIDE=0`) still disables every trial regardless
+     * of any extension promo supplied.
      *
      * @param input - Trial start parameters
-     * @returns Trial subscription ID or null if billing disabled
+     * @returns Trial subscription ID, or `null` if billing is disabled, the
+     *   resolved plan has no trial, or the customer already has a
+     *   subscription (one trial per customer, for life).
      */
     async startTrial(input: StartTrialInput): Promise<string | null> {
         if (!this.billing) {
@@ -108,32 +132,11 @@ export class TrialService {
             return null;
         }
 
-        const { customerId, accommodationId } = input;
+        const { customerId, accommodationId, extraTrialDays } = input;
+        const planSlug = input.planSlug ?? DEFAULT_TRIAL_PLAN_SLUG;
 
         try {
-            // All users start on the same base plan with the same trial duration.
-            // The accommodation type (simple cabin vs hotel/complex) is an attribute
-            // of the accommodation entity, not the user or subscription.
-            const planSlug = 'owner-basico';
-            // Testing-only override (HOSPEDA_TRIAL_DAYS_OVERRIDE): when set to a
-            // positive integer, shorten the trial so QA can exercise trial expiry
-            // without waiting the full OWNER_TRIAL_DAYS. Deliberately NOT gated by
-            // environment: NODE_ENV is 'production' on BOTH the prod and staging
-            // deployments, so it cannot distinguish them, and testing must be
-            // possible against production (the MP sandbox on staging is unreliable).
-            // This is an explicit ops knob — it affects EVERY trial started while it
-            // is set, so the operator sets it, runs the test, then UNSETS it. Unset
-            // by default in every environment.
-            const trialDays = env.HOSPEDA_TRIAL_DAYS_OVERRIDE ?? OWNER_TRIAL_DAYS;
-
-            apiLogger.info(
-                {
-                    customerId,
-                    planSlug,
-                    trialDays
-                },
-                'Starting trial for user'
-            );
+            apiLogger.info({ customerId, planSlug }, 'Starting trial for user');
 
             // Get plan by slug
             const plansResult = await this.billing.plans.list();
@@ -149,6 +152,39 @@ export class TrialService {
             if (!plan) {
                 apiLogger.error({ planSlug }, 'Trial plan not found');
                 throw new Error(`Trial plan not found: ${planSlug}`);
+            }
+
+            // Trial config lives on the plan's metadata JSONB (seeded from
+            // `PlanDefinition.hasTrial` / `.trialDays`).
+            const { hasTrial: planHasTrial, trialDays: planTrialDays } = resolvePlanTrialConfig(
+                plan.metadata
+            );
+
+            // Testing-only override (HOSPEDA_TRIAL_DAYS_OVERRIDE): when set to a
+            // positive integer, shorten the trial so QA can exercise trial expiry
+            // without waiting the plan's full trial length. Deliberately NOT gated
+            // by environment: NODE_ENV is 'production' on BOTH the prod and staging
+            // deployments, so it cannot distinguish them, and testing must be
+            // possible against production (the MP sandbox on staging is unreliable).
+            // This is an explicit ops knob — it affects EVERY trial started while it
+            // is set, so the operator sets it, runs the test, then UNSETS it. Unset
+            // by default in every environment. The override only shortens/lengthens
+            // an ALREADY-trial-eligible plan — it never forces a trial onto a plan
+            // that does not declare one (the `planHasTrial` guard below still applies).
+            // HOS-110 W1: a `trial_extension` promo code (SPEC-262) supplied by a
+            // trial-eligible customer at checkout adds its `extraDays` on top of
+            // the (possibly overridden) base length — e.g. base 14 + code's 7 = 21.
+            // Applied AFTER the override so a QA override still shortens the base
+            // length; the extension is additive on top of whatever base applies.
+            const baseTrialDays = env.HOSPEDA_TRIAL_DAYS_OVERRIDE ?? planTrialDays;
+            const trialDays = baseTrialDays + (extraTrialDays ?? 0);
+
+            if (!planHasTrial || baseTrialDays <= 0) {
+                apiLogger.warn(
+                    { customerId, planSlug, planHasTrial, trialDays },
+                    'Plan does not declare a trial — skipping trial creation'
+                );
+                return null;
             }
 
             // Check if user already has a subscription
@@ -189,16 +225,27 @@ export class TrialService {
                     autoStarted: 'true',
                     createdBy: 'trial-service',
                     environment: environmentMarker,
-                    ...(accommodationId ? { triggeredByAccommodationId: accommodationId } : {})
+                    ...(accommodationId ? { triggeredByAccommodationId: accommodationId } : {}),
+                    // HOS-110 W1: audit trail for a trial_extension promo code that
+                    // lengthened this trial beyond the plan's base trialDays.
+                    ...(extraTrialDays ? { extraTrialDaysFromPromo: String(extraTrialDays) } : {})
                 }
             });
+
+            // Clear entitlement cache to reflect the new trial subscription
+            // immediately (HOS-110). Previously only the accommodation-publish
+            // wrapper cleared this cache itself; other callers of `startTrial`
+            // (e.g. the paid-checkout trial branch) would otherwise leak a
+            // stale "no entitlements" cache entry until the TTL expired.
+            clearEntitlementCache(customerId);
 
             apiLogger.info(
                 {
                     customerId,
                     subscriptionId: subscription.id,
                     planSlug,
-                    trialEnd: trialEnd.toISOString()
+                    trialEnd: trialEnd.toISOString(),
+                    ...(extraTrialDays ? { extraTrialDays } : {})
                 },
                 'Trial subscription created successfully'
             );

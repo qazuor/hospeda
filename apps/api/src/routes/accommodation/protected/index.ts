@@ -27,6 +27,7 @@ import { protectedImportFromUrlRoute } from './import-from-url';
 import { protectedImportFromUrlStatusRoute } from './import-from-url-status';
 import { protectedListOwnAccommodationsRoute } from './list';
 import { protectedPatchAccommodationRoute } from './patch';
+import { protectedPublishAccommodationRoute } from './publish';
 import { removeFaqRoute } from './removeFaq';
 import { protectedRemoveMediaRoute } from './removeMedia';
 import { protectedReorderMediaRoute } from './reorderMedia';
@@ -46,6 +47,8 @@ ownershipRoutes.route('/', protectedPatchAccommodationRoute);
 ownershipRoutes.route('/', protectedSoftDeleteAccommodationRoute);
 // POST /:id/unpublish - Transition ACTIVE → INACTIVE
 ownershipRoutes.route('/', protectedUnpublishAccommodationRoute);
+// POST /:id/publish - Transition DRAFT (or INACTIVE) → ACTIVE (HOS-110)
+ownershipRoutes.route('/', protectedPublishAccommodationRoute);
 
 const app = createRouter();
 

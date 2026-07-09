@@ -210,12 +210,18 @@
                 "confirmNo": "Cancel",
                 "delete": "Delete",
                 "deleteConfirm": "Delete this property? It will be removed from your listings and the site.",
-                "deleteYes": "Yes, delete"
+                "deleteYes": "Yes, delete",
+                "publishConfirmTitle": "14 free days when you publish",
+                "publishConfirmNote": "Publishing starts your free 14-day trial. No credit card, no commitment.",
+                "publishYes": "Yes, publish"
             },
             "pricePerNight": "[TODO]",
             "unpublishSuccess": "Property unpublished",
             "unpublishError": "Could not unpublish. Please try again.",
             "deleteError": "Could not delete. Please try again.",
+            "publishError": "Could not publish. Please try again.",
+            "publishSubscriptionRequiredMessage": "You already used your free 14-day trial. Subscribe to a plan to publish this property.",
+            "publishSubscriptionRequiredCta": "View plans",
             "priceOnRequest": "Price on request"
         },
         "editor": {

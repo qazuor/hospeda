@@ -23,9 +23,16 @@ interface Props {
 	readonly body: string;
 	readonly primaryCta: CtaProps;
 	readonly secondaryCta?: CtaProps;
+	/**
+	 * Optional secondary note rendered below the main body copy, in a
+	 * visually distinct (muted/bordered) inline block. Used by the success
+	 * page (HOS-110 W1) to tell the user a supplied discount code was not
+	 * applied because a free trial was granted instead.
+	 */
+	readonly note?: string;
 }
 
-const { variant, title, body, primaryCta, secondaryCta } = Astro.props;
+const { variant, title, body, primaryCta, secondaryCta, note } = Astro.props;
 ---
 
 <section class="checkout-result section">
@@ -78,6 +85,7 @@ const { variant, title, body, primaryCta, secondaryCta } = Astro.props;
 
 		<h1 class="checkout-result__title">{title}</h1>
 		<p class="checkout-result__body">{body}</p>
+		{note && <p class="checkout-result__note">{note}</p>}
 
 		<div class="checkout-result__actions">
 			<a
@@ -153,6 +161,18 @@ const { variant, title, body, primaryCta, secondaryCta } = Astro.props;
 		font-family: var(--font-sans);
 		font-size: var(--text-body-lg);
 		color: var(--core-muted-foreground);
+		margin: 0;
+		max-width: 55ch;
+	}
+
+	.checkout-result__note {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--core-muted-foreground);
+		background-color: var(--surface-warm);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-button);
+		padding: var(--space-3) var(--space-4);
 		margin: 0;
 		max-width: 55ch;
 	}

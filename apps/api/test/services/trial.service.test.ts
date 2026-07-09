@@ -98,6 +98,7 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+import { clearEntitlementCache } from '../../src/middlewares/entitlement';
 import { TrialService } from '../../src/services/trial.service';
 import { env } from '../../src/utils/env';
 
@@ -138,7 +139,9 @@ describe('TrialService', () => {
             const mockPlan = {
                 id: 'plan-owner-basico',
                 name: 'owner-basico', // QZPay uses name as identifier
-                monthlyPriceArs: 1500000
+                monthlyPriceArs: 1500000,
+                // HOS-110: trial config now lives on the plan's metadata JSONB.
+                metadata: { hasTrial: true, trialDays: 14 }
             };
             const mockSubscription = {
                 id: 'sub-123',
@@ -175,6 +178,95 @@ describe('TrialService', () => {
             );
         });
 
+        // HOS-110 W1: a trial_extension promo code's extra days must add on top
+        // of the plan's own base trial length, not replace it.
+        describe('extraTrialDays (HOS-110 W1)', () => {
+            const arrangePlan = () => {
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [
+                        {
+                            id: 'plan-owner-basico',
+                            name: 'owner-basico',
+                            metadata: { hasTrial: true, trialDays: 14 }
+                        }
+                    ]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(
+                    [] as never
+                );
+                vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                    id: 'sub-extended'
+                } as never);
+            };
+
+            it('adds extraTrialDays on top of the plan base length', async () => {
+                // Arrange
+                arrangePlan();
+
+                // Act — base 14 + extension 7 = 21
+                await trialService.startTrial({
+                    customerId: 'customer-extended',
+                    extraTrialDays: 7
+                });
+
+                // Assert
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({ trialDays: 21 })
+                );
+            });
+
+            it('leaves the base trial length unchanged when extraTrialDays is omitted', async () => {
+                // Arrange
+                arrangePlan();
+
+                // Act
+                await trialService.startTrial({ customerId: 'customer-no-extension' });
+
+                // Assert
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({ trialDays: 14 })
+                );
+            });
+
+            it('stamps extraTrialDaysFromPromo in the MP creation metadata when extended', async () => {
+                // Arrange
+                arrangePlan();
+
+                // Act
+                await trialService.startTrial({
+                    customerId: 'customer-extended-meta',
+                    extraTrialDays: 7
+                });
+
+                // Assert
+                const createArg = (mockBilling.subscriptions.create as unknown as Mock).mock
+                    .calls[0]?.[0] as { metadata: Record<string, string> };
+                expect(createArg.metadata.extraTrialDaysFromPromo).toBe('7');
+            });
+
+            it('combines with HOSPEDA_TRIAL_DAYS_OVERRIDE (override is the base, extension adds on top)', async () => {
+                // Arrange
+                const originalOverride = env.HOSPEDA_TRIAL_DAYS_OVERRIDE;
+                env.HOSPEDA_TRIAL_DAYS_OVERRIDE = 1;
+                arrangePlan();
+
+                try {
+                    // Act — override base 1 + extension 7 = 8
+                    await trialService.startTrial({
+                        customerId: 'customer-override-plus-extension',
+                        extraTrialDays: 7
+                    });
+
+                    // Assert
+                    expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                        expect.objectContaining({ trialDays: 8 })
+                    );
+                } finally {
+                    env.HOSPEDA_TRIAL_DAYS_OVERRIDE = originalOverride;
+                }
+            });
+        });
+
         // HOSPEDA_TRIAL_DAYS_OVERRIDE (testing-only): when set to a positive integer
         // it replaces OWNER_TRIAL_DAYS (14) so QA can exercise trial expiry after
         // e.g. 1 day. It is intentionally NOT gated by environment (NODE_ENV is
@@ -196,7 +288,11 @@ describe('TrialService', () => {
             });
 
             const arrangeHappyPath = () => {
-                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+                const mockPlan = {
+                    id: 'plan-owner-basico',
+                    name: 'owner-basico',
+                    metadata: { hasTrial: true, trialDays: 14 }
+                };
                 vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
                     data: [mockPlan]
                 } as never);
@@ -244,7 +340,11 @@ describe('TrialService', () => {
         it('enriches the MP creation metadata with env marker + triggering accommodationId', async () => {
             // Arrange
             const customerId = 'customer-222';
-            const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+            const mockPlan = {
+                id: 'plan-owner-basico',
+                name: 'owner-basico',
+                metadata: { hasTrial: true, trialDays: 14 }
+            };
             vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
                 data: [mockPlan]
             } as never);
@@ -275,7 +375,11 @@ describe('TrialService', () => {
         it('omits the accommodation marker when no triggering accommodation is provided', async () => {
             // Arrange
             const customerId = 'customer-223';
-            const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+            const mockPlan = {
+                id: 'plan-owner-basico',
+                name: 'owner-basico',
+                metadata: { hasTrial: true, trialDays: 14 }
+            };
             vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
                 data: [mockPlan]
             } as never);
@@ -303,8 +407,17 @@ describe('TrialService', () => {
                 status: 'active'
             };
 
+            // Plan DOES declare a trial — this test must exercise the idempotency
+            // guard specifically (one trial per customer, for life), not the
+            // unrelated hasTrial guard which also returns null.
             vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [{ id: 'plan-1', name: 'owner-basico' }]
+                data: [
+                    {
+                        id: 'plan-1',
+                        name: 'owner-basico',
+                        metadata: { hasTrial: true, trialDays: 14 }
+                    }
+                ]
             } as never);
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
                 existingSubscription
@@ -331,6 +444,168 @@ describe('TrialService', () => {
 
             // Assert
             expect(result).toBeNull();
+        });
+
+        // HOS-110: startTrial() generalization — trialDays is read from the
+        // RESOLVED plan's own metadata (not a hardcoded constant), a `planSlug`
+        // can be passed to start a trial on any plan that declares one, and the
+        // entitlement cache is cleared after a successful create.
+        describe('plan-driven trial config (HOS-110 generalization)', () => {
+            it('defaults to DEFAULT_TRIAL_PLAN_SLUG (owner-basico) when planSlug is omitted', async () => {
+                // Arrange
+                const customerId = 'customer-default-slug';
+                const mockPlan = {
+                    id: 'plan-owner-basico',
+                    name: 'owner-basico',
+                    metadata: { hasTrial: true, trialDays: 14 }
+                };
+                const plansListSpy = vi
+                    .spyOn(mockBilling.plans, 'list')
+                    .mockResolvedValue({ data: [mockPlan] } as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(
+                    [] as never
+                );
+                vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                    id: 'sub-default-slug'
+                } as never);
+
+                // Act — no planSlug passed
+                const result = await trialService.startTrial({ customerId });
+
+                // Assert — resolved against 'owner-basico' (the default) and succeeded
+                expect(plansListSpy).toHaveBeenCalled();
+                expect(result).toBe('sub-default-slug');
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({ planId: mockPlan.id, trialDays: 14 })
+                );
+            });
+
+            it('uses a custom planSlug and reads trialDays from THAT plan (not owner-basico)', async () => {
+                // Arrange — mirrors owner-test-daily: hasTrial:true, trialDays:1 (HOS-110 decision #2)
+                const customerId = 'customer-custom-slug';
+                const testDailyPlan = {
+                    id: 'plan-owner-test-daily',
+                    name: 'owner-test-daily',
+                    metadata: { hasTrial: true, trialDays: 1 }
+                };
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [testDailyPlan]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(
+                    [] as never
+                );
+                vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                    id: 'sub-custom-slug'
+                } as never);
+
+                // Act
+                const result = await trialService.startTrial({
+                    customerId,
+                    planSlug: 'owner-test-daily'
+                });
+
+                // Assert — 1-day trial (from the plan), not the owner-basico 14-day default
+                expect(result).toBe('sub-custom-slug');
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({ planId: testDailyPlan.id, trialDays: 1 })
+                );
+            });
+
+            it('returns null and does not create a subscription when the resolved plan has hasTrial:false', async () => {
+                // Arrange — a plan that declares no trial at all.
+                const customerId = 'customer-no-trial-plan';
+                const noTrialPlan = {
+                    id: 'plan-no-trial',
+                    name: 'tourist-free',
+                    metadata: { hasTrial: false, trialDays: 0 }
+                };
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [noTrialPlan]
+                } as never);
+                const getByCustomerIdSpy = vi.spyOn(mockBilling.subscriptions, 'getByCustomerId');
+
+                // Act
+                const result = await trialService.startTrial({
+                    customerId,
+                    planSlug: 'tourist-free'
+                });
+
+                // Assert — no-op: no create call, and the guard short-circuits
+                // before even checking for an existing subscription.
+                expect(result).toBeNull();
+                expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+                expect(getByCustomerIdSpy).not.toHaveBeenCalled();
+            });
+
+            it('returns null and does not create a subscription when trialDays is 0 even if hasTrial is true', async () => {
+                // Arrange — malformed/inconsistent plan config: hasTrial true but
+                // a non-positive trialDays. Starting a 0-day "trial" would be a bug.
+                const customerId = 'customer-zero-days';
+                const zeroDaysPlan = {
+                    id: 'plan-zero-days',
+                    name: 'owner-basico',
+                    metadata: { hasTrial: true, trialDays: 0 }
+                };
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [zeroDaysPlan]
+                } as never);
+
+                // Act
+                const result = await trialService.startTrial({ customerId });
+
+                // Assert
+                expect(result).toBeNull();
+                expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+            });
+
+            it('clears the entitlement cache after successfully creating a trial subscription', async () => {
+                // Arrange
+                const customerId = 'customer-cache-clear';
+                const mockPlan = {
+                    id: 'plan-owner-basico',
+                    name: 'owner-basico',
+                    metadata: { hasTrial: true, trialDays: 14 }
+                };
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [mockPlan]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(
+                    [] as never
+                );
+                vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                    id: 'sub-cache-clear'
+                } as never);
+
+                // Act
+                const result = await trialService.startTrial({ customerId });
+
+                // Assert
+                expect(result).toBe('sub-cache-clear');
+                expect(clearEntitlementCache).toHaveBeenCalledWith(customerId);
+            });
+
+            it('does NOT clear the entitlement cache when the plan has no trial (no-op path)', async () => {
+                // Arrange — clear prior call history first: `clearEntitlementCache` is a
+                // single module-level mock shared across every test in this file (no
+                // global mock-reset is configured), so earlier successful-trial tests
+                // above would otherwise leave a stale recorded call.
+                vi.mocked(clearEntitlementCache).mockClear();
+                const customerId = 'customer-no-cache-clear';
+                const noTrialPlan = {
+                    id: 'plan-no-trial',
+                    name: 'tourist-free',
+                    metadata: { hasTrial: false, trialDays: 0 }
+                };
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [noTrialPlan]
+                } as never);
+
+                // Act
+                await trialService.startTrial({ customerId, planSlug: 'tourist-free' });
+
+                // Assert
+                expect(clearEntitlementCache).not.toHaveBeenCalled();
+            });
         });
     });
 

@@ -146,8 +146,22 @@ export async function setup(): Promise<void> {
     //    not initialized". Passing the client explicitly sidesteps that: the
     //    table objects are plain pgTable metadata and work with any pg client.
     //    Only `billing_plans` is needed (the tests never read `billing_prices`).
+    //
+    //    `TEST_DAILY_PLAN` (`owner-test-daily`) is seeded here too, on top of
+    //    `ALL_PLANS` — it is deliberately EXCLUDED from `ALL_PLANS` (see
+    //    `packages/billing/src/config/plans.config.ts`), so the loop above
+    //    alone never creates its row. The HOS-110
+    //    `0006-owner-test-daily-trial` data-migration test operates on this
+    //    row exactly like the billing-plans-port tests operate on the
+    //    `ALL_PLANS` rows: it needs the row to already exist. `ensurePlan`
+    //    works for any `PlanDefinition`, including this test-only one — the
+    //    dedicated `seedTestDailyPlan` production seed is NOT used here
+    //    because it resolves `getDb()` internally (the same double-instance
+    //    pitfall this comment already documents), and the trial-migration
+    //    test never reads `billing_prices`, so the price row it would also
+    //    create is unnecessary.
     const { initializeDb, resetDb, getDb } = await import('@repo/db');
-    const { ALL_PLANS } = await import('@repo/billing');
+    const { ALL_PLANS, TEST_DAILY_PLAN } = await import('@repo/billing');
     const { _internals } = await import('../../src/required/billingPlans.seed.js');
     const seedPool = new Pool({ connectionString: getTestConnectionString() });
     resetDb();
@@ -157,6 +171,7 @@ export async function setup(): Promise<void> {
         for (const plan of ALL_PLANS) {
             await _internals.ensurePlan(plan, false, seedDb);
         }
+        await _internals.ensurePlan(TEST_DAILY_PLAN, false, seedDb);
     } finally {
         await seedPool.end();
         resetDb();

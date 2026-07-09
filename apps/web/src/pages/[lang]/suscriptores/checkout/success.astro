@@ -21,20 +21,52 @@ const locale = Astro.locals.locale;
 const { t } = createTranslations(locale);
 
 const collectionStatus = Astro.url.searchParams.get('collection_status');
-const isApproved = collectionStatus === 'approved';
+
+// HOS-110 F1: PlanPurchaseButton appends `?effect=trial` (or `?effect=comp`)
+// to this in-app success sentinel URL when the granted effect has NO
+// MercadoPago preapproval to verify (see StartPaidSubscriptionResponse
+// `appliedEffect`). Without this signal there is no `collection_status`
+// on the URL at all, so the page fell through to the "verifying payment"
+// variant — wrong for a no-card trial, since there is no payment in
+// flight to confirm.
+const effectParam = Astro.url.searchParams.get('effect');
+const isTrial = effectParam === 'trial';
+const isComp = effectParam === 'comp';
+const isApproved = collectionStatus === 'approved' || isTrial || isComp;
+
+// HOS-110 W1: PlanPurchaseButton appends `?promoIgnored=1` to this in-app
+// success sentinel URL when the server discarded a discount code in favor
+// of a granted no-card trial (see subscription-checkout.service.ts
+// `promoCodeIgnored`). Surface a note so the user knows the code was not
+// applied instead of silently losing it.
+const promoIgnored = Astro.url.searchParams.get('promoIgnored') === '1';
 
 const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
 
-const title = isApproved
-	? t('billing.checkout.success.title', '¡Tu suscripción está activa!')
-	: t('billing.checkout.success.verifyingStatus', 'Verificando estado del pago...');
+const title = isTrial
+	? t('billing.checkout.success.trialTitle', '¡Tu prueba gratis arrancó!')
+	: isApproved
+		? t('billing.checkout.success.title', '¡Tu suscripción está activa!')
+		: t('billing.checkout.success.verifyingStatus', 'Verificando estado del pago...');
 
-const body = isApproved
-	? t('billing.checkout.success.subtitle', 'Tu pago fue aprobado correctamente')
-	: t(
-			'billing.checkout.success.verifyingSubtitle',
-			'Estamos confirmando tu pago. Esto puede tardar unos instantes.'
-		);
+const body = isTrial
+	? t(
+			'billing.checkout.success.trialSubtitle',
+			'Ya podés empezar a usar tu plan. No te cobramos nada: tu prueba gratuita está activa y no registramos ninguna tarjeta.'
+		)
+	: isApproved
+		? t('billing.checkout.success.subtitle', 'Tu pago fue aprobado correctamente')
+		: t(
+				'billing.checkout.success.verifyingSubtitle',
+				'Estamos confirmando tu pago. Esto puede tardar unos instantes.'
+			);
+
+const promoIgnoredNote = promoIgnored
+	? t(
+			'billing.checkout.success.promoIgnoredNote',
+			'Tu código de descuento no se aplicó porque activaste la prueba gratis.'
+		)
+	: undefined;
 ---
 
 <MarketingLayout
@@ -46,6 +78,7 @@ const body = isApproved
 		variant={isApproved ? 'success' : 'pending'}
 		title={title}
 		body={body}
+		{...(promoIgnoredNote ? { note: promoIgnoredNote } : {})}
 		primaryCta={{
 			href: miCuentaUrl,
 			label: t('billing.checkout.success.cta', 'Ir a mi cuenta'),

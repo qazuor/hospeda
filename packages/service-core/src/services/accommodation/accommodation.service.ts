@@ -117,6 +117,7 @@ import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction.js';
+import { DEFAULT_TRIAL_PLAN_SLUG } from '../billing/addon/trial.types.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
 import {
@@ -1661,7 +1662,12 @@ export class AccommodationService extends BaseCrudService<
                                     subscriptionId: trialSubscriptionId,
                                     accommodationId: id,
                                     ownerId: accommodation.ownerId,
-                                    planSlug: 'owner-basico',
+                                    // The publish flow always starts the trial on the
+                                    // default plan (`AccommodationPublishDeps.startTrial`
+                                    // never threads a `planSlug`), so this constant IS the
+                                    // actual slug used — shared single source of truth
+                                    // with `TrialService.startTrial`'s own default (HOS-110).
+                                    planSlug: DEFAULT_TRIAL_PLAN_SLUG,
                                     eligibility
                                 },
                                 '[accommodation.publish] trial subscription linkage'

@@ -463,6 +463,21 @@ export interface CreateTestPromoCodeInput {
     readonly newCustomersOnly?: boolean;
     readonly livemode?: boolean;
     readonly config?: Readonly<Record<string, unknown>>;
+    /**
+     * SPEC-262 typed effect columns (HOS-110 W1). Omitted defaults to the
+     * legacy `'discount'` shape with no `valueKind` (mirrors a pre-backfill
+     * row) — `resolveCheckoutPromoPlan` then falls back to the config-backed
+     * trial-extension resolver for that case, same as before this field
+     * existed. Set `effectKind: 'comp'` / `'trial_extension'` explicitly to
+     * exercise those branches end-to-end.
+     */
+    readonly effectKind?: 'discount' | 'comp' | 'trial_extension';
+    /** Required alongside `effectKind: 'discount'` to get a typed discount effect. */
+    readonly valueKind?: 'percentage' | 'fixed';
+    /** Discount cycle count; `null` = forever. Only meaningful for `effectKind: 'discount'`. */
+    readonly durationCycles?: number | null;
+    /** Extra trial days; only meaningful for `effectKind: 'trial_extension'`. */
+    readonly extraDays?: number | null;
 }
 
 /**
@@ -504,7 +519,11 @@ export async function createTestPromoCode(
             validPlans: input.validPlans,
             newCustomersOnly: input.newCustomersOnly ?? false,
             livemode: input.livemode ?? false,
-            config: input.config ?? { description: `E2E test code ${code}` }
+            config: input.config ?? { description: `E2E test code ${code}` },
+            ...(input.effectKind ? { effectKind: input.effectKind } : {}),
+            ...(input.valueKind ? { valueKind: input.valueKind } : {}),
+            ...(input.durationCycles === undefined ? {} : { durationCycles: input.durationCycles }),
+            ...(input.extraDays === undefined ? {} : { extraDays: input.extraDays })
         } as typeof billingPromoCodes.$inferInsert)
         .returning({ id: billingPromoCodes.id });
 

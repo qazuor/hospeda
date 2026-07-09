@@ -1004,6 +1004,9 @@
                 "invalidType": "O código promocional tem um tipo de dado inválido",
                 "max": "O código promocional não pode ultrapassar {{max}} caracteres",
                 "min": "O código promocional deve ter pelo menos {{min}} caracteres"
+            },
+            "promoCodeIgnored": {
+                "invalid": "O indicador de código promocional ignorado não é válido"
             }
         },
         "subscriptionEvent": {

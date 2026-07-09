@@ -27,15 +27,35 @@ export interface TrialStatus {
 }
 
 /**
+ * Default plan slug used by {@link StartTrialInput.planSlug} when the caller
+ * does not specify one (HOS-110). This is the single source of truth for the
+ * "trial defaults to the base owner plan" rule — every caller that logs or
+ * reports which plan a no-slug trial ran against should reference this
+ * constant instead of re-hardcoding the literal `'owner-basico'`.
+ */
+export const DEFAULT_TRIAL_PLAN_SLUG = 'owner-basico';
+
+/**
  * Input for starting a trial.
  *
- * All HOST users receive the same trial plan and duration.
- * The accommodation type (simple vs complex/hotel) is determined later
- * when the user creates their first accommodation, not at trial start.
+ * Originally every HOST user received the same trial plan and duration
+ * (`owner-basico`, 14 days). HOS-110 generalizes this so any plan that
+ * declares a trial (`hasTrial: true` in `billing_plans.metadata`) can be
+ * started via this same entry point — the accommodation-publish flow keeps
+ * relying on the {@link DEFAULT_TRIAL_PLAN_SLUG} default, while the paid
+ * checkout flow can pass the plan the user actually selected.
  */
 export interface StartTrialInput {
     /** Billing customer ID */
     readonly customerId: string;
+    /**
+     * Slug of the plan to start the trial on (matched against `QZPayPlan.name`).
+     * Defaults to {@link DEFAULT_TRIAL_PLAN_SLUG} (`'owner-basico'`) when
+     * omitted — this preserves the original accommodation-publish behavior,
+     * where the accommodation type is an attribute of the accommodation
+     * entity, not the trial plan.
+     */
+    readonly planSlug?: string;
     /**
      * Accommodation whose publish triggered this trial (SPEC-222 Part 2).
      *
@@ -46,6 +66,15 @@ export interface StartTrialInput {
      * triggering accommodation.
      */
     readonly accommodationId?: string;
+    /**
+     * Extra trial days to add on top of the resolved plan's own trial length
+     * (HOS-110 W1). Sourced from a `trial_extension` promo code (SPEC-262)
+     * supplied at checkout by a trial-eligible customer: the effective trial
+     * length becomes `(HOSPEDA_TRIAL_DAYS_OVERRIDE ?? planTrialDays) +
+     * extraTrialDays`. Omitted (or `0`) for every other trial-start path —
+     * the base plan length is used unchanged.
+     */
+    readonly extraTrialDays?: number;
 }
 
 /**
@@ -98,6 +127,49 @@ export interface TrialEndingSubscription {
     readonly trialEnd: Date;
     /** Days remaining */
     readonly daysRemaining: number;
+}
+
+/**
+ * Trial configuration declared on a plan's `billing_plans.metadata` JSONB
+ * (seeded from `PlanDefinition.hasTrial` / `.trialDays`, see
+ * `packages/billing/src/config/plans.config.ts`).
+ */
+export interface PlanTrialConfig {
+    /** Whether the plan declares a trial at all. */
+    readonly hasTrial: boolean;
+    /** Trial length in days (0 when `hasTrial` is `false`). */
+    readonly trialDays: number;
+}
+
+/**
+ * Reads the trial configuration (`hasTrial` / `trialDays`) off a plan's raw
+ * `metadata` value (HOS-110). Single source of truth for this read pattern —
+ * used by both `TrialService.startTrial` (to size the trial) and the paid
+ * checkout's trial-eligibility check, so the two never drift on how they
+ * interpret the same metadata shape.
+ *
+ * Defensive against malformed/missing metadata: any non-boolean `hasTrial`
+ * or non-number `trialDays` resolves to the safe "no trial" default rather
+ * than throwing, mirroring `mapDbToPlan` in `plan.crud.ts`.
+ *
+ * @param metadata - The plan's `metadata` value (typed `unknown` because the
+ *   qzpay-core SDK plan shape does not narrow it further).
+ * @returns The resolved trial configuration.
+ *
+ * @example
+ * ```ts
+ * const { hasTrial, trialDays } = resolvePlanTrialConfig(plan.metadata);
+ * if (hasTrial && trialDays > 0) {
+ *   // eligible for a no-card trial
+ * }
+ * ```
+ */
+export function resolvePlanTrialConfig(metadata: unknown): PlanTrialConfig {
+    const meta = (metadata ?? {}) as Record<string, unknown>;
+    return {
+        hasTrial: typeof meta.hasTrial === 'boolean' ? meta.hasTrial : false,
+        trialDays: typeof meta.trialDays === 'number' ? meta.trialDays : 0
+    };
 }
 
 /**
