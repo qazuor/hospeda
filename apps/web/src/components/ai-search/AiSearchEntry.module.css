@@ -163,6 +163,51 @@
     outline-offset: 3px;
 }
 
+/* Composite icon: magnifying glass (base) + sparkle (corner badge), both
+ * rendered white via @repo/icons' `color` prop — SVG icons honor CSS/prop
+ * color, unlike the emoji glyph they replace (BETA-144). */
+.compositeIcon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+}
+
+.compositeIconBase {
+    display: block;
+}
+
+.compositeIconSparkle {
+    position: absolute;
+    top: -0.3rem;
+    right: -0.3rem;
+    display: block;
+}
+
+/*
+ * Mobile stacking (BETA-144): on narrow viewports the three bottom-right
+ * FABs must stack in a clean, non-overlapping column:
+ *   - ScrollToTop (apps/web/.../ScrollToTop.astro): bottom 4rem, right 1rem,
+ *     44px — spans 4rem to ~6.75rem.
+ *   - FeedbackFAB (apps/web/src/styles/feedback-overrides.css, which wins
+ *     over the package default): bottom 7.5rem, right 1.5rem, 60px tall —
+ *     spans 7.5rem to 11.25rem.
+ *   - This AI-search FAB gets its own slot above both, at bottom 12.5rem,
+ *     right 1.5rem (same right offset as FeedbackFAB), leaving a 1.25rem
+ *     gap above the FeedbackFAB's top edge.
+ * Without this override the FAB's desktop `bottom: 5rem` collided with the
+ * FeedbackFAB's mobile position (7.5rem–11.25rem span).
+ */
+@media (max-width: 768px) {
+    .fab {
+        bottom: 12.5rem;
+        right: 1.5rem;
+    }
+}
+
 @keyframes fabIn {
     from {
         opacity: 0;

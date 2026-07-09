@@ -532,6 +532,67 @@ describe('ExternalReputationSection', () => {
         });
     });
 
+    // ── Dynamic per-platform URL hint (BETA-136) ────────────────────────────
+
+    describe('Dynamic URL hint', () => {
+        it('shows the Google hint by default (GOOGLE is the initial addPlatform)', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse([]));
+            renderSection();
+
+            await waitFor(() => {
+                expect(screen.getByTestId('ext-rep-url-hint').textContent).toMatch(/Google Maps/i);
+            });
+        });
+
+        it('updates the hint text when the selected platform changes to BOOKING', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse([]));
+            renderSection();
+
+            await waitFor(() => {
+                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
+            });
+
+            const platformSelect = screen.getByLabelText('Plataforma') as HTMLSelectElement;
+            fireEvent.change(platformSelect, { target: { value: 'BOOKING' } });
+
+            expect(screen.getByTestId('ext-rep-url-hint').textContent).toMatch(
+                /extranet de Booking/i
+            );
+        });
+
+        it('updates the hint text when the selected platform changes to AIRBNB', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse([]));
+            renderSection();
+
+            await waitFor(() => {
+                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
+            });
+
+            const platformSelect = screen.getByLabelText('Plataforma') as HTMLSelectElement;
+            fireEvent.change(platformSelect, { target: { value: 'AIRBNB' } });
+
+            expect(screen.getByTestId('ext-rep-url-hint').textContent).toMatch(
+                /anfitrión de Airbnb/i
+            );
+        });
+
+        it('updates the hint text when the selected platform changes to OTHER', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse([]));
+            renderSection();
+
+            await waitFor(() => {
+                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
+            });
+
+            const platformSelect = screen.getByLabelText('Plataforma') as HTMLSelectElement;
+            fireEvent.change(platformSelect, { target: { value: 'OTHER' } });
+
+            expect(screen.getByTestId('ext-rep-url-hint').textContent).toMatch(
+                /enlace público directo/i
+            );
+        });
+    });
+
     // ── Regression: unmemoized `t` used to recreate `loadListings` on every
     // render, re-triggering its mount effect in an infinite fetch loop ──────
 

@@ -10,7 +10,7 @@
  * - Clicking the overlay backdrop closes the drawer
  */
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AiSearchEntry } from '../../src/components/ai-search/AiSearchEntry.client';
 
@@ -182,6 +182,62 @@ describe('AiSearchEntry (SPEC-265 D — hybrid layout)', () => {
             renderEntry();
             fireEvent.click(screen.getByTestId('ai-search-entry'));
             expect(screen.getByTestId('search-chat-panel-mock')).toBeInTheDocument();
+        });
+    });
+
+    // ── Composite icon (BETA-144) ─────────────────────────────────────────────
+
+    describe('composite icon (BETA-144)', () => {
+        it('does not render the emoji sparkle glyph anywhere', () => {
+            renderEntry();
+            expect(document.body.textContent).not.toContain('✨');
+        });
+
+        it('renders both the base (search) and sparkle icon SVGs in the entry point', () => {
+            renderEntry();
+            const entry = screen.getByTestId('ai-search-entry');
+            expect(entry.querySelector('.compositeIconBase')).toBeInTheDocument();
+            expect(entry.querySelector('.compositeIconSparkle')).toBeInTheDocument();
+            // Both icons are real SVG elements, not emoji text.
+            expect(entry.querySelector('.compositeIconBase')?.tagName).toBe('svg');
+            expect(entry.querySelector('.compositeIconSparkle')?.tagName).toBe('svg');
+        });
+
+        it('renders both icon SVGs in the floating FAB once it becomes visible', () => {
+            // Capture the IntersectionObserver callback so the test can
+            // simulate the search bar scrolling out of view.
+            let capturedCallback: IntersectionObserverCallback | undefined;
+            const observe = vi.fn();
+            const disconnect = vi.fn();
+            vi.stubGlobal(
+                'IntersectionObserver',
+                class {
+                    constructor(callback: IntersectionObserverCallback) {
+                        capturedCallback = callback;
+                    }
+                    observe = observe;
+                    unobserve = vi.fn();
+                    disconnect = disconnect;
+                    takeRecords = () => [];
+                }
+            );
+
+            renderEntry();
+            expect(capturedCallback).toBeDefined();
+
+            // Simulate the search bar leaving the viewport.
+            act(() => {
+                capturedCallback?.(
+                    [{ isIntersecting: false } as IntersectionObserverEntry],
+                    {} as IntersectionObserver
+                );
+            });
+
+            const fab = screen.getByTestId('ai-search-fab');
+            expect(fab.querySelector('.compositeIconBase')).toBeInTheDocument();
+            expect(fab.querySelector('.compositeIconSparkle')).toBeInTheDocument();
+
+            vi.unstubAllGlobals();
         });
     });
 });

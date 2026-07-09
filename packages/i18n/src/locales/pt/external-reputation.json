@@ -39,7 +39,13 @@
         "rateLimitHit": "Você pode atualizar novamente em {{minutes}} minutos",
         "googleOnlyExplainer": "O texto das avaliações está disponível apenas para o Google. As outras plataformas exibem a pontuação e um link.",
         "verifiedHint": "O link foi verificado e corresponde a esta hospedagem",
-        "loading": "Carregando listagens…"
+        "loading": "Carregando listagens…",
+        "urlHint": {
+            "google": "Procure seu negócio no Google Maps, abra a ficha e copie a URL pelo botão Compartilhar.",
+            "booking": "Entre no extranet do Booking, abra sua propriedade e copie o link público da página da hospedagem.",
+            "airbnb": "No painel de anfitrião do Airbnb, abra o anúncio e copie a URL em 'Pré-visualizar anúncio'.",
+            "other": "Cole o link público direto do seu anúncio nessa plataforma."
+        }
     },
     "errors": {
         "fetchFailed": "Não foi possível carregar as avaliações externas. Tente novamente mais tarde.",
