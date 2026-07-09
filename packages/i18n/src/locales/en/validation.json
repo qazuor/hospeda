@@ -1004,6 +1004,9 @@
                 "invalidType": "Promo code has an invalid data type",
                 "max": "Promo code cannot exceed {{max}} characters",
                 "min": "Promo code must be at least {{min}} characters"
+            },
+            "promoCodeIgnored": {
+                "invalid": "The promo code ignored flag is not valid"
             }
         },
         "subscriptionEvent": {

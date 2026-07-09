@@ -34,8 +34,10 @@ describe('PropertyCard.astro — SPEC-205 Phase 4 + SPEC-208 PR2', () => {
         expect(propertyCardSource).toContain('host.properties.card.actions.edit');
     });
 
-    it('should still contain the publish link for DRAFT properties', () => {
-        expect(propertyCardSource).toContain('publishUrl');
+    it('should still contain the publish action for DRAFT properties', () => {
+        // HOS-110: the dead `?action=publish` admin link was replaced by a
+        // guided web-native PublishButton island with trial confirmation copy.
+        expect(propertyCardSource).toContain('PublishButton');
         expect(propertyCardSource).toContain('host.properties.card.actions.publish');
     });
 

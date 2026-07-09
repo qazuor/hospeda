@@ -363,6 +363,7 @@
         "zodError.billing.startPaid.promoCode.invalidType",
         "zodError.billing.startPaid.promoCode.max",
         "zodError.billing.startPaid.promoCode.min",
+        "zodError.billing.startPaid.promoCodeIgnored.invalid",
         "zodError.billing.subscriptionEvent.createdAt.invalid",
         "zodError.billing.subscriptionEvent.createdAt.invalidType",
         "zodError.billing.subscriptionEvent.eventType.invalidType",
@@ -1591,7 +1592,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1590,
+    "total": 1591,
     "byNamespace": {
         "accommodation": 55,
         "accommodationAmenity": 4,
@@ -1603,7 +1604,7 @@
         "adminView": 3,
         "amenity": 46,
         "attraction": 26,
-        "billing": 204,
+        "billing": 205,
         "commerce": 14,
         "commerceLead": 13,
         "common": 220,

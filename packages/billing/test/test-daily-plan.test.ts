@@ -20,9 +20,9 @@ describe('TEST_DAILY_PLAN (billing-interval-override)', () => {
         expect(TEST_DAILY_PLAN.slug).toBe('owner-test-daily');
     });
 
-    it('has no trial (a test plan is subscribed to directly for testing)', () => {
-        expect(TEST_DAILY_PLAN.hasTrial).toBe(false);
-        expect(TEST_DAILY_PLAN.trialDays).toBe(0);
+    it('has a 1-day no-card trial (HOS-110: exercises trial->expiry on a fast cadence)', () => {
+        expect(TEST_DAILY_PLAN.hasTrial).toBe(true);
+        expect(TEST_DAILY_PLAN.trialDays).toBe(1);
     });
 
     it('copies entitlements and limits verbatim from OWNER_PREMIUM_PLAN', () => {
