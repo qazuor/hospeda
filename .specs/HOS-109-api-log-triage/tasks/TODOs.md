@@ -1,6 +1,6 @@
 # HOS-109: Investigate & fix production API log errors and noise (post-relaunch triage)
 
-## Progress: 0/11 tasks (0%)
+## Progress: 1/11 tasks (9%)
 
 **Average Complexity:** 2.3/3 (max)
 **All tasks independent** — no blocking dependencies; ordered by priority within phases.
@@ -9,9 +9,8 @@
 
 ### F1 — Functional 500 bug
 
-- [ ] **T-001** (complexity: 3) — Fix blog tag filter 500 (posts ?tags= as join, not column)
-  - PostService._executeSearch passes `tags` as a where column → DbError 500. Translate to postTags join + regression test.
-  - Blocked by: none
+- [x] **T-001** (complexity: 3) — Fix blog tag filter 500 (posts ?tags= via r_entity_tag) ✅
+  - DONE (commit d4b4b0422): REntityTagModel.findEntityIdsByTags + inArray(posts.id, ids) via additionalConditions; empty-match → empty result. 9 tests, typecheck + biome green.
 
 ### F2 — Logging hygiene
 

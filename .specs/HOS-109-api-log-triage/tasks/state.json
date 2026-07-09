@@ -7,20 +7,30 @@
         {
             "id": "T-001",
             "title": "Fix blog tag filter 500 (posts ?tags= as join, not column)",
-            "description": "P1/F1. In PostService._executeSearch and _executeCount (packages/service-core/src/services/post/post.service.ts), intercept the `tags` filter before the where clause is built and resolve it against the postTags/r_entity_tag join instead of passing it as a column key to model.findAllWithRelations. Add a regression test: GET /public/posts?tags=<id> returns 200 with only posts carrying that tag, and existing filters (category, isNews, isFeatured) still work.",
-            "status": "pending",
+            "description": "P1/F1. In PostService._executeSearch and _executeCount (packages/service-core/src/services/post/post.service.ts), intercept the `tags` filter before the where clause is built and resolve it against the polymorphic r_entity_tag table (entityType=POST) instead of passing it as a column key to model.findAllWithRelations. Add a regression test: GET /public/posts?tags=<id> returns 200 with only posts carrying that tag, and existing filters (category, isNews, isFeatured) still work.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Locate where `tags` enters the where clause (mapPostFilterKeysToColumns)", "completed": false },
-                { "title": "Translate `tags` to a postTags join / additionalConditions", "completed": false },
-                { "title": "Regression test for ?tags= returning filtered 200", "completed": false }
+                {
+                    "title": "Locate where `tags` enters the where clause (mapPostFilterKeysToColumns)",
+                    "completed": true
+                },
+                {
+                    "title": "Translate `tags` to an r_entity_tag id-set resolution (findEntityIdsByTags + inArray)",
+                    "completed": true
+                },
+                { "title": "Regression test for ?tags= returning filtered 200", "completed": true }
             ],
             "tags": ["api", "service-core", "bug-500"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-07-09T03:28:00.000Z",
+                "started": "2026-07-09T04:10:00.000Z",
+                "completed": "2026-07-09T05:28:00.000Z"
+            }
         },
         {
             "id": "T-002",
@@ -31,13 +41,20 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Find the auth-required error → log mapping in the API middleware", "completed": false },
+                {
+                    "title": "Find the auth-required error → log mapping in the API middleware",
+                    "completed": false
+                },
                 { "title": "Map expected 401 to info/debug without stack", "completed": false }
             ],
             "tags": ["api", "logging"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T03:28:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-003",
@@ -54,7 +71,11 @@
             "tags": ["api", "logging", "needs-decision"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T03:28:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-004",
@@ -71,7 +92,11 @@
             "tags": ["api", "logging", "needs-decision"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T03:28:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-005",
@@ -83,13 +108,20 @@
             "blocks": [],
             "subtasks": [
                 { "title": "Trace the entitlements fetch origin in apps/web", "completed": false },
-                { "title": "Guard on session presence + remove hard retry on 401", "completed": false },
+                {
+                    "title": "Guard on session presence + remove hard retry on 401",
+                    "completed": false
+                },
                 { "title": "Verify no unauthenticated 429 loop", "completed": false }
             ],
             "tags": ["web", "rate-limit"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T03:28:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-006",
@@ -100,13 +132,20 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Find the unread-count polling call site (admin/web)", "completed": false },
+                {
+                    "title": "Find the unread-count polling call site (admin/web)",
+                    "completed": false
+                },
                 { "title": "Gate on permission / stop-on-403", "completed": false }
             ],
             "tags": ["admin", "web", "api"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T03:28:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-007",
@@ -118,12 +157,19 @@
             "blocks": [],
             "subtasks": [
                 { "title": "Identify request UA/source and slug origin", "completed": false },
-                { "title": "Write findings note + OQ-2 recommendation on Linear", "completed": false }
+                {
+                    "title": "Write findings note + OQ-2 recommendation on Linear",
+                    "completed": false
+                }
             ],
             "tags": ["web", "devops", "investigation"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T03:28:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-008",
@@ -140,7 +186,11 @@
             "tags": ["api", "cron", "investigation"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T03:28:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-009",
@@ -151,13 +201,20 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Confirm the warning condition in the dispatch job", "completed": false },
+                {
+                    "title": "Confirm the warning condition in the dispatch job",
+                    "completed": false
+                },
                 { "title": "Gate/downgrade the unconfigured-vault log", "completed": false }
             ],
             "tags": ["api", "cron", "social"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T03:28:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-010",
@@ -168,14 +225,21 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Compare expected vs received Brevo signature/token", "completed": false },
+                {
+                    "title": "Compare expected vs received Brevo signature/token",
+                    "completed": false
+                },
                 { "title": "Fix verification (config or code)", "completed": false },
                 { "title": "Verify a real Brevo event is accepted", "completed": false }
             ],
             "tags": ["api", "webhook", "config"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T03:28:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-011",
@@ -192,14 +256,18 @@
             "tags": ["web", "seo"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T03:28:00.000Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
         "total": 11,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 2.3
     }
