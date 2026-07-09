@@ -79,6 +79,7 @@ const defaultHookReturn = {
     isStreaming: false,
     conversationId: null,
     confidence: null,
+    nearbyDestinations: [] as Array<{ id: string; name: string; slug: string }>,
     lastTurnHadEntities: false,
     error: null,
     errorStatus: null,
@@ -483,6 +484,37 @@ describe('SearchChatPanel', () => {
                 mockHook({ resultsLoading: true, results: [] });
                 renderPanel();
                 expect(screen.queryByTestId('ai-search-results-count')).not.toBeInTheDocument();
+            });
+        });
+
+        // ── HOS-111 T-014: nearby destinations indicator (G-9) ─────────────────
+
+        describe('Nearby destinations indicator', () => {
+            it('renders the included destination names when nearbyDestinations is non-empty', () => {
+                mockHook({
+                    nearbyDestinations: [
+                        { id: 'dest-1', name: 'Pueblo Liebig', slug: 'pueblo-liebig' },
+                        { id: 'dest-2', name: 'San José', slug: 'san-jose' },
+                        {
+                            id: 'dest-3',
+                            name: 'Concepción del Uruguay',
+                            slug: 'concepcion-del-uruguay'
+                        }
+                    ]
+                });
+                renderPanel();
+                const indicator = screen.getByTestId('ai-search-nearby-destinations');
+                expect(indicator).toHaveTextContent('Pueblo Liebig');
+                expect(indicator).toHaveTextContent('San José');
+                expect(indicator).toHaveTextContent('Concepción del Uruguay');
+            });
+
+            it('does NOT render the indicator when nearbyDestinations is empty (normal, non-expanded turn)', () => {
+                mockHook({ nearbyDestinations: [] });
+                renderPanel();
+                expect(
+                    screen.queryByTestId('ai-search-nearby-destinations')
+                ).not.toBeInTheDocument();
             });
         });
 

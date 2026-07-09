@@ -23,6 +23,7 @@
 import type {
     AccommodationPublic,
     AiSearchChatFiltersEvent,
+    NearbyDestinationSummary,
     SearchIntentEntities
 } from '@repo/schemas';
 import { useCallback, useRef, useState } from 'react';
@@ -81,6 +82,10 @@ export interface UseSearchChatParams {
  * @property confidence - Model's self-assessed extraction confidence from the last `filters` event (SPEC-265 A1).
  *   `null` when no turn has completed yet. Used internally to trigger the low-confidence
  *   message — no numeric badge is shown to the user.
+ * @property nearbyDestinations - Resolved neighbor destinations included in the search
+ *   when the last turn expanded to "destinos cercanos" (HOS-111 T-014, G-9). Empty array
+ *   when the last turn did not expand (the normal case) — the panel renders the
+ *   "incluyendo <name>, <name>, ..." indicator only when this is non-empty.
  * @property error - Surface-level error message from `error` or `stream_error` events.
  * @property send - Send a user message and start a new streaming turn.
  * @property removeFilter - Drop a key from accumulated filters and re-run the accommodations search without a new LLM turn.
@@ -97,6 +102,7 @@ export interface UseSearchChatReturn {
     readonly isStreaming: boolean;
     readonly conversationId: string | null;
     readonly confidence: number | null;
+    readonly nearbyDestinations: ReadonlyArray<NearbyDestinationSummary>;
     /**
      * Whether the LAST model turn extracted any usable slot (SPEC-265 A2).
      * Snapshotted from the `filters` event — NOT recomputed from
@@ -146,6 +152,7 @@ interface SearchChatState {
     readonly isStreaming: boolean;
     readonly conversationId: string | null;
     readonly confidence: number | null;
+    readonly nearbyDestinations: ReadonlyArray<NearbyDestinationSummary>;
     readonly lastTurnHadEntities: boolean;
     readonly error: string | null;
     readonly errorStatus: number | null;
@@ -162,6 +169,7 @@ const INITIAL_STATE: SearchChatState = {
     isStreaming: false,
     conversationId: null,
     confidence: null,
+    nearbyDestinations: [],
     lastTurnHadEntities: false,
     error: null,
     errorStatus: null
@@ -363,6 +371,10 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
                             currentFilters: newFilters,
                             lastSearchParams: event.filters.params,
                             confidence: newConfidence,
+                            // HOS-111 T-014: reset to [] (not carried over) when this
+                            // turn did not expand — a prior turn's nearby indicator
+                            // must not linger once the user refines away from it.
+                            nearbyDestinations: event.filters.nearbyDestinations ?? [],
                             lastTurnHadEntities: hasAnyEntity(newFilters)
                         }));
                         void fetchAccommodations(event.filters.params);
@@ -455,12 +467,28 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
                 unknown
             >;
             delete updatedParams[paramKey];
+
+            // HOS-111 T-014 fix: removing the location chip (`destinationId`)
+            // must ALSO drop `destinationIds` — a nearby expansion sets
+            // `params.destinationIds = [anchor, ...neighbors]` (search-chat.ts)
+            // and the accommodation query builder prioritises `destinationIds`
+            // OVER `destinationId`. Without this, the multi-destination filter
+            // stays silently active after the chip is gone. In the same branch
+            // we clear `nearbyDestinations` so the "Incluyendo …" indicator does
+            // not linger against a search that no longer matches. Removing any
+            // OTHER chip leaves `nearbyDestinations` intact — the nearby
+            // expansion is still in effect, so the indicator must stay.
+            const isLocationRemoval = key === 'destinationId';
+            if (isLocationRemoval) {
+                delete updatedParams.destinationIds;
+            }
             const nextParams = updatedParams as AiSearchChatFiltersEvent['params'];
 
             setState((prev) => ({
                 ...prev,
                 currentFilters: updatedFilters,
-                lastSearchParams: nextParams
+                lastSearchParams: nextParams,
+                ...(isLocationRemoval ? { nearbyDestinations: [] } : {})
             }));
             void fetchAccommodations(nextParams);
         },
@@ -516,6 +544,7 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
         isStreaming: state.isStreaming,
         conversationId: state.conversationId,
         confidence: state.confidence,
+        nearbyDestinations: state.nearbyDestinations,
         lastTurnHadEntities: state.lastTurnHadEntities,
         error: state.error,
         errorStatus: state.errorStatus,
