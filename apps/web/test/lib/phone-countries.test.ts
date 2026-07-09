@@ -9,6 +9,7 @@ import {
     composePhoneValue,
     DEFAULT_PHONE_COUNTRY,
     findPhoneCountryByLabel,
+    flagEmoji,
     formatPhoneCountryLabel,
     PHONE_COUNTRIES,
     parsePhoneValue
@@ -105,6 +106,22 @@ describe('phone-countries', () => {
                     number: '   '
                 })
             ).toBe('');
+        });
+    });
+
+    describe('flagEmoji', () => {
+        it('should convert an uppercase ISO code into its regional-indicator flag emoji', () => {
+            expect(flagEmoji('AR')).toBe('\u{1F1E6}\u{1F1F7}');
+            expect(flagEmoji('UY')).toBe('\u{1F1FA}\u{1F1FE}');
+        });
+
+        it('should uppercase a lowercase ISO code before converting', () => {
+            expect(flagEmoji('ar')).toBe(flagEmoji('AR'));
+        });
+
+        it('should produce a distinct flag for every curated country with no collisions', () => {
+            const flags = PHONE_COUNTRIES.map((country) => flagEmoji(country.iso));
+            expect(new Set(flags).size).toBe(flags.length);
         });
     });
 
