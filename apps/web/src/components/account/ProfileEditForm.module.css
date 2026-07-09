@@ -14,11 +14,11 @@
 /* were extracted from; keep visual parity with the shared module. */
 
 .section {
-    composes: card from './AccountSection.module.css';
+    composes: card from "./AccountSection.module.css";
 }
 
 .sectionTitle {
-    composes: cardTitle from './AccountSection.module.css';
+    composes: cardTitle from "./AccountSection.module.css";
 }
 
 /* ── Fields grid ───────────────────────────────────────────────────────── */

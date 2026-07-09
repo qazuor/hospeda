@@ -10,9 +10,9 @@
  */
 
 .danger {
-    composes: dangerCompact from '../account/AccountButton.module.css';
+    composes: dangerCompact from "../account/AccountButton.module.css";
 }
 
 .secondary {
-    composes: secondaryCompact from '../account/AccountButton.module.css';
+    composes: secondaryCompact from "../account/AccountButton.module.css";
 }

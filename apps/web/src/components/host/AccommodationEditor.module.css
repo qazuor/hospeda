@@ -52,7 +52,7 @@
    `<fieldset>` (border:none; padding:0) — it renders fine nested here. */
 
 .card {
-    composes: card from '../account/AccountSection.module.css';
+    composes: card from "../account/AccountSection.module.css";
 }
 
 .actions {

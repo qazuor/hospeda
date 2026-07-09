@@ -1,7 +1,7 @@
 /* TradeCard.module.css — host trade provider card */
 
 .card {
-    composes: branded from '../../account/AccountSection.module.css';
+    composes: branded from "../../account/AccountSection.module.css";
     display: flex;
     flex-direction: column;
     /* Fill the grid cell so all cards in a row share the same height */
@@ -119,7 +119,7 @@
    button to the bottom of the card) and the anchor-specific underline reset. */
 
 .contactButton {
-    composes: primary from '../../account/AccountButton.module.css';
+    composes: primary from "../../account/AccountButton.module.css";
     margin-top: auto;
     text-decoration: none;
 }

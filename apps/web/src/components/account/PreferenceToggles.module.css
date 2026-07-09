@@ -36,11 +36,11 @@
 /* reuses AccountSection.module.css instead of a divergent local recipe. */
 
 .section {
-    composes: card from './AccountSection.module.css';
+    composes: card from "./AccountSection.module.css";
 }
 
 .sectionTitle {
-    composes: cardTitle from './AccountSection.module.css';
+    composes: cardTitle from "./AccountSection.module.css";
 }
 
 /* ── Preference row ────────────────────────────────────────────────────── */

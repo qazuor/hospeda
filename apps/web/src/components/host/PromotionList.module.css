@@ -21,7 +21,7 @@
    variant (BETA-143e). This local class only supplies the anchor-specific
    underline reset. */
 .createButton {
-    composes: primary from '../account/AccountButton.module.css';
+    composes: primary from "../account/AccountButton.module.css";
     text-decoration: none;
 }
 

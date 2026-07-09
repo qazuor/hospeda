@@ -120,6 +120,7 @@ async function seedCookieConsent(page: Page): Promise<void> {
     });
     await page.addInitScript((value) => {
         try {
+            // biome-ignore lint/suspicious/noDocumentCookie: Playwright addInitScript seeds cookie-consent before page load
             document.cookie = `cookie-consent=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax`;
         } catch {
             // document.cookie may be unavailable in some contexts; ignore.
