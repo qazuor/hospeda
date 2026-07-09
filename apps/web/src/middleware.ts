@@ -16,7 +16,7 @@
 
 import { defineMiddleware } from 'astro:middleware';
 import { injectNonce } from '../integrations/csp-nonce-injector';
-import { getApiUrl, getNoindexHosts, isDevelopment } from './lib/env';
+import { getNoindexHosts, isDevelopment } from './lib/env';
 import {
     buildChangePasswordRedirect,
     buildCspHeader,
@@ -28,7 +28,6 @@ import {
     generateCspNonce,
     isAdminBypassUser,
     isAuthRoute,
-    isBetaRoute,
     isChangePasswordRoute,
     isProfileCompletionRequiredSessionOptionalRoute,
     isProfileCompletionRoute,
@@ -52,7 +51,7 @@ import {
 const NOINDEX_HOSTS = parseNoindexHosts(getNoindexHosts());
 
 /**
- * CSP header name for all HTML responses (main pipeline and `/beta` docs).
+ * CSP header name for all HTML responses.
  * HOS-30 T-020: Phase 2 enforce — flipped from `Content-Security-Policy-Report-Only`.
  */
 const CSP_HEADER_NAME = 'Content-Security-Policy';
@@ -94,8 +93,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // Step 3.1: Legacy URL alias — the inbox page was originally hosted at
     // `/{locale}/mi-cuenta/messages/...` (English slug). It was renamed to
     // `/consultas/` for parity with the rest of the account section, which is
-    // all-Spanish. Any old link (bookmark, email, beta doc cached by Cloudflare)
-    // gets a permanent 308 redirect so deep links to specific conversations
+    // all-Spanish. Any old link (bookmark, email) gets a permanent 308
+    // redirect so deep links to specific conversations
     // (`/messages/{conversationId}`) continue to work.
     const legacyMessagesMatch = path.match(/^\/(es|en|pt)\/mi-cuenta\/messages(\/.*)?$/);
     if (legacyMessagesMatch) {
@@ -103,54 +102,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
         const tail = legacyMessagesMatch[2] ?? '/';
         const search = context.url.search;
         return context.redirect(`/${localeSegment}/mi-cuenta/consultas${tail}${search}`, 308);
-    }
-
-    // Step 3.5: Beta tester docs live under `/beta` outside the `/{lang}/` namespace.
-    // Skip locale enforcement, session parsing, and auth checks. Still attach the
-    // CSP header below (security) and stamp `X-Robots-Tag: noindex, nofollow` so
-    // crawlers don't index the private docs even if the URL leaks.
-    if (isBetaRoute({ path })) {
-        (context.locals as { user: null }).user = null;
-        let betaResponse = await next();
-
-        betaResponse.headers.set('X-Robots-Tag', 'noindex, nofollow');
-
-        const betaContentType = betaResponse.headers.get('content-type') ?? '';
-        if (betaContentType.includes('text/html')) {
-            // Stamp the per-request nonce on any inline <style>/<script>
-            // emitted by Astro without one, so they match the policy we set
-            // below. Content-Length is recomputed by Node from the new body.
-            const originalBody = await betaResponse.text();
-            const { html: rewrittenBody } = injectNonce({
-                html: originalBody,
-                nonce: cspNonce
-            });
-            const newHeaders = new Headers(betaResponse.headers);
-            newHeaders.delete('content-length');
-            betaResponse = new Response(rewrittenBody, {
-                status: betaResponse.status,
-                headers: newHeaders
-            });
-
-            const sentryDsn = import.meta.env.PUBLIC_SENTRY_DSN as string | undefined;
-            const dedicatedCspReportUri = import.meta.env.PUBLIC_SENTRY_CSP_REPORT_URI as
-                | string
-                | undefined;
-            const sentryReportUri = resolveSentryReportUri({ sentryDsn, dedicatedCspReportUri });
-            const directives = buildCspHeader({
-                nonce: cspNonce,
-                apiUrl: getApiUrl(),
-                sentryReportUri,
-                // Drop the external *.sentry.io connect-src when the first-party
-                // Sentry tunnel is active (SPEC-181 follow-up).
-                sentryTunnelEnabled: Boolean(import.meta.env.PUBLIC_SENTRY_TUNNEL),
-                // HOS-91: relax style-src in dev only (see buildCspHeader JSDoc).
-                isDev: isDevelopment()
-            });
-            betaResponse.headers.set(CSP_HEADER_NAME, directives);
-        }
-
-        return betaResponse;
     }
 
     // Step 4: Extract and validate locale from the URL path.
@@ -309,14 +260,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // header set here never reaches it. `staticHeaders: true` only forwards the
     // headers Astro's native `security.csp` build feature registers, NOT this
     // hand-built header. That is why every content page was moved off `prerender`
-    // onto this SSR path (HOS-74; the home page led the way under HOS-30 2.C). The
-    // ONE deliberate exception is `pages/beta/[...slug].astro` — private, noindex
-    // beta docs kept prerendered for resilience and accepted to ship without CSP
-    // (HOS-74 owner decision). Do NOT re-add `prerender` to any other page that
-    // needs the CSP header — it will silently ship with no policy. The
-    // `context.isPrerendered` term below is unreachable for a served response
-    // (prerendered files bypass this middleware at request time) and kept only as
-    // a defensive guard.
+    // onto this SSR path (HOS-74; the home page led the way under HOS-30 2.C). Do
+    // NOT re-add `prerender` to any page that needs the CSP header — it will
+    // silently ship with no policy. The `context.isPrerendered` term below is
+    // unreachable for a served response (prerendered files bypass this middleware
+    // at request time) and kept only as a defensive guard.
     const contentType = response.headers.get('content-type') ?? '';
     const isHtmlPage = contentType.includes('text/html') || context.isPrerendered;
 
@@ -354,12 +302,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
                 headers: newHeaders
             });
         }
-        // Defensive branch (HOS-74: the only prerendered route left is the beta
-        // docs catch-all, which is served off-disk and never reaches this
-        // middleware at request time — so this is unreachable for a served
-        // response). Historically, prerendered pages skipped the body rewrite
-        // because nonces cannot be embedded at build time — any un-nonced inline
-        // <style>/<script> was dropped under enforce mode. Kept as a guard.
+        // Defensive branch (HOS-74: no page currently opts into `prerender`, so
+        // this is unreachable for a served response — prerendered files bypass
+        // this middleware entirely at request time). Historically, prerendered
+        // pages skipped the body rewrite because nonces cannot be embedded at
+        // build time — any un-nonced inline <style>/<script> was dropped under
+        // enforce mode. Kept as a guard.
 
         response.headers.set(CSP_HEADER_NAME, directives);
     }

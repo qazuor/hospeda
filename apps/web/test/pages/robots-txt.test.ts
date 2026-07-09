@@ -185,26 +185,14 @@ describe('robots.txt — GET handler', () => {
             expect(body).toContain('Disallow: /feedback/');
         });
 
-        it('contains Disallow: /beta/', async () => {
-            const { getSiteUrl } = await import('@/lib/env');
-            vi.mocked(getSiteUrl).mockReturnValue('https://hospeda.test');
-
-            const { GET } = await import('../../src/pages/robots.txt.js');
-            const response = await GET({ request: makeRequest('hospeda.com.ar') } as never);
-            const body = await response.text();
-
-            expect(body).toContain('Disallow: /beta/');
-        });
-
-        it('SITEMAP_EXCLUDED_PATHS contains exactly the 5 expected paths', () => {
+        it('SITEMAP_EXCLUDED_PATHS contains exactly the 4 expected paths', () => {
             // This test locks the shared constant content so any accidental
             // drift is caught immediately.
-            expect(SITEMAP_EXCLUDED_PATHS).toHaveLength(5);
+            expect(SITEMAP_EXCLUDED_PATHS).toHaveLength(4);
             expect(SITEMAP_EXCLUDED_PATHS).toContain('/auth/');
             expect(SITEMAP_EXCLUDED_PATHS).toContain('/mi-cuenta/');
             expect(SITEMAP_EXCLUDED_PATHS).toContain('/busqueda/');
             expect(SITEMAP_EXCLUDED_PATHS).toContain('/feedback/');
-            expect(SITEMAP_EXCLUDED_PATHS).toContain('/beta/');
         });
     });
 

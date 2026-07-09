@@ -13,7 +13,6 @@ import { webLogger } from './logger';
 import { ALLOWED_REMOTE_HOSTS } from './media';
 import {
     AUTH_SEGMENTS,
-    BETA_PREFIX,
     CHANGE_PASSWORD_SEGMENT,
     PROFILE_COMPLETION_BYPASS_ROLES,
     PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS,
@@ -242,27 +241,6 @@ export function isStaticAssetRoute({ path }: { path: string }): boolean {
  */
 export function isServerIslandRoute({ path }: { path: string }): boolean {
     return !!path && path.startsWith('/_server-islands/');
-}
-
-/**
- * Checks if a URL path belongs to the private beta tester documentation site.
- * Beta routes live under `/beta` (no `/{lang}/` namespace, Spanish-only).
- *
- * @param params - Object containing the URL path string
- * @returns True if the path is a beta docs route
- *
- * @example
- * ```ts
- * isBetaRoute({ path: '/beta/' })                    // true
- * isBetaRoute({ path: '/beta/turista/crear-cuenta/' }) // true
- * isBetaRoute({ path: '/es/alojamientos/' })         // false
- * ```
- */
-export function isBetaRoute({ path }: { path: string }): boolean {
-    if (!path) {
-        return false;
-    }
-    return path === BETA_PREFIX || path.startsWith(`${BETA_PREFIX}/`);
 }
 
 // `buildLoginRedirect` now lives in the client-safe `./auth-redirect` module so

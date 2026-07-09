@@ -4,9 +4,9 @@
  * global compare-mode "clear on leave" check (HOS-85 T-005) on every page
  * load.
  *
- * BaseLayout wraps (directly or transitively) every layout except AuthLayout,
- * ErrorLayout, and BetaDocLayout (none of which render compare-mode-reactive
- * UI), so calling `clearCompareModeIfOutsideSection` here on the existing
+ * BaseLayout wraps (directly or transitively) every layout except AuthLayout
+ * and ErrorLayout (neither of which render compare-mode-reactive UI), so
+ * calling `clearCompareModeIfOutsideSection` here on the existing
  * `astro:page-load` handler is sufficient to turn compare mode off the
  * instant the user navigates outside `/{locale}/alojamientos/*` — including
  * ClientRouter-driven (non full-reload) navigations, since `astro:page-load`
