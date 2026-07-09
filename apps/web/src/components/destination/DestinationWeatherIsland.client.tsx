@@ -44,10 +44,27 @@ type FetchState =
     | { readonly status: 'ready'; readonly data: WeatherData }
     | { readonly status: 'empty' };
 
+/**
+ * Seasonal-average fallback rendered in the SSR / loading state so crawlers and
+ * LLM fetchers see real climate text for the destination even before the
+ * client-side live-weather fetch resolves. Sourced from the destination's static
+ * climate data by the parent card.
+ */
+interface SeasonalFallback {
+    /** Season i18n key (`spring` | `summer` | `autumn` | `winter`). */
+    readonly seasonKey: string;
+    /** Average min temperature (°C) for that season, if known. */
+    readonly avgTempMinC?: number;
+    /** Average max temperature (°C) for that season, if known. */
+    readonly avgTempMaxC?: number;
+}
+
 interface DestinationWeatherIslandProps {
     readonly locale: SupportedLocale;
     readonly destinationId: string;
     readonly apiUrl: string;
+    /** Optional seasonal-average fallback for the SSR / loading state. */
+    readonly seasonalFallback?: SeasonalFallback | null;
 }
 
 /**
@@ -72,15 +89,19 @@ function formatForecastDate(dateStr: string, locale: string): string {
  * Live weather display island for a destination detail page.
  *
  * Fetches current + 16-day forecast from the public weather cache endpoint.
- * Shows a skeleton while loading, condition icon + temperature + meta on ready,
- * and a neutral single-line fallback if data is unavailable.
+ * When a `seasonalFallback` is provided, the SSR / loading state renders that
+ * seasonal average as real text (SSR-first: crawlers see climate data, not an
+ * empty skeleton); it is replaced by the live weather after hydration. Shows the
+ * condition icon + temperature + meta on ready, and the seasonal fallback (or a
+ * neutral "unavailable" line) if live data cannot be fetched.
  *
- * @param props - Locale, destinationId, and API base URL
+ * @param props - Locale, destinationId, API base URL, and optional seasonalFallback
  */
 export function DestinationWeatherIsland({
     locale,
     destinationId,
-    apiUrl
+    apiUrl,
+    seasonalFallback = null
 }: DestinationWeatherIslandProps) {
     const { t } = createTranslations(locale);
     const [state, setState] = useState<FetchState>({ status: 'loading' });
@@ -130,7 +151,44 @@ export function DestinationWeatherIsland({
         };
     }, [apiUrl, destinationId]);
 
+    // SSR-first fallback: the seasonal average (already present in the
+    // destination's static climate data) rendered as real text. This is exactly
+    // what the SSR / loading HTML emits, so a crawler or LLM fetcher sees climate
+    // for this destination instead of an empty skeleton (HOS-117 T-005). The live
+    // current weather replaces it once the client-side fetch resolves.
+    const fallbackSeasonName = seasonalFallback
+        ? t(
+              `destinations.climate.seasons.${seasonalFallback.seasonKey}`,
+              seasonalFallback.seasonKey
+          )
+        : null;
+    const fallbackMin =
+        seasonalFallback && seasonalFallback.avgTempMinC !== undefined
+            ? Math.round(seasonalFallback.avgTempMinC)
+            : null;
+    const fallbackMax =
+        seasonalFallback && seasonalFallback.avgTempMaxC !== undefined
+            ? Math.round(seasonalFallback.avgTempMaxC)
+            : null;
+    const seasonalFallbackNode = fallbackSeasonName ? (
+        <>
+            <strong>{fallbackSeasonName}</strong> {fallbackMin ?? '—'}° / {fallbackMax ?? '—'}
+            {t('destinations.climate.units.celsius', '°C')}
+        </>
+    ) : null;
+
     if (state.status === 'loading') {
+        if (seasonalFallbackNode) {
+            return (
+                <p
+                    className={styles.unavailable}
+                    role="status"
+                    aria-busy="true"
+                >
+                    {seasonalFallbackNode}
+                </p>
+            );
+        }
         return (
             <div
                 className={styles.skeleton}
@@ -142,6 +200,9 @@ export function DestinationWeatherIsland({
     }
 
     if (state.status === 'empty') {
+        if (seasonalFallbackNode) {
+            return <p className={styles.unavailable}>{seasonalFallbackNode}</p>;
+        }
         return (
             <p className={styles.unavailable}>
                 {t('destinations.weather.unavailable', 'Clima no disponible por el momento')}
