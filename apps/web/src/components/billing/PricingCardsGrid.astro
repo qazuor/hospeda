@@ -282,7 +282,7 @@ function formatPriceArs(cents: number): string {
 							)}
 						</div>
 						{plan.hasTrial && plan.trialDays > 0 && (
-							<p class="pricing-card__trial pricing-card__trial--monthly">
+							<p class="pricing-card__trial">
 								{trialFallback.replace('{days}', String(plan.trialDays))}
 							</p>
 						)}
@@ -664,9 +664,15 @@ function formatPriceArs(cents: number): string {
 	.pricing-card__saving--annual {
 		display: none;
 	}
+	/*
+	   HOS-115: the annual entry path now grants the SAME no-card trial the
+	   monthly path does (the trial object is interval-agnostic), so the
+	   trial copy must be visible under BOTH toggles. `.pricing-card__trial`
+	   is intentionally absent from this hide rule — only the monthly-specific
+	   price amount/period are hidden under the annual toggle.
+	 */
 	[data-billing='annual'] .pricing-card__amount--monthly,
-	[data-billing='annual'] .pricing-card__period--monthly,
-	[data-billing='annual'] .pricing-card__trial--monthly {
+	[data-billing='annual'] .pricing-card__period--monthly {
 		display: none;
 	}
 	[data-billing='annual'] .pricing-card__amount--annual,
@@ -781,6 +787,17 @@ function formatPriceArs(cents: number): string {
 	 * to keep the displayed checkout price + the /start-paid payload in
 	 * sync. Pattern documented inline in PlanPurchaseButton.client.tsx.
 	 */
+	/**
+	 * Reads the `?interval=` query param (HOS-115 §5 nudge delivery path 1 —
+	 * the TRIAL_EXPIRED notification's upgradeUrl). Defaults to 'monthly' when
+	 * absent or set to anything other than the two known values, so a bad or
+	 * stale link never leaves the toggle in an invalid state.
+	 */
+	function resolveInitialInterval(): 'monthly' | 'annual' {
+		const params = new URLSearchParams(window.location.search);
+		return params.get('interval') === 'annual' ? 'annual' : 'monthly';
+	}
+
 	function initPricingToggle(container: HTMLElement): void {
 		const options = container.querySelectorAll<HTMLButtonElement>(
 			'[data-pricing-toggle]'
@@ -794,6 +811,11 @@ function formatPriceArs(cents: number): string {
 				opt.setAttribute('aria-checked', String(isActive));
 			}
 		};
+		// HOS-115 §5: pre-select the toggle from the query param on load. This
+		// only runs once per page load/navigation (astro:page-load), so a
+		// user who manually flips the toggle afterwards via the click
+		// listener below is never overridden by this initial selection.
+		setActive(resolveInitialInterval());
 		for (const opt of options) {
 			opt.addEventListener('click', () => {
 				const interval = opt.dataset.pricingToggle === 'annual' ? 'annual' : 'monthly';

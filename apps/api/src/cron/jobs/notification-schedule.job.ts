@@ -21,7 +21,7 @@ import { billingNotificationLog, eq, getDb, sql, withTransaction } from '@repo/d
 import { type NotificationPayload, NotificationType, RetryService } from '@repo/notifications';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { processDbNotificationRetries } from '../../services/notification-retry.service.js';
-import { TrialService } from '../../services/trial.service.js';
+import { buildTrialUpgradeUrl, TrialService } from '../../services/trial.service.js';
 import { loadBillingSettings } from '../../utils/billing-settings.js';
 import { lookupCustomerDetails } from '../../utils/customer-lookup.js';
 import { env } from '../../utils/env.js';
@@ -268,7 +268,17 @@ export const notificationScheduleJob: CronJobDefinition = {
                                 continue;
                             }
 
-                            const upgradeUrl = `${env.HOSPEDA_SITE_URL}/mi-cuenta/suscripcion`;
+                            // HOS-115 §5: nudge — target the owner pricing page (the
+                            // only page with the monthly/annual toggle) and carry the
+                            // interval the customer originally chose, exactly like the
+                            // TRIAL_EXPIRED notification (single source of truth in
+                            // `buildTrialUpgradeUrl`). `/mi-cuenta/suscripcion` (the
+                            // previous target) has no toggle, so `?interval=` there
+                            // would be silently ignored.
+                            const upgradeUrl = buildTrialUpgradeUrl({
+                                siteUrl: env.HOSPEDA_SITE_URL,
+                                intendedInterval: trial.intendedInterval
+                            });
 
                             // Fire-and-forget notification
                             sendNotification({
@@ -350,7 +360,13 @@ export const notificationScheduleJob: CronJobDefinition = {
                                 continue;
                             }
 
-                            const upgradeUrl = `${env.HOSPEDA_SITE_URL}/mi-cuenta/suscripcion`;
+                            // HOS-115 §5: nudge — same rationale as the 3-day branch
+                            // above (see comment there); single source of truth in
+                            // `buildTrialUpgradeUrl`.
+                            const upgradeUrl = buildTrialUpgradeUrl({
+                                siteUrl: env.HOSPEDA_SITE_URL,
+                                intendedInterval: trial.intendedInterval
+                            });
 
                             // Fire-and-forget notification
                             sendNotification({

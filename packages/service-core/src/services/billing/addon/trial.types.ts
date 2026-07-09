@@ -139,6 +139,18 @@ export interface TrialEndingSubscription {
     readonly trialEnd: Date;
     /** Days remaining */
     readonly daysRemaining: number;
+    /**
+     * The billing interval the customer originally selected when this trial
+     * started (HOS-115 §5), read back from `metadata.intendedInterval` on the
+     * QZPay subscription. Untyped/raw at the source — the QZPay SDK does not
+     * narrow subscription metadata — so this may be `undefined` (trial-start
+     * paths that never recorded an interval, e.g. the accommodation-publish
+     * auto-start flow) or any string value. Consumers must validate before
+     * trusting it (see {@link buildTrialUpgradeUrl} in `trial.service.ts`,
+     * which degrades gracefully for anything other than `'monthly'` /
+     * `'annual'`).
+     */
+    readonly intendedInterval?: string;
 }
 
 /**

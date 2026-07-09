@@ -99,7 +99,7 @@ vi.mock('../../src/utils/logger', () => ({
 }));
 
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
-import { TrialService } from '../../src/services/trial.service';
+import { buildTrialUpgradeUrl, TrialService } from '../../src/services/trial.service';
 import { env } from '../../src/utils/env';
 
 // Mock QZPay billing
@@ -1320,6 +1320,163 @@ describe('TrialService', () => {
             expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalledWith(
                 'sub-already-cancelled'
             );
+        });
+
+        // ── HOS-115 T-004: TRIAL_EXPIRED notification upgradeUrl nudge ──────────
+        //
+        // The TRIAL_EXPIRED notification's upgradeUrl must carry `?interval=` back
+        // from the expiring trial's `metadata.intendedInterval` (stamped by
+        // startTrial at grant time — CORE phase), so the pricing page can
+        // pre-select the same toggle the customer originally chose. It must
+        // degrade gracefully (omit the param) when the metadata has no valid
+        // interval — e.g. a trial started via the accommodation-publish
+        // auto-start flow, which never records one.
+        describe('TRIAL_EXPIRED notification upgradeUrl nudge (HOS-115 T-004)', () => {
+            const buildExpiredSub = (input: {
+                id: string;
+                customerId: string;
+                metadata: unknown;
+            }) => {
+                const now = new Date();
+                const expiredEnd = new Date(now);
+                expiredEnd.setDate(expiredEnd.getDate() - 1);
+                return {
+                    id: input.id,
+                    customerId: input.customerId,
+                    status: 'trialing',
+                    trialEnd: expiredEnd.toISOString(),
+                    metadata: input.metadata
+                };
+            };
+
+            it('appends ?interval=annual when the expiring trial recorded an annual intent', async () => {
+                const sendNotification = vi.fn();
+                const localTrialService = new TrialService(mockBilling, sendNotification);
+
+                vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                    data: [
+                        buildExpiredSub({
+                            id: 'sub-annual-intent',
+                            customerId: 'customer-annual-intent',
+                            metadata: { intendedInterval: 'annual' }
+                        })
+                    ]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+                vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                    id: 'customer-annual-intent',
+                    email: 'annual@example.com',
+                    metadata: { name: 'Annual User', userId: 'u-annual' }
+                } as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: 'plan-1',
+                    name: 'owner-basico'
+                } as never);
+
+                await localTrialService.blockExpiredTrials();
+
+                expect(sendNotification).toHaveBeenCalledOnce();
+                const payload = sendNotification.mock.calls[0]?.[0] as { upgradeUrl: string };
+                expect(payload.upgradeUrl).toContain('?interval=annual');
+                expect(payload.upgradeUrl).toContain('/suscriptores/planes/');
+            });
+
+            it('appends ?interval=monthly when the expiring trial recorded a monthly intent', async () => {
+                const sendNotification = vi.fn();
+                const localTrialService = new TrialService(mockBilling, sendNotification);
+
+                vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                    data: [
+                        buildExpiredSub({
+                            id: 'sub-monthly-intent',
+                            customerId: 'customer-monthly-intent',
+                            metadata: { intendedInterval: 'monthly' }
+                        })
+                    ]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+                vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                    id: 'customer-monthly-intent',
+                    email: 'monthly@example.com',
+                    metadata: { name: 'Monthly User', userId: 'u-monthly' }
+                } as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: 'plan-1',
+                    name: 'owner-basico'
+                } as never);
+
+                await localTrialService.blockExpiredTrials();
+
+                const payload = sendNotification.mock.calls[0]?.[0] as { upgradeUrl: string };
+                expect(payload.upgradeUrl).toContain('?interval=monthly');
+            });
+
+            it('omits the interval param when metadata has no intendedInterval (e.g. accommodation-publish auto-start)', async () => {
+                const sendNotification = vi.fn();
+                const localTrialService = new TrialService(mockBilling, sendNotification);
+
+                vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                    data: [
+                        buildExpiredSub({
+                            id: 'sub-no-intent',
+                            customerId: 'customer-no-intent',
+                            metadata: {}
+                        })
+                    ]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+                vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                    id: 'customer-no-intent',
+                    email: 'none@example.com',
+                    metadata: { name: 'No Intent User', userId: 'u-none' }
+                } as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: 'plan-1',
+                    name: 'owner-basico'
+                } as never);
+
+                await localTrialService.blockExpiredTrials();
+
+                const payload = sendNotification.mock.calls[0]?.[0] as { upgradeUrl: string };
+                expect(payload.upgradeUrl).not.toContain('interval=');
+            });
+        });
+    });
+
+    describe('buildTrialUpgradeUrl (HOS-115 T-004, pure function)', () => {
+        it('appends ?interval=annual for a valid annual intent', () => {
+            const url = buildTrialUpgradeUrl({
+                siteUrl: 'https://example.test',
+                intendedInterval: 'annual'
+            });
+            expect(url).toBe('https://example.test/es/suscriptores/planes/?interval=annual');
+        });
+
+        it('appends ?interval=monthly for a valid monthly intent', () => {
+            const url = buildTrialUpgradeUrl({
+                siteUrl: 'https://example.test',
+                intendedInterval: 'monthly'
+            });
+            expect(url).toBe('https://example.test/es/suscriptores/planes/?interval=monthly');
+        });
+
+        it('omits the query param when intendedInterval is undefined', () => {
+            const url = buildTrialUpgradeUrl({ siteUrl: 'https://example.test' });
+            expect(url).toBe('https://example.test/es/suscriptores/planes/');
+        });
+
+        it('omits the query param for an unrecognized value (defensive against malformed metadata)', () => {
+            const url = buildTrialUpgradeUrl({
+                siteUrl: 'https://example.test',
+                intendedInterval: 'weekly'
+            });
+            expect(url).toBe('https://example.test/es/suscriptores/planes/');
+        });
+
+        it('points at the owner pricing page, not /mi-cuenta/suscripcion (which has no toggle)', () => {
+            const url = buildTrialUpgradeUrl({ siteUrl: 'https://example.test' });
+            expect(url).not.toContain('/mi-cuenta/suscripcion');
+            expect(url).toContain('/suscriptores/planes/');
         });
     });
 

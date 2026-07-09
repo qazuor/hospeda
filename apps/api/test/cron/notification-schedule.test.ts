@@ -67,9 +67,18 @@ vi.mock('../../src/middlewares/billing', () => ({
     getQZPayBilling: vi.fn()
 }));
 
-// Mock TrialService
+// Mock TrialService. buildTrialUpgradeUrl is re-implemented here (mirroring the
+// real pure function in src/services/trial.service.ts) rather than stubbed as a
+// bare vi.fn(), since several tests below assert on the actual upgradeUrl shape
+// the job sends (HOS-115 §5 nudge).
 vi.mock('../../src/services/trial.service', () => ({
-    TrialService: vi.fn()
+    TrialService: vi.fn(),
+    buildTrialUpgradeUrl: vi.fn((input: { siteUrl: string; intendedInterval?: unknown }) => {
+        const base = `${input.siteUrl}/es/suscriptores/planes/`;
+        return input.intendedInterval === 'monthly' || input.intendedInterval === 'annual'
+            ? `${base}?interval=${input.intendedInterval}`
+            : base;
+    })
 }));
 
 // Mock notification helper
@@ -222,6 +231,116 @@ describe('Notification Schedule Cron Job', () => {
                 })
             );
             expect(mockTrialService.findTrialsEndingSoon).toHaveBeenCalledWith({ daysAhead: 3 });
+        });
+
+        it('should point the upgradeUrl at the owner pricing page and carry ?interval=annual (HOS-115 §5)', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const mockTrials3Days = [
+                {
+                    id: 'sub-1',
+                    customerId: 'cust-1',
+                    userEmail: 'user1@example.com',
+                    userName: 'User One',
+                    userId: 'user-1',
+                    planSlug: 'owner-basico',
+                    trialEnd: new Date('2024-06-18T00:00:00Z'),
+                    daysRemaining: 3,
+                    intendedInterval: 'annual'
+                }
+            ];
+
+            const mockBilling = {};
+            const mockTrialService = {
+                findTrialsEndingSoon: vi
+                    .fn()
+                    .mockResolvedValueOnce(mockTrials3Days) // 3 days
+                    .mockResolvedValueOnce([]) // 1 day
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
+
+            // Act
+            await notificationScheduleJob.handler(ctx);
+
+            // Assert
+            // Not asserting on the exact host (env.HOSPEDA_SITE_URL is resolved once at
+            // module import, so the beforeEach process.env override above does not
+            // retroactively apply) — mirrors the pattern in
+            // trial.service.test.ts's TRIAL_EXPIRED upgradeUrl nudge tests (HOS-115 T-004).
+            const payload = vi.mocked(sendNotification).mock.calls[0]?.[0] as {
+                upgradeUrl: string;
+            };
+            expect(payload.upgradeUrl).toContain('/suscriptores/planes/');
+            expect(payload.upgradeUrl).toContain('?interval=annual');
+            expect(payload.upgradeUrl).not.toContain('/mi-cuenta/suscripcion');
+        });
+
+        it('should omit ?interval= when the trial has no recorded intent (HOS-115 §5, graceful degrade)', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const mockTrials1Day = [
+                {
+                    id: 'sub-1',
+                    customerId: 'cust-1',
+                    userEmail: 'user1@example.com',
+                    userName: 'User One',
+                    userId: 'user-1',
+                    planSlug: 'owner-basico',
+                    trialEnd: new Date('2024-06-16T00:00:00Z'),
+                    daysRemaining: 1
+                    // no intendedInterval — e.g. accommodation-publish auto-start flow
+                }
+            ];
+
+            const mockBilling = {};
+            const mockTrialService = {
+                findTrialsEndingSoon: vi
+                    .fn()
+                    .mockResolvedValueOnce([]) // 3 days
+                    .mockResolvedValueOnce(mockTrials1Day) // 1 day
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
+
+            // Act
+            await notificationScheduleJob.handler(ctx);
+
+            // Assert
+            const payload = vi.mocked(sendNotification).mock.calls[0]?.[0] as {
+                upgradeUrl: string;
+            };
+            expect(payload.upgradeUrl).toContain('/suscriptores/planes/');
+            expect(payload.upgradeUrl).not.toContain('interval=');
+            expect(payload.upgradeUrl).not.toContain('/mi-cuenta/suscripcion');
         });
 
         it('should send reminders for trials ending in 1 day', async () => {
