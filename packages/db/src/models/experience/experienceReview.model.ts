@@ -14,8 +14,15 @@ export class ExperienceReviewModel extends BaseModelImpl<ExperienceReview> {
 
     protected override readonly validRelationKeys = ['experience', 'user'] as const;
 
+    /**
+     * Returns the Drizzle query key for this model.
+     * Must match the JS variable name used in the Drizzle schema (camelCase),
+     * NOT the SQL table name. Used by findAllWithRelations via db.query[tableName]
+     * (same defect class as BETA-150 on gastronomy reviews — the snake_case SQL
+     * name is not a valid db.query key and throws "Invalid table configuration").
+     */
     protected getTableName(): string {
-        return 'experience_reviews';
+        return 'experienceReviews';
     }
 }
 
