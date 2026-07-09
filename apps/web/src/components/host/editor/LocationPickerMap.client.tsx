@@ -3,8 +3,9 @@
  * @description Raw Leaflet map for the LocationPicker (SPEC-208, Phase C PR2).
  *
  * Uses raw Leaflet (NOT react-leaflet) for React 19 compatibility.
- * This component is dynamically imported with `ssr: false` to avoid
- * Leaflet touching `window` during SSR.
+ * This component is dynamically imported via `React.lazy()` (see
+ * LocationPicker.client.tsx) so it never touches `window`/`document`
+ * during SSR — Leaflet only loads once this chunk mounts on the client.
  */
 import { useEffect, useRef } from 'react';
 import styles from './LocationPicker.module.css';
@@ -35,6 +36,7 @@ export function LocationPickerMap({
     const mapRef = useRef<HTMLDivElement>(null);
     const leafletMapRef = useRef<unknown>(null);
     const markerRef = useRef<unknown>(null);
+    const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
     // Initialize Leaflet map
     // biome-ignore lint/correctness/useExhaustiveDependencies: Leaflet map needs full re-init on prop changes
@@ -69,6 +71,18 @@ export function LocationPickerMap({
 
             L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION }).addTo(map);
 
+            // BETA-132: on first mount (or when the container is revealed after
+            // being hidden/collapsed) Leaflet may cache a stale/zero container
+            // size and never request tiles for the true visible area, leaving
+            // the map half-loaded. Force a remeasure right after setup, then
+            // keep remeasuring on every container resize (mirrors the pattern
+            // in ListingMapInner.client.tsx's FitBoundsOnce).
+            map.invalidateSize();
+            const container = mapRef.current;
+            const ro = new ResizeObserver(() => map.invalidateSize());
+            ro.observe(container);
+            resizeObserverRef.current = ro;
+
             // Add marker
             const marker = markerPosition
                 ? L.marker([markerPosition.lat, markerPosition.lng], { draggable: !disabled })
@@ -94,6 +108,8 @@ export function LocationPickerMap({
         });
 
         return () => {
+            resizeObserverRef.current?.disconnect();
+            resizeObserverRef.current = null;
             if (
                 leafletMapRef.current &&
                 typeof (leafletMapRef.current as { remove?: () => void }).remove === 'function'
