@@ -135,6 +135,62 @@ export function getCategoryBackgroundFunction(color: LoggerColorType): ChalkFunc
 }
 
 /**
+ * Short display labels for well-known request-context keys, so the pretty
+ * segment stays compact (`req:` instead of `requestId:`). Any other key
+ * returned by the `getContext` provider is shown under its own name.
+ */
+const CONTEXT_KEY_LABELS: Record<string, string> = {
+    requestId: 'req',
+    userId: 'user',
+    sessionId: 'sid',
+    visitorId: 'vid'
+};
+
+/** Values longer than this are shortened with a trailing ellipsis. */
+const CONTEXT_VALUE_MAX_LENGTH = 8;
+
+/**
+ * Builds a compact `[req:ab12ef user:U123 vid:… sid:…]`-style segment from
+ * the configured `getContext` provider (see `BaseLoggerConfig.getContext`),
+ * for PRETTY-mode dev output. The JSON path does not need this — it already
+ * gets the full, unredacted-key context via `buildLogEntry`'s own merge.
+ *
+ * Only string/number values are shown (objects/arrays are skipped so a
+ * misused provider can never dump a giant object into the console line).
+ * Never throws: an absent, throwing, or non-object provider yields an empty
+ * segment.
+ *
+ * @returns The formatted segment, or an empty string when there is nothing
+ * to show.
+ */
+export function formatContextSegment(): string {
+    try {
+        const fields = getConfig().getContext?.();
+        if (fields === null || typeof fields !== 'object') {
+            return '';
+        }
+
+        const parts: string[] = [];
+        for (const [key, value] of Object.entries(fields)) {
+            if (typeof value !== 'string' && typeof value !== 'number') {
+                continue;
+            }
+            const label = CONTEXT_KEY_LABELS[key] ?? key;
+            const strValue = String(value);
+            const displayValue =
+                strValue.length > CONTEXT_VALUE_MAX_LENGTH
+                    ? `${strValue.slice(0, CONTEXT_VALUE_MAX_LENGTH)}…`
+                    : strValue;
+            parts.push(`${label}:${displayValue}`);
+        }
+
+        return parts.length === 0 ? '' : `[${parts.join(' ')}]`;
+    } catch {
+        return '';
+    }
+}
+
+/**
  * Format timestamp for logs
  * @returns Formatted timestamp [YYYY-MM-DD HH:MM:SS]
  */
@@ -318,6 +374,13 @@ export function formatLogMessage(
         } else {
             parts.push(labelText);
         }
+    }
+
+    // Add request-context segment if a getContext provider is configured
+    // (e.g. requestId/userId/sessionId/visitorId injected by apps/api).
+    const contextSegment = formatContextSegment();
+    if (contextSegment) {
+        parts.push(useColors ? chalk.gray(contextSegment) : contextSegment);
     }
 
     // Determine expand levels
