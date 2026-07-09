@@ -256,6 +256,7 @@
                 "phone": "Telefone",
                 "phoneCountry": "País",
                 "phoneCountrySearchPlaceholder": "Buscar país...",
+                "phoneCountryNoResults": "Nenhum país encontrado",
                 "phoneNumber": "Número",
                 "email": "Email",
                 "website": "Site",

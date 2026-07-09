@@ -10,18 +10,9 @@ import { useState } from 'react';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import {
-    composePhoneValue,
-    findPhoneCountryByLabel,
-    formatPhoneCountryLabel,
-    PHONE_COUNTRIES,
-    type PhoneCountry,
-    parsePhoneValue
-} from '@/lib/phone-countries';
+import { composePhoneValue, type PhoneCountry, parsePhoneValue } from '@/lib/phone-countries';
 import styles from './ContactInfoSection.module.css';
-
-/** DOM id for the phone country `<datalist>`. */
-const PHONE_COUNTRY_DATALIST_ID = 'acc-phone-country-options';
+import { CountryCodeCombobox } from './CountryCodeCombobox.client';
 
 /** Props for ContactInfoSection. */
 export interface ContactInfoSectionProps {
@@ -59,17 +50,10 @@ export function ContactInfoSection({
     const [phoneNumber, setPhoneNumber] = useState<string>(
         () => parsePhoneValue(data.phone).number
     );
-    const [countryQuery, setCountryQuery] = useState<string>(() =>
-        formatPhoneCountryLabel(parsePhoneValue(data.phone).country)
-    );
 
-    const handleCountryQueryChange = (value: string) => {
-        setCountryQuery(value);
-        const matched = findPhoneCountryByLabel(value);
-        if (matched) {
-            setPhoneCountry(matched);
-            onFieldChange('phone', composePhoneValue({ country: matched, number: phoneNumber }));
-        }
+    const handleCountryChange = (country: PhoneCountry) => {
+        setPhoneCountry(country);
+        onFieldChange('phone', composePhoneValue({ country, number: phoneNumber }));
     };
 
     const handleNumberChange = (value: string) => {
@@ -96,26 +80,12 @@ export function ContactInfoSection({
                             >
                                 {t('host.properties.editor.field.phoneCountry', 'País')}
                             </label>
-                            <input
+                            <CountryCodeCombobox
+                                locale={locale}
                                 id="acc-phone-country"
-                                list={PHONE_COUNTRY_DATALIST_ID}
-                                className={`${styles.fieldInput} ${styles.phoneCountryInput}`}
-                                value={countryQuery}
-                                onChange={(e) => handleCountryQueryChange(e.target.value)}
-                                placeholder={t(
-                                    'host.properties.editor.field.phoneCountrySearchPlaceholder',
-                                    'Buscar país...'
-                                )}
-                                autoComplete="off"
+                                value={phoneCountry}
+                                onChange={handleCountryChange}
                             />
-                            <datalist id={PHONE_COUNTRY_DATALIST_ID}>
-                                {PHONE_COUNTRIES.map((country) => (
-                                    <option
-                                        key={country.iso}
-                                        value={formatPhoneCountryLabel(country)}
-                                    />
-                                ))}
-                            </datalist>
                         </div>
                         <div className={styles.phoneNumberField}>
                             <label

@@ -28,7 +28,6 @@ import { CapacitySection } from './editor/CapacitySection.client';
 import { ContactInfoSection } from './editor/ContactInfoSection.client';
 import type { EditorSectionNavItem } from './editor/EditorSectionNav.client';
 import { EditorSectionNav } from './editor/EditorSectionNav.client';
-import { FeaturedToggleSection } from './editor/FeaturedToggleSection.client';
 import { LocationPicker } from './editor/LocationPicker.client';
 import { PhotoSection } from './editor/PhotoSection.client';
 import { PricingSection } from './editor/PricingSection.client';
@@ -387,8 +386,7 @@ export function AccommodationEditor({
             externalReputation: t(
                 'host.properties.editor.section.externalReputation',
                 'Reputación externa'
-            ),
-            featuredToggle: t('host.properties.editor.section.featuredToggle', 'Destacado')
+            )
         }),
         [t]
     );
@@ -407,10 +405,10 @@ export function AccommodationEditor({
         if (translationData) {
             sections.push({ id: 'editor-translations', label: sectionLabels.translations });
         }
-        sections.push(
-            { id: 'editor-externalReputation', label: sectionLabels.externalReputation },
-            { id: 'editor-featuredToggle', label: sectionLabels.featuredToggle }
-        );
+        sections.push({
+            id: 'editor-externalReputation',
+            label: sectionLabels.externalReputation
+        });
         return sections;
     }, [sectionLabels, translationData]);
 
@@ -566,17 +564,6 @@ export function AccommodationEditor({
                         aria-label={sectionLabels.externalReputation}
                     >
                         <ExternalReputationSection
-                            locale={locale}
-                            accommodationId={accommodationId}
-                        />
-                    </section>
-
-                    <section
-                        id="editor-featuredToggle"
-                        className={styles.card}
-                        aria-label={sectionLabels.featuredToggle}
-                    >
-                        <FeaturedToggleSection
                             locale={locale}
                             accommodationId={accommodationId}
                         />
