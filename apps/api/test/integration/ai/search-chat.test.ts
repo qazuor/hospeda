@@ -116,7 +116,9 @@ const {
     nextDestinationDbRows,
     nextPersistPromise,
     mockApiLogger,
-    nextSearchCallCount
+    nextSearchCallCount,
+    nextNearbyResult,
+    nearbyGetCalls
 } = vi.hoisted(() => ({
     generateObjectCalls: [] as Array<{ feature: string; prompt: string; locale: string }>,
     nextGenerateObjectResult: {
@@ -178,7 +180,19 @@ const {
      * for the search feature. Set per-test to simulate under-quota / at-quota states.
      * Reset to 0 in `beforeEach` so tests are isolated.
      */
-    nextSearchCallCount: { current: 0 }
+    nextSearchCallCount: { current: 0 },
+    /**
+     * HOS-111 T-013: controls what the mocked `DestinationService.getNearby`
+     * returns per-test. Default (empty nearby array) means "no expansion" so
+     * pre-existing tests that never set `expandToNearby: true` are unaffected.
+     */
+    nextNearbyResult: {
+        current: { data: { nearby: [] } } as
+            | { data: { nearby: Array<{ id: string; name: string; slug: string }> }; error?: never }
+            | { data?: never; error: { code: string; message: string } }
+    },
+    /** HOS-111 T-013: records every `getNearby` call for call-count/arg assertions. */
+    nearbyGetCalls: [] as Array<{ destinationId: string }>
 }));
 
 // ---------------------------------------------------------------------------
@@ -374,6 +388,26 @@ vi.mock('@repo/db', async (importOriginal) => {
 });
 
 // ---------------------------------------------------------------------------
+// Mock: @repo/service-core — DestinationService.getNearby (HOS-111 T-013)
+// Preserves every real export (Actor/ServiceError/RoleEnum/etc are used by
+// middlewares mounted on the same app) and overrides only DestinationService
+// so `getNearby` is controllable per-test without a real database.
+// ---------------------------------------------------------------------------
+
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        DestinationService: class {
+            async getNearby(_actor: unknown, params: { destinationId: string }) {
+                nearbyGetCalls.push({ destinationId: params.destinationId });
+                return nextNearbyResult.current;
+            }
+        }
+    };
+});
+
+// ---------------------------------------------------------------------------
 // Mock: search-chat.persistence — persistSearchChatTurn (T-007)
 // Mirrors the chat-route.test.ts pattern for persistChatTurn: vi.fn() returning
 // the per-test configured promise so each test can control success / failure / timeout.
@@ -421,6 +455,11 @@ const RIVER_FRONT_FEATURE_UUID = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 
 /** Fixed UUID returned by the mock DB for city → destination resolution (fix #4). */
 const COLON_DESTINATION_UUID = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+
+/** HOS-111 T-013: fixed UUIDs for the "nearby destinations" AC-9 fixtures (Colón's neighbors). */
+const PUEBLO_LIEBIG_UUID = '11111111-1111-4111-8111-111111111111';
+const SAN_JOSE_UUID = '22222222-2222-4222-8222-222222222222';
+const CONCEPCION_DEL_URUGUAY_UUID = '33333333-3333-4333-8333-333333333333';
 
 // ---------------------------------------------------------------------------
 // Test app
@@ -576,6 +615,9 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
         nextAmenityDbRows.current = [];
         nextFeatureDbRows.current = [];
         nextDestinationDbRows.current = [];
+        // HOS-111 T-013: reset nearby-expansion stub state ("no expansion" default).
+        nextNearbyResult.current = { data: { nearby: [] } };
+        nearbyGetCalls.length = 0;
         // T-007: default happy-path persistence — resolves with a fixed conversation id.
         nextPersistPromise.current = Promise.resolve({
             conversationId: 'ffffffff-ffff-4fff-8fff-ffffffffffff'
@@ -1701,6 +1743,271 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             };
             // The model's own destinationId wins (city resolution was skipped).
             expect(payload.params.destinationId).toBe(explicitDestinationId);
+        });
+    });
+
+    // =========================================================================
+    // Gate 9 — HOS-111 T-013: nearby-destination expansion (AC-9)
+    //
+    // "cabaña en Colón, y también en destinos cercanos" → Colón + ~50km
+    // neighbors (Pueblo Liebig, San José, Concepción del Uruguay), with the
+    // filters frame listing the included destinations.
+    // =========================================================================
+
+    describe('Gate 9 — HOS-111 T-013: nearby-destination expansion (AC-9)', () => {
+        it('AC-9: expandToNearby=true + resolved destinationId expands the search and lists the neighbors', async () => {
+            // Arrange: turn 2 of a conversation — Colón is already the anchor
+            // in the CURRENT FILTER SET, and the new message asks to expand.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { destinationId: COLON_DESTINATION_UUID, expandToNearby: true }
+                },
+                usage: { promptTokens: 15, completionTokens: 8, totalTokens: 23 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextNearbyResult.current = {
+                data: {
+                    nearby: [
+                        { id: PUEBLO_LIEBIG_UUID, name: 'Pueblo Liebig', slug: 'pueblo-liebig' },
+                        { id: SAN_JOSE_UUID, name: 'San José', slug: 'san-jose' },
+                        {
+                            id: CONCEPCION_DEL_URUGUAY_UUID,
+                            name: 'Concepción del Uruguay',
+                            slug: 'concepcion-del-uruguay'
+                        }
+                    ]
+                }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [
+                        { role: 'user', content: 'cabaña en Colón' },
+                        { role: 'assistant', content: 'Encontré cabañas en Colón.' },
+                        { role: 'user', content: 'y también en destinos cercanos' }
+                    ],
+                    currentFilters: { destinationId: COLON_DESTINATION_UUID },
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            expect(filtersFrame).toBeDefined();
+
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                intent: Record<string, unknown>;
+                nearbyDestinations?: Array<{ id: string; name: string; slug: string }>;
+            };
+
+            // getNearby was called with the resolved Colón anchor.
+            expect(nearbyGetCalls).toEqual([{ destinationId: COLON_DESTINATION_UUID }]);
+
+            // The search widens to a multi-destination query: anchor + neighbors.
+            expect(payload.params.destinationIds).toEqual(
+                expect.arrayContaining([
+                    COLON_DESTINATION_UUID,
+                    PUEBLO_LIEBIG_UUID,
+                    SAN_JOSE_UUID,
+                    CONCEPCION_DEL_URUGUAY_UUID
+                ])
+            );
+
+            // The filters frame lists which destinations were included (T-014 reads this).
+            expect(payload.nearbyDestinations).toEqual([
+                { id: PUEBLO_LIEBIG_UUID, name: 'Pueblo Liebig', slug: 'pueblo-liebig' },
+                { id: SAN_JOSE_UUID, name: 'San José', slug: 'san-jose' },
+                {
+                    id: CONCEPCION_DEL_URUGUAY_UUID,
+                    name: 'Concepción del Uruguay',
+                    slug: 'concepcion-del-uruguay'
+                }
+            ]);
+        });
+
+        it('does not call getNearby and omits nearbyDestinations when expandToNearby is absent', async () => {
+            // Arrange: a normal (non-expansion) turn with a resolved destination.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { destinationId: COLON_DESTINATION_UUID }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cabaña en Colón' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                nearbyDestinations?: unknown;
+            };
+
+            expect(nearbyGetCalls).toHaveLength(0);
+            expect(payload.nearbyDestinations).toBeUndefined();
+            expect(payload.params.destinationIds).toBeUndefined();
+            expect(payload.params.destinationId).toBe(COLON_DESTINATION_UUID);
+        });
+
+        it('does not call getNearby when expandToNearby=true but no destinationId was resolved (nothing to expand from)', async () => {
+            // Arrange: expandToNearby is set but there is no anchor destination
+            // this turn (e.g. a context-free message the model mis-flagged, or
+            // a query/geo/no-location turn) — the deterministic guard must skip.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.6,
+                    entities: { expandToNearby: true, minGuests: 4 }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'también cerca' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                nearbyDestinations?: unknown;
+            };
+
+            expect(nearbyGetCalls).toHaveLength(0);
+            expect(payload.nearbyDestinations).toBeUndefined();
+        });
+
+        it('non-fatal: a getNearby failure is logged and the turn still completes without expansion', async () => {
+            // Arrange
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { destinationId: COLON_DESTINATION_UUID, expandToNearby: true }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextNearbyResult.current = {
+                error: { code: 'INTERNAL_ERROR', message: 'DB unavailable' }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'y también cerca' }],
+                    currentFilters: { destinationId: COLON_DESTINATION_UUID },
+                    locale: 'es'
+                })
+            });
+
+            // Assert: the turn still succeeds end-to-end (non-fatal contract).
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                nearbyDestinations?: unknown;
+            };
+            expect(payload.nearbyDestinations).toBeUndefined();
+            expect(payload.params.destinationIds).toBeUndefined();
+            expect(payload.params.destinationId).toBe(COLON_DESTINATION_UUID);
+            expect(mockApiLogger.warn).toHaveBeenCalled();
+        });
+
+        it('empty-radius fallback still surfaces via nearbyDestinations when the model returns fallback neighbors', async () => {
+            // Arrange: the model-layer radius/fallback logic itself is unit-tested
+            // at packages/db/test/models/destination-nearby.test.ts. Here we only
+            // verify the route surfaces whatever DestinationService.getNearby
+            // returns (radius hit OR fallback) identically in the filters frame.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { destinationId: COLON_DESTINATION_UUID, expandToNearby: true }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // Only one destination came back (simulating the N-nearest fallback
+            // path when the fixed radius yielded nothing) — still surfaced.
+            nextNearbyResult.current = {
+                data: {
+                    nearby: [
+                        {
+                            id: CONCEPCION_DEL_URUGUAY_UUID,
+                            name: 'Concepción del Uruguay',
+                            slug: 'concepcion-del-uruguay'
+                        }
+                    ]
+                }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'y en destinos cercanos' }],
+                    currentFilters: { destinationId: COLON_DESTINATION_UUID },
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                nearbyDestinations?: Array<{ id: string; name: string; slug: string }>;
+            };
+
+            // A "nearby" result (radius hit or fallback) is never empty at this
+            // layer — the search-chat route never returns 0 results back empty.
+            expect(payload.nearbyDestinations).toHaveLength(1);
+            expect(payload.params.destinationIds).toEqual(
+                expect.arrayContaining([COLON_DESTINATION_UUID, CONCEPCION_DEL_URUGUAY_UUID])
+            );
         });
     });
 });

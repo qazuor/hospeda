@@ -110,6 +110,15 @@ export function buildConversationalSearchPrompt({
         lines.push(
             'CURRENT FILTER SET (the accumulated state of this search conversation — return the COMPLETE updated set, applying the new message as a delta):',
             JSON.stringify(currentFilters),
+            '',
+            // HOS-111 T-012: reinforce nearby-expansion detection from the
+            // conversation history. Only meaningful when a prior filter set
+            // (and therefore a destination to expand from) already exists.
+            'NEARBY EXPANSION: if the new user message asks to widen the search to nearby/surrounding destinations ' +
+                '(e.g. "y en destinos cercanos", "también cerca", "and nearby destinations too", "cerca de ahí también"), ' +
+                'set entities.expandToNearby = true in your output, IN ADDITION TO returning the rest of the CURRENT FILTER SET fields unchanged. ' +
+                'Only set expandToNearby = true when the CURRENT FILTER SET already carries a destination to expand from — ' +
+                'never infer it from a message with no prior search context.',
             ''
         );
     }
