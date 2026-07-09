@@ -267,6 +267,121 @@ describe('useSearchChat', () => {
         expect(result.current.nearbyDestinations).toEqual([]);
     });
 
+    // ── attractionLocationConflict (HOS-111 T-016) ─────────────────────────
+
+    it('does NOT run the accommodation search and yields ZERO results on an attractionLocationConflict (never the full catalog)', async () => {
+        // This is the proof for the empty-overlap / no-match case: a conflict
+        // means no destination matches both constraints. The emitted params
+        // cannot force zero results (an empty destinationIds array is treated as
+        // "no filter" → full catalog by the accommodation query builder), so the
+        // hook MUST skip the fetch entirely to guarantee 0 results.
+        const conflictEvent: Extract<SearchChatSseEvent, { type: 'filters' }> = {
+            type: 'filters',
+            filters: {
+                // NOTE: params carry NO usable location filter (as the API emits
+                // on a no-match). If the hook wrongly fetched, this would return
+                // the FULL catalog — the assertion below guards exactly that.
+                params: {} as unknown as Extract<
+                    SearchChatSseEvent,
+                    { type: 'filters' }
+                >['filters']['params'],
+                intent: { attractionSlugs: ['sede_carnaval'] } as unknown as Extract<
+                    SearchChatSseEvent,
+                    { type: 'filters' }
+                >['filters']['intent'],
+                attractionLocationConflict: {
+                    attractionSlugs: ['sede_carnaval'],
+                    locationLabel: 'Colón'
+                }
+            }
+        };
+
+        // If the hook were to (wrongly) call the search, the mock would resolve
+        // with a NON-empty catalog — so a passing test proves the fetch is skipped.
+        mockAccommodationsList.mockResolvedValue({
+            ok: true,
+            data: {
+                items: [{ id: 'acc-full-catalog', name: 'Should NOT appear' }],
+                pagination: { page: 1, pageSize: 20, total: 1, totalPages: 1 }
+            }
+        });
+
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(conflictEvent);
+            p.onEvent({
+                type: 'token',
+                delta: 'No encontré destinos que combinen Colón con carnaval.'
+            });
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('una cabaña en Colón con carnavales');
+        });
+
+        // The accommodation search is DELIBERATELY skipped — proves 0 results,
+        // NOT the full catalog.
+        expect(mockAccommodationsList).not.toHaveBeenCalled();
+        expect(result.current.results).toEqual([]);
+        expect(result.current.hasSearched).toBe(true);
+        expect(result.current.resultsLoading).toBe(false);
+        expect(result.current.attractionLocationConflict).toEqual({
+            attractionSlugs: ['sede_carnaval'],
+            locationLabel: 'Colón'
+        });
+    });
+
+    it('clears a prior attractionLocationConflict on a later non-conflicting filters event', async () => {
+        const conflictEvent: Extract<SearchChatSseEvent, { type: 'filters' }> = {
+            type: 'filters',
+            filters: {
+                params: {} as unknown as Extract<
+                    SearchChatSseEvent,
+                    { type: 'filters' }
+                >['filters']['params'],
+                intent: { attractionSlugs: ['sede_carnaval'] } as unknown as Extract<
+                    SearchChatSseEvent,
+                    { type: 'filters' }
+                >['filters']['intent'],
+                attractionLocationConflict: { attractionSlugs: ['sede_carnaval'] }
+            }
+        };
+
+        mockStreamSearchChat.mockImplementationOnce(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(conflictEvent);
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('una cabaña en Federación con carnavales');
+        });
+        expect(result.current.attractionLocationConflict).not.toBeNull();
+
+        // Next (normal) turn: a filters event with no conflict clears it and
+        // DOES run the search.
+        mockStreamSearchChat.mockImplementationOnce(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent());
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
+
+        await act(async () => {
+            result.current.send('mejor mostrame cualquier cabaña');
+        });
+
+        expect(result.current.attractionLocationConflict).toBeNull();
+        expect(mockAccommodationsList).toHaveBeenCalled();
+    });
+
     // ── tokens accumulate into currentReply; done finalizes ─────────────────
 
     it('token deltas accumulate into currentReply; done finalizes assistant message', async () => {

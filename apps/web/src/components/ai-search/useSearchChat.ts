@@ -23,6 +23,7 @@
 import type {
     AccommodationPublic,
     AiSearchChatFiltersEvent,
+    AttractionLocationConflict,
     NearbyDestinationSummary,
     SearchIntentEntities
 } from '@repo/schemas';
@@ -104,6 +105,16 @@ export interface UseSearchChatReturn {
     readonly confidence: number | null;
     readonly nearbyDestinations: ReadonlyArray<NearbyDestinationSummary>;
     /**
+     * HOS-111 T-016: set when the LAST turn asked for both a location and an
+     * attraction that share no destination (or the attraction matched nothing).
+     * When present the accommodation search is DELIBERATELY skipped (results
+     * stay `[]`, `hasSearched` is true) — the panel renders the empty-results
+     * state and the streamed reply explains the conflict. `null` on every
+     * normal turn. Reset to `null` on each new `filters` event that has no
+     * conflict, and by `reset()`.
+     */
+    readonly attractionLocationConflict: AttractionLocationConflict | null;
+    /**
      * Whether the LAST model turn extracted any usable slot (SPEC-265 A2).
      * Snapshotted from the `filters` event — NOT recomputed from
      * `currentFilters`, so removing chips via `removeFilter` does not flip it
@@ -153,6 +164,7 @@ interface SearchChatState {
     readonly conversationId: string | null;
     readonly confidence: number | null;
     readonly nearbyDestinations: ReadonlyArray<NearbyDestinationSummary>;
+    readonly attractionLocationConflict: AttractionLocationConflict | null;
     readonly lastTurnHadEntities: boolean;
     readonly error: string | null;
     readonly errorStatus: number | null;
@@ -170,6 +182,7 @@ const INITIAL_STATE: SearchChatState = {
     conversationId: null,
     confidence: null,
     nearbyDestinations: [],
+    attractionLocationConflict: null,
     lastTurnHadEntities: false,
     error: null,
     errorStatus: null
@@ -366,6 +379,34 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
                         // Store confidence (SPEC-265 A1) for the low-confidence UI.
                         const newFilters = event.filters.intent;
                         const newConfidence = event.filters.confidence ?? null;
+                        // HOS-111 T-016: attraction/location conflict — the API
+                        // resolved that no destination matches BOTH the requested
+                        // location and attraction (or the attraction matched
+                        // nothing). We must render ZERO results and let the reply
+                        // explain it. CRITICAL: we do NOT call fetchAccommodations
+                        // here — the emitted params cannot force zero results (an
+                        // empty destinationIds array is treated as "no filter" and
+                        // returns the FULL catalog), so running the search would
+                        // show everything. Skipping the fetch guarantees 0 results.
+                        const conflict = event.filters.attractionLocationConflict ?? null;
+                        if (conflict !== null) {
+                            setState((prev) => ({
+                                ...prev,
+                                currentFilters: newFilters,
+                                lastSearchParams: event.filters.params,
+                                confidence: newConfidence,
+                                nearbyDestinations: event.filters.nearbyDestinations ?? [],
+                                attractionLocationConflict: conflict,
+                                lastTurnHadEntities: hasAnyEntity(newFilters),
+                                // Deliberately empty — the conflict means no
+                                // destination satisfies both constraints.
+                                results: [],
+                                resultsLoading: false,
+                                hasSearched: true,
+                                error: null
+                            }));
+                            return;
+                        }
                         setState((prev) => ({
                             ...prev,
                             currentFilters: newFilters,
@@ -375,6 +416,9 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
                             // turn did not expand — a prior turn's nearby indicator
                             // must not linger once the user refines away from it.
                             nearbyDestinations: event.filters.nearbyDestinations ?? [],
+                            // HOS-111 T-016: clear any prior conflict once a normal
+                            // (non-conflicting) turn arrives.
+                            attractionLocationConflict: null,
                             lastTurnHadEntities: hasAnyEntity(newFilters)
                         }));
                         void fetchAccommodations(event.filters.params);
@@ -545,6 +589,7 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
         conversationId: state.conversationId,
         confidence: state.confidence,
         nearbyDestinations: state.nearbyDestinations,
+        attractionLocationConflict: state.attractionLocationConflict,
         lastTurnHadEntities: state.lastTurnHadEntities,
         error: state.error,
         errorStatus: state.errorStatus,
