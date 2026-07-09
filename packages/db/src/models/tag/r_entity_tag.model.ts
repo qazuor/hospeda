@@ -10,7 +10,7 @@
  * - SPEC-086 D-018 (final schema shape: 4-column PK with assignedById)
  */
 import type { EntityTag } from '@repo/schemas';
-import { and, count, desc, eq, type SQL } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, type SQL } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { rEntityTag } from '../../schemas/tag/r_entity_tag.dbschema.ts';
 import { tags } from '../../schemas/tag/tag.dbschema.ts';
@@ -367,6 +367,64 @@ export class REntityTagModel extends BaseModelImpl<EntityTag> {
                 { tagId, entityType },
                 err.message
             );
+        }
+    }
+
+    /**
+     * Finds the distinct entity IDs that carry ANY of the given tags for a specific
+     * entity type — the polymorphic-relation resolution primitive for "filter entity
+     * list by tag" use cases (HOS-109).
+     *
+     * `r_entity_tag` is a polymorphic join table (`entityId` + `entityType`) that
+     * Drizzle's relational `where` cannot resolve as a normal FK relation (see
+     * `packages/service-core/CLAUDE.md`). Callers that need to filter an entity list
+     * (e.g. posts) by one or more tag UUIDs must resolve the matching entity IDs
+     * here FIRST, then constrain their own query with an `id IN (...)` condition —
+     * never pass a raw `tags` key through to `buildWhereClause`, which throws for
+     * unknown columns.
+     *
+     * @param tagIds - Tag UUIDs to match (any-of / OR semantics — an entity tagged
+     *   with at least one of these IDs is included)
+     * @param entityType - EntityType discriminator to scope the match (e.g. `POST`)
+     * @param tx - Optional transaction client
+     * @returns Distinct entity IDs across all actors' assignments. Empty array when
+     *   `tagIds` is empty or no assignment matches.
+     */
+    async findEntityIdsByTags(
+        tagIds: string[],
+        entityType: EntityTag['entityType'],
+        tx?: DrizzleClient
+    ): Promise<string[]> {
+        if (tagIds.length === 0) {
+            return [];
+        }
+        const db = this.getClient(tx);
+        const logContext = { tagIds, entityType };
+
+        try {
+            const result = await db
+                .selectDistinct({ entityId: rEntityTag.entityId })
+                .from(rEntityTag)
+                .where(
+                    and(
+                        eq(
+                            rEntityTag.entityType,
+                            // DRIZZLE-LIMITATION: pgEnum branded `_.data` type rejects the EntityType TS enum until cast.
+                            entityType as unknown as typeof rEntityTag.entityType._.data
+                        ),
+                        inArray(rEntityTag.tagId, tagIds)
+                    )
+                );
+
+            const entityIds = result.map((row) => row.entityId);
+            logQuery(this.entityName, 'findEntityIdsByTags', logContext, {
+                count: entityIds.length
+            });
+            return entityIds;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'findEntityIdsByTags', logContext, err);
+            throw new DbError(this.entityName, 'findEntityIdsByTags', logContext, err.message);
         }
     }
 

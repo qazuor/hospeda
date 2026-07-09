@@ -1,4 +1,4 @@
-import { buildSearchCondition, PostModel } from '@repo/db';
+import { buildSearchCondition, PostModel, posts, REntityTagModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
@@ -24,6 +24,7 @@ import type {
     VisibilityEnum
 } from '@repo/schemas';
 import {
+    EntityTypeEnum,
     GetPostByCategoryInputSchema,
     GetPostByRelatedAccommodationInputSchema,
     GetPostByRelatedDestinationInputSchema,
@@ -40,6 +41,7 @@ import {
     PostUpdateInputSchema as PostUpdateSchema,
     ServiceErrorCode
 } from '@repo/schemas';
+import { inArray, type SQL } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
@@ -151,17 +153,50 @@ export class PostService extends BaseCrudService<
     private readonly mediaProvider: ImageProvider | null;
 
     /**
+     * Model for the polymorphic `r_entity_tag` join table. Used by
+     * `_executeSearch`/`_executeCount` to resolve the `tags` filter into a set of
+     * post IDs (HOS-109) — `tags` is not a `posts` column and cannot be resolved by
+     * `buildWhereClause`.
+     */
+    private readonly relatedModel: REntityTagModel;
+
+    /**
      * Initializes a new instance of the PostService.
      * @param ctx - The service context, containing the logger.
      * @param model - Optional PostModel instance (for testing/mocking).
      * @param mediaProvider - Optional ImageProvider for Cloudinary cleanup on hard delete.
+     * @param relatedModel - Optional REntityTagModel instance (for testing/mocking).
      */
-    constructor(ctx: ServiceConfig, model?: PostModel, mediaProvider?: ImageProvider | null) {
+    constructor(
+        ctx: ServiceConfig,
+        model?: PostModel,
+        mediaProvider?: ImageProvider | null,
+        relatedModel?: REntityTagModel
+    ) {
         super(ctx, PostService.ENTITY_NAME);
         this.model = model ?? new PostModel();
         /** Uses default _executeAdminSearch() - all filter fields map directly to table columns. */
         this.adminSearchSchema = PostAdminSearchSchema;
         this.mediaProvider = mediaProvider ?? null;
+        this.relatedModel = relatedModel ?? new REntityTagModel();
+    }
+
+    /**
+     * Resolves the `tags` filter (an array of tag UUIDs) into the set of post IDs
+     * that carry ANY of them, via the polymorphic `r_entity_tag` table (HOS-109).
+     *
+     * `tags` is a user-tag filter, not a `posts` column, so it can never be passed
+     * through to `buildWhereClause` — doing so throws `DbError` for an unknown
+     * column. Callers must intercept `tags` before building the where clause and
+     * constrain the query with the returned post IDs instead.
+     *
+     * @param tagIds - Tag UUIDs to match (any-of semantics)
+     * @returns Matching post IDs, or an empty array when no post carries any of the
+     *   given tags (callers must short-circuit to an empty result, not fall back to
+     *   an unfiltered query).
+     */
+    private async resolvePostIdsForTags(tagIds: string[]): Promise<string[]> {
+        return this.relatedModel.findEntityIdsByTags(tagIds, EntityTypeEnum.POST);
     }
 
     /**
@@ -764,6 +799,7 @@ export class PostService extends BaseCrudService<
             sortBy: _sortBy,
             sortOrder: _sortOrder,
             q,
+            tags,
             ...filterParams
         } = params;
 
@@ -783,7 +819,22 @@ export class PostService extends BaseCrudService<
             q && q.trim().length > 0
                 ? buildSearchCondition(q, this.getSearchableColumns(), this.model.getTable())
                 : undefined;
-        const additionalConditions = searchCondition ? [searchCondition] : undefined;
+
+        // `tags` (an array of user-tag UUIDs) is NOT a `posts` column — it lives in
+        // the polymorphic `r_entity_tag` table and must be resolved to a set of
+        // post IDs BEFORE reaching `mapPostFilterKeysToColumns`/`buildWhereClause`,
+        // which would otherwise throw `DbError` for an unknown column (HOS-109).
+        const additionalConditions: SQL[] = [];
+        if (searchCondition) additionalConditions.push(searchCondition);
+        if (tags && tags.length > 0) {
+            const postIds = await this.resolvePostIdsForTags(tags);
+            if (postIds.length === 0) {
+                // No post carries any of the requested tags — short-circuit to an
+                // empty result instead of falling through to an unfiltered query.
+                return { items: [], total: 0 };
+            }
+            additionalConditions.push(inArray(posts.id, postIds));
+        }
 
         // Eager-load the relations declared in getDefaultListRelations() (author,
         // related entities, sponsorship, postTags) so the public search response
@@ -803,7 +854,7 @@ export class PostService extends BaseCrudService<
                 sortBy: ctx.pagination?.sortBy,
                 sortOrder: ctx.pagination?.sortOrder
             },
-            additionalConditions
+            additionalConditions.length > 0 ? additionalConditions : undefined
         );
     }
 
@@ -820,6 +871,7 @@ export class PostService extends BaseCrudService<
             sortBy: _sortBy,
             sortOrder: _sortOrder,
             q,
+            tags,
             ...filterParams
         } = params;
         // Mirror the `_executeSearch` flow so the count reflects the same
@@ -829,7 +881,18 @@ export class PostService extends BaseCrudService<
             q && q.trim().length > 0
                 ? buildSearchCondition(q, this.getSearchableColumns(), this.model.getTable())
                 : undefined;
-        const additionalConditions = searchCondition ? [searchCondition] : undefined;
+
+        // Same `tags` interception as `_executeSearch` — see comment there.
+        const additionalConditions: SQL[] = [];
+        if (searchCondition) additionalConditions.push(searchCondition);
+        if (tags && tags.length > 0) {
+            const postIds = await this.resolvePostIdsForTags(tags);
+            if (postIds.length === 0) {
+                return { count: 0 };
+            }
+            additionalConditions.push(inArray(posts.id, postIds));
+        }
+
         const count = await this.model.count(mapPostFilterKeysToColumns(filterParams), {
             additionalConditions
         });

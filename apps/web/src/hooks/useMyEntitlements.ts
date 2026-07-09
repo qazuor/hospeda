@@ -14,6 +14,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSession } from '@/lib/auth-client';
 import { getApiUrl } from '@/lib/env';
 
 // ---------------------------------------------------------------------------
@@ -147,6 +148,14 @@ export function useMyEntitlements(): UseMyEntitlementsReturn {
     const [error, setError] = useState<Error | null>(null);
     const mountedRef = useRef(true);
 
+    // The entitlements endpoint lives under /protected and 401s for guests.
+    // Gate the fetch on a resolved session so unauthenticated visitors never
+    // call it — a guest previously triggered a fetch on every island mount and
+    // soft-navigation, and because a 401 is never cached each mount re-fired,
+    // climbing the rate limiter until it sustained 429 (HOS-109 T-005).
+    const { data: session, isPending: isSessionPending } = useSession();
+    const hasSession = !!session;
+
     useEffect(() => {
         mountedRef.current = true;
         return () => {
@@ -155,6 +164,23 @@ export function useMyEntitlements(): UseMyEntitlementsReturn {
     }, []);
 
     useEffect(() => {
+        // Session not resolved yet: stay in the loading state (has() fails
+        // closed) and let the effect re-run once it settles. This also keeps
+        // the initial render hydration-safe (isLoading=true on both sides).
+        if (isSessionPending) {
+            return;
+        }
+
+        // Guest / no session: never hit the protected endpoint. data stays null
+        // so has() returns false (the non-entitled variant), same end-state a
+        // guest reached before via the 401 catch — but without the network churn.
+        if (!hasSession) {
+            setData(null);
+            setError(null);
+            setIsLoading(false);
+            return;
+        }
+
         // If we have cached data, skip fetch
         const cached = getCachedData();
         if (cached) {
@@ -182,7 +208,7 @@ export function useMyEntitlements(): UseMyEntitlementsReturn {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [isSessionPending, hasSession]);
 
     const entitlementSet = new Set(data?.entitlements ?? []);
 
