@@ -37,12 +37,17 @@ import {
     withTransaction
 } from '@repo/db';
 import { ProductDomainEnum } from '@repo/schemas';
-import { calculatePromoCodeEffect, resolveFullPlanPriceCentavos } from '@repo/service-core';
+import {
+    calculatePromoCodeEffect,
+    resolveFullPlanPriceCentavos,
+    resolvePlanTrialConfig
+} from '@repo/service-core';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
 import { resolveCheckoutPromoPlan } from './subscription-checkout-promo.service.js';
 import { createCompSubscription } from './subscription-comp-create.service.js';
 import { applySignupDiscountToMonthly } from './subscription-discount-signup.service.js';
+import { TrialService } from './trial.service.js';
 
 /**
  * Time-to-live applied to a `pending_provider` subscription before the
@@ -375,12 +380,19 @@ export interface InitiatePaidMonthlySubscriptionInput {
     /**
      * Optional promo code. Resolved via
      * {@link resolveCheckoutPromoPlan} into a trial / discount / comp plan
-     * (SPEC-262 T-012 P2):
+     * (SPEC-262 T-012 P2). For a customer NOT eligible for the HOS-110
+     * no-card trial (see below), the effect applies to the paid checkout:
      *  - `trial_extension` → `freeTrialDays` on the preapproval (delays first charge).
      *  - `discount` → live-preapproval `transaction_amount` mutation (FAIL-CLOSED).
      *  - `comp` → a `status='comp'` subscription, NO MercadoPago preapproval.
      * An unknown / inactive / restricted code surfaces as
-     * `SubscriptionCheckoutError('INVALID_PROMO_CODE')`, mapped to HTTP 422.
+     * `SubscriptionCheckoutError('INVALID_PROMO_CODE')`, mapped to HTTP 422,
+     * REGARDLESS of trial eligibility (HOS-110 W1: the code is validated
+     * before either branch runs). For a trial-eligible customer the promo
+     * instead folds into the granted trial — see the TRIAL branch comment
+     * in {@link initiatePaidMonthlySubscription} for the full per-`kind`
+     * behavior (comp wins over trial; trial_extension lengthens it;
+     * discount is discarded and flagged via `promoCodeIgnored`).
      */
     readonly promoCode?: string;
     /** Drizzle client override for tests (comp insert path). */
@@ -388,13 +400,16 @@ export interface InitiatePaidMonthlySubscriptionInput {
 }
 
 /**
- * Marker for the promo effect that was applied at checkout, when it changes the
- * response shape. `comp` means NO MercadoPago redirect happened — the subscriber
- * is already active (free-forever) and the front-end goes straight to success.
- * `discount` means the preapproval amount was lowered (a normal MP redirect still
- * follows). Absent when no promo (or a trial extension) was applied.
+ * Marker for the checkout effect that was applied, when it changes the response
+ * shape. `comp` means NO MercadoPago redirect happened — the subscriber is
+ * already active (free-forever) and the front-end goes straight to success.
+ * `discount` means the preapproval amount was lowered (a normal MP redirect
+ * still follows). `trial` (HOS-110) means the plan's no-card trial was granted
+ * instead — the subscriber is `trialing` immediately, NO MercadoPago preapproval
+ * was created, and the front-end goes straight to success just like `comp`.
+ * Absent when no promo/trial (or a promo trial extension) was applied.
  */
-export type CheckoutAppliedEffect = 'comp' | 'discount';
+export type CheckoutAppliedEffect = 'comp' | 'discount' | 'trial';
 
 /**
  * Output shape of a successful initiation. Mirrors
@@ -411,6 +426,15 @@ export interface InitiatePaidMonthlySubscriptionResult {
     readonly localSubscriptionId: string;
     readonly expiresAt: string;
     readonly appliedEffect?: CheckoutAppliedEffect;
+    /**
+     * HOS-110 W1: set to `true` when a `discount` promo code was supplied
+     * alongside a trial-eligible checkout and the code was DISCARDED (not
+     * persisted anywhere) because the free trial takes priority over a
+     * discount on a not-yet-charged subscription. Only ever present together
+     * with `appliedEffect: 'trial'`. Absent (not `false`) in every other
+     * case — the front-end should treat "absent" and "false" identically.
+     */
+    readonly promoCodeIgnored?: true;
 }
 
 /**
@@ -458,7 +482,16 @@ export async function initiatePaidMonthlySubscription(
         );
     }
 
-    // Resolve the promo code with FULL validation (SPEC-262 C1+H1).
+    // Resolve the promo code with FULL validation (SPEC-262 C1+H1), BEFORE
+    // deciding trial vs paid (HOS-110 W1 fix). Adversarial review of the
+    // original HOS-110 trial branch found it ran before promo resolution,
+    // silently dropping ANY `promoCode` supplied by a trial-eligible
+    // customer: an invalid code never surfaced as an error, a comp code
+    // never took effect, and a trial_extension code's extra days were
+    // never applied. Resolving here — before both the comp and trial
+    // branches below — fixes all three: an invalid code always throws
+    // regardless of trial eligibility, and each branch can react to
+    // whatever the code actually is.
     // Pass userId + planId + amount so all restrictions are enforced:
     // expiresAt, maxUses, maxPerCustomer, validPlans, newCustomersOnly, minAmount.
     const promoPlan = await resolveCheckoutPromoPlan({
@@ -473,9 +506,13 @@ export async function initiatePaidMonthlySubscription(
 
     // ── COMP branch ──────────────────────────────────────────────────────────
     // Comp (free-forever) creates a status='comp' subscription directly — NO MP
-    // preapproval, NO charge. The response carries an in-app success sentinel URL
-    // (reusing the already-resolved return URL, which points at the checkout
-    // success page) and appliedEffect='comp' so the front skips the MP redirect.
+    // preapproval, NO charge. Checked BEFORE the trial branch (HOS-110 W1): a
+    // comp code ALWAYS wins over a trial — there is no reason to burn the
+    // customer's one-per-lifetime trial only to immediately shadow it with a
+    // free-forever subscription. The response carries an in-app success
+    // sentinel URL (reusing the already-resolved return URL, which points at
+    // the checkout success page) and appliedEffect='comp' so the front skips
+    // the MP redirect.
     if (promoPlan.kind === 'comp') {
         const customer = await billing.customers.get(customerId);
         if (!customer) {
@@ -499,6 +536,102 @@ export async function initiatePaidMonthlySubscription(
             expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
             appliedEffect: 'comp'
         };
+    }
+
+    // ── TRIAL branch (HOS-110, reordered by W1) ─────────────────────────────
+    // Unifies the no-card trial across every entry surface that hits
+    // `/start-paid` (the public pricing page, the testing daily-plan button —
+    // previously only the accommodation-publish flow granted a trial). When
+    // the resolved plan declares a trial AND the customer has never had a
+    // subscription before, they get enabled immediately (`trialing`, no MP
+    // preapproval) instead of being sent straight to MercadoPago.
+    //
+    // The promo is already resolved above (`comp` already returned and never
+    // reaches here) and folds into the granted trial per the HOS-110 W1 owner
+    // decision:
+    //  - `trial_extension` -> its `freeTrialDays` are forwarded as
+    //    `extraTrialDays`, lengthening the granted trial (base + extension).
+    //  - `discount` -> the trial wins outright (a free trial beats a discount
+    //    on a not-yet-charged sub); the discount is DISCARDED — never
+    //    persisted anywhere — and `promoCodeIgnored: true` is returned so the
+    //    front-end can tell the user their code was not applied.
+    //  - `none` -> unchanged trial, no flag.
+    const { hasTrial: planHasTrial, trialDays: planTrialDays } = resolvePlanTrialConfig(
+        plan.metadata
+    );
+    if (planHasTrial && planTrialDays > 0) {
+        // First-layer eligibility check: re-fetch the customer's subscriptions
+        // (the route already fetched this once for its own ALREADY_SUBSCRIBED /
+        // SUBSCRIPTION_CANCEL_PENDING guards; re-fetching here keeps this
+        // service self-contained without widening its input contract). Any
+        // prior subscription — of any status or product domain — disqualifies
+        // a trial (one trial per customer, for life).
+        const existingSubscriptions = await billing.subscriptions.getByCustomerId(customerId);
+        const isTrialEligible = existingSubscriptions.length === 0;
+
+        if (isTrialEligible) {
+            // Ensure the billing customer record actually exists before creating
+            // a trial subscription against it. `BillingCustomerSyncService.
+            // ensureCustomerExists` cannot be reused verbatim here: it keys off
+            // the Hospeda userId + email (neither available on this service's
+            // input), whereas `customerId` here is already the resolved QZPay
+            // customer id — so a direct existence check is the correct
+            // equivalent (mirrors the identical guard in the `comp` branch above).
+            const customer = await billing.customers.get(customerId);
+            if (!customer) {
+                throw new SubscriptionCheckoutError(
+                    'CUSTOMER_NOT_FOUND',
+                    `Customer '${customerId}' not found`
+                );
+            }
+
+            // HOS-110 W1: a trial_extension code adds its days on top of the
+            // plan's base trial length; a discount code is discarded (the
+            // trial wins as-is) — no extension applies in that case.
+            const extraTrialDays = promoPlan.kind === 'trial' ? promoPlan.freeTrialDays : undefined;
+
+            const trialService = new TrialService(billing);
+            // `startTrial` is the AUTHORITATIVE eligibility gate — it re-checks
+            // for ANY existing subscription itself. `isTrialEligible` above is a
+            // cheap first-layer short-circuit, not a substitute: a `null` return
+            // here means startTrial itself declined (e.g. a subscription was
+            // created concurrently between the two checks) — fall through to the
+            // normal paid path unchanged.
+            const trialSubscriptionId = await trialService.startTrial({
+                customerId,
+                planSlug,
+                ...(extraTrialDays === undefined ? {} : { extraTrialDays })
+            });
+
+            if (trialSubscriptionId) {
+                const trialSubscription = await billing.subscriptions.get(trialSubscriptionId);
+                const effectiveTrialDays = planTrialDays + (extraTrialDays ?? 0);
+                const expiresAt = trialSubscription?.trialEnd
+                    ? new Date(trialSubscription.trialEnd).toISOString()
+                    : new Date(Date.now() + effectiveTrialDays * 24 * 60 * 60 * 1000).toISOString();
+                const promoCodeIgnored = promoPlan.kind === 'discount';
+
+                apiLogger.info(
+                    {
+                        customerId,
+                        planSlug,
+                        trialSubscriptionId,
+                        expiresAt,
+                        ...(extraTrialDays ? { extraTrialDays } : {}),
+                        ...(promoCodeIgnored ? { promoCodeIgnored: true } : {})
+                    },
+                    'Trial-eligible checkout: granted no-card trial instead of MercadoPago redirect'
+                );
+
+                return {
+                    checkoutUrl: urls.paymentMethodReturnUrl,
+                    localSubscriptionId: trialSubscriptionId,
+                    expiresAt,
+                    appliedEffect: 'trial',
+                    ...(promoCodeIgnored ? { promoCodeIgnored: true } : {})
+                };
+            }
+        }
     }
 
     // SPEC-262 L1: reject a discount that would reduce the monthly price to zero.

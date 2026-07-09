@@ -21,7 +21,11 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { applyTestControl, isSubscriptionLive } from '@repo/billing';
 import { billingCustomers, billingSubscriptions, desc, eq, getDb, UserModel } from '@repo/db';
-import type { AccommodationPublishDeps, PublishEligibility } from '@repo/service-core';
+import {
+    type AccommodationPublishDeps,
+    DEFAULT_TRIAL_PLAN_SLUG,
+    type PublishEligibility
+} from '@repo/service-core';
 import { addPublishLinkageContext } from '../lib/sentry';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
@@ -147,7 +151,11 @@ export function buildAccommodationPublishDeps(
                     accommodationId,
                     ownerId,
                     customerId,
-                    planSlug: 'owner-basico'
+                    // The accommodation-publish flow always starts the trial on the
+                    // default plan (no `planSlug` is passed to `startTrial` above),
+                    // so this constant IS the actual slug used — single source of
+                    // truth shared with `TrialService.startTrial`'s own default (HOS-110).
+                    planSlug: DEFAULT_TRIAL_PLAN_SLUG
                 });
                 apiLogger.info(
                     { ownerId, customerId, subscriptionId, accommodationId },
