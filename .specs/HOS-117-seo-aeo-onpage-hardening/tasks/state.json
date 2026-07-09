@@ -81,19 +81,19 @@
             "id": "T-005",
             "title": "Fix flagged islands and document the SSR-emits-final-datum principle",
             "description": "Fix any island flagged offending by the T-001 audit so its raw SSR HTML carries the final value (regression test per island). Document the principle in apps/web/CLAUDE.md SEO/animations section: an island's SSR output emits the final datum; hydration only animates/interacts, never reveals a value. If audit finds only the counter, still document the rule. Ref US-2. Tests: regression test per fixed island asserting value present in SSR string.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-018"],
             "subtasks": [
-                { "title": "Fix each offending island's SSR output", "completed": false },
-                { "title": "Add per-island regression test", "completed": false },
-                { "title": "Document principle in apps/web/CLAUDE.md", "completed": false }
+                { "title": "Fix each offending island's SSR output", "completed": true },
+                { "title": "Add per-island regression test", "completed": true },
+                { "title": "Document principle in apps/web/CLAUDE.md", "completed": true }
             ],
             "tags": ["seo", "aeo", "web", "docs"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": "2026-07-09T19:25:00.000Z", "completed": "2026-07-09T19:45:00.000Z" }
         },
         {
             "id": "T-006",
@@ -381,9 +381,9 @@
     ],
     "summary": {
         "total": 21,
-        "pending": 19,
+        "pending": 18,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.4
     }
