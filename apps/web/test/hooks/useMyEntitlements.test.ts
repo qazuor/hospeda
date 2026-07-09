@@ -15,6 +15,19 @@ import { clearEntitlementsCache, useMyEntitlements } from '@/hooks/useMyEntitlem
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+// Mock the Better Auth session hook so tests can drive authenticated vs guest.
+const mockUseSession = vi.fn();
+vi.mock('@/lib/auth-client', () => ({
+    useSession: () => mockUseSession()
+}));
+
+/** An authenticated session snapshot (default for existing tests). */
+const AUTHENTICATED = { data: { user: { id: 'user-1' } }, isPending: false };
+/** A resolved guest (no session). */
+const GUEST = { data: null, isPending: false };
+/** Session still resolving. */
+const SESSION_PENDING = { data: null, isPending: true };
+
 function mockSuccessResponse(data: unknown) {
     return {
         ok: true,
@@ -48,6 +61,8 @@ describe('useMyEntitlements', () => {
     beforeEach(() => {
         mockFetch.mockReset();
         clearEntitlementsCache();
+        // Default to an authenticated session; guest-specific tests override this.
+        mockUseSession.mockReturnValue(AUTHENTICATED);
     });
 
     it('fetches entitlements on mount and returns has() + limit()', async () => {
@@ -157,5 +172,74 @@ describe('useMyEntitlements', () => {
         // While loading, has() should return false (fail-closed)
         expect(result.current.isLoading).toBe(true);
         expect(result.current.has('can_use_rich_description')).toBe(false);
+    });
+
+    // HOS-109 T-005: a guest must never call the protected endpoint, which is
+    // what caused the unauthenticated 401 → sustained 429 flood.
+    it('does NOT fetch when there is no session (guest)', async () => {
+        mockUseSession.mockReturnValue(GUEST);
+
+        const { result } = renderHook(() => useMyEntitlements());
+
+        await waitFor(() => {
+            expect(result.current.isLoading).toBe(false);
+        });
+
+        expect(mockFetch).not.toHaveBeenCalled();
+        // Fail-closed: guest sees the non-entitled variant.
+        expect(result.current.has('can_use_rich_description')).toBe(false);
+        expect(result.current.plan).toBeNull();
+        expect(result.current.error).toBeNull();
+    });
+
+    it('stays loading and does NOT fetch while the session is resolving', () => {
+        mockUseSession.mockReturnValue(SESSION_PENDING);
+
+        const { result } = renderHook(() => useMyEntitlements());
+
+        expect(result.current.isLoading).toBe(true);
+        expect(mockFetch).not.toHaveBeenCalled();
+        expect(result.current.has('can_use_rich_description')).toBe(false);
+    });
+
+    it('fetches once the session resolves from pending to authenticated', async () => {
+        mockUseSession.mockReturnValue(SESSION_PENDING);
+        mockFetch.mockResolvedValueOnce(mockSuccessResponse(ENTITLEMENTS_RESPONSE));
+
+        const { result, rerender } = renderHook(() => useMyEntitlements());
+
+        // Pending: no fetch yet.
+        expect(mockFetch).not.toHaveBeenCalled();
+
+        // Session resolves to authenticated → effect re-runs and fetches.
+        mockUseSession.mockReturnValue(AUTHENTICATED);
+        rerender();
+
+        await waitFor(() => {
+            expect(result.current.isLoading).toBe(false);
+        });
+
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+        expect(result.current.has('can_use_rich_description')).toBe(true);
+    });
+
+    it('clears entitlements when the session flips from authenticated to guest (sign-out)', async () => {
+        mockFetch.mockResolvedValueOnce(mockSuccessResponse(ENTITLEMENTS_RESPONSE));
+
+        const { result, rerender } = renderHook(() => useMyEntitlements());
+
+        await waitFor(() => {
+            expect(result.current.has('can_use_rich_description')).toBe(true);
+        });
+
+        // User signs out without a full reload while the island stays mounted.
+        mockUseSession.mockReturnValue(GUEST);
+        rerender();
+
+        await waitFor(() => {
+            expect(result.current.has('can_use_rich_description')).toBe(false);
+        });
+        expect(result.current.plan).toBeNull();
+        expect(result.current.error).toBeNull();
     });
 });
