@@ -28,7 +28,12 @@ import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { formatPhoneCountryLabel, PHONE_COUNTRIES, type PhoneCountry } from '@/lib/phone-countries';
+import {
+    flagEmoji,
+    formatPhoneCountryLabel,
+    PHONE_COUNTRIES,
+    type PhoneCountry
+} from '@/lib/phone-countries';
 import styles from './CountryCodeCombobox.module.css';
 
 /** Props for {@link CountryCodeCombobox}. */
@@ -262,7 +267,15 @@ export function CountryCodeCombobox({
                 // the field name, satisfying WCAG 2.5.3 Label in Name.
                 aria-label={`${fieldLabel}: ${selectedLabel}`}
             >
-                <span className={styles.triggerLabel}>{selectedLabel}</span>
+                <span className={styles.triggerLabel}>
+                    <span
+                        className={styles.triggerFlag}
+                        aria-hidden="true"
+                    >
+                        {flagEmoji(value.iso)}
+                    </span>
+                    <span className={styles.triggerLabelText}>{selectedLabel}</span>
+                </span>
                 <ChevronDownIcon
                     size={16}
                     weight="regular"
@@ -347,7 +360,15 @@ export function CountryCodeCombobox({
                                             onMouseEnter={() => setHighlightedIndex(index)}
                                         >
                                             <span className={styles.optionName}>
-                                                {country.name}
+                                                <span
+                                                    className={styles.optionFlag}
+                                                    aria-hidden="true"
+                                                >
+                                                    {flagEmoji(country.iso)}
+                                                </span>
+                                                <span className={styles.optionNameText}>
+                                                    {country.name}
+                                                </span>
                                             </span>
                                             <span className={styles.optionDial}>
                                                 {country.dialCode}

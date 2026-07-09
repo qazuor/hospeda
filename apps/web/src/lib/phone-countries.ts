@@ -76,6 +76,25 @@ export function formatPhoneCountryLabel(country: PhoneCountry): string {
 }
 
 /**
+ * Converts an ISO 3166-1 alpha-2 country code into its flag emoji by mapping
+ * each letter to a Unicode regional-indicator symbol (e.g. `'AR'` -> 🇦🇷).
+ *
+ * Rendering caveat: regional-indicator flag emoji render as an actual flag on
+ * Linux, macOS, iOS, and Android. Windows desktop (as of Windows 11) has no
+ * built-in flag glyphs for this range and falls back to showing the two
+ * plain letters side by side — an acceptable degradation since the ISO code
+ * is still meaningful, not garbled or invisible. Revisit with SVG flag
+ * assets later if that fallback proves unacceptable.
+ * @param iso - ISO 3166-1 alpha-2 country code (case-insensitive).
+ * @returns The two-codepoint flag emoji string for `iso`.
+ */
+export function flagEmoji(iso: string): string {
+    return iso
+        .toUpperCase()
+        .replace(/[A-Z]/g, (letter) => String.fromCodePoint(127397 + letter.charCodeAt(0)));
+}
+
+/**
  * Finds a country by its exact datalist option label
  * (see {@link formatPhoneCountryLabel}).
  * @param label - The full label the user typed or selected.
