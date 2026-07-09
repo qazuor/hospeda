@@ -159,9 +159,9 @@ Potential new env/config only if P14 needs a corrected Brevo webhook secret
 
 ## 11. Open questions
 
-- **OQ-1 (P8/P9)** — Target log level per expected status: `debug` (silent in prod)
-  vs `info` (visible but not error)? And should 403 stay slightly louder than 404
-  since it can indicate a probing attempt? **Needs owner discussion.**
+- **OQ-1 (P7/P8/P9)** — RESOLVED 2026-07-09 (owner): expected **401 and 404 → `info`**
+  (visible, no ERROR, no stack); expected **403 → `warn`** (kept slightly louder as a
+  permission-probing signal). Applies to T-002/T-003/T-004. 5xx stay ERROR+stack.
 - **OQ-2 (P10)** — Is the 404 flood an external crawler (accept + robots/limit) or
   our own stale sitemap/ISR (regenerate)? Determined in the P10 investigation.
 - **OQ-3 (P9)** — Should public profile-by-slug (`/users/by-slug/:slug`) have a
