@@ -21,6 +21,7 @@
 import { AccommodationTypeEnum } from '@repo/schemas';
 import type { APIRoute } from 'astro';
 import { getApiUrl, getSiteUrl } from '../lib/env';
+import { type DestinationCounts, isThinDestination } from '../lib/seo/thin-destination';
 
 export const prerender = false;
 
@@ -371,10 +372,15 @@ export const GET: APIRoute = async () => {
         })
     );
 
-    // Destinations: /destinos/{slug}/
+    // Destinations: /destinos/{slug}/ — exclude thin/empty destinations (no
+    // accommodations, events, or attractions) using the shared isThinDestination
+    // predicate, so the sitemap matches the noindex on the detail page (HOS-117 T-006).
+    const indexableDestinations = resolvedDestinations.filter(
+        (item) => !isThinDestination(item as EntityItem & DestinationCounts)
+    );
     entries.push(
         ...buildEntriesForEntity({
-            items: resolvedDestinations,
+            items: indexableDestinations,
             siteUrl,
             pathFn: (slug) => `/destinos/${slug}/`,
             changefreq: 'weekly',
