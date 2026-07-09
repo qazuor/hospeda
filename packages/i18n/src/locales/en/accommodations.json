@@ -582,6 +582,21 @@
             "maxReached": "Alert limit reached"
         }
     },
+    "amenityCategories": {
+        "climateControl": "Climate control",
+        "connectivity": "Connectivity",
+        "entertainment": "Entertainment",
+        "kitchen": "Kitchen",
+        "bedAndBath": "Bedroom & bath",
+        "outdoors": "Outdoors",
+        "accessibility": "Accessibility",
+        "services": "Services",
+        "safety": "Safety",
+        "familyFriendly": "Family friendly",
+        "workFriendly": "Work friendly",
+        "generalAppliances": "Appliances",
+        "other": "Other"
+    },
     "amenityNames": {
         "wifi": "WiFi",
         "air_conditioning": "Air conditioning",

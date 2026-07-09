@@ -166,6 +166,20 @@ describe('transformAmenityList', () => {
         const result = transformAmenityList({ items: raw });
         expect(result[0].category).toBeNull();
     });
+
+    it('should read the grouping value from `type` (BETA-133: the real public amenities catalog shape)', () => {
+        // AmenityPublicSchema exposes the AmenitiesTypeEnum value under `type`,
+        // not `category` — the raw API response never actually carries `category`.
+        const raw = [{ id: 'am-4', slug: 'pool', type: 'OUTDOORS' }];
+        const result = transformAmenityList({ items: raw });
+        expect(result[0].category).toBe('OUTDOORS');
+    });
+
+    it('should prefer `type` over `category` when both are present', () => {
+        const raw = [{ id: 'am-5', slug: 'wifi', type: 'CONNECTIVITY', category: 'legacy' }];
+        const result = transformAmenityList({ items: raw });
+        expect(result[0].category).toBe('CONNECTIVITY');
+    });
 });
 
 // ---------------------------------------------------------------------------
