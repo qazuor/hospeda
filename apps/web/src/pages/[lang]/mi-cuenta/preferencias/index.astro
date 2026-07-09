@@ -8,6 +8,7 @@
 
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { PreferenceToggles } from '@/components/account/PreferenceToggles.client';
 import { RestartTour } from '@/components/account/RestartTour.client';
 import { createTranslations } from '@/lib/i18n';
@@ -27,7 +28,7 @@ const apiUrl = getApiUrl();
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="preferencias">
-	<h2 class="account-section__title">{title}</h2>
+	<AccountPageHeader title={title} />
 
 	<PreferenceToggles
 		client:load
@@ -42,14 +43,6 @@ const apiUrl = getApiUrl();
 </AccountLayout>
 
 <style>
-	.account-section__title {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: clamp(1.5rem, 3vw, 2rem);
-		color: var(--core-foreground);
-		margin: 0 0 var(--space-6);
-	}
-
 	.account-tour-card {
 		margin-top: var(--space-6);
 		padding: var(--space-5);

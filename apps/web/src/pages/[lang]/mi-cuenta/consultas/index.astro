@@ -7,6 +7,7 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -62,7 +63,7 @@ function getInitials(name: string): string {
     activeSection="messages"
 >
     <div class="messages-inbox">
-        <h1 class="messages-inbox__title">{t('conversations.inbox.guestInboxTitle')}</h1>
+        <AccountPageHeader title={t('conversations.inbox.guestInboxTitle')} />
 
         {conversations.length === 0 ? (
             <AccountEmptyState
@@ -159,14 +160,6 @@ function getInitials(name: string): string {
         display: flex;
         flex-direction: column;
         gap: var(--space-4, 16px);
-    }
-
-    .messages-inbox__title {
-        font-family: var(--font-heading);
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--core-foreground);
-        margin: 0;
     }
 
     .messages-inbox__empty {

@@ -20,6 +20,7 @@ import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { RecommendationsFeed } from '@/components/account/RecommendationsFeed.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -40,8 +41,7 @@ const apiUrl = getApiUrl();
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="recomendaciones">
-    <h2 class="account-section__title">{title}</h2>
-    <p class="account-section__description">{description}</p>
+    <AccountPageHeader title={title} description={description} />
 
     <RecommendationsFeed
         client:visible
@@ -49,20 +49,3 @@ const apiUrl = getApiUrl();
         apiUrl={apiUrl}
     />
 </AccountLayout>
-
-<style>
-    .account-section__title {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: clamp(1.5rem, 3vw, 2rem);
-        color: var(--core-foreground);
-        margin: 0 0 var(--space-2);
-    }
-
-    .account-section__description {
-        font-family: var(--font-sans);
-        font-size: var(--text-body);
-        color: var(--core-muted-foreground);
-        margin: 0 0 var(--space-6);
-    }
-</style>
