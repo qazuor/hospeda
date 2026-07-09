@@ -8,7 +8,7 @@
       "id": "T-001",
       "title": "Widen annual checkout result type to allow the trial effect",
       "description": "In apps/api/src/services/subscription-checkout.service.ts, widen InitiatePaidAnnualSubscriptionResult / CheckoutAppliedEffect so the annual initiator can return appliedEffect: 'trial' plus an optional promoCodeIgnored flag (monthly already does this). Pure type change, no runtime branch yet. Unit test: none new (compile-only); the annual branch tests in T-009 assert the new shape.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 1,
       "blockedBy": [],
       "blocks": ["T-002"],
@@ -25,7 +25,7 @@
       "id": "T-002",
       "title": "Add the trial-eligibility branch to initiatePaidAnnualSubscription",
       "description": "Insert the trial branch into initiatePaidAnnualSubscription AFTER the COMP early-return and BEFORE the discount/upfront-charge path, mirroring initiatePaidMonthlySubscription (~L541-635): resolvePlanTrialConfig(plan.metadata) -> if plan declares a trial AND customer has zero prior subs -> trialService.startTrial() -> early return { appliedEffect: 'trial', localSubscriptionId, expiresAt, checkoutUrl: urls.successUrl (in-app sentinel), promoCodeIgnored when a discount code was dropped }. On startTrial() null (became ineligible), fall through to the unchanged annual paid path. Do NOT pass any interval (trial object is interval-agnostic). Unit tests in T-009. Spec AC-1/AC-2.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": ["T-001"],
       "blocks": ["T-003", "T-009"],
@@ -44,7 +44,7 @@
       "id": "T-003",
       "title": "Persist intendedInterval on the trial subscription metadata (both paths)",
       "description": "Thread intendedInterval ('monthly' | 'annual') into TrialService.startTrial() and stamp it into the trial subscription's metadata: 'annual' from the annual branch (T-002), 'monthly' from the existing monthly branch. Metadata-only write on the row startTrial already creates; no schema change, no migration. This is the OQ-1 source of truth and the analytics dimension. Unit test in T-010. Spec AC-8, Design section 5.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": ["T-002"],
       "blocks": ["T-004", "T-010"],
@@ -250,9 +250,9 @@
   ],
   "summary": {
     "total": 14,
-    "pending": 14,
+    "pending": 11,
     "inProgress": 0,
-    "completed": 0,
+    "completed": 3,
     "blocked": 0,
     "averageComplexity": 2.1
   }
