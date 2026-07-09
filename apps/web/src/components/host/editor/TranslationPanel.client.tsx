@@ -198,7 +198,12 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
                     entityType: 'accommodation',
                     entityId: accommodationId,
                     sourceLocale: locale
-                }
+                },
+                // BETA-135: the backend translates every field x locale
+                // sequentially (up to ~8 LLM calls), which routinely exceeds
+                // the client's default 10s timeout. Override it for this call
+                // only — every other request keeps the 10s default.
+                timeoutMs: 90_000
             });
 
             if (result.ok) {
