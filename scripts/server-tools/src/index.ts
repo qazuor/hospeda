@@ -59,6 +59,7 @@ import { findCommand } from './commands/find.ts';
 import { freeMem } from './commands/free-mem.ts';
 import { health } from './commands/health.ts';
 import { logs } from './commands/logs.ts';
+import { logsClear } from './commands/logs-clear.ts';
 import { prune } from './commands/prune.ts';
 import { psql } from './commands/psql.ts';
 import { r2Lifecycle } from './commands/r2-lifecycle.ts';
@@ -76,7 +77,7 @@ import { evaluateTargetPolicy } from './lib/target-policy.ts';
  * binary and JSON imports add a bundler-specific code path; hardcoding the
  * string is the simpler contract.
  */
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 
 interface Command {
     /** kebab-case name; matches the CLI invocation. */
@@ -138,6 +139,14 @@ const COMMANDS: ReadonlyArray<Command> = [
         // Read-only log streaming; safe with env default.
         targetPolicy: 'default-ok',
         run: logs
+    },
+    {
+        name: 'logs-clear',
+        summary: 'Empty an app container log buffer (api / web / admin) for a clean capture.',
+        // Truncates the container's json-log in place — destructive; the
+        // operator must know which environment they are wiping.
+        targetPolicy: 'explicit-required',
+        run: logsClear
     },
     {
         name: 'psql',

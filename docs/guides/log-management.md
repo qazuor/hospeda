@@ -120,6 +120,11 @@ querying (user/resource context) is a separate domain (SPEC-162).
   reliable.
 - For ad-hoc inspection on the VPS: `hops logs <kind>` (see
   [env-management.md](env-management.md) for the `hops` tooling).
+- To start a clean capture for testing (drop the old buffer so a new run
+  isn't mixed with stale lines): `hops --target=<env> logs-clear <kind>`.
+  It truncates the container's `json-file` log in place (the container
+  keeps running); Sentry and the `app_log_entries` DB table are
+  unaffected. Destructive and target-explicit — it prompts unless `--yes`.
 
 ## Phase 2 (future): Loki + Grafana
 
