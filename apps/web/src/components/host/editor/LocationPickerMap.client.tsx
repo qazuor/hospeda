@@ -59,6 +59,16 @@ export function LocationPickerMap({
                 import('leaflet/dist/images/marker-icon-2x.png'),
                 import('leaflet/dist/images/marker-shadow.png')
             ]);
+            // HOS-95: Leaflet's `Icon.Default._getIconUrl` prepends its CSS-detected
+            // `imagePath` (e.g. `.../leaflet/dist/images/`) to whatever `iconUrl` we
+            // set. Since the bundler already resolves these imports to fully-qualified
+            // URLs, that prepend produces a DOUBLED, broken path and the marker never
+            // renders (see ListingMapInner.client.tsx for the same fix). Deleting the
+            // override makes Leaflet use the base `Icon._getIconUrl`, which returns our
+            // explicit URL verbatim.
+            // biome-ignore lint/performance/noDelete: one-time reset of a prototype method; not a hot path.
+            // TYPE-WORKAROUND: Leaflet's public types don't expose the internal `_getIconUrl` member we must delete.
+            delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
             L.Icon.Default.mergeOptions({
                 iconUrl: toAssetUrl(iconMod),
                 iconRetinaUrl: toAssetUrl(iconRetinaMod),
