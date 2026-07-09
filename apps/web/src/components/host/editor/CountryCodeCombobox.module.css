@@ -43,6 +43,19 @@
 }
 
 .triggerLabel {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    overflow: hidden;
+}
+
+.triggerFlag {
+    flex-shrink: 0;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.triggerLabelText {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -138,12 +151,22 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-2, 0.5rem);
+    width: 100%;
     padding: 0.5rem 0.625rem;
+    background-color: transparent;
+    background-image: none;
+    border: none;
     border-radius: var(--radius-button, 8px);
     font-family: var(--font-sans);
     font-size: 0.875rem;
     color: var(--core-foreground);
+    text-align: left;
     cursor: pointer;
+    transition: background-color var(--duration-fast, 150ms) ease;
+}
+
+.option:hover {
+    background-color: var(--brand-primary-a05);
 }
 
 .optionHighlighted {
@@ -151,11 +174,26 @@
 }
 
 .optionSelected {
+    background-color: var(--brand-primary-a05);
     font-weight: 600;
     color: var(--brand-primary);
 }
 
+.optionFlag {
+    flex-shrink: 0;
+    font-size: 1rem;
+    line-height: 1;
+}
+
 .optionName {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    overflow: hidden;
+}
+
+.optionNameText {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
