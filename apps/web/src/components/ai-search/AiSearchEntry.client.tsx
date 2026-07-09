@@ -17,7 +17,7 @@
  * @module AiSearchEntry
  */
 
-import { SearchIcon, SparkleIcon } from '@repo/icons';
+import { FullscreenIcon, MinimizeIcon, SearchIcon, SparkleIcon } from '@repo/icons';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -114,6 +114,10 @@ export function AiSearchEntry({
     const { t } = createTranslations(locale);
     const [isOpen, setIsOpen] = useState(false);
     const [isFabVisible, setIsFabVisible] = useState(false);
+    // HOS-111 T-005: maximize toggle — widens the drawer to ~60% viewport on
+    // desktop (NOT a full-screen modal), reversible. Reset on close so the
+    // next open always starts at the default width.
+    const [isMaximized, setIsMaximized] = useState(false);
 
     // Ref to the search-bar entry point — used by IntersectionObserver to
     // detect when it scrolls out of viewport and show the FAB.
@@ -124,7 +128,14 @@ export function AiSearchEntry({
     const previousFocusRef = useRef<HTMLElement | null>(null);
 
     const handleOpen = useCallback((): void => setIsOpen(true), []);
-    const handleClose = useCallback((): void => setIsOpen(false), []);
+    const handleClose = useCallback((): void => {
+        setIsOpen(false);
+        // Reset maximize state so re-opening the drawer always starts compact.
+        setIsMaximized(false);
+    }, []);
+    const handleToggleMaximize = useCallback((): void => {
+        setIsMaximized((prev) => !prev);
+    }, []);
 
     // Focus trap: keep Tab focus cycling inside the modal drawer (a11y).
     const handleDrawerKeyDown = useCallback((e: React.KeyboardEvent): void => {
@@ -171,15 +182,17 @@ export function AiSearchEntry({
         };
     }, [isOpen]);
 
-    // Close on Escape key (SPEC-265 D).
+    // Close on Escape key (SPEC-265 D). Routed through handleClose (not a bare
+    // setIsOpen(false)) so the maximize state reset (HOS-111 T-005) applies
+    // on every close path, not just the close button.
     useEffect(() => {
         if (!isOpen) return;
         const handler = (e: KeyboardEvent): void => {
-            if (e.key === 'Escape') setIsOpen(false);
+            if (e.key === 'Escape') handleClose();
         };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, [isOpen]);
+    }, [isOpen, handleClose]);
 
     // Focus management (a11y): on open, remember the trigger and move focus
     // into the drawer; on close, restore focus to the trigger. Runs as a layout
@@ -254,25 +267,61 @@ export function AiSearchEntry({
                 >
                     <section
                         ref={drawerRef}
-                        className={styles.drawer}
+                        className={[styles.drawer, isMaximized ? styles.drawerMaximized : null]
+                            .filter(Boolean)
+                            .join(' ')}
                         // biome-ignore lint/a11y/useSemanticElements: a native <dialog> would need imperative showModal()/close() that conflicts with this React-controlled open state, the custom CSS backdrop overlay, and the drawer transition; role=dialog + aria-modal + the manual focus trap/restore below cover the a11y requirement
                         role="dialog"
                         aria-modal="true"
                         aria-label={t('aiSearch.panelTitle', 'Búsqueda inteligente')}
                         onKeyDown={handleDrawerKeyDown}
                     >
+                        {/* HOS-111 T-001: single visible header for the whole
+                             panel — the drawer owns the title; the inner
+                             SearchChatPanel no longer renders its own. */}
                         <div className={styles.drawerHeader}>
                             <h2 className={styles.drawerTitle}>
                                 {t('aiSearch.panelTitle', 'Búsqueda inteligente')}
                             </h2>
-                            <button
-                                type="button"
-                                className={styles.closeButton}
-                                onClick={handleClose}
-                                aria-label={t('aiSearch.chat.close', 'Cerrar panel')}
-                            >
-                                ×
-                            </button>
+                            <div className={styles.drawerHeaderActions}>
+                                {/* HOS-111 T-005: maximize/restore toggle —
+                                     widens the drawer to ~60% viewport on
+                                     desktop, reversible. */}
+                                <button
+                                    type="button"
+                                    className={styles.maximizeButton}
+                                    onClick={handleToggleMaximize}
+                                    aria-pressed={isMaximized}
+                                    aria-label={
+                                        isMaximized
+                                            ? t('aiSearch.chat.restore', 'Restaurar tamaño')
+                                            : t('aiSearch.chat.maximize', 'Maximizar panel')
+                                    }
+                                    data-testid="ai-search-maximize-toggle"
+                                >
+                                    {isMaximized ? (
+                                        <MinimizeIcon
+                                            size={16}
+                                            weight="bold"
+                                            aria-hidden="true"
+                                        />
+                                    ) : (
+                                        <FullscreenIcon
+                                            size={16}
+                                            weight="bold"
+                                            aria-hidden="true"
+                                        />
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
+                                    className={styles.closeButton}
+                                    onClick={handleClose}
+                                    aria-label={t('aiSearch.chat.close', 'Cerrar panel')}
+                                >
+                                    ×
+                                </button>
+                            </div>
                         </div>
                         <div className={styles.drawerBody}>
                             <SearchChatPanel
