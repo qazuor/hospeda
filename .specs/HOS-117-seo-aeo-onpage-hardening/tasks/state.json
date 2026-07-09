@@ -1,0 +1,390 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-117",
+    "title": "SEO/AEO on-page hardening: credibility bugs, demo-content exclusion, rendering strategy, CWV & content i18n",
+    "created": "2026-07-09T18:22:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Audit client:* islands for SSR↔hydration critical-content mismatch",
+            "description": "Enumerate every client:* React island in apps/web that displays critical content (prices, availability, badges, counts, ratings). Produce a compliance checklist marking each as compliant or offending, with file+line. Confirm AnimatedCounter.client.tsx is the primary offender (useState(0) revealed only on hydration). Ref US-2. Tests: none (audit artifact); output feeds T-004/T-005.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-005"],
+            "subtasks": [
+                { "title": "Grep client:visible/client:idle/client:load usages", "completed": false },
+                { "title": "For each, compare SSR-rendered output vs hydrated state", "completed": false },
+                { "title": "Write checklist (compliant/offending + file:line)", "completed": false }
+            ],
+            "tags": ["seo", "audit", "web"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-002",
+            "title": "Confirm thin-content predicate and available count fields for destinations",
+            "description": "Verify the exact emptiness predicate (accCount===0 && eventsCount===0 && attractions.length===0) and that these count fields are available in both destinos/[...path].astro (~L424) and sitemap-dynamic.xml.ts (L303-306). Decide where to extract the shared predicate helper. Ref US-3. Tests: none (analysis); output feeds T-006.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-006"],
+            "subtasks": [
+                { "title": "Read destinos/[...path].astro count fields", "completed": false },
+                { "title": "Read sitemap-dynamic.xml.ts destination emission", "completed": false },
+                { "title": "Decide shared predicate helper location", "completed": false }
+            ],
+            "tags": ["seo", "audit", "web"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-003",
+            "title": "Capture baseline CWV measurement and page inventory",
+            "description": "Record a baseline LCP/CLS/INP measurement (PostHog web-vitals or Lighthouse) for key page types and build a page inventory for Wave 4 classification. Informs OQ-3 (perf work is measurement-gated). Ref US-10. Tests: none (measurement artifact attached to Linear issue); output feeds T-015/T-017.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-015", "T-017"],
+            "subtasks": [
+                { "title": "Measure LCP/CLS/INP on home, listing, detail", "completed": false },
+                { "title": "Build public-page inventory", "completed": false },
+                { "title": "Attach numbers to HOS-117 Linear issue", "completed": false }
+            ],
+            "tags": ["performance", "cwv", "audit"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-004",
+            "title": "Fix homepage stat counters to SSR the final value (progressive enhancement)",
+            "description": "Make AnimatedCounter.client.tsx / StatsSection.astro emit the real final value as static text in SSR HTML; animate only visually after hydration (from a start value up to the value already in the DOM). Reuse the home-guards.ts:41-50 pattern for the failure/zero case so a legit-0 or API failure hides the counter instead of showing 0+. Preserve prefers-reduced-motion. Ref US-1. Tests: integration test asserting raw SSR HTML of the 5 counters contains real values, never 0+ (T-018 covers full suite).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                { "title": "Pass final value to island as SSR text", "completed": false },
+                { "title": "Animate from start→final on hydrate (visual only)", "completed": false },
+                { "title": "Wire home-guards fallback for zero/failure", "completed": false },
+                { "title": "Preserve prefers-reduced-motion behavior", "completed": false }
+            ],
+            "tags": ["seo", "aeo", "web", "bugfix"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-005",
+            "title": "Fix flagged islands and document the SSR-emits-final-datum principle",
+            "description": "Fix any island flagged offending by the T-001 audit so its raw SSR HTML carries the final value (regression test per island). Document the principle in apps/web/CLAUDE.md SEO/animations section: an island's SSR output emits the final datum; hydration only animates/interacts, never reveals a value. If audit finds only the counter, still document the rule. Ref US-2. Tests: regression test per fixed island asserting value present in SSR string.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                { "title": "Fix each offending island's SSR output", "completed": false },
+                { "title": "Add per-island regression test", "completed": false },
+                { "title": "Document principle in apps/web/CLAUDE.md", "completed": false }
+            ],
+            "tags": ["seo", "aeo", "web", "docs"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-006",
+            "title": "noindex empty destinations and exclude them from the sitemap",
+            "description": "Using the single shared predicate from T-002, pass noindex={true} from destinos/[...path].astro to DetailLayout for empty destinations (emits <meta name=robots content=noindex,follow>), and exclude the same destinations (all 3 locales) from sitemap-dynamic.xml.ts. Both call sites MUST use the identical predicate (no divergence). Non-empty destinations stay indexable. Ref US-3. Tests: assert noindex meta on empty dest + absence from sitemap; assert non-empty stays indexed (T-018).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                { "title": "Extract shared thin-content predicate helper", "completed": false },
+                { "title": "Pass noindex from destinos/[...path].astro", "completed": false },
+                { "title": "Exclude empty destinations from sitemap builder", "completed": false }
+            ],
+            "tags": ["seo", "web", "sitemap"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-007",
+            "title": "Add BreadcrumbJsonLd to gastronomy/experiences and extend CI guard to 6 entities",
+            "description": "Add BreadcrumbJsonLd to gastronomia/[slug].astro and experiencias/[slug].astro following the pattern at alojamientos/[slug].astro:497. Extend json-ld-coverage.test.ts DETAIL_PAGES (currently 4) to cover all 6 detail entities so the gap cannot silently regrow (root-cause fix). Ref US-4. Tests: json-ld-coverage.test.ts green with 6 entities, failing if any drops Breadcrumb or primary JSON-LD.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-018"],
+            "subtasks": [
+                { "title": "Emit BreadcrumbJsonLd in gastronomia/[slug].astro", "completed": false },
+                { "title": "Emit BreadcrumbJsonLd in experiencias/[slug].astro", "completed": false },
+                { "title": "Extend DETAIL_PAGES to 6 entities in the guard test", "completed": false }
+            ],
+            "tags": ["seo", "aeo", "web", "json-ld"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-008",
+            "title": "Decide demo-content exclusion mechanism (OQ-1/OQ-4) with tradeoffs",
+            "description": "Present coarse (env/host gate, all-or-nothing) vs granular (per-entity isSeed/noIndex flag) exclusion, and full-site vs selective noindex (OQ-4), with tradeoffs, for owner decision. Recommendation: coarse now (prod is 100% demo) with a documented low-effort path to degrade to granular. Ref US-5. Tests: none (decision); output shapes T-009/T-010.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-009"],
+            "subtasks": [
+                { "title": "Write coarse-vs-granular tradeoff comparison", "completed": false },
+                { "title": "Write full-site-vs-selective noindex tradeoff", "completed": false },
+                { "title": "Get owner decision, record on Linear issue", "completed": false }
+            ],
+            "tags": ["seo", "decision", "web"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-009",
+            "title": "Implement chosen demo-content exclusion mechanism",
+            "description": "Implement the mechanism decided in T-008 so all demo/seed public content is out of the index in production, with a documented path to degrade coarse→granular when real content mixes in. Real content must become indexable by flipping a flag/env, not editing logic. Ref US-5. Tests: toggle test — real content indexable, demo not (T-019).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-010", "T-019"],
+            "subtasks": [
+                { "title": "Implement gate/flag driving noindex + sitemap exclusion", "completed": false },
+                { "title": "Document coarse→granular degrade path", "completed": false }
+            ],
+            "tags": ["seo", "web", "demo-exclusion"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-010",
+            "title": "Add granular isSeed/noIndex flag if OQ-1 chose granular (schema + seed dual-write)",
+            "description": "Only if T-008 chose granular: add isSeed/noIndex flag to accommodations + accommodation.schema.json (structural migration via db:generate+db:migrate) and set it in seed data via the MANDATORY seed dual-write (baseline JSON + numbered data-migration via db:seed:make). Drives noindex meta + sitemap exclusion. Skip entirely if coarse. Ref US-5. Tests: flag-driven exclusion asserted (T-019).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                { "title": "Add flag column + schema (structural migration)", "completed": false },
+                { "title": "Seed dual-write: baseline + numbered data-migration", "completed": false },
+                { "title": "Wire flag into noindex + sitemap", "completed": false }
+            ],
+            "tags": ["seo", "db", "seed", "migration"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-011",
+            "title": "Raise FAQ coverage of published accommodations to the OQ target",
+            "description": "Raise the share of published accommodations with ≥1 real FAQ from 52% (avg 1.19) to the OQ-6 target (owner input). Add real FAQ content (no lorem) via seed DATA using the MANDATORY dual-write (baseline + numbered data-migration). FAQPageJsonLd already renders them. Ref US-6. Tests: seed-data count assertion meets target (T-020).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-020"],
+            "subtasks": [
+                { "title": "Confirm OQ-6 target with owner", "completed": false },
+                { "title": "Author real FAQ content in baseline fixtures", "completed": false },
+                { "title": "Add numbered seed data-migration (dual-write)", "completed": false }
+            ],
+            "tags": ["aeo", "content", "seed"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-012",
+            "title": "Review programmatic landings for unique prose; decide geo×type dimension",
+            "description": "Review existing landings (tipo/[type], comodidades/[slug], caracteristicas/[slug]) so each has (or gets a documented plan for) unique intro prose, not just a filtered list. Evaluate adding a geo×type landing dimension (e.g. /destino/cabañas/) and record go/no-go with duplicate-content risk + unique-prose requirement per landing. Ref US-7. Tests: none (content/decision); prose additions covered by existing render tests.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Audit current landings for unique prose", "completed": false },
+                { "title": "Add/plan unique intro prose per landing", "completed": false },
+                { "title": "Record geo×type go/no-go with risk", "completed": false }
+            ],
+            "tags": ["seo", "content", "web"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-013",
+            "title": "Update json-ld-audit.md to typed-component reality",
+            "description": "Rewrite apps/web/docs/seo/json-ld-audit.md to describe the current typed JSON-LD components (not the obsolete pre-SPEC-157 inline-object pattern), list all 6 entities + their components, and point at json-ld-coverage.test.ts as the enforced contract. Ref US-8. Tests: none (docs).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Describe typed components + 6 entities", "completed": false },
+                { "title": "Point to the CI guard test as the contract", "completed": false }
+            ],
+            "tags": ["docs", "seo"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-014",
+            "title": "Wave 3 content i18n — macro task (decide OQ-2 split first)",
+            "description": "MACRO task, kept unsplit because OQ-2 may move it to its own sub-spec. Decide OQ-2 (split vs keep). If kept: migrate accommodation/destination text fields (name/description/faqs) from plain text to {es,en,pt} shape (structural migration + seed dual-write), wire resolveI18nText into consumers, and close the seo.ts per-locale gap so SEOHead + JSON-LD use the locale value. LARGE — atomize into ~4-6 sub-tasks via /replan if kept here. Ref US-9. Tests: resolveI18nText fallback + localized SEO/JSON-LD (T-020).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-020"],
+            "subtasks": [
+                { "title": "Decide OQ-2 (split to sub-spec or keep)", "completed": false },
+                { "title": "If kept: schema migration to {es,en,pt}", "completed": false },
+                { "title": "If kept: seed dual-write + wire resolveI18nText", "completed": false },
+                { "title": "If kept: locale-aware SEOHead + JSON-LD", "completed": false }
+            ],
+            "tags": ["i18n", "db", "seed", "seo"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-015",
+            "title": "Classify each public page: prerender / SSR+edge-cache / pure-SSR",
+            "description": "Using the T-003 page inventory, classify every public page as prerender-candidate, SSR+edge-cache, or pure-SSR, each with a reason. Document the anti-myth in the spec/docs: SSR vs prerender does NOT change indexability; prerender only helps CWV via TTFB/CDN. Ref US-10. Tests: none (classification artifact).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                { "title": "Classify each page with rationale", "completed": false },
+                { "title": "Document SSR-vs-prerender anti-myth", "completed": false }
+            ],
+            "tags": ["performance", "rendering", "audit"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-016",
+            "title": "Verify Cloudflare edge caching of catalog SSR; prerender truly-static pages",
+            "description": "Verify whether Cloudflare actually caches catalog SSR responses (cache headers / hit-ratio evidence; scheduleRevalidationBatch revalidation already exists). Prerender the pages classified truly-static (legal/marketing) in T-015 if warranted. Any header change is infra/config recorded on the Linear issue, not a new route. Ref US-10. Tests: none code; evidence attached to issue.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                { "title": "Check CF cache headers / hit ratio on catalog SSR", "completed": false },
+                { "title": "Prerender truly-static pages if warranted", "completed": false },
+                { "title": "Record findings on Linear issue", "completed": false }
+            ],
+            "tags": ["performance", "rendering", "cloudflare"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-017",
+            "title": "Measurement-gated CWV fixes (before/after LCP/CLS/INP)",
+            "description": "For any perf fix, measure CWV before (baseline from T-003), apply, re-measure after; commit only with numbers on the Linear issue (OQ-3 process gate). No perf fix without measurement. Ref US-10. Tests: none automated; measurement recorded on issue.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-016"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Measure before, apply fix, measure after", "completed": false },
+                { "title": "Attach before/after numbers to Linear issue", "completed": false }
+            ],
+            "tags": ["performance", "cwv"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-018",
+            "title": "Wave 0 raw-SSR-HTML tests",
+            "description": "Assert on rendered HTML string (no hydration): the 5 counters carry real final values (never 0+); empty destinations emit noindex,follow and are absent from the sitemap while non-empty stay indexed; 6/6 detail entities emit BreadcrumbJsonLd. Extends/complements json-ld-coverage.test.ts. Ref US-1/US-2/US-3/US-4. Tests: integration suite on SSR output.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-005", "T-006", "T-007"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                { "title": "Counter final-value SSR test", "completed": false },
+                { "title": "Empty-destination noindex + sitemap-absence test", "completed": false },
+                { "title": "6/6 BreadcrumbJsonLd coverage test", "completed": false }
+            ],
+            "tags": ["testing", "seo", "web"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-019",
+            "title": "Wave 1 demo-exclusion toggle test",
+            "description": "Assert the exclusion mechanism: toggling the flag/env makes real content indexable and demo content noindex/absent from sitemap, without a logic change. Ref US-5. Tests: integration toggling gate/flag.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                { "title": "Test demo excluded under production gate", "completed": false },
+                { "title": "Test real content indexable when flag flipped", "completed": false }
+            ],
+            "tags": ["testing", "seo", "demo-exclusion"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-020",
+            "title": "Wave 2/3 seed-coverage and i18n fallback tests",
+            "description": "Wave 2: seed-data assertion that FAQ coverage meets the OQ-6 target. Wave 3 (if in scope): resolveI18nText fallback (en/pt → es when translation absent) + localized SEO/JSON-LD name/description tests. Ref US-6/US-9. Tests: seed-count + i18n resolver.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011", "T-014"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                { "title": "FAQ coverage seed-count assertion", "completed": false },
+                { "title": "resolveI18nText fallback test (if Wave 3 in scope)", "completed": false }
+            ],
+            "tags": ["testing", "aeo", "i18n"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-021",
+            "title": "Docs, closeout, and off-page follow-up",
+            "description": "Finalize apps/web/docs/seo/json-ld-audit.md; document the off-page authority gap (GSC, backlinks, domain age, editorial long-tail) as an Out-of-Scope follow-up (marketing/content-ops, not code); write closeout.md; record env vars/migrations/decisions on the HOS-117 Linear issue; apply status-needs-smoke-* labels if Wave 1/4 need live verification. Ref US-8. Tests: none (docs/cleanup).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-018", "T-019", "T-020"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Write off-page follow-up note", "completed": false },
+                { "title": "Write closeout.md", "completed": false },
+                { "title": "Record decisions/migrations on Linear issue + smoke labels", "completed": false }
+            ],
+            "tags": ["docs", "cleanup"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        }
+    ],
+    "summary": {
+        "total": 21,
+        "pending": 21,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}
