@@ -7,6 +7,7 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { SubscriptionDashboard } from '@/components/account/SubscriptionDashboard.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -39,7 +40,7 @@ const ownerPlans = plansResult.ok ? filterPlansByCategory(plansResult.plans, 'ow
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="suscripcion">
-	<h2 class="account-section__title">{title}</h2>
+	<AccountPageHeader title={title} />
 
 	<SubscriptionDashboard
 		locale={locale}
@@ -48,13 +49,3 @@ const ownerPlans = plansResult.ok ? filterPlansByCategory(plansResult.plans, 'ow
 		client:load
 	/>
 </AccountLayout>
-
-<style>
-	.account-section__title {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: clamp(1.5rem, 3vw, 2rem);
-		color: var(--core-foreground);
-		margin: 0 0 var(--space-6);
-	}
-</style>

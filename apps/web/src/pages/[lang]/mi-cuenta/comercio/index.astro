@@ -12,6 +12,7 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { isCommerceOwnerRole } from '@/lib/account-roles';
 import { fetchOwnerCommerceListings } from '@/lib/commerce/owner-listings';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -41,10 +42,7 @@ const listings = await fetchOwnerCommerceListings({ cookieHeader });
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="comercio">
-    <div class="mc-page__header">
-        <h2 class="mc-page__title">{title}</h2>
-        {subtitle && <p class="mc-page__subtitle">{subtitle}</p>}
-    </div>
+    <AccountPageHeader title={title} description={subtitle || undefined} />
 
     {
         listings.length === 0 ? (
@@ -86,25 +84,6 @@ const listings = await fetchOwnerCommerceListings({ cookieHeader });
 </AccountLayout>
 
 <style>
-    .mc-page__header {
-        margin-bottom: var(--space-6);
-    }
-
-    .mc-page__title {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: clamp(1.5rem, 3vw, 2rem);
-        color: var(--core-foreground);
-        margin: 0 0 0.25rem;
-    }
-
-    .mc-page__subtitle {
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm, 0.9375rem);
-        color: var(--core-muted-foreground);
-        margin: 0;
-    }
-
     .mc-empty {
         color: var(--core-muted-foreground);
         font-size: var(--text-body-sm, 0.9375rem);

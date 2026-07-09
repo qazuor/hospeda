@@ -1,0 +1,56 @@
+---
+/**
+ * @file AccountPageHeader.astro
+ * @description Canonical page-level heading for `/mi-cuenta/*` pages
+ * (BETA-143b). `AccountLayout.astro` deliberately renders no title of its own —
+ * every account sub-page previously copy-pasted its own `.account-section__title`
+ * (or a bespoke variant) with drift: inconsistent heading level (`h1` vs `h2`),
+ * a fixed `1.5rem` font-size on a few outliers instead of the canonical
+ * `clamp(1.5rem, 3vw, 2rem)`, and a unique third clamp formula on one page.
+ *
+ * This component is the single source of truth for that title going forward:
+ * it always renders an `<h1>` (the one page-level heading each account page
+ * should have) with an optional muted description/subtitle below it.
+ *
+ * Usage: render once per page, as the first element inside `<AccountLayout>`
+ * (or the first element of a header row alongside an adjacent action button).
+ * Do NOT also render a bespoke page-level `<h1>`/`<h2>` — this component owns
+ * that role. Sub-section headings inside islands/cards stay at `<h2>`/`<h3>`
+ * and are unaffected.
+ */
+
+interface Props {
+    /** The page's single canonical heading text. */
+    readonly title: string;
+    /** Optional muted subtitle/description rendered below the title. */
+    readonly description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<header class="account-page-header">
+    <h1 class="account-page-header__title">{title}</h1>
+    {description && <p class="account-page-header__description">{description}</p>}
+</header>
+
+<style>
+    .account-page-header {
+        margin: 0 0 var(--space-6);
+    }
+
+    .account-page-header__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .account-page-header__description {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm, 0.9375rem);
+        color: var(--core-muted-foreground);
+        margin: var(--space-2, 0.5rem) 0 0;
+    }
+</style>

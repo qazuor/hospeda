@@ -31,6 +31,7 @@ import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { TradesDirectory } from '@/components/host/host-trades/TradesDirectory.client';
 import { BuildingIcon, LockIcon } from '@repo/icons';
@@ -149,13 +150,7 @@ const accessDeniedCta = t('host-trades.accessDenied.cta', 'Ver planes de suscrip
     description={subtitle}
     activeSection="directorio-proveedores"
 >
-    <!-- Page header -->
-    <div class="trades-page__header">
-        <div class="trades-page__heading">
-            <h2 class="trades-page__title">{title}</h2>
-            <p class="trades-page__subtitle">{subtitle}</p>
-        </div>
-    </div>
+    <AccountPageHeader title={title} description={subtitle} />
 
     {accessDenied ? (
         /* Access-denied state (AC-5.3): tourist or non-host user */
@@ -200,43 +195,6 @@ const accessDeniedCta = t('host-trades.accessDenied.cta', 'Ver planes de suscrip
 </AccountLayout>
 
 <style>
-    /* ── Page header ── */
-    .trades-page__header {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-4, 1rem);
-        margin-bottom: var(--space-8, 2rem);
-    }
-
-    @media (min-width: 640px) {
-        .trades-page__header {
-            flex-direction: row;
-            align-items: flex-start;
-            justify-content: space-between;
-        }
-    }
-
-    .trades-page__heading {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .trades-page__title {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: clamp(1.5rem, 3vw, 2rem);
-        color: var(--core-foreground);
-        margin: 0;
-    }
-
-    .trades-page__subtitle {
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm, 0.9375rem);
-        color: var(--core-muted-foreground);
-        margin: 0;
-    }
-
     /* ── Access-denied state ── */
     .trades-page__access-denied {
         display: flex;

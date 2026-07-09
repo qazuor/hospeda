@@ -25,6 +25,7 @@ import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import { MAX_ACCOMMODATIONS_LIMIT_KEY, parseUsageResponse } from '@/lib/host/usage-badge';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import PropertyCard from '@/components/host/PropertyCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { BuildingIcon } from '@repo/icons';
@@ -123,8 +124,7 @@ const isEmpty = properties.length === 0;
          illustration already owns the primary call to action. -->
     <div class="props-page__header">
         <div class="props-page__heading">
-            <h2 class="props-page__title">{title}</h2>
-            <p class="props-page__subtitle">{subtitle}</p>
+            <AccountPageHeader title={title} description={subtitle} />
         </div>
         {!isEmpty && !fetchError && (
             <a href={publishNewUrl} class="props-page__cta-btn">
@@ -265,22 +265,6 @@ const isEmpty = properties.length === 0;
     .props-page__heading {
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .props-page__title {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: clamp(1.5rem, 3vw, 2rem);
-        color: var(--core-foreground, var(--core-foreground));
-        margin: 0;
-    }
-
-    .props-page__subtitle {
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm, 0.9375rem);
-        color: var(--core-muted-foreground, var(--core-muted-foreground));
-        margin: 0;
     }
 
     /* ── CTA button ── */
