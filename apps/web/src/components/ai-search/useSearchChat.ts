@@ -61,6 +61,12 @@ export interface UseSearchChatParams {
  * @property messages - Full conversation history (user + assistant turns).
  * @property currentFilters - Accumulated SearchIntentEntities from the last `filters` event.
  *   Rendered as chips by T-011. Echoed back as `currentFilters` on the next turn.
+ * @property lastSearchParams - The last server-resolved, URL-ready accommodation
+ *   search params (HOS-111 T-006). This is what was ACTUALLY sent to the
+ *   accommodations search, as opposed to `currentFilters` which is the raw LLM
+ *   intent (may include slots the mapper never forwards, e.g. `maxGuests`).
+ *   `ActiveFilterChips` uses this to suppress chips for filters that were
+ *   extracted but never applied.
  * @property results - Accommodation results from the last successful search.
  * @property resultsLoading - True while the accommodations GET is in flight.
  * @property hasSearched - True once the FIRST accommodations GET has ever
@@ -83,6 +89,7 @@ export interface UseSearchChatParams {
 export interface UseSearchChatReturn {
     readonly messages: ReadonlyArray<SearchChatHistoryMessage>;
     readonly currentFilters: SearchIntentEntities | null;
+    readonly lastSearchParams: AiSearchChatFiltersEvent['params'] | null;
     readonly results: ReadonlyArray<AccommodationPublic>;
     readonly resultsLoading: boolean;
     readonly hasSearched: boolean;
@@ -179,11 +186,23 @@ function hasAnyEntity(entities: SearchIntentEntities | null): boolean {
  * `SearchIntentEntities` (human-readable, used by the chips) and
  * `AccommodationSearchHttp` (the resolved search params). Keys not listed are
  * identical in both shapes.
+ *
+ * Exported (HOS-111 T-006) so `ActiveFilterChips` can check whether an
+ * intent-derived chip's underlying filter was actually forwarded to the
+ * accommodations search, instead of duplicating this map.
+ *
+ * `city` → `q`: the mapper forwards a city name as the generic keyword
+ * param (`mapIntentToSearchParams` in apps/api, priority-3 fallback when the
+ * city didn't resolve to a known destination). Without this entry,
+ * `removeFilter('city')` would try to delete a non-existent `params.city`
+ * key and leave the real `q` filter stuck applied after the chip disappears
+ * (HOS-111 follow-up fix).
  */
-const INTENT_TO_PARAM_KEY: Partial<Record<keyof SearchIntentEntities, string>> = {
+export const INTENT_TO_PARAM_KEY: Partial<Record<keyof SearchIntentEntities, string>> = {
     accommodationType: 'type',
     amenitySlugs: 'amenities',
-    featureSlugs: 'features'
+    featureSlugs: 'features',
+    city: 'q'
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -489,6 +508,7 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
     return {
         messages: state.messages,
         currentFilters: state.currentFilters,
+        lastSearchParams: state.lastSearchParams,
         results: state.results,
         resultsLoading: state.resultsLoading,
         hasSearched: state.hasSearched,

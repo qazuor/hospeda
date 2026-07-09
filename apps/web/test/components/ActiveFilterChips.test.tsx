@@ -360,4 +360,147 @@ describe('ActiveFilterChips', () => {
             expect(chip.textContent).toContain('Destino filtrado');
         });
     });
+
+    // ── Applied-params filtering (HOS-111 T-006 / AC-6) ────────────────────────
+
+    describe('appliedParams filtering (HOS-111 T-006)', () => {
+        it('renders every intent-derived chip when appliedParams is omitted (legacy behavior)', () => {
+            renderChips({ filters: { maxGuests: 6, minGuests: 2 } });
+            expect(screen.getAllByRole('listitem')).toHaveLength(2);
+        });
+
+        it('suppresses a chip whose param key is absent from appliedParams', () => {
+            // maxGuests is extracted by the model but the mapper never forwards
+            // it (min-only guest semantics) — appliedParams reflects that by
+            // omitting the key entirely.
+            renderChips({
+                filters: { maxGuests: 6, minGuests: 2 },
+                appliedParams: { minGuests: 2 }
+            });
+            const chips = screen.getAllByRole('listitem');
+            expect(chips).toHaveLength(1);
+            expect(chips[0].textContent).toContain('minGuests');
+        });
+
+        it('renders no chips when appliedParams is an empty object', () => {
+            renderChips({
+                filters: { hasPool: true, city: 'Rosario' },
+                appliedParams: {}
+            });
+            expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+        });
+
+        it('remaps renamed keys (accommodationType -> type) when checking appliedParams', () => {
+            renderChips({
+                filters: { accommodationType: 'CABIN' },
+                appliedParams: { type: 'CABIN' }
+            });
+            expect(screen.getAllByRole('listitem')).toHaveLength(1);
+        });
+
+        it('suppresses accommodationType when "type" is absent from appliedParams', () => {
+            renderChips({
+                filters: { accommodationType: 'CABIN' },
+                appliedParams: {}
+            });
+            expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+        });
+
+        it('renders a single Destino chip (not a Ciudad chip) when city resolved to an applied destinationId', () => {
+            // City text search wasn't applied (no `q`), but the city name
+            // matched a known destination — the location filter DID apply,
+            // via destinationId, not a keyword search.
+            renderChips({
+                filters: { city: 'Colón' },
+                appliedParams: { destinationId: '11111111-1111-4111-8111-111111111111' },
+                destinations: { '11111111-1111-4111-8111-111111111111': 'Colón' }
+            });
+            const chips = screen.getAllByRole('listitem');
+            expect(chips).toHaveLength(1);
+            expect(chips[0].textContent).toContain('Colón');
+        });
+
+        it('suppresses the location chip when neither q nor destinationId was applied', () => {
+            renderChips({
+                filters: { city: 'Colón' },
+                appliedParams: {}
+            });
+            expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+        });
+
+        // ── Phantom location chip regression (HOS-111 follow-up fix) ────────
+        //
+        // The model can legitimately emit BOTH `city` (a real place that
+        // resolves server-side) AND a hallucinated, unrelated `destinationId`
+        // in the same turn — they are independent optional intent slots, not
+        // mutually exclusive. Before this fix, `destinationId` rendered its
+        // OWN chip straight from the raw intent value, regardless of which
+        // location strategy the mapper actually applied — showing a second,
+        // phantom "Destino: <hallucinated place>" chip alongside the real
+        // "Destino: <resolved city>" chip.
+
+        it('renders only ONE location chip (the applied one) when intent has both city and a divergent destinationId', () => {
+            const catalog = {
+                '11111111-1111-4111-8111-111111111111': 'Colón', // the real, applied destination
+                '99999999-9999-4999-9999-999999999999': 'Hallucinated Place' // never applied
+            };
+            renderChips({
+                filters: {
+                    city: 'Colón',
+                    // Hallucinated by the model — NOT what actually got applied.
+                    destinationId: '99999999-9999-4999-9999-999999999999'
+                },
+                // Ground truth: the search actually ran against Colón's UUID
+                // (resolved from `city`), not the hallucinated one.
+                appliedParams: { destinationId: '11111111-1111-4111-8111-111111111111' },
+                destinations: catalog
+            });
+
+            const chips = screen.getAllByRole('listitem');
+            expect(chips).toHaveLength(1);
+            expect(chips[0].textContent).toContain('Colón');
+            expect(chips[0].textContent).not.toContain('Hallucinated Place');
+        });
+
+        it('removing the merged location chip targets destinationId when destinationId won', () => {
+            const { onRemove } = renderChips({
+                filters: { city: 'Colón', destinationId: '99999999-9999-4999-9999-999999999999' },
+                appliedParams: { destinationId: '11111111-1111-4111-8111-111111111111' }
+            });
+            fireEvent.click(screen.getByRole('button'));
+            expect(onRemove).toHaveBeenCalledWith('destinationId');
+        });
+
+        it('removing the merged location chip targets city when city (as keyword) won', () => {
+            const { onRemove } = renderChips({
+                filters: { city: 'Rosario', destinationId: '99999999-9999-4999-9999-999999999999' },
+                appliedParams: { q: 'Rosario' }
+            });
+            fireEvent.click(screen.getByRole('button'));
+            expect(onRemove).toHaveBeenCalledWith('city');
+        });
+
+        it('collapses city + destinationId to a single chip even without appliedParams (legacy mode, destinationId priority)', () => {
+            renderChips({
+                filters: { city: 'Colón', destinationId: '11111111-1111-4111-8111-111111111111' }
+            });
+            expect(screen.getAllByRole('listitem')).toHaveLength(1);
+        });
+
+        it('suppresses the location group chip when no coordinate/radius param was applied', () => {
+            renderChips({
+                filters: { latitude: -32.5, longitude: -58.2, radius: 20 },
+                appliedParams: {}
+            });
+            expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+        });
+
+        it('keeps the location group chip when a radius param was applied', () => {
+            renderChips({
+                filters: { latitude: -32.5, longitude: -58.2, radius: 20 },
+                appliedParams: { latitude: -32.5, longitude: -58.2, radius: 20 }
+            });
+            expect(screen.getAllByRole('listitem')).toHaveLength(1);
+        });
+    });
 });
