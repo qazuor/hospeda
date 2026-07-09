@@ -93,7 +93,10 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 // Import module under test AFTER mocks are wired
 // ---------------------------------------------------------------------------
 
-import { socialPublishDispatchJob } from '../../src/cron/jobs/social-publish-dispatch.job.js';
+import {
+    __resetUnconfiguredCredentialLogState,
+    socialPublishDispatchJob
+} from '../../src/cron/jobs/social-publish-dispatch.job.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -114,6 +117,9 @@ describe('Social Publish Dispatch Cron Job', () => {
     let mockContext: CronJobContext;
 
     beforeEach(() => {
+        // Reset the process-level one-time-log dedupe so each test starts fresh
+        // (HOS-109 T-009).
+        __resetUnconfiguredCredentialLogState();
         mockLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
         mockContext = {
             logger: mockLogger,
@@ -231,11 +237,35 @@ describe('Social Publish Dispatch Cron Job', () => {
                 skipped: true,
                 reason: 'missing_make_api_key'
             });
-            expect(mockLogger.warn).toHaveBeenCalledWith(
+            // HOS-109 T-009: an unconfigured optional credential is expected
+            // pre-launch — logged at info (not warn) so it is not alert-worthy.
+            expect(mockLogger.info).toHaveBeenCalledWith(
+                expect.stringContaining('no active make_api_key credential in the vault')
+            );
+            expect(mockLogger.warn).not.toHaveBeenCalledWith(
                 expect.stringContaining('no active make_api_key credential in the vault')
             );
             // dispatchTarget must NOT have been called
             expect(mockDispatchTarget).not.toHaveBeenCalled();
+        });
+
+        it('logs the unconfigured-credential notice only once across repeated runs (HOS-109 T-009)', async () => {
+            mockGetDecryptedSocialCredential.mockResolvedValue({
+                error: {
+                    code: 'NOT_FOUND',
+                    message: "No active credential found for key 'make_api_key'"
+                }
+            });
+
+            // The cron fires every ~5 min; simulate three consecutive runs.
+            await socialPublishDispatchJob.handler(mockContext);
+            await socialPublishDispatchJob.handler(mockContext);
+            await socialPublishDispatchJob.handler(mockContext);
+
+            const unconfiguredLogs = mockLogger.info.mock.calls.filter(([message]) =>
+                String(message).includes('no active make_api_key credential in the vault')
+            );
+            expect(unconfiguredLogs).toHaveLength(1);
         });
 
         it('does not call withTransaction when the vault credential is missing', async () => {
@@ -287,7 +317,11 @@ describe('Social Publish Dispatch Cron Job', () => {
                 skipped: true,
                 reason: 'missing_make_webhook_url'
             });
-            expect(mockLogger.warn).toHaveBeenCalledWith(
+            // HOS-109 T-009: expected unconfigured state → info, once, not warn.
+            expect(mockLogger.info).toHaveBeenCalledWith(
+                expect.stringContaining('no active make_webhook_url credential in the vault')
+            );
+            expect(mockLogger.warn).not.toHaveBeenCalledWith(
                 expect.stringContaining('no active make_webhook_url credential in the vault')
             );
             expect(mockDispatchTarget).not.toHaveBeenCalled();
