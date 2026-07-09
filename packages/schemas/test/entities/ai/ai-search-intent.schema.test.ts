@@ -387,6 +387,37 @@ describe('SearchIntentEntitiesSchema', () => {
         expect(result.success).toBe(false);
     });
 
+    // ── expandToNearby (HOS-111 T-012, G-9) ──────────────────────────────────
+
+    it('accepts expandToNearby: true', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({ expandToNearby: true });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.expandToNearby).toBe(true);
+        }
+    });
+
+    it('accepts expandToNearby: false', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({ expandToNearby: false });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.expandToNearby).toBe(false);
+        }
+    });
+
+    it('defaults to undefined (absent) when not provided', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({});
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.expandToNearby).toBeUndefined();
+        }
+    });
+
+    it('rejects a non-boolean expandToNearby', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({ expandToNearby: 'yes' });
+        expect(result.success).toBe(false);
+    });
+
     // ── NOT strict — extra keys stripped ─────────────────────────────────────
 
     it('strips extra unknown keys (entities schema is NOT strict)', () => {

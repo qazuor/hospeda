@@ -121,6 +121,29 @@ export const SearchIntentEntitiesSchema = z.object({
     /** Search radius in km (max 500). Only applied when `latitude` + `longitude` present. */
     radius: z.number().positive().max(500).optional(),
 
+    /**
+     * Geo "nearby destinations" expansion signal (HOS-111 T-012, G-9).
+     *
+     * `true` when the user's message is a conversational follow-up asking to
+     * widen the search to destinations near the current one (e.g. "y en
+     * destinos cercanos", "también cerca", "and nearby destinations too").
+     * The model infers this from the bounded conversation history that is
+     * already embedded in the prompt (`buildConversationalSearchPrompt`) —
+     * no new context plumbing is needed.
+     *
+     * Deliberately a plain boolean, NOT a duplicate `nearbyOfDestinationId`
+     * slot: the anchor destination is already resolvable from the existing
+     * location fields (`destinationId` / server-resolved `city`) carried
+     * forward turn-to-turn via the CURRENT FILTER SET mechanism. The
+     * search-chat handler (T-013) reads this flag and, when `true`, resolves
+     * the anchor's neighbors via `DestinationService.getNearby` and expands
+     * the search to include them.
+     *
+     * `false`/absent for a normal (non-expansion) query — the model MUST NOT
+     * set this from a single-turn message with no prior destination context.
+     */
+    expandToNearby: z.boolean().optional(),
+
     // ── Accommodation type ────────────────────────────────────────────────────
     /**
      * Type of accommodation requested (maps to `type` param).
