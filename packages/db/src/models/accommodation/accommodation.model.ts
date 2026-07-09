@@ -17,6 +17,11 @@ import { userBookmarks } from '../../schemas/user/user_bookmark.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
+import {
+    buildDistanceOrderByExpr,
+    buildJsonbCoordinateExprs,
+    buildWithinRadiusClause
+} from '../../utils/geo.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
 
@@ -101,9 +106,10 @@ function buildPriceOrderExpr(order: 'asc' | 'desc'): SQL {
  * Synthetic sort field that orders accommodations by haversine distance from a
  * caller-supplied `(centerLat, centerLong)` center. Only honored when the
  * caller passes the coordinates in (otherwise the field is silently dropped
- * upstream so the URL stays usable when no geo center is active). Mirrors the
- * SQL formula used by `buildGeoRadiusClause` (Earth radius 6371 km) so the
- * sort distance and the filter distance match exactly.
+ * upstream so the URL stays usable when no geo center is active). Shares the
+ * exact same formula as {@link buildGeoRadiusClause} via the extracted
+ * `@repo/db` geo helpers (HOS-111 T-010 — see `utils/geo.ts`) so the sort
+ * distance and the filter distance always match.
  *
  * Rows missing JSONB coordinates bubble to the end via `NULLS LAST`, which
  * also keeps the result deterministic when the cast yields NULL.
@@ -111,17 +117,14 @@ function buildPriceOrderExpr(order: 'asc' | 'desc'): SQL {
 const DISTANCE_SORT_FIELD = 'distance';
 
 function buildDistanceOrderExpr(centerLat: number, centerLong: number, order: 'asc' | 'desc'): SQL {
-    const direction = order === 'desc' ? sql`DESC` : sql`ASC`;
-    return sql`(
-        2 * 6371 * asin(
-            sqrt(
-                power(sin(radians(((${accommodations.location}->'coordinates'->>'lat')::numeric - ${centerLat}) / 2)), 2)
-                + cos(radians(${centerLat}))
-                  * cos(radians((${accommodations.location}->'coordinates'->>'lat')::numeric))
-                  * power(sin(radians(((${accommodations.location}->'coordinates'->>'long')::numeric - ${centerLong}) / 2)), 2)
-            )
-        )
-    ) ${direction} NULLS LAST`;
+    const { latExpr, longExpr } = buildJsonbCoordinateExprs(accommodations.location);
+    return buildDistanceOrderByExpr({
+        latCol: latExpr,
+        longCol: longExpr,
+        lat: centerLat,
+        long: centerLong,
+        order
+    });
 }
 
 /**
@@ -345,23 +348,23 @@ function buildFeatureIntersectionClause(featureIds: readonly string[]): SQL<unkn
  * Builds a WHERE clause that keeps accommodations whose stored coordinates are
  * within `radiusKm` of the supplied center using the haversine formula. The
  * coordinates live under `location.coordinates.{lat,long}` (JSONB, stored as
- * strings) and are cast to numeric on the fly. Earth radius is 6371 km.
+ * strings) and are cast to numeric on the fly. Delegates to the shared
+ * `@repo/db` geo helpers (HOS-111 T-010 — see `utils/geo.ts`) so this formula
+ * is defined exactly once across accommodation and destination geo queries.
  */
 function buildGeoRadiusClause(
     centerLat: number,
     centerLong: number,
     radiusKm: number
 ): SQL<unknown> {
-    return sql<unknown>`(
-        2 * 6371 * asin(
-            sqrt(
-                power(sin(radians(((${accommodations.location}->'coordinates'->>'lat')::numeric - ${centerLat}) / 2)), 2)
-                + cos(radians(${centerLat}))
-                  * cos(radians((${accommodations.location}->'coordinates'->>'lat')::numeric))
-                  * power(sin(radians(((${accommodations.location}->'coordinates'->>'long')::numeric - ${centerLong}) / 2)), 2)
-            )
-        )
-    ) <= ${radiusKm}`;
+    const { latExpr, longExpr } = buildJsonbCoordinateExprs(accommodations.location);
+    return buildWithinRadiusClause({
+        latCol: latExpr,
+        longCol: longExpr,
+        lat: centerLat,
+        long: centerLong,
+        radiusKm
+    });
 }
 
 export class AccommodationModel extends BaseModelImpl<Accommodation> {
