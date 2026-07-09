@@ -36,66 +36,66 @@
             "id": "T-002",
             "title": "Downgrade expected 401 on protected routes from ERROR+stack",
             "description": "P7/F2. A guest 401 on a protected route is expected. Stop emitting `ERROR` + full stack (`Caught error ... Authentication required`); keep only the HTTP access-log line at the agreed level (see OQ-1). Continuation of HOS-104/105 logging hygiene. Verify a guest hit produces no ERROR+stack.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Find the auth-required error → log mapping in the API middleware",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Map expected 401 to info/debug without stack", "completed": false }
+                { "title": "Map expected 401 to info/debug without stack", "completed": true }
             ],
             "tags": ["api", "logging"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-09T03:28:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-09T05:40:00.000Z",
+                "completed": "2026-07-09T05:47:00.000Z"
             }
         },
         {
             "id": "T-003",
             "title": "Downgrade expected 404 not-found from ERROR (getByField misses)",
             "description": "P8/F2. Public getByField misses (accommodation/post/event not found) currently log SERVICE ERROR + Route error + actor + stack. A 404 is expected. Downgrade to the agreed level (OQ-1) without stack. GATED on OQ-1 owner decision on target level. Verify a missing-slug request logs at most an access line.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Confirm OQ-1 target level with owner", "completed": false },
-                { "title": "Adjust not-found → log level mapping", "completed": false }
+                { "title": "Confirm OQ-1 target level with owner", "completed": true },
+                { "title": "Adjust not-found → log level mapping", "completed": true }
             ],
             "tags": ["api", "logging", "needs-decision"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-09T03:28:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-09T05:40:00.000Z",
+                "completed": "2026-07-09T05:47:00.000Z"
             }
         },
         {
             "id": "T-004",
             "title": "Downgrade expected 403 permission-denied from ERROR",
             "description": "P9/F2. 403 permission denials (e.g. user.getByField 'Only self or USER_READ_ALL') log as ERROR+stack. Downgrade to the agreed level (OQ-1); 403 may stay slightly louder than 404 (probing signal). GATED on OQ-1 + OQ-3 (public profile-by-slug design). Verify.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Confirm OQ-1/OQ-3 with owner", "completed": false },
-                { "title": "Adjust forbidden → log level mapping", "completed": false }
+                { "title": "Confirm OQ-1/OQ-3 with owner", "completed": true },
+                { "title": "Adjust forbidden → log level mapping", "completed": true }
             ],
             "tags": ["api", "logging", "needs-decision"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-09T03:28:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-09T05:40:00.000Z",
+                "completed": "2026-07-09T05:47:00.000Z"
             }
         },
         {
@@ -265,9 +265,9 @@
     ],
     "summary": {
         "total": 11,
-        "pending": 10,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.3
     }

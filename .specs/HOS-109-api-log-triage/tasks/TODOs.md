@@ -1,6 +1,6 @@
 # HOS-109: Investigate & fix production API log errors and noise (post-relaunch triage)
 
-## Progress: 1/11 tasks (9%)
+## Progress: 4/11 tasks (36%)
 
 **Average Complexity:** 2.3/3 (max)
 **All tasks independent** — no blocking dependencies; ordered by priority within phases.
@@ -14,9 +14,17 @@
 
 ### F2 — Logging hygiene
 
-- [ ] **T-002** (complexity: 2) — Downgrade expected 401 on protected routes from ERROR+stack
-- [ ] **T-003** (complexity: 2) — Downgrade expected 404 not-found from ERROR *(gated on OQ-1)*
-- [ ] **T-004** (complexity: 2) — Downgrade expected 403 permission-denied from ERROR *(gated on OQ-1/OQ-3)*
+- [x] **T-002** (complexity: 2) — Downgrade expected 401 on protected routes from ERROR+stack ✅
+- [x] **T-003** (complexity: 2) — Downgrade expected 404 not-found from ERROR ✅
+- [x] **T-004** (complexity: 2) — Downgrade expected 403 permission-denied from ERROR ✅
+  - DONE (commit 2e9ebbd05): single `resolveErrorLogLevel(code)` helper in service-core
+    (NOT_FOUND/UNAUTHORIZED → info, FORBIDDEN → warn, else error+stack), reused by both
+    emission points — service-layer `logError` and route-layer `createErrorHandler`
+    (stack line suppressed for non-error levels). 22 tests (16 service-core + 6 API new/updated),
+    typecheck + biome green. Fresh review: approve, no blockers.
+  - FOLLOW-UP (owner, not blocking): `ENTITLEMENT_REQUIRED` / `LIMIT_REACHED` also map to
+    HTTP 403 but stay at `error` — OQ-1 scoped the downgrade to 401/403/404 only, so this is
+    a deliberate gap. Revisit if paywall/limit-gate noise shows up in a future triage.
 
 ### F3 — Over-fetch / rate-limit
 
