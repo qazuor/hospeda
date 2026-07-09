@@ -36,6 +36,7 @@ import type {
     GetDestinationByPathInput,
     GetDestinationChildrenInput,
     GetDestinationDescendantsInput,
+    GetDestinationNearbyInput,
     GetDestinationStatsInput,
     GetDestinationSummaryInput,
     Success
@@ -56,6 +57,7 @@ import {
     GetDestinationByPathInputSchema,
     GetDestinationChildrenInputSchema,
     GetDestinationDescendantsInputSchema,
+    GetDestinationNearbyInputSchema,
     GetDestinationStatsInputSchema,
     GetDestinationSummaryInputSchema,
     ServiceErrorCode
@@ -1337,6 +1339,45 @@ export class DestinationService extends BaseCrudService<
                     resolvedCtx.tx
                 );
                 return { ancestors };
+            }
+        });
+    }
+
+    /**
+     * Gets destinations geographically near an anchor destination (HOS-111
+     * T-011 — backs the AI search chat's "y en destinos cercanos" follow-up).
+     *
+     * Delegates entirely to {@link DestinationModel.findNearby}, which
+     * implements the two-pass ~50 km radius / N-nearest-fallback strategy
+     * (spec OQ-2). Read-only, so no entity-specific permission gate beyond
+     * the standard view check — mirrors `getChildren`/`getAncestors`.
+     *
+     * @param actor - The actor performing the action.
+     * @param params - Input containing the anchor `destinationId` and
+     *   optional `radiusKm` / `fallbackCount` overrides.
+     * @param ctx - Optional service context. When provided with a
+     *   transaction, the query runs within it.
+     */
+    public async getNearby(
+        actor: Actor,
+        params: GetDestinationNearbyInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ nearby: Destination[] }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getNearby',
+            input: { actor, ...params },
+            schema: GetDestinationNearbyInputSchema,
+            ctx,
+            execute: async (validData, _actor, resolvedCtx) => {
+                const nearby = await this.model.findNearby(
+                    {
+                        destinationId: validData.destinationId,
+                        radiusKm: validData.radiusKm,
+                        fallbackCount: validData.fallbackCount
+                    },
+                    resolvedCtx.tx
+                );
+                return { nearby };
             }
         });
     }
