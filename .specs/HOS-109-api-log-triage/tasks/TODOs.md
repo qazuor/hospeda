@@ -1,6 +1,6 @@
 # HOS-109: Investigate & fix production API log errors and noise (post-relaunch triage)
 
-## Progress: 6/11 tasks (55%)
+## Progress: 7/11 tasks (64%)
 
 **Average Complexity:** 2.3/3 (max)
 **All tasks independent** — no blocking dependencies; ordered by priority within phases.
@@ -47,7 +47,12 @@
 
 - [ ] **T-007** (complexity: 2) — Investigate stale-slug 404 flood source (sitemap / ISR / crawler) *(OQ-2)*
 - [ ] **T-008** (complexity: 2) — Verify conversation-notification cron lock overlap
-- [ ] **T-009** (complexity: 2) — Gate social-publish-dispatch make_api_key warning
+- [x] **T-009** (complexity: 2) — Gate social-publish-dispatch make_api_key warning ✅
+  - DONE (commit 51a8a9f25): dispatch cron (every ~5min) warned on every run when the optional
+    make_api_key/make_webhook_url vault creds are absent (expected pre-launch). Now logged at `info`
+    ONCE per process per credential (module-level Set dedupe, cleared when the cred reappears).
+    Test-only `__resetUnconfiguredCredentialLogState`. 21 tests (incl. "only once across 3 runs"),
+    API typecheck + biome green.
 
 ### F5 — Config / SEO
 

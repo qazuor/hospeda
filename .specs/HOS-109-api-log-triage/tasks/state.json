@@ -196,24 +196,24 @@
             "id": "T-009",
             "title": "Gate social-publish-dispatch make_api_key warning",
             "description": "P12/F4. `no active make_api_key credential in the vault` warns every 5 min. Confirm it is purely 'vault not configured yet' and gate the WARN so it does not fire on every run when the social feature is intentionally unused (downgrade to a one-time/info log or skip silently when unconfigured).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Confirm the warning condition in the dispatch job",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Gate/downgrade the unconfigured-vault log", "completed": false }
+                { "title": "Gate/downgrade the unconfigured-vault log", "completed": true }
             ],
             "tags": ["api", "cron", "social"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-09T03:28:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-09T06:44:00.000Z",
+                "completed": "2026-07-09T06:52:00.000Z"
             }
         },
         {
@@ -265,9 +265,9 @@
     ],
     "summary": {
         "total": 11,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.3
     }
