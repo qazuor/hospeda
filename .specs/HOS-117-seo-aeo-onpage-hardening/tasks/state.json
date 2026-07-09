@@ -134,8 +134,8 @@
         {
             "id": "T-008",
             "title": "Decide demo-content exclusion mechanism (OQ-1/OQ-4) with tradeoffs",
-            "description": "Present coarse (env/host gate, all-or-nothing) vs granular (per-entity isSeed/noIndex flag) exclusion, and full-site vs selective noindex (OQ-4), with tradeoffs, for owner decision. Recommendation: coarse now (prod is 100% demo) with a documented low-effort path to degrade to granular. Ref US-5. Tests: none (decision); output shapes T-009/T-010.",
-            "status": "pending",
+            "description": "Present coarse (env/host gate, all-or-nothing) vs granular (per-entity isSeed/noIndex flag) exclusion, and full-site vs selective noindex (OQ-4), with tradeoffs, for owner decision. Recommendation: coarse now (prod is 100% demo) with a documented low-effort path to degrade to granular. Ref US-5. Tests: none (decision); output shapes T-009/T-010. CANCELLED (replan 2026-07-09): example data being deleted from prod in 2-3 days → demo-content exclusion obsolete.",
+            "status": "cancelled",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-009"],
@@ -152,8 +152,8 @@
         {
             "id": "T-009",
             "title": "Implement chosen demo-content exclusion mechanism",
-            "description": "Implement the mechanism decided in T-008 so all demo/seed public content is out of the index in production, with a documented path to degrade coarse→granular when real content mixes in. Real content must become indexable by flipping a flag/env, not editing logic. Ref US-5. Tests: toggle test — real content indexable, demo not (T-019).",
-            "status": "pending",
+            "description": "Implement the mechanism decided in T-008 so all demo/seed public content is out of the index in production, with a documented path to degrade coarse→granular when real content mixes in. Real content must become indexable by flipping a flag/env, not editing logic. Ref US-5. Tests: toggle test — real content indexable, demo not (T-019). CANCELLED (replan 2026-07-09): example data being deleted → gate obsolete.",
+            "status": "cancelled",
             "complexity": 3,
             "blockedBy": ["T-008"],
             "blocks": ["T-010", "T-019"],
@@ -169,8 +169,8 @@
         {
             "id": "T-010",
             "title": "Add granular isSeed/noIndex flag if OQ-1 chose granular (schema + seed dual-write)",
-            "description": "Only if T-008 chose granular: add isSeed/noIndex flag to accommodations + accommodation.schema.json (structural migration via db:generate+db:migrate) and set it in seed data via the MANDATORY seed dual-write (baseline JSON + numbered data-migration via db:seed:make). Drives noindex meta + sitemap exclusion. Skip entirely if coarse. Ref US-5. Tests: flag-driven exclusion asserted (T-019).",
-            "status": "pending",
+            "description": "Only if T-008 chose granular: add isSeed/noIndex flag to accommodations + accommodation.schema.json (structural migration via db:generate+db:migrate) and set it in seed data via the MANDATORY seed dual-write (baseline JSON + numbered data-migration via db:seed:make). Drives noindex meta + sitemap exclusion. Skip entirely if coarse. Ref US-5. Tests: flag-driven exclusion asserted (T-019). CANCELLED (replan 2026-07-09): example data being deleted → granular flag obsolete.",
+            "status": "cancelled",
             "complexity": 3,
             "blockedBy": ["T-009"],
             "blocks": ["T-019"],
@@ -187,8 +187,8 @@
         {
             "id": "T-011",
             "title": "Raise FAQ coverage of published accommodations to the OQ target",
-            "description": "Raise the share of published accommodations with ≥1 real FAQ from 52% (avg 1.19) to the OQ-6 target (owner input). Add real FAQ content (no lorem) via seed DATA using the MANDATORY dual-write (baseline + numbered data-migration). FAQPageJsonLd already renders them. Ref US-6. Tests: seed-data count assertion meets target (T-020).",
-            "status": "pending",
+            "description": "Raise the share of published accommodations with ≥1 real FAQ from 52% (avg 1.19) to the OQ-6 target (owner input). Add real FAQ content (no lorem) via seed DATA using the MANDATORY dual-write (baseline + numbered data-migration). FAQPageJsonLd already renders them. Ref US-6. Tests: seed-data count assertion meets target (T-020). CANCELLED (replan 2026-07-09): targets seed content being deleted; real content will carry its own FAQs.",
+            "status": "cancelled",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-020"],
@@ -205,7 +205,7 @@
         {
             "id": "T-012",
             "title": "Review programmatic landings for unique prose; decide geo×type dimension",
-            "description": "Review existing landings (tipo/[type], comodidades/[slug], caracteristicas/[slug]) so each has (or gets a documented plan for) unique intro prose, not just a filtered list. Evaluate adding a geo×type landing dimension (e.g. /destino/cabañas/) and record go/no-go with duplicate-content risk + unique-prose requirement per landing. Ref US-7. Tests: none (content/decision); prose additions covered by existing render tests.",
+            "description": "Review existing landings (tipo/[type], comodidades/[slug], caracteristicas/[slug]) so each has (or gets a documented plan for) unique intro prose, not just a filtered list. Evaluate adding a geo×type landing dimension (e.g. /destino/cabañas/) and record go/no-go with duplicate-content risk + unique-prose requirement per landing. Ref US-7. Tests: none (content/decision); prose additions covered by existing render tests. NOTE (replan 2026-07-09): keep the geo×type go/no-go + unique-prose REQUIREMENT as infra, but the actual prose depends on real content (post example-data purge).",
             "status": "pending",
             "complexity": 2,
             "blockedBy": [],
@@ -329,8 +329,8 @@
         {
             "id": "T-019",
             "title": "Wave 1 demo-exclusion toggle test",
-            "description": "Assert the exclusion mechanism: toggling the flag/env makes real content indexable and demo content noindex/absent from sitemap, without a logic change. Ref US-5. Tests: integration toggling gate/flag.",
-            "status": "pending",
+            "description": "Assert the exclusion mechanism: toggling the flag/env makes real content indexable and demo content noindex/absent from sitemap, without a logic change. Ref US-5. Tests: integration toggling gate/flag. CANCELLED (replan 2026-07-09): Wave 1 cancelled, nothing to test.",
+            "status": "cancelled",
             "complexity": 2,
             "blockedBy": ["T-009", "T-010"],
             "blocks": ["T-021"],
@@ -346,10 +346,10 @@
         {
             "id": "T-020",
             "title": "Wave 2/3 seed-coverage and i18n fallback tests",
-            "description": "Wave 2: seed-data assertion that FAQ coverage meets the OQ-6 target. Wave 3 (if in scope): resolveI18nText fallback (en/pt → es when translation absent) + localized SEO/JSON-LD name/description tests. Ref US-6/US-9. Tests: seed-count + i18n resolver.",
+            "description": "REFRAMED (replan 2026-07-09): Wave 2 FAQ-coverage assertion dropped (T-011 cancelled). Wave 3 (if in scope): resolveI18nText fallback (en/pt → es when translation absent) + localized SEO/JSON-LD name/description tests. Ref US-6/US-9. Tests: seed-count + i18n resolver.",
             "status": "pending",
             "complexity": 2,
-            "blockedBy": ["T-011", "T-014"],
+            "blockedBy": ["T-014"],
             "blocks": ["T-021"],
             "subtasks": [
                 { "title": "FAQ coverage seed-count assertion", "completed": false },
@@ -366,7 +366,7 @@
             "description": "Finalize apps/web/docs/seo/json-ld-audit.md; document the off-page authority gap (GSC, backlinks, domain age, editorial long-tail) as an Out-of-Scope follow-up (marketing/content-ops, not code); write closeout.md; record env vars/migrations/decisions on the HOS-117 Linear issue; apply status-needs-smoke-* labels if Wave 1/4 need live verification. Ref US-8. Tests: none (docs/cleanup).",
             "status": "pending",
             "complexity": 2,
-            "blockedBy": ["T-018", "T-019", "T-020"],
+            "blockedBy": ["T-018", "T-020"],
             "blocks": [],
             "subtasks": [
                 { "title": "Write off-page follow-up note", "completed": false },
@@ -377,14 +377,33 @@
             "phase": "docs",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
             "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-022",
+            "title": "Serve 410 Gone for deleted entity URLs (post example-data purge)",
+            "description": "ADDED (replan 2026-07-09). After example/seed data is deleted from prod, the old accommodation/post/gastronomy/experience detail URLs must return 410 Gone (not 404) so Google/LLM fetchers deindex them fast. Verify current behavior for an unknown/deleted published slug and return 410 for these entity routes (at least during the post-purge window). This is the real-value replacement for the cancelled Wave 1 gate. Ref US-3/US-5 spirit. Tests: integration asserting a deleted/unknown slug yields HTTP 410 on these entity routes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Check current 404-vs-410 behavior for unknown entity slugs", "completed": false },
+                { "title": "Return 410 Gone on accommodation/post/gastronomy/experience detail routes", "completed": false },
+                { "title": "Integration test for the 410 response", "completed": false }
+            ],
+            "tags": ["seo", "web"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T20:40:00.000Z", "started": null, "completed": null }
         }
     ],
     "summary": {
-        "total": 21,
-        "pending": 15,
+        "total": 17,
+        "pending": 11,
         "inProgress": 0,
         "completed": 6,
         "blocked": 0,
-        "averageComplexity": 2.4
+        "cancelled": 5,
+        "averageComplexity": 2.2
     }
 }
