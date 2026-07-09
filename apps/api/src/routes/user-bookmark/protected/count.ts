@@ -3,7 +3,7 @@
  * Returns the bookmark count for the authenticated user, optionally filtered by entity type.
  * @route GET /api/v1/protected/user-bookmarks/count
  */
-import type { EntityTypeEnum } from '@repo/schemas';
+import { EntityTypeEnum } from '@repo/schemas';
 import { ServiceError, UserBookmarkService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -21,9 +21,7 @@ export const countUserBookmarksRoute = createProtectedRoute({
         'Returns the total bookmark count for the authenticated user. Optionally filter by entity type.',
     tags: ['User Bookmarks'],
     requestQuery: {
-        entityType: z
-            .enum(['ACCOMMODATION', 'DESTINATION', 'ATTRACTION', 'EVENT', 'POST'])
-            .optional()
+        entityType: z.nativeEnum(EntityTypeEnum).optional()
     },
     responseSchema: z.object({
         count: z.number()
