@@ -7,6 +7,8 @@
  * LocationPicker.client.tsx) so it never touches `window`/`document`
  * during SSR — Leaflet only loads once this chunk mounts on the client.
  */
+import 'leaflet/dist/leaflet.css';
+
 import { useEffect, useRef } from 'react';
 import styles from './LocationPicker.module.css';
 

@@ -32,6 +32,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { uploadEntityImage } from '@/lib/media/upload-entity';
+import { addToast } from '@/store/toast-store';
 import styles from './PhotoSection.module.css';
 
 // Re-export types for consumers that import from this module
@@ -120,8 +121,11 @@ export interface PhotoSectionProps {
  * set portada, remove) is persisted immediately via a granular API call.
  * The parent PATCH no longer carries media data.
  *
- * Errors are shown inline (no toasts). On any op failure the local state is
- * NOT mutated, keeping the UI consistent with the server.
+ * Errors are shown inline AND surfaced via the global toast store (BETA-144):
+ * the inline message can be scrolled out of view (e.g. user is looking at the
+ * gallery while the featured-image upload fails), so a toast guarantees the
+ * failure is visible regardless of scroll position. On any op failure the
+ * local state is NOT mutated, keeping the UI consistent with the server.
  */
 export function PhotoSection({
     locale,
@@ -209,6 +213,18 @@ export function PhotoSection({
         [t]
     );
 
+    /**
+     * Report an upload failure both inline (existing behavior) and via the
+     * global toast store (BETA-144). The user may be scrolled down to the
+     * gallery when a featured-image upload fails and never see the inline
+     * message at the top of the editor — the toast is visible regardless of
+     * scroll position.
+     */
+    const reportUploadError = useCallback((message: string) => {
+        setError(message);
+        addToast({ type: 'error', message });
+    }, []);
+
     // --- Featured image handlers ---
 
     /**
@@ -225,7 +241,7 @@ export function PhotoSection({
 
             const validationError = validateFile(file);
             if (validationError) {
-                setError(validationError);
+                reportUploadError(validationError);
                 return;
             }
 
@@ -252,7 +268,7 @@ export function PhotoSection({
                 });
 
                 if (!addResult.ok) {
-                    setError(
+                    reportUploadError(
                         addResult.error.message ??
                             t(
                                 'host.properties.editor.photo.persistFailed',
@@ -271,7 +287,7 @@ export function PhotoSection({
                 });
 
                 if (!featuredResult.ok) {
-                    setError(
+                    reportUploadError(
                         featuredResult.error.message ??
                             t(
                                 'host.properties.editor.photo.featuredFailed',
@@ -291,7 +307,7 @@ export function PhotoSection({
                 });
                 setFeaturedItem(rowToItem(featuredResult.data.media));
             } catch (err) {
-                setError(
+                reportUploadError(
                     err instanceof Error
                         ? err.message
                         : t('host.properties.editor.photo.uploadFailed', 'Error al subir la imagen')
@@ -304,7 +320,7 @@ export function PhotoSection({
                 }
             }
         },
-        [accommodationId, validateFile, featuredItem, t]
+        [accommodationId, validateFile, featuredItem, t, reportUploadError]
     );
 
     /**
@@ -345,7 +361,7 @@ export function PhotoSection({
             if (!file) return;
 
             if (isGalleryFull) {
-                setError(
+                reportUploadError(
                     t(
                         'host.properties.editor.photo.galleryCapReached',
                         `Límite de galería alcanzado (máx. ${ACCOMMODATION_GALLERY_CAP} fotos)`
@@ -359,7 +375,7 @@ export function PhotoSection({
 
             const validationError = validateFile(file);
             if (validationError) {
-                setError(validationError);
+                reportUploadError(validationError);
                 return;
             }
 
@@ -384,7 +400,7 @@ export function PhotoSection({
                 });
 
                 if (!addResult.ok) {
-                    setError(
+                    reportUploadError(
                         addResult.error.message ??
                             t(
                                 'host.properties.editor.photo.persistFailed',
@@ -396,7 +412,7 @@ export function PhotoSection({
 
                 setGalleryItems((prev) => [...prev, rowToItem(addResult.data.media)]);
             } catch (err) {
-                setError(
+                reportUploadError(
                     err instanceof Error
                         ? err.message
                         : t('host.properties.editor.photo.uploadFailed', 'Error al subir la imagen')
@@ -409,7 +425,7 @@ export function PhotoSection({
                 }
             }
         },
-        [accommodationId, isGalleryFull, validateFile, t]
+        [accommodationId, isGalleryFull, validateFile, t, reportUploadError]
     );
 
     /**

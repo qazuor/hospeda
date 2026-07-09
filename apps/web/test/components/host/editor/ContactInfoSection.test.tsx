@@ -3,11 +3,11 @@
  * @description Tests for the ContactInfoSection form component.
  *
  * Covers:
- * - Renders phone country selector + number field, email, website with
- *   initial values
+ * - Renders the phone country combobox trigger + number field, email,
+ *   website with initial values
  * - Parses an existing `data.phone` value into country + number
  * - Calls onFieldChange with the recomposed `phone` string when either the
- *   country or the number input changes
+ *   country (via CountryCodeCombobox) or the number input changes
  * - Calls onFieldChange when email/website are modified
  * - Displays inline validation errors
  */
@@ -30,6 +30,27 @@ vi.mock('@/lib/cn', () => ({
 
 vi.mock('@/components/host/editor/ContactInfoSection.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
+}));
+
+vi.mock('@/components/host/editor/CountryCodeCombobox.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, {
+        get: (_target, prop) => String(prop)
+    })
+}));
+
+vi.mock('@repo/icons', () => ({
+    ChevronDownIcon: ({ size }: { size: number }) => (
+        <svg
+            data-testid="chevron-down-icon"
+            width={size}
+        />
+    ),
+    SearchIcon: ({ size }: { size: number }) => (
+        <svg
+            data-testid="search-icon"
+            width={size}
+        />
+    )
 }));
 
 const MOCK_DATA = {
@@ -75,12 +96,12 @@ describe('ContactInfoSection', () => {
         expect(screen.getByText('Contacto')).toBeInTheDocument();
     });
 
-    it('should render a country selector and a number input for phone', () => {
+    it('should render a country combobox trigger and a number input for phone', () => {
         render(<ContactInfoSection {...DEFAULT_PROPS} />);
 
-        const countryInput = screen.getByLabelText(/país/i) as HTMLInputElement;
-        expect(countryInput).toBeInTheDocument();
-        expect(countryInput).toHaveAttribute('list');
+        const countryTrigger = screen.getByRole('button', { name: /argentina/i });
+        expect(countryTrigger).toBeInTheDocument();
+        expect(countryTrigger).toHaveAttribute('aria-haspopup', 'listbox');
 
         const numberInput = screen.getByLabelText(/número/i) as HTMLInputElement;
         expect(numberInput.type).toBe('tel');
@@ -89,8 +110,9 @@ describe('ContactInfoSection', () => {
     it('should parse an existing phone value into country + number', () => {
         render(<ContactInfoSection {...DEFAULT_PROPS} />);
 
-        const countryInput = screen.getByLabelText(/país/i) as HTMLInputElement;
-        expect(countryInput.value).toBe('Argentina (+54)');
+        expect(screen.getByRole('button', { name: /argentina/i })).toHaveTextContent(
+            'Argentina (+54)'
+        );
 
         const numberInput = screen.getByLabelText(/número/i) as HTMLInputElement;
         expect(numberInput.value).toBe('9 343 1111111');
@@ -104,8 +126,9 @@ describe('ContactInfoSection', () => {
             />
         );
 
-        const countryInput = screen.getByLabelText(/país/i) as HTMLInputElement;
-        expect(countryInput.value).toBe('Argentina (+54)');
+        expect(screen.getByRole('button', { name: /argentina/i })).toHaveTextContent(
+            'Argentina (+54)'
+        );
 
         const numberInput = screen.getByLabelText(/número/i) as HTMLInputElement;
         expect(numberInput.value).toBe('343 1111111');
@@ -119,8 +142,9 @@ describe('ContactInfoSection', () => {
             />
         );
 
-        const countryInput = screen.getByLabelText(/país/i) as HTMLInputElement;
-        expect(countryInput.value).toBe('Argentina (+54)');
+        expect(screen.getByRole('button', { name: /argentina/i })).toHaveTextContent(
+            'Argentina (+54)'
+        );
 
         const numberInput = screen.getByLabelText(/número/i) as HTMLInputElement;
         expect(numberInput.value).toBe('');
@@ -141,7 +165,7 @@ describe('ContactInfoSection', () => {
         expect(onFieldChange).toHaveBeenCalledWith('phone', '+54 9 343 2222222');
     });
 
-    it('should recompose phone via onFieldChange when the country is changed', () => {
+    it('should recompose phone via onFieldChange when a country is selected from the combobox', () => {
         const onFieldChange = vi.fn();
         render(
             <ContactInfoSection
@@ -150,13 +174,16 @@ describe('ContactInfoSection', () => {
             />
         );
 
-        const countryInput = screen.getByLabelText(/país/i);
-        fireEvent.change(countryInput, { target: { value: 'Uruguay (+598)' } });
+        fireEvent.click(screen.getByRole('button', { name: /argentina/i }));
+        fireEvent.mouseDown(screen.getByRole('option', { name: /uruguay/i }));
 
         expect(onFieldChange).toHaveBeenCalledWith('phone', '+598 9 343 1111111');
+        expect(screen.getByRole('button', { name: /uruguay/i })).toHaveTextContent(
+            'Uruguay (+598)'
+        );
     });
 
-    it('should not call onFieldChange while the country query does not match a known country', () => {
+    it('should not call onFieldChange while only searching the combobox without selecting', () => {
         const onFieldChange = vi.fn();
         render(
             <ContactInfoSection
@@ -165,8 +192,8 @@ describe('ContactInfoSection', () => {
             />
         );
 
-        const countryInput = screen.getByLabelText(/país/i);
-        fireEvent.change(countryInput, { target: { value: 'Uru' } });
+        fireEvent.click(screen.getByRole('button', { name: /argentina/i }));
+        fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Uru' } });
 
         expect(onFieldChange).not.toHaveBeenCalled();
     });

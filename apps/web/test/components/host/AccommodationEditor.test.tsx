@@ -175,10 +175,13 @@ describe('AccommodationEditor', () => {
             'href',
             '#editor-externalReputation'
         );
-        expect(screen.getByRole('link', { name: 'Destacado' })).toHaveAttribute(
-            'href',
-            '#editor-featuredToggle'
-        );
+    });
+
+    it('should NOT render a featured-toggle section (self-service disabled, BETA-144)', () => {
+        render(<AccommodationEditor {...DEFAULT_PROPS} />);
+
+        expect(screen.queryByRole('link', { name: 'Destacado' })).not.toBeInTheDocument();
+        expect(document.getElementById('editor-featuredToggle')).not.toBeInTheDocument();
     });
 
     it('should render form fields with initial data values', () => {
@@ -190,9 +193,10 @@ describe('AccommodationEditor', () => {
         const summaryInput = screen.getByLabelText(/resumen/i) as HTMLTextAreaElement;
         expect(summaryInput.value).toBe('Un hermoso hotel en el centro');
 
-        // Phase B: contact info fields (BETA-139: phone split into country + number)
-        const phoneCountryInput = screen.getByLabelText(/país/i) as HTMLInputElement;
-        expect(phoneCountryInput.value).toBe('Argentina (+54)');
+        // Phase B: contact info fields (BETA-139: phone split into country + number;
+        // BETA-144: country field is a CountryCodeCombobox trigger button, not an input)
+        const phoneCountryTrigger = screen.getByLabelText(/país/i) as HTMLButtonElement;
+        expect(phoneCountryTrigger).toHaveTextContent('Argentina (+54)');
 
         const phoneNumberInput = screen.getByLabelText(/número/i) as HTMLInputElement;
         expect(phoneNumberInput.value).toBe('9 343 1234567');
