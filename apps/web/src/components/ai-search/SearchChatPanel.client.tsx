@@ -488,6 +488,7 @@ export function SearchChatPanel({
                                 data-testid="ai-search-reply"
                                 // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
                                 dangerouslySetInnerHTML={{
+                                    // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
                                     __html: renderChatMarkdown({ raw: msg.content })
                                 }}
                             />
@@ -509,6 +510,7 @@ export function SearchChatPanel({
                             aria-live="polite"
                             // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
                             dangerouslySetInnerHTML={{
+                                // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
                                 __html: renderChatMarkdown({ raw: chat.currentReply })
                             }}
                         />

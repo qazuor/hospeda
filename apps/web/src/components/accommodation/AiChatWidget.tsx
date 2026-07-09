@@ -177,6 +177,7 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                                     className={`${styles.bubble} ${styles.assistantBubble}`}
                                     // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
                                     dangerouslySetInnerHTML={{
+                                        // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
                                         __html: renderChatMarkdown({ raw: m.content })
                                     }}
                                 />
@@ -195,6 +196,7 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                                 className={`${styles.bubble} ${styles.assistantBubble} ${styles.streaming}`}
                                 // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
                                 dangerouslySetInnerHTML={{
+                                    // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
                                     __html: renderChatMarkdown({
                                         raw: chat.state.currentAssistantContent
                                     })
