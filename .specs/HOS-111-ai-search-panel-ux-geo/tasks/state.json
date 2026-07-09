@@ -490,7 +490,7 @@
             "id": "T-015",
             "title": "attractionSlugs intent slot + curated attraction allowlist in prompt (G-11)",
             "description": "Add an optional attractionSlugs slot to the ai-search-intent schema (mirroring amenitySlugs/featureSlugs) and inject a curated attraction allowlist into the extraction prompt so the model emits canonical attraction slugs (e.g. \"carnavales\"). Files: packages/schemas ai-search-intent.schema.ts + apps/api search-chat prompt. Tests: unit tests asserting NL attraction mentions resolve to canonical slugs and off-allowlist terms don't hallucinate.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-016"],
@@ -511,21 +511,21 @@
             "tags": ["api", "intent", "schemas"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-09T10:19:25.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-09T20:43:35.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "Attraction → destinations → constrain accommodation search (G-11, AC-11)",
             "description": "Resolve emitted attraction slug(s) to attraction rows, find destinations that have them via r_destination_attraction, and constrain the accommodation search to those destinations (no accommodation↔attraction join for the MVP). Files: apps/api search-chat handler + packages/service-core / packages/db attraction+destination resolution. Tests: integration test for \"una ciudad con carnavales\" constraining results to destinations with that attraction.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-015", "T-017"],
             "blocks": ["T-018"],
@@ -546,21 +546,21 @@
             "tags": ["api", "db", "service"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-09T10:19:25.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-09T20:43:35.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "Support multi-destinationId filter in accommodation query schema (G-11)",
             "description": "If the accommodation query schema does not already accept multiple destinationIds, add a multi-destinationId filter (used by attraction resolution T-016, and optionally by nearby expansion T-013). Files: packages/schemas accommodation.query.schema.ts + packages/db accommodation.model.ts query builder. Tests: unit tests asserting the query returns accommodations across multiple destinationIds.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-016"],
@@ -581,21 +581,21 @@
             "tags": ["schemas", "db"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-09T10:19:25.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-09T20:43:35.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "Cross-cutting integration/E2E tests for geo + attraction flows (AC-12)",
             "description": "Add end-to-end/integration coverage for the conversational geo-nearby flow and the attraction-constrained flow through the search-chat endpoint, plus regression guards. Files: apps/api search-chat test suite. Tests: E2E asserting AC-9 (Colón + nearby) and AC-11 (carnavales) behave end-to-end; typecheck/lint/tests green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-013", "T-016"],
             "blocks": ["T-019"],
@@ -616,21 +616,21 @@
             "tags": ["api", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-09T10:19:25.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-09T20:43:35.000Z"
             }
         },
         {
             "id": "T-019",
             "title": "Close-out notes + doc touch-ups",
             "description": "Fill .specs/HOS-111-ai-search-panel-ux-geo/closeout.md with what shipped per phase, PRs, tests, and any follow-ups (e.g. HOS-113 dependency on the extracted Haversine helper). Update any web/ai-search component doc if present. Files: .specs/HOS-111-ai-search-panel-ux-geo/closeout.md.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-018"],
             "blocks": [],
@@ -647,22 +647,22 @@
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-09T10:19:25.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-09T20:43:35.000Z"
             }
         }
     ],
     "summary": {
         "total": 19,
-        "pending": 5,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 14,
+        "completed": 19,
         "blocked": 0,
         "averageComplexity": 2.4
     }

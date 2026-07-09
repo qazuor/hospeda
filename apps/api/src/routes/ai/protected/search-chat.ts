@@ -29,6 +29,15 @@
  * Persistence failures are logged via `apiLogger` and swallowed — they MUST
  * NEVER break the SSE stream or throw out of the handler.
  *
+ * ## Attraction-constrained search (HOS-111 T-016, G-11)
+ *
+ * When the extracted entities carry `attractionSlugs` (T-015 — a curated
+ * allowlist match, e.g. "carnavales"), the handler resolves them to the
+ * destinations that have that attraction and constrains `params.
+ * destinationIds` to that set. See the inline comment at the resolution
+ * block for how this combines with nearby-expansion (T-013) and a single
+ * resolved `destinationId` when both fire in the same turn.
+ *
  * @module apps/api/routes/ai/protected/search-chat
  */
 
@@ -49,6 +58,7 @@ import {
     type AiSearchChatFiltersEvent,
     type AiSearchChatRequest,
     AiSearchChatRequestSchema,
+    type AttractionLocationConflict,
     type NearbyDestinationSummary,
     type SearchIntentEntities,
     SearchIntentEntitiesSchema,
@@ -66,6 +76,7 @@ import {
     createProtectedStreamingRoute,
     type StreamTextChunk
 } from '../../../utils/streaming-route-factory.js';
+import { resolveAttractionConstraint } from './attraction-resolver.js';
 import { persistSearchChatTurn } from './search-chat.persistence.js';
 import {
     buildConversationalSearchPrompt,
@@ -521,19 +532,77 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         }
 
         // -----------------------------------------------------------------------
+        // Step 7.6 (HOS-111 T-016): Attraction-constrained destination search.
+        //
+        // When the model emitted attractionSlugs (T-015), resolve them to the
+        // destinations that have those attractions. Three outcomes (see
+        // `attraction-resolver.ts`):
+        //   - `constrain` → narrow the search to those destination ids.
+        //   - `no-match`  → the requested attraction is incompatible with the
+        //     requested location (empty intersection), OR matched no destination
+        //     at all. Owner decision: return ZERO accommodations + have the
+        //     assistant explain the conflict, NOT a silent substitution.
+        //   - `none`      → no attractionSlugs, or a non-fatal service failure.
+        //
+        // CRITICAL (empty-array gotcha): the accommodation query builder treats
+        // an empty `destinationIds` array as "no location filter" → FULL catalog
+        // (`params.destinationIds && length > 0`). So a no-match must NEVER set
+        // `params.destinationIds = []` to try to force zero results — instead it
+        // emits `attractionLocationConflict` in the filters frame and the web
+        // client (`useSearchChat.ts`) skips the accommodation search entirely,
+        // rendering the empty-results + explanation state. `params` is left
+        // untouched on no-match (the conflict flag is the guarantee).
+        // -----------------------------------------------------------------------
+        const attractionSlugs = validatedEntities.attractionSlugs ?? [];
+        const singularDestinationId =
+            typeof params.destinationId === 'string' ? params.destinationId : undefined;
+        const currentDestinationIdsForAttraction: string[] | undefined =
+            Array.isArray(params.destinationIds) && params.destinationIds.length > 0
+                ? params.destinationIds
+                : singularDestinationId === undefined
+                  ? undefined
+                  : [singularDestinationId];
+
+        const attractionResolution = await resolveAttractionConstraint({
+            actor,
+            attractionSlugs,
+            currentDestinationIds: currentDestinationIdsForAttraction
+        });
+
+        let attractionLocationConflict: AttractionLocationConflict | undefined;
+        if (attractionResolution.kind === 'constrain') {
+            params.destinationIds = attractionResolution.destinationIds;
+        } else if (attractionResolution.kind === 'no-match') {
+            // Best-effort human location label: the resolved city string when
+            // present (the raw destinationId UUID has no name to hand here).
+            const locationLabel =
+                typeof validatedEntities.city === 'string' && validatedEntities.city.trim() !== ''
+                    ? validatedEntities.city
+                    : undefined;
+            attractionLocationConflict = {
+                attractionSlugs: [...attractionResolution.attractionSlugs],
+                ...(locationLabel === undefined ? {} : { locationLabel })
+            };
+        }
+
+        // -----------------------------------------------------------------------
         // Step 8 (T-006): Build the reply system prompt + messages, then call
         // streamText to stream the natural-language acknowledgment.
         //
         // The reply system prompt is supplied as a caller-wins system message —
         // this OVERRIDES `DEFAULT_PROMPTS['search']` (the JSON extractor) so the
         // model outputs a friendly conversational text, not structured JSON.
+        // On an attraction/location conflict, the conflict note is threaded into
+        // the reply so the assistant names it ("no hay carnaval en Chajarí")
+        // instead of emitting a generic empty-results acknowledgment.
         // -----------------------------------------------------------------------
         const replySystemPrompt = buildSearchReplySystemPrompt({ locale });
         const replyMessages = buildSearchReplyMessages({
             systemPrompt: replySystemPrompt,
             history,
             message,
-            extractedFilters: validatedEntities
+            extractedFilters: validatedEntities,
+            attractionLocationConflict
         });
 
         const { stream: rawStream, meta: rawMeta } = await aiService.streamText({
@@ -616,7 +685,12 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
                 // HOS-111 T-013: only present when this turn actually expanded
                 // to nearby destinations (absent, not empty-array, otherwise —
                 // see AiSearchChatFiltersEventSchema JSDoc).
-                nearbyDestinations: nearbyDestinations.length > 0 ? nearbyDestinations : undefined
+                nearbyDestinations: nearbyDestinations.length > 0 ? nearbyDestinations : undefined,
+                // HOS-111 T-016: only present on an attraction/location conflict.
+                // When present the web client MUST skip the accommodation search
+                // and render the empty-results + explanation state (an empty
+                // destinationIds array would return the full catalog).
+                attractionLocationConflict
             },
             stream,
             meta

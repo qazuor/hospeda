@@ -171,9 +171,9 @@ describe('sitemap-dynamic.xml — GET handler', () => {
 
         // accommodations empty (2 calls: page1 empty)
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
-        // destinations: 1 item
+        // destinations: 1 non-thin item (has accommodations → stays in the sitemap)
         fetchMock.mockImplementationOnce(() =>
-            Promise.resolve(makeApiResponse([{ slug: 'concordia' }]))
+            Promise.resolve(makeApiResponse([{ slug: 'concordia', accommodationsCount: 5 }]))
         );
         // destinations page 2 empty
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
@@ -188,6 +188,43 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).toContain('https://hospeda.test/es/destinos/concordia/');
         expect(body).toContain('https://hospeda.test/en/destinos/concordia/');
         expect(body).toContain('https://hospeda.test/pt/destinos/concordia/');
+    });
+
+    it('excludes thin destinations (no accommodations/events/attractions) from the sitemap', async () => {
+        // HOS-117 T-006: a destination with zero accommodations, events, and
+        // attractions must NOT appear in the sitemap (matches its noindex page).
+        const fetchMock = vi.fn();
+
+        // accommodations empty
+        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
+        // destinations page 1: one real (has attractions) + one thin (all empty)
+        fetchMock.mockImplementationOnce(() =>
+            Promise.resolve(
+                makeApiResponse([
+                    {
+                        slug: 'colon',
+                        accommodationsCount: 0,
+                        attractions: [{}, {}],
+                        eventsCount: 0
+                    },
+                    { slug: 'ghost-town', accommodationsCount: 0, attractions: [], eventsCount: 0 }
+                ])
+            )
+        );
+        // destinations page 2 empty
+        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
+        // events, posts, gastronomy, experiences empty
+        fetchMock.mockResolvedValue(makeEmptyApiResponse());
+
+        vi.stubGlobal('fetch', fetchMock);
+
+        const response = await GET({});
+        const body = await response.text();
+
+        // Real destination (has attractions) stays in.
+        expect(body).toContain('https://hospeda.test/es/destinos/colon/');
+        // Thin destination is excluded from all locales.
+        expect(body).not.toContain('destinos/ghost-town/');
     });
 
     it('emits event entries with /eventos/ path for all 3 locales', async () => {
