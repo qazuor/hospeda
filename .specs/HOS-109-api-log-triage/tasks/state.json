@@ -127,24 +127,24 @@
             "id": "T-006",
             "title": "Stop unread-count poller from re-polling on 403",
             "description": "P6/F3. GET /admin/conversations/unread-count returns 403 every ~30s from a client polling without the permission. Make the poller not fire for actors lacking permission, or stop on 403 instead of re-polling. Verify the 30s 403 cadence disappears for a non-permitted actor.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Find the unread-count polling call site (admin/web)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Gate on permission / stop-on-403", "completed": false }
+                { "title": "Gate on permission / stop-on-403", "completed": true }
             ],
             "tags": ["admin", "web", "api"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-09T03:28:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-09T06:22:00.000Z",
+                "completed": "2026-07-09T06:40:00.000Z"
             }
         },
         {
@@ -265,9 +265,9 @@
     ],
     "summary": {
         "total": 11,
-        "pending": 6,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.3
     }

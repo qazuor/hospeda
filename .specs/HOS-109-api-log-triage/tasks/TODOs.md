@@ -1,6 +1,6 @@
 # HOS-109: Investigate & fix production API log errors and noise (post-relaunch triage)
 
-## Progress: 5/11 tasks (45%)
+## Progress: 6/11 tasks (55%)
 
 **Average Complexity:** 2.3/3 (max)
 **All tasks independent** — no blocking dependencies; ordered by priority within phases.
@@ -34,7 +34,14 @@
     → sustained 429. Fix = gate the fetch on a resolved Better Auth `useSession()` (guests never call it,
     fail-closed; stays loading while session resolves; authed users fetch+cache once). One file, 3
     consumers untouched. 10 hook tests + 157 consumer tests + web typecheck + biome green. Fresh review: approve.
-- [ ] **T-006** (complexity: 2) — Stop unread-count poller re-polling on 403
+- [x] **T-006** (complexity: 2) — Stop unread-count poller re-polling on 403 ✅
+  - DONE (commit e56ae5843): admin `useUnreadCount` (sidebar badge) polled every 30s uncond.;
+    an actor without the conversations permission got a 403 per tick forever. Fix = `refetchInterval`
+    stops (false) once a 403 is seen; local `retry` never retries any 4xx (403/429/404) matching the
+    root QueryClient policy (SPEC-117 M-2), transient 5xx/network still retry 3x. Policies extracted as
+    pure fns (unreadCountRefetchInterval / unreadCountShouldRetry), unit-tested. 9 tests, admin
+    typecheck (route tree generated) + biome green. Fresh review caught + fixed a regression: initial
+    local retry excluded only 403 → would have re-amplified 429; widened to all 4xx.
 
 ### F4 — Investigations (report first, then fix/downgrade)
 
