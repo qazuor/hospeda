@@ -73,6 +73,7 @@ const defaultHookReturn = {
         cityDestination: null;
     }>,
     resultsLoading: false,
+    hasSearched: false,
     currentReply: '',
     isStreaming: false,
     conversationId: null,
@@ -211,6 +212,31 @@ describe('SearchChatPanel', () => {
                 )
             ).not.toBeInTheDocument();
         });
+
+        // ── Assistant markdown rendering (bug fix) ──────────────────────────
+        //
+        // Regression coverage: assistant replies used to render as a plain
+        // React text child, so markdown markers (**bold**) showed up
+        // literally instead of being interpreted.
+
+        it('renders markdown emphasis in a completed assistant message as HTML, not literal asterisks', () => {
+            mockHook({
+                messages: [{ role: 'assistant', content: 'Encontré **3 opciones** para vos.' }]
+            });
+            renderPanel();
+            const reply = screen.getByTestId('ai-search-reply');
+            expect(reply.innerHTML).toContain('<strong>3 opciones</strong>');
+            expect(reply.textContent).not.toContain('**');
+        });
+
+        it('does NOT render markdown for a user message (kept as plain text)', () => {
+            mockHook({
+                messages: [{ role: 'user', content: 'busco **algo** con pileta' }]
+            });
+            renderPanel();
+            // The literal asterisks must survive untouched for user bubbles.
+            expect(screen.getByText('busco **algo** con pileta')).toBeInTheDocument();
+        });
     });
 
     // ── Streaming reply ─────────────────────────────────────────────────────
@@ -259,6 +285,16 @@ describe('SearchChatPanel', () => {
             mockHook({ isStreaming: false, currentReply: '' });
             renderPanel();
             expect(screen.queryByRole('status', { name: /pensando/i })).not.toBeInTheDocument();
+        });
+
+        it('renders markdown emphasis in the live-streamed reply as HTML, not literal asterisks', () => {
+            mockHook({
+                isStreaming: true,
+                currentReply: 'Aquí tenés **algunas opciones**'
+            });
+            renderPanel();
+            const bubble = document.querySelector('.streaming');
+            expect(bubble?.innerHTML).toContain('<strong>algunas opciones</strong>');
         });
     });
 
@@ -317,10 +353,49 @@ describe('SearchChatPanel', () => {
             expect(screen.getByText('Consultar precio')).toBeInTheDocument();
         });
 
-        it('does NOT render results section when results is empty and not loading', () => {
-            mockHook({ results: [], resultsLoading: false });
+        it('does NOT render results section when results is empty and not loading and no search has run', () => {
+            mockHook({ results: [], resultsLoading: false, hasSearched: false });
             renderPanel();
             expect(screen.queryByText('Resultados')).not.toBeInTheDocument();
+        });
+
+        // ── Zero-results empty state (bug fix) ──────────────────────────────
+        //
+        // Regression coverage: previously `showResults` only considered
+        // `results.length > 0 || resultsLoading`, so a completed search with
+        // ZERO matches (resultsLoading false, results empty, hasSearched
+        // true) rendered nothing at all — the drawer looked exactly like the
+        // "never searched" empty state, and the `resultsEmpty` copy was
+        // unreachable dead code.
+
+        it('renders the results section with an empty-state message once a search has run and matched zero results', () => {
+            mockHook({ results: [], resultsLoading: false, hasSearched: true });
+            renderPanel();
+            expect(screen.getByTestId('ai-search-results')).toBeInTheDocument();
+            expect(screen.getByTestId('ai-search-results-empty')).toBeInTheDocument();
+        });
+
+        it('does NOT render the zero-results empty state before any search has run', () => {
+            mockHook({ results: [], resultsLoading: false, hasSearched: false });
+            renderPanel();
+            expect(screen.queryByTestId('ai-search-results-empty')).not.toBeInTheDocument();
+        });
+
+        it('does NOT render the zero-results empty state while a search is still loading', () => {
+            mockHook({ results: [], resultsLoading: true, hasSearched: true });
+            renderPanel();
+            expect(screen.queryByTestId('ai-search-results-empty')).not.toBeInTheDocument();
+        });
+
+        it('prefers the results grid over the empty state once results arrive after hasSearched is true', () => {
+            mockHook({
+                results: mockResults as ReturnType<typeof useSearchChat>['results'],
+                resultsLoading: false,
+                hasSearched: true
+            });
+            renderPanel();
+            expect(screen.queryByTestId('ai-search-results-empty')).not.toBeInTheDocument();
+            expect(screen.getByText('Cabaña Río Verde')).toBeInTheDocument();
         });
     });
 

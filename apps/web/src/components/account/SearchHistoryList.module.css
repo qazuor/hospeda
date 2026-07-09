@@ -188,7 +188,7 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     font-weight: 500;
-    color: #fff;
+    color: var(--destructive-foreground);
     background-color: var(--destructive, oklch(0.6 0.22 25));
     border: none;
     border-radius: var(--radius-button);
@@ -377,6 +377,27 @@
     color: var(--core-muted-foreground);
     max-width: 36ch;
     margin: 0 auto;
+}
+
+.search-history__empty-cta {
+    display: inline-block;
+    margin-top: var(--space-4);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--brand-primary);
+    border: 1px solid var(--brand-primary-a30);
+    border-radius: var(--radius-button);
+    padding: var(--space-2) var(--space-4);
+    text-decoration: none;
+    transition:
+        background-color var(--duration-fast) ease,
+        color var(--duration-fast) ease;
+}
+
+.search-history__empty-cta:hover {
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground, #fff);
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */

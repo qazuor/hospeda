@@ -1,5 +1,5 @@
 import { ServiceErrorCode } from '@repo/schemas';
-import { ServiceError } from '@repo/service-core';
+import { resolveErrorLogLevel, ServiceError } from '@repo/service-core';
 /**
  * Response formatting middleware
  * Ensures consistent response format across the API
@@ -297,11 +297,17 @@ export const createErrorHandler = () => {
         // Get response configuration
         const responseConfig = getResponseConfig();
 
-        // Log the error for debugging with full details
-        apiLogger.error(
-            `🚨 Caught error in ${c.req.method} ${c.req.path}: [${error.name}] ${error.message}`
+        // Log the error for debugging. EXPECTED outcomes (401/403/404) are not
+        // application faults: emit them at a reduced level without a stack trace
+        // so they don't flood the error stream (HOS-109 / OQ-1). Real faults keep
+        // `error` + the full stack.
+        const logLevel = resolveErrorLogLevel(
+            error instanceof ServiceError ? error.code : undefined
         );
-        if (error.stack) {
+        apiLogger[logLevel](
+            `Caught error in ${c.req.method} ${c.req.path}: [${error.name}] ${error.message}`
+        );
+        if (logLevel === 'error' && error.stack) {
             apiLogger.error(`📋 Stack: ${error.stack}`);
         }
 

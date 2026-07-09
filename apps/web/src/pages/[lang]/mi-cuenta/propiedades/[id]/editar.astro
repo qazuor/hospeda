@@ -19,6 +19,7 @@ import { webLogger as logger } from '@/lib/logger';
 import type { AccommodationTranslationData, MediaImage } from '@/lib/api/types';
 import { transformAccommodationEdit, transformAccommodationMedia, transformAccommodationTranslations, transformAmenityList, transformDestinationList } from '@/lib/api/transforms';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { AccommodationEditor } from '@/components/host/AccommodationEditor.client';
 
 export const prerender = false;
@@ -179,9 +180,7 @@ if (!accommodationData || fetchError) {
 >
     <main class="section">
         <div class="section__container">
-            <h1 class="editor-page__title">
-                {t('host.properties.editor.pageTitle', 'Editar propiedad')}
-            </h1>
+            <AccountPageHeader title={t('host.properties.editor.pageTitle', 'Editar propiedad')} />
 
             <AccommodationEditor
                 client:load
@@ -198,13 +197,3 @@ if (!accommodationData || fetchError) {
         </div>
     </main>
 </AccountLayout>
-
-<style>
-    .editor-page__title {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: clamp(1.5rem, 0.5vw + 1.25rem, 2rem);
-        color: var(--core-foreground);
-        margin: 0 0 var(--space-4, 1.5rem);
-    }
-</style>

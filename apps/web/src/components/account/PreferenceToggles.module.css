@@ -123,7 +123,7 @@
     left: 3px;
     width: 18px;
     height: 18px;
-    background-color: white;
+    background-color: var(--core-card);
     border-radius: 50%;
     transition: transform var(--duration-normal, 0.4s) ease;
     box-shadow: 0 1px 3px oklch(0 0 0 / 0.2);
@@ -143,7 +143,7 @@
 
 .select {
     padding: var(--space-2, 8px) var(--space-3, 12px);
-    background-color: var(--background);
+    background-color: var(--core-background);
     color: var(--core-foreground);
     border: 1px solid var(--border);
     border-radius: var(--radius-button, 8px);

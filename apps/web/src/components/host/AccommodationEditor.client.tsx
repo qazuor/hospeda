@@ -9,7 +9,7 @@
  * owns all state + handlers, delegates rendering to section subcomponents.
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type {
     AccommodationEditData,
     AccommodationTranslationData,
@@ -26,7 +26,8 @@ import { AmenitiesSection } from './editor/AmenitiesSection.client';
 import { BasicInfoSection } from './editor/BasicInfoSection.client';
 import { CapacitySection } from './editor/CapacitySection.client';
 import { ContactInfoSection } from './editor/ContactInfoSection.client';
-import { FeaturedToggleSection } from './editor/FeaturedToggleSection.client';
+import type { EditorSectionNavItem } from './editor/EditorSectionNav.client';
+import { EditorSectionNav } from './editor/EditorSectionNav.client';
 import { LocationPicker } from './editor/LocationPicker.client';
 import { PhotoSection } from './editor/PhotoSection.client';
 import { PricingSection } from './editor/PricingSection.client';
@@ -366,119 +367,230 @@ export function AccommodationEditor({
         }
     }, []);
 
+    // --- Card / section-nav labels (BETA-138) ---
+    // Resolved once so the same translated string drives both the sticky
+    // section nav and each card's `aria-label` (the wrapping <section> has no
+    // visible heading of its own — the inner fieldset's <legend> is not
+    // reachable as an accessible name for the outer wrapper).
+    const sectionLabels = useMemo(
+        () => ({
+            basicInfo: t('host.properties.editor.section.basicInfo', 'Información básica'),
+            capacity: t('host.properties.editor.section.capacity', 'Capacidad'),
+            pricing: t('host.properties.editor.section.pricing', 'Precio'),
+            location: t('host.properties.editor.section.location', 'Ubicación'),
+            contact: t('host.properties.editor.section.contact', 'Contacto'),
+            socialNetworks: t('host.properties.editor.section.socialNetworks', 'Redes sociales'),
+            amenities: t('host.properties.editor.section.amenities', 'Servicios y comodidades'),
+            photos: t('host.properties.editor.section.photos', 'Fotos'),
+            translations: t('host.properties.editor.translation.sectionTitle', 'Traducciones'),
+            externalReputation: t(
+                'host.properties.editor.section.externalReputation',
+                'Reputación externa'
+            )
+        }),
+        [t]
+    );
+
+    const navSections = useMemo<EditorSectionNavItem[]>(() => {
+        const sections: EditorSectionNavItem[] = [
+            { id: 'editor-basicInfo', label: sectionLabels.basicInfo },
+            { id: 'editor-capacity', label: sectionLabels.capacity },
+            { id: 'editor-pricing', label: sectionLabels.pricing },
+            { id: 'editor-location', label: sectionLabels.location },
+            { id: 'editor-contact', label: sectionLabels.contact },
+            { id: 'editor-socialNetworks', label: sectionLabels.socialNetworks },
+            { id: 'editor-amenities', label: sectionLabels.amenities },
+            { id: 'editor-photos', label: sectionLabels.photos }
+        ];
+        if (translationData) {
+            sections.push({ id: 'editor-translations', label: sectionLabels.translations });
+        }
+        sections.push({
+            id: 'editor-externalReputation',
+            label: sectionLabels.externalReputation
+        });
+        return sections;
+    }, [sectionLabels, translationData]);
+
     return (
         <form
             className={styles.editor}
             onSubmit={handleSubmit}
         >
-            <BasicInfoSection
-                locale={locale}
-                data={formData}
-                destinations={destinations}
-                errors={errors}
-                onFieldChange={handleTextFieldChange}
-            />
-
-            <CapacitySection
-                locale={locale}
-                data={formData}
-                errors={errors}
-                onFieldChange={handleNumberFieldChange}
-            />
-
-            <PricingSection
-                locale={locale}
-                data={formData}
-                errors={errors}
-                onFieldChange={handleCurrencyFieldChange}
-            />
-
-            <LocationPicker
-                locale={locale}
-                value={{ latitude: formData.latitude, longitude: formData.longitude }}
-                onChange={(coords) => {
-                    setFormData((prev) => ({
-                        ...prev,
-                        latitude: coords.latitude,
-                        longitude: coords.longitude
-                    }));
-                    setErrors((prev) => ({
-                        ...prev,
-                        latitude: undefined,
-                        longitude: undefined
-                    }));
-                }}
-                errors={errors}
-            />
-
-            <ContactInfoSection
-                locale={locale}
-                data={formData}
-                errors={errors}
-                onFieldChange={handleTextFieldChange}
-            />
-
-            <SocialNetworksSection
-                locale={locale}
-                data={formData}
-                errors={errors}
-                onFieldChange={handleTextFieldChange}
-            />
-
-            <AmenitiesSection
-                locale={locale}
-                data={formData}
-                amenities={amenities}
-                features={features}
-                onToggleAmenity={handleToggleAmenity}
-                onToggleFeature={handleToggleFeature}
-            />
-
-            <PhotoSection
-                locale={locale}
-                accommodationId={accommodationId}
-                initialFeaturedImage={initialFeaturedImage}
-                initialGallery={initialGallery}
-            />
-
-            {translationData && (
-                <TranslationPanel
-                    locale={locale}
-                    accommodationId={accommodationId}
-                    translations={translationData}
-                />
-            )}
-
-            <ExternalReputationSection
-                locale={locale}
-                accommodationId={accommodationId}
-            />
-
-            <FeaturedToggleSection
-                locale={locale}
-                accommodationId={accommodationId}
-            />
-
-            {submitSuccess && (
-                <output className={styles.submitSuccess}>
-                    {t('host.properties.editor.toast.saveSuccess', 'Cambios guardados')}
-                </output>
-            )}
-
-            {submitError && (
-                <div
-                    className={styles.submitError}
-                    role="alert"
-                >
-                    {submitError}
+            <div className={styles.layout}>
+                <div className={styles.navSlot}>
+                    <EditorSectionNav
+                        locale={locale}
+                        sections={navSections}
+                    />
                 </div>
-            )}
 
-            <ActionBar
-                locale={locale}
-                isSaving={isSaving}
-                onCancel={handleCancel}
-            />
+                <div className={styles.cardsColumn}>
+                    <section
+                        id="editor-basicInfo"
+                        className={styles.card}
+                        aria-label={sectionLabels.basicInfo}
+                    >
+                        <BasicInfoSection
+                            locale={locale}
+                            data={formData}
+                            destinations={destinations}
+                            errors={errors}
+                            onFieldChange={handleTextFieldChange}
+                        />
+                    </section>
+
+                    <section
+                        id="editor-capacity"
+                        className={styles.card}
+                        aria-label={sectionLabels.capacity}
+                    >
+                        <CapacitySection
+                            locale={locale}
+                            data={formData}
+                            errors={errors}
+                            onFieldChange={handleNumberFieldChange}
+                        />
+                    </section>
+
+                    <section
+                        id="editor-pricing"
+                        className={styles.card}
+                        aria-label={sectionLabels.pricing}
+                    >
+                        <PricingSection
+                            locale={locale}
+                            data={formData}
+                            errors={errors}
+                            onFieldChange={handleCurrencyFieldChange}
+                        />
+                    </section>
+
+                    <section
+                        id="editor-location"
+                        className={styles.card}
+                        aria-label={sectionLabels.location}
+                    >
+                        <LocationPicker
+                            locale={locale}
+                            value={{ latitude: formData.latitude, longitude: formData.longitude }}
+                            onChange={(coords) => {
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    latitude: coords.latitude,
+                                    longitude: coords.longitude
+                                }));
+                                setErrors((prev) => ({
+                                    ...prev,
+                                    latitude: undefined,
+                                    longitude: undefined
+                                }));
+                            }}
+                            errors={errors}
+                        />
+                    </section>
+
+                    <section
+                        id="editor-contact"
+                        className={styles.card}
+                        aria-label={sectionLabels.contact}
+                    >
+                        <ContactInfoSection
+                            locale={locale}
+                            data={formData}
+                            errors={errors}
+                            onFieldChange={handleTextFieldChange}
+                        />
+                    </section>
+
+                    <section
+                        id="editor-socialNetworks"
+                        className={styles.card}
+                        aria-label={sectionLabels.socialNetworks}
+                    >
+                        <SocialNetworksSection
+                            locale={locale}
+                            data={formData}
+                            errors={errors}
+                            onFieldChange={handleTextFieldChange}
+                        />
+                    </section>
+
+                    <section
+                        id="editor-amenities"
+                        className={styles.card}
+                        aria-label={sectionLabels.amenities}
+                    >
+                        <AmenitiesSection
+                            locale={locale}
+                            data={formData}
+                            amenities={amenities}
+                            features={features}
+                            onToggleAmenity={handleToggleAmenity}
+                            onToggleFeature={handleToggleFeature}
+                        />
+                    </section>
+
+                    <section
+                        id="editor-photos"
+                        className={styles.card}
+                        aria-label={sectionLabels.photos}
+                    >
+                        <PhotoSection
+                            locale={locale}
+                            accommodationId={accommodationId}
+                            initialFeaturedImage={initialFeaturedImage}
+                            initialGallery={initialGallery}
+                        />
+                    </section>
+
+                    {translationData && (
+                        <section
+                            id="editor-translations"
+                            className={styles.card}
+                            aria-label={sectionLabels.translations}
+                        >
+                            <TranslationPanel
+                                locale={locale}
+                                accommodationId={accommodationId}
+                                translations={translationData}
+                            />
+                        </section>
+                    )}
+
+                    <section
+                        id="editor-externalReputation"
+                        className={styles.card}
+                        aria-label={sectionLabels.externalReputation}
+                    >
+                        <ExternalReputationSection
+                            locale={locale}
+                            accommodationId={accommodationId}
+                        />
+                    </section>
+
+                    {submitSuccess && (
+                        <output className={styles.submitSuccess}>
+                            {t('host.properties.editor.toast.saveSuccess', 'Cambios guardados')}
+                        </output>
+                    )}
+
+                    {submitError && (
+                        <div
+                            className={styles.submitError}
+                            role="alert"
+                        >
+                            {submitError}
+                        </div>
+                    )}
+
+                    <ActionBar
+                        locale={locale}
+                        isSaving={isSaving}
+                        onCancel={handleCancel}
+                    />
+                </div>
+            </div>
         </form>
     );
 }

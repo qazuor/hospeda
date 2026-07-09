@@ -42,7 +42,7 @@ vi.mock('leaflet', () => {
         map: vi.fn(() => mockMap),
         tileLayer: vi.fn(() => ({ addTo: vi.fn() })),
         marker: vi.fn(() => mockMarker),
-        Icon: { Default: { mergeOptions: vi.fn() } }
+        Icon: { Default: { mergeOptions: vi.fn(), prototype: { _getIconUrl: vi.fn() } } }
     };
     // Mock both the named-export shape and the default-export shape: the
     // real `leaflet` package is CJS/UMD, and depending on bundler interop

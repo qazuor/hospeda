@@ -235,7 +235,11 @@
                 "socialNetworks": "Redes sociales",
                 "photos": "Fotos",
                 "photosDescription": "Subí fotos de tu propiedad para atraer más huéspedes",
+                "externalReputation": "Reputación externa",
                 "featuredToggle": "Destacado"
+            },
+            "sectionNav": {
+                "ariaLabel": "Navegación de secciones del formulario"
             },
             "field": {
                 "name": "Nombre",
@@ -256,6 +260,10 @@
                 "amenities": "Comodidades",
                 "features": "Características",
                 "phone": "Teléfono",
+                "phoneCountry": "País",
+                "phoneCountrySearchPlaceholder": "Buscar país...",
+                "phoneCountryNoResults": "No se encontraron países",
+                "phoneNumber": "Número",
                 "email": "Email",
                 "website": "Sitio web",
                 "facebook": "Facebook",

@@ -215,6 +215,68 @@
     opacity: 0.85;
 }
 
+/* ─── Assistant bubble markdown content ───────────────────────────────────────
+   Assistant replies are rendered from sanitized markdown (renderChatMarkdown)
+   via dangerouslySetInnerHTML, so nested elements need their own rules —
+   the plain `.bubble` text styles don't cascade to markup-specific spacing.
+   Kept sober: no extra color, matches the surrounding bubble typography.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.assistantBubble p {
+    margin: 0;
+}
+
+.assistantBubble p + p {
+    margin-top: 0.5rem;
+}
+
+.assistantBubble strong,
+.assistantBubble b {
+    font-weight: 700;
+}
+
+.assistantBubble em,
+.assistantBubble i {
+    font-style: italic;
+}
+
+.assistantBubble ul,
+.assistantBubble ol {
+    margin: 0.375rem 0;
+    padding-left: 1.25rem;
+}
+
+.assistantBubble li + li {
+    margin-top: 0.125rem;
+}
+
+.assistantBubble a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.assistantBubble code {
+    padding: 0.1rem 0.3rem;
+    border-radius: var(--radius-sm, 0.25rem);
+    background-color: var(--core-foreground-a08, oklch(0 0 0 / 0.08));
+    font-family: var(--font-mono, monospace);
+    font-size: 0.85em;
+}
+
+.assistantBubble pre {
+    margin: 0.375rem 0;
+    padding: 0.5rem 0.625rem;
+    border-radius: var(--radius-sm, 0.375rem);
+    background-color: var(--core-foreground-a08, oklch(0 0 0 / 0.08));
+    overflow-x: auto;
+}
+
+.assistantBubble pre code {
+    padding: 0;
+    background: none;
+}
+
 /* ─── Thinking indicator ──────────────────────────────────────────────────────
    Three animated dots rendered while isStreaming and no currentReply yet.
    ─────────────────────────────────────────────────────────────────────────── */

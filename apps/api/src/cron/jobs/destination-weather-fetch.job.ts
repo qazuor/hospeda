@@ -9,7 +9,49 @@
  * - Open-Meteo (no API key, non-commercial tier)
  * - Tolerates per-destination failures (serves the last cache)
  * - dry-run support (fetches without persisting)
- * - Advisory lock (43031) prevents overlapping executions across replicas
+ * - Advisory lock (43031) prevents overlapping WRITE phases across replicas
+ *
+ * ## Why fetch and persist run as two separate steps
+ *
+ * `WeatherFetcher.fetchAll()` makes a sequential HTTP call to Open-Meteo (up
+ * to 10s each, timeout) per destination. Wrapping that loop in a database
+ * transaction previously held the connection idle across every `fetch()`
+ * call, tripping Postgres's `idle_in_transaction_session_timeout` (30s) in
+ * production and crashing the process — the `pg` driver surfaces a
+ * connection killed mid-transaction as an unhandled `'error'` event, not a
+ * catchable query rejection. See `packages/service-core/CLAUDE.md`: external
+ * API calls MUST stay OUTSIDE the transaction callback.
+ *
+ * This job now runs:
+ *  1. `fetcher.fetchAll()` — remote fetch only. No transaction is open at
+ *     any point during this step.
+ *  2. `withTransaction(...)` — a short transaction whose FIRST statement is
+ *     `pg_try_advisory_xact_lock(43031)` (the repo's standard cron-lock
+ *     pattern per `docs/decisions/ADR-019-billing-transaction-isolation.md`
+ *     — transaction-scoped locks only, no session-scoped locks), followed
+ *     only by `fetcher.persist(...)`, i.e. per-destination DB writes. No
+ *     external I/O happens inside this transaction, so it can never sit idle
+ *     long enough to hit the timeout.
+ *
+ * ## Trade-off: the lock now only guards the WRITE phase
+ *
+ * Because the advisory lock is acquired inside the (write-only) transaction,
+ * two overlapping invocations both perform the fetch phase — only one of
+ * them goes on to persist; the other's transaction fails to acquire the
+ * lock and returns the usual `skipped` result. Acceptable for a 12h cron
+ * against a free, unauthenticated API; this is what keeps the fix within
+ * ADR-019's "transaction-scoped locks only" rule instead of introducing a
+ * session-scoped lock.
+ *
+ * ## Write atomicity: all-or-nothing (deliberate, no savepoints)
+ *
+ * All destination writes run inside the single write transaction — if one
+ * `update()` fails, the whole batch rolls back. The per-destination
+ * `errors` already reported in the summary come from the (out-of-transaction)
+ * fetch phase, where per-destination tolerance genuinely matters (a single
+ * slow/broken upstream response must not fail the whole run). A write-phase
+ * failure is an unexpected error, not an expected per-destination outcome,
+ * so no savepoint-based partial-commit logic is used here — keep it simple.
  *
  * @module cron/jobs/destination-weather-fetch
  */
@@ -22,11 +64,11 @@ import type { CronJobDefinition } from '../types.js';
 /**
  * Advisory lock key reserved for the destination-weather-fetch cron job.
  *
- * Uses `pg_try_advisory_xact_lock` (transaction-level, non-blocking) so the lock
- * auto-releases on commit/rollback and is safe under PgBouncer / Coolify's
- * pooled-client configuration (see `packages/db/docs/advisory-locks.md`).
- *
- * Key 43031 continues the 4300x non-billing series (SPEC-215).
+ * Transaction-scoped (`pg_try_advisory_xact_lock`, auto-releases on
+ * commit/rollback), acquired as the first statement inside the write-only
+ * transaction — see the module doc-comment above. Key 43031 continues the
+ * 4300x non-billing series (SPEC-215); registered in
+ * `packages/db/docs/advisory-locks.md`.
  */
 const ADVISORY_LOCK_KEY = 43031;
 
@@ -68,20 +110,28 @@ export const destinationWeatherFetchJob: CronJobDefinition = {
         });
 
         try {
-            const cronResult = await withTransaction<CronTransactionResult>(async (_tx) => {
-                const lockResult = await _tx.execute(
+            const fetcher = new WeatherFetcher({
+                openMeteoClient: new OpenMeteoClient(),
+                destinationModel: new DestinationModel()
+            });
+
+            // Phase 1: remote fetch only — no transaction open here. This is
+            // exactly the step that must never share a connection with an
+            // open transaction (see module doc-comment).
+            const fetchResults = await fetcher.fetchAll();
+
+            // Phase 2: short transaction — advisory lock as the first
+            // statement, then only DB writes. No HTTP calls happen from
+            // here on, so this transaction can never sit idle.
+            const cronResult = await withTransaction<CronTransactionResult>(async (tx) => {
+                const lockResult = await tx.execute(
                     sql`SELECT pg_try_advisory_xact_lock(${ADVISORY_LOCK_KEY}) AS acquired`
                 );
                 if (!lockResult.rows[0]?.acquired) {
                     return { skipped: true };
                 }
 
-                const fetcher = new WeatherFetcher({
-                    openMeteoClient: new OpenMeteoClient(),
-                    destinationModel: new DestinationModel()
-                });
-
-                const summary = await fetcher.fetchAndStoreAll({ dryRun });
+                const summary = await fetcher.persist(fetchResults, { dryRun, tx });
                 const durationMs = Date.now() - startedAt.getTime();
 
                 logger.info('Destination weather fetch completed', {

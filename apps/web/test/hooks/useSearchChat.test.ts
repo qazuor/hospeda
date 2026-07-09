@@ -112,6 +112,53 @@ describe('useSearchChat', () => {
         expect(result.current.isStreaming).toBe(false);
         expect(result.current.conversationId).toBeNull();
         expect(result.current.error).toBeNull();
+        expect(result.current.hasSearched).toBe(false);
+    });
+
+    // ── hasSearched flag (empty-results UX) ──────────────────────────────────
+
+    it('sets hasSearched to true as soon as the first accommodations GET fires', async () => {
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent());
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        expect(result.current.hasSearched).toBe(false);
+
+        await act(async () => {
+            result.current.send('cabaña con pileta');
+        });
+
+        expect(result.current.hasSearched).toBe(true);
+    });
+
+    it('keeps hasSearched true when a search resolves with zero results', async () => {
+        mockAccommodationsList.mockReset();
+        mockAccommodationsList.mockResolvedValue({
+            ok: true,
+            data: { items: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 } }
+        });
+
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent());
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('algo muy específico que no existe');
+        });
+
+        expect(result.current.results).toEqual([]);
+        expect(result.current.resultsLoading).toBe(false);
+        expect(result.current.hasSearched).toBe(true);
     });
 
     // ── filters event fires accommodations GET ───────────────────────────────
@@ -392,6 +439,7 @@ describe('useSearchChat', () => {
 
         expect(result.current.messages).toHaveLength(2);
         expect(result.current.conversationId).toBe(CONV_ID);
+        expect(result.current.hasSearched).toBe(true);
 
         act(() => {
             result.current.reset();
@@ -405,6 +453,7 @@ describe('useSearchChat', () => {
         expect(result.current.isStreaming).toBe(false);
         expect(result.current.conversationId).toBeNull();
         expect(result.current.error).toBeNull();
+        expect(result.current.hasSearched).toBe(false);
     });
 
     // ── results stored from accommodations GET ───────────────────────────────

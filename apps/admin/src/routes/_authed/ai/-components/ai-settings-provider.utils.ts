@@ -56,7 +56,14 @@ export function buildProviderOptions(params: {
 }): ProviderOption[] {
     const { knownProviders, currentValue, providers } = params;
 
-    const ids = Array.from(new Set<AiProviderId>([...knownProviders, 'stub', currentValue]));
+    // Radix `<Select.Item />` throws if any item has an empty-string value
+    // (it reserves "" to clear the selection). A feature's `primaryProvider`
+    // can be transiently empty during a form reset, and a saved blob may
+    // carry an empty value; filter those out so the option list is always
+    // renderable.
+    const ids = Array.from(new Set<AiProviderId>([...knownProviders, 'stub', currentValue])).filter(
+        (id) => id !== ('' as AiProviderId)
+    );
 
     return ids.map((id) => {
         const isStub = id === 'stub';
@@ -68,6 +75,24 @@ export function buildProviderOptions(params: {
 
         return { value: id, label };
     });
+}
+
+/**
+ * Filters a provider's model list down to the values Radix `<Select.Item />`
+ * can actually render.
+ *
+ * Radix reserves the empty string `""` to clear a `Select`'s value and throws
+ * if any item carries it. A credential's model list can contain blank/
+ * whitespace-only entries (a saved blob with an empty slot, or a trailing
+ * comma in a manually edited list), so those must be dropped before the list
+ * is mapped to `<Select.Item />`s. When the result is empty the caller falls
+ * back to a free-text `<Input />` instead of a model select.
+ *
+ * @param models - The raw model ids for the selected provider.
+ * @returns The models safe to render as select items, in encounter order.
+ */
+export function filterRenderableModels(models: readonly string[]): string[] {
+    return models.filter((model) => model.trim() !== '');
 }
 
 /** Minimal shape of a TanStack Form instance needed to apply a bulk update. */

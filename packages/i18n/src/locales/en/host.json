@@ -235,7 +235,11 @@
                 "socialNetworks": "Social networks",
                 "photos": "Photos",
                 "photosDescription": "Upload photos of your property to attract more guests",
+                "externalReputation": "External reputation",
                 "featuredToggle": "[EN] Destacado"
+            },
+            "sectionNav": {
+                "ariaLabel": "Form section navigation"
             },
             "field": {
                 "name": "Name",
@@ -256,6 +260,10 @@
                 "amenities": "Amenities",
                 "features": "Features",
                 "phone": "Phone",
+                "phoneCountry": "Country",
+                "phoneCountrySearchPlaceholder": "Search country...",
+                "phoneCountryNoResults": "No countries found",
+                "phoneNumber": "Number",
                 "email": "Email",
                 "website": "Website",
                 "facebook": "Facebook",

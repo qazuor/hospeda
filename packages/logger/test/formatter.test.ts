@@ -343,6 +343,109 @@ describe('formatter', () => {
             expect(result).toContain(longText);
             expect(result).not.toContain('TRUNCATED');
         });
+
+        describe('getContext integration (request-context seam)', () => {
+            it('should append a compact context segment when getContext returns fields', () => {
+                // Arrange
+                configureLogger({
+                    getContext: () => ({ requestId: 'abcdef123456', userId: 'U123' })
+                });
+
+                // Act
+                const result = formatLogMessage(LogLevel.INFO, 'hello');
+
+                // Assert
+                expect(result).toContain('req:abcdef12');
+                expect(result).toContain('user:U123');
+            });
+
+            it('should not append a context segment when no provider is configured', () => {
+                // Act
+                const result = formatLogMessage(LogLevel.INFO, 'hello');
+
+                // Assert — no stray brackets from an absent provider
+                expect(result).not.toMatch(/\[req:|\[user:|\[sid:|\[vid:/);
+            });
+
+            it('should not append a context segment when the provider returns undefined', () => {
+                // Arrange
+                configureLogger({ getContext: () => undefined });
+
+                // Act
+                const result = formatLogMessage(LogLevel.INFO, 'hello');
+
+                // Assert
+                expect(result).not.toMatch(/\[req:|\[user:|\[sid:|\[vid:/);
+            });
+
+            it('should not break formatting when the provider throws', () => {
+                // Arrange
+                configureLogger({
+                    getContext: () => {
+                        throw new Error('boom');
+                    }
+                });
+
+                // Act
+                const result = formatLogMessage(LogLevel.INFO, 'hello');
+
+                // Assert — core message still present, no throw
+                expect(result).toContain('hello');
+            });
+
+            it('should skip non-primitive context values so it never dumps an object', () => {
+                // Arrange
+                configureLogger({
+                    getContext: () => ({
+                        requestId: 'abc123',
+                        nested: { should: 'never appear' }
+                    })
+                });
+
+                // Act
+                const result = formatLogMessage(LogLevel.INFO, 'hello');
+
+                // Assert
+                expect(result).toContain('req:abc123');
+                expect(result).not.toContain('should');
+            });
+
+            it('should omit method and path (already in the message, and noisy)', () => {
+                // Arrange
+                configureLogger({
+                    getContext: () => ({
+                        requestId: 'abcdef123456',
+                        method: 'GET',
+                        path: '/api/v1/public/accommodations',
+                        visitorId: 'vvvvvvvv-1111'
+                    })
+                });
+
+                // Act
+                const result = formatLogMessage(LogLevel.INFO, 'hello');
+
+                // Assert — correlation ids shown, method/path omitted
+                expect(result).toContain('req:abcdef12');
+                expect(result).toContain('vid:vvvvvvv');
+                expect(result).not.toContain('method:');
+                expect(result).not.toContain('path:');
+                expect(result).not.toContain('GET');
+            });
+
+            it('should show role in full without truncating it', () => {
+                // Arrange — a role longer than the id truncation cap
+                configureLogger({
+                    getContext: () => ({ requestId: 'abcdef123456', role: 'SUPER_ADMIN' })
+                });
+
+                // Act
+                const result = formatLogMessage(LogLevel.INFO, 'hello');
+
+                // Assert — role intact, requestId still truncated
+                expect(result).toContain('role:SUPER_ADMIN');
+                expect(result).toContain('req:abcdef12');
+            });
+        });
     });
 
     describe('formatLogArgs', () => {

@@ -33,7 +33,18 @@
  */
 
 import type { AiService } from '@repo/ai-core';
-import { amenities, features, getDb, inArray } from '@repo/db';
+import {
+    amenities,
+    and,
+    destinations,
+    eq,
+    features,
+    getDb,
+    inArray,
+    isNull,
+    safeIlike,
+    sql
+} from '@repo/db';
 import {
     type AiSearchChatFiltersEvent,
     type AiSearchChatRequest,
@@ -65,6 +76,68 @@ import { mapIntentToSearchParams } from './search-intent.mapper.js';
 const PERSISTENCE_TIMEOUT_MS = 1500;
 
 // ─── Slug → UUID resolution helpers ──────────────────────────────────────────
+
+/**
+ * Amenity slug matched by each boolean shortcut flag on {@link SearchIntentEntities}.
+ *
+ * Mirrors the mapper's boolean-shortcut serialisation (`hasPool` → `'true'`,
+ * etc.) but on the amenity-slug side: these are the exact slugs the model may
+ * ALSO emit in `amenitySlugs` for the same physical amenity.
+ */
+const BOOLEAN_SHORTCUT_AMENITY_SLUGS = {
+    hasPool: 'pool',
+    hasParking: 'parking',
+    hasWifi: 'wifi',
+    allowsPets: 'pet_friendly'
+} as const;
+
+/**
+ * Removes amenity slugs that are already covered by a `true` boolean shortcut
+ * flag (`hasPool`, `hasParking`, `hasWifi`, `allowsPets`).
+ *
+ * ## Why this is needed
+ *
+ * The model may extract BOTH `hasPool: true` AND `amenitySlugs: ['pool']` for
+ * the same user request. The boolean shortcut is deliberately expanded
+ * downstream (search UI / accommodation search) into an OR of variants
+ * (e.g. `pool` OR `heated_pool`), while a resolved amenity UUID is applied
+ * with exact AND semantics. Keeping `'pool'` in `amenitySlugs` in that case
+ * would additionally AND-filter on the exact `pool` amenity, silently
+ * excluding accommodations that only have a variant like `heated_pool` —
+ * even though the boolean shortcut alone would have matched them.
+ *
+ * Dropping the duplicated slug BEFORE resolving `amenitySlugs` to UUIDs keeps
+ * the boolean shortcut as the sole (correct, OR-based) source of truth for
+ * that amenity, while leaving any OTHER amenity slugs in the array untouched.
+ *
+ * @param amenitySlugs - Raw amenity slugs from `entities.amenitySlugs`.
+ * @param entities - The validated entities carrying the boolean shortcut flags.
+ * @returns A new array with slugs already covered by a `true` boolean shortcut removed.
+ */
+function dedupeAmenitySlugsAgainstBooleanShortcuts(
+    amenitySlugs: readonly string[],
+    entities: SearchIntentEntities
+): string[] {
+    const shortcutSlugsToDrop = new Set<string>();
+    if (entities.hasPool === true) {
+        shortcutSlugsToDrop.add(BOOLEAN_SHORTCUT_AMENITY_SLUGS.hasPool);
+    }
+    if (entities.hasParking === true) {
+        shortcutSlugsToDrop.add(BOOLEAN_SHORTCUT_AMENITY_SLUGS.hasParking);
+    }
+    if (entities.hasWifi === true) {
+        shortcutSlugsToDrop.add(BOOLEAN_SHORTCUT_AMENITY_SLUGS.hasWifi);
+    }
+    if (entities.allowsPets === true) {
+        shortcutSlugsToDrop.add(BOOLEAN_SHORTCUT_AMENITY_SLUGS.allowsPets);
+    }
+
+    if (shortcutSlugsToDrop.size === 0) {
+        return [...amenitySlugs];
+    }
+
+    return amenitySlugs.filter((slug) => !shortcutSlugsToDrop.has(slug));
+}
 
 /**
  * Resolves amenity slugs to UUIDs via a single DB query.
@@ -106,6 +179,65 @@ async function resolveFeatureIds(slugs: readonly string[]): Promise<string[]> {
         .from(features)
         .where(inArray(features.slug, [...slugs]));
     return rows.map((r) => r.id);
+}
+
+/**
+ * Resolves a free-text city name to a known destination UUID (fix for the
+ * "city falls back to free-text `q` search" bug).
+ *
+ * ## Why this exists
+ *
+ * `entities.city` (e.g. "Colón") previously always fell through to the `q`
+ * free-text keyword param, which does an ILIKE against accommodation
+ * name/description — almost never matching accommodations that are simply
+ * LOCATED in that city. This resolves the city server-side against the
+ * `destinations` table (mirrors `resolveAmenityIds` / `resolveFeatureIds`)
+ * so the caller can pass a verified `destinationId` to the mapper instead.
+ *
+ * ## Matching strategy
+ *
+ * 1. Exact, case-insensitive match on `destinations.name`, scoped to public +
+ *    active destinations (never resolves to a hidden/draft/deleted row).
+ * 2. If no exact match, a `safeIlike` substring match on `destinations.name`
+ *    (handles partial mentions or minor spelling variance) — first match wins.
+ *
+ * Returns `undefined` when no destination matches, in which case the caller
+ * keeps the existing fallback to `q` (mapper priority: `destinationId` > geo
+ * > `city`).
+ *
+ * @param city - Raw city name extracted by the model (`entities.city`).
+ * @returns The matching destination UUID, or `undefined` when no match is found.
+ */
+async function resolveDestinationIdFromCity(city: string): Promise<string | undefined> {
+    const trimmedCity = city.trim();
+    if (trimmedCity.length === 0) {
+        return undefined;
+    }
+
+    const db = getDb();
+    const publicActiveFilter = and(
+        isNull(destinations.deletedAt),
+        eq(destinations.visibility, 'PUBLIC'),
+        eq(destinations.lifecycleState, 'ACTIVE')
+    );
+
+    // Priority 1: exact case-insensitive match on the destination name.
+    const exactRows = await db
+        .select({ id: destinations.id })
+        .from(destinations)
+        .where(and(publicActiveFilter, sql`LOWER(${destinations.name}) = LOWER(${trimmedCity})`));
+    if (exactRows[0]) {
+        return exactRows[0].id;
+    }
+
+    // Priority 2: fuzzy substring match (handles partial or slightly varied
+    // city mentions). safeIlike escapes '%', '_', and '\' metacharacters, so
+    // it must always be used here instead of the raw drizzle helper.
+    const fuzzyRows = await db
+        .select({ id: destinations.id })
+        .from(destinations)
+        .where(and(publicActiveFilter, safeIlike(destinations.name, trimmedCity)));
+    return fuzzyRows[0]?.id;
 }
 
 // ─── Route ────────────────────────────────────────────────────────────────────
@@ -155,8 +287,13 @@ async function resolveFeatureIds(slugs: readonly string[]): Promise<string[]> {
  * 4. Call `aiService.generateObject` with `SearchIntentOutputSchema` to extract
  *    the full updated entity set. Mirrors search-intent.ts (same Zod-cast pattern).
  * 5. Safe-parse returned entities; fall back to `{}` on failure.
- * 6. Resolve amenity and feature slugs to UUIDs in parallel (single DB queries).
- * 7. Map entities to URL-ready params via `mapIntentToSearchParams`.
+ * 6. Resolve amenity slugs (deduped against boolean shortcuts — see
+ *    `dedupeAmenitySlugsAgainstBooleanShortcuts`), feature slugs, and — when a
+ *    city was extracted and no stronger location signal is present — the city
+ *    name to a destination UUID (see `resolveDestinationIdFromCity`), all in
+ *    parallel (single DB queries each).
+ * 7. Map entities to URL-ready params via `mapIntentToSearchParams`, passing the
+ *    resolved amenity/feature UUIDs and (if resolved) the destination UUID.
  * 8. Build the reply system prompt via `buildSearchReplySystemPrompt` (caller-wins
  *    policy — this OVERRIDES `DEFAULT_PROMPTS['search']` so the model outputs text,
  *    not JSON). Assemble `streamText` messages via `buildSearchReplyMessages`.
@@ -267,13 +404,37 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
             validatedEntities = {};
         }
 
-        // Step 6: Resolve amenity and feature slugs to DB UUIDs in parallel.
-        const amenitySlugIds = validatedEntities.amenitySlugs ?? [];
+        // Step 6: Resolve amenity slugs, feature slugs, and city → destinationId
+        // to DB-verified values in parallel.
+        //
+        // Amenity slugs are first deduped against any `true` boolean shortcut
+        // flag (hasPool/hasParking/hasWifi/allowsPets) — see
+        // `dedupeAmenitySlugsAgainstBooleanShortcuts` JSDoc for why: resolving
+        // both would AND-filter on the exact amenity on top of the shortcut's
+        // OR-based variant expansion, silently excluding valid matches.
+        const rawAmenitySlugIds = validatedEntities.amenitySlugs ?? [];
+        const amenitySlugIds = dedupeAmenitySlugsAgainstBooleanShortcuts(
+            rawAmenitySlugIds,
+            validatedEntities
+        );
         const featureSlugIds = validatedEntities.featureSlugs ?? [];
 
-        const [resolvedAmenityIds, resolvedFeatureIds] = await Promise.all([
+        // Only attempt city → destination resolution when a city was extracted
+        // AND no stronger location signal (destinationId or full geo coords) is
+        // already present — mirrors the mapper's own location priority so we
+        // never pay for a DB lookup whose result would be discarded anyway.
+        const hasStrongerLocationSignal =
+            validatedEntities.destinationId !== undefined ||
+            (validatedEntities.latitude !== undefined && validatedEntities.longitude !== undefined);
+        const cityToResolve =
+            validatedEntities.city !== undefined && !hasStrongerLocationSignal
+                ? validatedEntities.city
+                : undefined;
+
+        const [resolvedAmenityIds, resolvedFeatureIds, resolvedDestinationId] = await Promise.all([
             resolveAmenityIds(amenitySlugIds),
-            resolveFeatureIds(featureSlugIds)
+            resolveFeatureIds(featureSlugIds),
+            cityToResolve === undefined ? undefined : resolveDestinationIdFromCity(cityToResolve)
         ]);
 
         // Step 7: Map validated intent to URL-ready AccommodationSearchHttp params.
@@ -290,7 +451,8 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         const mappedParams = mapIntentToSearchParams(
             validatedEntities,
             resolvedAmenityIds,
-            resolvedFeatureIds
+            resolvedFeatureIds,
+            resolvedDestinationId
         );
         // TYPE-WORKAROUND: mapIntentToSearchParams returns MappedParams
         // (Record<string, string | string[]>) which omits page/pageSize; the

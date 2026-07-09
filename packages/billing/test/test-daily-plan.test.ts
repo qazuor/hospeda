@@ -35,6 +35,15 @@ describe('TEST_DAILY_PLAN (billing-interval-override)', () => {
         expect(TEST_DAILY_PLAN.annualPriceArs).toBeNull();
     });
 
+    it("is priced at exactly MercadoPago's $15.00 ARS preapproval minimum (1500 centavos)", () => {
+        // Pinned to the real MP-confirmed floor, not an assumed "small" value.
+        // A production checkout against this plan failed with
+        // "Cannot pay an amount lower than $ 15.00" when this constant was
+        // 100 (ARS $1.00) — regression guard against ever lowering it again
+        // without re-confirming MP's minimum has changed.
+        expect(TEST_DAILY_PLAN_UNIT_AMOUNT_CENTAVOS).toBe(1500);
+    });
+
     it('is INACTIVE so the active-filtered public plans endpoint never lists it', () => {
         // active:false keeps it off `/api/v1/public/plans` (which filters
         // active:true) with no endpoint change. It stays subscribable because

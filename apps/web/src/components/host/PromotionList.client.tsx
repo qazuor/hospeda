@@ -271,20 +271,19 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
 
     return (
         <div className={styles.container}>
-            {/* ── Header ── */}
-            <div className={styles.header}>
-                <h2 className={styles.title}>
-                    {t('host.promotions.pageTitle', 'Mis promociones')}
-                </h2>
-                {canCreate ? (
+            {/* ── Header ──
+                The page title lives at the page level (AccountLayout / index.astro),
+                so this island only renders the create-promotion action, right-aligned. */}
+            {canCreate ? (
+                <div className={styles.header}>
                     <a
                         href={buildUrl({ locale, path: 'mi-cuenta/promociones/nueva' })}
                         className={styles.createButton}
                     >
                         {t('host.promotions.createButton', 'Nueva promoción')}
                     </a>
-                ) : null}
-            </div>
+                </div>
+            ) : null}
 
             {/* ── Upgrade banner (plan without create_promotions) ── */}
             {!canCreate && (

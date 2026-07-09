@@ -135,6 +135,80 @@ export function getCategoryBackgroundFunction(color: LoggerColorType): ChalkFunc
 }
 
 /**
+ * Correlation keys shown in the PRETTY context segment, in display order,
+ * with their compact labels. These are the only context fields rendered in
+ * pretty mode — they are the identifiers you cannot reconstruct from the log
+ * message itself.
+ *
+ * `method` and `path` are deliberately NOT here: the request log line already
+ * prints `GET /api/... 200`, and a deeper service-layer line correlates back
+ * to that request via `req`, so repeating them in every segment is redundant
+ * noise (and `path` truncated to a few chars is useless — everything starts
+ * with `/api/v1/`). The JSON path is unaffected: it still carries `method`
+ * and `path` as structured, queryable fields via `buildLogEntry`'s merge.
+ */
+const CONTEXT_DISPLAY_LABELS: ReadonlyArray<readonly [key: string, label: string]> = [
+    ['requestId', 'req'],
+    ['userId', 'user'],
+    ['role', 'role'],
+    ['sessionId', 'sid'],
+    ['visitorId', 'vid']
+];
+
+/**
+ * ID-shaped values are shortened to a distinguishing prefix (a UUID's first
+ * 8 chars are enough to eyeball-match in dev). Keys listed here are shown
+ * whole because they are short, semantic values, not opaque ids.
+ */
+const CONTEXT_VALUE_MAX_LENGTH = 8;
+const CONTEXT_UNTRUNCATED_KEYS: ReadonlySet<string> = new Set(['role']);
+
+/**
+ * Builds a compact `[req:ab12ef34 user:12ab… role:HOST vid:…]`-style segment
+ * from the configured `getContext` provider (see `BaseLoggerConfig.getContext`),
+ * for PRETTY-mode dev output. Only the correlation ids in
+ * {@link CONTEXT_DISPLAY_LABELS} are shown, in that order; any other context
+ * key (`method`, `path`, …) is omitted on purpose (see that constant's docs).
+ * The JSON path does not use this — it already gets the full context via
+ * `buildLogEntry`'s own merge.
+ *
+ * Only string/number values are shown (objects/arrays are skipped so a
+ * misused provider can never dump a giant object into the console line).
+ * Never throws: an absent, throwing, or non-object provider yields an empty
+ * segment.
+ *
+ * @returns The formatted segment, or an empty string when there is nothing
+ * to show.
+ */
+export function formatContextSegment(): string {
+    try {
+        const fields = getConfig().getContext?.();
+        if (fields === null || typeof fields !== 'object') {
+            return '';
+        }
+
+        const record = fields as Record<string, unknown>;
+        const parts: string[] = [];
+        for (const [key, label] of CONTEXT_DISPLAY_LABELS) {
+            const value = record[key];
+            if (typeof value !== 'string' && typeof value !== 'number') {
+                continue;
+            }
+            const strValue = String(value);
+            const displayValue =
+                !CONTEXT_UNTRUNCATED_KEYS.has(key) && strValue.length > CONTEXT_VALUE_MAX_LENGTH
+                    ? `${strValue.slice(0, CONTEXT_VALUE_MAX_LENGTH)}…`
+                    : strValue;
+            parts.push(`${label}:${displayValue}`);
+        }
+
+        return parts.length === 0 ? '' : `[${parts.join(' ')}]`;
+    } catch {
+        return '';
+    }
+}
+
+/**
  * Format timestamp for logs
  * @returns Formatted timestamp [YYYY-MM-DD HH:MM:SS]
  */
@@ -318,6 +392,13 @@ export function formatLogMessage(
         } else {
             parts.push(labelText);
         }
+    }
+
+    // Add request-context segment if a getContext provider is configured
+    // (e.g. requestId/userId/sessionId/visitorId injected by apps/api).
+    const contextSegment = formatContextSegment();
+    if (contextSegment) {
+        parts.push(useColors ? chalk.gray(contextSegment) : contextSegment);
     }
 
     // Determine expand levels

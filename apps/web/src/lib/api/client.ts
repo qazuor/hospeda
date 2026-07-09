@@ -85,7 +85,8 @@ async function request<T>({
     withCredentials,
     cookieHeader,
     headers: extraHeaders,
-    cacheTtlMs
+    cacheTtlMs,
+    timeoutMs
 }: {
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     path: string;
@@ -113,14 +114,23 @@ async function request<T>({
      * SSR fan-out otherwise exhausts the public rate-limit bucket.
      */
     cacheTtlMs?: number;
+    /**
+     * Optional override for the request's abort timeout, in milliseconds.
+     * Defaults to {@link REQUEST_TIMEOUT} (10s) when omitted. Use this for
+     * endpoints whose backend work legitimately exceeds the default budget
+     * (e.g. the AI translate endpoint, which performs up to ~8 sequential
+     * LLM calls) — BETA-135.
+     */
+    timeoutMs?: number;
 }): Promise<ApiResult<T>> {
     // SPEC-131: never let this function throw — a misconfigured env or network
     // error must resolve to { ok: false } so callers keep the ApiResult<T>
     // contract. The fetch + parse lives in `exec`; the URL is computed inside it
     // so a bad base URL surfaces as an error result, not a thrown exception.
+    const effectiveTimeoutMs = timeoutMs ?? REQUEST_TIMEOUT;
     const exec = async (): Promise<ApiResult<T>> => {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+        const timeoutId = setTimeout(() => controller.abort(), effectiveTimeoutMs);
         try {
             const url = `${getBaseUrl()}${path}${serializeParams(params)}`;
             const headers: Record<string, string> = {
@@ -174,7 +184,7 @@ async function request<T>({
             if (err instanceof DOMException && err.name === 'AbortError') {
                 return {
                     ok: false,
-                    error: { status: 408, message: `Request timeout after ${REQUEST_TIMEOUT}ms` }
+                    error: { status: 408, message: `Request timeout after ${effectiveTimeoutMs}ms` }
                 };
             }
             return {
@@ -331,17 +341,23 @@ export const apiClient = {
      *   (`/billing/subscriptions/start-paid`, `/billing/addons/:slug/purchase`,
      *   `/billing/addons/:id/cancel`) which enforce `X-Idempotency-Key`. Send
      *   a fresh UUID v4 per logical user action (`crypto.randomUUID()`).
+     * @param timeoutMs - Optional override for the request's abort timeout, in
+     *   milliseconds. Defaults to 10s. Use for endpoints whose backend work
+     *   legitimately exceeds the default budget (e.g. the AI translate
+     *   endpoint — BETA-135).
      */
     postProtected<T>({
         path,
         body,
         cookieHeader,
-        headers
+        headers,
+        timeoutMs
     }: {
         path: string;
         body?: unknown;
         cookieHeader?: string;
         headers?: Record<string, string>;
+        timeoutMs?: number;
     }): Promise<ApiResult<T>> {
         return request<T>({
             method: 'POST',
@@ -349,7 +365,8 @@ export const apiClient = {
             body,
             withCredentials: true,
             cookieHeader,
-            headers
+            headers,
+            timeoutMs
         });
     }
 };

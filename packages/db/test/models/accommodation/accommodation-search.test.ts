@@ -1069,4 +1069,150 @@ describe('AccommodationModel — amenity/feature filter (REQ-096-01)', () => {
             expect((ownerArgs as { where?: unknown })?.where).toBeDefined();
         });
     });
+
+    // =========================================================================
+    // maxRating filter — regression: maxRating was accepted by the schema and
+    // threaded through to countByFilters/search/searchWithRelations, but none
+    // of the three ever pushed an `lte(averageRating, maxRating)` clause, so
+    // "rating <= N" searches silently returned every rating. minRating (the
+    // symmetric `gte` clause) already worked; maxRating must mirror it.
+    //
+    // Structural note: Drizzle's `and(...)` wraps 2+ conditions as a fixed
+    // `("(" , <inner-and>, ")")` triple, so top-level `queryChunks.length`
+    // only distinguishes "0-1 conditions" from "2+ conditions" — it does NOT
+    // grow linearly per extra clause once there are already 2+. Comparing
+    // chunk *counts* between two already-multi-clause WHEREs is therefore
+    // unreliable. Instead these tests walk the SQL tree and assert on the
+    // actual rendered fragment (` <= `), which `lte()` uniquely produces
+    // (the other max* filters use raw `sql` templates like
+    // `...)::int <= ${value}`, a different literal string).
+    // =========================================================================
+
+    /**
+     * Flattens a Drizzle SQL AST into an ordered array of its primitive leaf
+     * values (string fragments and bound parameter values), by walking
+     * `queryChunks` recursively and unwrapping `StringChunk`/`Param`-shaped
+     * nodes (both expose their payload via `.value`).
+     */
+    function collectSqlLeaves(node: unknown, acc: unknown[] = []): unknown[] {
+        if (node == null || typeof node !== 'object') return acc;
+        const n = node as { queryChunks?: unknown[]; value?: unknown };
+        if (Array.isArray(n.queryChunks)) {
+            for (const chunk of n.queryChunks) collectSqlLeaves(chunk, acc);
+            return acc;
+        }
+        if (n.value !== undefined) {
+            if (Array.isArray(n.value)) {
+                acc.push(...(n.value as unknown[]));
+            } else {
+                acc.push(n.value);
+            }
+        }
+        return acc;
+    }
+
+    describe('maxRating filter (rating upper bound regression)', () => {
+        it('countByFilters() pushes an lte(averageRating, maxRating) clause when maxRating is present', async () => {
+            let capturedWhere: unknown;
+            const { db } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    capturedWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(db as any);
+
+            await model.countByFilters({ maxRating: 3 });
+
+            // Assert — the `<= ` operator fragment (unique to the drizzle-native
+            // lte() comparator) and the bound value 3 both appear in the WHERE
+            // tree. Before the fix, maxRating was silently dropped and neither
+            // would be present.
+            const leaves = collectSqlLeaves(capturedWhere);
+            expect(leaves).toContain(' <= ');
+            expect(leaves).toContain(3);
+        });
+
+        it('does NOT push an lte(averageRating, ...) clause when maxRating is undefined', async () => {
+            let capturedWhere: unknown;
+            const { db } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    capturedWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(db as any);
+
+            // minGuests alone uses a raw `sql` template ending in
+            // `)::int >= ${value}` — it must not produce the standalone
+            // ` <= ` fragment that only the rating lte() comparator emits.
+            await model.countByFilters({ minGuests: 2 });
+
+            const leaves = collectSqlLeaves(capturedWhere);
+            expect(leaves).not.toContain(' <= ');
+        });
+
+        it('applies both minRating (gte) and maxRating (lte) together for a "between" range', async () => {
+            let capturedWhere: unknown;
+            const { db } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    capturedWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(db as any);
+
+            await model.countByFilters({ minRating: 2, maxRating: 3 });
+
+            const leaves = collectSqlLeaves(capturedWhere);
+            // Both bounds must be present and independent of each other.
+            expect(leaves).toContain(' >= ');
+            expect(leaves).toContain(2);
+            expect(leaves).toContain(' <= ');
+            expect(leaves).toContain(3);
+        });
+
+        it('search() applies the same maxRating clause as countByFilters() (count/items parity)', async () => {
+            let searchWhere: unknown;
+            const { db: searchDb } = makeSearchMock({
+                items: [],
+                total: 0,
+                captureWhere: (clause) => {
+                    searchWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(searchDb as any);
+            await model.search({ maxRating: 3 });
+
+            let countWhere: unknown;
+            const { db: countDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    countWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(countDb as any);
+            await model.countByFilters({ maxRating: 3 });
+
+            expect(collectSqlLeaves(searchWhere)).toContain(' <= ');
+            expect(collectSqlLeaves(countWhere)).toContain(' <= ');
+        });
+
+        it('searchWithRelations() applies the same maxRating clause via its findMany WHERE', async () => {
+            let capturedArgs: unknown;
+            const { db } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            db.query.accommodations.findMany = vi.fn().mockImplementation((args: unknown) => {
+                capturedArgs = args;
+                return Promise.resolve([]);
+            });
+            getDb.mockReturnValue(db as any);
+
+            const result = await model.searchWithRelations({ maxRating: 3 });
+
+            expect(result.items).toEqual([]);
+            const where = (capturedArgs as { where?: unknown })?.where;
+            expect(where).toBeDefined();
+            expect(collectSqlLeaves(where)).toContain(' <= ');
+        });
+    });
 });

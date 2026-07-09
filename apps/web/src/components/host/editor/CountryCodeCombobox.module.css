@@ -1,0 +1,217 @@
+/* CountryCodeCombobox.module.css — BETA-144
+ * Trigger button + portal-mounted search popover for the phone country-code
+ * picker. Uses CSS custom properties from global.css / @repo/design-tokens
+ * only — no hardcoded colors, spacing, or radii.
+ */
+
+/* ============================================================
+   Trigger button
+   ============================================================ */
+
+.trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    cursor: pointer;
+    transition: border-color var(--duration-fast, 150ms) ease;
+    box-sizing: border-box;
+}
+
+.trigger:hover {
+    border-color: var(--brand-primary-a30);
+}
+
+.trigger:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 1px;
+    border-color: var(--brand-primary);
+}
+
+.triggerDisabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.triggerLabel {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    overflow: hidden;
+}
+
+.triggerFlag {
+    flex-shrink: 0;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.triggerLabelText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chevron {
+    flex-shrink: 0;
+    color: var(--core-muted-foreground);
+    transition: transform var(--duration-fast, 150ms) ease;
+}
+
+.chevronOpen {
+    transform: rotate(180deg);
+}
+
+/* ============================================================
+   Popover (portal-mounted on document.body, position:fixed via inline style)
+   ============================================================ */
+
+.popover {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    max-height: 320px;
+    padding: var(--space-2, 0.5rem);
+    box-sizing: border-box;
+    animation: countryComboboxPopoverIn var(--duration-fast, 150ms) ease;
+}
+
+@keyframes countryComboboxPopoverIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .popover {
+        animation: none;
+    }
+}
+
+.searchWrap {
+    position: relative;
+    flex-shrink: 0;
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.searchIcon {
+    position: absolute;
+    left: 0.625rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--core-muted-foreground);
+    pointer-events: none;
+}
+
+.searchInput {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.625rem 0.5rem 2rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    box-sizing: border-box;
+}
+
+.searchInput:focus {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 1px;
+    border-color: var(--brand-primary);
+}
+
+.listbox {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+    padding: 0.5rem 0.625rem;
+    background-color: transparent;
+    background-image: none;
+    border: none;
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--duration-fast, 150ms) ease;
+}
+
+.option:hover {
+    background-color: var(--brand-primary-a05);
+}
+
+.optionHighlighted {
+    background-color: var(--brand-primary-a05);
+}
+
+.optionSelected {
+    background-color: var(--brand-primary-a05);
+    font-weight: 600;
+    color: var(--brand-primary);
+}
+
+.optionFlag {
+    flex-shrink: 0;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.optionName {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    overflow: hidden;
+}
+
+.optionNameText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.optionDial {
+    flex-shrink: 0;
+    color: var(--core-muted-foreground);
+}
+
+.optionSelected .optionDial {
+    color: var(--brand-primary);
+}
+
+.emptyState {
+    padding: 0.75rem;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    text-align: center;
+}

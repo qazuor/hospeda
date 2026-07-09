@@ -235,7 +235,11 @@
                 "socialNetworks": "Redes sociais",
                 "photos": "Fotos",
                 "photosDescription": "Faça upload de fotos do seu imóvel para atrair mais hóspedes",
+                "externalReputation": "Reputação externa",
                 "featuredToggle": "[PT] Destacado"
+            },
+            "sectionNav": {
+                "ariaLabel": "Navegação de seções do formulário"
             },
             "field": {
                 "name": "Nome",
@@ -256,6 +260,10 @@
                 "amenities": "Comodidades",
                 "features": "Recursos",
                 "phone": "Telefone",
+                "phoneCountry": "País",
+                "phoneCountrySearchPlaceholder": "Buscar país...",
+                "phoneCountryNoResults": "Nenhum país encontrado",
+                "phoneNumber": "Número",
                 "email": "Email",
                 "website": "Site",
                 "facebook": "Facebook",

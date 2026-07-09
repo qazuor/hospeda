@@ -105,7 +105,7 @@
     width: 16px;
     height: 16px;
     flex-shrink: 0;
-    accent-color: var(--primary, oklch(0.5 0.18 260));
+    accent-color: var(--brand-primary, oklch(0.5 0.18 260));
     cursor: pointer;
 }
 
@@ -269,8 +269,8 @@
     font-family: var(--font-sans);
     font-size: 0.9rem;
     font-weight: 500;
-    color: white;
-    background-color: var(--primary, oklch(0.5 0.18 260));
+    color: var(--primary-foreground);
+    background-color: var(--brand-primary, oklch(0.5 0.18 260));
     border: none;
     border-radius: var(--radius-button, 8px);
     cursor: pointer;

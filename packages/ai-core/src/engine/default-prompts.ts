@@ -229,6 +229,15 @@ Extract a JSON object with these top-level fields:
     checkIn: ISO date string (YYYY-MM-DD)
     checkOut: ISO date string (YYYY-MM-DD)
 
+Guest / bedroom / bathroom counts — minimum only, not an exact match:
+- For "for N people", "N bedrooms", or "N bathrooms" set ONLY minGuests / \
+minBedrooms / minBathrooms = N and do NOT set the corresponding max field. Each \
+accommodation has a single capacity value, so "for N people" means it must fit AT \
+LEAST N people, not EXACTLY N — setting the max too would wrongly exclude larger \
+accommodations that comfortably fit more guests.
+- Only set the max field when the user gives an explicit upper bound (e.g. "up to \
+6 people", "between 4 and 6 bedrooms", "no more than 2 bathrooms").
+
 Conversational refinement (multi-turn search):
 - The request may include a CURRENT FILTER SET that represents the accumulated state \
 of an ongoing search conversation. When it is present, treat it as the source of \

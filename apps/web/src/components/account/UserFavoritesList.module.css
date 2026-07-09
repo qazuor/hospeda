@@ -77,6 +77,29 @@
     color: oklch(1 0 0);
 }
 
+/* Mobile: the 7 tabs no longer wrap into messy rows with ~32px tap
+ * targets. Instead they scroll horizontally as a single row with
+ * comfortable ~44px tap height (WCAG target size). */
+@media (max-width: 640px) {
+    .tabsRow {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x proximity;
+        padding-bottom: var(--space-2, 8px);
+        scrollbar-width: none;
+    }
+
+    .tabsRow::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tab {
+        padding: var(--space-3, 12px) var(--space-4, 16px);
+        scroll-snap-align: start;
+    }
+}
+
 /* ── Coming soon placeholder ───────────────────────────────────────────── */
 
 .comingSoon {

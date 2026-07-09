@@ -173,6 +173,16 @@
     margin-bottom: var(--space-3, 1rem);
 }
 
+/* Dynamic per-platform hint below the URL input (BETA-136). Matches the
+ * `.fieldHint` convention used in BasicInfoSection.module.css. */
+.fieldHint {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin: var(--space-1, 0.25rem) 0 var(--space-3, 1rem);
+}
+
 .addFormLabel {
     font-family: var(--font-sans);
     font-weight: 500;
@@ -237,7 +247,7 @@ select.addFormSelect {
     border: none;
     border-radius: var(--radius-pill, 9999px);
     background-color: var(--brand-primary);
-    color: #fff;
+    color: var(--primary-foreground);
     font-family: var(--font-sans);
     font-weight: 600;
     font-size: 0.875rem;
@@ -281,7 +291,7 @@ select.addFormSelect {
 
 .refreshButton:hover {
     background-color: var(--brand-primary);
-    color: #fff;
+    color: var(--primary-foreground);
 }
 
 .refreshButton:disabled {

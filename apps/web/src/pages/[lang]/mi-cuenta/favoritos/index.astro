@@ -7,6 +7,7 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { UserFavoritesList } from '@/components/account/UserFavoritesList.client';
 import { CreateCollectionCTA } from '@/components/account/CreateCollectionCTA.client';
 import { createTranslations } from '@/lib/i18n';
@@ -89,7 +90,9 @@ const usageRatio =
 
 <AccountLayout locale={locale} title={title} activeSection="favoritos">
 	<div class="favoritos-header">
-		<h2 class="account-section__title">{title}</h2>
+		<div class="favoritos-header__title">
+			<AccountPageHeader title={title} />
+		</div>
 
 		{
 			usageLabel !== null && collectionUsage !== null && (
@@ -133,18 +136,12 @@ const usageRatio =
 <style>
 	.favoritos-header {
 		display: flex;
-		align-items: center;
+		align-items: flex-start;
 		flex-wrap: wrap;
 		gap: var(--space-3);
-		margin-bottom: var(--space-6);
 	}
 
-	.account-section__title {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: clamp(1.5rem, 3vw, 2rem);
-		color: var(--core-foreground);
-		margin: 0;
+	.favoritos-header__title {
 		flex: 1 1 auto;
 	}
 

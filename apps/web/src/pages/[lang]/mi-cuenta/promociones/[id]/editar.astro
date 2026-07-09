@@ -23,6 +23,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { PromotionForm } from '@/components/host/PromotionForm.client';
 
 export const prerender = false;
@@ -47,31 +48,7 @@ if (!promotionId) {
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="promociones">
-    <div class="edit-promo-page__header">
-        <h2 class="edit-promo-page__title">{title}</h2>
-        <p class="edit-promo-page__subtitle">{description}</p>
-    </div>
+    <AccountPageHeader title={title} description={description} />
 
     <PromotionForm client:load locale={locale} mode="edit" promotionId={promotionId} />
 </AccountLayout>
-
-<style>
-    .edit-promo-page__header {
-        margin-bottom: var(--space-6);
-    }
-
-    .edit-promo-page__title {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: clamp(1.5rem, 3vw, 2rem);
-        color: var(--core-foreground);
-        margin: 0 0 0.25rem;
-    }
-
-    .edit-promo-page__subtitle {
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm, 0.9375rem);
-        color: var(--core-muted-foreground);
-        margin: 0;
-    }
-</style>

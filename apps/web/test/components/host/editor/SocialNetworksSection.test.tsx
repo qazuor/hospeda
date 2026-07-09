@@ -3,8 +3,11 @@
  * @description Tests for the SocialNetworksSection form component.
  *
  * Covers:
- * - Renders all 6 social network URL fields with initial values
- * - Calls onFieldChange when fields are modified
+ * - Renders all 6 social network handle fields with their domain prefix
+ * - Parses a stored full URL back to just the handle
+ * - Falls back to showing the raw value when a stored URL doesn't match the
+ *   expected domain (nothing hidden/lost)
+ * - Composes the full URL via onFieldChange when a handle is typed
  * - Displays inline validation errors
  */
 
@@ -51,7 +54,7 @@ const MOCK_DATA = {
     email: '',
     website: '',
     facebookUrl: 'https://facebook.com/test',
-    instagramUrl: 'https://instagram.com/test',
+    instagramUrl: 'https://www.instagram.com/testuser',
     twitterUrl: '',
     linkedinUrl: '',
     tiktokUrl: '',
@@ -82,20 +85,58 @@ describe('SocialNetworksSection', () => {
         expect(screen.getByLabelText(/youtube/i)).toBeInTheDocument();
     });
 
-    it('should display initial values for populated fields', () => {
+    it('should render the fixed domain prefix for each network', () => {
+        render(<SocialNetworksSection {...DEFAULT_PROPS} />);
+
+        expect(screen.getByText('facebook.com/')).toBeInTheDocument();
+        expect(screen.getByText('instagram.com/')).toBeInTheDocument();
+        expect(screen.getByText('x.com/')).toBeInTheDocument();
+        expect(screen.getByText('linkedin.com/in/')).toBeInTheDocument();
+        expect(screen.getByText('tiktok.com/@')).toBeInTheDocument();
+        expect(screen.getByText('youtube.com/@')).toBeInTheDocument();
+    });
+
+    it('should parse a stored full URL down to just the handle', () => {
         render(<SocialNetworksSection {...DEFAULT_PROPS} />);
 
         const facebookInput = screen.getByLabelText(/facebook/i) as HTMLInputElement;
-        expect(facebookInput.value).toBe('https://facebook.com/test');
+        expect(facebookInput.value).toBe('test');
 
         const instagramInput = screen.getByLabelText(/instagram/i) as HTMLInputElement;
-        expect(instagramInput.value).toBe('https://instagram.com/test');
+        expect(instagramInput.value).toBe('testuser');
 
         const twitterInput = screen.getByLabelText(/twitter/i) as HTMLInputElement;
         expect(twitterInput.value).toBe('');
     });
 
-    it('should call onFieldChange when a field is modified', () => {
+    it('should show the raw stored value when it does not match the expected domain', () => {
+        render(
+            <SocialNetworksSection
+                {...DEFAULT_PROPS}
+                data={{ ...MOCK_DATA, facebookUrl: 'https://not-facebook.example.com/test' }}
+            />
+        );
+
+        const facebookInput = screen.getByLabelText(/facebook/i) as HTMLInputElement;
+        expect(facebookInput.value).toBe('https://not-facebook.example.com/test');
+    });
+
+    it('should not save a bare domain when the handle is cleared', () => {
+        const onFieldChange = vi.fn();
+        render(
+            <SocialNetworksSection
+                {...DEFAULT_PROPS}
+                onFieldChange={onFieldChange}
+            />
+        );
+
+        const facebookInput = screen.getByLabelText(/facebook/i);
+        fireEvent.change(facebookInput, { target: { value: '' } });
+
+        expect(onFieldChange).toHaveBeenCalledWith('facebookUrl', '');
+    });
+
+    it('should compose the full URL via onFieldChange when a handle is typed', () => {
         const onFieldChange = vi.fn();
         render(
             <SocialNetworksSection
@@ -105,9 +146,9 @@ describe('SocialNetworksSection', () => {
         );
 
         const twitterInput = screen.getByLabelText(/twitter/i);
-        fireEvent.change(twitterInput, { target: { value: 'https://x.com/test' } });
+        fireEvent.change(twitterInput, { target: { value: 'mi-usuario' } });
 
-        expect(onFieldChange).toHaveBeenCalledWith('twitterUrl', 'https://x.com/test');
+        expect(onFieldChange).toHaveBeenCalledWith('twitterUrl', 'https://x.com/mi-usuario');
     });
 
     it('should display validation error for a specific social field', () => {
@@ -122,14 +163,14 @@ describe('SocialNetworksSection', () => {
         expect(screen.getByLabelText(/facebook/i)).toHaveAttribute('aria-invalid', 'true');
     });
 
-    it('should set all input types to url', () => {
+    it('should set all handle input types to text', () => {
         render(<SocialNetworksSection {...DEFAULT_PROPS} />);
 
-        expect(screen.getByLabelText(/facebook/i)).toHaveAttribute('type', 'url');
-        expect(screen.getByLabelText(/instagram/i)).toHaveAttribute('type', 'url');
-        expect(screen.getByLabelText(/twitter/i)).toHaveAttribute('type', 'url');
-        expect(screen.getByLabelText(/linkedin/i)).toHaveAttribute('type', 'url');
-        expect(screen.getByLabelText(/tiktok/i)).toHaveAttribute('type', 'url');
-        expect(screen.getByLabelText(/youtube/i)).toHaveAttribute('type', 'url');
+        expect(screen.getByLabelText(/facebook/i)).toHaveAttribute('type', 'text');
+        expect(screen.getByLabelText(/instagram/i)).toHaveAttribute('type', 'text');
+        expect(screen.getByLabelText(/twitter/i)).toHaveAttribute('type', 'text');
+        expect(screen.getByLabelText(/linkedin/i)).toHaveAttribute('type', 'text');
+        expect(screen.getByLabelText(/tiktok/i)).toHaveAttribute('type', 'text');
+        expect(screen.getByLabelText(/youtube/i)).toHaveAttribute('type', 'text');
     });
 });

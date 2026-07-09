@@ -786,6 +786,84 @@ describe('processSubscriptionUpdated', () => {
         );
     });
 
+    // HOS-108: recurring subs created via qzpay `mode: 'paid'` land on the
+    // literal stored status `incomplete` (qzpay vocab), NOT `pending_provider`.
+    // The activation webhook must normalize that `from` before the transition
+    // guard, otherwise `incomplete` is rejected as an unknown source status and
+    // the sub is stuck forever. This is the exact production regression.
+    it('should activate a subscription stored as qzpay `incomplete` (HOS-108)', async () => {
+        // Arrange: local row still carries qzpay's creation-time `incomplete`.
+        const mpPreapprovalId = 'preapproval-mp-001';
+        mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+        mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+        const localSub = makeLocalSubscription({ status: 'incomplete' });
+        // makeDbMock defaults the FOR UPDATE fresh row to the same status, so this
+        // also exercises the in-transaction normalization of `freshStatus`.
+        const dbMock = makeDbMock([localSub]);
+        vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+        const event = makeWebhookEvent();
+
+        // Act
+        const result = await processSubscriptionUpdated({
+            event: event as never,
+            billing: mockBilling as never,
+            paymentAdapter: mockPaymentAdapter as never,
+            providerEventId: 'evt-hos108-a'
+        });
+
+        // Assert: the write happened and the sub is now active.
+        expect(result).toEqual({
+            success: true,
+            statusChanged: true,
+            newStatus: SubscriptionStatusEnum.ACTIVE
+        });
+
+        const txUpdateChain = dbMock.tx.update({});
+        expect(txUpdateChain.set).toHaveBeenCalledWith(
+            expect.objectContaining({ status: SubscriptionStatusEnum.ACTIVE })
+        );
+
+        // Audit trail records the NORMALIZED previous status (Hospeda vocab),
+        // not the raw qzpay `incomplete`.
+        const txInsertChain = dbMock.tx.insert({});
+        expect(txInsertChain.values).toHaveBeenCalledWith(
+            expect.objectContaining({
+                previousStatus: SubscriptionStatusEnum.PENDING_PROVIDER,
+                newStatus: SubscriptionStatusEnum.ACTIVE
+            })
+        );
+    });
+
+    // HOS-108: a genuinely unrecognized stored status (neither qzpay nor Hospeda
+    // vocab) is a data-integrity signal — skip the write entirely, do not open a
+    // transaction, and surface it (no silent coercion).
+    it('should skip the write when the stored status is unrecognized (HOS-108)', async () => {
+        // Arrange
+        const mpPreapprovalId = 'preapproval-mp-001';
+        mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+        mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+        const localSub = makeLocalSubscription({ status: 'bogus_status' });
+        const dbMock = makeDbMock([localSub]);
+        vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+        const event = makeWebhookEvent();
+
+        // Act
+        const result = await processSubscriptionUpdated({
+            event: event as never,
+            billing: mockBilling as never,
+            paymentAdapter: mockPaymentAdapter as never,
+            providerEventId: 'evt-hos108-b'
+        });
+
+        // Assert: no status change, and the transaction was never opened.
+        expect(result).toEqual({ success: true, statusChanged: false });
+        expect(dbMock.transaction).not.toHaveBeenCalled();
+    });
+
     // TC-10: CANCELLED transition does NOT overwrite existing canceledAt
     it('should NOT overwrite canceledAt when it is already set during CANCELLED transition', async () => {
         // Arrange

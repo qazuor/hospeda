@@ -17,11 +17,44 @@
  * @module AiSearchEntry
  */
 
+import { SearchIcon, SparkleIcon } from '@repo/icons';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './AiSearchEntry.module.css';
 import { SearchChatPanel } from './SearchChatPanel.client';
+
+/**
+ * Composite "search + AI" icon: a magnifying glass with a small sparkle
+ * badge overlaid at the top-right corner, conveying "AI-powered search"
+ * without relying on an emoji glyph (BETA-144). Both icons render solid
+ * white via the `color` prop so they stay visible on the brand-primary
+ * blue background of the entry point and FAB.
+ *
+ * @param className - Optional extra class merged onto the outer wrapper
+ * (e.g. to layer sizing/animation from the caller's own CSS module class).
+ */
+function AiSearchCompositeIcon({ className }: { readonly className?: string }) {
+    return (
+        <span
+            className={[styles.compositeIcon, className].filter(Boolean).join(' ')}
+            aria-hidden="true"
+        >
+            <SearchIcon
+                size={22}
+                weight="bold"
+                color="#fff"
+                className={styles.compositeIconBase}
+            />
+            <SparkleIcon
+                size={12}
+                weight="fill"
+                color="#fff"
+                className={styles.compositeIconSparkle}
+            />
+        </span>
+    );
+}
 
 /**
  * Selector matching the elements that can receive keyboard focus inside the
@@ -173,12 +206,7 @@ export function AiSearchEntry({
                 aria-label={t('aiSearch.triggerLabel', 'Buscá con IA')}
                 data-testid="ai-search-entry"
             >
-                <span
-                    className={styles.searchBarIcon}
-                    aria-hidden="true"
-                >
-                    ✨
-                </span>
+                <AiSearchCompositeIcon className={styles.searchBarIcon} />
                 <span className={styles.searchBarPlaceholder}>
                     {t(
                         'aiSearch.chat.placeholder',
@@ -194,7 +222,10 @@ export function AiSearchEntry({
             </button>
 
             {/* Floating FAB — appears when the search bar is out of viewport.
-                 Positioned above the FeedbackFAB (bottom: 5rem vs 1rem). */}
+                 Desktop layout unchanged (bottom: 5rem, right: 1.5rem).
+                 Mobile gets its own non-overlapping slot above the other two
+                 bottom-right FABs — see .fab's max-width:768px rule in
+                 AiSearchEntry.module.css (BETA-144). */}
             {isFabVisible && !isOpen && (
                 <button
                     type="button"
@@ -203,7 +234,7 @@ export function AiSearchEntry({
                     aria-label={t('aiSearch.triggerLabel', 'Buscá con IA')}
                     data-testid="ai-search-fab"
                 >
-                    <span aria-hidden="true">✨</span>
+                    <AiSearchCompositeIcon />
                 </button>
             )}
 

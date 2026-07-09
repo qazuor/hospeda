@@ -16,6 +16,7 @@ import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
     checkSubscriptionStatusTransition,
+    normalizeStoredSubscriptionStatus,
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner,
     withServiceTransaction
@@ -81,6 +82,12 @@ import {
  * QZPay uses "canceled" (1 L) while Hospeda uses "cancelled" (2 L's).
  * The mapStatus() in @qazuor/qzpay-mercadopago passes through unknown statuses,
  * so "finished" arrives as-is.
+ *
+ * NOT the same map as `normalizeStoredSubscriptionStatus` (@repo/service-core):
+ * this one maps the INCOMING status returned by `retrieve()` (has `finished`,
+ * `pending` → null; never `incomplete`), whereas the normalizer maps the STORED
+ * DB `from` status (has `incomplete`, `unpaid`, `incomplete_expired`). They
+ * serve different inputs — do NOT merge them.
  */
 export const QZPAY_TO_HOSPEDA_STATUS: Record<string, SubscriptionStatusEnum | null> = {
     active: SubscriptionStatusEnum.ACTIVE,
@@ -395,7 +402,36 @@ export async function processSubscriptionUpdated({
     }
 
     // Step 6: Compare statuses
-    const previousStatus = localSubscription.status;
+    //
+    // HOS-108: the stored status may be in qzpay's creation-time vocabulary
+    // (recurring subs created via `mode: 'paid'` land on the literal string
+    // `incomplete`, NOT Hospeda's `pending_provider`). The transition state
+    // machine is expressed exclusively in Hospeda vocabulary, so we MUST
+    // normalize the stored `from` before comparing it or feeding it to the
+    // guard — otherwise `incomplete` is rejected as an "unknown source status"
+    // and the activation write (plus every side effect) is silently skipped.
+    const rawPreviousStatus = localSubscription.status;
+    const previousStatus = normalizeStoredSubscriptionStatus(rawPreviousStatus);
+
+    if (previousStatus === null) {
+        // A stored status we cannot map to Hospeda vocabulary is a data-integrity
+        // bug. Skip is safe (row stays authoritative; MP won't retry a 200'd event)
+        // and actionable — surface it for manual inspection.
+        apiLogger.error(
+            {
+                subscriptionId: localSubscription.id,
+                customerId: localSubscription.customerId,
+                rawStatus: rawPreviousStatus,
+                mpPreapprovalId: maskId(mpPreapprovalId),
+                providerEventId,
+                source
+            },
+            'Subscription webhook: stored status not recognized — skipping status write and side effects',
+            { capture: true }
+        );
+        return { success: true, statusChanged: false };
+    }
+
     if (previousStatus === mappedStatus) {
         // If no status change but planId changed, persist the new planId
         if (fetchedPlanId != null && localPlanId != null && fetchedPlanId !== localPlanId) {
@@ -502,13 +538,32 @@ export async function processSubscriptionUpdated({
             .where(eq(billingSubscriptions.id, localSubscription.id))
             .for('update');
 
-        const freshStatus = freshRow?.status;
-
-        if (!freshStatus) {
+        if (!freshRow) {
             // Row disappeared between Step 5 and here — nothing to update.
             apiLogger.warn(
                 { subscriptionId: localSubscription.id, source },
                 'Subscription webhook tx: row not found under FOR UPDATE lock — skipping write'
+            );
+            txStatusChanged = false;
+            return;
+        }
+
+        // HOS-108: normalize the fresh (locked) status too — it is read straight
+        // off the row and can still be in qzpay vocabulary (`incomplete`).
+        const rawFreshStatus = freshRow.status;
+        const freshStatus = normalizeStoredSubscriptionStatus(rawFreshStatus);
+
+        if (freshStatus === null) {
+            apiLogger.error(
+                {
+                    subscriptionId: localSubscription.id,
+                    rawStatus: rawFreshStatus,
+                    mpPreapprovalId: maskId(mpPreapprovalId),
+                    providerEventId,
+                    source
+                },
+                'Subscription webhook tx: fresh stored status not recognized — committing nothing',
+                { capture: true }
             );
             txStatusChanged = false;
             return;
@@ -617,6 +672,13 @@ export async function processSubscriptionUpdated({
                 metadata: {
                     qzpayStatus,
                     mpPreapprovalId,
+                    // HOS-108 forensics: preserve the raw stored status when it
+                    // differed from the normalized value (i.e. the row was still
+                    // on qzpay vocabulary like `incomplete`). This keeps the exact
+                    // bug signature greppable in the audit trail; omitted when the
+                    // stored value was already Hospeda vocabulary (no divergence).
+                    ...(rawPreviousStatus === previousStatus ? {} : { rawPreviousStatus }),
+                    ...(rawFreshStatus === freshStatus ? {} : { rawFreshStatus }),
                     ...(cancellationReason === undefined ? {} : { cancellationReason })
                 }
             });
