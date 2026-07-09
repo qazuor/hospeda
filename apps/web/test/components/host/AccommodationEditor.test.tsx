@@ -167,9 +167,12 @@ describe('AccommodationEditor', () => {
         const summaryInput = screen.getByLabelText(/resumen/i) as HTMLTextAreaElement;
         expect(summaryInput.value).toBe('Un hermoso hotel en el centro');
 
-        // Phase B: contact info fields
-        const phoneInput = screen.getByLabelText(/teléfono/i) as HTMLInputElement;
-        expect(phoneInput.value).toBe('+54 9 343 1234567');
+        // Phase B: contact info fields (BETA-139: phone split into country + number)
+        const phoneCountryInput = screen.getByLabelText(/país/i) as HTMLInputElement;
+        expect(phoneCountryInput.value).toBe('Argentina (+54)');
+
+        const phoneNumberInput = screen.getByLabelText(/número/i) as HTMLInputElement;
+        expect(phoneNumberInput.value).toBe('9 343 1234567');
 
         const emailInput = screen.getByLabelText(/^email$/i) as HTMLInputElement;
         expect(emailInput.value).toBe('contacto@hotel.com');
@@ -177,12 +180,12 @@ describe('AccommodationEditor', () => {
         const websiteInput = screen.getByLabelText(/sitio web/i) as HTMLInputElement;
         expect(websiteInput.value).toBe('https://hotel.com');
 
-        // Phase B: social networks fields
+        // Phase B: social networks fields (BETA-139: only the handle is shown)
         const facebookInput = screen.getByLabelText(/facebook/i) as HTMLInputElement;
-        expect(facebookInput.value).toBe('https://facebook.com/hotel');
+        expect(facebookInput.value).toBe('hotel');
 
         const instagramInput = screen.getByLabelText(/instagram/i) as HTMLInputElement;
-        expect(instagramInput.value).toBe('https://instagram.com/hotel');
+        expect(instagramInput.value).toBe('hotel');
 
         // Phase B: location fields
         const latInput = screen.getByLabelText(/latitud/i) as HTMLInputElement;
@@ -284,10 +287,10 @@ describe('AccommodationEditor', () => {
         const user = userEvent.setup();
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
-        const phoneInput = screen.getByLabelText(/teléfono/i) as HTMLInputElement;
-        await user.clear(phoneInput);
-        await user.type(phoneInput, '+54 9 343 9999999');
-        fireEvent.submit(phoneInput.closest('form')!);
+        const phoneNumberInput = screen.getByLabelText(/número/i) as HTMLInputElement;
+        await user.clear(phoneNumberInput);
+        await user.type(phoneNumberInput, '9 343 9999999');
+        fireEvent.submit(phoneNumberInput.closest('form')!);
 
         await vi.waitFor(() => {
             expect(mockUpdate).toHaveBeenCalledOnce();
@@ -306,7 +309,7 @@ describe('AccommodationEditor', () => {
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
         const twitterInput = screen.getByLabelText(/twitter/i) as HTMLInputElement;
-        await user.type(twitterInput, 'https://x.com/mi-hotel');
+        await user.type(twitterInput, 'mi-hotel');
         fireEvent.submit(twitterInput.closest('form')!);
 
         await vi.waitFor(() => {
