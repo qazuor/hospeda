@@ -1,0 +1,52 @@
+/* EditorSectionNav.module.css — BETA-138 */
+/* Visibility (mounted only inside the desktop two-column layout) is handled
+   by the parent's `.navSlot` in AccommodationEditor.module.css. */
+
+.nav {
+    display: flex;
+    flex-direction: column;
+}
+
+.list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-left: 2px solid var(--core-foreground-a08);
+}
+
+.item {
+    margin: 0;
+}
+
+.link {
+    display: block;
+    padding: 0.5rem var(--space-4, 1rem);
+    margin-left: -2px;
+    border-left: 2px solid transparent;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: var(--core-muted-foreground);
+    text-decoration: none;
+    transition:
+        color var(--duration-fast, 0.2s) ease,
+        border-color var(--duration-fast, 0.2s) ease;
+}
+
+.link:hover {
+    color: var(--core-foreground);
+}
+
+.link:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.link[aria-current="true"] {
+    color: var(--brand-accent);
+    font-weight: 600;
+    border-left-color: var(--brand-accent);
+}

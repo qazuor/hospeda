@@ -229,7 +229,11 @@
                 "socialNetworks": "Social networks",
                 "photos": "Photos",
                 "photosDescription": "Upload photos of your property to attract more guests",
+                "externalReputation": "External reputation",
                 "featuredToggle": "[EN] Destacado"
+            },
+            "sectionNav": {
+                "ariaLabel": "Form section navigation"
             },
             "field": {
                 "name": "Name",

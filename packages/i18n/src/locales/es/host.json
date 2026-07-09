@@ -229,7 +229,11 @@
                 "socialNetworks": "Redes sociales",
                 "photos": "Fotos",
                 "photosDescription": "Subí fotos de tu propiedad para atraer más huéspedes",
+                "externalReputation": "Reputación externa",
                 "featuredToggle": "Destacado"
+            },
+            "sectionNav": {
+                "ariaLabel": "Navegación de secciones del formulario"
             },
             "field": {
                 "name": "Nombre",
