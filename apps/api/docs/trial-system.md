@@ -98,9 +98,13 @@ Authorization: Bearer <token>
   "startedAt": "2024-01-01T00:00:00.000Z",
   "expiresAt": "2024-01-15T00:00:00.000Z",
   "daysRemaining": 7,
-  "planSlug": "owner-basico"
+  "planSlug": "owner-basico",
+  "intendedInterval": "annual"
 }
 ```
+
+`intendedInterval` (`'monthly' | 'annual' | null`, added HOS-115) — see
+[Annual Trial Branch (HOS-115)](#annual-trial-branch-hos-115) below.
 
 ### Start Trial (Internal)
 
@@ -397,6 +401,91 @@ if (customerId && user.role === 'HOST') {
 4. **Single trial plan**: All HOST users start on the `owner-basico` 14-day free trial, as documented in `v1-launch-strategy.md`.
 
 **When to revisit**: This decision should be revisited if a new role is introduced that requires subscription-based access (e.g., a `PROPERTY_MANAGER` role for multi-property management companies), if the SPONSOR role is migrated to a subscription model, or if the platform introduces tiered access for content editors that requires billing.
+
+---
+
+## Annual Trial Branch (HOS-115)
+
+Before HOS-115, only the **monthly** first-time checkout (`initiatePaidMonthlySubscription`,
+HOS-110/W1) granted a no-card trial; a trial-eligible customer who entered checkout on the
+**annual** toggle fell straight through to an upfront MercadoPago charge with no trial at
+all. HOS-115 closes that gap so the trial grant is interval-agnostic at entry.
+
+### 1. Annual first-time checkout now grants the same no-card trial
+
+`initiatePaidAnnualSubscription` (`apps/api/src/services/subscription-checkout.service.ts`,
+~L1223) adds a TRIAL branch inserted **after** the COMP early-return and **before** the
+discount/upfront-charge path, mirroring the monthly precedence exactly:
+`comp` wins outright → `trial` (if eligible) → paid.
+
+- Eligibility is the SAME cross-interval, one-trial-per-customer-for-life rule as monthly:
+  any prior subscription of any status/interval/product-domain disqualifies the trial.
+  `TrialService.startTrial()` is the authoritative gate (re-checked internally); the local
+  `existingSubscriptions.length === 0` check is just a cheap first-layer short-circuit.
+- The trial object itself is interval-agnostic (no price, no interval) — it is literally the
+  same trial the monthly path grants, just reached from the annual toggle.
+- Promo codes fold in per the HOS-110 W1 rules: `trial_extension` forwards its
+  `freeTrialDays` as `extraTrialDays` (lengthens the trial); `discount` is discarded
+  (trial wins) and the result carries `promoCodeIgnored: true`; `comp` never reaches this
+  branch (it already returned above).
+- On success the function returns `appliedEffect: 'trial'` with no real MP checkout object
+  (`checkoutUrl` reuses the already-resolved success URL), mirroring the monthly
+  `InitiatePaidMonthlySubscriptionResult` shape so the route handler treats both uniformly.
+
+### 2. `intendedInterval` metadata + pricing-toggle nudge
+
+The checkout entry interval (`'monthly' | 'annual'`) is stamped onto the trial
+subscription's `metadata.intendedInterval` at creation time
+(`TrialService.startTrial()`, forwarded from the checkout-entry callers), and read back
+in two places so a user who never converted still lands on the toggle they originally
+picked:
+
+- **`getTrialStatus()`** (`trial.service.ts` ~L416-431 for the historical/expired branch,
+  ~L449-456 for the active/trialing branch) resolves it via `resolveIntendedInterval()`
+  (validates against the two known values, `null` for anything else — missing metadata,
+  garbage values, or a trial that predates HOS-115) and returns it as
+  `intendedInterval` on the trial-status response. For the historical branch this is read
+  off the **most-recent** canceled/expired trial subscription (same sort used to pick which
+  historical sub to report on at all), matching the "most-recent trial" language in the
+  spec. This is nudge delivery path 2: a logged-in user who navigates directly to the
+  pricing page (no `?interval=` query param) still gets the toggle pre-selected.
+- **`buildTrialUpgradeUrl()`** (used by both `notification-schedule.job.ts`'s
+  `TRIAL_ENDING_REMINDER` sender and the `TRIAL_EXPIRED` notification) appends
+  `?interval=<intendedInterval>` to the owner pricing page link when the value is one of
+  the two known intervals, and omits the param otherwise. This is nudge delivery path 1:
+  the link embedded in the reminder/expiry email.
+
+Both read paths tolerate `unknown` metadata shapes (the QZPay `metadata` column is not
+strictly typed) — `resolveIntendedInterval()` is the single validation point, never a raw
+cast to a specific type.
+
+### 3. Duplicate reminder cron disabled
+
+`trial-pre-end-notif.job.ts` (SPEC-126 D5, advisory lock 1005) independently sent the same
+`NotificationType.TRIAL_ENDING_REMINDER` email that `notification-schedule.job.ts`
+(SPEC-064, ~3.5 months older and the canonical sender) already sends, causing duplicate
+emails. Its `upgradeUrl` also pointed at the dead `/cuenta/planes` route with no user
+linkage (`userId: null`). HOS-115 flips `enabled: false` on the job definition — the file
+is **not** deleted, because it has two robustness properties `notification-schedule.job.ts`
+still lacks and that a follow-up must port over before the file can be removed:
+
+1. The skip-tolerant D-3 window (`daysRemaining >= 2`) so a missed cron day doesn't drop
+   the D-3 reminder entirely.
+2. A durable `billing_subscription_events` dedup ledger (vs. `notification-schedule`'s
+   weaker in-memory/log-based dedup), which survives process restarts and multi-replica
+   races.
+
+**Follow-up: HOS-121** tracks porting these two improvements into
+`notification-schedule.job.ts`; only once that lands should `trial-pre-end-notif.job.ts`
+be deleted outright.
+
+### Gate matrix impact
+
+`GET /api/v1/protected/billing/trial/status` already existed pre-HOS-115 with gate
+`none` ("Trial status self-read; always accessible") in
+[`docs/billing/endpoint-gate-matrix.md`](../../docs/billing/endpoint-gate-matrix.md).
+HOS-115 only added a field (`intendedInterval`) to its response — it did not change the
+gate decision, and no new route was added. **No gate-matrix row change was required.**
 
 ---
 
