@@ -93,8 +93,8 @@
 }
 
 .planCardCurrent {
-    border-color: var(--primary, oklch(0.5 0.18 260));
-    background-color: oklch(from var(--primary, oklch(0.5 0.18 260)) l c h / 0.05);
+    border-color: var(--brand-primary, oklch(0.5 0.18 260));
+    background-color: oklch(from var(--brand-primary, oklch(0.5 0.18 260)) l c h / 0.05);
 }
 
 .planCardInner {
@@ -149,9 +149,9 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    background-color: oklch(from var(--primary, oklch(0.5 0.18 260)) l c h / 0.12);
-    color: var(--primary, oklch(0.5 0.18 260));
-    border: 1px solid oklch(from var(--primary, oklch(0.5 0.18 260)) l c h / 0.3);
+    background-color: oklch(from var(--brand-primary, oklch(0.5 0.18 260)) l c h / 0.12);
+    color: var(--brand-primary, oklch(0.5 0.18 260));
+    border: 1px solid oklch(from var(--brand-primary, oklch(0.5 0.18 260)) l c h / 0.3);
 }
 
 .badgeUpgrade {
@@ -199,9 +199,9 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--primary, oklch(0.5 0.18 260));
+    color: var(--brand-primary, oklch(0.5 0.18 260));
     background-color: transparent;
-    border: 1px solid var(--primary, oklch(0.5 0.18 260));
+    border: 1px solid var(--brand-primary, oklch(0.5 0.18 260));
     border-radius: var(--radius-button, 8px);
     cursor: pointer;
     transition:
@@ -212,8 +212,8 @@
 }
 
 .btnSelect:hover {
-    background-color: var(--primary, oklch(0.5 0.18 260));
-    color: white;
+    background-color: var(--brand-primary, oklch(0.5 0.18 260));
+    color: var(--primary-foreground);
 }
 
 .btnSelect:focus-visible {
@@ -228,7 +228,7 @@
 
 .btnSelectAnnual:hover {
     background-color: var(--success, oklch(0.55 0.18 145));
-    color: white;
+    color: var(--success-foreground);
 }
 
 /* ── Footer ────────────────────────────────────────────────────────────────── */

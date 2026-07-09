@@ -237,7 +237,7 @@ select.addFormSelect {
     border: none;
     border-radius: var(--radius-pill, 9999px);
     background-color: var(--brand-primary);
-    color: #fff;
+    color: var(--primary-foreground);
     font-family: var(--font-sans);
     font-weight: 600;
     font-size: 0.875rem;
@@ -281,7 +281,7 @@ select.addFormSelect {
 
 .refreshButton:hover {
     background-color: var(--brand-primary);
-    color: #fff;
+    color: var(--primary-foreground);
 }
 
 .refreshButton:disabled {
