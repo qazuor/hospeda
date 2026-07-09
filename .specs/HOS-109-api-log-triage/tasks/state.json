@@ -245,29 +245,29 @@
             "id": "T-011",
             "title": "Serve robots.txt and fix RSS feed route",
             "description": "P15/F5. GET /robots.txt returns 404 and GET /public/posts/slug/rss.xml returns 400 (RSS path routed as a post slug). Serve a robots.txt and provide a proper RSS feed route so these stop erroring. Verify both return 200 with correct content-type.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Add robots.txt (web)", "completed": false },
-                { "title": "Add/route RSS feed instead of 400", "completed": false }
+                { "title": "Add robots.txt (web)", "completed": true },
+                { "title": "Add/route RSS feed instead of 400", "completed": true }
             ],
             "tags": ["web", "seo"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-09T03:28:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-09T06:55:00.000Z",
+                "completed": "2026-07-09T07:16:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 11,
-        "pending": 4,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.3
     }

@@ -1,6 +1,6 @@
 # HOS-109: Investigate & fix production API log errors and noise (post-relaunch triage)
 
-## Progress: 7/11 tasks (64%)
+## Progress: 8/11 tasks (73%)
 
 **Average Complexity:** 2.3/3 (max)
 **All tasks independent** — no blocking dependencies; ordered by priority within phases.
@@ -57,7 +57,16 @@
 ### F5 — Config / SEO
 
 - [ ] **T-010** (complexity: 3) — Fix Brevo webhook signature verification
-- [ ] **T-011** (complexity: 2) — Serve robots.txt and fix RSS feed route
+- [x] **T-011** (complexity: 2) — Serve robots.txt and fix RSS feed route ✅
+  - DONE (commit 44e68e107): INVESTIGATION FIRST (owner asked) confirmed it's NOT our bug — the web
+    feed fetches the correct /posts? list endpoint, RSS `<link>`/sitemap point to the web, nobody
+    builds `/posts/slug/rss.xml`. Source = external crawlers hitting the API domain. Owner chose
+    Option A. Fix (API-side, since errors are in API logs): serve `/robots.txt` Disallow-all +
+    301-redirect `/api/v1/public/posts/slug/rss.xml` → web feed (registered before `/slug/:slug`,
+    exact-match only). Bypass Accept-header validation via validationMiddleware publicPaths (exact),
+    because `options.skipValidation` runs too late for app-mounted routes. 5 tests via initApp +
+    35 validation regression + typecheck + biome green. Fresh review: approve. **Partially answers
+    OQ-2**: the 404/feed flood is external crawler traffic, not our sitemap/ISR.
 
 ---
 
