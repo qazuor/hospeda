@@ -28,6 +28,7 @@
 
 import type { AccommodationPublic } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { renderChatMarkdown } from '@/lib/ai-search/render-chat-markdown';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -325,7 +326,15 @@ export function SearchChatPanel({
 
     const hasMessages = chat.messages.length > 0;
     const showThinking = chat.isStreaming && !chat.currentReply;
-    const showResults = chat.results.length > 0 || chat.resultsLoading;
+    // BUG FIX: previously only `results.length > 0 || resultsLoading`, which
+    // means a completed search with ZERO results (resultsLoading false,
+    // results empty) never rendered the results section at all — the
+    // `resultsEmpty` copy below was unreachable dead code. `hasSearched`
+    // (true once the first accommodations GET has ever fired) keeps the
+    // section — and its empty-state message — visible after a 0-result turn,
+    // so the user sees "no matches" instead of an empty drawer that looks
+    // like the search never ran.
+    const showResults = chat.results.length > 0 || chat.resultsLoading || chat.hasSearched;
 
     // Low-confidence notice (SPEC-265 A2): show once a turn has completed
     // (not during streaming) when EITHER the confidence is below threshold OR
@@ -467,28 +476,42 @@ export function SearchChatPanel({
                         </div>
                     )}
 
-                    {/* Completed message history */}
-                    {chat.messages.map((msg, idx) => (
-                        <div
-                            // biome-ignore lint/suspicious/noArrayIndexKey: message list grows monotonically; index is stable for already-committed messages
-                            key={idx}
-                            className={`${styles.bubble} ${
-                                msg.role === 'user' ? styles.userBubble : styles.assistantBubble
-                            }`}
-                            data-testid={msg.role === 'assistant' ? 'ai-search-reply' : undefined}
-                        >
-                            {msg.content}
-                        </div>
-                    ))}
+                    {/* Completed message history. Assistant replies are rendered as
+                        sanitized markdown (bold/lists/links); user messages stay
+                        plain text — no reason to interpret markdown the user typed. */}
+                    {chat.messages.map((msg, idx) =>
+                        msg.role === 'assistant' ? (
+                            <div
+                                // biome-ignore lint/suspicious/noArrayIndexKey: message list grows monotonically; index is stable for already-committed messages
+                                key={idx}
+                                className={`${styles.bubble} ${styles.assistantBubble}`}
+                                data-testid="ai-search-reply"
+                                // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
+                                dangerouslySetInnerHTML={{
+                                    __html: renderChatMarkdown({ raw: msg.content })
+                                }}
+                            />
+                        ) : (
+                            <div
+                                // biome-ignore lint/suspicious/noArrayIndexKey: message list grows monotonically; index is stable for already-committed messages
+                                key={idx}
+                                className={`${styles.bubble} ${styles.userBubble}`}
+                            >
+                                {msg.content}
+                            </div>
+                        )
+                    )}
 
                     {/* Live-streamed reply — shown while isStreaming and tokens are arriving */}
                     {chat.isStreaming && chat.currentReply && (
                         <div
                             className={`${styles.bubble} ${styles.assistantBubble} ${styles.streaming}`}
                             aria-live="polite"
-                        >
-                            {chat.currentReply}
-                        </div>
+                            // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
+                            dangerouslySetInnerHTML={{
+                                __html: renderChatMarkdown({ raw: chat.currentReply })
+                            }}
+                        />
                     )}
 
                     {/* Thinking indicator — shown while streaming but before first token */}
@@ -608,10 +631,13 @@ export function SearchChatPanel({
                                 ))}
                             </ul>
                         ) : (
-                            <p className={styles.resultsEmpty}>
+                            <p
+                                className={styles.resultsEmpty}
+                                data-testid="ai-search-results-empty"
+                            >
                                 {t(
                                     'aiSearch.chat.resultsEmpty',
-                                    'No encontramos alojamientos con esos filtros.'
+                                    'No encontré alojamientos con esos filtros. Probá aflojar algún criterio.'
                                 )}
                             </p>
                         )}

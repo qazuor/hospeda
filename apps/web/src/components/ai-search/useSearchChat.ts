@@ -63,6 +63,12 @@ export interface UseSearchChatParams {
  *   Rendered as chips by T-011. Echoed back as `currentFilters` on the next turn.
  * @property results - Accommodation results from the last successful search.
  * @property resultsLoading - True while the accommodations GET is in flight.
+ * @property hasSearched - True once the FIRST accommodations GET has ever
+ *   fired (set the moment a `filters` event triggers `fetchAccommodations`,
+ *   before the response arrives). Distinguishes "no search has run yet" from
+ *   "a search ran and matched zero results" — the panel uses this to decide
+ *   whether to show the empty-results copy instead of just hiding the whole
+ *   results section. Reset to `false` by `reset()`.
  * @property currentReply - Streamed reply text accumulator (shown live while streaming).
  * @property isStreaming - True from `send()` until `done` / `error` arrives.
  * @property conversationId - Server conversation id from the last `done` event (nullable).
@@ -79,6 +85,7 @@ export interface UseSearchChatReturn {
     readonly currentFilters: SearchIntentEntities | null;
     readonly results: ReadonlyArray<AccommodationPublic>;
     readonly resultsLoading: boolean;
+    readonly hasSearched: boolean;
     readonly currentReply: string;
     readonly isStreaming: boolean;
     readonly conversationId: string | null;
@@ -127,6 +134,7 @@ interface SearchChatState {
     readonly lastSearchParams: AiSearchChatFiltersEvent['params'] | null;
     readonly results: ReadonlyArray<AccommodationPublic>;
     readonly resultsLoading: boolean;
+    readonly hasSearched: boolean;
     readonly currentReply: string;
     readonly isStreaming: boolean;
     readonly conversationId: string | null;
@@ -142,6 +150,7 @@ const INITIAL_STATE: SearchChatState = {
     lastSearchParams: null,
     results: [],
     resultsLoading: false,
+    hasSearched: false,
     currentReply: '',
     isStreaming: false,
     conversationId: null,
@@ -252,7 +261,7 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
      */
     const fetchAccommodations = useCallback(
         async (searchParams: AiSearchChatFiltersEvent['params']): Promise<void> => {
-            setState((prev) => ({ ...prev, resultsLoading: true, error: null }));
+            setState((prev) => ({ ...prev, resultsLoading: true, hasSearched: true, error: null }));
             const apiParams = filtersParamsToApiParams(searchParams);
             const result = await accommodationsApi.list(
                 apiParams as Parameters<typeof accommodationsApi.list>[0]
@@ -482,6 +491,7 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
         currentFilters: state.currentFilters,
         results: state.results,
         resultsLoading: state.resultsLoading,
+        hasSearched: state.hasSearched,
         currentReply: state.currentReply,
         isStreaming: state.isStreaming,
         conversationId: state.conversationId,
