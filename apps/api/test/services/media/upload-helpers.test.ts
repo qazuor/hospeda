@@ -7,6 +7,9 @@
  * - validateFile: accepts valid buffer, rejects empty
  * - buildEntityFolder: produces correct path
  * - uploadToProvider: logs actorId (not entityId) in success log (Fix C / SPEC-208)
+ * - uploadToProvider: bounded timeout forwarded to the provider, single
+ *   attempt only (NO retry) — a failure surfaces as a typed UPSTREAM_ERROR
+ *   (BETA-134)
  * - buildPatchPayload: normalises nested media → flat keys (SPEC-208 PR3 Bug 1)
  * - buildPatchPayload: preserves null featuredImageId for DB clear (SPEC-208 PR3 Bug 2)
  */
@@ -273,6 +276,68 @@ describe('upload-helpers', () => {
             // relies on code review. The structural test above documents the fix.
             void mockLogger;
             void capturedLogs;
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // BETA-134: bounded timeout, single attempt (NO retry)
+    // -------------------------------------------------------------------------
+    describe('uploadToProvider — bounded timeout, single attempt (BETA-134)', () => {
+        const baseParams = {
+            buffer: Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
+            folder: 'hospeda/dev/accommodations/eeee0000',
+            publicId: 'gallery/abcd1234',
+            entityType: 'accommodation',
+            entityId: 'eeee0000-0000-4000-8000-000000000002'
+        };
+
+        it('should pass a bounded, positive timeoutMs to the provider', async () => {
+            // Arrange
+            const mockUpload = vi.fn().mockResolvedValue({
+                url: 'https://res.cloudinary.com/hospeda/image/upload/v1/hospeda/dev/accommodations/eeee0000/gallery/abcd1234',
+                publicId: 'hospeda/dev/accommodations/eeee0000/gallery/abcd1234',
+                width: 1920,
+                height: 1080
+            });
+            const provider = { upload: mockUpload, delete: vi.fn() };
+
+            // Act
+            await uploadToProvider(
+                provider as unknown as Parameters<typeof uploadToProvider>[0],
+                baseParams
+            );
+
+            // Assert: a bounded (short, well under a minute), positive timeout
+            // was forwarded to the provider — this is what lets our own JSON
+            // error response win the race against an upstream proxy timeout.
+            const callArg = mockUpload.mock.calls[0]?.[0] as { timeoutMs?: number };
+            expect(typeof callArg.timeoutMs).toBe('number');
+            expect(callArg.timeoutMs).toBeGreaterThan(0);
+            expect(callArg.timeoutMs).toBeLessThanOrEqual(30_000);
+        });
+
+        it('should return a typed UPSTREAM_ERROR after a single failed attempt, with NO retry', async () => {
+            // Arrange: the provider fails once, simulating a hanging/erroring
+            // Cloudinary call (the BETA-134 scenario). Automatic retry was
+            // removed by design (uploads are not provably idempotent).
+            const mockUpload = vi.fn().mockRejectedValue(new Error('ETIMEDOUT'));
+            const provider = { upload: mockUpload, delete: vi.fn() };
+
+            // Act
+            const result = await uploadToProvider(
+                provider as unknown as Parameters<typeof uploadToProvider>[0],
+                baseParams
+            );
+
+            // Assert: a clean, typed JSON-serializable error — never a thrown
+            // exception or a raw Error instance reaching the route handler.
+            expect(result).toEqual({
+                code: 'UPSTREAM_ERROR',
+                message: 'Image upload failed',
+                status: 502
+            });
+            // Single attempt only — no retry.
+            expect(mockUpload).toHaveBeenCalledOnce();
         });
     });
 });

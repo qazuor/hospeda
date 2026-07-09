@@ -20,6 +20,29 @@ const ENTITY_MAX_FILE_SIZE_MB = 5;
 const CONTENT_LENGTH_MARGIN = 1024;
 
 /**
+ * Single-attempt upstream timeout (ms) for the interactive entity-upload
+ * path (BETA-134).
+ *
+ * The web owner editor uploads photos via a synchronous XHR request. Without
+ * a bound on this end, a slow/hanging Cloudinary response eventually gets
+ * killed by the reverse proxy in front of the API, which returns its OWN
+ * non-JSON error body — breaking the client's `JSON.parse(xhr.responseText)`
+ * before our own (already JSON-safe) error handling ever gets a chance to
+ * respond. Bounding this call well under any realistic reverse-proxy timeout
+ * lets this code win the race and produce a clean typed JSON error first.
+ *
+ * MUST stay below the reverse-proxy timeout so we win the race and return
+ * JSON; pending calibration during staging smoke.
+ *
+ * Deliberately single-attempt: no retry (see {@link uploadToProvider} JSDoc
+ * for the rationale — retrying is NOT safe here). Also NOT mirroring the
+ * 180s batch-importer timeout in `scripts/process-destination-photos.ts`,
+ * which runs offline with no synchronous caller waiting on a live HTTP
+ * connection.
+ */
+const UPLOAD_TIMEOUT_MS = 25_000;
+
+/**
  * Result of a successful upload.
  */
 export interface UploadHelperResult {
@@ -96,6 +119,20 @@ export function validateFile(
 /**
  * Upload a file to Cloudinary and validate the response.
  *
+ * Applies a single bounded upload timeout, with NO retry (BETA-134): the
+ * interactive entity-upload path has no client-side timeout of its own, so a
+ * hanging Cloudinary call must fail fast on our end rather than let an
+ * upstream reverse-proxy timeout return a non-JSON error body. See
+ * {@link UPLOAD_TIMEOUT_MS} for the rationale.
+ *
+ * Deliberately single-attempt: `packages/media/src/server/cloudinary.provider.ts`
+ * documents that Cloudinary uploads are not provably idempotent at the SDK
+ * level, so an automatic caller-level retry here risks leaking an orphaned
+ * Cloudinary asset version when Cloudinary itself is merely slow (not
+ * actually failed). The bounded timeout alone fixes the root cause — our
+ * code returns a typed JSON error before the reverse proxy has a chance to
+ * inject its own non-JSON body.
+ *
  * @param provider - The image provider instance
  * @param params - Upload parameters
  * @returns The validated upload result or an error
@@ -114,16 +151,23 @@ export async function uploadToProvider(
         readonly actorId?: string;
     }
 ): Promise<UploadHelperResult | UploadHelperError> {
-    let uploadResult: Awaited<ReturnType<typeof provider.upload>>;
+    let uploadResult: Awaited<ReturnType<typeof provider.upload>> | undefined;
+    let uploadError: unknown;
+
     try {
         uploadResult = await provider.upload({
             file: params.buffer,
             folder: params.folder,
             publicId: params.publicId,
+            timeoutMs: UPLOAD_TIMEOUT_MS,
             ...(params.tags === undefined ? {} : { tags: [...params.tags] }),
             ...(params.overwrite === undefined ? {} : { overwrite: params.overwrite })
         });
-    } catch (uploadError) {
+    } catch (thrownError) {
+        uploadError = thrownError;
+    }
+
+    if (!uploadResult) {
         apiLogger.error(
             {
                 error: uploadError instanceof Error ? uploadError.message : String(uploadError),
