@@ -102,25 +102,25 @@
             "id": "T-005",
             "title": "Stop web from fetching entitlements without a session / retry-looping on 401",
             "description": "P5/F3. Guest requests to /protected/users/me/entitlements climb 82->100 then sustain 429. Investigate the web call site: it must not fetch entitlements without a session, and must not retry-loop on 401. Fix + verify no 429 churn while unauthenticated. Do not break authenticated entitlement gating.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Trace the entitlements fetch origin in apps/web", "completed": false },
+                { "title": "Trace the entitlements fetch origin in apps/web", "completed": true },
                 {
                     "title": "Guard on session presence + remove hard retry on 401",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Verify no unauthenticated 429 loop", "completed": false }
+                { "title": "Verify no unauthenticated 429 loop", "completed": true }
             ],
             "tags": ["web", "rate-limit"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-09T03:28:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-09T06:05:00.000Z",
+                "completed": "2026-07-09T06:16:00.000Z"
             }
         },
         {
@@ -265,9 +265,9 @@
     ],
     "summary": {
         "total": 11,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.3
     }

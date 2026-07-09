@@ -1,6 +1,6 @@
 # HOS-109: Investigate & fix production API log errors and noise (post-relaunch triage)
 
-## Progress: 4/11 tasks (36%)
+## Progress: 5/11 tasks (45%)
 
 **Average Complexity:** 2.3/3 (max)
 **All tasks independent** — no blocking dependencies; ordered by priority within phases.
@@ -28,7 +28,12 @@
 
 ### F3 — Over-fetch / rate-limit
 
-- [ ] **T-005** (complexity: 3) — Stop web fetching entitlements without a session / retry-loop on 401
+- [x] **T-005** (complexity: 3) — Stop web fetching entitlements without a session / retry-loop on 401 ✅
+  - DONE (commit ce7a7429a): root cause = `useMyEntitlements` fetched `/protected/users/me/entitlements`
+    on every island mount + soft-nav for guests; the 401 was never cached, so each remount re-fired
+    → sustained 429. Fix = gate the fetch on a resolved Better Auth `useSession()` (guests never call it,
+    fail-closed; stays loading while session resolves; authed users fetch+cache once). One file, 3
+    consumers untouched. 10 hook tests + 157 consumer tests + web typecheck + biome green. Fresh review: approve.
 - [ ] **T-006** (complexity: 2) — Stop unread-count poller re-polling on 403
 
 ### F4 — Investigations (report first, then fix/downgrade)
