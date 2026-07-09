@@ -271,6 +271,18 @@
         width: 520px;
         max-width: 90vw;
         height: 100%;
+        transition: width 0.25s ease;
+    }
+
+    /* HOS-111 T-005 (OQ-1): maximize widens the drawer to ~60% viewport —
+       enough room for 2-3 result-card columns — without going full-screen;
+       the page stays visible behind the (still partial-width) backdrop.
+       Declared after `.drawer` so it wins the width/max-width tie when both
+       classes are present on the same element. Mobile is already full-width
+       by default, so this has no visible effect below the breakpoint. */
+    .drawerMaximized {
+        width: 60vw;
+        max-width: 60vw;
     }
 }
 
@@ -293,6 +305,53 @@
     font-size: 1.125rem;
     font-weight: 600;
     color: var(--core-foreground, #1f2937);
+}
+
+/* HOS-111 T-005: groups the maximize toggle + close button on the right of
+   the single header row. */
+.drawerHeaderActions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.maximizeButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-button, 0.5rem);
+    background: transparent;
+    color: var(--core-muted-foreground, #6b7280);
+    cursor: pointer;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.maximizeButton:hover {
+    background-color: oklch(0 0 0 / 0.06);
+    color: var(--core-foreground, #1f2937);
+}
+
+.maximizeButton:focus-visible {
+    outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 2px;
+}
+
+/* HOS-111 T-005 follow-up: `.drawerMaximized` only exists in the
+   min-width:768px media query above — below that breakpoint the drawer is
+   already full-width, so maximizing would toggle `aria-pressed` with zero
+   visible effect. Hide the control entirely on mobile rather than ship a
+   dead toggle. Pure CSS (no matchMedia/JS), so it stays SSR-safe. */
+@media (max-width: 767px) {
+    .maximizeButton {
+        display: none;
+    }
 }
 
 .closeButton {
