@@ -151,7 +151,7 @@ export async function setup(): Promise<void> {
     //    `ALL_PLANS` — it is deliberately EXCLUDED from `ALL_PLANS` (see
     //    `packages/billing/src/config/plans.config.ts`), so the loop above
     //    alone never creates its row. The HOS-110
-    //    `0005-owner-test-daily-trial` data-migration test operates on this
+    //    `0006-owner-test-daily-trial` data-migration test operates on this
     //    row exactly like the billing-plans-port tests operate on the
     //    `ALL_PLANS` rows: it needs the row to already exist. `ensurePlan`
     //    works for any `PlanDefinition`, including this test-only one — the

@@ -1,7 +1,7 @@
 /**
  * @fileoverview
  * Integration tests for the HOS-110 data migration
- * `0005-owner-test-daily-trial.ts` — the dual-write counterpart backfilling
+ * `0006-owner-test-daily-trial.ts` — the dual-write counterpart backfilling
  * `owner-test-daily`'s new 1-day no-card trial
  * (`metadata.hasTrial: true, metadata.trialDays: 1`) onto an
  * ALREADY-SEEDED `billing_plans` row (see the migration's own JSDoc for the
@@ -27,7 +27,7 @@ import type { Actor } from '@repo/service-core';
 import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import * as ownerTestDailyTrial from '../../src/data-migrations/0005-owner-test-daily-trial.js';
+import * as ownerTestDailyTrial from '../../src/data-migrations/0006-owner-test-daily-trial.js';
 import { buildMigrationContext } from '../../src/data-migrations/context.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -138,7 +138,7 @@ afterAll(async () => {
     resetDb();
 });
 
-describe('0005-owner-test-daily-trial', () => {
+describe('0006-owner-test-daily-trial', () => {
     it('flips a baseline (pre-HOS-110) owner-test-daily row to hasTrial:true, trialDays:1', async () => {
         await withRollback(async (tx) => {
             // Arrange — simulate the pre-HOS-110 baseline default this migration backfills.
