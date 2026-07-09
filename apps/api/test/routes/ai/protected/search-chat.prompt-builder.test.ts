@@ -133,6 +133,64 @@ describe('buildConversationalSearchPrompt', () => {
     });
 });
 
+// ─── HOS-111 T-012: nearby-expansion reinforcement ───────────────────────────
+
+describe('buildConversationalSearchPrompt — nearby expansion (HOS-111 T-012, G-9)', () => {
+    it('includes the NEARBY EXPANSION instruction block AND example follow-up phrases when a current filter set exists', () => {
+        // A follow-up like "y en destinos cercanos" only makes sense once a
+        // destination is already in the accumulated filter set.
+        const currentFilters: SearchIntentEntities = { destinationId: 'dest-colon-uuid' };
+        const prompt = buildConversationalSearchPrompt({
+            currentFilters,
+            history: [{ role: 'user', content: 'cabaña en Colón' }],
+            message: 'y en destinos cercanos también',
+            locale: 'es'
+        });
+
+        expect(prompt).toContain('NEARBY EXPANSION');
+        expect(prompt).toContain('expandToNearby');
+        expect(prompt).toContain('y en destinos cercanos');
+        expect(prompt).toContain('también cerca');
+    });
+
+    it('omits the NEARBY EXPANSION instruction block when there is no current filter set (unrelated / single-turn message)', () => {
+        // Single-turn message, no prior destination context — the model must
+        // never be told expandToNearby is settable here (deterministic guard,
+        // R-3: the anchor destination must already exist to expand from).
+        const prompt = buildConversationalSearchPrompt({
+            history: [],
+            message: 'cabaña para 4 con pileta',
+            locale: 'es'
+        });
+
+        expect(prompt).not.toContain('NEARBY EXPANSION');
+        expect(prompt).not.toContain('expandToNearby');
+    });
+
+    it('omits the NEARBY EXPANSION instruction block when the current filter set is empty', () => {
+        const prompt = buildConversationalSearchPrompt({
+            currentFilters: {},
+            history: [],
+            message: 'también cerca',
+            locale: 'es'
+        });
+
+        expect(prompt).not.toContain('NEARBY EXPANSION');
+    });
+
+    it('instructs the model to only set expandToNearby when an existing destination is already in context', () => {
+        const currentFilters: SearchIntentEntities = { destinationId: 'dest-colon-uuid' };
+        const prompt = buildConversationalSearchPrompt({
+            currentFilters,
+            history: [],
+            message: 'también cerca',
+            locale: 'es'
+        });
+
+        expect(prompt).toContain('never infer it from a message with no prior search context');
+    });
+});
+
 // ─── buildSearchReplySystemPrompt (T-006) ────────────────────────────────────
 
 describe('buildSearchReplySystemPrompt', () => {

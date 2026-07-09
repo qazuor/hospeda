@@ -48,6 +48,19 @@ export const AiSearchChatRequestSchema = z
 export type AiSearchChatRequest = z.infer<typeof AiSearchChatRequestSchema>;
 
 /**
+ * Minimal destination summary used to render the "nearby destinations
+ * included" indicator (HOS-111 T-013/T-014, G-9). Deliberately narrow — only
+ * what the chip/line UI needs, not a full `Destination` payload.
+ */
+export const NearbyDestinationSummarySchema = z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    slug: z.string()
+});
+
+export type NearbyDestinationSummary = z.infer<typeof NearbyDestinationSummarySchema>;
+
+/**
  * Payload of the `filters` SSE event, emitted once per turn as soon as
  * `generateObject` resolves (before the reply streams, so results render first).
  *
@@ -57,11 +70,20 @@ export type AiSearchChatRequest = z.infer<typeof AiSearchChatRequestSchema>;
  *   Optional for additive compatibility — the route always sends it, but older
  *   clients that ignore unknown keys are unaffected. Used internally by the UI
  *   to trigger `lowConfidenceMessage` when below threshold; no numeric badge.
+ * @property nearbyDestinations - The resolved NEIGHBOR destinations (never
+ *   including the anchor destination itself) when this turn's `intent`
+ *   carried `expandToNearby: true` (HOS-111 T-013, G-9). Absent/omitted when
+ *   no nearby expansion happened this turn. The frontend renders these as an
+ *   "incluyendo <name>, <name>, ..." indicator (T-014) so it's clear which
+ *   destinations were added to the search. `params.destinationIds` already
+ *   carries the anchor + these ids for the actual accommodation search call —
+ *   this field exists purely for the UI label, not for re-deriving the query.
  */
 export const AiSearchChatFiltersEventSchema = z.object({
     params: AccommodationSearchHttpSchema,
     intent: SearchIntentEntitiesSchema,
-    confidence: z.number().min(0).max(1).optional()
+    confidence: z.number().min(0).max(1).optional(),
+    nearbyDestinations: z.array(NearbyDestinationSummarySchema).optional()
 });
 
 export type AiSearchChatFiltersEvent = z.infer<typeof AiSearchChatFiltersEventSchema>;

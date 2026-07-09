@@ -49,11 +49,13 @@ import {
     type AiSearchChatFiltersEvent,
     type AiSearchChatRequest,
     AiSearchChatRequestSchema,
+    type NearbyDestinationSummary,
     type SearchIntentEntities,
     SearchIntentEntitiesSchema,
     type SearchIntentOutput,
     SearchIntentOutputSchema
 } from '@repo/schemas';
+import { DestinationService } from '@repo/service-core';
 import { createAiQuotaMiddleware } from '../../../middlewares/ai-quota.js';
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit.js';
 import { entitlementMiddleware } from '../../../middlewares/entitlement.js';
@@ -462,6 +464,63 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         const params = mappedParams as unknown as AiSearchChatFiltersEvent['params'];
 
         // -----------------------------------------------------------------------
+        // Step 7.5 (HOS-111 T-013): Nearby-destination expansion.
+        //
+        // When the model set `expandToNearby: true` (T-012) AND the mapper
+        // resolved a single anchor destination this turn, resolve the
+        // anchor's ~50 km neighbors (T-011) and widen the search to a
+        // multi-destination query. `params.destinationId` is whatever the
+        // mapper's location-priority chain (resolvedDestinationId > entities.
+        // destinationId > geo > city-as-q) actually picked — reusing it here
+        // (rather than re-deriving priority) guarantees the expansion anchor
+        // always matches what the search itself is actually filtering by.
+        // Never fatal: a nearby-resolution failure just skips expansion and
+        // the turn proceeds as a normal (non-expanded) search.
+        // -----------------------------------------------------------------------
+        let nearbyDestinations: NearbyDestinationSummary[] = [];
+        const nearbyAnchorId =
+            typeof params.destinationId === 'string' ? params.destinationId : undefined;
+
+        if (validatedEntities.expandToNearby === true && nearbyAnchorId !== undefined) {
+            try {
+                const destinationService = new DestinationService({ logger: apiLogger });
+                const nearbyResult = await destinationService.getNearby(actor, {
+                    destinationId: nearbyAnchorId
+                });
+
+                if (!nearbyResult.error && nearbyResult.data.nearby.length > 0) {
+                    nearbyDestinations = nearbyResult.data.nearby.map((d) => ({
+                        id: d.id,
+                        name: d.name,
+                        slug: d.slug
+                    }));
+                    // Widen the accommodation search to the anchor + its
+                    // neighbors. `destinationIds` (when non-empty) takes
+                    // priority over the singular `destinationId` in the
+                    // accommodation model's query builder, so leaving
+                    // `params.destinationId` in place is harmless.
+                    params.destinationIds = [
+                        nearbyAnchorId,
+                        ...nearbyDestinations.map((d) => d.id)
+                    ];
+                } else if (nearbyResult.error) {
+                    apiLogger.warn(
+                        { destinationId: nearbyAnchorId, error: nearbyResult.error.message },
+                        'search-chat: nearby-destination resolution failed (non-fatal, expansion skipped)'
+                    );
+                }
+            } catch (error) {
+                apiLogger.warn(
+                    {
+                        destinationId: nearbyAnchorId,
+                        error: error instanceof Error ? error.message : String(error)
+                    },
+                    'search-chat: nearby-destination resolution threw (non-fatal, expansion skipped)'
+                );
+            }
+        }
+
+        // -----------------------------------------------------------------------
         // Step 8 (T-006): Build the reply system prompt + messages, then call
         // streamText to stream the natural-language acknowledgment.
         //
@@ -550,7 +609,15 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         );
 
         return {
-            filters: { params, intent: validatedEntities, confidence: typedObject.confidence },
+            filters: {
+                params,
+                intent: validatedEntities,
+                confidence: typedObject.confidence,
+                // HOS-111 T-013: only present when this turn actually expanded
+                // to nearby destinations (absent, not empty-array, otherwise —
+                // see AiSearchChatFiltersEventSchema JSDoc).
+                nearbyDestinations: nearbyDestinations.length > 0 ? nearbyDestinations : undefined
+            },
             stream,
             meta
         };

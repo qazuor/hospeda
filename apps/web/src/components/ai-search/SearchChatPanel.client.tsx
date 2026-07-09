@@ -32,6 +32,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { ActiveFilterChips } from './ActiveFilterChips';
 import { LoginCta } from './LoginCta';
+import { NearbyDestinationsIndicator } from './NearbyDestinationsIndicator';
 import { OnboardingExamples } from './OnboardingExamples';
 import { ResultsSection } from './ResultsSection';
 import styles from './SearchChatPanel.module.css';
@@ -382,6 +383,12 @@ export function SearchChatPanel({
                         appliedParams={chat.lastSearchParams}
                     />
                 </div>
+
+                {/* HOS-111 T-014: which nearby destinations were included (G-9) */}
+                <NearbyDestinationsIndicator
+                    nearbyDestinations={chat.nearbyDestinations}
+                    t={t}
+                />
 
                 {/* Low-confidence notice (SPEC-265 A2) */}
                 {isLowConfidence && (

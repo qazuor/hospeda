@@ -369,6 +369,27 @@
     flex-shrink: 0;
 }
 
+/* ─── Nearby destinations indicator (HOS-111 T-014, G-9) ──────────────────────
+   "Incluyendo <name>, <name>, ..." line shown above the results when the last
+   turn expanded the search to nearby destinations. Renders nothing (parent
+   returns null) when no expansion happened.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.nearbyIndicator {
+    display: block;
+    padding: 0.375rem 1.25rem 0.625rem;
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--core-muted-foreground, #6b7280);
+    flex-shrink: 0;
+}
+
+.nearbyIndicatorLabel {
+    font-weight: 600;
+    color: var(--core-foreground, #1f2937);
+}
+
 /* ─── Results section ─────────────────────────────────────────────────────────
    Accommodation results grid beneath the message thread.
    Rendered when `results.length > 0` or `resultsLoading`.
