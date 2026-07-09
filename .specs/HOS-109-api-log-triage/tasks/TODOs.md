@@ -70,6 +70,7 @@
     violating the "external calls OUTSIDE the transaction" rule (service-core CLAUDE.md). Recommend a
     follow-up spec: move email dispatch out of the transaction (the Redis idempotency guard
     `conv:notif:{id}` already dedups), and/or lower MAX_BATCH_SIZE / add a per-email timeout.
+    → Follow-up filed as **HOS-112** (Backlog, kind-needs-spec, related to HOS-109).
 - [x] **T-009** (complexity: 2) — Gate social-publish-dispatch make_api_key warning ✅
   - DONE (commit 51a8a9f25): dispatch cron (every ~5min) warned on every run when the optional
     make_api_key/make_webhook_url vault creds are absent (expected pre-launch). Now logged at `info`
