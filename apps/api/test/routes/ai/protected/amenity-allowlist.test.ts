@@ -44,9 +44,9 @@ describe('matchAmenityTerms', () => {
             expect(result).toContain('bbq');
         });
 
-        it('should match "mascotas" → pets-allowed', () => {
+        it('should match "mascotas" → pet_friendly', () => {
             const result = matchAmenityTerms('mascotas', 'es');
-            expect(result).toContain('pets-allowed');
+            expect(result).toContain('pet_friendly');
         });
 
         it('should match "desayuno" → breakfast', () => {
@@ -91,14 +91,14 @@ describe('matchAmenityTerms', () => {
             expect(result).toContain('parking');
         });
 
-        it('should match "pet friendly" → pets-allowed', () => {
+        it('should match "pet friendly" → pet_friendly', () => {
             const result = matchAmenityTerms('pet friendly', 'en');
-            expect(result).toContain('pets-allowed');
+            expect(result).toContain('pet_friendly');
         });
 
-        it('should match "pet-friendly" → pets-allowed', () => {
+        it('should match "pet-friendly" → pet_friendly', () => {
             const result = matchAmenityTerms('pet-friendly', 'en');
-            expect(result).toContain('pets-allowed');
+            expect(result).toContain('pet_friendly');
         });
 
         it('should match "breakfast included" → breakfast', () => {
@@ -128,9 +128,9 @@ describe('matchAmenityTerms', () => {
             expect(result).toContain('parking');
         });
 
-        it('should match "animais" → pets-allowed', () => {
+        it('should match "animais" → pet_friendly', () => {
             const result = matchAmenityTerms('animais', 'pt');
-            expect(result).toContain('pets-allowed');
+            expect(result).toContain('pet_friendly');
         });
 
         it('should match "ar condicionado" → air-conditioning', () => {
@@ -480,7 +480,7 @@ describe('matchFeatureTerms', () => {
 
     describe('anti-overlap negatives — physical services MUST NOT appear in FEATURE_ALLOWLIST', () => {
         it('matchFeatureTerms("pet friendly", "en") → empty array', () => {
-            // "pet friendly" maps to "pets-allowed" in AMENITY_ALLOWLIST; it MUST
+            // "pet friendly" maps to "pet_friendly" in AMENITY_ALLOWLIST; it MUST
             // NOT appear in FEATURE_ALLOWLIST — would cause double-mapping.
             const result = matchFeatureTerms('pet friendly', 'en');
             expect(result).toHaveLength(0);
@@ -511,7 +511,7 @@ describe('matchFeatureTerms', () => {
         });
 
         it('matchFeatureTerms("mascotas", "es") → empty array', () => {
-            // "mascotas" maps to "pets-allowed" in AMENITY_ALLOWLIST; not in FEATURE_ALLOWLIST.
+            // "mascotas" maps to "pet_friendly" in AMENITY_ALLOWLIST; not in FEATURE_ALLOWLIST.
             const result = matchFeatureTerms('mascotas', 'es');
             expect(result).toHaveLength(0);
         });
@@ -602,7 +602,7 @@ describe('FEATURE_ALLOWLIST structure', () => {
             'pool',
             'wifi',
             'parking',
-            'pets-allowed',
+            'pet_friendly',
             'breakfast',
             'air-conditioning',
             'bbq'

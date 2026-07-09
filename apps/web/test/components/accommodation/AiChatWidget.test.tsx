@@ -400,4 +400,62 @@ describe('AiChatWidget', () => {
         const thinkingEl = document.querySelector('output[aria-label="Thinking…"]');
         expect(thinkingEl).toBeNull();
     });
+
+    // ─── Assistant markdown rendering (bug fix) ──────────────────────────────
+    //
+    // Regression coverage: assistant replies used to render as a plain React
+    // text child, so markdown markers (**bold**) showed up literally instead
+    // of being interpreted. Mirrors the equivalent SearchChatPanel coverage.
+
+    it('renders markdown emphasis in a completed assistant message as HTML, not literal asterisks', async () => {
+        mockUseAccommodationChat.mockReturnValue({
+            ...idleChatState,
+            state: {
+                ...idleChatState.state,
+                messages: [{ role: 'assistant', content: 'Tiene **wifi gratis** y pileta.' }]
+            }
+        });
+
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        const bubble = document.querySelector('.assistantBubble');
+        expect(bubble?.innerHTML).toContain('<strong>wifi gratis</strong>');
+        expect(bubble?.textContent).not.toContain('**');
+    });
+
+    it('does NOT render markdown for a user message (kept as plain text)', async () => {
+        mockUseAccommodationChat.mockReturnValue({
+            ...idleChatState,
+            state: {
+                ...idleChatState.state,
+                messages: [{ role: 'user', content: 'tiene **wifi**?' }]
+            }
+        });
+
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        expect(screen.getByText('tiene **wifi**?')).toBeInTheDocument();
+    });
+
+    it('renders markdown emphasis in the live-streamed assistant content as HTML', async () => {
+        mockUseAccommodationChat.mockReturnValue({
+            ...idleChatState,
+            state: {
+                ...idleChatState.state,
+                status: 'streaming' as const,
+                currentAssistantContent: 'Sí, tiene **pileta climatizada**'
+            }
+        });
+
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        const bubble = document.querySelector('.streaming');
+        expect(bubble?.innerHTML).toContain('<strong>pileta climatizada</strong>');
+    });
 });

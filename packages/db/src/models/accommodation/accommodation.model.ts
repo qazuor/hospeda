@@ -7,7 +7,7 @@ import type {
     UserSummary
 } from '@repo/schemas';
 import type { AnyColumn, SQL } from 'drizzle-orm';
-import { and, asc, count, desc, eq, gte, inArray, isNull, ne, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gte, inArray, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { rAccommodationAmenity } from '../../schemas/accommodation/r_accommodation_amenity.dbschema.ts';
@@ -488,6 +488,9 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         if (params.minRating !== undefined) {
             whereClauses.push(gte(accommodations.averageRating, params.minRating));
         }
+        if (params.maxRating !== undefined) {
+            whereClauses.push(lte(accommodations.averageRating, params.maxRating));
+        }
         if (params.amenities && params.amenities.length > 0) {
             // Intersection semantics: accommodation must have ALL provided amenity IDs.
             whereClauses.push(buildAmenityIntersectionClause(params.amenities));
@@ -632,6 +635,9 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         }
         if (params.minRating !== undefined) {
             whereClauses.push(gte(accommodations.averageRating, params.minRating));
+        }
+        if (params.maxRating !== undefined) {
+            whereClauses.push(lte(accommodations.averageRating, params.maxRating));
         }
         if (params.amenities && params.amenities.length > 0) {
             // Intersection semantics: accommodation must have ALL provided amenity IDs.
@@ -811,6 +817,9 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         }
         if (params.minRating !== undefined) {
             whereClauses.push(gte(accommodations.averageRating, params.minRating));
+        }
+        if (params.maxRating !== undefined) {
+            whereClauses.push(lte(accommodations.averageRating, params.maxRating));
         }
         if (params.amenities && params.amenities.length > 0) {
             // Intersection semantics: accommodation must have ALL provided amenity IDs.

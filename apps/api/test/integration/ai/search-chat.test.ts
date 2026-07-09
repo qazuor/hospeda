@@ -113,6 +113,7 @@ const {
     currentBillingLoadFailedForTest,
     nextAmenityDbRows,
     nextFeatureDbRows,
+    nextDestinationDbRows,
     nextPersistPromise,
     mockApiLogger,
     nextSearchCallCount
@@ -148,6 +149,14 @@ const {
     nextAmenityDbRows: { current: [] as Array<{ id: string }> },
     /** Rows returned by the mocked feature DB query. */
     nextFeatureDbRows: { current: [] as Array<{ id: string }> },
+    /**
+     * Rows returned by the mocked destination DB query
+     * (`resolveDestinationIdFromCity` — city → destinationId resolution, fix #4).
+     * Both the exact-match and fuzzy-match queries read this same array, so
+     * setting it to a single row simulates "the city resolved to a destination"
+     * regardless of which of the two queries would have matched in production.
+     */
+    nextDestinationDbRows: { current: [] as Array<{ id: string }> },
     /**
      * T-007: controls what `persistSearchChatTurn` returns per-test.
      * Default: resolves with a fixed conversation id (happy path).
@@ -327,8 +336,10 @@ vi.mock('../../../src/middlewares/entitlement', async (importOriginal) => {
 
 // ---------------------------------------------------------------------------
 // Mock: @repo/db
-// Stubs `getDb()` so amenity/feature slug-to-UUID queries return per-test rows
-// without needing a real seeded database. Mirrors search-intent.test.ts exactly.
+// Stubs `getDb()` so amenity/feature slug-to-UUID and city → destinationId
+// queries return per-test rows without needing a real seeded database.
+// Mirrors search-intent.test.ts exactly, extended with a `destinations` branch
+// for `resolveDestinationIdFromCity` (fix #4).
 // ---------------------------------------------------------------------------
 
 vi.mock('@repo/db', async (importOriginal) => {
@@ -343,6 +354,8 @@ vi.mock('@repo/db', async (importOriginal) => {
                         let rows: Array<{ id: string }>;
                         if (table === actual.amenities) {
                             rows = nextAmenityDbRows.current;
+                        } else if (table === actual.destinations) {
+                            rows = nextDestinationDbRows.current;
                         } else {
                             rows = nextFeatureDbRows.current;
                         }
@@ -355,6 +368,7 @@ vi.mock('@repo/db', async (importOriginal) => {
         })),
         amenities: actual.amenities,
         features: actual.features,
+        destinations: actual.destinations,
         inArray: actual.inArray
     };
 });
@@ -404,6 +418,9 @@ const POOL_AMENITY_UUID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 
 /** Fixed UUID returned by the mock DB for feature slug lookups. */
 const RIVER_FRONT_FEATURE_UUID = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+
+/** Fixed UUID returned by the mock DB for city → destination resolution (fix #4). */
+const COLON_DESTINATION_UUID = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 
 // ---------------------------------------------------------------------------
 // Test app
@@ -558,6 +575,7 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
         nextSearchCallCount.current = 0;
         nextAmenityDbRows.current = [];
         nextFeatureDbRows.current = [];
+        nextDestinationDbRows.current = [];
         // T-007: default happy-path persistence — resolves with a fixed conversation id.
         nextPersistPromise.current = Promise.resolve({
             conversationId: 'ffffffff-ffff-4fff-8fff-ffffffffffff'
@@ -1452,6 +1470,237 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             });
 
             expect(res.status).toBe(200);
+        });
+    });
+
+    // =========================================================================
+    // Gate 8 — intent-extraction pipeline fixes:
+    //   fix #1: guests/bedrooms/bathrooms min===max collapses to min-only.
+    //   fix #2: boolean-shortcut amenity slugs (hasPool/hasParking/hasWifi/
+    //           allowsPets) are deduped out of amenitySlugs before resolution.
+    //   fix #4: entities.city resolves server-side to destinationId.
+    // =========================================================================
+
+    describe('Gate 8 — intent-extraction pipeline fixes', () => {
+        it('fix #1: minGuests === maxGuests collapses to minGuests only in the emitted params', async () => {
+            // Arrange: the model extracted an exact headcount ("para 4 personas"),
+            // not an explicit range.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { minGuests: 4, maxGuests: 4 }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cabaña para 4 personas' }]
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            expect(payload.params.minGuests).toBe('4');
+            expect(payload.params.maxGuests).toBeUndefined();
+        });
+
+        it('fix #2: hasPool=true + amenitySlugs=["pool"] resolves only via the boolean shortcut, not amenities', async () => {
+            // Arrange: the model extracted BOTH the boolean shortcut AND the
+            // duplicated amenity slug for the same physical amenity (pool).
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { hasPool: true, amenitySlugs: ['pool'] }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // If the (buggy) route resolved 'pool' anyway, the mock would return
+            // this UUID — asserting it is ABSENT proves the dedup ran.
+            nextAmenityDbRows.current = [{ id: POOL_AMENITY_UUID }];
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'quiero pileta' }]
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            // The boolean shortcut still applies (OR-based, correct behavior).
+            expect(payload.params.hasPool).toBe('true');
+            // The exact-amenity AND filter must NOT also be applied — 'pool' was
+            // deduped out of amenitySlugs before resolution, so `amenities` is
+            // omitted (an empty resolvedAmenityIds array means the mapper never
+            // sets the key at all).
+            expect(payload.params.amenities).toBeUndefined();
+        });
+
+        it('fix #2: an amenity slug NOT covered by a boolean shortcut is still resolved normally', async () => {
+            // Arrange: hasPool is true (pool deduped), but 'bbq' has no boolean
+            // shortcut counterpart and must still resolve.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { hasPool: true, amenitySlugs: ['pool', 'bbq'] }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            const BBQ_AMENITY_UUID = 'f0000000-0000-4000-8000-0000000000bb';
+            // The mock's `from()` branch returns nextAmenityDbRows.current for ANY
+            // amenities-table query — set it to only the BBQ UUID; the handler's
+            // dedup ensures 'pool' is never included in the resolved query slugs,
+            // so this simulates the DB matching only the surviving 'bbq' slug.
+            nextAmenityDbRows.current = [{ id: BBQ_AMENITY_UUID }];
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'quiero pileta y parrilla' }]
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            expect(payload.params.hasPool).toBe('true');
+            expect(payload.params.amenities).toEqual(expect.arrayContaining([BBQ_AMENITY_UUID]));
+        });
+
+        it('fix #4: city resolved to a known destination emits destinationId, not q', async () => {
+            // Arrange: the model extracted a bare city name.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.85,
+                    entities: { city: 'Colón' }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // The mocked destinations-table query matches "Colón" to a real destination.
+            nextDestinationDbRows.current = [{ id: COLON_DESTINATION_UUID }];
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'algo en Colón' }]
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            expect(payload.params.destinationId).toBe(COLON_DESTINATION_UUID);
+            expect(payload.params.q).toBeUndefined();
+        });
+
+        it('fix #4: city NOT resolved to any destination falls back to q (existing behavior preserved)', async () => {
+            // Arrange: the model extracted a city name with no destinations-table match.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.8,
+                    entities: { city: 'Nowhereland' }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // No destination rows match — resolveDestinationIdFromCity returns undefined.
+            nextDestinationDbRows.current = [];
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'algo en Nowhereland' }]
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            expect(payload.params.q).toBe('Nowhereland');
+            expect(payload.params.destinationId).toBeUndefined();
+        });
+
+        it('fix #4: city resolution is skipped entirely when entities.destinationId is already present', async () => {
+            // Arrange: the model already extracted a destinationId directly —
+            // the handler must not waste a DB round-trip resolving city too.
+            const explicitDestinationId = 'a1111111-1111-4111-8111-111111111111';
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.95,
+                    entities: { destinationId: explicitDestinationId, city: 'Colón' }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // If city resolution ran anyway, this row would leak through — it must not.
+            nextDestinationDbRows.current = [{ id: COLON_DESTINATION_UUID }];
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody()
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            // The model's own destinationId wins (city resolution was skipped).
+            expect(payload.params.destinationId).toBe(explicitDestinationId);
         });
     });
 });
