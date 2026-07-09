@@ -21,7 +21,11 @@
 import { AccommodationTypeEnum } from '@repo/schemas';
 import type { APIRoute } from 'astro';
 import { getApiUrl, getSiteUrl } from '../lib/env';
-import { type DestinationCounts, isThinDestination } from '../lib/seo/thin-destination';
+import {
+    type DestinationListItem,
+    destinationListItemCounts,
+    isThinDestination
+} from '../lib/seo/thin-destination';
 
 export const prerender = false;
 
@@ -304,7 +308,7 @@ export const GET: APIRoute = async () => {
     const [accommodations, destinations, events, posts, gastronomy, experiences] =
         await Promise.allSettled([
             fetchAllEntities(apiUrl, `${base}/accommodations`),
-            fetchAllEntities(apiUrl, `${base}/destinations`),
+            fetchAllEntities(apiUrl, `${base}/destinations`, { includeEventCount: 'true' }),
             fetchAllEntities(apiUrl, `${base}/events`),
             fetchAllEntities(apiUrl, `${base}/posts`),
             fetchAllEntities(apiUrl, `${base}/gastronomies`),
@@ -373,10 +377,14 @@ export const GET: APIRoute = async () => {
     );
 
     // Destinations: /destinos/{slug}/ — exclude thin/empty destinations (no
-    // accommodations, events, or attractions) using the shared isThinDestination
-    // predicate, so the sitemap matches the noindex on the detail page (HOS-117 T-006).
+    // accommodations, events, or attractions) so the sitemap matches the noindex
+    // on the detail page (HOS-117 T-006). The list endpoint returns `attractions`
+    // as an array and only includes `eventsCount` when asked (includeEventCount
+    // above), so destinationListItemCounts bridges that shape to the shared
+    // predicate — feeding it the same three counts the detail page uses.
     const indexableDestinations = resolvedDestinations.filter(
-        (item) => !isThinDestination(item as EntityItem & DestinationCounts)
+        (item) =>
+            !isThinDestination(destinationListItemCounts(item as EntityItem & DestinationListItem))
     );
     entries.push(
         ...buildEntriesForEntity({

@@ -39,3 +39,34 @@ export function isThinDestination(counts: DestinationCounts): boolean {
     const events = counts.eventsCount ?? 0;
     return accommodations === 0 && attractions === 0 && events === 0;
 }
+
+/**
+ * Raw shape of a public destination LIST item (from `/api/v1/public/destinations`).
+ * The list endpoint does NOT expose `attractionsCount`/`eventsCount` the way the
+ * detail stats endpoint does: it returns `attractions` as an **array** and only
+ * includes `eventsCount` when fetched with `?includeEventCount=true`.
+ */
+export interface DestinationListItem {
+    readonly accommodationsCount?: number | null;
+    readonly attractions?: readonly unknown[] | null;
+    readonly eventsCount?: number | null;
+}
+
+/**
+ * Bridge a public destination LIST item to {@link DestinationCounts} so the sitemap
+ * filter feeds {@link isThinDestination} the SAME three counts the detail page does
+ * (which reads them from the stats endpoint). Without this, `attractionsCount` and
+ * `eventsCount` would be `undefined` on every list item and the sitemap would drop
+ * any destination with 0 accommodations even when it has events or attractions —
+ * diverging from the page's `noindex` decision (HOS-117 T-006 / US-3).
+ *
+ * @param item - A public destination list item (fetched with `includeEventCount=true`).
+ * @returns The three counts, ready for {@link isThinDestination}.
+ */
+export function destinationListItemCounts(item: DestinationListItem): DestinationCounts {
+    return {
+        accommodationsCount: item.accommodationsCount ?? undefined,
+        attractionsCount: Array.isArray(item.attractions) ? item.attractions.length : undefined,
+        eventsCount: item.eventsCount ?? undefined
+    };
+}
