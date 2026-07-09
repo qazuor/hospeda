@@ -1,0 +1,206 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-109",
+    "title": "Investigate & fix production API log errors and noise (post-relaunch triage)",
+    "created": "2026-07-09T03:28:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Fix blog tag filter 500 (posts ?tags= as join, not column)",
+            "description": "P1/F1. In PostService._executeSearch and _executeCount (packages/service-core/src/services/post/post.service.ts), intercept the `tags` filter before the where clause is built and resolve it against the postTags/r_entity_tag join instead of passing it as a column key to model.findAllWithRelations. Add a regression test: GET /public/posts?tags=<id> returns 200 with only posts carrying that tag, and existing filters (category, isNews, isFeatured) still work.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Locate where `tags` enters the where clause (mapPostFilterKeysToColumns)", "completed": false },
+                { "title": "Translate `tags` to a postTags join / additionalConditions", "completed": false },
+                { "title": "Regression test for ?tags= returning filtered 200", "completed": false }
+            ],
+            "tags": ["api", "service-core", "bug-500"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-002",
+            "title": "Downgrade expected 401 on protected routes from ERROR+stack",
+            "description": "P7/F2. A guest 401 on a protected route is expected. Stop emitting `ERROR` + full stack (`Caught error ... Authentication required`); keep only the HTTP access-log line at the agreed level (see OQ-1). Continuation of HOS-104/105 logging hygiene. Verify a guest hit produces no ERROR+stack.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Find the auth-required error → log mapping in the API middleware", "completed": false },
+                { "title": "Map expected 401 to info/debug without stack", "completed": false }
+            ],
+            "tags": ["api", "logging"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-003",
+            "title": "Downgrade expected 404 not-found from ERROR (getByField misses)",
+            "description": "P8/F2. Public getByField misses (accommodation/post/event not found) currently log SERVICE ERROR + Route error + actor + stack. A 404 is expected. Downgrade to the agreed level (OQ-1) without stack. GATED on OQ-1 owner decision on target level. Verify a missing-slug request logs at most an access line.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Confirm OQ-1 target level with owner", "completed": false },
+                { "title": "Adjust not-found → log level mapping", "completed": false }
+            ],
+            "tags": ["api", "logging", "needs-decision"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-004",
+            "title": "Downgrade expected 403 permission-denied from ERROR",
+            "description": "P9/F2. 403 permission denials (e.g. user.getByField 'Only self or USER_READ_ALL') log as ERROR+stack. Downgrade to the agreed level (OQ-1); 403 may stay slightly louder than 404 (probing signal). GATED on OQ-1 + OQ-3 (public profile-by-slug design). Verify.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Confirm OQ-1/OQ-3 with owner", "completed": false },
+                { "title": "Adjust forbidden → log level mapping", "completed": false }
+            ],
+            "tags": ["api", "logging", "needs-decision"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-005",
+            "title": "Stop web from fetching entitlements without a session / retry-looping on 401",
+            "description": "P5/F3. Guest requests to /protected/users/me/entitlements climb 82->100 then sustain 429. Investigate the web call site: it must not fetch entitlements without a session, and must not retry-loop on 401. Fix + verify no 429 churn while unauthenticated. Do not break authenticated entitlement gating.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Trace the entitlements fetch origin in apps/web", "completed": false },
+                { "title": "Guard on session presence + remove hard retry on 401", "completed": false },
+                { "title": "Verify no unauthenticated 429 loop", "completed": false }
+            ],
+            "tags": ["web", "rate-limit"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-006",
+            "title": "Stop unread-count poller from re-polling on 403",
+            "description": "P6/F3. GET /admin/conversations/unread-count returns 403 every ~30s from a client polling without the permission. Make the poller not fire for actors lacking permission, or stop on 403 instead of re-polling. Verify the 30s 403 cadence disappears for a non-permitted actor.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Find the unread-count polling call site (admin/web)", "completed": false },
+                { "title": "Gate on permission / stop-on-403", "completed": false }
+            ],
+            "tags": ["admin", "web", "api"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-007",
+            "title": "Investigate stale-slug 404 flood source (sitemap / ISR / crawler)",
+            "description": "P10/F4. Hundreds of sequential 404s on seed-like slugs. Determine the request source: our own sitemap, ISR warm-up, or an external crawler; and whether it enumerates OLD seed slugs after reseed. Produce a findings note on HOS-109 (OQ-2) then decide fix (regenerate/limit sitemap, cache-bust, or accept + downgrade). Investigation first, no premature fix.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Identify request UA/source and slug origin", "completed": false },
+                { "title": "Write findings note + OQ-2 recommendation on Linear", "completed": false }
+            ],
+            "tags": ["web", "devops", "investigation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-008",
+            "title": "Verify conversation-notification cron lock overlap",
+            "description": "P11/F4. `[CRON:conversation-notification] skipping — previous run holds advisory lock` recurs. Verify whether the job ever completes or leaks its advisory lock (job duration vs cron cadence). Write findings on HOS-109; fix only if a real overlap/leak (not a benign skip).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Inspect the cron job + lock release path", "completed": false },
+                { "title": "Findings note: benign skip vs real leak", "completed": false }
+            ],
+            "tags": ["api", "cron", "investigation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-009",
+            "title": "Gate social-publish-dispatch make_api_key warning",
+            "description": "P12/F4. `no active make_api_key credential in the vault` warns every 5 min. Confirm it is purely 'vault not configured yet' and gate the WARN so it does not fire on every run when the social feature is intentionally unused (downgrade to a one-time/info log or skip silently when unconfigured).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Confirm the warning condition in the dispatch job", "completed": false },
+                { "title": "Gate/downgrade the unconfigured-vault log", "completed": false }
+            ],
+            "tags": ["api", "cron", "social"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-010",
+            "title": "Fix Brevo webhook signature verification",
+            "description": "P14/F5. `[Brevo webhook: signature mismatch]` -> 401 on POST /public/webhooks/brevo/<token>. Legitimate Brevo callbacks (bounce/open) are being dropped. Diagnose the secret/token config mismatch and fix so real events pass. Verify against a real Brevo test event; if it needs an env change, record it on the Linear issue and flag Coolify.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Compare expected vs received Brevo signature/token", "completed": false },
+                { "title": "Fix verification (config or code)", "completed": false },
+                { "title": "Verify a real Brevo event is accepted", "completed": false }
+            ],
+            "tags": ["api", "webhook", "config"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-011",
+            "title": "Serve robots.txt and fix RSS feed route",
+            "description": "P15/F5. GET /robots.txt returns 404 and GET /public/posts/slug/rss.xml returns 400 (RSS path routed as a post slug). Serve a robots.txt and provide a proper RSS feed route so these stop erroring. Verify both return 200 with correct content-type.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add robots.txt (web)", "completed": false },
+                { "title": "Add/route RSS feed instead of 400", "completed": false }
+            ],
+            "tags": ["web", "seo"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-09T03:28:00.000Z", "started": null, "completed": null }
+        }
+    ],
+    "summary": {
+        "total": 11,
+        "pending": 11,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.3
+    }
+}
