@@ -28,6 +28,7 @@ import {
     type ReactivateFromTrialInput,
     type ReactivateSubscriptionInput,
     type ReactivateSubscriptionResult,
+    resolveIntendedInterval,
     resolvePlanTrialConfig,
     type StartTrialInput,
     type TrialEndingSubscription,
@@ -128,9 +129,8 @@ export function buildTrialUpgradeUrl(input: {
 }): string {
     const { siteUrl, intendedInterval } = input;
     const base = `${siteUrl}${TRIAL_UPGRADE_PATH}`;
-    return intendedInterval === 'monthly' || intendedInterval === 'annual'
-        ? `${base}?interval=${intendedInterval}`
-        : base;
+    const resolved = resolveIntendedInterval(intendedInterval);
+    return resolved ? `${base}?interval=${resolved}` : base;
 }
 
 /**
@@ -351,7 +351,8 @@ export class TrialService {
                 startedAt: null,
                 expiresAt: null,
                 daysRemaining: 0,
-                planSlug: null
+                planSlug: null,
+                intendedInterval: null
             };
         }
 
@@ -368,7 +369,8 @@ export class TrialService {
                     startedAt: null,
                     expiresAt: null,
                     daysRemaining: 0,
-                    planSlug: null
+                    planSlug: null,
+                    intendedInterval: null
                 };
             }
 
@@ -400,12 +402,21 @@ export class TrialService {
                         startedAt: null,
                         expiresAt: null,
                         daysRemaining: 0,
-                        planSlug: null
+                        planSlug: null,
+                        intendedInterval: null
                     };
                 }
 
                 // Historical canceled/ended sub with a trial — fetch plan for its slug.
                 const historicalPlan = await this.billing.plans.get(historicalTrialSub.planId);
+                // HOS-115 §5 nudge delivery path 2: read back the interval this
+                // (most-recent, per the sort above) trial recorded so a user who
+                // navigates directly to the pricing page — no `?interval=` query
+                // param — still gets the toggle pre-selected to their original intent.
+                const historicalIntendedInterval = resolveIntendedInterval(
+                    (historicalTrialSub.metadata as Record<string, unknown> | undefined)
+                        ?.intendedInterval
+                );
                 return {
                     isOnTrial: false,
                     isExpired: true,
@@ -416,7 +427,8 @@ export class TrialService {
                         ? new Date(historicalTrialSub.trialEnd).toISOString()
                         : null,
                     daysRemaining: 0,
-                    planSlug: historicalPlan?.name || null
+                    planSlug: historicalPlan?.name || null,
+                    intendedInterval: historicalIntendedInterval
                 };
             }
 
@@ -434,6 +446,15 @@ export class TrialService {
             const daysRemaining =
                 trialEnd && !isExpired ? calculateTrialDaysRemaining({ trialEnd, now }) : 0;
 
+            // HOS-115 §5 nudge delivery path 2 (see comment above the historical
+            // branch). Read regardless of status — harmless when the sub already
+            // converted to `active`, since the value simply mirrors the trial the
+            // customer started from.
+            const intendedInterval = resolveIntendedInterval(
+                (activeSubscription.metadata as Record<string, unknown> | undefined)
+                    ?.intendedInterval
+            );
+
             return {
                 isOnTrial,
                 isExpired,
@@ -442,7 +463,8 @@ export class TrialService {
                     : null,
                 expiresAt: trialEnd ? trialEnd.toISOString() : null,
                 daysRemaining,
-                planSlug: plan?.name || null
+                planSlug: plan?.name || null,
+                intendedInterval
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -462,7 +484,8 @@ export class TrialService {
                 startedAt: null,
                 expiresAt: null,
                 daysRemaining: 0,
-                planSlug: null
+                planSlug: null,
+                intendedInterval: null
             };
         }
     }

@@ -166,7 +166,11 @@ function formatPriceArs(cents: number): string {
 }
 ---
 
-<div class="pricing-cards__container" data-billing="monthly">
+<div
+	class="pricing-cards__container"
+	data-billing="monthly"
+	data-audience={audience}
+>
 	<h2 class="sr-only">{sectionHeading}</h2>
 
 	{hasPlans && hasAnyAnnualPrice && (
@@ -787,15 +791,64 @@ function formatPriceArs(cents: number): string {
 	 * to keep the displayed checkout price + the /start-paid payload in
 	 * sync. Pattern documented inline in PlanPurchaseButton.client.tsx.
 	 */
+	import { billingApi } from '@/lib/api/endpoints-protected';
 	/**
 	 * Reads the `?interval=` query param (HOS-115 §5 nudge delivery path 1 —
-	 * the TRIAL_EXPIRED notification's upgradeUrl). Defaults to 'monthly' when
+	 * the TRIAL_EXPIRED notification's upgradeUrl). Returns `null` when
 	 * absent or set to anything other than the two known values, so a bad or
 	 * stale link never leaves the toggle in an invalid state.
 	 */
-	function resolveInitialInterval(): 'monthly' | 'annual' {
+	function resolveQueryInterval(): 'monthly' | 'annual' | null {
 		const params = new URLSearchParams(window.location.search);
-		return params.get('interval') === 'annual' ? 'annual' : 'monthly';
+		const value = params.get('interval');
+		return value === 'monthly' || value === 'annual' ? value : null;
+	}
+
+	/**
+	 * HOS-115 §5 nudge delivery path 2 (T-008, fast-follow): for a logged-in
+	 * visitor who navigated directly to the owner pricing page (no
+	 * `?interval=` query param — path 1 already covers that case and always
+	 * wins), look up their most recent trial's `intendedInterval` and
+	 * pre-select the toggle to match.
+	 *
+	 * Deliberately client-side, NOT server-rendered: this page sets
+	 * `Cache-Control: s-maxage=...` so Cloudflare caches the SSR HTML at the
+	 * edge and serves it to every subsequent visitor regardless of their own
+	 * cookies. Baking one visitor's personalized `intendedInterval` into that
+	 * cached markup would leak it to whoever the CDN serves the cached page
+	 * to next. Fetching after the cacheable HTML has already loaded keeps the
+	 * page fully cacheable and the personalization strictly per-browser.
+	 *
+	 * Scoped to `audience === 'owner'` only (`data-audience` on the
+	 * container) — every trial-eligible plan today is an owner plan (see
+	 * `DEFAULT_TRIAL_PLAN_SLUG` / `TRIAL_UPGRADE_PATH` in `trial.service.ts`),
+	 * so applying this on the tourist pricing page would incorrectly nudge
+	 * that toggle from an unrelated owner trial.
+	 *
+	 * Fire-and-forget: never blocks first paint. A no-op for anonymous
+	 * visitors (the protected endpoint 401s, surfaced as `ApiResult.ok:
+	 * false`, swallowed here), for users with no trial history, and for a
+	 * trial that recorded no interval. `isOverridden` is re-checked right
+	 * before applying so a visitor who manually flips the toggle — or
+	 * navigates again — while the request is in flight is never clobbered by
+	 * a late response.
+	 */
+	async function applyIntendedIntervalNudge(input: {
+		readonly setActive: (interval: 'monthly' | 'annual') => void;
+		readonly isOverridden: () => boolean;
+	}): Promise<void> {
+		const { setActive, isOverridden } = input;
+		try {
+			const result = await billingApi.getTrialStatus();
+			if (isOverridden() || !result.ok) return;
+			const { intendedInterval } = result.data;
+			if (intendedInterval === 'monthly' || intendedInterval === 'annual') {
+				setActive(intendedInterval);
+			}
+		} catch {
+			// Never let a lookup failure affect the toggle — it simply stays
+			// at whatever it already resolved to (default 'monthly').
+		}
 	}
 
 	function initPricingToggle(container: HTMLElement): void {
@@ -803,6 +856,7 @@ function formatPriceArs(cents: number): string {
 			'[data-pricing-toggle]'
 		);
 		if (options.length === 0) return;
+		let manuallyToggled = false;
 		const setActive = (interval: 'monthly' | 'annual'): void => {
 			container.setAttribute('data-billing', interval);
 			for (const opt of options) {
@@ -811,15 +865,26 @@ function formatPriceArs(cents: number): string {
 				opt.setAttribute('aria-checked', String(isActive));
 			}
 		};
-		// HOS-115 §5: pre-select the toggle from the query param on load. This
-		// only runs once per page load/navigation (astro:page-load), so a
-		// user who manually flips the toggle afterwards via the click
-		// listener below is never overridden by this initial selection.
-		setActive(resolveInitialInterval());
+		// HOS-115 §5: pre-select the toggle from the query param on load (or
+		// 'monthly' when absent/invalid). This only runs once per page
+		// load/navigation (astro:page-load), so a user who manually flips the
+		// toggle afterwards via the click listener below is never overridden
+		// by this initial selection.
+		const queryInterval = resolveQueryInterval();
+		setActive(queryInterval ?? 'monthly');
 		for (const opt of options) {
 			opt.addEventListener('click', () => {
+				manuallyToggled = true;
 				const interval = opt.dataset.pricingToggle === 'annual' ? 'annual' : 'monthly';
 				setActive(interval);
+			});
+		}
+		// Nudge delivery path 2: only when path 1 (query param) did not
+		// already decide, and only on the owner audience.
+		if (!queryInterval && container.dataset.audience === 'owner') {
+			void applyIntendedIntervalNudge({
+				setActive,
+				isOverridden: () => manuallyToggled
 			});
 		}
 	}

@@ -873,6 +873,190 @@ describe('TrialService', () => {
             expect(result.isExpired).toBe(false);
             expect(result.planSlug).toBe('owner-pro');
         });
+
+        describe('intendedInterval (HOS-115 §5 T-008 — nudge delivery path 2)', () => {
+            it('returns the annual interval stamped on an active trial subscription', async () => {
+                // Arrange
+                const customerId = 'customer-interval-annual';
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() + 7);
+
+                const mockSubscription = {
+                    id: 'sub-annual-trial',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'trialing',
+                    trialStart: now.toISOString(),
+                    trialEnd: trialEnd.toISOString(),
+                    metadata: { intendedInterval: 'annual' }
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    mockSubscription
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.intendedInterval).toBe('annual');
+            });
+
+            it('returns the monthly interval stamped on an active trial subscription', async () => {
+                // Arrange
+                const customerId = 'customer-interval-monthly';
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() + 7);
+
+                const mockSubscription = {
+                    id: 'sub-monthly-trial',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'trialing',
+                    trialStart: now.toISOString(),
+                    trialEnd: trialEnd.toISOString(),
+                    metadata: { intendedInterval: 'monthly' }
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    mockSubscription
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.intendedInterval).toBe('monthly');
+            });
+
+            it('returns null when the active trial subscription has no metadata at all', async () => {
+                // Arrange — e.g. a trial started via the accommodation-publish
+                // auto-start flow, which never records an interval.
+                const customerId = 'customer-interval-none';
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() + 7);
+
+                const mockSubscription = {
+                    id: 'sub-no-interval-trial',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'trialing',
+                    trialStart: now.toISOString(),
+                    trialEnd: trialEnd.toISOString()
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    mockSubscription
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.intendedInterval).toBeNull();
+            });
+
+            it('returns null for malformed metadata (defensive against a garbage value)', async () => {
+                // Arrange
+                const customerId = 'customer-interval-garbage';
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() + 7);
+
+                const mockSubscription = {
+                    id: 'sub-garbage-interval-trial',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'trialing',
+                    trialStart: now.toISOString(),
+                    trialEnd: trialEnd.toISOString(),
+                    metadata: { intendedInterval: 'weekly' }
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    mockSubscription
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.intendedInterval).toBeNull();
+            });
+
+            it('returns the interval stamped on the most-recent historical (expired, canceled) trial', async () => {
+                // Arrange — mirrors the "canceled without converting" fixture above,
+                // but with metadata.intendedInterval set, exercising the direct-navigation
+                // nudge for a user whose trial already expired.
+                const customerId = 'customer-interval-historical';
+                const now = new Date();
+                const trialStart = new Date(now);
+                trialStart.setDate(trialStart.getDate() - 20);
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() - 6);
+
+                const canceledTrialSub = {
+                    id: 'sub-canceled-trial-annual',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'canceled' as const,
+                    trialStart: trialStart.toISOString(),
+                    trialEnd: trialEnd.toISOString(),
+                    metadata: { intendedInterval: 'annual' }
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    canceledTrialSub
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.isExpired).toBe(true);
+                expect(result.intendedInterval).toBe('annual');
+            });
+
+            it('returns null when there is no subscription at all (never had a trial)', async () => {
+                // Arrange
+                const customerId = 'customer-interval-never';
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(
+                    [] as never
+                );
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.intendedInterval).toBeNull();
+            });
+
+            it('returns null when billing is disabled', async () => {
+                // Arrange
+                const trialServiceNoBilling = new TrialService(null);
+
+                // Act
+                const result = await trialServiceNoBilling.getTrialStatus({
+                    customerId: 'customer-interval-no-billing'
+                });
+
+                // Assert
+                expect(result.intendedInterval).toBeNull();
+            });
+        });
     });
 
     describe('checkTrialExpiry', () => {
