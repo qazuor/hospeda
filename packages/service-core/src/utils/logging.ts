@@ -1,7 +1,43 @@
+import { ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../types';
+import { ServiceError } from '../types';
 import { serviceLogger as defaultLogger } from './service-logger';
 
 let _logger = defaultLogger;
+
+/**
+ * Log level used when emitting a caught service error.
+ */
+export type ErrorLogLevel = 'error' | 'warn' | 'info';
+
+/**
+ * Maps a {@link ServiceErrorCode} to the log level its errors should be emitted at.
+ *
+ * EXPECTED client-side outcomes are not application faults and must not pollute
+ * the error stream with `ERROR` + stack traces (HOS-109 / OQ-1):
+ *
+ * - `NOT_FOUND` (404) and `UNAUTHORIZED` (401) are routine guest/browsing
+ *   outcomes → `info`.
+ * - `FORBIDDEN` (403) is a permission denial that doubles as a probing signal,
+ *   so it stays slightly louder → `warn`.
+ *
+ * Every other code (INTERNAL_ERROR, DATABASE/PROVIDER failures, VALIDATION_ERROR,
+ * etc.) keeps `error` — those are real faults worth a stack trace.
+ *
+ * @param code - The service error code, or `undefined` for non-`ServiceError` errors.
+ * @returns The log level to emit at; defaults to `error`.
+ */
+export const resolveErrorLogLevel = (code: ServiceErrorCode | undefined): ErrorLogLevel => {
+    switch (code) {
+        case ServiceErrorCode.NOT_FOUND:
+        case ServiceErrorCode.UNAUTHORIZED:
+            return 'info';
+        case ServiceErrorCode.FORBIDDEN:
+            return 'warn';
+        default:
+            return 'error';
+    }
+};
 
 /**
  * Overrides the default logger instance with a custom one.
@@ -74,7 +110,11 @@ export const logMethodEnd = (methodName: string, output: unknown): void => {
  * @param actor - The actor that was executing the method.
  */
 export const logError = (methodName: string, error: Error, input: unknown, actor: Actor): void => {
-    _logger.error(
+    // EXPECTED outcomes (401/403/404) are not application faults: emit them at a
+    // reduced level (info/warn) so they don't flood the error stream with stack
+    // traces (HOS-109 / OQ-1). Real faults stay at `error`.
+    const level = resolveErrorLogLevel(error instanceof ServiceError ? error.code : undefined);
+    _logger[level](
         `Error in ${methodName} | error: ${error.message} | input: ${JSON.stringify(input)} | actor: ${formatActor(actor)}`
     );
 };
