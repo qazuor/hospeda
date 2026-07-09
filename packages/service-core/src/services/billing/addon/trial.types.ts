@@ -75,6 +75,18 @@ export interface StartTrialInput {
      * the base plan length is used unchanged.
      */
     readonly extraTrialDays?: number;
+    /**
+     * The billing interval the customer selected on the pricing toggle when
+     * they started this trial (HOS-115 §5). The trial subscription itself is
+     * interval-agnostic (no price, no interval) — this value is stamped
+     * as-is into the created subscription's `metadata.intendedInterval` so
+     * it can survive as the source of truth for the post-trial conversion
+     * nudge (pre-selecting the pricing toggle) and as an analytics
+     * dimension. Optional because non-checkout trial-start paths (e.g. the
+     * accommodation-publish auto-start flow) have no interval choice to
+     * record.
+     */
+    readonly intendedInterval?: 'monthly' | 'annual';
 }
 
 /**

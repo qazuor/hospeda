@@ -267,6 +267,65 @@ describe('TrialService', () => {
             });
         });
 
+        // HOS-115 §5: `intendedInterval` is stamped as-is into the MP creation
+        // metadata so the post-trial conversion nudge can pre-select the same
+        // toggle the customer started from.
+        describe('intendedInterval (HOS-115)', () => {
+            const arrangePlan = () => {
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [
+                        {
+                            id: 'plan-owner-basico',
+                            name: 'owner-basico',
+                            metadata: { hasTrial: true, trialDays: 14 }
+                        }
+                    ]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(
+                    [] as never
+                );
+                vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                    id: 'sub-intended-interval'
+                } as never);
+            };
+
+            it('stamps intendedInterval="annual" in the MP creation metadata when supplied', async () => {
+                arrangePlan();
+
+                await trialService.startTrial({
+                    customerId: 'customer-annual-intent',
+                    intendedInterval: 'annual'
+                });
+
+                const createArg = (mockBilling.subscriptions.create as unknown as Mock).mock
+                    .calls[0]?.[0] as { metadata: Record<string, string> };
+                expect(createArg.metadata.intendedInterval).toBe('annual');
+            });
+
+            it('stamps intendedInterval="monthly" in the MP creation metadata when supplied', async () => {
+                arrangePlan();
+
+                await trialService.startTrial({
+                    customerId: 'customer-monthly-intent',
+                    intendedInterval: 'monthly'
+                });
+
+                const createArg = (mockBilling.subscriptions.create as unknown as Mock).mock
+                    .calls[0]?.[0] as { metadata: Record<string, string> };
+                expect(createArg.metadata.intendedInterval).toBe('monthly');
+            });
+
+            it('omits intendedInterval from metadata when not supplied (e.g. accommodation-publish auto-start)', async () => {
+                arrangePlan();
+
+                await trialService.startTrial({ customerId: 'customer-no-intent' });
+
+                const createArg = (mockBilling.subscriptions.create as unknown as Mock).mock
+                    .calls[0]?.[0] as { metadata: Record<string, string> };
+                expect(createArg.metadata.intendedInterval).toBeUndefined();
+            });
+        });
+
         // HOSPEDA_TRIAL_DAYS_OVERRIDE (testing-only): when set to a positive integer
         // it replaces OWNER_TRIAL_DAYS (14) so QA can exercise trial expiry after
         // e.g. 1 day. It is intentionally NOT gated by environment (NODE_ENV is

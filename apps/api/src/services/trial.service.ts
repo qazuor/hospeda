@@ -121,6 +121,12 @@ export class TrialService {
      * (`HOSPEDA_TRIAL_DAYS_OVERRIDE=0`) still disables every trial regardless
      * of any extension promo supplied.
      *
+     * `input.intendedInterval` (HOS-115) is stamped as-is into the created
+     * subscription's `metadata.intendedInterval` — the trial object itself
+     * carries no price/interval, so this is the sole record of which
+     * checkout toggle (monthly/annual) the customer started from, read back
+     * later to nudge the pricing page at conversion.
+     *
      * @param input - Trial start parameters
      * @returns Trial subscription ID, or `null` if billing is disabled, the
      *   resolved plan has no trial, or the customer already has a
@@ -132,7 +138,7 @@ export class TrialService {
             return null;
         }
 
-        const { customerId, accommodationId, extraTrialDays } = input;
+        const { customerId, accommodationId, extraTrialDays, intendedInterval } = input;
         const planSlug = input.planSlug ?? DEFAULT_TRIAL_PLAN_SLUG;
 
         try {
@@ -228,7 +234,13 @@ export class TrialService {
                     ...(accommodationId ? { triggeredByAccommodationId: accommodationId } : {}),
                     // HOS-110 W1: audit trail for a trial_extension promo code that
                     // lengthened this trial beyond the plan's base trialDays.
-                    ...(extraTrialDays ? { extraTrialDaysFromPromo: String(extraTrialDays) } : {})
+                    ...(extraTrialDays ? { extraTrialDaysFromPromo: String(extraTrialDays) } : {}),
+                    // HOS-115 §5: the checkout entry interval the customer originally
+                    // chose (monthly/annual), stamped as-is so the post-trial
+                    // conversion nudge can pre-select the same toggle. Omitted for
+                    // trial-start paths with no interval choice (e.g. the
+                    // accommodation-publish auto-start flow).
+                    ...(intendedInterval ? { intendedInterval } : {})
                 }
             });
 
