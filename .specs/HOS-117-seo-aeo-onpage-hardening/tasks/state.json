@@ -26,19 +26,19 @@
             "id": "T-002",
             "title": "Confirm thin-content predicate and available count fields for destinations",
             "description": "Verify the exact emptiness predicate (accCount===0 && eventsCount===0 && attractions.length===0) and that these count fields are available in both destinos/[...path].astro (~L424) and sitemap-dynamic.xml.ts (L303-306). Decide where to extract the shared predicate helper. Ref US-3. Tests: none (analysis); output feeds T-006.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-006"],
             "subtasks": [
-                { "title": "Read destinos/[...path].astro count fields", "completed": false },
-                { "title": "Read sitemap-dynamic.xml.ts destination emission", "completed": false },
-                { "title": "Decide shared predicate helper location", "completed": false }
+                { "title": "Read destinos/[...path].astro count fields", "completed": true },
+                { "title": "Read sitemap-dynamic.xml.ts destination emission", "completed": true },
+                { "title": "Decide shared predicate helper location", "completed": true }
             ],
             "tags": ["seo", "audit", "web"],
             "phase": "setup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": "2026-07-09T20:05:00.000Z", "completed": "2026-07-09T20:08:00.000Z" }
         },
         {
             "id": "T-003",
@@ -99,37 +99,37 @@
             "id": "T-006",
             "title": "noindex empty destinations and exclude them from the sitemap",
             "description": "Using the single shared predicate from T-002, pass noindex={true} from destinos/[...path].astro to DetailLayout for empty destinations (emits <meta name=robots content=noindex,follow>), and exclude the same destinations (all 3 locales) from sitemap-dynamic.xml.ts. Both call sites MUST use the identical predicate (no divergence). Non-empty destinations stay indexable. Ref US-3. Tests: assert noindex meta on empty dest + absence from sitemap; assert non-empty stays indexed (T-018).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-018"],
             "subtasks": [
-                { "title": "Extract shared thin-content predicate helper", "completed": false },
-                { "title": "Pass noindex from destinos/[...path].astro", "completed": false },
-                { "title": "Exclude empty destinations from sitemap builder", "completed": false }
+                { "title": "Extract shared thin-content predicate helper", "completed": true },
+                { "title": "Pass noindex from destinos/[...path].astro", "completed": true },
+                { "title": "Exclude empty destinations from sitemap builder", "completed": true }
             ],
             "tags": ["seo", "web", "sitemap"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": "2026-07-09T20:05:00.000Z", "completed": "2026-07-09T20:15:00.000Z" }
         },
         {
             "id": "T-007",
             "title": "Add BreadcrumbJsonLd to gastronomy/experiences and extend CI guard to 6 entities",
             "description": "Add BreadcrumbJsonLd to gastronomia/[slug].astro and experiencias/[slug].astro following the pattern at alojamientos/[slug].astro:497. Extend json-ld-coverage.test.ts DETAIL_PAGES (currently 4) to cover all 6 detail entities so the gap cannot silently regrow (root-cause fix). Ref US-4. Tests: json-ld-coverage.test.ts green with 6 entities, failing if any drops Breadcrumb or primary JSON-LD.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-018"],
             "subtasks": [
-                { "title": "Emit BreadcrumbJsonLd in gastronomia/[slug].astro", "completed": false },
-                { "title": "Emit BreadcrumbJsonLd in experiencias/[slug].astro", "completed": false },
-                { "title": "Extend DETAIL_PAGES to 6 entities in the guard test", "completed": false }
+                { "title": "Emit BreadcrumbJsonLd in gastronomia/[slug].astro", "completed": true },
+                { "title": "Emit BreadcrumbJsonLd in experiencias/[slug].astro", "completed": true },
+                { "title": "Extend DETAIL_PAGES to 6 entities in the guard test", "completed": true }
             ],
             "tags": ["seo", "aeo", "web", "json-ld"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": "2026-07-09T19:50:00.000Z", "completed": "2026-07-09T20:00:00.000Z" }
         },
         {
             "id": "T-008",
@@ -381,9 +381,9 @@
     ],
     "summary": {
         "total": 21,
-        "pending": 18,
+        "pending": 15,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.4
     }
