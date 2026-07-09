@@ -215,18 +215,6 @@
     text-decoration: none;
 }
 
-/* `.planCard` is a column flex container with no `align-items` set, so it
-   defaults to `stretch` — the "Cambiar plan" button (and the "Ver planes
-   disponibles" fallback link) are direct children and would otherwise
-   stretch to the card's full width, rendering as an oversized bordered bar
-   instead of a compact button matching the "Descargar factura" / "Pausar" /
-   "Cancelar" siblings below (those live inside `.actionsRow`, a row flex
-   container, so they never hit this stretch behavior). BETA-143e. */
-.planCard > .btnSecondary,
-.planCard > .upgradeLink {
-    align-self: flex-start;
-}
-
 .btnDanger {
     composes: danger from "./AccountButton.module.css";
     text-decoration: none;
@@ -275,6 +263,21 @@
 .upgradeLink:hover {
     opacity: 0.75;
     text-decoration: underline;
+}
+
+/* `.planCard` is a column flex container with no `align-items` set, so it
+   defaults to `stretch` — the "Cambiar plan" button (and the "Ver planes
+   disponibles" fallback link) are direct children and would otherwise
+   stretch to the card's full width, rendering as an oversized bordered bar
+   instead of a compact button matching the "Descargar factura" / "Pausar" /
+   "Cancelar" siblings below (those live inside `.actionsRow`, a row flex
+   container, so they never hit this stretch behavior). BETA-143e.
+   NOTE: kept AFTER the base `.upgradeLink`/`.btnSecondary` rules so the
+   higher-specificity `.planCard > …` selectors don't precede them
+   (biome noDescendingSpecificity). */
+.planCard > .btnSecondary,
+.planCard > .upgradeLink {
+    align-self: flex-start;
 }
 
 /* ── Confirmation modal ─────────────────────────────────────────────────────── */
