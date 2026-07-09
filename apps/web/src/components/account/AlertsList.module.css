@@ -33,20 +33,8 @@
 }
 
 .alertsRetryBtn {
+    composes: ghost from "./AccountButton.module.css";
     align-self: flex-start;
-    padding: var(--space-2) var(--space-4);
-    border: 1px solid var(--core-foreground-a20);
-    border-radius: var(--radius-button);
-    background: transparent;
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--core-foreground);
-    cursor: pointer;
-    transition: background-color var(--duration-fast) ease;
-}
-
-.alertsRetryBtn:hover {
-    background-color: var(--core-foreground-a08);
 }
 
 /* ─── Upgrade (plan-gate) state ───────────────────────────────────────────── */
@@ -205,29 +193,19 @@
     flex-shrink: 0;
 }
 
+/* Converged to `.ghost` (not `.danger`): this is a soft, muted-until-hover
+ * trigger for a two-step inline confirm (Yes/No shown on click) — a loud
+ * danger-bordered button by default would compete visually with the
+ * confirm step. Local hover override keeps the destructive-tinted hover
+ * signal instead of ghost's neutral hover. */
 .alertsDeleteBtn {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--core-muted-foreground);
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: var(--radius-button);
-    padding: var(--space-2) var(--space-3);
-    cursor: pointer;
-    white-space: nowrap;
-    transition:
-        color var(--duration-fast) ease,
-        border-color var(--duration-fast) ease;
+    composes: ghost from "./AccountButton.module.css";
 }
 
 .alertsDeleteBtn:hover:enabled {
-    color: var(--destructive, oklch(0.6 0.22 25));
+    background-color: var(--destructive-a08);
     border-color: var(--destructive-a25);
-}
-
-.alertsDeleteBtn:disabled {
-    opacity: 0.4;
-    cursor: default;
+    color: var(--destructive, oklch(0.6 0.22 25));
 }
 
 .alertsDeleteConfirm {

@@ -11,6 +11,7 @@
 import { useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import styles from './CollectionBookmarkRemoveBtn.module.css';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -99,20 +100,7 @@ export function CollectionBookmarkRemoveBtn({
                     ariaLabel ??
                     t('account.favorites.collections.removeFromCollection', 'Quitar de colección')
                 }
-                style={{
-                    padding: '4px 12px',
-                    backgroundColor: 'transparent',
-                    color: 'var(--destructive)',
-                    border: '1px solid var(--destructive)',
-                    borderRadius: 'var(--radius-button, 8px)',
-                    fontFamily: 'var(--font-sans)',
-                    fontSize: '0.8125rem',
-                    fontWeight: 500,
-                    cursor: removing ? 'not-allowed' : 'pointer',
-                    opacity: removing ? 0.5 : 1,
-                    transition: 'background-color 0.4s ease, opacity 0.4s ease',
-                    whiteSpace: 'nowrap'
-                }}
+                className={styles.removeBtn}
             >
                 {removing
                     ? t('account.favorites.collections.removing', 'Quitando...')
@@ -124,12 +112,7 @@ export function CollectionBookmarkRemoveBtn({
             {error && (
                 <p
                     role="alert"
-                    style={{
-                        marginTop: '4px',
-                        fontSize: '0.75rem',
-                        color: 'var(--destructive)',
-                        fontFamily: 'var(--font-sans)'
-                    }}
+                    className={styles.error}
                 >
                     {error}
                 </p>

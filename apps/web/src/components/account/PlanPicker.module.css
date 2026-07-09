@@ -193,34 +193,12 @@
 }
 
 .btnSelect {
-    display: inline-flex;
-    align-items: center;
-    padding: var(--space-2, 8px) var(--space-4, 16px);
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--brand-primary, oklch(0.5 0.18 260));
-    background-color: transparent;
-    border: 1px solid var(--brand-primary, oklch(0.5 0.18 260));
-    border-radius: var(--radius-button, 8px);
-    cursor: pointer;
-    transition:
-        background-color var(--duration-normal, 0.4s) ease,
-        color var(--duration-normal, 0.4s) ease;
-    white-space: nowrap;
-    min-height: 36px;
+    composes: secondary from "./AccountButton.module.css";
 }
 
-.btnSelect:hover {
-    background-color: var(--brand-primary, oklch(0.5 0.18 260));
-    color: var(--primary-foreground);
-}
-
-.btnSelect:focus-visible {
-    outline: 2px solid var(--brand-accent);
-    outline-offset: 2px;
-}
-
+/* Local override — annual plan option keeps a distinct success-green
+ * accent to visually flag the discounted/annual choice among plan cards,
+ * layered on top of `.btnSelect` via a second className. */
 .btnSelectAnnual {
     color: var(--success, oklch(0.55 0.18 145));
     border-color: var(--success, oklch(0.55 0.18 145));
@@ -241,29 +219,5 @@
 }
 
 .btnCancel {
-    display: inline-flex;
-    align-items: center;
-    padding: var(--space-2, 8px) var(--space-5, 20px);
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--core-muted-foreground);
-    background-color: transparent;
-    border: 1px solid var(--border, oklch(0.8 0 0));
-    border-radius: var(--radius-button, 8px);
-    cursor: pointer;
-    transition:
-        border-color var(--duration-normal, 0.4s) ease,
-        color var(--duration-normal, 0.4s) ease;
-    min-height: 40px;
-}
-
-.btnCancel:hover {
-    border-color: var(--core-foreground);
-    color: var(--core-foreground);
-}
-
-.btnCancel:focus-visible {
-    outline: 2px solid var(--brand-accent);
-    outline-offset: 2px;
+    composes: ghost from "./AccountButton.module.css";
 }
