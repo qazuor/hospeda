@@ -135,25 +135,42 @@ export function getCategoryBackgroundFunction(color: LoggerColorType): ChalkFunc
 }
 
 /**
- * Short display labels for well-known request-context keys, so the pretty
- * segment stays compact (`req:` instead of `requestId:`). Any other key
- * returned by the `getContext` provider is shown under its own name.
+ * Correlation keys shown in the PRETTY context segment, in display order,
+ * with their compact labels. These are the only context fields rendered in
+ * pretty mode — they are the identifiers you cannot reconstruct from the log
+ * message itself.
+ *
+ * `method` and `path` are deliberately NOT here: the request log line already
+ * prints `GET /api/... 200`, and a deeper service-layer line correlates back
+ * to that request via `req`, so repeating them in every segment is redundant
+ * noise (and `path` truncated to a few chars is useless — everything starts
+ * with `/api/v1/`). The JSON path is unaffected: it still carries `method`
+ * and `path` as structured, queryable fields via `buildLogEntry`'s merge.
  */
-const CONTEXT_KEY_LABELS: Record<string, string> = {
-    requestId: 'req',
-    userId: 'user',
-    sessionId: 'sid',
-    visitorId: 'vid'
-};
-
-/** Values longer than this are shortened with a trailing ellipsis. */
-const CONTEXT_VALUE_MAX_LENGTH = 8;
+const CONTEXT_DISPLAY_LABELS: ReadonlyArray<readonly [key: string, label: string]> = [
+    ['requestId', 'req'],
+    ['userId', 'user'],
+    ['role', 'role'],
+    ['sessionId', 'sid'],
+    ['visitorId', 'vid']
+];
 
 /**
- * Builds a compact `[req:ab12ef user:U123 vid:… sid:…]`-style segment from
- * the configured `getContext` provider (see `BaseLoggerConfig.getContext`),
- * for PRETTY-mode dev output. The JSON path does not need this — it already
- * gets the full, unredacted-key context via `buildLogEntry`'s own merge.
+ * ID-shaped values are shortened to a distinguishing prefix (a UUID's first
+ * 8 chars are enough to eyeball-match in dev). Keys listed here are shown
+ * whole because they are short, semantic values, not opaque ids.
+ */
+const CONTEXT_VALUE_MAX_LENGTH = 8;
+const CONTEXT_UNTRUNCATED_KEYS: ReadonlySet<string> = new Set(['role']);
+
+/**
+ * Builds a compact `[req:ab12ef34 user:12ab… role:HOST vid:…]`-style segment
+ * from the configured `getContext` provider (see `BaseLoggerConfig.getContext`),
+ * for PRETTY-mode dev output. Only the correlation ids in
+ * {@link CONTEXT_DISPLAY_LABELS} are shown, in that order; any other context
+ * key (`method`, `path`, …) is omitted on purpose (see that constant's docs).
+ * The JSON path does not use this — it already gets the full context via
+ * `buildLogEntry`'s own merge.
  *
  * Only string/number values are shown (objects/arrays are skipped so a
  * misused provider can never dump a giant object into the console line).
@@ -170,15 +187,16 @@ export function formatContextSegment(): string {
             return '';
         }
 
+        const record = fields as Record<string, unknown>;
         const parts: string[] = [];
-        for (const [key, value] of Object.entries(fields)) {
+        for (const [key, label] of CONTEXT_DISPLAY_LABELS) {
+            const value = record[key];
             if (typeof value !== 'string' && typeof value !== 'number') {
                 continue;
             }
-            const label = CONTEXT_KEY_LABELS[key] ?? key;
             const strValue = String(value);
             const displayValue =
-                strValue.length > CONTEXT_VALUE_MAX_LENGTH
+                !CONTEXT_UNTRUNCATED_KEYS.has(key) && strValue.length > CONTEXT_VALUE_MAX_LENGTH
                     ? `${strValue.slice(0, CONTEXT_VALUE_MAX_LENGTH)}…`
                     : strValue;
             parts.push(`${label}:${displayValue}`);

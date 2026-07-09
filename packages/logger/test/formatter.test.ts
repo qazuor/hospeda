@@ -409,6 +409,42 @@ describe('formatter', () => {
                 expect(result).toContain('req:abc123');
                 expect(result).not.toContain('should');
             });
+
+            it('should omit method and path (already in the message, and noisy)', () => {
+                // Arrange
+                configureLogger({
+                    getContext: () => ({
+                        requestId: 'abcdef123456',
+                        method: 'GET',
+                        path: '/api/v1/public/accommodations',
+                        visitorId: 'vvvvvvvv-1111'
+                    })
+                });
+
+                // Act
+                const result = formatLogMessage(LogLevel.INFO, 'hello');
+
+                // Assert — correlation ids shown, method/path omitted
+                expect(result).toContain('req:abcdef12');
+                expect(result).toContain('vid:vvvvvvv');
+                expect(result).not.toContain('method:');
+                expect(result).not.toContain('path:');
+                expect(result).not.toContain('GET');
+            });
+
+            it('should show role in full without truncating it', () => {
+                // Arrange — a role longer than the id truncation cap
+                configureLogger({
+                    getContext: () => ({ requestId: 'abcdef123456', role: 'SUPER_ADMIN' })
+                });
+
+                // Act
+                const result = formatLogMessage(LogLevel.INFO, 'hello');
+
+                // Assert — role intact, requestId still truncated
+                expect(result).toContain('role:SUPER_ADMIN');
+                expect(result).toContain('req:abcdef12');
+            });
         });
     });
 
