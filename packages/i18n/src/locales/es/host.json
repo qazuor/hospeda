@@ -246,6 +246,7 @@
                 "bathrooms": "Baños",
                 "price": "Precio por noche",
                 "currency": "Moneda",
+                "currencyFixedArs": "ARS — Peso argentino",
                 "amenities": "Comodidades",
                 "features": "Características",
                 "phone": "Teléfono",

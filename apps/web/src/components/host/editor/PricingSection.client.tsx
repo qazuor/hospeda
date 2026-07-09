@@ -1,6 +1,7 @@
 /**
  * @file PricingSection.client.tsx
- * @description Form section for accommodation pricing: basePrice and currency.
+ * @description Form section for accommodation pricing: basePrice (editable)
+ * and currency (static ARS indicator — see BETA-137).
  * Uses native HTML form elements.
  */
 
@@ -22,7 +23,9 @@ export interface PricingSectionProps {
 
 /**
  * Pricing form section.
- * Renders basePrice (number) and currency (select: ARS/USD) inputs.
+ * Renders an editable basePrice (number) input and a static, read-only
+ * currency indicator (BETA-137: multi-currency isn't implemented, so the
+ * old ARS/USD select is hidden until it ships).
  */
 export function PricingSection({ locale, data, errors, onFieldChange }: PricingSectionProps) {
     const { t } = createTranslations(locale);
@@ -69,32 +72,22 @@ export function PricingSection({ locale, data, errors, onFieldChange }: PricingS
                 </div>
 
                 <div className={styles.field}>
-                    <label
-                        htmlFor="acc-currency"
-                        className={styles.fieldLabel}
-                    >
+                    <span className={styles.fieldLabel}>
                         {t('host.properties.editor.field.currency', 'Moneda')}
-                    </label>
-                    <select
-                        id="acc-currency"
-                        className={styles.fieldInput}
-                        value={data.currency ?? 'ARS'}
-                        onChange={(e) => onFieldChange('currency', e.target.value)}
-                        aria-invalid={Boolean(errors.currency)}
-                        aria-describedby={errors.currency ? 'acc-currency-error' : undefined}
+                    </span>
+                    {/*
+                     * BETA-137: multi-currency is NOT implemented yet, so the
+                     * currency SELECT (ARS/USD) is hidden — hosts cannot change
+                     * it. This is a static, read-only indicator instead, kept
+                     * so the two-column .row layout stays intact. Re-introduce
+                     * the interactive select once multi-currency ships.
+                     */}
+                    <p
+                        id="acc-currency-static"
+                        className={styles.currencyStatic}
                     >
-                        <option value="ARS">ARS — Peso argentino</option>
-                        <option value="USD">USD — Dólar</option>
-                    </select>
-                    {errors.currency && (
-                        <span
-                            id="acc-currency-error"
-                            className={styles.fieldError}
-                            role="alert"
-                        >
-                            {errors.currency}
-                        </span>
-                    )}
+                        {t('host.properties.editor.field.currencyFixedArs', 'ARS — Peso argentino')}
+                    </p>
                 </div>
             </div>
         </fieldset>
