@@ -73,6 +73,13 @@ file), and conversion to paid is **always an explicit, user-initiated checkout**
    `[data-billing='annual']`).
 5. Replicate the monthly promo precedence exactly (comp wins → no trial;
    `trial_extension` adds days; `discount` discarded with `promoCodeIgnored`).
+6. Persist the interval the user chose when starting the trial
+   (`intendedInterval`) on the trial subscription's metadata, on BOTH the monthly
+   and annual entry paths, so the choice survives the interval-agnostic trial
+   object (OQ-1).
+7. Pre-select that interval on the pricing toggle when the user returns to
+   convert after the trial, so a user who started on annual is nudged back to
+   annual rather than defaulting to the monthly toggle (OQ-1 — full nudge).
 
 ## Non-Goals
 
@@ -198,17 +205,66 @@ already neutral, no i18n copy change is required beyond confirming it.
    for zero benefit — the trial is byte-for-byte the same object and length in both
    cases, so a second line would only risk the two drifting.
 
+### 5. Interval nudge at conversion (`apps/api` + `apps/web`) — OQ-1 resolved: full nudge
+
+The trial object is interval-agnostic, so nothing on it records that the user
+started from the annual toggle. Without a nudge the pricing toggle defaults to
+monthly at conversion, silently steering an annual-intent user to the monthly
+plan and leaking the annual upsell. Owner decision: implement the **full nudge**.
+
+**Source of truth — persist `intendedInterval` (API).** When a trial is granted,
+stamp `intendedInterval: 'monthly' | 'annual'` into the trial subscription's
+`metadata` — `'annual'` from the annual entry branch, `'monthly'` from the monthly
+one. This is a metadata-only write (no schema change, no migration) on a row that
+is already being created, and it doubles as the analytics dimension (see Analytics
+below). It is the single source of truth for the user's original interval intent.
+
+**Nudge delivery — pre-select the toggle (web).** When the user returns to the
+pricing page to convert, the billing toggle must open on their `intendedInterval`
+instead of the hardcoded monthly default. Two complementary delivery paths, in
+priority order:
+
+1. **Notification deep-link (primary).** The `TRIAL_EXPIRED` notification already
+   carries an `upgradeUrl`. Append `?interval=<intendedInterval>` to it; the
+   pricing page reads that query param and sets the initial `data-billing`
+   accordingly. This covers the dominant "user clicks the expiry email/notification"
+   flow with no new endpoint.
+2. **Logged-in lookup (secondary, for direct navigation).** For a user who
+   navigates to the pricing page directly (no query param), the page — when the
+   user is authenticated — reads `intendedInterval` from their most recent trial
+   via the existing trial-status surface (extended to return it) and pre-selects
+   the toggle. If that surface does not already expose enough to do this cheaply,
+   this second path may ship as a fast-follow; path 1 is the must-have.
+
+The query param always wins over both the default and the lookup, so a user who
+deliberately re-flips the toggle is never overridden.
+
+**Alternatives considered.** Query-param-only (path 1 alone) was considered as the
+whole nudge — simpler, but it misses direct navigation, and the owner chose the
+full nudge. Persisting the interval in a dedicated DB column was rejected in favor
+of metadata (no migration; the value is only read opportunistically by the web).
+
 ### Summary of the code delta
 
 - `apps/api/src/services/subscription-checkout.service.ts` — add the trial branch
   to `initiatePaidAnnualSubscription`; widen its result type to include
   `appliedEffect: 'trial'` + optional `promoCodeIgnored`.
-- `apps/web/src/components/billing/PricingCardsGrid.astro` — show the trial copy
-  under the annual toggle (rename the class off `--monthly`, drop it from the
-  annual hide rule).
+- `apps/api` trial creation (both the monthly and annual branches / the
+  `startTrial` call) — stamp `intendedInterval: 'monthly' | 'annual'` into the
+  trial subscription metadata (OQ-1 source of truth; metadata-only, no migration).
+- `apps/api` `TRIAL_EXPIRED` notification — append `?interval=<intendedInterval>`
+  to the existing `upgradeUrl` (nudge delivery path 1).
+- `apps/web/src/components/billing/PricingCardsGrid.astro` — (a) show the trial
+  copy under the annual toggle (rename the class off `--monthly`, drop it from the
+  annual hide rule); (b) read `?interval=` (and, secondarily, the logged-in user's
+  `intendedInterval`) to pre-select the toggle's initial `data-billing` (nudge).
+- Trial-status surface (`apps/api` + its web consumer) — OPTIONAL fast-follow:
+  expose `intendedInterval` so direct navigation (no query param) also nudges.
 - `@repo/i18n` (only if the current `pricing.trial` wording implies monthly-only) —
   interval-neutral copy for es/en/pt.
-- No change to `trial.service.ts`, `trial-expiry.ts`, the DB schema, or any cron.
+- No change to `trial-expiry.ts`, the expiry logic in `trial.service.ts`, the DB
+  schema, or any cron. `startTrial` gains only a metadata field on the row it
+  already writes.
 
 ## Promo interaction (replicate monthly precedence exactly)
 
@@ -242,6 +298,18 @@ interval-agnostic, this rule is explicitly cross-interval:
 
 There is no per-interval trial allotment. "Annual" vs "monthly" only describes
 which checkout the user completes at conversion, never a separate trial grant.
+
+## Analytics (OQ-2 resolved: reuse the existing event)
+
+No new analytics event or property is introduced. The existing `checkout_started`
+event already captures `billingInterval`; the annual trial branch additionally
+sets `appliedEffect='trial'`. "Annual → trial" is therefore the cross-tab of
+`billingInterval='annual'` × `appliedEffect='trial'`, and "annual → paid" is
+`billingInterval='annual'` × `appliedEffect` in (`discount`, absent). Because
+`intendedInterval` is persisted on the trial (OQ-1), post-trial conversion events
+can be attributed back to the interval the user originally chose without a
+dedicated event. A separate "annual→trial" event was considered and rejected as
+unnecessary analytics surface.
 
 ## Testability
 
@@ -335,21 +403,47 @@ Then they are NOT granted a second trial (one trial per customer, for life)
   And they are routed to the annual upfront charge.
 ```
 
-## Open questions
+### AC-8 — Trial stamps the intended interval
 
-- **OQ-1 — Interval choice at conversion.** After an annual-originated trial
-  expires, the user re-picks the interval at conversion from scratch (they could
-  choose monthly or annual). Do we want any nudge toward the interval they
-  originally selected when they started the trial (e.g. pre-select the annual
-  toggle, or a "you started with annual" hint)? The trial object stores no
-  interval, so honoring the original choice would require persisting it somewhere
-  (e.g. trial subscription metadata). Flagged, not decided — the default with no
-  extra work is "user re-picks freely, no nudge."
-- **OQ-2 — Analytics dimension.** `checkout_started` currently captures
-  `billingInterval`. When the annual branch short-circuits into a trial, should the
-  emitted analytics distinguish "annual → trial" from "annual → paid" (a new
-  property or event), or is `appliedEffect='trial'` on the existing event enough?
-  Flagged for the implementation phase; not a blocker.
+```
+Given a trial-eligible user starting a trial from the ANNUAL toggle
+When TrialService.startTrial() creates the trialing subscription
+Then its metadata records intendedInterval='annual'
+  And a trial started from the MONTHLY toggle records intendedInterval='monthly'.
+```
+
+### AC-9 — Conversion pre-selects the intended interval (nudge)
+
+```
+Given a user whose annual-intent trial expired (intendedInterval='annual')
+When they open the pricing page via the TRIAL_EXPIRED notification link
+      (upgradeUrl carrying ?interval=annual)
+Then the billing toggle opens on 'annual' (data-billing='annual'), not the
+     monthly default
+  And if they instead navigate directly while logged in, the page pre-selects
+     'annual' from their persisted intendedInterval (secondary path / fast-follow)
+  And a user who manually flips the toggle is never overridden.
+```
+
+### AC-10 — Analytics reuses the existing event
+
+```
+Given a trial-eligible user starts an annual trial
+When the checkout_started analytics event is emitted
+Then it carries billingInterval='annual' AND appliedEffect='trial'
+  And NO new analytics event or property is introduced for the annual→trial case.
+```
+
+## Resolved product decisions
+
+- **OQ-1 — Interval choice at conversion — RESOLVED (2026-07-09): full nudge.**
+  Persist `intendedInterval` on the trial metadata and pre-select the pricing
+  toggle at conversion (notification deep-link primary; logged-in lookup
+  secondary / fast-follow). See Design §5. Chosen over "no nudge" to protect the
+  annual upsell for a user who deliberately picked annual before the trial.
+- **OQ-2 — Analytics dimension — RESOLVED (2026-07-09): reuse the existing event.**
+  No new event/property. "Annual → trial" is `billingInterval='annual'` ×
+  `appliedEffect='trial'` on the existing `checkout_started` event. See Analytics.
 
 ## Smoke labels
 
