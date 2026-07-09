@@ -180,6 +180,10 @@ const FS_EXCLUSIONS: ReadonlySet<string> = new Set([
     'conversations/protected/owner/system-actor.ts',
     // Pure amenity/feature allowlist data + matching helpers consumed by search-chat.ts (not a Hono route)
     'ai/protected/amenity-allowlist.ts',
+    // Pure attraction allowlist data + matching helpers consumed by search-chat.ts (not a Hono route) — HOS-111
+    'ai/protected/attraction-allowlist.ts',
+    // Pure attraction→destination resolver consumed by search-chat.ts (not a Hono route) — HOS-111
+    'ai/protected/attraction-resolver.ts',
     // Pure intent→search-params mapper consumed by search-chat.ts (not a Hono route)
     'ai/protected/search-intent.mapper.ts',
     // Per-request prompt builder for search-chat (not a Hono route) — SPEC-212 T-003/T-006

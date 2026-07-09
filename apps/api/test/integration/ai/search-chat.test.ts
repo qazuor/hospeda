@@ -118,7 +118,9 @@ const {
     mockApiLogger,
     nextSearchCallCount,
     nextNearbyResult,
-    nearbyGetCalls
+    nearbyGetCalls,
+    nextAttractionResolveResult,
+    attractionResolveCalls
 } = vi.hoisted(() => ({
     generateObjectCalls: [] as Array<{ feature: string; prompt: string; locale: string }>,
     nextGenerateObjectResult: {
@@ -192,7 +194,20 @@ const {
             | { data?: never; error: { code: string; message: string } }
     },
     /** HOS-111 T-013: records every `getNearby` call for call-count/arg assertions. */
-    nearbyGetCalls: [] as Array<{ destinationId: string }>
+    nearbyGetCalls: [] as Array<{ destinationId: string }>,
+    /**
+     * HOS-111 T-016: controls what the mocked
+     * `AttractionService.getDestinationIdsByAttractionSlugs` returns per-test.
+     * Default (empty destinationIds) means "no constraint" so pre-existing
+     * tests that never set `attractionSlugs` are unaffected.
+     */
+    nextAttractionResolveResult: {
+        current: { data: { destinationIds: [] } } as
+            | { data: { destinationIds: string[] }; error?: never }
+            | { data?: never; error: { code: string; message: string } }
+    },
+    /** HOS-111 T-016: records every attraction-resolve call for assertions. */
+    attractionResolveCalls: [] as Array<{ slugs: string[] }>
 }));
 
 // ---------------------------------------------------------------------------
@@ -403,6 +418,14 @@ vi.mock('@repo/service-core', async (importOriginal) => {
                 nearbyGetCalls.push({ destinationId: params.destinationId });
                 return nextNearbyResult.current;
             }
+        },
+        // HOS-111 T-016: mirrors the DestinationService.getNearby mock above —
+        // controllable per-test without a real database or DB-mock join chain.
+        AttractionService: class {
+            async getDestinationIdsByAttractionSlugs(_actor: unknown, params: { slugs: string[] }) {
+                attractionResolveCalls.push({ slugs: params.slugs });
+                return nextAttractionResolveResult.current;
+            }
         }
     };
 });
@@ -460,6 +483,10 @@ const COLON_DESTINATION_UUID = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 const PUEBLO_LIEBIG_UUID = '11111111-1111-4111-8111-111111111111';
 const SAN_JOSE_UUID = '22222222-2222-4222-8222-222222222222';
 const CONCEPCION_DEL_URUGUAY_UUID = '33333333-3333-4333-8333-333333333333';
+
+/** HOS-111 T-016: fixed UUIDs for the "attraction-matched destinations" AC-11 fixtures. */
+const GUALEGUAYCHU_UUID = '44444444-4444-4444-8444-444444444444';
+const GUALEGUAY_UUID = '55555555-5555-4555-8555-555555555555';
 
 // ---------------------------------------------------------------------------
 // Test app
@@ -618,6 +645,9 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
         // HOS-111 T-013: reset nearby-expansion stub state ("no expansion" default).
         nextNearbyResult.current = { data: { nearby: [] } };
         nearbyGetCalls.length = 0;
+        // HOS-111 T-016: reset attraction-resolution stub state ("no constraint" default).
+        nextAttractionResolveResult.current = { data: { destinationIds: [] } };
+        attractionResolveCalls.length = 0;
         // T-007: default happy-path persistence — resolves with a fixed conversation id.
         nextPersistPromise.current = Promise.resolve({
             conversationId: 'ffffffff-ffff-4fff-8fff-ffffffffffff'
@@ -2008,6 +2038,263 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(payload.params.destinationIds).toEqual(
                 expect.arrayContaining([COLON_DESTINATION_UUID, CONCEPCION_DEL_URUGUAY_UUID])
             );
+        });
+    });
+
+    // =========================================================================
+    // Gate 10 — HOS-111 T-016: attraction-constrained destination search (AC-11)
+    //
+    // "una ciudad con carnavales" → constrains results to the destinations
+    // that have that attraction (Gualeguaychú, Gualeguay).
+    // =========================================================================
+
+    describe('Gate 10 — HOS-111 T-016: attraction-constrained destination search (AC-11)', () => {
+        it('AC-11: attractionSlugs resolves and constrains params.destinationIds when there is no other location constraint', async () => {
+            // Arrange
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { attractionSlugs: ['sede_carnaval', 'corsodromo'] }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextAttractionResolveResult.current = {
+                data: { destinationIds: [GUALEGUAYCHU_UUID, GUALEGUAY_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'una ciudad con carnavales' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            expect(filtersFrame).toBeDefined();
+
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+
+            expect(attractionResolveCalls).toEqual([{ slugs: ['sede_carnaval', 'corsodromo'] }]);
+            expect(payload.params.destinationIds).toEqual([GUALEGUAYCHU_UUID, GUALEGUAY_UUID]);
+            expect(
+                (payload as { attractionLocationConflict?: unknown }).attractionLocationConflict
+            ).toBeUndefined();
+        });
+
+        it('intersects with an already-resolved destinationId when the city HAS the attraction', async () => {
+            // Arrange: the model resolved a city (Colón) AND Colón is one of the
+            // attraction-matched destinations → the intersection is non-empty, so
+            // the search narrows to exactly Colón.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: {
+                        destinationId: COLON_DESTINATION_UUID,
+                        attractionSlugs: ['sede_carnaval']
+                    }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextAttractionResolveResult.current = {
+                data: { destinationIds: [COLON_DESTINATION_UUID, GUALEGUAYCHU_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'una cabaña en Colón con carnavales' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                attractionLocationConflict?: unknown;
+            };
+
+            // Non-empty intersection (Colón ∈ {Colón, Gualeguaychú}) → narrows to Colón.
+            expect(payload.params.destinationIds).toEqual([COLON_DESTINATION_UUID]);
+            expect(payload.attractionLocationConflict).toBeUndefined();
+        });
+
+        it('AC-11 no-match: an incompatible city+attraction emits attractionLocationConflict and does NOT widen to the attraction set', async () => {
+            // Arrange: the model resolved a city (Colón) but Colón is NOT one of
+            // the attraction-matched destinations → empty intersection. Owner
+            // decision: no-match (zero results + explanation), NOT a silent
+            // substitution of the attraction destinations.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: {
+                        destinationId: COLON_DESTINATION_UUID,
+                        city: 'Colón',
+                        attractionSlugs: ['sede_carnaval']
+                    }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextAttractionResolveResult.current = {
+                data: { destinationIds: [GUALEGUAYCHU_UUID, GUALEGUAY_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'una cabaña en Colón con carnavales' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                attractionLocationConflict?: { attractionSlugs: string[]; locationLabel?: string };
+            };
+
+            // The conflict is signalled so the web client skips the search.
+            expect(payload.attractionLocationConflict).toBeDefined();
+            expect(payload.attractionLocationConflict?.attractionSlugs).toEqual(['sede_carnaval']);
+            expect(payload.attractionLocationConflict?.locationLabel).toBe('Colón');
+            // CRITICAL: params are NOT widened to the attraction destinations —
+            // the search must NOT silently substitute them.
+            expect(payload.params.destinationIds).not.toEqual([GUALEGUAYCHU_UUID, GUALEGUAY_UUID]);
+            expect(payload.params.destinationId).toBe(COLON_DESTINATION_UUID);
+        });
+
+        it('does not call the attraction resolver when attractionSlugs is absent', async () => {
+            // Arrange
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.9, entities: { destinationId: COLON_DESTINATION_UUID } },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cabaña en Colón' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            expect(attractionResolveCalls).toHaveLength(0);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            expect(payload.params.destinationIds).toBeUndefined();
+            expect(payload.params.destinationId).toBe(COLON_DESTINATION_UUID);
+        });
+
+        it('non-fatal: an attraction-resolution failure is logged and the turn still completes without constraining', async () => {
+            // Arrange
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.9, entities: { attractionSlugs: ['sede_carnaval'] } },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextAttractionResolveResult.current = {
+                error: { code: 'INTERNAL_ERROR', message: 'DB unavailable' }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'una ciudad con carnavales' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert: the turn still succeeds end-to-end (non-fatal contract).
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            expect(payload.params.destinationIds).toBeUndefined();
+            expect(
+                (payload as { attractionLocationConflict?: unknown }).attractionLocationConflict
+            ).toBeUndefined();
+            expect(mockApiLogger.warn).toHaveBeenCalled();
+        });
+
+        it('no-match: an attraction that matched NO destination emits attractionLocationConflict (owner decision)', async () => {
+            // Arrange: the user asked for an attraction that no destination carries.
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.7, entities: { attractionSlugs: ['sede_carnaval'] } },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextAttractionResolveResult.current = { data: { destinationIds: [] } };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'una ciudad con carnavales' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                attractionLocationConflict?: { attractionSlugs: string[] };
+            };
+            // No-match: conflict signalled, and params carry NO location filter
+            // (never an empty destinationIds array — that would be the full catalog).
+            expect(payload.attractionLocationConflict).toBeDefined();
+            expect(payload.attractionLocationConflict?.attractionSlugs).toEqual(['sede_carnaval']);
+            expect(payload.params.destinationIds).toBeUndefined();
         });
     });
 });
