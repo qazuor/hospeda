@@ -231,6 +231,23 @@ export const SearchIntentEntitiesSchema = z.object({
      */
     featureSlugs: z.array(z.string()).optional(),
 
+    /**
+     * Destination attraction slugs matched from the locale-specific
+     * `ATTRACTION_ALLOWLIST` (HOS-111 T-015, G-11 — "una ciudad con carnavales").
+     *
+     * Mirrors `amenitySlugs`/`featureSlugs`: the model is only asked to emit
+     * CANONICAL slugs from the curated allowlist (never invented ones), and the
+     * route resolves them server-side. Unlike amenities/features (which resolve
+     * to accommodation-level filter UUIDs), attraction slugs resolve to the
+     * DESTINATIONS that have that attraction via `r_destination_attraction`
+     * (no accommodation↔attraction join exists for the MVP — spec §6 Phase 3) —
+     * the search-chat handler (T-016) turns the resolved set into a
+     * `destinationIds` constraint on the accommodation search, never a direct
+     * query param on this schema. Empty array is treated as absent (no
+     * attraction constraint applied).
+     */
+    attractionSlugs: z.array(z.string()).optional(),
+
     // ── Availability dates ────────────────────────────────────────────────────
     /**
      * Check-in date as an ISO date string (YYYY-MM-DD).

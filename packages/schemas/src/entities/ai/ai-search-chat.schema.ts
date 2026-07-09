@@ -61,6 +61,38 @@ export const NearbyDestinationSummarySchema = z.object({
 export type NearbyDestinationSummary = z.infer<typeof NearbyDestinationSummarySchema>;
 
 /**
+ * Attraction ↔ location conflict signal (HOS-111 T-016, G-11 — owner
+ * decision on the empty-intersection case).
+ *
+ * Emitted in the `filters` SSE frame when the user asked for BOTH an explicit
+ * location (a resolved `destinationId`, or a Phase-2 nearby-expanded set) AND
+ * an attraction, but NO destination satisfies both (empty intersection) — OR
+ * when the requested attraction resolves to zero destinations at all. In that
+ * case the search must return ZERO accommodations and the assistant must
+ * explain the conflict (e.g. "no encontré destinos que combinen Chajarí con
+ * carnaval; probá aflojando un filtro") rather than silently substituting the
+ * attraction's destinations.
+ *
+ * When this field is present, the web client MUST NOT run the accommodation
+ * search (an empty `destinationIds` array is treated as "no filter" → full
+ * catalog by the query builder, so it can NEVER be used to force zero — see
+ * `useSearchChat.ts`). Instead the client short-circuits to the empty-results
+ * + explanation state.
+ *
+ * @property attractionSlugs - The canonical attraction slugs the user asked
+ *   for (e.g. `['sede_carnaval', 'corsodromo']`).
+ * @property locationLabel - Best-effort human location label (the resolved
+ *   city string when available) for the reply/UI. Absent when the location
+ *   came from a raw destination id with no name to hand.
+ */
+export const AttractionLocationConflictSchema = z.object({
+    attractionSlugs: z.array(z.string()),
+    locationLabel: z.string().optional()
+});
+
+export type AttractionLocationConflict = z.infer<typeof AttractionLocationConflictSchema>;
+
+/**
  * Payload of the `filters` SSE event, emitted once per turn as soon as
  * `generateObject` resolves (before the reply streams, so results render first).
  *
@@ -83,7 +115,16 @@ export const AiSearchChatFiltersEventSchema = z.object({
     params: AccommodationSearchHttpSchema,
     intent: SearchIntentEntitiesSchema,
     confidence: z.number().min(0).max(1).optional(),
-    nearbyDestinations: z.array(NearbyDestinationSummarySchema).optional()
+    nearbyDestinations: z.array(NearbyDestinationSummarySchema).optional(),
+    /**
+     * Attraction ↔ location conflict (HOS-111 T-016, G-11). Present ONLY when
+     * the turn asked for both a location and an attraction that share no
+     * destination (empty intersection), or the attraction matched no
+     * destination at all. When present, the web client MUST skip the
+     * accommodation search and render the empty-results + explanation state —
+     * see {@link AttractionLocationConflictSchema}. Absent on every normal turn.
+     */
+    attractionLocationConflict: AttractionLocationConflictSchema.optional()
 });
 
 export type AiSearchChatFiltersEvent = z.infer<typeof AiSearchChatFiltersEventSchema>;

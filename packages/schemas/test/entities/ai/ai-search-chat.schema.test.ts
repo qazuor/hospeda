@@ -150,6 +150,46 @@ describe('AiSearchChatFiltersEventSchema', () => {
             expect(result.error.issues.some((i) => i.path.includes('intent'))).toBe(true);
         }
     });
+
+    // ── attractionLocationConflict (HOS-111 T-016) ───────────────────────────
+
+    it('accepts an attractionLocationConflict with slugs + locationLabel', () => {
+        const result = AiSearchChatFiltersEventSchema.safeParse({
+            params: {},
+            intent: { attractionSlugs: ['sede_carnaval'] },
+            attractionLocationConflict: {
+                attractionSlugs: ['sede_carnaval'],
+                locationLabel: 'Colón'
+            }
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.attractionLocationConflict?.attractionSlugs).toEqual([
+                'sede_carnaval'
+            ]);
+            expect(result.data.attractionLocationConflict?.locationLabel).toBe('Colón');
+        }
+    });
+
+    it('accepts an attractionLocationConflict without locationLabel (optional)', () => {
+        const result = AiSearchChatFiltersEventSchema.safeParse({
+            params: {},
+            intent: {},
+            attractionLocationConflict: { attractionSlugs: ['sede_carnaval'] }
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('accepts a payload without attractionLocationConflict (backward-compatible)', () => {
+        const result = AiSearchChatFiltersEventSchema.safeParse({
+            params: { minGuests: 4 },
+            intent: { minGuests: 4 }
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.attractionLocationConflict).toBeUndefined();
+        }
+    });
 });
 
 describe('AiSearchChatTokenEventSchema', () => {

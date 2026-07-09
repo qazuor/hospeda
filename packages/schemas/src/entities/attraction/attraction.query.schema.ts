@@ -148,6 +148,16 @@ export const DestinationsByAttractionSchema = z.object({
     pageSize: z.number().int().min(1).max(100).default(10)
 });
 
+/**
+ * Schema for bulk-resolving attraction SLUGS (not a single UUID) to the
+ * destinations that have them (HOS-111 T-016, G-11 — "una ciudad con
+ * carnavales"). Used by the AI search-chat handler, which only has NL-matched
+ * slugs from the curated allowlist, never a pre-resolved attraction UUID.
+ */
+export const DestinationIdsByAttractionSlugsSchema = z.object({
+    slugs: z.array(z.string()).min(1)
+});
+
 // ============================================================================
 // STATS SCHEMA
 // ============================================================================
@@ -188,6 +198,9 @@ export type AttractionListWithCountsResponse = z.infer<
 >;
 export type AttractionsByDestinationInput = z.infer<typeof AttractionsByDestinationSchema>;
 export type DestinationsByAttractionInput = z.infer<typeof DestinationsByAttractionSchema>;
+export type DestinationIdsByAttractionSlugsInput = z.infer<
+    typeof DestinationIdsByAttractionSlugsSchema
+>;
 export type AttractionStats = z.infer<typeof AttractionStatsSchema>;
 
 // Compatibility aliases for existing code
@@ -214,6 +227,13 @@ export const AttractionsByDestinationInputSchema = AttractionsByDestinationSchem
 export const AttractionsByDestinationOutputSchema = AttractionListResponseSchema;
 export const DestinationsByAttractionInputSchema = DestinationsByAttractionSchema;
 export const DestinationsByAttractionOutputSchema = AttractionListResponseSchema;
+export const DestinationIdsByAttractionSlugsInputSchema = DestinationIdsByAttractionSlugsSchema;
+export const DestinationIdsByAttractionSlugsOutputSchema = z.object({
+    destinationIds: z.array(z.string().uuid())
+});
+export type DestinationIdsByAttractionSlugsOutput = z.infer<
+    typeof DestinationIdsByAttractionSlugsOutputSchema
+>;
 export const AttractionCountOutputSchema = z.object({ count: z.number().int().min(0) });
 
 // ============================================================================
