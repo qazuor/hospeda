@@ -28,8 +28,10 @@
  * Hydration: caller MUST use `client:load`.
  */
 
+import { BellIcon } from '@repo/icons';
 import type { PriceAlertResponse } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -310,26 +312,16 @@ export function AlertsList({ locale, apiUrl, userId: _userId }: AlertsListProps)
 
     if (isEmpty) {
         return (
-            <div
-                className={styles.alertsEmpty}
-                aria-live="polite"
-            >
-                <p className={styles.alertsEmptyTitle}>
-                    {t('account.alerts.empty.title', 'No tenés alertas activas')}
-                </p>
-                <p className={styles.alertsEmptyBody}>
-                    {t(
-                        'account.alerts.empty.body',
-                        'Explorá alojamientos y activá alertas para enterarte cuando bajen de precio.'
-                    )}
-                </p>
-                <a
-                    href={listingHref}
-                    className={styles.alertsEmptyCta}
-                >
-                    {t('account.alerts.empty.cta', 'Explorar alojamientos')}
-                </a>
-            </div>
+            <AccountEmptyState
+                title={t('account.alerts.empty.title', 'No tenés alertas activas')}
+                description={t(
+                    'account.alerts.empty.body',
+                    'Explorá alojamientos y activá alertas para enterarte cuando bajen de precio.'
+                )}
+                icon={<BellIcon size={28} />}
+                ctaLabel={t('account.alerts.empty.cta', 'Explorar alojamientos')}
+                ctaHref={listingHref}
+            />
         );
     }
 
