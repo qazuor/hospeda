@@ -1,6 +1,6 @@
 # HOS-109: Investigate & fix production API log errors and noise (post-relaunch triage)
 
-## Progress: 8/11 tasks (73%)
+## Progress: 10/11 tasks (91%) — T-010 blocked on owner (Brevo dashboard + prod env)
 
 **Average Complexity:** 2.3/3 (max)
 **All tasks independent** — no blocking dependencies; ordered by priority within phases.
@@ -45,8 +45,31 @@
 
 ### F4 — Investigations (report first, then fix/downgrade)
 
-- [ ] **T-007** (complexity: 2) — Investigate stale-slug 404 flood source (sitemap / ISR / crawler) *(OQ-2)*
-- [ ] **T-008** (complexity: 2) — Verify conversation-notification cron lock overlap
+- [x] **T-007** (complexity: 2) — Investigate stale-slug 404 flood source (sitemap / ISR / crawler) *(OQ-2)* ✅
+  - FINDINGS (investigation, no code change): NOT our bug. Confirmed via the T-011 investigation —
+    `sitemap-dynamic.xml.ts` is regenerated from the CURRENT DB (lists current slugs, never stale
+    ones), the RSS feed fetches the correct `/posts?` list endpoint, and no code builds the bad
+    paths. The 404 flood = external crawlers requesting OLD seed slugs after reseed: the web SSR
+    `[slug].astro` forwards each to the API `getBySlug` → NOT_FOUND → logged. No ISR enumerates
+    slugs (web uses Cloudflare cache + on-demand revalidation).
+  - **OQ-2 RESOLVED: external crawler traffic → accept + downgrade.** Already mitigated by T-003
+    (404 → `info`, no ERROR/stack) + T-011 (Disallow-all robots.txt on the API domain). No further
+    code fix. Optional future SEO nicety: 410 Gone for known-deleted slugs — deferred, out of scope.
+    NEEDS-YOUR-DATA (optional): exact crawler UA/volume would confirm from prod logs, but the source
+    - mitigation are settled from code.
+- [x] **T-008** (complexity: 2) — Verify conversation-notification cron lock overlap ✅
+  - FINDINGS (investigation, no code change): **benign skip, NO leak.** The lock is
+    `pg_try_advisory_xact_lock(43020)` — TRANSACTION-level, auto-released by Postgres on
+    commit/rollback; it cannot leak across runs. The recurring "skipping — previous run holds
+    advisory lock" WARN is the lock working as intended (a prior run still executing at the next
+    5-min tick). Job `timeoutMs` 120s < 300s cadence, so overlap is bounded.
+  - ROOT-CAUSE FLAG (follow-up, outside T-008's "fix only if real leak" scope): the whole batch —
+    including `sendEmail` (external HTTP) for up to 100 schedules sequentially — runs INSIDE the
+    lock-holding transaction (`conversation-notification.job.ts`). A large/slow batch keeps the
+    transaction (+ lock + a pooled DB connection) open long enough to trip the next run's skip,
+    violating the "external calls OUTSIDE the transaction" rule (service-core CLAUDE.md). Recommend a
+    follow-up spec: move email dispatch out of the transaction (the Redis idempotency guard
+    `conv:notif:{id}` already dedups), and/or lower MAX_BATCH_SIZE / add a per-email timeout.
 - [x] **T-009** (complexity: 2) — Gate social-publish-dispatch make_api_key warning ✅
   - DONE (commit 51a8a9f25): dispatch cron (every ~5min) warned on every run when the optional
     make_api_key/make_webhook_url vault creds are absent (expected pre-launch). Now logged at `info`
@@ -56,7 +79,26 @@
 
 ### F5 — Config / SEO
 
-- [ ] **T-010** (complexity: 3) — Fix Brevo webhook signature verification
+- [ ] **T-010** (complexity: 3) — Fix Brevo webhook signature verification — **BLOCKED ON OWNER (Brevo dashboard + prod env)**
+  - DIAGNOSIS (code read, `apps/api/src/routes/webhooks/brevo.ts`): the CODE IS CORRECT and NOT a
+    signature bug. Brevo does NOT sign payloads — this endpoint gates on a **static shared token in
+    the URL path** (`POST /api/v1/public/webhooks/brevo/:token`), compared to
+    `HOSPEDA_BREVO_WEBHOOK_SECRET` via `timingSafeEqual`. The `signature mismatch` → 401 means the
+    `:token` in the incoming URL ≠ the configured secret. This is **config drift**, not code.
+  - ROOT CAUSE (one of): (a) the token embedded in the webhook URL registered in the Brevo dashboard
+    ≠ `HOSPEDA_BREVO_WEBHOOK_SECRET` on `hospeda-api-prod` (value mismatch / rotated one side only);
+    or (b) the secret contains URL-unsafe characters (`/`, `+`, `=`) that get mangled in the URL path
+    so the decoded path token never equals the raw env value. (Secret is SET, not unset — an unset
+    secret logs a different line, `HOSPEDA_BREVO_WEBHOOK_SECRET unset, rejecting`.)
+  - REMEDIATION (**needs your Brevo dashboard + prod access — the blocking step**):
+    1. In the Brevo dashboard, read the exact webhook URL and extract its `:token` segment.
+    2. Set `HOSPEDA_BREVO_WEBHOOK_SECRET` on `hospeda-api-prod` to EXACTLY that token, OR regenerate a
+       URL-safe token (alphanumeric / hex / base64url — no `/`, `+`, `=`) and update BOTH the Brevo
+       dashboard URL and the Coolify env var to match. `hops env-set prod HOSPEDA_BREVO_WEBHOOK_SECRET <v>`
+       then `hops redeploy prod`.
+    3. Fire a real Brevo test event (bounce/open) and confirm 200.
+  - OPTIONAL CODE HARDENING (I can do without creds if you want): warn/reject at boot if
+    `HOSPEDA_BREVO_WEBHOOK_SECRET` contains URL-unsafe characters, to prevent this class of mismatch.
 - [x] **T-011** (complexity: 2) — Serve robots.txt and fix RSS feed route ✅
   - DONE (commit 44e68e107): INVESTIGATION FIRST (owner asked) confirmed it's NOT our bug — the web
     feed fetches the correct /posts? list endpoint, RSS `<link>`/sitemap point to the web, nobody

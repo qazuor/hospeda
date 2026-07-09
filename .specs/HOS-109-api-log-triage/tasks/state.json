@@ -151,45 +151,45 @@
             "id": "T-007",
             "title": "Investigate stale-slug 404 flood source (sitemap / ISR / crawler)",
             "description": "P10/F4. Hundreds of sequential 404s on seed-like slugs. Determine the request source: our own sitemap, ISR warm-up, or an external crawler; and whether it enumerates OLD seed slugs after reseed. Produce a findings note on HOS-109 (OQ-2) then decide fix (regenerate/limit sitemap, cache-bust, or accept + downgrade). Investigation first, no premature fix.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Identify request UA/source and slug origin", "completed": false },
+                { "title": "Identify request UA/source and slug origin", "completed": true },
                 {
                     "title": "Write findings note + OQ-2 recommendation on Linear",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "devops", "investigation"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-09T03:28:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-09T07:20:00.000Z",
+                "completed": "2026-07-09T07:30:00.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Verify conversation-notification cron lock overlap",
             "description": "P11/F4. `[CRON:conversation-notification] skipping — previous run holds advisory lock` recurs. Verify whether the job ever completes or leaks its advisory lock (job duration vs cron cadence). Write findings on HOS-109; fix only if a real overlap/leak (not a benign skip).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Inspect the cron job + lock release path", "completed": false },
-                { "title": "Findings note: benign skip vs real leak", "completed": false }
+                { "title": "Inspect the cron job + lock release path", "completed": true },
+                { "title": "Findings note: benign skip vs real leak", "completed": true }
             ],
             "tags": ["api", "cron", "investigation"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-09T03:28:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-09T07:20:00.000Z",
+                "completed": "2026-07-09T07:30:00.000Z"
             }
         },
         {
@@ -265,10 +265,10 @@
     ],
     "summary": {
         "total": 11,
-        "pending": 3,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 8,
-        "blocked": 0,
+        "completed": 10,
+        "blocked": 1,
         "averageComplexity": 2.3
     }
 }
