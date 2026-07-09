@@ -210,12 +210,18 @@
                 "confirmNo": "Cancelar",
                 "delete": "Eliminar",
                 "deleteConfirm": "¿Eliminar esta propiedad? Se quitará de tu listado y del sitio.",
-                "deleteYes": "Sí, eliminar"
+                "deleteYes": "Sí, eliminar",
+                "publishConfirmTitle": "14 días gratis al publicar",
+                "publishConfirmNote": "Al publicar arranca tu prueba gratis de 14 días. Sin tarjeta, sin compromiso.",
+                "publishYes": "Sí, publicar"
             },
             "pricePerNight": "por noche",
             "unpublishSuccess": "Propiedad despublicada",
             "unpublishError": "No se pudo despublicar. Intentá de nuevo.",
             "deleteError": "No se pudo eliminar. Intentá de nuevo.",
+            "publishError": "No se pudo publicar. Intentá de nuevo.",
+            "publishSubscriptionRequiredMessage": "Ya usaste tu prueba gratis de 14 días. Suscribite a un plan para publicar esta propiedad.",
+            "publishSubscriptionRequiredCta": "Ver planes",
             "priceOnRequest": "Precio a consultar"
         },
         "editor": {
