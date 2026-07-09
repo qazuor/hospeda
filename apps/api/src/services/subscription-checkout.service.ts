@@ -600,6 +600,9 @@ export async function initiatePaidMonthlySubscription(
             const trialSubscriptionId = await trialService.startTrial({
                 customerId,
                 planSlug,
+                // HOS-115 §5: record the checkout entry interval so the
+                // post-trial conversion nudge can pre-select the same toggle.
+                intendedInterval: 'monthly',
                 ...(extraTrialDays === undefined ? {} : { extraTrialDays })
             });
 
@@ -1087,15 +1090,22 @@ export interface InitiatePaidAnnualSubscriptionInput {
      */
     readonly statementDescriptor?: string;
     /**
-     * Optional promo code (SPEC-262 T-012 P2). Annual honors:
-     *  - `discount` → a one-time reduced line-item amount (annual is a SINGLE
-     *    charge, so there is NO preapproval mutation and NO multi-cycle counter;
-     *    forever/multi-cycle semantics do not apply — it is just a one-time
-     *    reduced price).
+     * Optional promo code (SPEC-262 T-012 P2, extended by HOS-115). Annual
+     * honors:
      *  - `comp` → a `status='comp'` subscription, NO MercadoPago charge.
-     *  - `trial_extension` → ignored on annual (no recurring trial to extend);
-     *    a trial code on annual is treated as a no-op promo (full price).
-     * An unknown / inactive code surfaces as INVALID_PROMO_CODE (HTTP 422).
+     *    Wins outright over a trial (comp always beats trial).
+     *  - For a TRIAL-ELIGIBLE customer on a trial-declaring plan (HOS-115),
+     *    the promo folds into the granted trial exactly like monthly:
+     *    `trial_extension` lengthens it (`freeTrialDays` forwarded as
+     *    `extraTrialDays`); `discount` is discarded (trial wins, response
+     *    carries `promoCodeIgnored: true`).
+     *  - Otherwise (not trial-eligible, or the plan has no trial): `discount`
+     *    → a one-time reduced line-item amount (annual is a SINGLE charge, so
+     *    there is NO preapproval mutation and NO multi-cycle counter —
+     *    forever/multi-cycle semantics do not apply); `trial_extension` is a
+     *    no-op (no recurring trial to extend, full price charged).
+     * An unknown / inactive code surfaces as INVALID_PROMO_CODE (HTTP 422),
+     * regardless of trial eligibility.
      */
     readonly promoCode?: string;
     /**
@@ -1109,13 +1119,27 @@ export interface InitiatePaidAnnualSubscriptionInput {
  * Output shape of a successful annual initiation. Mirrors the monthly
  * shape so the route handler can return either uniformly. `appliedEffect`
  * is `'comp'` when a comp code short-circuited the MP charge (no real
- * `checkoutUrl`), or `'discount'` when the annual line-item was reduced.
+ * `checkoutUrl`), `'discount'` when the annual line-item was reduced, or
+ * (HOS-115) `'trial'` when a trial-eligible customer was granted the
+ * no-card trial instead of being charged upfront — mirrors the monthly
+ * `InitiatePaidMonthlySubscriptionResult` shape exactly so the two stay
+ * symmetric.
  */
 export interface InitiatePaidAnnualSubscriptionResult {
     readonly checkoutUrl: string;
     readonly localSubscriptionId: string;
     readonly expiresAt: string;
     readonly appliedEffect?: CheckoutAppliedEffect;
+    /**
+     * HOS-115 (mirrors HOS-110 W1 monthly): set to `true` when a `discount`
+     * promo code was supplied alongside a trial-eligible annual checkout and
+     * the code was DISCARDED (not persisted anywhere) because the free trial
+     * takes priority over a discount on a not-yet-charged subscription. Only
+     * ever present together with `appliedEffect: 'trial'`. Absent (not
+     * `false`) in every other case — the front-end should treat "absent" and
+     * "false" identically.
+     */
+    readonly promoCodeIgnored?: true;
 }
 
 /**
@@ -1194,6 +1218,102 @@ export async function initiatePaidAnnualSubscription(
             expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
             appliedEffect: 'comp'
         };
+    }
+
+    // ── TRIAL branch (HOS-115, mirrors the monthly HOS-110/W1 branch) ─────────
+    // Closes the last HOS-110 follow-up: the annual entry path previously fell
+    // straight through to the upfront charge below with no trial branch at all.
+    // The trial object created by `TrialService.startTrial()` is interval-agnostic
+    // (no price, no interval) — this is the SAME trial the monthly path grants,
+    // just reached from the annual toggle. Inserted here, AFTER the COMP
+    // early-return and BEFORE the discount/upfront-charge path, so precedence is
+    // identical to monthly: comp wins outright -> trial (if eligible) -> paid.
+    //
+    // The promo is already resolved above (`comp` already returned and never
+    // reaches here) and folds into the granted trial per the SAME HOS-110 W1
+    // rules the monthly branch uses:
+    //  - `trial_extension` -> its `freeTrialDays` are forwarded as
+    //    `extraTrialDays`, lengthening the granted trial (base + extension).
+    //  - `discount` -> the trial wins outright; the discount is DISCARDED —
+    //    never persisted anywhere — and `promoCodeIgnored: true` is returned so
+    //    the front-end can tell the user their code was not applied.
+    //  - `none` -> unchanged trial, no flag.
+    const { hasTrial: planHasTrial, trialDays: planTrialDays } = resolvePlanTrialConfig(
+        plan.metadata
+    );
+    if (planHasTrial && planTrialDays > 0) {
+        // First-layer eligibility check (mirrors monthly): any prior
+        // subscription — of any status, interval, or product domain —
+        // disqualifies a trial (one trial per customer, for life; see
+        // Eligibility in the spec — cross-interval, not per-interval).
+        const existingSubscriptions = await billing.subscriptions.getByCustomerId(customerId);
+        const isTrialEligible = existingSubscriptions.length === 0;
+
+        if (isTrialEligible) {
+            // Ensure the billing customer record actually exists before creating
+            // a trial subscription against it (mirrors the COMP branch above and
+            // the monthly TRIAL branch's identical guard).
+            const trialCustomer = await billing.customers.get(customerId);
+            if (!trialCustomer) {
+                throw new SubscriptionCheckoutError(
+                    'CUSTOMER_NOT_FOUND',
+                    `Customer '${customerId}' not found`
+                );
+            }
+
+            // HOS-110 W1 rule, replicated: a trial_extension code adds its days
+            // on top of the plan's base trial length; a discount code is
+            // discarded (the trial wins as-is) — no extension applies then.
+            const extraTrialDays = promoPlan.kind === 'trial' ? promoPlan.freeTrialDays : undefined;
+
+            const trialService = new TrialService(billing);
+            // `startTrial` is the AUTHORITATIVE eligibility gate — it re-checks
+            // for ANY existing subscription itself. `isTrialEligible` above is a
+            // cheap first-layer short-circuit, not a substitute: a `null` return
+            // here means startTrial itself declined (e.g. a subscription was
+            // created concurrently between the two checks) — fall through to the
+            // normal annual paid path unchanged.
+            const trialSubscriptionId = await trialService.startTrial({
+                customerId,
+                planSlug,
+                // HOS-115 §5: record the checkout entry interval so the
+                // post-trial conversion nudge can pre-select the same toggle.
+                intendedInterval: 'annual',
+                ...(extraTrialDays === undefined ? {} : { extraTrialDays })
+            });
+
+            if (trialSubscriptionId) {
+                const trialSubscription = await billing.subscriptions.get(trialSubscriptionId);
+                const effectiveTrialDays = planTrialDays + (extraTrialDays ?? 0);
+                const expiresAt = trialSubscription?.trialEnd
+                    ? new Date(trialSubscription.trialEnd).toISOString()
+                    : new Date(Date.now() + effectiveTrialDays * 24 * 60 * 60 * 1000).toISOString();
+                const promoCodeIgnored = promoPlan.kind === 'discount';
+
+                apiLogger.info(
+                    {
+                        customerId,
+                        planSlug,
+                        trialSubscriptionId,
+                        expiresAt,
+                        ...(extraTrialDays ? { extraTrialDays } : {}),
+                        ...(promoCodeIgnored ? { promoCodeIgnored: true } : {})
+                    },
+                    'Annual trial-eligible checkout: granted no-card trial instead of upfront MP charge'
+                );
+
+                return {
+                    // No MP object was created — reuse the already-resolved
+                    // success URL as the in-app success sentinel, exactly like
+                    // the COMP branch above and the monthly TRIAL branch.
+                    checkoutUrl: urls.successUrl,
+                    localSubscriptionId: trialSubscriptionId,
+                    expiresAt,
+                    appliedEffect: 'trial',
+                    ...(promoCodeIgnored ? { promoCodeIgnored: true } : {})
+                };
+            }
+        }
     }
 
     // ── DISCOUNT branch (annual = one-time reduced price) ─────────────────────

@@ -113,7 +113,24 @@ export const trialPreEndNotifJob: CronJobDefinition = {
     name: 'trial-pre-end-notif',
     description: 'Daily reminder emails for trials ending in 1-3 days (D-3 and D-1 variants).',
     schedule: '0 13 * * *', // 10:00 AR / 13:00 UTC, daily
-    enabled: true,
+    // DISABLED (HOS-115): this job duplicates `notification-schedule.job.ts`'s
+    // TRIAL_ENDING_REMINDER sender. That other job predates this one by ~3.5
+    // months (SPEC-064 vs SPEC-126 D5) and is the canonical sender — this file
+    // was a later, trial-only addition (SPEC-126 D5) that independently
+    // re-sends the same `NotificationType.TRIAL_ENDING_REMINDER`, causing
+    // duplicate emails, and its `upgradeUrl` pointed at the dead
+    // `/cuenta/planes` route with `userId: null` (no user linkage).
+    // Before deleting this file, a follow-up MUST port its two robustness
+    // advantages into `notification-schedule.job.ts`:
+    //   1. The skip-tolerant D-3 window (`daysRemaining >= 2`, see
+    //      `selectVariant` below) so a missed cron day doesn't drop the D-3
+    //      reminder entirely.
+    //   2. The durable `billing_subscription_events` dedup ledger (vs.
+    //      `notification-schedule`'s weaker in-memory/log-based dedup), which
+    //      survives process restarts and multi-replica races.
+    // Do not delete this file and do not change its logic until that port
+    // lands — only this flag was flipped.
+    enabled: false,
     timeoutMs: 5 * 60 * 1000, // 5 minutes
 
     handler: async (ctx) => {
