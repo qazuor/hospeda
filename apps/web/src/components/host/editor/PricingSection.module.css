@@ -76,3 +76,19 @@
 select.fieldInput {
     appearance: auto;
 }
+
+/* BETA-137: static, read-only currency indicator (replaces the hidden
+ * ARS/USD select). Matches .fieldInput's box/spacing so the two-column
+ * .row layout stays visually aligned, but uses muted text and no
+ * border/background to read as non-editable. */
+.currencyStatic {
+    display: block;
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    margin: 0;
+    color: var(--core-muted-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
