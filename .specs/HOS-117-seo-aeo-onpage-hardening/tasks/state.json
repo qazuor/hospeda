@@ -8,19 +8,19 @@
             "id": "T-001",
             "title": "Audit client:* islands for SSR↔hydration critical-content mismatch",
             "description": "Enumerate every client:* React island in apps/web that displays critical content (prices, availability, badges, counts, ratings). Produce a compliance checklist marking each as compliant or offending, with file+line. Confirm AnimatedCounter.client.tsx is the primary offender (useState(0) revealed only on hydration). Ref US-2. Tests: none (audit artifact); output feeds T-004/T-005.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-004", "T-005"],
             "subtasks": [
-                { "title": "Grep client:visible/client:idle/client:load usages", "completed": false },
-                { "title": "For each, compare SSR-rendered output vs hydrated state", "completed": false },
-                { "title": "Write checklist (compliant/offending + file:line)", "completed": false }
+                { "title": "Grep client:visible/client:idle/client:load usages", "completed": true },
+                { "title": "For each, compare SSR-rendered output vs hydrated state", "completed": true },
+                { "title": "Write checklist (compliant/offending + file:line)", "completed": true }
             ],
             "tags": ["seo", "audit", "web"],
             "phase": "setup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": "2026-07-09T18:56:00.000Z", "completed": "2026-07-09T19:05:00.000Z" }
         },
         {
             "id": "T-002",
@@ -62,20 +62,20 @@
             "id": "T-004",
             "title": "Fix homepage stat counters to SSR the final value (progressive enhancement)",
             "description": "Make AnimatedCounter.client.tsx / StatsSection.astro emit the real final value as static text in SSR HTML; animate only visually after hydration (from a start value up to the value already in the DOM). Reuse the home-guards.ts:41-50 pattern for the failure/zero case so a legit-0 or API failure hides the counter instead of showing 0+. Preserve prefers-reduced-motion. Ref US-1. Tests: integration test asserting raw SSR HTML of the 5 counters contains real values, never 0+ (T-018 covers full suite).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-018"],
             "subtasks": [
-                { "title": "Pass final value to island as SSR text", "completed": false },
-                { "title": "Animate from start→final on hydrate (visual only)", "completed": false },
-                { "title": "Wire home-guards fallback for zero/failure", "completed": false },
-                { "title": "Preserve prefers-reduced-motion behavior", "completed": false }
+                { "title": "Pass final value to island as SSR text", "completed": true },
+                { "title": "Animate from start→final on hydrate (visual only)", "completed": true },
+                { "title": "Wire home-guards fallback for zero/failure", "completed": true },
+                { "title": "Preserve prefers-reduced-motion behavior", "completed": true }
             ],
             "tags": ["seo", "aeo", "web", "bugfix"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": "2026-07-09T19:06:00.000Z", "completed": "2026-07-09T19:20:00.000Z" }
         },
         {
             "id": "T-005",
@@ -381,9 +381,9 @@
     ],
     "summary": {
         "total": 21,
-        "pending": 21,
+        "pending": 19,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.4
     }
