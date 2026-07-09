@@ -99,10 +99,9 @@ describe('isStaticAssetRoute', () => {
     });
 
     it('should treat file-extension endpoints as static so trailing-slash enforcement skips them', () => {
-        // Regression: /beta/search-index.json was 301-redirected to
-        // /beta/search-index.json/ (which Astro never resolves), so the beta
-        // docs search index returned 404 and the UI hung on "Cargando índice…".
-        expect(isStaticAssetRoute({ path: '/beta/search-index.json' })).toBe(true);
+        // Regression: a `.json`-extension endpoint was 301-redirected to a
+        // trailing-slash form (which Astro never resolves), causing it to 404.
+        expect(isStaticAssetRoute({ path: '/es/search-index.json' })).toBe(true);
         expect(isStaticAssetRoute({ path: '/sitemap-dynamic.xml' })).toBe(true);
     });
 

@@ -15,10 +15,10 @@
  * serves prerendered files off-disk without re-running middleware, so the header
  * set at build time is discarded. The real fix was to move every content route
  * OFF `prerender` onto the SSR path (nosotros, legal/*, faq, contacto, colaborar,
- * beneficios, etc.). The only route left prerendered is `beta/[...slug].astro`
- * (private noindex docs, OQ-3), which is allowlisted below and accepted to ship
- * without CSP. The `context.isPrerendered` branch in middleware.ts is now a
- * vestigial defensive guard; the guard tests below only assert it wasn't deleted.
+ * beneficios, etc.). No route is currently prerendered — the allowlist below
+ * exists for any future documented exception. The `context.isPrerendered`
+ * branch in middleware.ts is now a vestigial defensive guard; the guard tests
+ * below only assert it wasn't deleted.
  *
  * Tests:
  * - Regression guard: middleware source contains the isPrerendered fallback.
@@ -51,11 +51,12 @@ const MIDDLEWARE_SRC = readFileSync(resolve(__dirname, '../../middleware.ts'), '
 const PAGES_DIR = resolve(__dirname, '../../pages');
 
 /**
- * Routes intentionally kept prerendered despite HOS-74 (OQ-3). These ship
- * WITHOUT the middleware CSP header by design — see each file's JSDoc. Paths are
- * relative to `src/pages`, forward-slash normalized.
+ * Routes intentionally kept prerendered despite HOS-74. These ship WITHOUT
+ * the middleware CSP header by design — see each file's JSDoc. Paths are
+ * relative to `src/pages`, forward-slash normalized. Currently empty — no
+ * route opts into `prerender`.
  */
-const PRERENDER_ALLOWLIST = new Set<string>(['beta/[...slug].astro']);
+const PRERENDER_ALLOWLIST = new Set<string>([]);
 
 /** Recursively collect every `.astro` page file under `src/pages`. */
 const collectAstroPages = (dir: string): readonly string[] => {
@@ -113,9 +114,9 @@ describe('CSP_HEADER_NAME — enforce mode, not Report-Only (HOS-30 T-020)', () 
         expect(MIDDLEWARE_SRC).not.toContain("headers.set('Content-Security-Policy-Report-Only'");
     });
 
-    it('uses the shared CSP_HEADER_NAME constant on both the main pipeline and the /beta docs route, so neither can drift to a different header', () => {
+    it('uses the shared CSP_HEADER_NAME constant exactly once, so the header can never drift', () => {
         const occurrences = MIDDLEWARE_SRC.split('headers.set(CSP_HEADER_NAME').length - 1;
-        expect(occurrences).toBe(2);
+        expect(occurrences).toBe(1);
     });
 });
 
@@ -140,11 +141,6 @@ describe('apps/web pages — no route re-introduces prerender except the allowli
         // A non-empty list means a route shipped without the middleware CSP header
         // (prerendered files bypass middleware at runtime — the exact HOS-74 bug).
         expect(offenders).toEqual([]);
-    });
-
-    it('the beta docs catch-all stays prerendered — allowlist remains meaningful (HOS-74 OQ-3)', () => {
-        const beta = join(PAGES_DIR, 'beta', '[...slug].astro');
-        expect(readFileSync(beta, 'utf8')).toMatch(/export\s+const\s+prerender\s*=\s*true/);
     });
 });
 
