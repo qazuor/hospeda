@@ -97,6 +97,26 @@ function makeErrorResponse(status = 500, message = 'Server error') {
     } as Response;
 }
 
+/** 403 entitlement-gate response, mirroring `gateSearchHistory` (BETA-148) */
+function makeEntitlementRequiredResponse() {
+    return {
+        ok: false,
+        status: 403,
+        json: async () => ({
+            success: false,
+            error: {
+                code: 'ENTITLEMENT_REQUIRED',
+                message:
+                    'El historial de búsqueda solo está disponible en los planes Plus y VIP. Actualiza tu plan para acceder.',
+                details: {
+                    requiredEntitlement: 'CAN_VIEW_SEARCH_HISTORY',
+                    upgradeUrl: '/billing/plans'
+                }
+            }
+        })
+    } as Response;
+}
+
 /** Default successful mutation response */
 function makeMutationResponse() {
     return {
@@ -177,6 +197,39 @@ describe('SearchHistoryList', () => {
             renderComponent();
             await waitFor(() => {
                 expect(screen.queryByRole('list')).not.toBeInTheDocument();
+            });
+        });
+    });
+
+    // ── 3b. Entitlement-gated (free-tier) state — BETA-148 ─────────────────────
+
+    describe('Entitlement-gated state (403 ENTITLEMENT_REQUIRED)', () => {
+        it('shows the upsell/empty-state message instead of the generic error', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce(makeEntitlementRequiredResponse());
+            renderComponent();
+            await waitFor(() => {
+                expect(screen.getByText(/sin búsquedas guardadas/i)).toBeInTheDocument();
+                expect(
+                    screen.getByText(/tus búsquedas aparecerán acá cuando tengas un plan/i)
+                ).toBeInTheDocument();
+            });
+        });
+
+        it('does NOT render a generic error alert', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce(makeEntitlementRequiredResponse());
+            renderComponent();
+            await waitFor(() => {
+                expect(screen.getByText(/sin búsquedas guardadas/i)).toBeInTheDocument();
+            });
+            expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        });
+
+        it('shows an upgrade CTA linking to the plans page', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce(makeEntitlementRequiredResponse());
+            renderComponent();
+            await waitFor(() => {
+                const link = screen.getByRole('link', { name: /ver planes/i });
+                expect(link).toHaveAttribute('href', '/es/suscriptores/planes/');
             });
         });
     });
