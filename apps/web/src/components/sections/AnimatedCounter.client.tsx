@@ -1,11 +1,17 @@
 /**
  * @file AnimatedCounter.client.tsx
- * @description Animated stat counter island. Counts up from 0 to the target
- * value when the element scrolls into the viewport, using requestAnimationFrame
- * with an easeOutQuart easing. Supports a counter layout (icon + large number
- * + label) and a compact badge layout.
+ * @description Animated stat counter island. The SSR / first render always emits
+ * the real target `value` as text (so crawlers and LLM fetchers that don't run JS
+ * or scroll never see "0"); once hydrated AND scrolled into view, it drops to 0 and
+ * counts up to the target via requestAnimationFrame with an easeOutQuart easing —
+ * a purely visual enhancement. Supports a counter layout (icon + large number +
+ * label) and a compact badge layout.
  *
- * Tasks: T-072
+ * SSR-first principle (HOS-117 US-2): an island's SSR output must emit the final
+ * datum; hydration only animates/interacts, it must never be the first place a
+ * value appears.
+ *
+ * Tasks: T-072, HOS-117 T-004
  */
 
 import { toBcp47Locale } from '@repo/i18n/web';
@@ -91,7 +97,11 @@ export function AnimatedCounter({
     duration = 2000,
     locale
 }: AnimatedCounterProps) {
-    const [displayValue, setDisplayValue] = useState(0);
+    // Seed with the real `value` so the SSR / first client render emits the final
+    // number as text (crawlers and LLM fetchers that don't run JS or scroll see
+    // "450+", never "0+"). The count-up is a visual enhancement applied only after
+    // hydration, once the element scrolls into view (see the observer below).
+    const [displayValue, setDisplayValue] = useState(value);
     const numberFormatter = useMemo(() => new Intl.NumberFormat(toBcp47Locale(locale)), [locale]);
     const formatNumber = (n: number): string => numberFormatter.format(n);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -111,12 +121,16 @@ export function AnimatedCounter({
                 hasAnimatedRef.current = true;
                 observer.disconnect();
 
-                // Respect prefers-reduced-motion: snap to final value, skip RAF.
+                // Respect prefers-reduced-motion: keep the final value, skip RAF.
                 if (reducedMotion) {
                     setDisplayValue(value);
                     return;
                 }
 
+                // Now that we are post-hydration and in view, drop to 0 and run the
+                // count-up. The SSR HTML already showed `value`, so machines never
+                // saw 0; only a real user (JS + scrolled into view) sees the animation.
+                setDisplayValue(0);
                 const startTime = performance.now();
 
                 function tick(now: number) {

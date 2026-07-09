@@ -131,6 +131,19 @@ import FilterSidebar from '@/components/accommodation/FilterSidebar.client';
 | `client:media` | Responsive-only components (mobile menu) |
 | `client:only="react"` | Cannot be server-rendered (map libraries) |
 
+#### SSR-first principle for islands (HOS-117 US-2)
+
+**An island's SSR output must already contain the final critical data it displays. Hydration only animates or adds interactivity — it must never be the first place a value appears.** Crawlers and LLM fetchers (Googlebot's initial fetch, GPTBot, ClaudeBot, PerplexityBot) read the raw SSR HTML without running JS or scrolling; whatever a value's "loading"/initial state renders is what they index.
+
+Concretely:
+
+- Seed React state from the SSR prop, not a placeholder literal. `useState(value)`, **never** `useState(0)` / `useState(null)` / `useState('loading')` when the real value is already available as a prop. (This was the "0+" counter bug: `AnimatedCounter` seeded `useState(0)` and only reached the real number after hydration → crawlers indexed "0+". Fixed in `AnimatedCounter.client.tsx`.)
+- If an island genuinely needs a client-side fetch for live data (e.g. `DestinationWeatherIsland`), pass a **server-rendered fallback** so the SSR/loading state still shows real text (e.g. the seasonal average), then replace it after hydration. Never emit an empty skeleton as the only content of an indexable page.
+- `client:only="react"` islands emit **no** SSR HTML at all — only use them on `noindex` pages, or when the indexable content lives in sibling Astro markup, never as the sole source of critical text.
+- A stat that is legitimately `0`/`NaN`/absent must be **hidden** (see `home-guards.ts` `isMeaningfulStat` / `shouldShowSocialProof`), never rendered as a misleading "0+".
+
+The CI guard `test/integration/json-ld-coverage.test.ts` and per-island regression tests assert on the **raw SSR HTML string** (no hydration) — add one when you touch an island that shows prices, counts, ratings, availability, or badges.
+
 ### API Integration
 
 All API calls go through `src/lib/api/`. Three files, three tiers:

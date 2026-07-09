@@ -3,14 +3,15 @@
  * @description Unit tests for the AnimatedCounter React island.
  *
  * Coverage targets:
- * - Idle pre-intersection state (T-084 / S-11a): the counter renders "0"
- *   while the IntersectionObserver has not reported visibility, and does not
- *   start animating until the callback fires.
+ * - SSR-first pre-intersection state (HOS-117 T-004, regresses the "0+" bug):
+ *   the counter renders the REAL formatted value (never "0") while the
+ *   IntersectionObserver has not reported visibility, so crawlers / LLM fetchers
+ *   that don't run JS or scroll see the true number in the SSR HTML.
  * - Locale formatting after intersection (T-085 / S-11b): once the observer
- *   reports visibility, the counter animates and ends on the localized
+ *   reports visibility, the counter animates (0 → value) and ends on the localized
  *   formatted value (es-AR / en-US).
  *
- * Tasks: T-084 (S-11a), T-085 (S-11b)
+ * Tasks: T-084 (S-11a), T-085 (S-11b), HOS-117 T-004
  */
 
 import { toBcp47Locale } from '@repo/i18n';
@@ -39,14 +40,17 @@ vi.mock('../../src/lib/stats-icons', () => ({
     resolveStatsIcon: () => undefined
 }));
 
-// ─── Suite: idle (T-084) ──────────────────────────────────────────────────────
+// ─── Suite: SSR-first pre-intersection (HOS-117 T-004) ────────────────────────
 
-describe('AnimatedCounter — idle state (pre-intersection)', () => {
+describe('AnimatedCounter — SSR-first: real value before intersection', () => {
     afterEach(() => {
         vi.clearAllMocks();
     });
 
-    it('renders "0" before the IntersectionObserver fires', () => {
+    it('renders the real formatted value (not "0") before the IntersectionObserver fires', () => {
+        // Regression for the "0+" bug (HOS-117 T-004): the initial render — which
+        // is exactly what SSR emits and what a no-JS crawler receives — must show
+        // the real number, never 0.
         render(
             <AnimatedCounter
                 value={1234}
@@ -55,13 +59,13 @@ describe('AnimatedCounter — idle state (pre-intersection)', () => {
             />
         );
 
-        // The aria-hidden number node holds the formatted display value.
-        // Before intersection, displayValue stays at 0 → formatted as "0".
+        const expected = new Intl.NumberFormat(toBcp47Locale('es')).format(1234);
         const numberNode = document.querySelector('[aria-hidden="true"]');
-        expect(numberNode?.textContent).toBe('0');
+        expect(numberNode?.textContent).toBe(expected);
+        expect(numberNode?.textContent).not.toBe('0');
     });
 
-    it('does not start animating until the IntersectionObserver callback fires', () => {
+    it('keeps the real value when mounted but not yet scrolled into view', () => {
         // Replace the global IntersectionObserver with a tracker that records
         // observe() calls but never invokes the visibility callback. This
         // simulates "element mounted but not yet in viewport".
@@ -87,11 +91,11 @@ describe('AnimatedCounter — idle state (pre-intersection)', () => {
 
             // observer.observe(element) was called …
             expect(observeSpy).toHaveBeenCalledTimes(1);
-            // … but no display update because the IO callback was never
-            // invoked. The counter stays at "0" (formatted via Intl).
+            // … and with no visibility callback the animation never starts, so the
+            // node keeps showing the real value (never drops to 0).
             expect(screen.getByLabelText('9.999 reseñas')).toBeInTheDocument();
             const numberNode = document.querySelector('[aria-hidden="true"]');
-            expect(numberNode?.textContent).toBe('0');
+            expect(numberNode?.textContent).toBe('9.999');
         } finally {
             (globalThis as any).IntersectionObserver = previous;
         }
