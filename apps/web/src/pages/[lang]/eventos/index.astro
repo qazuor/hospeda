@@ -69,7 +69,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
-import { resolvePromotedFacetCanonical } from '@/lib/seo/promoted-facet-canonical';
+import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
 import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
 import { EventCategoryEnum } from '@repo/schemas';
@@ -274,12 +274,18 @@ const sortOptions = [
 
 const baseUrl = buildUrl({ locale, path: 'eventos' });
 
-// SPEC-306 OQ-3: when `category` is the ONLY active facet/filter (no other
-// query params refining the result set), canonicalize to the category's
-// first-class landing instead of the base listing — that's the single URL
-// search engines should credit for this exact result set. Any additional
-// filter active alongside `category` falls through to the base-listing
-// canonical (OQ-3's "combinations canonicalize to base" rule).
+// SPEC-306 OQ-3 / HOS-96 US-6/US-7 (T-018): the shared `resolveFacetSeoDecision`
+// predicate decides both `noindex` and the canonical target for this facet's
+// active values in ONE call — 0 values or another filter active -> indexable,
+// base canonical; exactly 1 value, no other filter -> indexable, canonical is
+// the category's first-class dedicated landing (SPEC-306's
+// `/eventos/categoria/{slug}/`, preserved per owner decision — see
+// `facet-config.ts`'s `eventCategory.dedicatedLandingPattern`); 2+ values ->
+// noindex,follow + base canonical. Driven by `activeCategories` (the plural
+// array, computed once near the top of this file) — NOT the singular
+// `category`, which the superseded inline call used incorrectly (a latent
+// gap: a crafted `?categories=A,B` URL never triggered the old single-value
+// canonical logic at all, since it only ever looked at `category`).
 const hasOtherEventFilters = Boolean(
     q ||
         when !== 'all' ||
@@ -292,14 +298,23 @@ const hasOtherEventFilters = Boolean(
         startDateAfterFilter ||
         startDateBeforeFilter
 );
-const singlePromotedCategory = resolvePromotedFacetCanonical({
-    facetValues: category ? [category] : [],
+const facetSeoDecision = resolveFacetSeoDecision({
+    facetValues: activeCategories,
     hasOtherFilters: hasOtherEventFilters,
-    validEnumValues: Object.values(EventCategoryEnum)
+    validEnumValues: Object.values(EventCategoryEnum),
+    dedicatedLandingPattern: FACET_CONFIG_BY_ID.eventCategory.dedicatedLandingPattern
 });
-const canonicalBaseUrl = singlePromotedCategory
-    ? buildUrl({ locale, path: `eventos/categoria/${singlePromotedCategory.toLowerCase().replace(/_/g, '-')}` })
-    : baseUrl;
+const canonicalBaseUrl =
+    facetSeoDecision.canonical.kind === 'dedicatedLanding' &&
+    FACET_CONFIG_BY_ID.eventCategory.dedicatedLandingPattern
+        ? buildUrl({
+              locale,
+              path: FACET_CONFIG_BY_ID.eventCategory.dedicatedLandingPattern.replace(
+                  '{slug}',
+                  facetSeoDecision.canonical.slug
+              )
+          })
+        : baseUrl;
 
 // Self-canonical for paginated pages (SPEC-157 follow-up). Pages 2+ are served
 // at `/{locale}/eventos/page/{n}/` via an Astro.rewrite to this listing with
@@ -473,6 +488,7 @@ const itemListEntries = cards.map((card) => ({
 	title={t('events.title', 'Eventos')}
 	description={t('events.description', 'Descubrí eventos culturales, deportivos y gastronómicos del Litoral.')}
 	canonicalPath={canonicalPath}
+	noindex={facetSeoDecision.noindex}
 	showFilters={true}
 	filterPosition="left"
 	totalCount={total}

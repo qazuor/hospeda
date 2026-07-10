@@ -55,7 +55,9 @@ import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
 import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
 import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
+import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
 import { XCircleIcon } from '@repo/icons';
+import { PostCategoryEnum } from '@repo/schemas';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -203,13 +205,54 @@ const hasActiveFilters =
 /** Canonical URL for this listing (no query params) — used as "clear filters" target. */
 const baseUrl = buildUrl({ locale, path: 'publicaciones' });
 
+/**
+ * HOS-96 T-019 (NET-NEW — this page never called `resolvePromotedFacetCanonical`
+ * nor emitted `noindex` before this task). Mirrors the accommodations/events
+ * `hasOther*Filters` pattern: any OTHER (non-category) narrowing filter —
+ * excludes the `categories`/`category` facet itself, `sortBy`, and `page`
+ * (sort/pagination don't narrow the result set, same convention as the other
+ * two listings).
+ */
+const hasOtherPostFilters = Boolean(
+    q ||
+        destinationId ||
+        publishedAfterFilter ||
+        publishedBeforeFilter ||
+        isFeatured
+);
+
+// SPEC-306-style single-facet canonical / HOS-96 US-6/US-7 (T-019): the shared
+// `resolveFacetSeoDecision` predicate decides both `noindex` and the
+// canonical target for this facet's active values in ONE call — 0 values or
+// another filter active -> indexable, base canonical; exactly 1 value, no
+// other filter -> indexable, canonical is the category's first-class
+// dedicated landing (`/publicaciones/categoria/{slug}/`); 2+ values ->
+// noindex,follow + base canonical.
+const facetSeoDecision = resolveFacetSeoDecision({
+    facetValues: postCategoryActiveValues,
+    hasOtherFilters: hasOtherPostFilters,
+    validEnumValues: Object.values(PostCategoryEnum),
+    dedicatedLandingPattern: FACET_CONFIG_BY_ID.postCategory.dedicatedLandingPattern
+});
+const canonicalBaseUrl =
+    facetSeoDecision.canonical.kind === 'dedicatedLanding' &&
+    FACET_CONFIG_BY_ID.postCategory.dedicatedLandingPattern
+        ? buildUrl({
+              locale,
+              path: FACET_CONFIG_BY_ID.postCategory.dedicatedLandingPattern.replace(
+                  '{slug}',
+                  facetSeoDecision.canonical.slug
+              )
+          })
+        : baseUrl;
+
 // Self-canonical for paginated pages (SPEC-157 follow-up). Pages 2+ are served
 // at `/{locale}/publicaciones/page/{n}/` via an Astro.rewrite to this listing
 // with `?page=n`; the rewrite drops the `/page/n/` segment from
 // Astro.url.pathname, so we rebuild the crawlable URL from the page number to
 // keep each paginated page self-canonical and indexable (not canonicalized to
 // page 1).
-const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
+const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalBaseUrl;
 
 /**
  * Build the `filterGroups` config for FilterSidebar.
@@ -389,6 +432,7 @@ const postCategoryClearChip = buildClearFacetChip({
     title={t('blog.title', 'Publicaciones')}
     description={t('blog.description', 'Artículos sobre cultura, gastronomía, turismo y más del Litoral Entrerriano.')}
     canonicalPath={canonicalPath}
+    noindex={facetSeoDecision.noindex}
     showFilters={true}
     filterPosition="left"
     totalCount={total}

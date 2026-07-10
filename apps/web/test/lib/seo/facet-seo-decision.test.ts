@@ -41,7 +41,7 @@ describe('resolveFacetSeoDecision (HOS-96 US-6/US-7/OQ-1)', () => {
         });
     });
 
-    it('falls back to the base-listing canonical for exactly one value on a facet WITHOUT a dedicated landing (events)', () => {
+    it('falls back to the base-listing canonical for exactly one value on a facet WITHOUT a dedicated landing (generic case — e.g. a future facet declared with no landing; every current facet HAS one as of HOS-96 T-017/18/19)', () => {
         const result = resolveFacetSeoDecision({
             facetValues: ['MUSIC'],
             hasOtherFilters: false,
@@ -85,12 +85,13 @@ describe('resolveFacetSeoDecision (HOS-96 US-6/US-7/OQ-1)', () => {
         expect(result).toEqual({ noindex: false, canonical: { kind: 'base' } });
     });
 
-    it('is the single shared predicate: the same imported function decides both the accommodation-type and event-category facets straight from FACET_CONFIG_BY_ID', () => {
+    it('is the single shared predicate: the same imported function decides the accommodation-type, event-category, AND post-category facets straight from FACET_CONFIG_BY_ID (HOS-96 T-017/18/19: all three now have a dedicated landing — the owner decision that events KEEPS its SPEC-306 landing means there is no more "one facet has none" contrast among the three)', () => {
         const accommodationConfig = FACET_CONFIG_BY_ID.accommodationType;
         const eventConfig = FACET_CONFIG_BY_ID.eventCategory;
+        const postConfig = FACET_CONFIG_BY_ID.postCategory;
 
-        // No per-facet copy of resolveFacetSeoDecision exists — both calls below
-        // go through the identical imported symbol.
+        // No per-facet copy of resolveFacetSeoDecision exists — all three calls
+        // below go through the identical imported symbol.
         const accommodationResult = resolveFacetSeoDecision({
             facetValues: ['HOTEL'],
             hasOtherFilters: false,
@@ -103,10 +104,18 @@ describe('resolveFacetSeoDecision (HOS-96 US-6/US-7/OQ-1)', () => {
             validEnumValues: Object.values(eventConfig.enum ?? {}),
             dedicatedLandingPattern: eventConfig.dedicatedLandingPattern
         });
+        const postResult = resolveFacetSeoDecision({
+            facetValues: ['CULTURE'],
+            hasOtherFilters: false,
+            validEnumValues: Object.values(postConfig.enum ?? {}),
+            dedicatedLandingPattern: postConfig.dedicatedLandingPattern
+        });
 
-        expect(accommodationConfig.dedicatedLandingPattern).toBeDefined();
-        expect(eventConfig.dedicatedLandingPattern).toBeUndefined();
+        expect(accommodationConfig.dedicatedLandingPattern).toBe('/alojamientos/tipo/{slug}/');
+        expect(eventConfig.dedicatedLandingPattern).toBe('/eventos/categoria/{slug}/');
+        expect(postConfig.dedicatedLandingPattern).toBe('/publicaciones/categoria/{slug}/');
         expect(accommodationResult.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'hotel' });
-        expect(eventResult.canonical).toEqual({ kind: 'base' });
+        expect(eventResult.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'music' });
+        expect(postResult.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'culture' });
     });
 });

@@ -33,7 +33,13 @@ describe('facet-config', () => {
             expect(config.singularParamKey).toBe('category');
             expect(config.operator).toBe('OR');
             expect(config.enum).toBe(EventCategoryEnum);
-            expect(config.dedicatedLandingPattern).toBeUndefined();
+            // Owner decision (HOS-96 T-017/18/19 integration review): events
+            // KEEPS its dedicated `/eventos/categoria/{slug}/` landing
+            // (SPEC-306 already built it, and `/eventos/?category=X` already
+            // canonicalizes to it today) as the 1-value canonical — consistent
+            // with accommodations/blog, not a regression. The spec's original
+            // config table wrongly said events had no dedicated landing.
+            expect(config.dedicatedLandingPattern).toBe('/eventos/categoria/{slug}/');
             expect(config.outOfBackendScope).toBe(false);
         });
     });

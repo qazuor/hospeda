@@ -107,7 +107,20 @@ export const FACET_CONFIG_BY_ID: Readonly<Record<FacetId, FacetConfig>> = Object
         singularParamKey: 'category',
         operator: 'OR',
         enum: EventCategoryEnum,
-        dedicatedLandingPattern: undefined,
+        // Owner decision (HOS-96 T-017/18/19 integration review, 2026-07-xx):
+        // events KEEPS its dedicated `/eventos/categoria/{slug}/` landing as
+        // the 1-value canonical. SPEC-306 already built that landing, and
+        // `/eventos/?category=X` already canonicalized to it before this
+        // spec — this PRESERVES that behavior, it does not introduce it. The
+        // spec's original "per-facet configuration model" table wrongly
+        // stated events had no dedicated landing; that was a documentation
+        // error, not a product decision to regress SPEC-306. Slug transform
+        // (`value.toLowerCase().replace(/_/g, '-')`, applied by
+        // `resolveFacetSeoDecision`) was verified to match every
+        // `EventCategoryEnum` member against the landing route's own
+        // `VALID_CATEGORIES` slug dictionary (no enum member contains `_`,
+        // so both are simple lowercasing — e.g. `MUSIC` -> `music`).
+        dedicatedLandingPattern: '/eventos/categoria/{slug}/',
         outOfBackendScope: false
     }),
     postCategory: Object.freeze({

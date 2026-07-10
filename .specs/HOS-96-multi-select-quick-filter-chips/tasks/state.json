@@ -544,93 +544,93 @@
             "id": "T-017",
             "title": "Wire 2+-value SEO predicate into accommodations listing head",
             "description": "Call the shared predicate from T-016 in `apps/web/src/pages/[lang]/alojamientos/index.astro`'s `<head>` rendering (robots meta + canonical link), replacing/complementing the existing single-value `resolvePromotedFacetCanonical` call so it now also handles the 2+ case for the `types` param.\n\n**Files:** `apps/web/src/pages/[lang]/alojamientos/index.astro`.\n\n**Tests (SEO, `apps/web`):** AAA — (1) `/alojamientos/?types=HOTEL,CABIN` head emits `<meta name=\"robots\" content=\"noindex,follow\">` and canonical = `/alojamientos/` (no query); (2) `/alojamientos/?types=HOTEL` head is indexable with canonical = `/alojamientos/tipo/hotel/`; (3) `/alojamientos/` (0 values) indexable with base canonical; (4) `/alojamientos/tipo/hotel/` (dedicated landing) still resolves 200 and emits its existing canonical, unchanged.\n\n**Acceptance mapping:** US-6 (AC1, AC3), US-7 (AC1-AC4).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-016", "T-011"],
             "blocks": ["T-026"],
             "subtasks": [
                 {
                     "title": "Wire shared predicate into accommodations listing head",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write SEO tests for 0/1/2 value states and dedicated landing",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "seo", "accommodations"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T18:20:00Z",
+                "completed": "2026-07-10T18:45:00Z"
             }
         },
         {
             "id": "T-018",
             "title": "Wire 2+-value SEO predicate into events listing head",
             "description": "Call the shared predicate from T-016 in the events listing page's `<head>` rendering for the `categories` param. Since events have no dedicated single-value landing, the 1-value case falls back to whatever the predicate defines for a facet without `dedicatedLandingPattern` (indexable, base-listing canonical — confirm this fallback in T-016's implementation).\n\n**Files:** `apps/web/src/pages/[lang]/eventos/index.astro`.\n\n**Tests (SEO, `apps/web`):** AAA — (1) `/eventos/?categories=MUSIC,CULTURE` head emits `noindex,follow` + base canonical; (2) `/eventos/?categories=MUSIC` (1 value, no dedicated landing) is indexable with base-listing canonical; (3) `/eventos/` (0 values) indexable with base canonical.\n\n**Acceptance mapping:** US-7 (AC1-AC4).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-016", "T-013"],
             "blocks": ["T-026"],
             "subtasks": [
                 {
                     "title": "Wire shared predicate into events listing head",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write SEO tests for 0/1/2 value states (no-dedicated-landing fallback)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "seo", "events"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T18:20:00Z",
+                "completed": "2026-07-10T18:45:00Z"
             }
         },
         {
             "id": "T-019",
             "title": "Wire 2+-value SEO predicate into blog listing head",
             "description": "Call the shared predicate from T-016 in the blog/publications listing page's `<head>` rendering for the `categories` param, preserving the existing dedicated-landing canonical for 1 value.\n\n**Files:** `apps/web/src/pages/[lang]/publicaciones/index.astro`.\n\n**Tests (SEO, `apps/web`):** AAA — (1) `/publicaciones/?categories=A,B` head emits `noindex,follow` + base canonical; (2) `/publicaciones/?categories=A` indexable with canonical = `/publicaciones/categoria/{slug}/`; (3) `/publicaciones/` (0 values) indexable, base canonical; (4) `/publicaciones/categoria/{slug}/` dedicated landing still resolves and emits its canonical, unchanged.\n\n**Acceptance mapping:** US-6 (AC2, AC3), US-7 (AC1-AC4).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-016", "T-012"],
             "blocks": ["T-026"],
             "subtasks": [
                 {
                     "title": "Wire shared predicate into blog listing head",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write SEO tests for 0/1/2 value states and dedicated landing",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "seo", "blog"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T18:20:00Z",
+                "completed": "2026-07-10T18:45:00Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 8,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 19,
+        "completed": 22,
         "blocked": 0,
         "averageComplexity": 1.9
     }
