@@ -21,6 +21,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { isHostRole } from '@/lib/account-roles';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import { MAX_ACCOMMODATIONS_LIMIT_KEY, parseUsageResponse } from '@/lib/host/usage-badge';
@@ -48,6 +49,12 @@ const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
 if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+}
+
+// Role gate: only host-level roles may manage properties. A plain tourist
+// reaching this URL directly is redirected back to the account home.
+if (!isHostRole(user.role)) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
 }
 
 // ---------------------------------------------------------------------------
