@@ -1,0 +1,1302 @@
+---
+/**
+ * @file funcionalidades/index.astro
+ * @description Public marketing "catalog" page (HOS-119) showing everything the
+ * Hospeda platform offers, organized by audience (Viajeros, Anfitriones,
+ * Gastronomía y experiencias, Marcas) rather than by technical category.
+ * Replicates the owner-approved brochure at
+ * `.specs/HOS-119-funcionalidades-page/docs/brochure-reference.html` — see that
+ * spec for the full copy/layout source of truth.
+ *
+ * Intentionally NOT linked from Header/Footer/nav.json — the owner shares this
+ * link manually with prospective hosts, restaurants, and sponsors.
+ *
+ * @route /{lang}/funcionalidades/
+ * @rendering SSR + Cloudflare cache (no `prerender`, matches beneficios/nosotros)
+ */
+
+import { Image } from 'astro:assets';
+import { BriefcaseIcon, CheckIcon, HomeIcon, ShieldIcon, UserIcon } from '@repo/icons';
+
+import StandaloneLayout from '@/layouts/StandaloneLayout.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import CollectionPageJsonLd from '@/components/seo/CollectionPageJsonLd.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import PlanTable from '@/components/features/PlanTable.astro';
+import { FeaturesSubnav } from '@/components/features/FeaturesSubnav.client';
+import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { getSiteUrl } from '@/lib/env';
+import { buildUrl } from '@/lib/urls';
+import logoSrc from '@/assets/images/logo.webp';
+import {
+	ANFITRIONES_ADDONS,
+	ANFITRIONES_BANNER_ICON,
+	ANFITRIONES_LIST,
+	ANFITRIONES_TABLE_ROWS,
+	EXTRAS,
+	GASTRO_LIST,
+	HERO_STATS,
+	MARCAS_CARDS,
+	PILLARS,
+	SOON_ITEMS,
+	SUBNAV_LINKS,
+	VIAJEROS_LIST,
+	VIAJEROS_TABLE_ROWS
+} from '@/lib/features-content';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const siteBase = getSiteUrl();
+const canonicalUrl = new URL(Astro.url.pathname, siteBase).href;
+const homeUrl = new URL(buildUrl({ locale, path: '' }), siteBase).href;
+
+const pageTitle = t('features.meta.title', 'Todo lo que Hospeda hace por vos');
+const pageDescription = t(
+	'features.meta.description',
+	'Descubrí todo lo que ofrece Hospeda para viajeros, anfitriones, gastronomía y experiencias, y marcas.'
+);
+
+// Icon used by the audience "who" badges (one per section) — kept local so
+// the section markup below can reference a capitalized JSX-style component.
+const ViajerosWhoIcon = UserIcon;
+const AnfitrionesWhoIcon = HomeIcon;
+const GastroWhoIcon = BriefcaseIcon;
+const MarcasWhoIcon = ShieldIcon;
+const BannerIcon = ANFITRIONES_BANNER_ICON;
+
+// "los 4 mundos" (audiences) + "Próximamente" as ItemList entries, excluding
+// the "Y además" subnav entry which is not an audience/world of its own.
+const itemListEntries = SUBNAV_LINKS.filter((link) => link.id !== 'ademas').map((link) => ({
+	url: `${canonicalUrl}#${link.id}`,
+	name: t(link.labelKey)
+}));
+
+const breadcrumbItems = [
+	{ name: t('features.seo.breadcrumbHome', 'Inicio'), url: homeUrl },
+	{ name: t('features.seo.breadcrumbCurrent', 'Funcionalidades'), url: canonicalUrl }
+];
+
+const subnavSectionIds = SUBNAV_LINKS.map((link) => link.id);
+---
+
+<StandaloneLayout locale={locale}>
+	<SEOHead
+		slot="head"
+		title={pageTitle}
+		description={pageDescription}
+		canonical={canonicalUrl}
+		locale={locale}
+	/>
+	<CollectionPageJsonLd
+		slot="head"
+		name={t('features.seo.collectionName', pageTitle)}
+		description={t('features.seo.collectionDescription', pageDescription)}
+		url={canonicalUrl}
+	/>
+	<ItemListJsonLd
+		slot="head"
+		name={t('features.seo.collectionName', pageTitle)}
+		items={itemListEntries}
+	/>
+	<BreadcrumbJsonLd slot="head" items={breadcrumbItems} />
+
+	<div class="fx-page" id="top">
+		<!-- ===== TOP BAR (this page's own chrome — no site Header) ===== -->
+		<div class="fx-topbar">
+			<div class="fx-container fx-topbar__in">
+				<a href="#top" class="fx-topbar__brand" aria-label={t('features.hero.logoAlt', 'Hospeda — volver arriba')}>
+					<Image src={logoSrc} alt="" width={30} height={32} loading="eager" />
+					<span class="fx-topbar__wordmark">Hospeda</span>
+				</a>
+
+				<!-- ===== AUDIENCE SUBNAV ===== -->
+				<nav class="fx-subnav" aria-label={t('features.subnav.ariaLabel', 'Navegación por audiencia')}>
+					<div class="fx-subnav__in">
+						{SUBNAV_LINKS.map((link) => (
+							<a href={`#${link.id}`} class="fx-subnav__link" data-subnav-link={link.id}>
+								{t(link.labelKey)}
+							</a>
+						))}
+					</div>
+				</nav>
+
+				<ThemeControl client:idle variant="navbar" />
+			</div>
+		</div>
+		<FeaturesSubnav client:idle sectionIds={subnavSectionIds} />
+
+		<!-- ===== HERO ===== -->
+		<header class="fx-hero">
+			<div class="fx-hero__blobs" aria-hidden="true">
+				<span class="fx-blob fx-blob--1"></span>
+				<span class="fx-blob fx-blob--2"></span>
+				<span class="fx-blob fx-blob--3"></span>
+				<span class="fx-blob fx-blob--4"></span>
+			</div>
+			<div class="fx-container fx-hero__in">
+				<Image
+					src={logoSrc}
+					alt="Hospeda"
+					width={68}
+					height={73}
+					loading="eager"
+					class="fx-hero__logo"
+				/>
+				<span class="fx-hand">{t('features.hero.tagline', 'descubrí, hospedate, crecé')}</span>
+				<h1 class="fx-hero__title">
+					{t('features.hero.titleMain', 'Todo lo que')}{' '}
+					<em class="fx-hero__accent">{t('features.hero.titleAccent', 'Hospeda')}</em>{' '}
+					{t('features.hero.titleEnd', 'hace por vos.')}
+				</h1>
+				<p class="fx-hero__lede">{t('features.hero.lede')}</p>
+				<div class="fx-hero__stats">
+					{HERO_STATS.map((stat) => (
+						<span class:list={['fx-pill', `fx-pill--${stat.variant}`]}>
+							<b>{t(stat.valueKey)}</b> {t(stat.labelKey)}
+						</span>
+					))}
+				</div>
+			</div>
+		</header>
+
+		<!-- ===== UN VISTAZO ===== -->
+		<section class="fx-section">
+			<div class="fx-container">
+				<div class="fx-section-head" data-reveal="up">
+					<span class="fx-eyebrow">{t('features.vistazo.eyebrow', 'un vistazo')}</span>
+					<h2 class="fx-h2">{t('features.vistazo.title')}</h2>
+					<p class="fx-lead">{t('features.vistazo.description')}</p>
+				</div>
+				<div class="fx-grid fx-grid--4" data-reveal="up">
+					{PILLARS.map((pillar) => {
+						const { Icon } = pillar;
+						return (
+							<div class="fx-card">
+								<span class:list={['fx-ico', `fx-ico--${pillar.variant}`]} aria-hidden="true">
+									<Icon size={23} weight="regular" />
+								</span>
+								<h3 class="fx-card__title">{t(pillar.titleKey)}</h3>
+								<p class="fx-card__desc">{t(pillar.descriptionKey)}</p>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+		</section>
+
+		<!-- ===== VIAJEROS ===== -->
+		<section id="viajeros" class="fx-section fx-section--warm fx-section--river">
+			<div class="fx-container">
+				<div class="fx-section-head" data-reveal="up">
+					<span class="fx-who fx-who--river">
+						<ViajerosWhoIcon size={15} weight="regular" aria-hidden="true" />
+						{t('features.viajeros.who')}
+					</span>
+					<span class="fx-eyebrow fx-eyebrow--block">{t('features.viajeros.eyebrow')}</span>
+					<h2 class="fx-h2">{t('features.viajeros.title')}</h2>
+					<p class="fx-lead">{t('features.viajeros.description')}</p>
+				</div>
+
+				<div class="fx-flist" data-reveal="up">
+					{VIAJEROS_LIST.map((item) => (
+						<div class="fx-frow fx-frow--river">
+							<span class="fx-tick fx-tick--river" aria-hidden="true">
+								<CheckIcon size={15} weight="bold" />
+							</span>
+							<div>
+								<b>{t(item.titleKey)}</b>
+								<span>{t(item.descriptionKey)}</span>
+							</div>
+						</div>
+					))}
+				</div>
+
+				<PlanTable
+					headerLabel={t('features.viajeros.table.header')}
+					planLabels={[
+						t('features.viajeros.table.plans.free'),
+						t('features.viajeros.table.plans.plus'),
+						t('features.viajeros.table.plans.vip')
+					]}
+					rows={VIAJEROS_TABLE_ROWS}
+					noteLabel={t('features.viajeros.table.note')}
+					t={t}
+				/>
+			</div>
+		</section>
+
+		<!-- ===== ANFITRIONES ===== -->
+		<section id="anfitriones" class="fx-section fx-section--forest">
+			<div class="fx-container">
+				<div class="fx-section-head" data-reveal="up">
+					<span class="fx-who fx-who--forest">
+						<AnfitrionesWhoIcon size={15} weight="regular" aria-hidden="true" />
+						{t('features.anfitriones.who')}
+					</span>
+					<span class="fx-eyebrow fx-eyebrow--block fx-eyebrow--forest">{t('features.anfitriones.eyebrow')}</span>
+					<h2 class="fx-h2">{t('features.anfitriones.title')}</h2>
+					<p class="fx-lead">{t('features.anfitriones.description')}</p>
+				</div>
+
+				<div class="fx-banner" data-reveal="up">
+					<span class="fx-banner__ico" aria-hidden="true">
+						<BannerIcon size={28} weight="regular" />
+					</span>
+					<div class="fx-banner__tx">
+						<h3>{t('features.anfitriones.banner.title')}</h3>
+						<p>{t('features.anfitriones.banner.description')}</p>
+					</div>
+				</div>
+
+				<div class="fx-flist" data-reveal="up">
+					{ANFITRIONES_LIST.map((item) => (
+						<div class="fx-frow">
+							<span class="fx-tick" aria-hidden="true">
+								<CheckIcon size={15} weight="bold" />
+							</span>
+							<div>
+								<b>{t(item.titleKey)}</b>
+								<span>{t(item.descriptionKey)}</span>
+							</div>
+						</div>
+					))}
+				</div>
+
+				<PlanTable
+					headerLabel={t('features.anfitriones.table.header')}
+					planLabels={[
+						t('features.anfitriones.table.plans.basic'),
+						t('features.anfitriones.table.plans.pro'),
+						t('features.anfitriones.table.plans.premium')
+					]}
+					rows={ANFITRIONES_TABLE_ROWS}
+					noteLabel={t('features.anfitriones.table.note')}
+					t={t}
+				/>
+
+				<h3 class="fx-addons-title">{t('features.anfitriones.addonsTitle')}</h3>
+				<div class="fx-grid fx-grid--3" data-reveal="up">
+					{ANFITRIONES_ADDONS.map((addon) => (
+						<div class="fx-addon">
+							<h4>{t(addon.titleKey)}</h4>
+							<p>{t(addon.descriptionKey)}</p>
+						</div>
+					))}
+				</div>
+			</div>
+		</section>
+
+		<!-- ===== GASTRONOMÍA Y EXPERIENCIAS ===== -->
+		<section id="gastro" class="fx-section fx-section--sand">
+			<div class="fx-container">
+				<div class="fx-section-head" data-reveal="up">
+					<span class="fx-who fx-who--sun">
+						<GastroWhoIcon size={15} weight="regular" aria-hidden="true" />
+						{t('features.gastro.who')}
+					</span>
+					<span class="fx-eyebrow fx-eyebrow--block">{t('features.gastro.eyebrow')}</span>
+					<h2 class="fx-h2">{t('features.gastro.title')}</h2>
+					<p class="fx-lead">{t('features.gastro.description')}</p>
+				</div>
+				<div class="fx-flist" data-reveal="up">
+					{GASTRO_LIST.map((item) => (
+						<div class="fx-frow fx-frow--sun">
+							<span class="fx-tick fx-tick--sun" aria-hidden="true">
+								<CheckIcon size={15} weight="bold" />
+							</span>
+							<div>
+								<b>{t(item.titleKey)}</b>
+								<span>{t(item.descriptionKey)}</span>
+							</div>
+						</div>
+					))}
+				</div>
+				<p class="fx-note">{t('features.gastro.note')}</p>
+			</div>
+		</section>
+
+		<!-- ===== MARCAS ===== -->
+		<section id="marcas" class="fx-section">
+			<div class="fx-container">
+				<div class="fx-section-head" data-reveal="up">
+					<span class="fx-who">
+						<MarcasWhoIcon size={15} weight="regular" aria-hidden="true" />
+						{t('features.marcas.who')}
+					</span>
+					<span class="fx-eyebrow fx-eyebrow--block">{t('features.marcas.eyebrow')}</span>
+					<h2 class="fx-h2">{t('features.marcas.title')}</h2>
+					<p class="fx-lead">{t('features.marcas.description')}</p>
+				</div>
+				<div class="fx-grid fx-grid--2" data-reveal="up">
+					{MARCAS_CARDS.map((card) => {
+						const { Icon } = card;
+						return (
+							<div class="fx-card">
+								<span class:list={['fx-ico', `fx-ico--${card.variant}`]} aria-hidden="true">
+									<Icon size={23} weight="regular" />
+								</span>
+								<h3 class="fx-card__title">{t(card.titleKey)}</h3>
+								<p class="fx-card__desc">{t(card.descriptionKey)}</p>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+		</section>
+
+		<!-- ===== Y ADEMÁS ===== -->
+		<section id="ademas" class="fx-section fx-section--warm">
+			<div class="fx-container">
+				<div class="fx-section-head" data-reveal="up">
+					<span class="fx-eyebrow">{t('features.ademas.eyebrow')}</span>
+					<h2 class="fx-h2">{t('features.ademas.title')}</h2>
+					<p class="fx-lead">{t('features.ademas.description')}</p>
+				</div>
+				<div class="fx-extras" data-reveal="up">
+					{EXTRAS.map((extra) => {
+						const { Icon } = extra;
+						return (
+							<div class="fx-extra">
+								<span class="fx-extra__ico" aria-hidden="true">
+									<Icon size={19} weight="regular" />
+								</span>
+								<div>
+									<b>{t(extra.titleKey)}</b>
+									<span>{t(extra.descriptionKey)}</span>
+								</div>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+		</section>
+
+		<!-- ===== PRÓXIMAMENTE ===== -->
+		<section id="proximamente" class="fx-section fx-section--sand fx-section--soon">
+			<div class="fx-container">
+				<div class="fx-section-head" data-reveal="up">
+					<span class="fx-eyebrow fx-eyebrow--gold">{t('features.proximamente.eyebrow')}</span>
+					<h2 class="fx-h2">{t('features.proximamente.title')}</h2>
+					<p class="fx-lead">{t('features.proximamente.description')}</p>
+				</div>
+				<div class="fx-soon-grid" data-reveal="up">
+					{SOON_ITEMS.map((item) => {
+						const { Icon } = item;
+						return (
+							<div class="fx-soon-card">
+								<span class="fx-soon-badge">{t('features.proximamente.badge', 'Pronto')}</span>
+								<span class="fx-soon-ico" aria-hidden="true">
+									<Icon size={19} weight="regular" />
+								</span>
+								<h4>{t(item.titleKey)}</h4>
+								<p>{t(item.descriptionKey)}</p>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+		</section>
+
+		<!-- ===== CTA ===== -->
+		<section class="fx-section">
+			<div class="fx-container">
+				<div class="fx-cta" data-reveal="up">
+					<span class="fx-cta__sun" aria-hidden="true"></span>
+					<span class="fx-hand fx-cta__hand">{t('features.cta.tagline')}</span>
+					<h2 class="fx-cta__title">{t('features.cta.title')}</h2>
+					<p class="fx-cta__desc">{t('features.cta.description')}</p>
+					<GradientButton
+						href={buildUrl({ locale, path: 'publicar' })}
+						label={t('features.cta.button')}
+						variant="accent"
+						icon="true"
+					/>
+					<p class="fx-cta__footnote">
+						{t('features.footer.tagline')} — {t('features.footer.note')}
+					</p>
+				</div>
+			</div>
+		</section>
+	</div>
+</StandaloneLayout>
+
+<style>
+	/* Smooth in-page scroll for the subnav anchor links (AC-2.1), disabled
+	 * under reduced motion so the jump is instant instead (AC-2.3). Scoped to
+	 * `:global(html)` because the scroll-triggering element (the anchor's
+	 * target) lives outside this component's own DOM subtree conceptually —
+	 * `scroll-behavior` must be set on the scrolling box itself. */
+	:global(html:has(.fx-page)) {
+		scroll-behavior: smooth;
+		/* This standalone page has no site Header (that's the whole point), so
+		 * the Header's own JS-measured `--navbar-height` override never runs
+		 * and the global 80px design-token default would leave anchor targets
+		 * (subnav clicks, scroll-padding-top) offset by ~20px too much under
+		 * this page's own, shorter, 60px top bar. Must stay numerically equal
+		 * to `--fx-topbar-h` below (also 60px) — that's the actual rendered
+		 * bar height driving `.fx-topbar__in`'s `min-height`. */
+		--navbar-height: 60px;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		:global(html:has(.fx-page)) {
+			scroll-behavior: auto;
+		}
+	}
+
+	/* ==========================================================================
+	 * Local token bridge — maps every brochure color/radius/shadow name to a
+	 * real global.css / @repo/design-tokens token, scoped to this page only.
+	 * Nothing below this block ever hardcodes a color, radius, or font. Dark
+	 * mode works automatically because every `--fx-*` variable resolves to a
+	 * theme-aware token.
+	 * ========================================================================== */
+	.fx-page {
+		/* Rendered height of `.fx-topbar` (see `.fx-topbar__in`'s min-height).
+		 * Declared here (not on `.fx-topbar` itself) so it's visible to every
+		 * descendant, including the plan tables' sticky `<thead>` rendered by
+		 * the child `PlanTable` component further down the page. */
+		--fx-topbar-h: 60px;
+		--fx-river: var(--hospeda-river);
+		--fx-river-ink: var(--brand-primary);
+		--fx-river-soft: var(--brand-primary-a12);
+		--fx-sun: var(--brand-accent);
+		--fx-sun-ink: var(--brand-accent);
+		--fx-sun-soft: var(--brand-accent-a12);
+		--fx-forest: var(--hospeda-forest);
+		--fx-forest-ink: var(--hospeda-forest);
+		--fx-forest-soft: color-mix(in oklab, var(--hospeda-forest) 12%, transparent);
+		--fx-sky: var(--hospeda-sky);
+		--fx-gold: var(--warning);
+		--fx-gold-soft: color-mix(in oklab, var(--warning) 16%, transparent);
+		--fx-sand: var(--surface-warm);
+		--fx-card: var(--core-card);
+		--fx-ink: var(--core-foreground);
+		--fx-ink-2: var(--core-muted-foreground);
+		--fx-line: var(--border);
+		--fx-r-card: var(--radius-card);
+		--fx-r-md: var(--radius-md);
+		--fx-r-pill: var(--radius-pill);
+		--fx-shadow-sm: var(--shadow-card);
+		--fx-shadow: var(--shadow-card-hover);
+
+		background-color: var(--core-background);
+		color: var(--fx-ink);
+	}
+
+	.fx-container {
+		max-width: var(--container-max);
+		margin-inline: auto;
+		padding-inline: var(--space-container-x);
+	}
+
+	/* --- generic section --- */
+	.fx-section {
+		position: relative;
+		padding-block: var(--space-section);
+		overflow: clip;
+	}
+	.fx-section--warm {
+		background-color: var(--fx-sand);
+	}
+	.fx-section--sand {
+		background-color: color-mix(in oklab, var(--fx-sand) 70%, var(--core-background));
+	}
+	.fx-section--river .fx-eyebrow--block {
+		color: var(--fx-river-ink);
+	}
+	.fx-section--forest .fx-eyebrow--block {
+		color: var(--fx-forest-ink);
+	}
+
+	.fx-eyebrow {
+		display: block;
+		font-family: var(--font-decorative);
+		font-weight: 600;
+		font-size: 1.6rem;
+		line-height: 1;
+		color: var(--fx-sun-ink);
+	}
+	.fx-eyebrow--block {
+		margin-top: var(--space-4);
+	}
+	.fx-eyebrow--gold {
+		color: var(--fx-gold);
+	}
+
+	.fx-section-head {
+		max-width: 64ch;
+		margin-bottom: var(--space-8);
+	}
+	.fx-h2 {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.6rem, 4vw, 2.5rem);
+		letter-spacing: -0.02em;
+		line-height: 1.08;
+		margin: var(--space-2) 0 0;
+		color: var(--fx-ink);
+		text-wrap: balance;
+	}
+	.fx-lead {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--fx-ink-2);
+		margin: var(--space-3) 0 0;
+		max-width: 62ch;
+		line-height: 1.6;
+	}
+	.fx-note {
+		font-size: var(--text-body-sm);
+		color: var(--fx-ink-2);
+		margin: var(--space-3) 2px 0;
+		line-height: 1.5;
+	}
+
+	.fx-who {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-size: var(--text-caption);
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--fx-river-ink);
+		background-color: var(--fx-river-soft);
+		padding: 6px 13px;
+		border-radius: var(--fx-r-pill);
+	}
+	.fx-who--sun {
+		color: var(--fx-sun-ink);
+		background-color: var(--fx-sun-soft);
+	}
+	.fx-who--forest {
+		color: var(--fx-forest-ink);
+		background-color: var(--fx-forest-soft);
+	}
+
+	/* --- hero --- */
+	.fx-hero {
+		position: relative;
+		overflow: hidden;
+		padding-block: clamp(3rem, 9vw, 6.5rem) clamp(2.5rem, 7vw, 5rem);
+	}
+	.fx-hero__blobs {
+		position: absolute;
+		inset: -10% -5% auto;
+		height: 120%;
+		z-index: 0;
+		filter: blur(46px);
+		opacity: 0.55;
+		pointer-events: none;
+	}
+	.fx-blob {
+		position: absolute;
+		border-radius: 50%;
+	}
+	.fx-blob--1 {
+		width: 46vw;
+		height: 46vw;
+		max-width: 560px;
+		max-height: 560px;
+		left: -8%;
+		top: -14%;
+		background: radial-gradient(circle at 40% 40%, var(--fx-river), transparent 68%);
+		animation: fx-drift1 22s ease-in-out infinite;
+	}
+	.fx-blob--2 {
+		width: 38vw;
+		height: 38vw;
+		max-width: 460px;
+		max-height: 460px;
+		right: -6%;
+		top: 2%;
+		background: radial-gradient(circle at 50% 50%, var(--fx-sky), transparent 66%);
+		animation: fx-drift2 26s ease-in-out infinite;
+	}
+	.fx-blob--3 {
+		width: 26vw;
+		height: 26vw;
+		max-width: 320px;
+		max-height: 320px;
+		right: 14%;
+		top: -8%;
+		background: radial-gradient(circle at 50% 50%, var(--fx-sun), transparent 60%);
+		animation: fx-drift3 18s ease-in-out infinite;
+	}
+	.fx-blob--4 {
+		width: 34vw;
+		height: 34vw;
+		max-width: 420px;
+		max-height: 420px;
+		left: 26%;
+		top: 34%;
+		background: radial-gradient(circle at 50% 50%, var(--fx-forest), transparent 66%);
+		animation: fx-drift1 30s ease-in-out infinite;
+	}
+	@keyframes fx-drift1 {
+		0%, 100% { transform: translate(0, 0); }
+		50% { transform: translate(3%, 4%); }
+	}
+	@keyframes fx-drift2 {
+		0%, 100% { transform: translate(0, 0); }
+		50% { transform: translate(-4%, 3%); }
+	}
+	@keyframes fx-drift3 {
+		0%, 100% { transform: translate(0, 0); }
+		50% { transform: translate(-3%, 5%); }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.fx-blob {
+			animation: none !important;
+		}
+	}
+
+	.fx-hero__in {
+		position: relative;
+		z-index: 1;
+		max-width: 46rem;
+	}
+	.fx-hero__logo {
+		margin-bottom: var(--space-5);
+		filter: drop-shadow(0 6px 16px var(--brand-primary-a25));
+	}
+	.fx-hand {
+		font-family: var(--font-decorative);
+		color: var(--fx-sun-ink);
+		font-weight: 600;
+		font-size: clamp(1.6rem, 4vw, 2.4rem);
+		line-height: 1;
+		display: block;
+		margin-bottom: var(--space-2);
+	}
+	.fx-hero__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(2.1rem, 6.2vw, 3.9rem);
+		line-height: 1.02;
+		letter-spacing: -0.025em;
+		margin: 0.1em 0 0;
+		color: var(--fx-ink);
+		text-wrap: balance;
+	}
+	.fx-hero__accent {
+		font-style: normal;
+		color: var(--fx-river-ink);
+	}
+	.fx-hero__lede {
+		font-family: var(--font-sans);
+		font-size: clamp(1.05rem, 2.1vw, 1.25rem);
+		color: var(--fx-ink-2);
+		max-width: 60ch;
+		margin: var(--space-6) 0 0;
+		line-height: 1.55;
+	}
+	.fx-hero__stats {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+		margin-top: var(--space-8);
+	}
+	.fx-pill {
+		display: inline-flex;
+		align-items: baseline;
+		gap: var(--space-2);
+		background-color: var(--fx-card);
+		border: 1px solid var(--fx-line);
+		border-radius: var(--fx-r-pill);
+		padding: 9px 16px;
+		box-shadow: var(--fx-shadow-sm);
+		font-size: var(--text-body-sm);
+		color: var(--fx-ink-2);
+	}
+	.fx-pill b {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: 1.1rem;
+		color: var(--fx-ink);
+		font-variant-numeric: tabular-nums;
+	}
+	.fx-pill--river b {
+		color: var(--fx-river-ink);
+	}
+	.fx-pill--sun b {
+		color: var(--fx-sun-ink);
+	}
+	.fx-pill--forest b {
+		color: var(--fx-forest-ink);
+	}
+
+	/* --- top bar (this page's own chrome — logo + subnav + theme toggle) ---
+	 * This is the ONLY sticky bar on the page (there is no site Header to
+	 * collide with). `--fx-topbar-h` is the single source of truth for its
+	 * height, reused below to keep scroll-padding, the sticky subnav-link
+	 * offset, and the sticky plan-table `<thead>` all in sync. */
+	.fx-topbar {
+		--fx-topbar-h: 60px;
+		position: sticky;
+		top: 0;
+		z-index: 40;
+		background-color: color-mix(in oklab, var(--core-background) 86%, transparent);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		border-bottom: 1px solid var(--fx-line);
+	}
+	.fx-topbar__in {
+		display: flex;
+		align-items: center;
+		gap: var(--space-4);
+		min-height: var(--fx-topbar-h);
+	}
+	.fx-topbar__brand {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		flex: none;
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-body);
+		color: var(--fx-ink);
+		text-decoration: none;
+	}
+	.fx-topbar__wordmark {
+		letter-spacing: -0.01em;
+	}
+
+	/* --- subnav (nested inside the top bar) --- */
+	.fx-subnav {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+	.fx-subnav__in {
+		display: flex;
+		gap: 4px;
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+	.fx-subnav__in::-webkit-scrollbar {
+		display: none;
+	}
+	.fx-subnav__link {
+		font-size: var(--text-body-sm);
+		font-weight: 500;
+		color: var(--fx-ink-2);
+		text-decoration: none;
+		padding: 8px 12px;
+		border-radius: var(--fx-r-pill);
+		white-space: nowrap;
+		transition: color var(--duration-fast, 0.15s), background-color var(--duration-fast, 0.15s);
+	}
+	.fx-subnav__link:hover {
+		color: var(--fx-ink);
+		background-color: var(--fx-river-soft);
+	}
+	.fx-subnav__link[data-active='true'] {
+		color: var(--fx-river-ink);
+		background-color: var(--fx-river-soft);
+		font-weight: 600;
+	}
+
+	/* --- grids & cards --- */
+	.fx-grid {
+		display: grid;
+		gap: var(--space-card-gap);
+	}
+	.fx-grid--2 {
+		grid-template-columns: repeat(2, 1fr);
+	}
+	.fx-grid--3 {
+		grid-template-columns: repeat(3, 1fr);
+	}
+	.fx-grid--4 {
+		grid-template-columns: repeat(4, 1fr);
+	}
+	@media (max-width: 860px) {
+		.fx-grid--3,
+		.fx-grid--4 {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+	@media (max-width: 560px) {
+		.fx-grid--2,
+		.fx-grid--3,
+		.fx-grid--4 {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.fx-card {
+		background-color: var(--fx-card);
+		border: 1px solid var(--fx-line);
+		border-radius: var(--fx-r-card);
+		padding: var(--space-6);
+		box-shadow: var(--fx-shadow-sm);
+		transition: transform var(--duration-normal, 0.2s), box-shadow var(--duration-normal, 0.2s);
+	}
+	.fx-card:hover {
+		transform: translateY(-3px);
+		box-shadow: var(--fx-shadow);
+	}
+	.fx-ico {
+		width: 44px;
+		height: 44px;
+		border-radius: 13px;
+		display: grid;
+		place-items: center;
+		margin-bottom: var(--space-4);
+		background-color: var(--fx-river-soft);
+		color: var(--fx-river-ink);
+	}
+	.fx-ico--sun {
+		background-color: var(--fx-sun-soft);
+		color: var(--fx-sun-ink);
+	}
+	.fx-ico--forest {
+		background-color: var(--fx-forest-soft);
+		color: var(--fx-forest-ink);
+	}
+	.fx-ico--sky {
+		background-color: color-mix(in oklab, var(--fx-sky) 20%, transparent);
+		color: var(--fx-sky);
+	}
+	.fx-card__title {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: 1.15rem;
+		margin: 0 0 7px;
+		letter-spacing: -0.01em;
+		color: var(--fx-ink);
+	}
+	.fx-card__desc {
+		margin: 0;
+		color: var(--fx-ink-2);
+		font-size: var(--text-body-sm);
+		line-height: 1.55;
+	}
+
+	/* --- feature list (benefit rows) --- */
+	.fx-flist {
+		display: grid;
+		gap: var(--space-3);
+		grid-template-columns: repeat(2, 1fr);
+		margin-bottom: var(--space-8);
+	}
+	@media (max-width: 640px) {
+		.fx-flist {
+			grid-template-columns: 1fr;
+		}
+	}
+	.fx-frow {
+		display: flex;
+		gap: var(--space-3);
+		align-items: flex-start;
+		background-color: var(--fx-card);
+		border: 1px solid var(--fx-line);
+		border-radius: var(--fx-r-md);
+		padding: 15px 17px;
+	}
+	.fx-tick {
+		flex: none;
+		width: 26px;
+		height: 26px;
+		border-radius: 8px;
+		display: grid;
+		place-items: center;
+		background-color: var(--fx-forest-soft);
+		color: var(--fx-forest-ink);
+		margin-top: 1px;
+	}
+	.fx-tick--sun {
+		background-color: var(--fx-sun-soft);
+		color: var(--fx-sun-ink);
+	}
+	.fx-tick--river {
+		background-color: var(--fx-river-soft);
+		color: var(--fx-river-ink);
+	}
+	.fx-frow b {
+		font-weight: 600;
+		font-size: var(--text-body-sm);
+		display: block;
+		color: var(--fx-ink);
+	}
+	.fx-frow span {
+		color: var(--fx-ink-2);
+		font-size: var(--text-caption);
+		line-height: 1.5;
+		display: block;
+		margin-top: 2px;
+	}
+
+	/* --- highlight banner (anfitriones trial) --- */
+	.fx-banner {
+		display: flex;
+		gap: var(--space-6);
+		align-items: center;
+		flex-wrap: wrap;
+		background: linear-gradient(120deg, var(--fx-river-soft), var(--fx-sun-soft));
+		border: 1px solid var(--fx-line);
+		border-radius: var(--fx-r-card);
+		padding: var(--space-6) var(--space-8);
+		margin-bottom: var(--space-8);
+	}
+	.fx-banner__ico {
+		flex: none;
+		width: 56px;
+		height: 56px;
+		border-radius: 16px;
+		background-color: var(--fx-card);
+		display: grid;
+		place-items: center;
+		color: var(--fx-sun-ink);
+		box-shadow: var(--fx-shadow-sm);
+	}
+	.fx-banner__tx {
+		flex: 1 1 300px;
+	}
+	.fx-banner__tx h3 {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+		margin: 0 0 4px;
+		letter-spacing: -0.01em;
+		color: var(--fx-ink);
+	}
+	.fx-banner__tx p {
+		margin: 0;
+		color: var(--fx-ink-2);
+		font-size: var(--text-body-sm);
+	}
+
+	/* --- plan table (shared markup lives in PlanTable.astro) --- */
+	:global(.fx-tscroll) {
+		overflow-x: auto;
+		border: 1px solid var(--fx-line, var(--border));
+		border-radius: var(--fx-r-card, var(--radius-card));
+		background-color: var(--fx-card, var(--core-card));
+		box-shadow: var(--fx-shadow-sm, var(--shadow-card));
+		-webkit-overflow-scrolling: touch;
+	}
+	:global(.fx-table) {
+		border-collapse: collapse;
+		width: 100%;
+		min-width: 620px;
+		font-size: var(--text-body-sm);
+	}
+	:global(.fx-table__head),
+	:global(.fx-table__plan) {
+		text-align: left;
+		padding: 18px 18px 16px;
+		border-bottom: 1px solid var(--fx-line, var(--border));
+		vertical-align: bottom;
+		background-color: color-mix(in oklab, var(--fx-sand, var(--surface-warm)) 55%, var(--fx-card, var(--core-card)));
+		/* Sticky header row while scrolling a tall plan table (keeps the plan
+		 * names visible). Offset below the page's own sticky top bar (never
+		 * `0` — that would collide with it), and a hairline bottom shadow
+		 * gives a visible seam so the two sticky layers never look like one
+		 * fused block when they meet mid-scroll. */
+		position: sticky;
+		top: calc(var(--fx-topbar-h, 60px) + 1px);
+		z-index: 5;
+		box-shadow: 0 1px 0 var(--fx-line, var(--border));
+	}
+	:global(.fx-table__plan) {
+		text-align: center;
+		position: relative;
+	}
+	:global(.fx-table__pname) {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-body);
+		display: block;
+		letter-spacing: -0.01em;
+	}
+	:global(.fx-table__plan--popular .fx-table__pname) {
+		color: var(--fx-sun-ink, var(--brand-accent));
+	}
+	:global(.fx-table__badge) {
+		display: inline-block;
+		margin-top: 4px;
+		font-size: 0.6rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--fx-sun-ink, var(--brand-accent));
+		background-color: var(--fx-sun-soft, var(--brand-accent-a12));
+		padding: 3px 7px;
+		border-radius: var(--fx-r-pill, var(--radius-pill));
+	}
+	:global(.fx-table__feat) {
+		font-weight: 500;
+		min-width: 210px;
+		padding: 13px 18px;
+		border-bottom: 1px solid var(--fx-line, var(--border));
+		vertical-align: top;
+	}
+	:global(.fx-table__feat small) {
+		display: block;
+		color: var(--fx-ink-2, var(--core-muted-foreground));
+		font-weight: 400;
+		font-size: var(--text-caption);
+		margin-top: 2px;
+	}
+	:global(.fx-table__cell) {
+		text-align: center;
+		white-space: nowrap;
+		font-variant-numeric: tabular-nums;
+		padding: 13px 18px;
+		border-bottom: 1px solid var(--fx-line, var(--border));
+		vertical-align: top;
+	}
+	:global(.fx-table tbody tr:last-child td) {
+		border-bottom: 0;
+	}
+	:global(.fx-table tbody tr:hover td) {
+		background-color: color-mix(in oklab, var(--fx-river-soft, var(--brand-primary-a12)) 45%, transparent);
+	}
+	:global(.fx-table__yes) {
+		display: inline-grid;
+		place-items: center;
+		width: 24px;
+		height: 24px;
+		border-radius: 7px;
+		background-color: var(--fx-forest-soft, color-mix(in oklab, var(--hospeda-forest) 12%, transparent));
+		color: var(--fx-forest-ink, var(--hospeda-forest));
+	}
+	:global(.fx-table__no) {
+		color: var(--fx-line, var(--border));
+		font-weight: 700;
+	}
+	:global(.fx-table__lim) {
+		display: inline-block;
+		background-color: var(--fx-river-soft, var(--brand-primary-a12));
+		color: var(--fx-river-ink, var(--brand-primary));
+		font-weight: 600;
+		font-size: var(--text-caption);
+		padding: 3px 9px;
+		border-radius: var(--fx-r-pill, var(--radius-pill));
+	}
+	:global(.fx-table__inf) {
+		font-size: 1rem;
+		font-weight: 700;
+		color: var(--fx-river-ink, var(--brand-primary));
+	}
+	:global(.fx-table__addon) {
+		display: inline-block;
+		background-color: var(--fx-sun-soft, var(--brand-accent-a12));
+		color: var(--fx-sun-ink, var(--brand-accent));
+		font-weight: 600;
+		font-size: 0.72rem;
+		padding: 3px 9px;
+		border-radius: var(--fx-r-pill, var(--radius-pill));
+	}
+	:global(.fx-table__note) {
+		font-size: var(--text-body-sm);
+		color: var(--fx-ink-2, var(--core-muted-foreground));
+		margin: var(--space-3) 2px 0;
+		line-height: 1.5;
+	}
+
+	/* --- addon cards --- */
+	.fx-addons-title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: 1.25rem;
+		margin: var(--space-10) 0 var(--space-4);
+		letter-spacing: -0.01em;
+		color: var(--fx-ink);
+	}
+	.fx-addon {
+		background-color: var(--fx-card);
+		border: 1px solid var(--fx-line);
+		border-radius: var(--fx-r-md);
+		padding: var(--space-4) var(--space-5);
+	}
+	.fx-addon h4 {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: var(--text-body);
+		margin: 0 0 4px;
+		color: var(--fx-ink);
+	}
+	.fx-addon p {
+		margin: var(--space-2) 0 0;
+		color: var(--fx-ink-2);
+		font-size: var(--text-caption);
+		line-height: 1.5;
+	}
+
+	/* --- "y además" chips --- */
+	.fx-extras {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-4);
+	}
+	@media (max-width: 820px) {
+		.fx-extras {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+	@media (max-width: 520px) {
+		.fx-extras {
+			grid-template-columns: 1fr;
+		}
+	}
+	.fx-extra {
+		display: flex;
+		gap: var(--space-3);
+		align-items: flex-start;
+	}
+	.fx-extra__ico {
+		flex: none;
+		width: 38px;
+		height: 38px;
+		border-radius: 11px;
+		display: grid;
+		place-items: center;
+		background-color: var(--fx-river-soft);
+		color: var(--fx-river-ink);
+	}
+	.fx-extra:nth-child(3n + 2) .fx-extra__ico {
+		background-color: var(--fx-sun-soft);
+		color: var(--fx-sun-ink);
+	}
+	.fx-extra:nth-child(3n) .fx-extra__ico {
+		background-color: var(--fx-forest-soft);
+		color: var(--fx-forest-ink);
+	}
+	.fx-extra b {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: var(--text-body-sm);
+		display: block;
+		color: var(--fx-ink);
+	}
+	.fx-extra span {
+		display: block;
+		color: var(--fx-ink-2);
+		font-size: var(--text-caption);
+		line-height: 1.5;
+		margin-top: 2px;
+	}
+
+	/* --- próximamente --- */
+	.fx-soon-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-4);
+	}
+	@media (max-width: 860px) {
+		.fx-soon-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+	@media (max-width: 560px) {
+		.fx-soon-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+	.fx-soon-card {
+		position: relative;
+		background-color: var(--fx-card);
+		border: 1.5px dashed var(--fx-line);
+		border-radius: var(--fx-r-md);
+		padding: var(--space-5);
+	}
+	.fx-soon-badge {
+		position: absolute;
+		top: 15px;
+		right: 15px;
+		display: inline-flex;
+		align-items: center;
+		font-size: 0.62rem;
+		font-weight: 700;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: var(--fx-gold);
+		background-color: var(--fx-gold-soft);
+		padding: 4px 9px;
+		border-radius: var(--fx-r-pill);
+	}
+	.fx-soon-ico {
+		width: 36px;
+		height: 36px;
+		border-radius: 10px;
+		display: grid;
+		place-items: center;
+		background-color: var(--fx-gold-soft);
+		color: var(--fx-gold);
+		margin-bottom: var(--space-3);
+	}
+	.fx-soon-card h4 {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: 0.97rem;
+		margin: 0 0 6px;
+		padding-right: 56px;
+		letter-spacing: -0.01em;
+		color: var(--fx-ink);
+	}
+	.fx-soon-card p {
+		margin: 0;
+		color: var(--fx-ink-2);
+		font-size: var(--text-caption);
+		line-height: 1.5;
+	}
+
+	/* --- closing CTA --- */
+	.fx-cta {
+		background-color: var(--surface-dark, oklch(0.24 0.04 252));
+		color: var(--surface-dark-foreground, oklch(0.96 0.01 240));
+		border-radius: var(--fx-r-card);
+		padding: clamp(2.1rem, 5vw, 3.5rem);
+		text-align: center;
+		position: relative;
+		overflow: hidden;
+	}
+	.fx-cta__sun {
+		position: absolute;
+		width: 180px;
+		height: 180px;
+		border-radius: 50%;
+		top: -60px;
+		right: -40px;
+		background: radial-gradient(circle, var(--fx-sun), transparent 70%);
+		opacity: 0.5;
+		filter: blur(8px);
+	}
+	.fx-cta__hand {
+		color: var(--fx-sky);
+		position: relative;
+	}
+	.fx-cta__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.5rem, 3.6vw, 2.35rem);
+		margin: 6px 0 var(--space-3);
+		letter-spacing: -0.02em;
+		position: relative;
+	}
+	.fx-cta__desc {
+		max-width: 52ch;
+		margin: 0 auto var(--space-6);
+		position: relative;
+		opacity: 0.85;
+	}
+	.fx-cta__footnote {
+		margin-top: var(--space-6);
+		font-size: var(--text-caption);
+		opacity: 0.7;
+		position: relative;
+	}
+
+	@media (max-width: 900px) {
+		.fx-hero__blobs {
+			opacity: 0.4;
+		}
+	}
+</style>

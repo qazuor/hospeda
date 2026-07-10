@@ -1,0 +1,80 @@
+---
+/**
+ * @file PlanTable.astro
+ * @description Reusable plan comparison table for the `/funcionalidades` page
+ * (HOS-119). Renders a horizontally-scrollable table with a feature-label
+ * column plus three plan columns; the middle plan is marked "popular". No
+ * prices are ever rendered — cells only carry check/dash icons, numeric
+ * limits, an infinity glyph, an "addon" pill, or a short text label.
+ *
+ * Shared by the Viajeros (Gratis/Plus/VIP) and Anfitriones (Básico/Pro/Premium)
+ * tables so the row-rendering logic (and its accessibility semantics) lives
+ * in exactly one place.
+ */
+
+import { CheckIcon } from '@repo/icons';
+import type { TranslationFn } from '@/lib/i18n';
+import type { PlanTableRow } from '@/lib/features-content';
+
+interface Props {
+	/** Label for the left-most "feature name" column header. */
+	readonly headerLabel: string;
+	/** The three plan column labels, in order (index 1 = "popular"). */
+	readonly planLabels: readonly [string, string, string];
+	/** Table rows, each with a label and one cell per plan. */
+	readonly rows: readonly PlanTableRow[];
+	/** Optional footnote rendered below the table. */
+	readonly noteLabel?: string;
+	/** Bound translation function, used to resolve row/cell i18n keys. */
+	readonly t: TranslationFn;
+}
+
+const { headerLabel, planLabels, rows, noteLabel, t } = Astro.props;
+---
+
+<div class="fx-tscroll" data-reveal="up" tabindex="0" role="region" aria-label={headerLabel}>
+	<table class="fx-table">
+		<thead>
+			<tr>
+				<th class="fx-table__head">{headerLabel}</th>
+				{planLabels.map((label, i) => (
+					<th class:list={['fx-table__plan', { 'fx-table__plan--popular': i === 1 }]}>
+						<span class="fx-table__pname">{label}</span>
+						{i === 1 && <span class="fx-table__badge">{t('features.popularBadge')}</span>}
+					</th>
+				))}
+			</tr>
+		</thead>
+		<tbody>
+			{rows.map((row) => (
+				<tr>
+					<td class="fx-table__feat">
+						{t(row.labelKey)}
+						{row.noteKey && <small>{t(row.noteKey)}</small>}
+					</td>
+					{row.cells.map((cell) => (
+						<td class="fx-table__cell">
+							{cell.kind === 'yes' && (
+								<span class="fx-table__yes" aria-label="Sí">
+									<CheckIcon size={14} weight="bold" />
+								</span>
+							)}
+							{cell.kind === 'no' && (
+								<span class="fx-table__no" aria-hidden="true">–</span>
+							)}
+							{cell.kind === 'limit' && <span class="fx-table__lim">{cell.value}</span>}
+							{cell.kind === 'unlimited' && (
+								<span class="fx-table__inf" aria-label="Ilimitado">∞</span>
+							)}
+							{cell.kind === 'addon' && (
+								<span class="fx-table__addon">{t('features.anfitriones.table.addonCell')}</span>
+							)}
+							{cell.kind === 'text' && <span>{t(cell.labelKey)}</span>}
+						</td>
+					))}
+				</tr>
+			))}
+		</tbody>
+	</table>
+</div>
+{noteLabel && <p class="fx-table__note">{noteLabel}</p>}
