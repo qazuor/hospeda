@@ -231,8 +231,16 @@ export function shouldSendAdminAlert(previousStatus: string, newStatus: string):
  *
  * @param input - The billing instance, DB handle, the just-activated local
  *   subscription row, and webhook context for logging/audit.
+ *
+ * @remarks
+ * Exported (HOS-123 T-012) so `payment-logic.ts::confirmAnnualSubscription`
+ * can invoke the exact same trigger on the annual `payment.updated` confirm
+ * path (`PENDING_PROVIDER -> ACTIVE` via a one-time payment, rather than a
+ * monthly preapproval webhook), without duplicating this logic (AC-7
+ * single-source discipline). Verified no circular import: neither this
+ * module nor any of its transitive imports reference `payment-logic.ts`.
  */
-async function completeReactivationSupersession({
+export async function completeReactivationSupersession({
     billing,
     paymentAdapter,
     db,
