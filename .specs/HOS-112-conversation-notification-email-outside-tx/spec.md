@@ -86,7 +86,7 @@ Reference: HOS-109 T-008 (spec/HOS-109-api-log-triage) log-triage findings.
 - **NG-2** — Not adding a real distributed job queue / worker pool. This stays a
   cron job; the fix is a transaction-boundary + idempotency restructuring.
 - **NG-3** — Not fixing the sibling `conversation-token-reminder.job.ts`
-  anti-pattern in this spec (tracked separately — see OQ-4).
+  anti-pattern in this spec (tracked separately as **HOS-129** — see OQ-4).
 - **NG-4** — Not migrating away from the advisory-lock convention wholesale; ADR-019
   (transaction-scoped locks only, no session-scoped) still governs.
 
@@ -197,8 +197,7 @@ double-sends. Two sub-decisions, both flagged as Open Questions:
   **claim before send but DEL on failure** (step 3), which restores retry-on-failure
   while closing the concurrent double-send window; accept the rare
   crash-mid-send lost-notification as the documented trade-off (same class of
-  trade-off the weather job accepted). Owner should confirm at-most-once vs
-  at-least-once is acceptable for this notification.
+  trade-off the weather job accepted). **Owner confirmed at-most-once (2026-07-10).**
 - **Role of the advisory lock after the change** (OQ-2): with a correct atomic
   Redis claim serializing per-schedule sends, the Phase-2 advisory lock is
   largely redundant for correctness (each run only advances schedules it uniquely
@@ -220,10 +219,11 @@ a WARN when the claim path runs without Redis so the degradation is visible.
 
 - **No schema changes.** `conversation_notification_schedules` is unchanged;
   `advanceSchedule` signature is unchanged.
-- **No new env vars.** Optionally (OQ-5) add an email-send timeout; if pursued as a
-  send-level `AbortSignal` it needs no env var, or a configurable
-  `HOSPEDA_EMAIL_TIMEOUT_MS` if made tunable (would then follow the full env-var
-  registration workflow).
+- **Email-send timeout (in-scope, OQ-5 resolved).** Add an `AbortSignal`-based
+  timeout to the `sendEmail` path so a hung provider connection cannot stall a run.
+  Default it to a hardcoded sane value (no env var) to keep this change env-free;
+  a tunable `HOSPEDA_EMAIL_TIMEOUT_MS` is a deferred nice-to-have (would then
+  follow the full env-var registration workflow). No other new env vars.
 - **Redis contract change** (behavioral, not schema): `markDispatched` becomes an
   atomic `SET … NX EX` returning whether the claim was acquired; add a
   `releaseClaim`/`DEL` helper for the failure path. Key/TTL unchanged
@@ -255,6 +255,11 @@ the emails themselves are unchanged.
   writes), empty-due, and error paths still pass.
 - **AC-8** — `packages/db/docs/advisory-locks.md` entry for `43020` corrected to
   the real filename.
+- **AC-9** — `sendEmail` runs under an `AbortSignal` timeout; a provider that never
+  responds is aborted rather than stalling the run (test with a hanging fetch mock).
+- **AC-10** — Phase-2 `advanceSchedule` re-reads the schedule row under the lock and
+  verifies `streakCount` before advancing; a stale/already-advanced row is not
+  double-advanced (test).
 
 ## 10. Risks
 
@@ -276,28 +281,34 @@ the emails themselves are unchanged.
 - **R-5** — *Redis fail-open under outage* becomes more consequential than today.
   Accepted with visibility (WARN), per §6.
 
-## 11. Open questions
+## 11. Open questions — RESOLVED (2026-07-10, owner)
 
-- **OQ-1** — Delivery semantics: **at-most-once** (claim before send, accept rare
-  crash-mid-send loss) vs **at-least-once** (claim after send, accept rare
-  duplicate)? *Recommendation: at-most-once with DEL-on-failure.* Owner decision.
-- **OQ-2** — Keep the Phase-2 advisory lock as defense-in-depth, or drop it now
-  that the atomic Redis claim serializes sends? *Recommendation: keep it* (matches
-  precedent, cheap insurance).
-- **OQ-3** — Should Phase-2 `advanceSchedule` re-read the row and verify
-  `streakCount` under the lock before advancing (fully idempotent), or is the
-  claim-scoped enqueue sufficient? *Recommendation: re-read for safety; low cost.*
-- **OQ-4** — `conversation-token-reminder.job.ts` has the identical anti-pattern.
-  Fix it in this spec's scope, or file a companion HOS issue? *Recommendation:
-  companion issue* (keep this spec focused; NG-3).
-- **OQ-5** — Also add a `sendEmail` timeout/`AbortSignal` and/or lower
-  `MAX_BATCH_SIZE` as complementary hardening, or defer? *Recommendation: add a
-  send timeout in-scope* (cheap, directly reduces worst-case run duration); defer
-  batch-size tuning.
-- **OQ-6** — Should `findDue` gain `ORDER BY pending_notification_at` +
-  `LIMIT`/`SKIP LOCKED` so the 100-cap is deterministic and backlog is FIFO,
-  instead of the JS `.slice`? Out of strict scope but adjacent. *Recommendation:
-  defer to a follow-up unless trivially cheap here.*
+All six resolved by the owner on 2026-07-10; decisions are now firm and folded
+into §4/§6/§7/§9 above.
+
+- **OQ-1** — Delivery semantics → **RESOLVED: at-most-once with DEL-on-failure.**
+  Claim (`SET NX EX`) before the send; on provider/render failure release the
+  claim so it retries next tick. The only exposed loss is a hard process crash
+  between claim and the send returning — accepted, because a conversation
+  notification is not a critical transactional email and a visible duplicate is
+  worse than a rare miss.
+- **OQ-2** — Phase-2 advisory lock → **RESOLVED: keep it** as defense-in-depth
+  (cheap, matches the weather-job precedent, guards against a Redis-outage
+  fail-open storm). The atomic Redis claim is now the primary double-send guard;
+  the lock is insurance.
+- **OQ-3** — Streak-advance idempotency → **RESOLVED: re-read the row under the
+  Phase-2 lock and verify `streakCount` before advancing.** Low cost, fully closes
+  the double-advance risk (R-3).
+- **OQ-4** — Sibling `conversation-token-reminder.job.ts` → **RESOLVED: companion
+  issue, out of this spec's scope.** Filed as **HOS-129** (kind-needs-spec,
+  related to HOS-112). It must mirror the final shape HOS-112 settles on and not
+  start before HOS-112 lands.
+- **OQ-5** — `sendEmail` timeout → **RESOLVED: add a send timeout / `AbortSignal`
+  in-scope** (cheap, directly bounds worst-case run duration). `MAX_BATCH_SIZE`
+  tuning deferred to a follow-up.
+- **OQ-6** — Deterministic `findDue` (`ORDER BY` + `LIMIT`/`SKIP LOCKED`) →
+  **RESOLVED: defer** to a follow-up. Out of strict scope; the JS `.slice` stays
+  for now.
 
 ## 12. Implementation notes
 
