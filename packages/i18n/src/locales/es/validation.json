@@ -1199,6 +1199,9 @@
             "mobilePhone": {
                 "international": "El teléfono celular no es válido"
             },
+            "whatsapp": {
+                "international": "El número de WhatsApp no es válido"
+            },
             "personalEmail": {
                 "invalid": "El email personal no es válido"
             },

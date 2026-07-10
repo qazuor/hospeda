@@ -1213,6 +1213,9 @@
             "mobilePhone": {
                 "international": "[PT] El mobile phone no es válido"
             },
+            "whatsapp": {
+                "international": "[PT] El WhatsApp no es válido"
+            },
             "personalEmail": {
                 "invalid": "[PT] El personal email no es válido"
             },

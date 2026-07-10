@@ -279,6 +279,18 @@ describe('httpToDomainAccommodationCreate — contactInfo', () => {
         expect(result.contactInfo?.mobilePhone).toBe('+5493435551234');
         expect(result.contactInfo?.personalEmail).toBe('host@test.com');
     });
+
+    it('should map whatsapp to contactInfo.whatsapp (BETA-151)', () => {
+        const httpData = {
+            ...baseCreatePayload,
+            phone: '+5493435551234',
+            whatsapp: '+5493435559999'
+        };
+
+        const result = httpToDomainAccommodationCreate(httpData);
+
+        expect(result.contactInfo?.whatsapp).toBe('+5493435559999');
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -326,6 +338,19 @@ describe('httpToDomainAccommodationUpdate — contactInfo', () => {
             personalEmail: 'contact@test.com',
             website: 'https://test.com'
         });
+    });
+
+    it('should map whatsapp to contactInfo.whatsapp on update (BETA-151)', () => {
+        const result = httpToDomainAccommodationUpdate({ whatsapp: '+5493435559999' });
+
+        expect(result.contactInfo).toEqual({ whatsapp: '+5493435559999' });
+    });
+
+    it('should not inject whatsapp when only phone changes (SPEC-229 merge safety)', () => {
+        const result = httpToDomainAccommodationUpdate({ phone: '+5493435551234' });
+
+        expect(result.contactInfo).toEqual({ mobilePhone: '+5493435551234' });
+        expect(result.contactInfo).not.toHaveProperty('whatsapp');
     });
 
     it('should not include contactInfo when no contact fields provided', () => {
