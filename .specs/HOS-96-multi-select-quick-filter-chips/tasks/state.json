@@ -886,43 +886,43 @@
             "id": "T-027",
             "title": "Write closeout.md and record decisions on the Linear issue",
             "description": "File `.specs/HOS-96-multi-select-quick-filter-chips/closeout.md` summarizing what shipped (per-facet config model, events/blog `categories` stack, multi-toggle helper + chip/sidebar wiring, SEO 2+-value rule), which PRs implemented it, and test results (unit/model/service/API/frontend/SEO/regression suites green). Update the Linear `HOS-96` issue with the same summary plus the four resolved OQ decisions (OQ-1..OQ-4, already pinned in the spec) as a decision log. Per project convention, this feature is entirely internal (no third-party integration) so no `status-needs-smoke-staging`/`-prod` label is required by default; apply `status-needs-smoke-staging` only if the owner wants a live SEO/index verification pass, per the spec's own note.\n\n**Files:** new `.specs/HOS-96-multi-select-quick-filter-chips/closeout.md`; Linear issue `HOS-96` (via the standard `/closeIssue` flow, not a hand-rolled state write).\n\n**Tests:** none (closeout task); verify all prior tasks' quality gates are green before filing.\n\n**Acceptance mapping:** closes the spec per Implementation Approach Phase 7.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-020", "T-021", "T-022", "T-023", "T-024", "T-025", "T-026"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Write closeout.md summarizing shipped work + test results",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Record OQ-1..OQ-4 decision log on the Linear issue",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Apply status-needs-smoke-staging label only if owner wants live SEO verification",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "closeout"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T19:10:00Z",
+                "completed": "2026-07-10T21:16:00Z"
             }
         }
     ],
     "summary": {
         "total": 27,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 26,
+        "completed": 27,
         "blocked": 0,
         "averageComplexity": 1.9
     }
