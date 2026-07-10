@@ -18,8 +18,10 @@
  * Hydration: caller MUST use `client:load`.
  */
 
+import { SearchIcon } from '@repo/icons';
 import type { SearchHistoryFilters, UserSearchHistoryListItem } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import { formatRelativeTime } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -586,27 +588,21 @@ export function SearchHistoryList({
 
             {/* ── List ──────────────────────────────────────────────────── */}
             {isEmpty ? (
-                <div
-                    className={styles['search-history__empty']}
-                    aria-live="polite"
-                >
-                    <p className={styles['search-history__empty-title']}>
-                        {t('account.searchHistory.empty.title', 'Sin búsquedas guardadas')}
-                    </p>
-                    <p className={styles['search-history__empty-body']}>
-                        {t(
+                <div aria-live="polite">
+                    <AccountEmptyState
+                        title={t('account.searchHistory.empty.title', 'Sin búsquedas guardadas')}
+                        description={t(
                             'account.searchHistory.empty.body',
                             'Tus búsquedas aparecerán acá cuando tengas un plan Plus o VIP activo.'
                         )}
-                    </p>
-                    {entitlementRequired && (
-                        <a
-                            href={upgradeUrl}
-                            className={styles['search-history__empty-cta']}
-                        >
-                            {t('account.alerts.upgrade.cta', 'Ver planes')}
-                        </a>
-                    )}
+                        icon={<SearchIcon size={28} />}
+                        ctaHref={entitlementRequired ? upgradeUrl : undefined}
+                        ctaLabel={
+                            entitlementRequired
+                                ? t('account.alerts.upgrade.cta', 'Ver planes')
+                                : undefined
+                        }
+                    />
                 </div>
             ) : (
                 <ul

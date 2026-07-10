@@ -1,6 +1,7 @@
 /* ResponseRateWidget.module.css — circular progress KPI card */
 
 .widget {
+    composes: branded from "../account/AccountSection.module.css";
     display: flex;
     flex-direction: column;
     gap: var(--space-3, 0.75rem);

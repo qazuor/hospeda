@@ -288,28 +288,7 @@
 }
 
 .submitBtn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2, 8px);
-    padding: var(--space-3, 12px) var(--space-6, 24px);
-    background-color: var(--brand-primary);
-    color: var(--primary-foreground);
-    border: none;
-    border-radius: var(--radius-button, 8px);
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity var(--duration-normal, 0.4s) ease;
-}
-
-.submitBtn:hover:not(:disabled) {
-    opacity: 0.88;
-}
-
-.submitBtn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    composes: primary from "./AccountButton.module.css";
 }
 
 /* ── Field row (side-by-side) ────────────────────────────────────────────── */

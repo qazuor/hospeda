@@ -1,0 +1,17 @@
+/**
+ * CollectionBookmarkRemoveBtn.module.css
+ * Scoped styles for the CollectionBookmarkRemoveBtn React island.
+ * Previously styled via a raw inline `style={{}}` object (no CSS module) —
+ * converged onto the shared `.dangerCompact` variant (BETA-143).
+ */
+
+.removeBtn {
+    composes: dangerCompact from "./AccountButton.module.css";
+}
+
+.error {
+    margin-top: var(--space-1, 4px);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--destructive);
+}
