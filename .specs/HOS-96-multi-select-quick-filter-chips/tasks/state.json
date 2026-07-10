@@ -851,35 +851,35 @@
             "id": "T-026",
             "title": "Document per-facet operator model and URL-as-state principle",
             "description": "Add a section to `apps/web/CLAUDE.md` documenting: (1) the per-facet multi-select config model (`paramKey`/`singularParamKey`/`operator`/`enum`/`dedicatedLandingPattern`) introduced in T-001, with accommodation `types` as the blueprint and events/blog `categories` as the replication; (2) the principle that the URL query param is the ONLY shared state between chips and the sidebar (no in-memory store); (3) a note that the sidebar-vs-backend latent bug (`?category=A,B` silently failing) is now closed; (4) the 2+-value SEO `noindex`/canonical rule and where its shared predicate lives, so a future facet (HOS-97 gastronomía/experiencias) can be added by declaring config, not new logic.\n\n**Files:** `apps/web/CLAUDE.md`.\n\n**Tests:** none (documentation-only task); verify the doc renders correctly and cross-links to `apps/web/src/lib/filters/facet-config.ts` and `apps/web/src/lib/seo/promoted-facet-canonical.ts`.\n\n**Acceptance mapping:** supports maintainability goals from Architecture/Dependencies sections; no direct US (documentation deliverable from Implementation Approach Phase 7).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-014", "T-015", "T-017", "T-018", "T-019"],
             "blocks": ["T-027"],
             "subtasks": [
                 {
                     "title": "Add per-facet config model section to apps/web/CLAUDE.md",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document URL-as-single-source principle and closed latent bug",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document 2+-value SEO predicate location and extensibility note",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "web"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T18:46:00Z",
+                "completed": "2026-07-10T18:52:00Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 22,
+        "completed": 23,
         "blocked": 0,
         "averageComplexity": 1.9
     }
