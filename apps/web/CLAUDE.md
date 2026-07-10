@@ -884,8 +884,10 @@ the shared CSV/repeated-key/whitespace-tolerant, de-duplicating param reader),
 `toggle-multi-query-param.ts` (`buildMultiToggleParamHref`, add/remove a value,
 preserve other params, drop `page`), `build-clear-facet-chip.ts` (`buildClearFacetChip`,
 the "Clear (N)" bulk-reset chip, returns `undefined` below 2 active values). Chips are
-`FilterChips.astro` `<a>` elements carrying `aria-pressed`; the component stays
-href-agnostic (the page supplies `href`/`active`/`ariaPressed`).
+`FilterChips.astro` `<a>` elements carrying `aria-current` for the active state — NOT
+`aria-pressed` (only valid ARIA on `role="button"`; using it on an `<a href>` is an
+`aria-allowed-attr` violation, caught by the CI a11y sweep and removed). The component
+stays href-agnostic (the page supplies `href`/`active`).
 
 **Chip href alone is not enough**: each page must also read its array param and forward
 it to the API list call (`endpoints.ts` `eventsApi/postsApi.list` accept `categories`,
