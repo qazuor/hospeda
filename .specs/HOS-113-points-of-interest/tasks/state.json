@@ -8,7 +8,7 @@
       "id": "T-001",
       "title": "Add PointOfInterestTypeEnum to schemas package",
       "description": "Create the closed `PointOfInterestTypeEnum` (values BEACH, STADIUM, PARK, MUSEUM, PLAZA, MONUMENT, VIEWPOINT, NATURAL, OTHER — SCREAMING_SNAKE per codebase convention, mirroring `AccommodationTypeEnum`) plus its Zod wrapper, mirroring `packages/schemas/src/enums/amenity-type.enum.ts` + `.schema.ts` exactly (OQ-3). Files: `packages/schemas/src/enums/point-of-interest-type.enum.ts`, `packages/schemas/src/enums/point-of-interest-type.schema.ts`, edit `packages/schemas/src/enums/index.ts` barrel to export both. Unit tests: `packages/schemas/test/enums/point-of-interest-type.schema.test.ts` — valid enum values parse, invalid string rejected with `zodError.enums.pointOfInterestType.invalid` message key.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [],
       "blocks": [
@@ -18,19 +18,19 @@
       "subtasks": [
         {
           "title": "Define PointOfInterestTypeEnum TS enum",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Define PointOfInterestTypeEnumSchema (z.nativeEnum)",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Export both from enums barrel",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write enum schema unit tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -40,21 +40,21 @@
       ],
       "phase": "setup",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T10:00:00.000Z",
+        "completed": "2026-07-10T10:10:00.000Z"
       }
     },
     {
       "id": "T-002",
       "title": "Add PointOfInterestTypePgEnum to Drizzle enums",
       "description": "Add a `pgEnum('point_of_interest_type_enum', enumToTuple(PointOfInterestTypeEnum))` export in `packages/db/src/schemas/enums.dbschema.ts`, mirroring the `AmenitiesTypePgEnum`/`ClientTypePgEnum` one-liners already there. This is the DB-side counterpart to T-001's Zod enum, consumed by the `points_of_interest.type` column. No new file. Unit tests: extend `packages/db/test/schemas/enums.dbschema.test.ts` (or create if none exists for this file) asserting the pgEnum's value tuple matches `PointOfInterestTypeEnum`'s values exactly.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 1,
       "blockedBy": [
         "T-001"
@@ -65,15 +65,15 @@
       "subtasks": [
         {
           "title": "Import PointOfInterestTypeEnum from @repo/schemas",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Add PointOfInterestTypePgEnum = pgEnum(...) export",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write/extend enum tuple parity test",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -83,21 +83,21 @@
       ],
       "phase": "setup",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T10:10:00.000Z",
+        "completed": "2026-07-10T10:20:00.000Z"
       }
     },
     {
       "id": "T-003",
       "title": "Create points_of_interest Drizzle table schema",
       "description": "Create `packages/db/src/schemas/destination/point-of-interest.dbschema.ts` mirroring `attraction.dbschema.ts` structurally (id uuid PK, slug text UNIQUE not null, isBuiltin/isFeatured bool, displayWeight int default 50, lifecycleState via `LifecycleStatusPgEnum`, icon/description text nullable, full BaseModel audit block with user FKs onDelete set null, adminInfo jsonb) but WITHOUT a `name` column (OQ-2), plus the two POI-specific additions: `lat` and `long` as `doublePrecision()` NOT NULL (R-3: plain numeric, no JSONB/string), and `type` using T-002's `PointOfInterestTypePgEnum` NOT NULL. Indexes: unique on `slug`, index on `isFeatured`, index on `lifecycleState`, index on `type`. Add `pointsOfInterestRelations` (relations to the join table, many). Unit tests: `packages/db/test/schemas/destination/point-of-interest.dbschema.test.ts` verifying column definitions/nullability/defaults.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-002"
@@ -108,23 +108,23 @@
       "subtasks": [
         {
           "title": "Define points_of_interest table columns",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Add slug unique + isFeatured/lifecycleState/type indexes",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Add BaseModel audit columns + FKs",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Define pointsOfInterestRelations",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write schema unit tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -134,21 +134,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T10:20:00.000Z",
+        "completed": "2026-07-10T10:35:00.000Z"
       }
     },
     {
       "id": "T-004",
       "title": "Create r_destination_point_of_interest join table schema",
       "description": "Create `packages/db/src/schemas/destination/r_destination_point_of_interest.dbschema.ts`, mirroring `r_destination_attraction.dbschema.ts` exactly: composite PK `(destinationId, pointOfInterestId)`, both uuid FKs `onDelete: 'cascade'`, a composite index and a reverse `pointOfInterestId` index, plus `one(destinations)`/`one(pointsOfInterest)` relations and the inverse `many(destinations)` relation labeled `destinationsWithPointOfInterest` (M2M per OQ-1). Unit tests: `packages/db/test/schemas/destination/r_destination_point_of_interest.dbschema.test.ts` verifying PK composition, cascade behavior config, and both indexes exist.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-003"
@@ -159,19 +159,19 @@
       "subtasks": [
         {
           "title": "Define composite PK + 2 FK columns with cascade",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Add composite + reverse indexes",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Define relations (both directions)",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write schema unit tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -181,21 +181,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T10:35:00.000Z",
+        "completed": "2026-07-10T10:45:00.000Z"
       }
     },
     {
       "id": "T-005",
       "title": "Export POI Drizzle schemas from db package barrel",
       "description": "Add `export * from './destination/point-of-interest.dbschema.js'` and the join-table equivalent to the db package's schema barrel (same file/pattern used for `attraction.dbschema.ts`'s export — locate it via the existing attraction export line). Confirm both new tables are visible to `drizzle-kit generate` by running `pnpm --filter @repo/db exec drizzle-kit check` (or the project's schema-drift check) locally. Unit tests: none new (covered by T-003/T-004); this task's own verification is the successful barrel export + a quick import smoke test asserting `pointsOfInterest` and `rDestinationPointOfInterest` tables are importable from `@repo/db`.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-004"
@@ -206,15 +206,15 @@
       "subtasks": [
         {
           "title": "Add barrel export lines for both new schema files",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Verify tables importable from @repo/db package root",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write barrel import smoke test",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -223,21 +223,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T10:45:00.000Z",
+        "completed": "2026-07-10T10:52:00.000Z"
       }
     },
     {
       "id": "T-006",
       "title": "Generate and commit migration 0050 for POI tables",
       "description": "Run `pnpm db:generate` to produce the structural migration (expected `0050_*.sql`, mirroring `0048_glossy_psylocke.sql`'s shape: `CREATE TABLE points_of_interest`, `CREATE TABLE r_destination_point_of_interest`, `CREATE TYPE point_of_interest_type_enum`, FK constraints with `ON DELETE cascade`, unique index on slug, plus the other indexes from T-003/T-004). Commit the generated `.sql` file and its journal entry. Verify `pnpm env:check:registry`-style drift guard (the `db:generate` drift check referenced in AC-1) passes with no uncommitted schema diff. Apply locally via `pnpm db:migrate` against the worktree dev DB and confirm both tables exist. No new unit tests (migration SQL is generated, not hand-written) — verification is `pnpm db:migrate` succeeding + a manual `\\d points_of_interest` / `\\d r_destination_point_of_interest` check.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-005"
@@ -249,11 +249,11 @@
       "subtasks": [
         {
           "title": "Run pnpm db:generate",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Review generated 0050_*.sql for correctness vs 0048 template",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Apply locally via pnpm db:migrate",
@@ -261,7 +261,7 @@
         },
         {
           "title": "Verify drift guard passes (no pending schema diff)",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -271,14 +271,14 @@
       ],
       "phase": "setup",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T10:52:00.000Z",
+        "completed": "2026-07-10T11:05:00.000Z"
       }
     },
     {
@@ -2252,9 +2252,9 @@
   ],
   "summary": {
     "total": 52,
-    "pending": 52,
+    "pending": 46,
     "inProgress": 0,
-    "completed": 0,
+    "completed": 6,
     "blocked": 0,
     "averageComplexity": 2.1
   }
