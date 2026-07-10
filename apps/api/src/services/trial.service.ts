@@ -16,7 +16,6 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import type { DrizzleClient } from '@repo/db';
 import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import { NotificationType, type TrialEventPayload } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
@@ -26,6 +25,7 @@ import {
     checkSubscriptionStatusTransition,
     DEFAULT_TRIAL_PLAN_SLUG,
     type ReactivateFromTrialInput,
+    type ReactivateFromTrialResult,
     type ReactivateSubscriptionInput,
     type ReactivateSubscriptionResult,
     resolveIntendedInterval,
@@ -40,9 +40,13 @@ import { and, eq, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
+import { createPaidSubscription } from './billing/paid-subscription-create.js';
+import { resolveReactivationPlan } from './billing/reactivation-plan-guard.js';
+import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
 
 export type {
     ReactivateFromTrialInput,
+    ReactivateFromTrialResult,
     ReactivateSubscriptionInput,
     ReactivateSubscriptionResult,
     StartTrialInput,
@@ -906,162 +910,119 @@ export class TrialService {
     }
 
     /**
-     * Reactivate from trial to paid subscription
-     * Converts an expired or active trial to a paid plan
+     * Reactivate from trial to a real, card-collecting paid subscription
+     * (HOS-114).
      *
-     * @param input - Reactivation parameters
-     * @param tx - Optional transaction client; falls back to getDb() if not provided
-     * @returns New subscription ID
+     * Unlike the pre-HOS-114 behavior, this method does NOT create a
+     * locally-`active` subscription with no MercadoPago preapproval behind
+     * it (the "phantom-active" bug — see HOS-114 spec §2). It instead:
+     *
+     * 1. Resolves + validates `input.planId` against the live plan catalog,
+     *    fail-closed on unknown/free/annual targets ({@link resolveReactivationPlan}).
+     * 2. Ensures the billing customer exists.
+     * 3. Creates a real `mode: 'paid'` MercadoPago preapproval via the
+     *    shared {@link createPaidSubscription} helper (also used by
+     *    `/start-paid`) — fail-closed if the provider returns no checkout URL.
+     * 4. Returns a `checkoutUrl` the caller MUST redirect the user to. The
+     *    created subscription is `incomplete`, not `active`, until the
+     *    `subscription_preapproval.created` webhook confirms it.
+     *
+     * The old trial subscription is deliberately NOT cancelled here — see
+     * the inline comment below (spec §6.4/§6.5, HOS-114 T-007).
+     *
+     * @param input - Reactivation parameters, including the resolved MP
+     *   checkout return/notification URLs.
+     * @returns The new (not-yet-confirmed) subscription id, its checkout URL,
+     *   and its `incomplete` status.
+     * @throws SubscriptionCheckoutError With code `PLAN_NOT_FOUND`,
+     *   `INVALID_REACTIVATION_PLAN`, `ANNUAL_REACTIVATION_UNSUPPORTED`,
+     *   `CUSTOMER_NOT_FOUND`, or `MISSING_INIT_POINT`.
      */
-    async reactivateFromTrial(
-        input: ReactivateFromTrialInput,
-        tx?: DrizzleClient
-    ): Promise<string> {
+    async reactivateFromTrial(input: ReactivateFromTrialInput): Promise<ReactivateFromTrialResult> {
         if (!this.billing) {
             throw new Error('Billing not enabled');
         }
 
-        const { customerId, planId } = input;
+        const { customerId, planId, urls } = input;
 
         try {
-            apiLogger.info(
-                {
-                    customerId,
-                    planId
-                },
-                'Reactivating customer from trial'
-            );
+            apiLogger.info({ customerId, planId }, 'Reactivating customer from trial');
 
-            // Get existing subscriptions
+            // HOS-114 §6.1/AC-6: resolve + validate the target plan FIRST,
+            // fail-closed on unknown/free/annual plans before touching the
+            // customer or any existing subscription.
+            const { plan, priceId } = await resolveReactivationPlan({
+                billing: this.billing,
+                planId
+            });
+
+            // Ensure the billing customer actually exists before creating a
+            // paid preapproval against it (mirrors the identical guard in
+            // `initiatePaidMonthlySubscription`'s trial/comp branches).
+            const customer = await this.billing.customers.get(customerId);
+            if (!customer) {
+                throw new SubscriptionCheckoutError(
+                    'CUSTOMER_NOT_FOUND',
+                    `Customer '${customerId}' not found`
+                );
+            }
+
+            // Identify the trialing subscription(s) this reactivation
+            // supersedes so the webhook can complete the swap once the new
+            // preapproval is confirmed (spec §6.4). A single trialing sub is
+            // the expected case; a comma-joined list defensively covers the
+            // (unexpected) multi-sub case without losing any id.
             const existingSubscriptions =
                 await this.billing.subscriptions.getByCustomerId(customerId);
+            const supersedesSubscriptionId = (existingSubscriptions ?? [])
+                .filter((sub) => sub.status === 'trialing')
+                .map((sub) => sub.id)
+                .join(',');
 
-            // Create new paid subscription FIRST to avoid leaving user without a subscription
-            // if cancellation succeeds but creation fails
-            const now = new Date();
-
-            const newSubscription = await this.billing.subscriptions.create({
+            // Real MP preapproval via the shared `mode: 'paid'` helper (also
+            // used by `/start-paid`) — fail-closed (`MISSING_INIT_POINT`) if
+            // the provider returns no checkout URL.
+            const { subscription: newSubscription, checkoutUrl } = await createPaidSubscription({
+                billing: this.billing,
                 customerId,
-                planId,
+                planId: plan.id,
+                priceId,
+                paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
+                notificationUrl: urls.notificationUrl,
                 metadata: {
                     convertedFromTrial: 'true',
-                    convertedAt: now.toISOString()
+                    convertedAt: new Date().toISOString(),
+                    ...(supersedesSubscriptionId ? { supersedesSubscriptionId } : {})
                 }
             });
 
-            // Record reactivation event in audit log (best-effort)
-            try {
-                const db = tx ?? getDb();
-                await db.insert(billingSubscriptionEvents).values({
-                    subscriptionId: newSubscription.id,
-                    previousStatus: SubscriptionStatusEnum.TRIALING,
-                    newStatus: SubscriptionStatusEnum.ACTIVE,
-                    triggerSource: 'trial-reactivation',
-                    metadata: {
-                        convertedFromTrial: true,
-                        customerId,
-                        planId
-                    }
-                });
-            } catch (auditError) {
-                // T-048: capture audit failure to Sentry and insert a compensating event
-                // so reconciliation jobs can detect and recover from the missing audit row.
-                Sentry.captureException(auditError, {
-                    tags: { module: 'trial-service', operation: 'reactivateFromTrial' },
-                    extra: { subscriptionId: newSubscription.id, customerId, planId }
-                });
-
-                apiLogger.error(
-                    { error: auditError, subscriptionId: newSubscription.id },
-                    'Failed to insert reactivation event (non-blocking)'
-                );
-
-                try {
-                    const fallbackDb = tx ?? getDb();
-                    await fallbackDb.insert(billingSubscriptionEvents).values({
-                        subscriptionId: newSubscription.id,
-                        eventType: BILLING_EVENT_TYPES.REACTIVATION_AUDIT_FAILED,
-                        triggerSource: 'trial-reactivation-audit-fallback',
-                        metadata: {
-                            error:
-                                auditError instanceof Error
-                                    ? auditError.message
-                                    : String(auditError),
-                            customerId,
-                            planId,
-                            timestamp: new Date().toISOString()
-                        }
-                    });
-                } catch {
-                    // Truly non-blocking: Sentry already captured the original failure.
-                }
-            }
-
-            // Cancel existing trial subscriptions only after new subscription is created
-            let cancelFailed = false;
-            if (existingSubscriptions && existingSubscriptions.length > 0) {
-                for (const sub of existingSubscriptions) {
-                    if (sub.status === 'trialing') {
-                        try {
-                            await this.billing.subscriptions.cancel(sub.id);
-                            apiLogger.debug(
-                                {
-                                    subscriptionId: sub.id
-                                },
-                                'Cancelled trial subscription'
-                            );
-                        } catch (cancelError) {
-                            // Log but do not throw: the new subscription is already active.
-                            // Set a flag so reconciliation runs below to clean up the duplicate.
-                            cancelFailed = true;
-                            const cancelMsg =
-                                cancelError instanceof Error
-                                    ? cancelError.message
-                                    : String(cancelError);
-                            apiLogger.warn(
-                                { subscriptionId: sub.id, error: cancelMsg },
-                                'Failed to cancel old trial subscription after reactivation'
-                            );
-                        }
-                    }
-                }
-            }
-
-            // If any cancel call failed, attempt reconciliation immediately to avoid leaving
-            // the customer with two active subscriptions in QZPay.
-            if (cancelFailed) {
-                const reconcileResult = await this.reconcileDuplicateSubscriptions({ customerId });
-
-                if (reconcileResult.cancelledCount > 0) {
-                    apiLogger.info(
-                        {
-                            customerId,
-                            cancelledIds: reconcileResult.cancelledIds,
-                            keptId: reconcileResult.keptId
-                        },
-                        'Reconciliation resolved duplicate subscriptions after failed cancel'
-                    );
-                } else {
-                    apiLogger.warn(
-                        { customerId },
-                        'Reconciliation found no duplicates to cancel — manual review may be needed'
-                    );
-                }
-            }
-
-            // Clear entitlement cache to reflect new subscription immediately
-            clearEntitlementCache(customerId);
+            // Deferred to webhook (HOS-114 T-007): cancel superseded sub +
+            // audit + clearEntitlementCache on PENDING_PROVIDER->ACTIVE.
+            // The old trialing subscription (captured above as
+            // `supersedesSubscriptionId`) stays live and keeps granting
+            // entitlements until the `subscription_preapproval.created`
+            // webhook confirms THIS new preapproval `active` (spec §6.4/§6.5)
+            // — cancelling it synchronously here would strip the customer's
+            // entitlements during the MP checkout window, or leave them with
+            // no subscription at all if they abandon checkout.
 
             apiLogger.info(
                 {
                     customerId,
                     newSubscriptionId: newSubscription.id,
-                    planId
+                    planId: plan.id,
+                    checkoutUrl
                 },
-                'Successfully reactivated customer from trial'
+                'Initiated paid reactivation from trial — awaiting MercadoPago confirmation'
             );
 
-            return newSubscription.id;
+            return {
+                success: true,
+                subscriptionId: newSubscription.id,
+                checkoutUrl,
+                status: 'incomplete',
+                message: 'Redirect to MercadoPago to complete reactivation'
+            };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -1079,33 +1040,61 @@ export class TrialService {
     }
 
     /**
-     * Reactivate a canceled subscription by creating a new paid subscription.
+     * Reactivate a canceled subscription by creating a real, card-collecting
+     * paid subscription (HOS-114).
      *
      * Rejects if:
      * - Any subscription is active or trialing (use plan-change instead)
      * - No canceled subscription exists (nothing to reactivate)
      *
-     * @param input - Reactivation parameters
-     * @param tx - Optional transaction client; falls back to getDb() if not provided
-     * @returns New subscription ID and previous plan ID
+     * Like {@link reactivateFromTrial}, this method no longer creates a
+     * locally-`active` subscription with no MercadoPago preapproval behind
+     * it. It resolves + validates the target plan, creates a real
+     * `mode: 'paid'` preapproval via {@link createPaidSubscription}, and
+     * returns a `checkoutUrl` the caller MUST redirect the user to. See the
+     * inline comment near the end of this method for why the old canceled
+     * subscription is not touched synchronously here (spec §6.4, HOS-114 T-007).
+     *
+     * @param input - Reactivation parameters, including the resolved MP
+     *   checkout return/notification URLs.
+     * @returns The new (not-yet-confirmed) subscription id, the previous
+     *   plan id, the checkout URL, and the `incomplete` status.
+     * @throws SubscriptionCheckoutError With code `PLAN_NOT_FOUND`,
+     *   `INVALID_REACTIVATION_PLAN`, `ANNUAL_REACTIVATION_UNSUPPORTED`,
+     *   `CUSTOMER_NOT_FOUND`, `ACTIVE_SUBSCRIPTION_EXISTS` (HOS-114 T-015b —
+     *   HTTP 409), `NO_CANCELED_SUBSCRIPTION` (HOS-114 T-015b — HTTP 404),
+     *   or `MISSING_INIT_POINT`.
      */
     async reactivateSubscription(
-        input: ReactivateSubscriptionInput,
-        tx?: DrizzleClient
+        input: ReactivateSubscriptionInput
     ): Promise<ReactivateSubscriptionResult> {
         if (!this.billing) {
             throw new Error('Billing not enabled');
         }
 
-        const { customerId, planId } = input;
+        const { customerId, planId, urls } = input;
 
         try {
             apiLogger.info({ customerId, planId }, 'Reactivating canceled subscription');
 
+            // HOS-114 §6.1/AC-6: resolve + validate the target plan FIRST,
+            // fail-closed on unknown/free/annual plans before touching the
+            // customer or any existing subscription.
+            const { plan, priceId } = await resolveReactivationPlan({
+                billing: this.billing,
+                planId
+            });
+
             const subscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
 
             if (!subscriptions || subscriptions.length === 0) {
-                throw new Error('No canceled subscription found to reactivate');
+                // HOS-114 T-015b: was a plain `Error` (HTTP 500) — now a
+                // typed business error mapped to HTTP 404 by
+                // `mapSubscriptionCheckoutErrorToHttp`.
+                throw new SubscriptionCheckoutError(
+                    'NO_CANCELED_SUBSCRIPTION',
+                    'No canceled subscription found to reactivate'
+                );
             }
 
             // Reject if any subscription is active or trialing
@@ -1115,7 +1104,11 @@ export class TrialService {
 
             if (activeOrTrialing) {
                 const statusLabel = activeOrTrialing.status === 'active' ? 'active' : 'trialing';
-                throw new Error(
+                // HOS-114 T-015b: was a plain `Error` (HTTP 500) — now a
+                // typed business error mapped to HTTP 409 by
+                // `mapSubscriptionCheckoutErrorToHttp`.
+                throw new SubscriptionCheckoutError(
+                    'ACTIVE_SUBSCRIPTION_EXISTS',
                     `Cannot reactivate: ${statusLabel} subscription exists. Use plan-change instead.`
                 );
             }
@@ -1124,106 +1117,71 @@ export class TrialService {
             const canceledSub = subscriptions.find((sub) => sub.status === 'canceled');
 
             if (!canceledSub) {
-                throw new Error('No canceled subscription found to reactivate');
+                // HOS-114 T-015b: was a plain `Error` (HTTP 500) — now a
+                // typed business error mapped to HTTP 404 by
+                // `mapSubscriptionCheckoutErrorToHttp`.
+                throw new SubscriptionCheckoutError(
+                    'NO_CANCELED_SUBSCRIPTION',
+                    'No canceled subscription found to reactivate'
+                );
             }
 
             const previousPlanId = canceledSub.planId ?? null;
 
-            // Create new paid subscription FIRST to avoid leaving user without a subscription
-            // if cancellation succeeds but creation fails
-            const newSubscription = await this.billing.subscriptions.create({
+            // Ensure the billing customer actually exists before creating a
+            // paid preapproval against it (mirrors reactivateFromTrial).
+            const customer = await this.billing.customers.get(customerId);
+            if (!customer) {
+                throw new SubscriptionCheckoutError(
+                    'CUSTOMER_NOT_FOUND',
+                    `Customer '${customerId}' not found`
+                );
+            }
+
+            // Real MP preapproval via the shared `mode: 'paid'` helper (also
+            // used by `/start-paid`) — fail-closed (`MISSING_INIT_POINT`) if
+            // the provider returns no checkout URL.
+            const { subscription: newSubscription, checkoutUrl } = await createPaidSubscription({
+                billing: this.billing,
                 customerId,
-                planId,
+                planId: plan.id,
+                priceId,
+                paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
+                notificationUrl: urls.notificationUrl,
                 metadata: {
                     reactivatedFromCanceled: 'true',
                     reactivatedAt: new Date().toISOString(),
-                    previousPlanId: previousPlanId ?? undefined
+                    ...(previousPlanId ? { previousPlanId } : {}),
+                    supersedesSubscriptionId: canceledSub.id
                 }
             });
 
-            // Record reactivation event in audit log (best-effort)
-            try {
-                const db = tx ?? getDb();
-                await db.insert(billingSubscriptionEvents).values({
-                    subscriptionId: newSubscription.id,
-                    previousStatus: SubscriptionStatusEnum.CANCELLED,
-                    newStatus: SubscriptionStatusEnum.ACTIVE,
-                    triggerSource: 'subscription-reactivation',
-                    metadata: {
-                        reactivatedFromCanceled: true,
-                        customerId,
-                        planId,
-                        previousPlanId
-                    }
-                });
-            } catch (auditError) {
-                // T-048: capture audit failure to Sentry and insert a compensating event
-                // so reconciliation jobs can detect and recover from the missing audit row.
-                Sentry.captureException(auditError, {
-                    tags: { module: 'trial-service', operation: 'reactivateSubscription' },
-                    extra: {
-                        subscriptionId: newSubscription.id,
-                        customerId,
-                        planId,
-                        previousPlanId
-                    }
-                });
-
-                apiLogger.error(
-                    { error: auditError, subscriptionId: newSubscription.id },
-                    'Failed to insert reactivation event (non-blocking)'
-                );
-
-                try {
-                    const fallbackDb = tx ?? getDb();
-                    await fallbackDb.insert(billingSubscriptionEvents).values({
-                        subscriptionId: newSubscription.id,
-                        eventType: BILLING_EVENT_TYPES.REACTIVATION_AUDIT_FAILED,
-                        triggerSource: 'subscription-reactivation-audit-fallback',
-                        metadata: {
-                            error:
-                                auditError instanceof Error
-                                    ? auditError.message
-                                    : String(auditError),
-                            customerId,
-                            planId,
-                            previousPlanId,
-                            timestamp: new Date().toISOString()
-                        }
-                    });
-                } catch {
-                    // Truly non-blocking: Sentry already captured the original failure.
-                }
-            }
-
-            // Cancel all existing canceled subscriptions (idempotent cleanup)
-            // Done after creation so user always has an active subscription
-            for (const sub of subscriptions) {
-                if (sub.status === 'canceled') {
-                    try {
-                        await this.billing.subscriptions.cancel(sub.id);
-                    } catch {
-                        // Already canceled, ignore
-                    }
-                }
-            }
-
-            // Clear entitlement cache to reflect new subscription immediately
-            clearEntitlementCache(customerId);
+            // Deferred to webhook (HOS-114 T-007): cancel superseded sub +
+            // audit + clearEntitlementCache on PENDING_PROVIDER->ACTIVE.
+            // `canceledSub` is already terminal (grants no entitlements), but
+            // the swap/audit stays deferred to the webhook confirmation so
+            // there is exactly ONE place (spec §6.4) that finalizes a
+            // reactivation — mirrors `reactivateFromTrial` exactly instead of
+            // special-casing "already-canceled, so it's safe to touch now".
 
             apiLogger.info(
                 {
                     customerId,
                     newSubscriptionId: newSubscription.id,
-                    planId,
-                    previousPlanId
+                    planId: plan.id,
+                    previousPlanId,
+                    checkoutUrl
                 },
-                'Successfully reactivated canceled subscription'
+                'Initiated paid reactivation of canceled subscription — awaiting MercadoPago confirmation'
             );
 
             return {
+                success: true,
                 subscriptionId: newSubscription.id,
-                previousPlanId
+                previousPlanId,
+                checkoutUrl,
+                status: 'incomplete',
+                message: 'Redirect to MercadoPago to complete reactivation'
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);

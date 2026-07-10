@@ -106,33 +106,91 @@ export interface StartTrialInput {
 }
 
 /**
- * Input for reactivating from trial
+ * MercadoPago return/notification URLs required to route a paid
+ * reactivation through the real card-collecting checkout (HOS-114). The
+ * caller (the reactivate route) resolves these from env + the
+ * authenticated user's locale, mirroring exactly how `/start-paid` builds
+ * `InitiatePaidMonthlySubscriptionInput.urls` — see
+ * `apps/api/src/routes/billing/checkout-return-urls.ts`, the single shared
+ * builder both entry points use, so a paid reactivation and a first-time
+ * paid checkout can never diverge on where MercadoPago redirects the user
+ * or where it posts webhooks.
+ */
+export interface ReactivationCheckoutUrls {
+    /** MercadoPago `back_url` for the preapproval. */
+    readonly paymentMethodReturnUrl: string;
+    /** Webhook destination for this preapproval. */
+    readonly notificationUrl: string;
+}
+
+/**
+ * Input for reactivating from trial (HOS-114: paid reactivation now routes
+ * through a real MercadoPago preapproval, so the caller must supply the
+ * checkout return URLs).
  */
 export interface ReactivateFromTrialInput {
     /** Billing customer ID */
     readonly customerId: string;
-    /** New plan ID to subscribe to */
+    /** New plan ID to subscribe to (must resolve to a monthly, paid plan) */
     readonly planId: string;
+    /** Checkout return/notification URLs for the MP preapproval (HOS-114). */
+    readonly urls: ReactivationCheckoutUrls;
 }
 
 /**
- * Input for reactivating a canceled subscription (BILL-13)
+ * Result of a successful {@link ReactivateFromTrialInput} call (HOS-114).
+ *
+ * The created subscription is `incomplete` — NOT active — until the
+ * `subscription_preapproval.created` webhook confirms the MercadoPago
+ * preapproval. The caller (the route) MUST redirect the user to
+ * `checkoutUrl` to complete authorization.
+ */
+export interface ReactivateFromTrialResult {
+    /** Always `true` — the method throws on any failure instead of returning a failure shape. */
+    readonly success: true;
+    /** New (not-yet-confirmed) subscription ID. */
+    readonly subscriptionId: string;
+    /** MercadoPago checkout URL the caller must redirect the user to. */
+    readonly checkoutUrl: string;
+    /** The created subscription's qzpay status — always `'incomplete'` at creation time. */
+    readonly status: 'incomplete';
+    /** Human-readable summary for the response body. */
+    readonly message: string;
+}
+
+/**
+ * Input for reactivating a canceled subscription (BILL-13). HOS-114: paid
+ * reactivation now routes through a real MercadoPago preapproval, so the
+ * caller must supply the checkout return URLs (see
+ * {@link ReactivateFromTrialInput}).
  */
 export interface ReactivateSubscriptionInput {
     /** Billing customer ID */
     readonly customerId: string;
-    /** New plan ID to subscribe to */
+    /** New plan ID to subscribe to (must resolve to a monthly, paid plan) */
     readonly planId: string;
+    /** Checkout return/notification URLs for the MP preapproval (HOS-114). */
+    readonly urls: ReactivationCheckoutUrls;
 }
 
 /**
- * Result from reactivating a canceled subscription
+ * Result from reactivating a canceled subscription (HOS-114: the created
+ * subscription is `incomplete` until the webhook confirms the MP
+ * preapproval; the caller MUST redirect the user to `checkoutUrl`).
  */
 export interface ReactivateSubscriptionResult {
-    /** New subscription ID */
+    /** Always `true` — the method throws on any failure instead of returning a failure shape. */
+    readonly success: true;
+    /** New (not-yet-confirmed) subscription ID. */
     readonly subscriptionId: string;
     /** Previous plan ID (from the canceled subscription), or null */
     readonly previousPlanId: string | null;
+    /** MercadoPago checkout URL the caller must redirect the user to. */
+    readonly checkoutUrl: string;
+    /** The created subscription's qzpay status — always `'incomplete'` at creation time. */
+    readonly status: 'incomplete';
+    /** Human-readable summary for the response body. */
+    readonly message: string;
 }
 
 /**
