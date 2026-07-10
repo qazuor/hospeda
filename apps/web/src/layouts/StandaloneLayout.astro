@@ -1,0 +1,121 @@
+---
+/**
+ * @file StandaloneLayout.astro
+ * @description Minimal, chrome-free HTML shell for fully standalone marketing
+ * pages that must NOT render the site's Header, Footer, nav, cookie-consent
+ * banner, feedback FAB, announcements bar, or any other site chrome (HOS-119
+ * — the `/[lang]/funcionalidades/` brochure page needs to look self-contained,
+ * exactly like the original approved brochure artifact).
+ *
+ * Unlike `BaseLayout.astro` (Header + Footer + GlobalAnnouncements +
+ * CookieConsentBanner + FeedbackHeadlessHost + ClientRouter + ...) this layout
+ * renders ONLY what a standalone page still needs to behave like a real
+ * Hospeda page:
+ * - Fonts (`FontsLoader`) and dark-mode FOUC prevention (`ThemeFoucScript`),
+ *   so theming/typography are pixel-identical to the rest of the site.
+ * - `@/styles/global.css` (design tokens + base resets), so every `var(--x)`
+ *   the page uses resolves and dark mode works automatically.
+ * - `<slot name="head" />` for the page to supply its own `SEOHead` + JSON-LD
+ *   (this layout does NOT auto-inject SEOHead the way `MarketingLayout` did —
+ *   the page owns its full `<head>` content beyond the shell above).
+ * - The `[data-reveal]` no-JS fallback and a scroll-reveal bootstrap script.
+ *
+ * Deliberately excluded (the whole point of this layout): Header, Footer,
+ * GlobalAnnouncements, SkipToContent, ScrollToTop, NavigationProgress,
+ * ClientRouter (view transitions), CookieConsentBanner, ToastViewport,
+ * GuestPreferenceNudge, AuthedPreferenceSync, PaginationLoading,
+ * FeedbackHeadlessHost, PostHogScript, and the parallax/GLightbox/compare-mode
+ * init that BaseLayout's page-init script wires up. A page using this layout
+ * owns 100% of its own visible chrome (top bar, nav, theme toggle, etc.).
+ *
+ * `astro:page-load` is NOT dispatched on this layout (that event is fired
+ * exclusively by `<ClientRouter />`, which this shell intentionally omits) —
+ * see the inline script below for how scroll-reveal is bootstrapped instead.
+ *
+ * Usage:
+ * ```astro
+ * <StandaloneLayout locale={locale}>
+ *   <SEOHead slot="head" title={title} description={description} canonical={canonicalUrl} locale={locale} />
+ *   <CollectionPageJsonLd slot="head" ... />
+ *   <div>page content — including the page's own top bar/nav</div>
+ * </StandaloneLayout>
+ * ```
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
+import FontsLoader from '@/components/shared/FontsLoader.astro';
+import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
+import '@/styles/global.css';
+
+interface Props {
+	readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const cspNonce = Astro.locals.cspNonce ?? '';
+---
+
+<!doctype html>
+<html lang={locale}>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+		<!-- Browser UI chrome matches the brand blue, same as BaseLayout — the
+		     dark variant keeps the chrome on-brand under prefers-color-scheme:
+		     dark (see BaseLayout.astro for the full SPEC-157 REQ-18 rationale). -->
+		<meta name="theme-color" content={BRAND_THEME_COLOR} />
+		<meta name="theme-color" content={BRAND_THEME_COLOR_DARK} media="(prefers-color-scheme: dark)" />
+
+		<!-- Favicon (identical to BaseLayout) -->
+		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+		<link rel="manifest" href="/site.webmanifest" />
+
+		<!-- Google Fonts: Geologica, Roboto, Caveat (non-blocking with preload + swap) -->
+		<FontsLoader cspNonce={cspNonce} />
+
+		<!-- Applies the saved theme before first paint (dark-mode FOUC guard) -->
+		<ThemeFoucScript cspNonce={cspNonce} />
+
+		<!-- Named slot for page-specific head content: SEOHead + JSON-LD.
+		     This layout does NOT render SEOHead itself — the page supplies it. -->
+		<slot name="head" />
+
+		<!--
+		  Fallback: when JavaScript is disabled, the IntersectionObserver that
+		  reveals [data-reveal] elements never runs (see the bootstrap script
+		  below), so the page below the hero would stay invisible. Force-reveal
+		  everything for no-JS users and SEO crawlers that don't execute scripts.
+		  Copied verbatim from BaseLayout.astro.
+		-->
+		<noscript>
+			<style>
+				[data-reveal] {
+					opacity: 1 !important;
+					transform: none !important;
+				}
+			</style>
+		</noscript>
+	</head>
+	<body>
+		<main id="main-content">
+			<slot />
+		</main>
+
+		<script>
+			import { initScrollReveal } from '@/lib/scroll-reveal';
+			// BaseLayout runs this on the `astro:page-load` event, which is only
+			// ever dispatched by `<ClientRouter />` — a component this standalone
+			// shell deliberately omits (no site chrome means no client-side
+			// navigation to re-run setup for). Calling it directly here is the
+			// correct equivalent for a single, full, non-SPA page load: every
+			// `[data-reveal]` element above this script tag already exists in
+			// the DOM by the time this module executes.
+			initScrollReveal();
+		</script>
+	</body>
+</html>

@@ -1,0 +1,334 @@
+{
+    "meta": {
+        "title": "Todo lo que Hospeda hace por vos",
+        "description": "Descubrí todo lo que ofrece Hospeda: para viajeros, para anfitriones, para gastronomía y experiencias, y para marcas del Litoral entrerriano."
+    },
+    "popularBadge": "Popular",
+    "seo": {
+        "collectionName": "Funcionalidades de Hospeda",
+        "collectionDescription": "Catálogo completo de lo que ofrece la plataforma Hospeda, organizado por audiencia: viajeros, anfitriones, gastronomía y experiencias, y marcas.",
+        "breadcrumbHome": "Inicio",
+        "breadcrumbCurrent": "Funcionalidades"
+    },
+    "hero": {
+        "logoAlt": "Hospeda — volver arriba",
+        "tagline": "descubrí, hospedate, crecé",
+        "titleMain": "Todo lo que",
+        "titleAccent": "Hospeda",
+        "titleEnd": "hace por vos.",
+        "lede": "La plataforma para descubrir y gestionar turismo en Concepción del Uruguay y el Litoral argentino. Para el que viaja, para el que recibe huéspedes, y para los negocios y marcas que quieren estar donde se planean las escapadas. Esto es, en criollo, todo lo que vas a encontrar adentro.",
+        "stats": {
+            "features": { "value": "+120", "label": "funcionalidades" },
+            "languages": { "value": "3", "label": "idiomas · es · en · pt" },
+            "trial": { "value": "14", "label": "días gratis para anfitriones" },
+            "worlds": { "value": "3", "label": "mundos: alojamientos · gastronomía · experiencias" }
+        }
+    },
+    "subnav": {
+        "ariaLabel": "Navegación por audiencia",
+        "viajeros": "Viajeros",
+        "anfitriones": "Anfitriones",
+        "gastro": "Gastronomía y experiencias",
+        "marcas": "Marcas",
+        "ademas": "Y además",
+        "proximamente": "Próximamente"
+    },
+    "vistazo": {
+        "eyebrow": "un vistazo",
+        "title": "Una sola plataforma, cuatro maneras de usarla.",
+        "description": "No hace falta ser experto en nada. Cada persona entra por su puerta y encuentra justo lo que necesita: el resto queda ahí, esperando cuando lo quieras.",
+        "pillars": {
+            "descubrir": {
+                "title": "Descubrir",
+                "description": "Buscá alojamientos, destinos, eventos, gastronomía y experiencias del Litoral. Con mapa, filtros, clima y hasta un buscador que entiende lenguaje natural."
+            },
+            "hospedarse": {
+                "title": "Hospedarse",
+                "description": "Guardá favoritos, compará opciones, recibí alertas de precio y hablá directo con el anfitrión. Tu próxima escapada, organizada en un lugar."
+            },
+            "publicar": {
+                "title": "Publicar y crecer",
+                "description": "Si alquilás, mostrá tu propiedad con fotos, promociones y estadísticas. Herramientas de IA que te escriben, traducen e importan la ficha por vos."
+            },
+            "sumarNegocio": {
+                "title": "Sumar tu negocio",
+                "description": "Restaurantes, experiencias, auspiciantes y marcas: un lugar en el mapa turístico de la región, con ficha propia, reseñas y visibilidad."
+            }
+        }
+    },
+    "viajeros": {
+        "who": "Para el que viaja",
+        "eyebrow": "tu escapada, más fácil",
+        "title": "Explorá gratis. Guardá lo que te gusta. Cuando querés más, hay más.",
+        "description": "Todo el catálogo es público y navegable sin cuenta. Con una cuenta gratis ya guardás favoritos, dejás reseñas y le escribís a los anfitriones. Y si viajás seguido, los planes Plus y VIP te suman comparador, alertas de precio, colecciones y ofertas exclusivas.",
+        "list": {
+            "search": {
+                "title": "Buscá sin vueltas",
+                "description": "Lista o mapa, con filtros por precio, tipo, huéspedes, amenities, pileta, pet-friendly y radio en el mapa."
+            },
+            "aiSearch": {
+                "title": "Preguntá en tu idioma",
+                "description": "El buscador con IA entiende «cabaña con pileta para 4 cerca del río» y te trae resultados de verdad."
+            },
+            "weather": {
+                "title": "El clima, antes de reservar",
+                "description": "Pronóstico a 16 días y condiciones en vivo de cada destino, para elegir bien la fecha."
+            },
+            "contactHost": {
+                "title": "Hablá con el anfitrión",
+                "description": "Consultá directo desde la ficha, incluso sin cuenta. Seguí y respondé desde tu mail con un enlace mágico, o desde tu bandeja si tenés cuenta."
+            },
+            "reviews": {
+                "title": "Reseñas de verdad",
+                "description": "Leé opiniones aprobadas y sumá la reputación externa de Booking, Airbnb y Google, todo junto."
+            },
+            "eventsAgenda": {
+                "title": "Eventos, agenda y notas",
+                "description": "Qué pasa en cada destino: eventos, atracciones y un blog de tips y noticias turísticas."
+            },
+            "sorting": {
+                "title": "Ordená a tu manera",
+                "description": "Por precio, rating, distancia o «lo más guardado», combinando varios criterios a la vez."
+            },
+            "similar": {
+                "title": "Descubrí parecidos",
+                "description": "Alojamientos similares y los mejor puntuados de cada destino, a un clic."
+            },
+            "socialProof": {
+                "title": "Lo que otros ya eligieron",
+                "description": "Mirá cuántas personas guardaron cada alojamiento antes de decidir."
+            }
+        },
+        "table": {
+            "header": "Con tu cuenta",
+            "plans": { "free": "Gratis", "plus": "Plus", "vip": "VIP" },
+            "rows": {
+                "favorites": { "label": "Guardar favoritos" },
+                "collections": {
+                    "label": "Colecciones",
+                    "note": "agrupá favoritos en listas temáticas"
+                },
+                "compare": { "label": "Comparar alojamientos", "note": "lado a lado" },
+                "priceAlerts": { "label": "Alertas de precio", "note": "te avisamos cuando baja" },
+                "recommendations": { "label": "Recomendaciones para vos" },
+                "reviews": { "label": "Escribir y leer reseñas" },
+                "exclusiveOffers": { "label": "Ofertas exclusivas" },
+                "hostWhatsapp": {
+                    "label": "WhatsApp del anfitrión",
+                    "plusValue": "ver",
+                    "vipValue": "directo"
+                },
+                "aiSearch": { "label": "Buscador con IA", "note": "consultas por mes" },
+                "aiChat": { "label": "Chat con el alojamiento", "note": "consultas por mes" },
+                "prioritySupport": { "label": "Soporte prioritario VIP" }
+            },
+            "note": "Los mensajes con anfitriones, tu perfil, las reseñas y las novedades son siempre gratis, en cualquier plan."
+        }
+    },
+    "anfitriones": {
+        "who": "Para el que recibe",
+        "eyebrow": "tu propiedad, bien mostrada",
+        "title": "Publicá tu alojamiento y hacelo crecer.",
+        "description": "Cargá tu propiedad, mostrala con buenas fotos, creá promociones y mirá cómo rinde con estadísticas claras. Y cuando no tenés ganas de escribir, la IA te importa la ficha desde Airbnb o Booking, te mejora los textos y los traduce a tres idiomas.",
+        "banner": {
+            "title": "14 días gratis, sin poner la tarjeta.",
+            "description": "Empezás a probar todo hoy mismo. No pedimos método de pago para arrancar, y tus datos quedan guardados aunque decidas esperar. Con el código FREEMONTH, 30 días más."
+        },
+        "list": {
+            "aiImport": {
+                "title": "Importá la ficha en segundos",
+                "description": "Pegá el link de Airbnb, Booking, MercadoLibre o Google y la IA completa los datos por vos."
+            },
+            "aiWrite": {
+                "title": "Que la IA te ayude a escribir",
+                "description": "Mejora tus descripciones y las traduce a español, inglés y portugués con un clic."
+            },
+            "promotions": {
+                "title": "Promociones que se ven",
+                "description": "Creá ofertas con badge en el listado y la ficha, visibles a todos los que buscan."
+            },
+            "stats": {
+                "title": "Estadísticas que se entienden",
+                "description": "Vistas, tasa de respuesta y consultas. En planes superiores, desglose de favoritos y comparación de mercado."
+            },
+            "reputation": {
+                "title": "Reputación de todos lados, en un lugar",
+                "description": "Conectá tus ratings de Google, Booking y más para mostrarlos en tu ficha."
+            },
+            "vipTraveler": {
+                "title": "Además, sos VIP viajando",
+                "description": "Todo anfitrión tiene gratis el pack completo de viajero VIP: favoritos infinitos, comparador, alertas y más."
+            },
+            "guestChat": {
+                "title": "Chat con IA para tus huéspedes",
+                "description": "Sumá un asistente que responde consultas sobre tu alojamiento a cualquier hora."
+            },
+            "seo": {
+                "title": "Tu ficha, lista para Google",
+                "description": "SEO editable, título y descripción, en cada alojamiento, incluido en todos los planes."
+            },
+            "hostTrades": {
+                "title": "Directorio de proveedores a mano",
+                "description": "Plomería, electricidad, gas, cerrajería, climatización, limpieza y más: oficios locales de confianza para llamar cuando algo falla en tu alojamiento."
+            }
+        },
+        "table": {
+            "header": "Tu plan de anfitrión",
+            "plans": { "basic": "Básico", "pro": "Pro", "premium": "Premium" },
+            "rows": {
+                "listings": { "label": "Alojamientos publicables", "note": "+5 con addon" },
+                "photos": { "label": "Fotos por alojamiento", "note": "+20 con addon" },
+                "activePromotions": { "label": "Promociones activas" },
+                "richDescription": { "label": "Descripción enriquecida y video" },
+                "advancedStats": { "label": "Estadísticas avanzadas" },
+                "featuredListing": { "label": "Listado destacado" },
+                "verificationBadge": { "label": "Insignia de verificación" },
+                "customBranding": { "label": "Branding personalizado" },
+                "prioritySupport": { "label": "Soporte prioritario" },
+                "aiImport": { "label": "Importar ficha con IA", "note": "por mes" },
+                "aiImprove": { "label": "IA para mejorar textos", "note": "por mes" },
+                "aiTranslate": { "label": "IA para traducir", "note": "por mes" },
+                "aiGuestChat": { "label": "IA: chat para tus huéspedes", "note": "por mes" }
+            },
+            "note": "Editar tu propiedad, cargar amenities, FAQs, ubicación y SEO va incluido en todos los planes.",
+            "addonCell": "con addon"
+        },
+        "addonsTitle": "¿Necesitás un poco más? Sumá un addon.",
+        "addons": {
+            "visibilityBoost": {
+                "title": "Visibility Boost",
+                "description": "Destacá un alojamiento por 7 o 30 días. Pago único, cuando lo necesitás."
+            },
+            "extraPhotos": {
+                "title": "Fotos extra (+20)",
+                "description": "Veinte fotos más por alojamiento, para mostrarlo completo."
+            },
+            "extraListings": {
+                "title": "Alojamientos extra (+5)",
+                "description": "Cinco propiedades más para publicar, si tu portfolio crece."
+            }
+        }
+    },
+    "gastro": {
+        "who": "Para tu restaurante o experiencia",
+        "eyebrow": "tu negocio, en el mapa turístico",
+        "title": "Gastronomía y experiencias, donde la gente planea su viaje.",
+        "description": "Un restaurante, una bodega, un paseo en kayak o una cata: tu negocio tiene ficha propia dentro de Hospeda, visible para todos los que están armando su escapada por el Litoral. Vos mantenés el contenido; nosotros lo ponemos en la vidriera.",
+        "list": {
+            "ownProfile": {
+                "title": "Ficha pública propia",
+                "description": "Con fotos, descripción rica, horarios, contacto, redes y menú o precios. Aparecés en listados y búsquedas."
+            },
+            "reviewsFaqs": {
+                "title": "Reseñas y FAQs",
+                "description": "Recibí opiniones moderadas y respondé las preguntas frecuentes de tus clientes."
+            },
+            "selfEdit": {
+                "title": "Vos editás el contenido",
+                "description": "Actualizás horarios, contacto, media y menú cuando quieras, desde tu panel. Sin depender de nadie."
+            },
+            "seo": {
+                "title": "Buen SEO incluido",
+                "description": "Tu ficha está pensada para aparecer bien en Google, con editor de título y descripción."
+            }
+        },
+        "note": "Mientras tu suscripción está activa, tu ficha es pública. ¿Querés sumarte? Se hace desde «sumar mi negocio» y nuestro equipo te da el alta."
+    },
+    "marcas": {
+        "who": "Para marcas y auspiciantes",
+        "eyebrow": "acompañá al turismo de la región",
+        "title": "Poné tu marca donde el turismo del Litoral se encuentra.",
+        "description": "Dos formas de estar presente: como partner auspiciante en el directorio de la plataforma, o patrocinando los posts y eventos que la gente lee cada día.",
+        "cards": {
+            "partners": {
+                "title": "Partners auspiciantes",
+                "description": "Instituciones y empresas en el directorio público de partners, con niveles bronce, plata y oro. El alta y la gestión las hace nuestro equipo por vos."
+            },
+            "sponsorship": {
+                "title": "Patrocinio de contenido",
+                "description": "Como Sponsor tenés un panel propio para crear y editar tus patrocinios de posts y eventos, con niveles y paquetes a elegir, analíticas y facturas a la vista. Autogestionado."
+            }
+        }
+    },
+    "ademas": {
+        "eyebrow": "y además, siempre",
+        "title": "Detalles que hacen que todo funcione mejor.",
+        "description": "Cosas que no ves en un plan pero que están en cada rincón de la plataforma, para todos.",
+        "items": {
+            "languages": {
+                "title": "Tres idiomas",
+                "description": "Español, inglés y portugués en toda la plataforma. Español por defecto para el mercado argentino."
+            },
+            "weather": {
+                "title": "Clima y pronóstico",
+                "description": "Condiciones en vivo y a 16 días para cada destino, para elegir la mejor fecha."
+            },
+            "events": {
+                "title": "Eventos y agenda",
+                "description": "Qué pasa en cada destino, con organizadores, ubicaciones y comentarios."
+            },
+            "blog": {
+                "title": "Blog y notas turísticas",
+                "description": "Tips, noticias y recomendaciones para descubrir el Litoral de otra manera."
+            },
+            "newsletter": {
+                "title": "Newsletter",
+                "description": "Novedades y ofertas a tu correo, con alta y baja en un clic. Sin spam."
+            },
+            "promoCodes": {
+                "title": "Códigos promocionales",
+                "description": "Descuentos de bienvenida y campañas como LANZAMIENTO50 o BIENVENIDO30, y meses gratis con FREEMONTH."
+            }
+        }
+    },
+    "proximamente": {
+        "eyebrow": "lo que se viene",
+        "title": "En camino: lo próximo que vas a ver en Hospeda.",
+        "description": "Somos honestos: esto todavía no está disponible, pero ya lo estamos construyendo. Te lo contamos para que sepas hacia dónde va la plataforma.",
+        "badge": "Pronto",
+        "items": {
+            "touristCard": {
+                "title": "Tarjeta turista",
+                "description": "Beneficios y descuentos para viajeros en alojamientos, gastronomía y experiencias."
+            },
+            "multiProperty": {
+                "title": "Alojamientos multi-propiedad",
+                "description": "Planes pensados para hoteles y operaciones grandes, con gestión centralizada del portfolio."
+            },
+            "hostProfile": {
+                "title": "Perfil público del anfitrión",
+                "description": "Una página propia para cada anfitrión, con todos sus alojamientos en un solo lugar."
+            },
+            "reviewReplies": {
+                "title": "Responder reseñas",
+                "description": "Que el anfitrión responda públicamente las opiniones de sus huéspedes."
+            },
+            "calendarSync": {
+                "title": "Calendario de disponibilidad",
+                "description": "Con sincronización a Google Calendar e iCal para no repetir fechas."
+            },
+            "whatsappListing": {
+                "title": "WhatsApp en la ficha",
+                "description": "Contacto directo por WhatsApp con el anfitrión, desde la misma página."
+            },
+            "reviewPhotos": {
+                "title": "Fotos en las reseñas",
+                "description": "Que los huéspedes sumen sus propias fotos a las opiniones."
+            },
+            "aiSupport": {
+                "title": "Asistente de IA para soporte",
+                "description": "Ayuda automática para resolver dudas al instante, en cualquier momento."
+            }
+        }
+    },
+    "cta": {
+        "tagline": "¿arrancamos?",
+        "title": "Sumá tu alojamiento o tu negocio a Hospeda.",
+        "description": "Probá 14 días gratis si alquilás, o escribinos para poner tu restaurante, experiencia o marca en el mapa turístico del Litoral. Sin compromiso, sin tarjeta para empezar.",
+        "button": "Conocer Hospeda"
+    },
+    "footer": {
+        "tagline": "Turismo del Litoral · Concepción del Uruguay, Entre Ríos",
+        "note": "Este es un resumen en criollo de lo que ofrece la plataforma hoy."
+    }
+}
