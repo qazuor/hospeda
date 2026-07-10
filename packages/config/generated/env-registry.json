@@ -514,6 +514,7 @@
       "descriptionEs": "Clave maestra AES-256-GCM para el vault de credenciales de IA (solo apps/api). Cifra/descifra las API keys de proveedores en reposo. Mínimo 32 caracteres (Zod). Opcional hasta que las features de IA estén cableadas en todos los entornos.",
       "type": "string",
       "required": false,
+      "requiredScope": "production",
       "secret": true,
       "exampleValue": "your-aes-256-gcm-master-key-min-32-chars-xxxxxxxx",
       "apps": [
@@ -1852,6 +1853,7 @@
       "descriptionEs": "Clave maestra AES-256-GCM para el vault de credenciales sociales (solo apps/api). Cifra/descifra make_webhook_url, make_api_key, ai_social_key y operator_pin en reposo. Mínimo 32 caracteres (Zod). Radio de impacto separado de HOSPEDA_AI_VAULT_MASTER_KEY — no reutilizar. REQUERIDA en producción (la impone el superRefine de env.ts): sin ella la API arranca pero todo guardado/rotación de credencial social falla con un 500. Opcional solo en local/test.",
       "type": "string",
       "required": false,
+      "requiredScope": "production",
       "secret": true,
       "exampleValue": "your-aes-256-gcm-master-key-min-32-chars-yyyyyyyy",
       "apps": [
