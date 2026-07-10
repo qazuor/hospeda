@@ -21,6 +21,7 @@ import { AccommodationImportRequestSchema } from '@repo/schemas';
 import { useEffect, useId, useRef, useState } from 'react';
 import { type ImportRunHandle, useImportStatus } from '@/hooks/use-import-status';
 import { accommodationsImportApi, isAsyncImportStart } from '@/lib/api/endpoints-protected';
+import { translateApiError } from '@/lib/api-errors';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -129,12 +130,33 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
             const result = await accommodationsImportApi.importFromUrl(parsed.data);
             if (!result.ok) {
                 onError?.('unknown');
-                setError(
-                    t(
-                        'host.importFromUrl.errors.submit',
-                        'No pudimos importar el alojamiento. Intentá de nuevo.'
-                    )
-                );
+                // Surface the specific failure instead of one generic message
+                // (BETA-154). 403 (no permission / plan doesn't include import)
+                // and 429 (too many imports) get dedicated import-context copy;
+                // any other error is localized by `translateApiError` (which also
+                // maps code-less statuses via BETA-146), falling back to the
+                // generic import message.
+                const status = result.error?.status;
+                const message =
+                    status === 403
+                        ? t(
+                              'host.importFromUrl.errors.forbidden',
+                              'No tenés permiso para importar desde una URL. Verificá que tu plan lo incluya.'
+                          )
+                        : status === 429
+                          ? t(
+                                'host.importFromUrl.errors.rateLimit',
+                                'Hiciste demasiadas importaciones seguidas. Esperá un momento y probá de nuevo.'
+                            )
+                          : translateApiError({
+                                error: result.error,
+                                t,
+                                fallback: t(
+                                    'host.importFromUrl.errors.submit',
+                                    'No pudimos importar el alojamiento. Intentá de nuevo.'
+                                )
+                            });
+                setError(message);
                 setIsSubmitting(false);
                 return;
             }

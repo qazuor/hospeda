@@ -16,6 +16,8 @@
             "legalRequired": "Debés confirmar el aviso legal.",
             "submit": "No pudimos importar el alojamiento. Intentá de nuevo.",
             "network": "No pudimos conectar con el servidor.",
+            "forbidden": "No tenés permiso para importar desde una URL. Verificá que tu plan lo incluya.",
+            "rateLimit": "Hiciste demasiadas importaciones seguidas. Esperá un momento y probá de nuevo.",
             "failure": {
                 "invalidUrl": "Revisá que la URL sea válida y corresponda a un alojamiento.",
                 "sourceBlocked": "La fuente está temporalmente no disponible. Esperá unos minutos y probá de nuevo, o cargá los datos manualmente.",
