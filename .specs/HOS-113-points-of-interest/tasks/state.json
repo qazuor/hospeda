@@ -285,7 +285,7 @@
       "id": "T-007",
       "title": "Create point-of-interest.schema.ts base Zod schema",
       "description": "Create `packages/schemas/src/entities/point-of-interest/point-of-interest.schema.ts` mirroring `attraction.schema.ts`'s `AttractionSchema` shape, but WITHOUT `name` (OQ-2) and WITH `lat`/`long`/`type` added: `slug` (string, regex `^[a-z0-9]+(?:[-_][a-z0-9]+)*$` per SPEC-266 underscore-allowing discipline, required — this is the i18n key), `lat` (number, min -90 max 90), `long` (number, min -180 max 180), `type` (`PointOfInterestTypeEnumSchema` from T-001, required), `icon`/`description` optional strings, `isBuiltin`/`isFeatured` bool default false, `displayWeight` int default 50, `lifecycleState`. Also add `PointOfInterestSummarySchema`/`PointOfInterestMiniSchema` via `.pick()`. Unit tests: `packages/schemas/test/entities/point-of-interest/point-of-interest.schema.test.ts` covering valid payload, lat/long out-of-range rejection, invalid slug rejection, missing `type` rejection, confirming no `name` field is accepted.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-001"
@@ -299,15 +299,15 @@
       "subtasks": [
         {
           "title": "Define PointOfInterestSchema with lat/long/type, no name",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Define PointOfInterestSummarySchema/MiniSchema",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write schema unit tests incl. lat/long range + slug regex edge cases",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -316,21 +316,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T12:30:00.000Z",
+        "completed": "2026-07-10T12:40:00.000Z"
       }
     },
     {
       "id": "T-008",
       "title": "Create point-of-interest.crud.schema.ts",
       "description": "Create `packages/schemas/src/entities/point-of-interest/point-of-interest.crud.schema.ts` mirroring `attraction.crud.schema.ts`: Create/Update/Delete/Restore input+output schemas derived from T-007's `PointOfInterestSchema` via `.omit()`/`stripShapeDefaults(...).partial()`, plus `PointOfInterestAddToDestinationInputSchema`/`RemoveFromDestinationInputSchema`/`DestinationRelationOutputSchema` (mirroring the attraction relation-management input shapes, needed even though admin write routes are deferred — NG-5 — since the seed factory and relationship seed step both call these create/relation methods programmatically). Unit tests: `point-of-interest.crud.schema.test.ts` covering create input validation, update partial semantics, relation input shape.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-007"
@@ -342,15 +342,15 @@
       "subtasks": [
         {
           "title": "Define Create/Update/Delete/Restore input+output schemas",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Define AddToDestination/RemoveFromDestination/RelationOutput schemas",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write crud schema unit tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -359,21 +359,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T12:40:00.000Z",
+        "completed": "2026-07-10T12:41:30.000Z"
       }
     },
     {
       "id": "T-009",
       "title": "Create point-of-interest.query.schema.ts",
       "description": "Create `packages/schemas/src/entities/point-of-interest/point-of-interest.query.schema.ts` mirroring `attraction.query.schema.ts`: `PointOfInterestFiltersSchema` (add a `type` filter on top of the attraction pattern), `PointOfInterestSearchSchema extends BaseSearchSchema`, list/search result item schemas, `HttpPointOfInterestSearchSchema`, and critically `DestinationIdsByPointOfInterestSlugsSchema` (`{ slugs: z.array(z.string()).min(1) }`, mirroring `DestinationIdsByAttractionSlugsSchema` exactly — this is the input contract T-020's `getDestinationIdsByPointOfInterestSlugs` service method and T-039's AI resolver both consume). Unit tests: `point-of-interest.query.schema.test.ts` covering filter/search parsing and the slugs-array min-length validation.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-007"
@@ -385,19 +385,19 @@
       "subtasks": [
         {
           "title": "Define PointOfInterestFiltersSchema with type filter",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Define PointOfInterestSearchSchema + result item schemas",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Define DestinationIdsByPointOfInterestSlugsSchema",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write query schema unit tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -406,21 +406,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T12:41:30.000Z",
+        "completed": "2026-07-10T12:43:00.000Z"
       }
     },
     {
       "id": "T-010",
       "title": "Create point-of-interest.http.schema.ts",
       "description": "Create `packages/schemas/src/entities/point-of-interest/point-of-interest.http.schema.ts` mirroring `attraction.http.schema.ts`: HTTP-coerced create/update/search schemas (query-string-safe versions of T-008/T-009's schemas, using the same `HttpQueryFields`-style coercion helpers as attraction) plus `httpToDomain*` mapper functions converting coerced HTTP input into domain input shapes. Unit tests: `point-of-interest.http.schema.test.ts` covering string-to-number coercion for `lat`/`long`/`displayWeight` query params and the httpToDomain mapper round-trip.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-008",
@@ -432,15 +432,15 @@
       "subtasks": [
         {
           "title": "Define HTTP-coerced create/update/search schemas",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Define httpToDomain mapper functions",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write http schema unit tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -449,21 +449,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T12:43:00.000Z",
+        "completed": "2026-07-10T12:46:30.000Z"
       }
     },
     {
       "id": "T-011",
       "title": "Create point-of-interest.access.schema.ts",
       "description": "Create `packages/schemas/src/entities/point-of-interest/point-of-interest.access.schema.ts` mirroring `attraction.access.schema.ts`: `PointOfInterestPublicSchema`/`ProtectedSchema`/`AdminSchema` tiers via `.pick()` on T-007's base schema (public tier excludes `adminInfo`/audit-by fields; all tiers include `lat`/`long`/`type` since coordinates are not sensitive). Unit tests: `point-of-interest.access.schema.test.ts` asserting each tier strips the expected fields.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 1,
       "blockedBy": [
         "T-007"
@@ -474,11 +474,11 @@
       "subtasks": [
         {
           "title": "Define Public/Protected/Admin access tier schemas",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write access tier unit tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -487,21 +487,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T12:50:00.000Z",
+        "completed": "2026-07-10T12:53:30.000Z"
       }
     },
     {
       "id": "T-012",
       "title": "Create point-of-interest.relations.schema.ts",
       "description": "Create `packages/schemas/src/entities/point-of-interest/point-of-interest.relations.schema.ts` mirroring `attraction.relations.schema.ts`: `DestinationPointOfInterestRelationSchema`, `PointOfInterestWithDestinationSchema`, bulk add/remove/reorder schemas, `BulkRelationOperationOutputSchema` (M2M per OQ-1, so a POI can list multiple destinationIds). Unit tests: `point-of-interest.relations.schema.test.ts` covering relation schema shape and bulk-operation output validation.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-007"
@@ -513,15 +513,15 @@
       "subtasks": [
         {
           "title": "Define DestinationPointOfInterestRelationSchema",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Define PointOfInterestWithDestinationSchema + bulk schemas",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write relations schema unit tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -530,21 +530,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T12:53:30.000Z",
+        "completed": "2026-07-10T12:57:30.000Z"
       }
     },
     {
       "id": "T-013",
       "title": "Create point-of-interest schemas barrel and wire package export",
       "description": "Create `packages/schemas/src/entities/point-of-interest/index.ts` as a plain `export * from` barrel of the 6 files from T-007/T-008/T-009/T-010/T-011/T-012, mirroring `attraction/index.ts`. Wire this barrel into `packages/schemas/src/entities/index.ts` (or wherever entity barrels are aggregated) so `@repo/schemas` exposes the full POI 6-file set (AC-2). Unit tests: a barrel smoke test asserting all expected named exports (`PointOfInterestSchema`, `PointOfInterestCreateInputSchema`, etc.) are importable from `@repo/schemas`.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 1,
       "blockedBy": [
         "T-008",
@@ -560,15 +560,15 @@
       "subtasks": [
         {
           "title": "Create point-of-interest/index.ts barrel",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Wire into entities root barrel",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write barrel export smoke test",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -577,21 +577,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T12:57:30.000Z",
+        "completed": "2026-07-10T13:02:00.000Z"
       }
     },
     {
       "id": "T-014",
       "title": "Add PointOfInterest permission enum values",
       "description": "Add `POINT_OF_INTEREST_CREATE/UPDATE/DELETE/VIEW/RESTORE/LIFECYCLE_CHANGE/HARD_DELETE` and `DESTINATION_POINT_OF_INTEREST_MANAGE` to `packages/schemas/src/enums/permission.enum.ts` and register the `POINT_OF_INTEREST` category in `PermissionCategoryEnum`, following the documented 'Adding Missing Permissions' recipe in service-core's CLAUDE.md. DEVIATION NOTE (deliberate): unlike attraction's split-brain gate (route layer checks `ATTRACTION_*` while the service layer mostly checks `DESTINATION_*`), POI uses `POINT_OF_INTEREST_*` consistently at BOTH the service layer (T-018) and any future route layer — do not replicate attraction's inconsistency. Unit tests: extend `permission.enum.test.ts` (or equivalent) asserting the new values exist and are unique strings.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [],
       "blocks": [
@@ -600,19 +600,19 @@
       "subtasks": [
         {
           "title": "Add POINT_OF_INTEREST_* values to PermissionEnum",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Add DESTINATION_POINT_OF_INTEREST_MANAGE value",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Register POINT_OF_INTEREST category in PermissionCategoryEnum",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write/extend permission enum tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -622,14 +622,14 @@
       ],
       "phase": "setup",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T13:03:00.000Z",
+        "completed": "2026-07-10T13:06:30.000Z"
       }
     },
     {
@@ -2252,9 +2252,9 @@
   ],
   "summary": {
     "total": 52,
-    "pending": 46,
+    "pending": 38,
     "inProgress": 0,
-    "completed": 6,
+    "completed": 14,
     "blocked": 0,
     "averageComplexity": 2.1
   }
