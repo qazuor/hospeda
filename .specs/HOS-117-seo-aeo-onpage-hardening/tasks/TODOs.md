@@ -1,6 +1,6 @@
 # TODOs: SEO/AEO on-page hardening (HOS-117)
 
-Status: in-progress | Progress: 9/17 active tasks (Wave 0; T-014 FAQ i18n; T-020 tests; T-022 410 Gone)
+Status: in-progress | Progress: 11/17 active tasks (Wave 0; T-013/T-018; T-014 FAQ i18n; T-020 tests; T-022 410 Gone)
 
 > **Replan 2026-07-09**: owner will delete all example/seed data from prod within
 > 2-3 days. Wave 1 (demo-content exclusion) is obsolete — deleting the data
@@ -33,7 +33,9 @@ Status: in-progress | Progress: 9/17 active tasks (Wave 0; T-014 FAQ i18n; T-020
 
 - [ ] T-012: Programmatic landings — geo×type go/no-go + unique-prose requirement (complexity: 2)
       Note: actual prose depends on real content (post purge).
-- [ ] T-013: Update json-ld-audit.md to typed-component reality (complexity: 1) [blocked by T-007 ✓]
+- [x] T-013: Update json-ld-audit.md to typed-component reality (complexity: 1) [blocked by T-007 ✓]
+      Done 2026-07-10: rewrote to typed-component reality, all 6 entities
+      (+ RestaurantJsonLd / TouristAttractionJsonLd), points to json-ld-coverage.test.ts.
 
 ## Wave 3 — Content i18n (P2) ✅ FAQ i18n support + destination SEO parity
 
@@ -57,8 +59,10 @@ Status: in-progress | Progress: 9/17 active tasks (Wave 0; T-014 FAQ i18n; T-020
 
 ## Testing
 
-- [ ] T-018: Wave 0 raw-SSR-HTML tests (complexity: 3) [blocked by T-004✓ T-005✓ T-006✓ T-007✓]
-      Note: largely done inline with each Wave 0 task — verify + consolidate.
+- [x] T-018: Wave 0 raw-SSR-HTML tests (complexity: 3) [blocked by T-004✓ T-005✓ T-006✓ T-007✓]
+      Done 2026-07-10: gap analysis showed counters (AnimatedCounter behavioral),
+      sitemap exclusion, and 6/6 breadcrumb were already covered. Filled the 2 real
+      wiring gaps: StatsSection isMeaningfulStat filter + destinos noindex={isThinContent}.
 - [x] T-020: Wave 3 i18n fallback tests (complexity: 2) [blocked by T-014 ✓]
       resolveI18nText/resolveI18nLocale fallback + faqSetInLanguage + toDestinationFaqs
       i18n tests (resolve-i18n-text.test.ts, faq-i18n.test.ts). Wave 2 FAQ-coverage
