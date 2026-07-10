@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
     BulkAddPointsOfInterestToDestinationInputSchema,
-    BulkRelationOperationOutputSchema,
     BulkRemovePointsOfInterestFromDestinationInputSchema,
     DestinationPointOfInterestRelationSchema,
     DestinationWithPointsOfInterestListSchema,
+    PointOfInterestBulkRelationOperationOutputSchema,
     PointOfInterestDestinationRelationDetailSchema,
     PointOfInterestListItemWithRelationsSchema,
     PointOfInterestWithDestinationsSchema,
@@ -214,17 +214,19 @@ describe('Point Of Interest Relation Schemas', () => {
         });
     });
 
-    describe('BulkRelationOperationOutputSchema', () => {
+    describe('PointOfInterestBulkRelationOperationOutputSchema', () => {
         it('should validate a successful bulk operation output', () => {
             const validOutput = { success: true, processed: 5, failed: 0 };
 
-            expect(() => BulkRelationOperationOutputSchema.parse(validOutput)).not.toThrow();
+            expect(() =>
+                PointOfInterestBulkRelationOperationOutputSchema.parse(validOutput)
+            ).not.toThrow();
         });
 
         it('should default success to true', () => {
             const output = { processed: 3, failed: 0 };
 
-            const result = BulkRelationOperationOutputSchema.parse(output);
+            const result = PointOfInterestBulkRelationOperationOutputSchema.parse(output);
             expect(result.success).toBe(true);
         });
 
@@ -239,7 +241,9 @@ describe('Point Of Interest Relation Schemas', () => {
                 ]
             };
 
-            expect(() => BulkRelationOperationOutputSchema.parse(output)).not.toThrow();
+            expect(() =>
+                PointOfInterestBulkRelationOperationOutputSchema.parse(output)
+            ).not.toThrow();
         });
     });
 

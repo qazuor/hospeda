@@ -152,7 +152,7 @@ export const UpdatePointOfInterestOrderInputSchema = z.object({
 /**
  * Schema for bulk relation operation results
  */
-export const BulkRelationOperationOutputSchema = z.object({
+export const PointOfInterestBulkRelationOperationOutputSchema = z.object({
     success: z.boolean().default(true),
     processed: z.number().int().min(0),
     failed: z.number().int().min(0),
@@ -202,7 +202,9 @@ export type BulkRemovePointsOfInterestFromDestinationInput = z.infer<
 >;
 export type UpdatePointOfInterestOrderInput = z.infer<typeof UpdatePointOfInterestOrderInputSchema>;
 
-export type BulkRelationOperationOutput = z.infer<typeof BulkRelationOperationOutputSchema>;
+export type PointOfInterestBulkRelationOperationOutput = z.infer<
+    typeof PointOfInterestBulkRelationOperationOutputSchema
+>;
 export type PointOfInterestDestinationRelationDetail = z.infer<
     typeof PointOfInterestDestinationRelationDetailSchema
 >;
