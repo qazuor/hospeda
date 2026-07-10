@@ -701,3 +701,39 @@ describe('DetailVariant — thumbGrid absent at count=1', () => {
         expect(thumbGrid).not.toBeNull();
     });
 });
+
+// ─── Loading skeleton (BETA-147) ─────────────────────────────────────────────
+
+describe('DetailVariant — cell images show a loading skeleton (BETA-147)', () => {
+    it('featured img carries the skeleton class while still loading', () => {
+        const { container } = renderDetail(IMG_1);
+        const img = container.querySelector('img');
+        expect(img?.className).toContain('cellImgSkeleton');
+    });
+
+    it('skeleton class is cleared once the image fires load', () => {
+        const { container } = renderDetail(IMG_1);
+        const img = container.querySelector('img') as HTMLImageElement;
+        expect(img.className).toContain('cellImgSkeleton');
+        fireEvent.load(img);
+        expect(img.className).not.toContain('cellImgSkeleton');
+        // The base cell class must remain so the CSS invariants still apply.
+        expect(img.className).toContain('cellImg');
+    });
+
+    it('skeleton class is cleared on image error as well', () => {
+        const { container } = renderDetail(IMG_1);
+        const img = container.querySelector('img') as HTMLImageElement;
+        fireEvent.error(img);
+        expect(img.className).not.toContain('cellImgSkeleton');
+    });
+
+    it('every non-lightbox cell img carries the skeleton class while loading', () => {
+        const { container } = renderDetail(IMG_4);
+        const imgs = Array.from(container.querySelectorAll('img'));
+        expect(imgs.length).toBeGreaterThan(1);
+        for (const img of imgs) {
+            expect(img.className).toContain('cellImgSkeleton');
+        }
+    });
+});
