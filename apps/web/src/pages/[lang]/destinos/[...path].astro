@@ -38,6 +38,7 @@ import { DestinationReviewSidebarCard } from '@/components/destination/Destinati
 import DestinationReviewSignInCta from '@/components/destination/DestinationReviewSignInCta.astro';
 import { getApiUrl } from '@/lib/env';
 import {
+	faqSetInLanguage,
 	toAccommodationCardProps,
 	toDestinationFaqs,
 	toEventCardProps
@@ -45,6 +46,8 @@ import {
 import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { type I18nTextLike, resolveI18nText } from '@/lib/resolve-i18n-text';
+import { pickLocalizedSeo } from '@/lib/seo';
 import { buildUrl } from '@/lib/urls';
 import { AlertTriangleIcon } from '@repo/icons';
 import { renderContent } from '@/lib/render-content';
@@ -67,9 +70,27 @@ const result = segments.length === 1
 if (!result.ok) return new Response(null, { status: 404 });
 
 const dest = result.data as Record<string, unknown>;
+// Destination names are proper nouns — never translated. Keep the plain value.
 const name = String(dest.name || '');
-const summary = String(dest.summary || '');
-const description = String(dest.description || summary);
+// HOS-117: resolve localized summary/description prose (parity with the other
+// detail pages), falling back to the legacy Spanish text.
+const summary = resolveI18nText((dest.summaryI18n as I18nTextLike | string) ?? dest.summary, locale);
+const description =
+	resolveI18nText((dest.descriptionI18n as I18nTextLike | string) ?? dest.description, locale) ||
+	summary;
+// HOS-117: route the page title/meta through pickLocalizedSeo like the other
+// detail pages, so the es-authored stored SEO override does not leak on en/pt.
+const seo = dest.seo as Record<string, unknown> | null | undefined;
+const seoTitle = pickLocalizedSeo({
+	stored: seo?.title as string | null | undefined,
+	fallback: name,
+	locale
+});
+const seoDescription = pickLocalizedSeo({
+	stored: seo?.description as string | null | undefined,
+	fallback: summary || description,
+	locale
+});
 const slug = String(dest.slug || '');
 const destId = String(dest.id || '');
 
@@ -111,7 +132,7 @@ const attractions = (dest.attractions as ReadonlyArray<{
 const ratingBreakdown = dest.rating as Record<string, number | undefined> | null | undefined;
 
 // --- FAQs (SPEC-158): normalize + build FAQPage JSON-LD sections -----------
-const faqs = toDestinationFaqs(dest.faqs);
+const faqs = toDestinationFaqs(dest.faqs, locale);
 const faqSections = faqs.map((faq) => ({ heading: faq.question, body: faq.answer }));
 
 // --- Previews (accommodations, events, posts) and counts --------------------
@@ -433,8 +454,8 @@ const isThinContent = isThinDestination({
 
 <DetailLayout
 	locale={locale}
-	title={name}
-	description={summary || description}
+	title={seoTitle}
+	description={seoDescription}
 	ogImage={placeImage}
 	ogType="Destino"
 	ogSubtitle={t('destinations.region', 'Entre Ríos, Argentina')}
@@ -454,7 +475,7 @@ const isThinContent = isThinDestination({
 	/>
 	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbJsonLdItems} />
 	{faqSections.length > 0 && (
-		<FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={locale} />
+		<FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={faqSetInLanguage(faqs, locale)} />
 	)}
 
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={breadcrumbItems} />

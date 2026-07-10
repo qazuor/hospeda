@@ -64,17 +64,84 @@ export type {
  * the clean `DetailFaq[]` shape consumed by `DestinationFaqAccordion` and the
  * `FAQPageJsonLd` builder. Tolerates a missing/non-array input (returns []).
  *
+ * HOS-117: resolves the localized `questionI18n`/`answerI18n` fields for the
+ * active `locale`, falling back to the legacy Spanish `question`/`answer` text
+ * when a translation is absent. `resolvedLocale` records the language the text
+ * actually resolved to so the caller can emit an honest `inLanguage`.
+ *
  * @param raw - The `faqs` field from a destination detail API response.
+ * @param locale - Active page locale used to resolve i18n text (defaults to `es`).
  * @returns Array of normalized FAQ items (empty when absent).
  */
-export function toDestinationFaqs(raw: unknown): DetailFaq[] {
+export function toDestinationFaqs(raw: unknown, locale = 'es'): DetailFaq[] {
+    return mapDetailFaqs(raw, locale);
+}
+
+/**
+ * Resolves one FAQ text field for `locale` under the FAQ contract: use the
+ * requested locale's translation only when present, otherwise the legacy
+ * plain-text column, which is the authoritative Spanish (es) source. Unlike the
+ * generic resolveI18nText, this never cross-falls to another locale — so an
+ * i18n object missing the requested key never surfaces en/pt text over the
+ * legacy es content (HOS-117 / judgment-day C2).
+ */
+function resolveFaqField(
+    i18n: unknown,
+    legacy: unknown,
+    locale: string
+): { readonly text: string; readonly locale: 'es' | 'en' | 'pt' } {
+    if (i18n && typeof i18n === 'object') {
+        const localized = (i18n as I18nTextLike)[locale as keyof I18nTextLike];
+        if (localized) return { text: localized, locale: locale as 'es' | 'en' | 'pt' };
+    }
+    // No translation for the requested locale — the legacy column is the es source.
+    return { text: String(legacy ?? ''), locale: 'es' };
+}
+
+/**
+ * Shared FAQ normalizer for every entity detail transform (accommodation,
+ * destination, experience, gastronomy) — HOS-117. Resolves the localized
+ * `questionI18n`/`answerI18n` fields for `locale`, falling back to the legacy
+ * Spanish `question`/`answer` text when a translation is absent, and records
+ * the language the text actually resolved to in `resolvedLocale`.
+ *
+ * @param raw - The raw `faqs` array from a public detail API response.
+ * @param locale - Active page locale used to resolve i18n text.
+ * @returns Array of normalized FAQ items (empty when the input is not an array).
+ */
+function mapDetailFaqs(raw: unknown, locale: string): DetailFaq[] {
     if (!Array.isArray(raw)) return [];
-    return (raw as ReadonlyArray<Record<string, unknown>>).map((faq) => ({
-        id: String(faq.id || ''),
-        question: String(faq.question || ''),
-        answer: String(faq.answer || ''),
-        category: faq.category ? String(faq.category) : null
-    }));
+    return (raw as ReadonlyArray<Record<string, unknown>>).map((faq) => {
+        const q = resolveFaqField(faq.questionI18n, faq.question, locale);
+        const a = resolveFaqField(faq.answerI18n, faq.answer, locale);
+        return {
+            id: String(faq.id || ''),
+            question: q.text,
+            answer: a.text,
+            category: faq.category ? String(faq.category) : null,
+            // Honest per-FAQ language: both fields must agree, else the pair is
+            // mixed and we report the platform default (es).
+            resolvedLocale: q.locale === a.locale ? q.locale : 'es'
+        };
+    });
+}
+
+/**
+ * Determines the honest BCP-47 `inLanguage` for a FAQPage JSON-LD block built
+ * from a resolved `DetailFaq[]` (HOS-117). Returns the requested `locale` only
+ * when the set is non-empty and every FAQ's text actually resolved to it;
+ * otherwise `'es'` — the language the legacy fallback text is in. This prevents
+ * declaring `inLanguage="en"` over Spanish content when no translation exists.
+ *
+ * @param faqs - Resolved FAQs carrying `resolvedLocale`.
+ * @param locale - The requested page locale.
+ * @returns The language code to place on the FAQPage node.
+ */
+export function faqSetInLanguage(
+    faqs: ReadonlyArray<Pick<DetailFaq, 'resolvedLocale'>>,
+    locale: string
+): string {
+    return faqs.length > 0 && faqs.every((faq) => faq.resolvedLocale === locale) ? locale : 'es';
 }
 
 // --- Accommodation Card Data (Detailed) --- unique to transforms
@@ -820,12 +887,7 @@ export function toAccommodationDetailPageProps({
                 };
             })
             .sort((a, b) => b.displayWeight - a.displayWeight),
-        faqs: (faqsArr ?? []).map((faq) => ({
-            id: String(faq.id || ''),
-            question: String(faq.question || ''),
-            answer: String(faq.answer || ''),
-            category: faq.category ? String(faq.category) : null
-        }))
+        faqs: mapDetailFaqs(faqsArr, locale)
     };
 }
 
@@ -2010,14 +2072,7 @@ export function toGastronomyDetailPageProps({
     const seoObj = item.seo as Record<string, unknown> | undefined;
     const ownerObj = item.owner as Record<string, unknown> | undefined;
 
-    const faqs: GastronomyDetailData['faqs'] = Array.isArray(item.faqs)
-        ? (item.faqs as Array<Record<string, unknown>>).map((faq) => ({
-              id: String(faq.id || ''),
-              question: String(faq.question || ''),
-              answer: String(faq.answer || ''),
-              category: faq.category ? String(faq.category) : null
-          }))
-        : [];
+    const faqs: GastronomyDetailData['faqs'] = mapDetailFaqs(item.faqs, locale);
 
     return {
         ...cardProps,
@@ -2168,14 +2223,7 @@ export function toExperienceDetailPageProps({
     const seoObj = item.seo as Record<string, unknown> | undefined;
     const ownerObj = item.owner as Record<string, unknown> | undefined;
 
-    const faqs: ExperienceDetailData['faqs'] = Array.isArray(item.faqs)
-        ? (item.faqs as Array<Record<string, unknown>>).map((faq) => ({
-              id: String(faq.id || ''),
-              question: String(faq.question || ''),
-              answer: String(faq.answer || ''),
-              category: faq.category ? String(faq.category) : null
-          }))
-        : [];
+    const faqs: ExperienceDetailData['faqs'] = mapDetailFaqs(item.faqs, locale);
 
     return {
         ...cardProps,

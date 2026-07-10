@@ -659,7 +659,9 @@ describe('toAccommodationDetailPageProps', () => {
                 id: 'faq-1',
                 question: 'Checkin?',
                 answer: '14:00',
-                category: 'general'
+                category: 'general',
+                // HOS-117: legacy plain-string FAQ resolves to the platform default es.
+                resolvedLocale: 'es'
             });
         });
     });
