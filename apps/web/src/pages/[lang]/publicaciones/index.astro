@@ -227,7 +227,16 @@ const filterGroups = [
         type: 'toggle' as const
     },
     {
-        id: 'category',
+        // HOS-96 T-015: id is the PLURAL array paramKey ('categories',
+        // matching the postCategory facet's `paramKey` in `facet-config.ts`),
+        // not the legacy singular 'category'. `filter-reducer.ts`'s generic
+        // `initStateFromParams`/`buildParamsFromState`/`TOGGLE_CHECKBOX` are
+        // all keyed on `group.id`, so this rename makes 2+ checked categories
+        // serialize as `?categories=A,B` (accepted end-to-end since HOS-96
+        // T-002/T-012) instead of the silently-rejected `?category=A,B`. The
+        // singular `category` param is still accepted on READ elsewhere
+        // (backward compat, US-10) — only the sidebar's own group id changes.
+        id: 'categories',
         label: t('blog.filters.category', 'Categoría'),
         type: 'checkbox' as const,
         options: [
@@ -283,12 +292,19 @@ const sortOptions = [
 
 /**
  * Build the `initialParams` record for FilterSidebar so server-rendered state
- * matches the URL on first paint (avoids hydration flash). Keys match the URL
- * param names emitted by FilterSidebar's reducer.
+ * matches the URL on first paint (avoids hydration flash). Keys match each
+ * `FilterGroup.id`, NOT necessarily the raw URL param name.
+ * `FilterSidebar.client.tsx` seeds its initial state exclusively from THIS
+ * prop (`initStateFromParams({ ..., params: initialParams ?? {} })`) — it
+ * never reads `window.location.search` itself — so the `categories` checkbox
+ * group (HOS-96 T-015 renamed its id from `category` to `categories`) must be
+ * seeded under the `categories` key here, reusing the same
+ * `postCategoryActiveValues` array already computed above for the API fetch
+ * (T-012), or the sidebar would silently desync from the URL on load.
  */
 const sidebarInitialParams: Record<string, string> = {};
 if (q)                          sidebarInitialParams['q'] = q;
-if (category)                   sidebarInitialParams['category'] = category;
+if (postCategoryActiveValues.length > 0) sidebarInitialParams['categories'] = postCategoryActiveValues.join(',');
 if (isFeaturedParam === 'true') sidebarInitialParams['isFeatured'] = 'true';
 if (destinationId)              sidebarInitialParams['destinationId'] = destinationId;
 if (publishedAfterFilter)       sidebarInitialParams['publishedAfter'] = publishedAfterFilter;

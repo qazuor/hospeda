@@ -352,12 +352,20 @@ const resolvedCards = cards.map((card) => {
 /**
  * Build the `initialParams` record for FilterSidebar so server-rendered state
  * matches the URL on first paint (avoids hydration flash).
- * Keys match the URL param names emitted by FilterSidebar's reducer.
+ * Keys match the URL param names emitted by FilterSidebar's reducer — which
+ * means they must match each `FilterGroup.id`, NOT necessarily the raw URL
+ * param name. `FilterSidebar.client.tsx` seeds its initial state exclusively
+ * from THIS prop (`initStateFromParams({ ..., params: initialParams ?? {} })`)
+ * — it never reads `window.location.search` itself — so the `categories`
+ * checkbox group (HOS-96 T-014 renamed its id from `category` to `categories`)
+ * must be seeded under the `categories` key here, reusing the same
+ * `activeCategories` array already computed above for the API fetch (T-013),
+ * or the sidebar would silently desync from the URL on load.
  * `price` dual-range maps to `priceMin` / `priceMax` via the `id: 'price'` group.
  */
 const sidebarInitialParams: Record<string, string> = {};
 if (q)              sidebarInitialParams['q']        = q;
-if (category)       sidebarInitialParams['category'] = category;
+if (activeCategories.length > 0) sidebarInitialParams['categories'] = activeCategories.join(',');
 if (isFeaturedParam === 'true') sidebarInitialParams['isFeatured'] = 'true';
 if (destinationId)  sidebarInitialParams['destinationId'] = destinationId;
 if (startDateAfterFilter)  sidebarInitialParams['startDateAfter']  = startDateAfterFilter;

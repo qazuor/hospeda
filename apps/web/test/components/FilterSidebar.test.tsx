@@ -124,6 +124,23 @@ const checkboxGroup: FilterGroup = {
     ]
 };
 
+/**
+ * Mirrors the RENAMED events/blog `categories` checkbox group (HOS-96
+ * T-014/T-015 — both `buildEventsFilterGroups`'s categoryGroup and blog's
+ * inline `filterGroups` category entry have id `'categories'`, not the old
+ * singular `'category'`).
+ */
+const categoriesCheckboxGroup: FilterGroup = {
+    id: 'categories',
+    label: 'Categoría',
+    type: 'checkbox',
+    options: [
+        { value: 'MUSIC', label: 'Música' },
+        { value: 'CULTURE', label: 'Cultura' },
+        { value: 'GASTRONOMY', label: 'Gastronomía' }
+    ]
+};
+
 const radioGroup: FilterGroup = {
     id: 'category',
     label: 'Categoría',
@@ -567,6 +584,67 @@ describe('FilterSidebar — per-group active count badge', () => {
         const priceToggle = container.querySelector('button[id="filter-price"]');
         expect(guestsToggle?.textContent?.trim()).toBe('Huéspedes');
         expect(priceToggle?.textContent?.trim()).toBe('Precio por noche');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests: categories group URL-init round-trip (HOS-96 T-014/T-015)
+// ---------------------------------------------------------------------------
+
+describe('FilterSidebar — categories group URL-init round-trip (HOS-96 T-014/T-015)', () => {
+    it('reflects an existing ?categories=A,B URL as checked on load', () => {
+        const props = buildProps({
+            filters: [categoriesCheckboxGroup],
+            initialParams: { categories: 'MUSIC,CULTURE' }
+        });
+        render(<FilterSidebar {...props} />);
+
+        const musicBtn = screen.getAllByRole('button', { name: 'Música' })[0];
+        const cultureBtn = screen.getAllByRole('button', { name: 'Cultura' })[0];
+        const gastronomyBtn = screen.getAllByRole('button', { name: 'Gastronomía' })[0];
+
+        expect(musicBtn).toHaveAttribute('aria-pressed', 'true');
+        expect(cultureBtn).toHaveAttribute('aria-pressed', 'true');
+        expect(gastronomyBtn).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('a single checked value round-trips too (not just 2+)', () => {
+        const props = buildProps({
+            filters: [categoriesCheckboxGroup],
+            initialParams: { categories: 'MUSIC' }
+        });
+        render(<FilterSidebar {...props} />);
+
+        const musicBtn = screen.getAllByRole('button', { name: 'Música' })[0];
+        expect(musicBtn).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('the OLD singular ?category= param does NOT seed the renamed categories group (id mismatch — confirms the rename actually matters)', () => {
+        const props = buildProps({
+            filters: [categoriesCheckboxGroup],
+            initialParams: { category: 'MUSIC' }
+        });
+        render(<FilterSidebar {...props} />);
+
+        const musicBtn = screen.getAllByRole('button', { name: 'Música' })[0];
+        expect(musicBtn).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('checking a second box accumulates (aria-pressed flips to true, existing selection stays true)', () => {
+        const props = buildProps({
+            filters: [categoriesCheckboxGroup],
+            initialParams: { categories: 'MUSIC' }
+        });
+        render(<FilterSidebar {...props} />);
+
+        const cultureBtn = screen.getAllByRole('button', { name: 'Cultura' })[0];
+        expect(cultureBtn).toHaveAttribute('aria-pressed', 'false');
+
+        fireEvent.click(cultureBtn as HTMLElement);
+
+        const musicBtn = screen.getAllByRole('button', { name: 'Música' })[0];
+        expect(musicBtn).toHaveAttribute('aria-pressed', 'true');
+        expect(cultureBtn).toHaveAttribute('aria-pressed', 'true');
     });
 });
 

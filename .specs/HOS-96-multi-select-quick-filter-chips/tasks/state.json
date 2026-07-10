@@ -447,62 +447,62 @@
             "id": "T-014",
             "title": "Rename events sidebar FilterGroup id category to categories",
             "description": "In the events sidebar configuration for `FilterSidebar.client.tsx`, rename the category `FilterGroup` id from `category` to `categories` so `filter-reducer.ts`'s existing CSV serialization (`params.set(id, values.join(','))`) writes the array param the backend now accepts (T-006). This closes the latent bug where the sidebar already let users tick 2+ categories but serialized under the rejected singular key.\n\n**Files:** the events sidebar filter-group config (wherever `FilterSidebar` is instantiated for the events listing), `filter-reducer.ts` only if it hardcodes the `category` id anywhere (it should not — it's generic).\n\n**Tests (frontend, `apps/web`):** AAA — (1) checking 2 category boxes in the events sidebar and firing navigation writes `?categories=A,B` (not `?category=A,B`); (2) a single checked box still writes a working param (`?categories=A` or backward-compatible `?category=A` per the chosen single-value serialization — assert whichever the reducer actually does); (3) sidebar checkbox state reflects an existing `?categories=A,B` URL on load.\n\n**Acceptance mapping:** US-5 (AC3), US-9 (AC4, AC5), M-3.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013"],
             "blocks": ["T-024", "T-026"],
             "subtasks": [
                 {
                     "title": "Rename events sidebar FilterGroup id category to categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write sidebar serialization + load-state tests for events categories",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "sidebar", "events"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T18:06:00Z",
+                "completed": "2026-07-10T18:18:00Z"
             }
         },
         {
             "id": "T-015",
             "title": "Rename blog sidebar FilterGroup id category to categories",
             "description": "Same rename as T-014, applied to the blog/publications sidebar's category `FilterGroup` id (`category` → `categories`), aligning with the backend's new `categories` array param (T-007).\n\n**Files:** the blog sidebar filter-group config (wherever `FilterSidebar` is instantiated for the publications listing).\n\n**Tests (frontend, `apps/web`):** same matrix as T-014 applied to blog categories — multi-select serialization under `categories` key, sidebar reflects an existing multi-value URL on load.\n\n**Acceptance mapping:** US-5 (AC3), US-9 (AC4, AC5), M-3.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": ["T-024", "T-026"],
             "subtasks": [
                 {
                     "title": "Rename blog sidebar FilterGroup id category to categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write sidebar serialization + load-state tests for blog categories",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "sidebar", "blog"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T18:06:00Z",
+                "completed": "2026-07-10T18:18:00Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 10,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 17,
+        "completed": 19,
         "blocked": 0,
         "averageComplexity": 1.9
     }
