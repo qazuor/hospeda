@@ -116,12 +116,41 @@ export interface StartTrialInput {
  * paid checkout can never diverge on where MercadoPago redirects the user
  * or where it posts webhooks.
  */
-export interface ReactivationCheckoutUrls {
+export interface MonthlyReactivationCheckoutUrls {
     /** MercadoPago `back_url` for the preapproval. */
     readonly paymentMethodReturnUrl: string;
     /** Webhook destination for this preapproval. */
     readonly notificationUrl: string;
 }
+
+/**
+ * MercadoPago hosted-checkout return URLs for an ANNUAL (one-time charge)
+ * reactivation (HOS-123). Annual reactivation goes through
+ * `billing.checkout.create({ mode: 'payment' })`, whose hosted checkout has
+ * two distinct return paths (`successUrl` / `cancelUrl`) instead of the
+ * monthly preapproval's single `back_url` — mirroring the shape
+ * `initiatePaidAnnualSubscription` already uses for a first-time annual
+ * checkout.
+ */
+export interface AnnualReactivationCheckoutUrls {
+    /** Hosted-checkout redirect after a successful annual payment. */
+    readonly successUrl: string;
+    /** Hosted-checkout redirect after the user cancels the annual payment. */
+    readonly cancelUrl: string;
+    /** Webhook destination for this checkout's `payment.updated` events. */
+    readonly notificationUrl: string;
+}
+
+/**
+ * Discriminated union of the checkout return URLs a paid reactivation needs,
+ * keyed on the billing interval (OQ-3): the monthly preapproval shape vs the
+ * annual hosted-checkout shape. The caller (the reactivate route) picks the
+ * correct member based on the request's `billingInterval` before invoking the
+ * service.
+ */
+export type ReactivationCheckoutUrls =
+    | MonthlyReactivationCheckoutUrls
+    | AnnualReactivationCheckoutUrls;
 
 /**
  * Input for reactivating from trial (HOS-114: paid reactivation now routes
@@ -131,9 +160,21 @@ export interface ReactivationCheckoutUrls {
 export interface ReactivateFromTrialInput {
     /** Billing customer ID */
     readonly customerId: string;
-    /** New plan ID to subscribe to (must resolve to a monthly, paid plan) */
+    /** New plan ID to subscribe to (must resolve to a paid plan) */
     readonly planId: string;
-    /** Checkout return/notification URLs for the MP preapproval (HOS-114). */
+    /**
+     * Which recurring price of the target plan to reactivate onto (HOS-123).
+     * `'monthly'` (default at the call site) routes through the MercadoPago
+     * preapproval; `'annual'` routes through the one-time hosted-checkout
+     * charge. A plan can carry both prices, so the interval is explicit
+     * rather than inferred (OQ-1).
+     */
+    readonly billingInterval?: 'monthly' | 'annual';
+    /**
+     * Checkout return/notification URLs. The `paymentMethodReturnUrl` shape
+     * is used for `'monthly'`, the `successUrl`/`cancelUrl` shape for
+     * `'annual'` (HOS-114 / HOS-123) — the route resolves the correct member.
+     */
     readonly urls: ReactivationCheckoutUrls;
 }
 
@@ -152,8 +193,16 @@ export interface ReactivateFromTrialResult {
     readonly subscriptionId: string;
     /** MercadoPago checkout URL the caller must redirect the user to. */
     readonly checkoutUrl: string;
-    /** The created subscription's qzpay status — always `'incomplete'` at creation time. */
-    readonly status: 'incomplete';
+    /**
+     * The created subscription's status at creation time (HOS-123). The two
+     * values come from different spaces: `'incomplete'` is qzpay's raw
+     * preapproval status for the MONTHLY path; `'pending_provider'` is
+     * Hospeda's own {@link SubscriptionStatusEnum.PENDING_PROVIDER} for the
+     * ANNUAL path (which bypasses qzpay's `subscriptions.create()` entirely —
+     * it's a direct Drizzle insert). Neither means active until the
+     * confirming webhook fires.
+     */
+    readonly status: 'incomplete' | 'pending_provider';
     /** Human-readable summary for the response body. */
     readonly message: string;
 }
@@ -167,9 +216,20 @@ export interface ReactivateFromTrialResult {
 export interface ReactivateSubscriptionInput {
     /** Billing customer ID */
     readonly customerId: string;
-    /** New plan ID to subscribe to (must resolve to a monthly, paid plan) */
+    /** New plan ID to subscribe to (must resolve to a paid plan) */
     readonly planId: string;
-    /** Checkout return/notification URLs for the MP preapproval (HOS-114). */
+    /**
+     * Which recurring price of the target plan to reactivate onto (HOS-123).
+     * `'monthly'` (default at the call site) routes through the MercadoPago
+     * preapproval; `'annual'` routes through the one-time hosted-checkout
+     * charge (OQ-1). See {@link ReactivateFromTrialInput.billingInterval}.
+     */
+    readonly billingInterval?: 'monthly' | 'annual';
+    /**
+     * Checkout return/notification URLs — monthly `paymentMethodReturnUrl`
+     * shape or annual `successUrl`/`cancelUrl` shape; the route resolves the
+     * correct member (HOS-114 / HOS-123).
+     */
     readonly urls: ReactivationCheckoutUrls;
 }
 
@@ -187,8 +247,14 @@ export interface ReactivateSubscriptionResult {
     readonly previousPlanId: string | null;
     /** MercadoPago checkout URL the caller must redirect the user to. */
     readonly checkoutUrl: string;
-    /** The created subscription's qzpay status — always `'incomplete'` at creation time. */
-    readonly status: 'incomplete';
+    /**
+     * The created subscription's status at creation time (HOS-123).
+     * `'incomplete'` (qzpay preapproval status) for the MONTHLY path;
+     * `'pending_provider'` ({@link SubscriptionStatusEnum.PENDING_PROVIDER})
+     * for the ANNUAL one-time-charge path. See
+     * {@link ReactivateFromTrialResult.status}.
+     */
+    readonly status: 'incomplete' | 'pending_provider';
     /** Human-readable summary for the response body. */
     readonly message: string;
 }
