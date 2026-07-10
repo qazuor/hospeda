@@ -146,7 +146,9 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
                 id: z.string().uuid(),
                 question: z.string(),
                 answer: z.string(),
-                category: z.string().nullable()
+                category: z.string().nullable(),
+                questionI18n: I18nTextSchema.nullish(),
+                answerI18n: I18nTextSchema.nullish()
             })
         )
         .optional(),
