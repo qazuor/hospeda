@@ -979,6 +979,14 @@ export class TrialService {
                 .map((sub) => sub.id)
                 .join(',');
 
+            // HOS-123: `urls` is now a discriminated union (monthly preapproval
+            // shape vs annual hosted-checkout shape). The annual branch is wired
+            // in T-008/T-009; until then reactivation only handles the monthly
+            // shape — narrow explicitly so this stays type-safe.
+            if (!('paymentMethodReturnUrl' in urls)) {
+                throw new Error('Annual reactivation is not yet available');
+            }
+
             // Real MP preapproval via the shared `mode: 'paid'` helper (also
             // used by `/start-paid`) — fail-closed (`MISSING_INIT_POINT`) if
             // the provider returns no checkout URL.
@@ -1136,6 +1144,14 @@ export class TrialService {
                     'CUSTOMER_NOT_FOUND',
                     `Customer '${customerId}' not found`
                 );
+            }
+
+            // HOS-123: `urls` is now a discriminated union (monthly preapproval
+            // shape vs annual hosted-checkout shape). The annual branch is wired
+            // in T-008/T-009; until then reactivation only handles the monthly
+            // shape — narrow explicitly so this stays type-safe.
+            if (!('paymentMethodReturnUrl' in urls)) {
+                throw new Error('Annual reactivation is not yet available');
             }
 
             // Real MP preapproval via the shared `mode: 'paid'` helper (also
