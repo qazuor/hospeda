@@ -54,6 +54,12 @@ describe('experiencias/[slug].astro', () => {
             expect(src).toContain('if (!result.ok)');
         });
 
+        it('propagates 410 (GONE) for soft-deleted entities, 404 otherwise (HOS-117 T-022)', () => {
+            expect(src).toContain(
+                'return new Response(null, { status: result.error.status === 410 ? 410 : 404 });'
+            );
+        });
+
         it('returns 404 for non-PUBLIC visibility values', () => {
             expect(src).toContain("visibility !== 'PUBLIC'");
         });

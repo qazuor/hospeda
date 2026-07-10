@@ -98,7 +98,15 @@ try {
             // featureIds). The full catalog for the checkbox groups is fetched
             // separately below with ?applicableVertical=accommodation; the
             // selected-items arrays here are kept as a fallback only.
-        } else if (accomResponse.status === 404 || accomResponse.status === 403) {
+        } else if (
+            accomResponse.status === 404 ||
+            accomResponse.status === 403 ||
+            accomResponse.status === 410
+        ) {
+            // 410 Gone: the owner's own accommodation was soft-deleted (HOS-117
+            // T-022 — the shared _canView now returns 410 for a deleted PUBLIC
+            // listing, not 404). Redirect cleanly to the properties list like a
+            // 404 instead of logging a false "fetch failed" warning.
             return Astro.redirect(`/${locale}/mi-cuenta/propiedades/`);
         } else {
             logger.warn('editar.astro: accommodation fetch failed', {
