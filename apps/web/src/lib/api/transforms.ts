@@ -1598,6 +1598,11 @@ export function transformAccommodationEdit({
                     ?.mobilePhone as string) ??
                 ''
         ),
+        whatsapp: String(
+            (item.whatsapp as string) ??
+                ((item.contactInfo as Record<string, unknown> | undefined)?.whatsapp as string) ??
+                ''
+        ),
         email: String(
             (item.email as string) ??
                 ((item.contactInfo as Record<string, unknown> | undefined)

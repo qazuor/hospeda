@@ -16,6 +16,8 @@
             "legalRequired": "Você precisa confirmar o aviso legal.",
             "submit": "Não foi possível importar a acomodação. Tente novamente.",
             "network": "Não foi possível conectar ao servidor.",
+            "forbidden": "Você não tem permissão para importar de uma URL. Verifique se seu plano inclui isso.",
+            "rateLimit": "Você fez muitas importações seguidas. Aguarde um momento e tente novamente.",
             "failure": {
                 "invalidUrl": "Verifique se a URL é válida e corresponde a uma acomodação.",
                 "sourceBlocked": "A fonte está temporariamente indisponível. Aguarde alguns minutos e tente novamente, ou preencha os dados manualmente.",
@@ -264,6 +266,7 @@
                 "phoneCountrySearchPlaceholder": "Buscar país...",
                 "phoneCountryNoResults": "Nenhum país encontrado",
                 "phoneNumber": "Número",
+                "whatsapp": "WhatsApp",
                 "email": "Email",
                 "website": "Site",
                 "facebook": "Facebook",

@@ -492,37 +492,27 @@
         {
             "id": "T-022",
             "title": "Serve 410 Gone for deleted entity URLs (post example-data purge)",
-            "description": "ADDED (replan 2026-07-09). After example/seed data is deleted from prod, the old accommodation/post/gastronomy/experience detail URLs must return 410 Gone (not 404) so Google/LLM fetchers deindex them fast. Verify current behavior for an unknown/deleted published slug and return 410 for these entity routes (at least during the post-purge window). This is the real-value replacement for the cancelled Wave 1 gate. Ref US-3/US-5 spirit. Tests: integration asserting a deleted/unknown slug yields HTTP 410 on these entity routes.",
-            "status": "pending",
+            "description": "ADDED (replan 2026-07-09). DONE 2026-07-10. New ServiceErrorCode.GONE -> HTTP 410. Public getBySlug/getById of a soft-deleted entity returns 410 ONLY when it was visibility PUBLIC (owner-refined '410 only for published' 2026-07-10); deleted PRIVATE/DRAFT/RESTRICTED -> 404 uniform (preserves SPEC-092 T-087 anti-enumeration); never-existed -> 404. Applied across accommodation/experience/gastronomy/post _canView (post gap fixed: soft-deleted PUBLIC post leaked 200). GONE logged as info (HOS-109). 4 web detail routes propagate; editar.astro treats 410 as clean redirect (fix from judgment-day round 1). Judgment-day APPROVED (round 2). Tests green: service-core 134, api routes 74, web 54, integration soft-delete-access 8. NOTE: apps/api test/integration/** is dead in CI (no test:integration script reaches it) - follow-up candidate.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                {
-                    "title": "Check current 404-vs-410 behavior for unknown entity slugs",
-                    "completed": false
-                },
-                {
-                    "title": "Return 410 Gone on accommodation/post/gastronomy/experience detail routes",
-                    "completed": false
-                },
-                { "title": "Integration test for the 410 response", "completed": false }
+                { "title": "Check current 404-vs-410 behavior for unknown entity slugs", "completed": true },
+                { "title": "Return 410 Gone on accommodation/post/gastronomy/experience detail routes", "completed": true },
+                { "title": "Integration test for the 410 response", "completed": true }
             ],
             "tags": ["seo", "web"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": {
-                "created": "2026-07-09T20:40:00.000Z",
-                "started": null,
-                "completed": null
-            }
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": { "created": "2026-07-09T20:40:00.000Z", "started": "2026-07-09T21:00:00.000Z", "completed": "2026-07-10T04:40:00.000Z" }
         }
     ],
     "summary": {
         "total": 17,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "cancelled": 5,
         "averageComplexity": 2.2

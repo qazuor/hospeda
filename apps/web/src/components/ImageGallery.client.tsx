@@ -218,6 +218,66 @@ function buildLightboxUrl(url: string): string {
     return buildCellUrl(url, 'full');
 }
 
+// ─── Cell image with loading skeleton ─────────────────────────────────────────
+
+/**
+ * Props for {@link GalleryCellImage} — the subset of native `<img>` attributes
+ * the gallery grid/cover cells use.
+ */
+interface GalleryCellImageProps {
+    readonly src: string;
+    readonly srcSet?: string;
+    readonly sizes?: string;
+    readonly alt: string;
+    /** Base cell image class (`styles.cellImg` or `styles.coverImg`). */
+    readonly className: string;
+    readonly loading: 'eager' | 'lazy';
+    readonly fetchPriority?: 'high' | 'low' | 'auto';
+    readonly width?: number;
+    readonly height?: number;
+    /** Mirrors the native `aria-hidden` attribute for decorative overlay cells. */
+    readonly ariaHidden?: boolean;
+}
+
+/**
+ * A gallery grid/cover `<img>` that renders an animated skeleton placeholder
+ * while the image is still loading, then clears it once the image paints (or
+ * fails to). Fixes the blank cells shown by the `detail` and `cover-plus-grid`
+ * variants before their images arrive — previously only the lightbox surfaced a
+ * loading indicator (BETA-147).
+ *
+ * The skeleton is a shimmer background applied to the `<img>` element itself.
+ * Because every cell image is `object-fit: cover` and fills its fixed-ratio
+ * cell, the loaded image paints over the background with zero layout shift.
+ *
+ * SSR/cache safety: the island markup is server-rendered, so an image may
+ * already be decoded before React attaches `onLoad`. A layout effect checks
+ * `img.complete` after mount and clears the skeleton synchronously in that case
+ * (mirrors the lightbox's belt-and-suspenders load handling).
+ */
+function GalleryCellImage({ className, ariaHidden, ...imgProps }: GalleryCellImageProps) {
+    const [isLoaded, setIsLoaded] = useState(false);
+    const ref = useRef<HTMLImageElement>(null);
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount to catch images already decoded before `onLoad` can attach (SSR/cache path).
+    useLayoutEffect(() => {
+        if (ref.current?.complete) {
+            setIsLoaded(true);
+        }
+    }, []);
+
+    return (
+        <img
+            ref={ref}
+            {...imgProps}
+            aria-hidden={ariaHidden}
+            className={isLoaded ? className : `${className} ${styles.cellImgSkeleton}`}
+            onLoad={() => setIsLoaded(true)}
+            onError={() => setIsLoaded(true)}
+        />
+    );
+}
+
 // ─── Lightbox ────────────────────────────────────────────────────────────────
 
 interface LightboxProps {
@@ -485,7 +545,14 @@ function DetailVariant({ images, onOpen, t, viewAllHref }: DetailVariantProps) {
                     aria-label={t('ui.accessibility.openFullscreen', 'Ver en pantalla completa')}
                     onClick={() => onOpen(0)}
                 >
-                    <img
+                    {/* SPEC-157 REQ-3: this is the LCP candidate on the
+                        accommodation detail page. The gallery is an island, so
+                        this markup is server-rendered into the initial HTML —
+                        fetchPriority + explicit dimensions let the browser
+                        prioritise the fetch and reserve layout (no CLS). The
+                        intrinsic ratio mirrors the .mosaic max-height (480px);
+                        object-fit: cover keeps remote images undistorted. */}
+                    <GalleryCellImage
                         src={buildCellUrl(featured.url, 'galleryFeatured')}
                         srcSet={buildCellSrcset(featured.url, 'galleryFeatured')}
                         sizes={
@@ -494,13 +561,6 @@ function DetailVariant({ images, onOpen, t, viewAllHref }: DetailVariantProps) {
                         alt={featured.alt}
                         className={styles.cellImg}
                         loading="eager"
-                        // SPEC-157 REQ-3: this is the LCP candidate on the
-                        // accommodation detail page. The gallery is an island, so
-                        // this markup is server-rendered into the initial HTML —
-                        // fetchPriority + explicit dimensions let the browser
-                        // prioritise the fetch and reserve layout (no CLS). The
-                        // intrinsic ratio mirrors the .mosaic max-height (480px);
-                        // object-fit: cover keeps remote images undistorted.
                         fetchPriority="high"
                         width={800}
                         height={480}
@@ -538,7 +598,7 @@ function DetailVariant({ images, onOpen, t, viewAllHref }: DetailVariantProps) {
                                         key={img.url}
                                         className={`${cellClass} ${styles.moreOverlay}`}
                                     >
-                                        <img
+                                        <GalleryCellImage
                                             src={buildCellUrl(img.url, thumbPreset)}
                                             srcSet={buildCellSrcset(img.url, thumbPreset)}
                                             sizes={
@@ -549,7 +609,7 @@ function DetailVariant({ images, onOpen, t, viewAllHref }: DetailVariantProps) {
                                             alt={img.alt}
                                             className={styles.cellImg}
                                             loading="lazy"
-                                            aria-hidden="true"
+                                            ariaHidden
                                         />
                                         {/* Keyboard-accessible overlay button — opens lightbox at the first hidden image */}
                                         <button
@@ -583,7 +643,7 @@ function DetailVariant({ images, onOpen, t, viewAllHref }: DetailVariantProps) {
                                     )}
                                     onClick={() => onOpen(lightboxIndex)}
                                 >
-                                    <img
+                                    <GalleryCellImage
                                         src={buildCellUrl(img.url, thumbPreset)}
                                         srcSet={buildCellSrcset(img.url, thumbPreset)}
                                         sizes={
@@ -693,7 +753,7 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
                 aria-label={t('ui.accessibility.openFullscreen', 'Ver en pantalla completa')}
                 onClick={() => onOpen(0)}
             >
-                <img
+                <GalleryCellImage
                     src={buildCellUrl(cover.url, 'galleryFeatured')}
                     srcSet={buildCellSrcset(cover.url, 'galleryFeatured')}
                     sizes={isCloudinaryUrl(cover.url) ? CELL_SIZES.galleryFeatured : undefined}
@@ -734,7 +794,7 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
                                     key={img.url}
                                     className={`${cellClass} ${styles.moreOverlay}`}
                                 >
-                                    <img
+                                    <GalleryCellImage
                                         src={buildCellUrl(img.url, extrasPreset)}
                                         srcSet={buildCellSrcset(img.url, extrasPreset)}
                                         sizes={
@@ -745,7 +805,7 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
                                         alt={img.alt}
                                         className={styles.cellImg}
                                         loading="lazy"
-                                        aria-hidden="true"
+                                        ariaHidden
                                     />
                                     {/* Keyboard-accessible overlay — opens lightbox at first hidden image */}
                                     <button
@@ -779,7 +839,7 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
                                 )}
                                 onClick={() => onOpen(lightboxIndex)}
                             >
-                                <img
+                                <GalleryCellImage
                                     src={buildCellUrl(img.url, extrasPreset)}
                                     srcSet={buildCellSrcset(img.url, extrasPreset)}
                                     sizes={

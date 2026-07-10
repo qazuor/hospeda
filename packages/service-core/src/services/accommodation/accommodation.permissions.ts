@@ -1,5 +1,10 @@
 import type { Accommodation, AccommodationCreateInput } from '@repo/schemas';
-import { LifecycleStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    PermissionEnum,
+    ServiceErrorCode,
+    VisibilityEnum
+} from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { checkGenericPermission, getOwnershipDescriptor, hasPermission } from '../../utils';
@@ -123,10 +128,18 @@ export function checkCanRestore(actor: Actor, entity: Accommodation): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanView(actor: Actor, entity: Accommodation): void {
-    // Soft-deleted accommodations are invisible to everyone.
-    // The base model's findOneWithRelations does not filter deleted_at IS NULL,
-    // so we enforce it here to prevent ghost rows from leaking on public reads.
+    // Soft-deleted accommodations existed but are permanently gone. The base
+    // model's findOneWithRelations does not filter deleted_at IS NULL, so we
+    // enforce it here to prevent ghost rows from leaking on public reads. Only
+    // entities that were PUBLIC (indexable) surface as GONE (410) so crawlers/
+    // LLM fetchers deindex the URL fast; deleted PRIVATE/RESTRICTED content that
+    // was never public returns NOT_FOUND (404, uniform) to preserve the
+    // anti-enumeration contract (SPEC-092 T-087) — its past existence is not
+    // disclosed. HOS-117 T-022.
     if (entity.deletedAt !== null && entity.deletedAt !== undefined) {
+        if (entity.visibility === VisibilityEnum.PUBLIC) {
+            throw new ServiceError(ServiceErrorCode.GONE, 'Accommodation is gone');
+        }
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
     }
 

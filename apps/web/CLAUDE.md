@@ -190,7 +190,7 @@ API Response (raw)  →  transforms.ts  →  Component Props (clean)
 
 ### Pricing Exception
 
-The pricing page (`/suscriptores/precios/*`) is the **only page with hardcoded fallback data**. If the billing API fails, it renders `pricing-fallbacks.ts` instead of showing an error. This is intentional.. a pricing page must never be empty as it's critical for conversion.
+The pricing page (`/suscriptores/planes/*`) is the **only page with hardcoded fallback data**. If the billing API fails, it renders `pricing-fallbacks.ts` instead of showing an error. This is intentional.. a pricing page must never be empty as it's critical for conversion.
 
 All other pages depend entirely on the API. If the API fails, they show an error or redirect to 404.
 

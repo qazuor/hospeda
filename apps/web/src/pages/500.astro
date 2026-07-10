@@ -13,10 +13,19 @@ import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { RefreshIcon, ChatIcon } from '@repo/icons';
 import { isDevelopment } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
+import { createTranslations, DEFAULT_LOCALE } from '@/lib/i18n';
+import { extractLocaleFromPath } from '@/lib/middleware-helpers';
 import { buildUrl } from '@/lib/urls';
 
-const locale = (Astro.locals?.locale ?? 'es') as SupportedLocale;
+// Error pages are reached via an uncaught error (500) or an internal rewrite
+// (404), where `Astro.locals.locale` may never have been populated. Recover the
+// locale from the ORIGINAL request path: `Astro.originPathname` holds the
+// pre-rewrite pathname (e.g. "/en/foo/"), unlike `Astro.url.pathname` which on a
+// rewrite reflects the rewritten "/500" route. Fall back to url path, then
+// locals, then the default locale.
+const originalPath = Astro.originPathname ?? Astro.url.pathname;
+const { locale: pathLocale } = extractLocaleFromPath({ path: originalPath });
+const locale = (pathLocale ?? Astro.locals?.locale ?? DEFAULT_LOCALE) as SupportedLocale;
 const { t } = createTranslations(locale);
 const homeUrl = buildUrl({ locale, path: '/' });
 const feedbackUrl = buildUrl({ locale, path: 'feedback' });
@@ -74,7 +83,7 @@ const destructiveColor = 'oklch(0.55 0.2 30)';
 		<GradientButton
 			slot="actions"
 			href={feedbackWithParams}
-			label="Reportar problema"
+			label={t('error.500.reportProblem')}
 			variant="outline-primary"
 			shape="rounded"
 		>

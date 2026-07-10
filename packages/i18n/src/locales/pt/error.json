@@ -4,7 +4,9 @@
         "heading": "Página não encontrada",
         "description": "Desculpe, a página que você está procurando não existe ou foi movida.",
         "message": "Desculpe, a página que você está procurando não existe ou foi movida.",
-        "goHome": "Voltar ao início"
+        "goHome": "Voltar ao início",
+        "search": "Buscar",
+        "reportBrokenLink": "Reportar link quebrado"
     },
     "500": {
         "title": "Erro do servidor",
@@ -12,7 +14,8 @@
         "description": "Desculpe, algo deu errado em nossos servidores. Por favor, tente novamente mais tarde.",
         "message": "Desculpe, algo deu errado. Por favor, tente novamente mais tarde.",
         "retry": "Tentar novamente",
-        "goHome": "Voltar ao início"
+        "goHome": "Voltar ao início",
+        "reportProblem": "Reportar problema"
     },
     "form": {
         "validation-failed": "A validação do formulário falhou. Por favor, corrija os erros e tente novamente.",

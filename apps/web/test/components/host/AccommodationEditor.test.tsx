@@ -10,7 +10,7 @@
  * - Submit handler: builds PATCH payload from changed fields only
  */
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccommodationEditorProps } from '@/components/host/AccommodationEditor.client';
@@ -87,6 +87,7 @@ const MOCK_INITIAL_DATA = {
     amenityIds: ['am-1'],
     featureIds: ['ft-1'],
     phone: '+54 9 343 1234567',
+    whatsapp: '',
     email: 'contacto@hotel.com',
     website: 'https://hotel.com',
     facebookUrl: 'https://facebook.com/hotel',
@@ -194,11 +195,14 @@ describe('AccommodationEditor', () => {
         expect(summaryInput.value).toBe('Un hermoso hotel en el centro');
 
         // Phase B: contact info fields (BETA-139: phone split into country + number;
-        // BETA-144: country field is a CountryCodeCombobox trigger button, not an input)
-        const phoneCountryTrigger = screen.getByLabelText(/país/i) as HTMLButtonElement;
+        // BETA-144: country field is a CountryCodeCombobox trigger button, not an input).
+        // BETA-151 added a parallel WhatsApp field sharing the "País"/"Número"
+        // sub-labels, so scope to the phone <fieldset> (legend "Teléfono").
+        const phoneFieldset = within(screen.getByRole('group', { name: /^teléfono$/i }));
+        const phoneCountryTrigger = phoneFieldset.getByLabelText(/país/i) as HTMLButtonElement;
         expect(phoneCountryTrigger).toHaveTextContent('Argentina (+54)');
 
-        const phoneNumberInput = screen.getByLabelText(/número/i) as HTMLInputElement;
+        const phoneNumberInput = phoneFieldset.getByLabelText(/número/i) as HTMLInputElement;
         expect(phoneNumberInput.value).toBe('9 343 1234567');
 
         const emailInput = screen.getByLabelText(/^email$/i) as HTMLInputElement;
@@ -314,7 +318,11 @@ describe('AccommodationEditor', () => {
         const user = userEvent.setup();
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
-        const phoneNumberInput = screen.getByLabelText(/número/i) as HTMLInputElement;
+        // Two fields carry a "Número" sub-label (phone + WhatsApp); scope to the
+        // phone <fieldset> (legend "Teléfono") to target the phone number input.
+        const phoneNumberInput = within(
+            screen.getByRole('group', { name: /^teléfono$/i })
+        ).getByLabelText(/número/i) as HTMLInputElement;
         await user.clear(phoneNumberInput);
         await user.type(phoneNumberInput, '9 343 9999999');
         fireEvent.submit(phoneNumberInput.closest('form')!);
@@ -324,6 +332,30 @@ describe('AccommodationEditor', () => {
         });
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.data.phone).toBe('+54 9 343 9999999');
+    });
+
+    it('should include whatsapp in PATCH payload when changed', async () => {
+        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
+        vi.doMock('@/lib/api/endpoints-protected', () => ({
+            accommodationEditApi: { update: mockUpdate }
+        }));
+
+        const user = userEvent.setup();
+        render(<AccommodationEditor {...DEFAULT_PROPS} />);
+
+        // Scope to the WhatsApp <fieldset> (legend "WhatsApp") to target its number input.
+        const whatsappNumberInput = within(
+            screen.getByRole('group', { name: /^whatsapp$/i })
+        ).getByLabelText(/número/i) as HTMLInputElement;
+        await user.clear(whatsappNumberInput);
+        await user.type(whatsappNumberInput, '9 343 8888888');
+        fireEvent.submit(whatsappNumberInput.closest('form')!);
+
+        await vi.waitFor(() => {
+            expect(mockUpdate).toHaveBeenCalledOnce();
+        });
+        const callArg = mockUpdate.mock.calls[0][0];
+        expect(callArg.data.whatsapp).toBe('+54 9 343 8888888');
     });
 
     it('should include social network fields in PATCH payload when changed', async () => {
