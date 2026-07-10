@@ -290,21 +290,21 @@
             "id": "T-013",
             "title": "Update json-ld-audit.md to typed-component reality",
             "description": "Rewrite apps/web/docs/seo/json-ld-audit.md to describe the current typed JSON-LD components (not the obsolete pre-SPEC-157 inline-object pattern), list all 6 entities + their components, and point at json-ld-coverage.test.ts as the enforced contract. Ref US-8. Tests: none (docs).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-007"],
             "blocks": [],
             "subtasks": [
-                { "title": "Describe typed components + 6 entities", "completed": false },
-                { "title": "Point to the CI guard test as the contract", "completed": false }
+                { "title": "Describe typed components + 6 entities", "completed": true },
+                { "title": "Point to the CI guard test as the contract", "completed": true }
             ],
             "tags": ["docs", "seo"],
             "phase": "docs",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
             "timestamps": {
                 "created": "2026-07-09T18:22:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T04:50:00.000Z",
+                "completed": "2026-07-10T05:00:00.000Z"
             }
         },
         {
@@ -401,22 +401,22 @@
             "id": "T-018",
             "title": "Wave 0 raw-SSR-HTML tests",
             "description": "Assert on rendered HTML string (no hydration): the 5 counters carry real final values (never 0+); empty destinations emit noindex,follow and are absent from the sitemap while non-empty stay indexed; 6/6 detail entities emit BreadcrumbJsonLd. Extends/complements json-ld-coverage.test.ts. Ref US-1/US-2/US-3/US-4. Tests: integration suite on SSR output.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004", "T-005", "T-006", "T-007"],
             "blocks": ["T-021"],
             "subtasks": [
-                { "title": "Counter final-value SSR test", "completed": false },
-                { "title": "Empty-destination noindex + sitemap-absence test", "completed": false },
-                { "title": "6/6 BreadcrumbJsonLd coverage test", "completed": false }
+                { "title": "Counter final-value SSR test", "completed": true },
+                { "title": "Empty-destination noindex + sitemap-absence test", "completed": true },
+                { "title": "6/6 BreadcrumbJsonLd coverage test", "completed": true }
             ],
             "tags": ["testing", "seo", "web"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
             "timestamps": {
                 "created": "2026-07-09T18:22:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T04:45:00.000Z",
+                "completed": "2026-07-10T05:00:00.000Z"
             }
         },
         {
@@ -520,9 +520,9 @@
     ],
     "summary": {
         "total": 17,
-        "pending": 11,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 8,
         "blocked": 0,
         "cancelled": 5,
         "averageComplexity": 2.2
