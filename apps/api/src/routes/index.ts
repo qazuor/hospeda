@@ -135,6 +135,8 @@ import {
 } from './partners';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
 import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
+// Points of interest: seed-only editorial catalog, public read tier only (HOS-113 NG-5/OQ-6)
+import { publicPointOfInterestRoutes } from './point-of-interest';
 import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
 // ─── Entities with admin-only or specialized tiers ──────────────────────────
 import { adminPostSponsorRoutes } from './postSponsor';
@@ -279,6 +281,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/amenities', publicAmenityRoutes);
         app.route('/api/v1/public/features', publicFeatureRoutes);
         app.route('/api/v1/public/attractions', publicAttractionRoutes);
+        // Points of interest: seed-only catalog, public read tier only (HOS-113 NG-5)
+        app.route('/api/v1/public/points-of-interest', publicPointOfInterestRoutes);
         app.route('/api/v1/public/event-locations', publicEventLocationRoutes);
         app.route('/api/v1/public/event-organizers', publicEventOrganizerRoutes);
 
