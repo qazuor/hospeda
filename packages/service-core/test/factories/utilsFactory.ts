@@ -16,6 +16,7 @@ export type IdTypes =
     | 'accommodationReview'
     | 'amenity'
     | 'attraction'
+    | 'pointOfInterest'
     | 'destination'
     | 'destinationReview'
     | 'post'
