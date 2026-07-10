@@ -52,6 +52,45 @@ describe('ReactivateTrialRequestSchema', () => {
         // Assert
         expect(result.success).toBe(false);
     });
+
+    it('should default billingInterval to "monthly" when omitted (regression)', () => {
+        // Arrange
+        const input = { planId: 'plan-owner-pro' };
+
+        // Act
+        const result = ReactivateTrialRequestSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.billingInterval).toBe('monthly');
+        }
+    });
+
+    it('should accept billingInterval "annual"', () => {
+        // Arrange
+        const input = { planId: 'plan-owner-pro', billingInterval: 'annual' as const };
+
+        // Act
+        const result = ReactivateTrialRequestSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.billingInterval).toBe('annual');
+        }
+    });
+
+    it('should reject an invalid billingInterval value', () => {
+        // Arrange
+        const input = { planId: 'plan-owner-pro', billingInterval: 'quarterly' };
+
+        // Act
+        const result = ReactivateTrialRequestSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
 });
 
 describe('ReactivateSubscriptionRequestSchema', () => {
@@ -69,6 +108,45 @@ describe('ReactivateSubscriptionRequestSchema', () => {
     it('should reject an empty planId', () => {
         // Arrange
         const input = { planId: '' };
+
+        // Act
+        const result = ReactivateSubscriptionRequestSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
+    it('should default billingInterval to "monthly" when omitted (regression)', () => {
+        // Arrange
+        const input = { planId: 'plan-owner-pro' };
+
+        // Act
+        const result = ReactivateSubscriptionRequestSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.billingInterval).toBe('monthly');
+        }
+    });
+
+    it('should accept billingInterval "annual"', () => {
+        // Arrange
+        const input = { planId: 'plan-owner-pro', billingInterval: 'annual' as const };
+
+        // Act
+        const result = ReactivateSubscriptionRequestSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.billingInterval).toBe('annual');
+        }
+    });
+
+    it('should reject an invalid billingInterval value', () => {
+        // Arrange
+        const input = { planId: 'plan-owner-pro', billingInterval: 'quarterly' };
 
         // Act
         const result = ReactivateSubscriptionRequestSchema.safeParse(input);
@@ -132,6 +210,31 @@ describe('ReactivateTrialResponseSchema', () => {
         expect(result.success).toBe(false);
     });
 
+    it('should accept status "pending_provider" (annual direct-insert result)', () => {
+        // Arrange
+        const input = { ...VALID_RESPONSE, status: 'pending_provider' as const };
+
+        // Act
+        const result = ReactivateTrialResponseSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.status).toBe('pending_provider');
+        }
+    });
+
+    it('should still accept a historic status "incomplete" payload (regression)', () => {
+        // Act
+        const result = ReactivateTrialResponseSchema.safeParse(VALID_RESPONSE);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.status).toBe('incomplete');
+        }
+    });
+
     it('should reject a missing message', () => {
         // Arrange
         const { message: _message, ...input } = VALID_RESPONSE;
@@ -193,6 +296,31 @@ describe('ReactivateSubscriptionResponseSchema', () => {
 
         // Assert
         expect(result.success).toBe(false);
+    });
+
+    it('should accept status "pending_provider" (annual direct-insert result)', () => {
+        // Arrange
+        const input = { ...VALID_RESPONSE, status: 'pending_provider' as const };
+
+        // Act
+        const result = ReactivateSubscriptionResponseSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.status).toBe('pending_provider');
+        }
+    });
+
+    it('should still accept a historic status "incomplete" payload (regression)', () => {
+        // Act
+        const result = ReactivateSubscriptionResponseSchema.safeParse(VALID_RESPONSE);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.status).toBe('incomplete');
+        }
     });
 
     it('should reject a null checkoutUrl that is not a valid URL string when non-null', () => {
