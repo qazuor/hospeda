@@ -7,7 +7,7 @@
 
 import type { TranslationKey } from '@repo/i18n';
 import { type SocialAudience, SocialAudienceCreateSchema } from '@repo/schemas';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -61,6 +61,17 @@ export function AudienceFormModal({ open, onOpenChange, item }: AudienceFormModa
     const createMutation = useCreateSocialAudience();
     const updateMutation = useUpdateSocialAudience();
     const isPending = createMutation.isPending || updateMutation.isPending;
+
+    // Re-seed the form whenever the modal opens for a given row. The component
+    // stays mounted across opens (parent only toggles `open`/`item`), so the
+    // `useState` initializer runs once with `item === null` and would otherwise
+    // keep showing an empty form on every edit.
+    useEffect(() => {
+        if (open) {
+            setForm(item ? itemToForm(item) : EMPTY_FORM);
+            setFieldErrors({});
+        }
+    }, [open, item]);
 
     const handleOpenChange = (next: boolean) => {
         if (!next) {
