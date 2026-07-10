@@ -44,7 +44,9 @@ if (!slug) return new Response(null, { status: 404 });
 const result = await experiencesApi.getBySlug({ slug });
 
 if (!result.ok) {
-    return new Response(null, { status: 404 });
+    // Propagate 410 Gone for soft-deleted entities so crawlers/LLM fetchers
+    // deindex the URL fast (HOS-117 T-022); any other failure stays 404.
+    return new Response(null, { status: result.error.status === 410 ? 410 : 404 });
 }
 
 const raw = result.data as unknown as Record<string, unknown>;

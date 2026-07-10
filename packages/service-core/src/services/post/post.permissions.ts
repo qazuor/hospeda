@@ -70,6 +70,26 @@ export function checkCanHardDeletePost(actor: Actor): void {
  * @throws ServiceError if forbidden
  */
 export function checkCanViewPost(actor: Actor, post: Post): void {
+    // Soft-deleted posts existed but are permanently gone. findOneWithRelations
+    // does not filter deleted_at IS NULL, so enforce it here. Only posts that
+    // were PUBLIC (indexable) surface as GONE (410) so crawlers/LLM fetchers
+    // deindex the URL fast; a deleted PRIVATE post that was never public returns
+    // NOT_FOUND (404, uniform) to preserve the anti-enumeration contract
+    // (SPEC-092 T-087). The author and staff with POST_VIEW_ALL may still view a
+    // deleted post for management. Without this guard, a soft-deleted PUBLIC post
+    // leaked a full 200. HOS-117 T-022.
+    if (
+        post.deletedAt !== null &&
+        post.deletedAt !== undefined &&
+        actor.id !== post.authorId &&
+        !hasPermission(actor, PermissionEnum.POST_VIEW_ALL)
+    ) {
+        if (post.visibility === VisibilityEnum.PUBLIC) {
+            throw new ServiceError(ServiceErrorCode.GONE, 'Post is gone');
+        }
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Post not found');
+    }
+
     if (post.visibility === VisibilityEnum.PUBLIC) return;
     if (
         post.visibility === VisibilityEnum.PRIVATE &&
