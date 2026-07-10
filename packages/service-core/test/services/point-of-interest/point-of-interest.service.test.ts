@@ -1,4 +1,9 @@
-import { DestinationModel, PointOfInterestModel, RDestinationPointOfInterestModel } from '@repo/db';
+import {
+    DestinationModel,
+    PointOfInterestModel,
+    pointsOfInterest,
+    RDestinationPointOfInterestModel
+} from '@repo/db';
 import type { PointOfInterestIdType } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
@@ -6,6 +11,7 @@ import {
     PointOfInterestTypeEnum,
     ServiceErrorCode
 } from '@repo/schemas';
+import { inArray as mockedInArray } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ServiceConfig } from '../../../src';
 import { PointOfInterestService } from '../../../src/services/point-of-interest/point-of-interest.service';
@@ -14,6 +20,15 @@ import { PointOfInterestFactoryBuilder } from '../../factories/pointOfInterestFa
 import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
+
+// `drizzle-orm`'s `inArray` is spied (not stubbed) so the real SQL condition
+// is still produced — this lets the HOS-113 regression tests below assert
+// the destinationId->id-filter resolution actually calls `inArray` with the
+// resolved POI ids, without needing a real Postgres connection.
+vi.mock('drizzle-orm', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('drizzle-orm')>();
+    return { ...actual, inArray: vi.fn(actual.inArray) };
+});
 
 const poiId = getMockId('pointOfInterest', 'poi-1') as PointOfInterestIdType;
 const actorNoPerms = createActor({ permissions: [] });
@@ -173,6 +188,196 @@ describe('PointOfInterestService', () => {
 
             expect(result.data).toEqual([]);
             expect(result.pagination.total).toBe(0);
+        });
+    });
+
+    /**
+     * HOS-113 CRITICAL regression coverage: `points_of_interest` has NO
+     * `destinationId` column — it is M2M via `r_destination_point_of_interest`.
+     * Before this fix, `_executeSearch`/`_executeCount`/`searchForList` put
+     * `where.destinationId = destinationId` and called `this.model.findAll(where)`
+     * directly, which either threw `DbError` (unknown column, destinationId-only
+     * search) or silently dropped the filter (combined with another known
+     * column), leaking POIs from every destination. These tests assert the
+     * `destinationId` filter is resolved via the join table and applied as an
+     * `id IN (...)` additional SQL condition (verified through a spied REAL
+     * `inArray` from `drizzle-orm`, not a hand-rolled predicate), and that the
+     * plain `where` object passed to `model.findAll`/`model.count` never
+     * contains `destinationId` (which would otherwise reach the real
+     * `buildWhereClause` as an unknown column and throw/misbehave).
+     */
+    describe('destinationId search filter (HOS-113 regression — join table, not a column)', () => {
+        const destinationId = getMockId('destination', 'dest-1');
+        const poiA = PointOfInterestFactoryBuilder.create({
+            id: getMockId('pointOfInterest', 'poi-dest-a') as PointOfInterestIdType,
+            type: PointOfInterestTypeEnum.BEACH
+        });
+        const poiB = PointOfInterestFactoryBuilder.create({
+            id: getMockId('pointOfInterest', 'poi-dest-b') as PointOfInterestIdType,
+            type: PointOfInterestTypeEnum.BEACH
+        });
+
+        describe('search()', () => {
+            it('should filter by destinationId alone via the join table without throwing', async () => {
+                asMock(relatedModel.findAll).mockResolvedValue({
+                    items: [
+                        { destinationId, pointOfInterestId: poiA.id },
+                        { destinationId, pointOfInterestId: poiB.id }
+                    ]
+                });
+                asMock(model.findAll).mockResolvedValue({ items: [poiA, poiB], total: 2 });
+
+                const result = await service.search(actorNoPerms, {
+                    destinationId,
+                    page: 1,
+                    pageSize: 10
+                });
+
+                expect(result.error).toBeUndefined();
+                expect(result.data?.items).toHaveLength(2);
+
+                // The relation lookup was resolved via the join table.
+                expect(relatedModel.findAll).toHaveBeenCalledWith({ destinationId });
+
+                // `where` reaching model.findAll must NOT carry `destinationId` —
+                // that column does not exist on `points_of_interest`.
+                const [whereArg, , additionalConditionsArg] = asMock(model.findAll).mock
+                    .calls[0] as [Record<string, unknown>, unknown, unknown[]];
+                expect(whereArg).not.toHaveProperty('destinationId');
+                expect(whereArg).toEqual({});
+
+                // The id filter is a real `inArray(pointsOfInterest.id, ids)`
+                // condition — asserted via the spied real `inArray`.
+                expect(mockedInArray).toHaveBeenCalledWith(
+                    pointsOfInterest.id,
+                    expect.arrayContaining([poiA.id, poiB.id])
+                );
+                expect(additionalConditionsArg).toHaveLength(1);
+            });
+
+            it('should apply BOTH destinationId and type constraints (not silently drop destinationId)', async () => {
+                asMock(relatedModel.findAll).mockResolvedValue({
+                    items: [{ destinationId, pointOfInterestId: poiA.id }]
+                });
+                asMock(model.findAll).mockResolvedValue({ items: [poiA], total: 1 });
+
+                const result = await service.search(actorNoPerms, {
+                    destinationId,
+                    type: PointOfInterestTypeEnum.BEACH,
+                    page: 1,
+                    pageSize: 10
+                });
+
+                expect(result.error).toBeUndefined();
+
+                const [whereArg, , additionalConditionsArg] = asMock(model.findAll).mock
+                    .calls[0] as [Record<string, unknown>, unknown, unknown[]];
+                // `type` is a real column and stays in `where`; `destinationId`
+                // must NOT be — both constraints are still applied, just via
+                // different mechanisms.
+                expect(whereArg).toEqual({ type: PointOfInterestTypeEnum.BEACH });
+                expect(mockedInArray).toHaveBeenCalledWith(pointsOfInterest.id, [poiA.id]);
+                expect(additionalConditionsArg).toHaveLength(1);
+            });
+
+            it('should short-circuit to an empty result when destinationId maps to zero POIs', async () => {
+                asMock(relatedModel.findAll).mockResolvedValue({ items: [] });
+
+                const result = await service.search(actorNoPerms, {
+                    destinationId,
+                    page: 1,
+                    pageSize: 10
+                });
+
+                expect(result.error).toBeUndefined();
+                expect(result.data?.items).toEqual([]);
+                expect(result.data?.total).toBe(0);
+                expect(model.findAll).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('count()', () => {
+            it('should apply the same destinationId join-table resolution as search()', async () => {
+                asMock(relatedModel.findAll).mockResolvedValue({
+                    items: [{ destinationId, pointOfInterestId: poiA.id }]
+                });
+                asMock(model.count).mockResolvedValue(1);
+
+                const result = await service.count(actorNoPerms, {
+                    destinationId,
+                    page: 1,
+                    pageSize: 10
+                });
+
+                expect(result.error).toBeUndefined();
+                expect(result.data?.count).toBe(1);
+
+                const [whereArg, optionsArg] = asMock(model.count).mock.calls[0] as [
+                    Record<string, unknown>,
+                    { additionalConditions?: unknown[] }
+                ];
+                expect(whereArg).toEqual({});
+                expect(optionsArg?.additionalConditions).toHaveLength(1);
+                expect(mockedInArray).toHaveBeenCalledWith(pointsOfInterest.id, [poiA.id]);
+            });
+
+            it('should short-circuit to a zero count when destinationId maps to zero POIs', async () => {
+                asMock(relatedModel.findAll).mockResolvedValue({ items: [] });
+
+                const result = await service.count(actorNoPerms, {
+                    destinationId,
+                    page: 1,
+                    pageSize: 10
+                });
+
+                expect(result.error).toBeUndefined();
+                expect(result.data?.count).toBe(0);
+                expect(model.count).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('searchForList()', () => {
+            it('should apply the destinationId join-table id-filter (not a where column)', async () => {
+                asMock(relatedModel.findAll)
+                    // First call: resolving destinationId -> poi ids.
+                    .mockResolvedValueOnce({
+                        items: [{ destinationId, pointOfInterestId: poiA.id }]
+                    })
+                    // Second call: destination counts for the returned page.
+                    .mockResolvedValueOnce({
+                        items: [{ destinationId, pointOfInterestId: poiA.id }]
+                    });
+                asMock(model.findAll).mockResolvedValue({ items: [poiA], total: 1 });
+
+                const result = await service.searchForList(actorNoPerms, {
+                    destinationId,
+                    page: 1,
+                    pageSize: 10
+                });
+
+                expect(result.data).toHaveLength(1);
+                expect(result.data[0]?.id).toBe(poiA.id);
+
+                const [whereArg, , additionalConditionsArg] = asMock(model.findAll).mock
+                    .calls[0] as [Record<string, unknown>, unknown, unknown[]];
+                expect(whereArg).not.toHaveProperty('destinationId');
+                expect(additionalConditionsArg).toHaveLength(1);
+                expect(mockedInArray).toHaveBeenCalledWith(pointsOfInterest.id, [poiA.id]);
+            });
+
+            it('should short-circuit to an empty page when destinationId maps to zero POIs', async () => {
+                asMock(relatedModel.findAll).mockResolvedValue({ items: [] });
+
+                const result = await service.searchForList(actorNoPerms, {
+                    destinationId,
+                    page: 1,
+                    pageSize: 10
+                });
+
+                expect(result.data).toEqual([]);
+                expect(result.pagination.total).toBe(0);
+                expect(model.findAll).not.toHaveBeenCalled();
+            });
         });
     });
 });

@@ -1,4 +1,9 @@
-import { DestinationModel, PointOfInterestModel, RDestinationPointOfInterestModel } from '@repo/db';
+import {
+    DestinationModel,
+    PointOfInterestModel,
+    pointsOfInterest,
+    RDestinationPointOfInterestModel
+} from '@repo/db';
 import type {
     CountResponse,
     Destination,
@@ -26,6 +31,7 @@ import {
     PointsOfInterestByDestinationInputSchema,
     ServiceErrorCode
 } from '@repo/schemas';
+import { inArray, type SQL } from 'drizzle-orm';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import {
@@ -470,19 +476,82 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         });
     }
 
-    protected async _executeSearch(
-        params: PointOfInterestSearchInput,
-        _actor: Actor,
-        _ctx: ServiceContext
-    ): Promise<PaginatedListOutput<PointOfInterest>> {
-        const { slug, type, isFeatured, isBuiltin, destinationId } = params;
+    /**
+     * Builds the plain `where` object for search/count/searchForList.
+     *
+     * Deliberately EXCLUDES `destinationId` — `points_of_interest` has no
+     * `destinationId` column (the relation is M2M via
+     * `r_destination_point_of_interest`, HOS-113 OQ-1). Passing it through
+     * to `buildWhereClause` would either throw `DbError` (unknown column,
+     * when it's the only filter) or be silently dropped (when combined with
+     * another known filter), returning POIs across ALL destinations. See
+     * {@link resolveDestinationIdFilter} for how `destinationId` is applied
+     * instead, as an `id IN (...)` additional condition.
+     *
+     * @param params - Search params containing the plain-column filters.
+     * @returns A `where` object safe to pass to `model.findAll`/`model.count`.
+     */
+    private buildSearchWhere(
+        params: Pick<PointOfInterestSearchInput, 'slug' | 'type' | 'isFeatured' | 'isBuiltin'>
+    ): Record<string, unknown> {
+        const { slug, type, isFeatured, isBuiltin } = params;
         const where: Record<string, unknown> = {};
         if (slug) where.slug = slug;
         if (type) where.type = type;
         if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
-        if (destinationId) where.destinationId = destinationId;
-        const { items, total } = await this.model.findAll(where);
+        return where;
+    }
+
+    /**
+     * Resolves a `destinationId` search filter to an `id IN (...)`
+     * additional SQL condition, via the `r_destination_point_of_interest`
+     * join table (HOS-113 OQ-1 — POIs have no `destinationId` column).
+     *
+     * Reuses the same relation lookup as
+     * {@link getPointsOfInterestForDestination}: query the join table for
+     * every `pointOfInterestId` mapped to the destination, then constrain
+     * the main query with `inArray(pointsOfInterest.id, ids)`.
+     *
+     * @param destinationId - The destination id filter from search params,
+     *   if any.
+     * @returns `{ empty: true }` when `destinationId` was provided but maps
+     *   to zero points of interest (callers MUST short-circuit to an empty
+     *   result rather than falling through to an unfiltered query).
+     *   `{ empty: false, additionalConditions: [] }` when no `destinationId`
+     *   filter was requested. `{ empty: false, additionalConditions: [SQL] }`
+     *   otherwise, containing the `id IN (...)` condition to combine with
+     *   the plain `where` object.
+     */
+    private async resolveDestinationIdFilter(
+        destinationId: string | undefined
+    ): Promise<{ empty: boolean; additionalConditions: SQL[] }> {
+        if (!destinationId) {
+            return { empty: false, additionalConditions: [] };
+        }
+        const { items: relations } = await this.relatedModel.findAll({ destinationId });
+        if (relations.length === 0) {
+            return { empty: true, additionalConditions: [] };
+        }
+        const poiIds = relations.map(
+            (r: DestinationPointOfInterestRelation) => r.pointOfInterestId as string
+        );
+        return { empty: false, additionalConditions: [inArray(pointsOfInterest.id, poiIds)] };
+    }
+
+    protected async _executeSearch(
+        params: PointOfInterestSearchInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<PaginatedListOutput<PointOfInterest>> {
+        const where = this.buildSearchWhere(params);
+        const { empty, additionalConditions } = await this.resolveDestinationIdFilter(
+            params.destinationId
+        );
+        if (empty) {
+            return { items: [], total: 0 };
+        }
+        const { items, total } = await this.model.findAll(where, undefined, additionalConditions);
         return { items, total };
     }
 
@@ -491,14 +560,14 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<CountResponse> {
-        const { slug, type, isFeatured, isBuiltin, destinationId } = params;
-        const where: Record<string, unknown> = {};
-        if (slug) where.slug = slug;
-        if (type) where.type = type;
-        if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
-        if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
-        if (destinationId) where.destinationId = destinationId;
-        const count = await this.model.count(where);
+        const where = this.buildSearchWhere(params);
+        const { empty, additionalConditions } = await this.resolveDestinationIdFilter(
+            params.destinationId
+        );
+        if (empty) {
+            return { count: 0 };
+        }
+        const count = await this.model.count(where, { additionalConditions });
         return { count };
     }
 
@@ -516,32 +585,38 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         _ctx?: ServiceContext
     ): Promise<PointOfInterestListWithCountsResponse> {
         await this._canSearch(actor);
-        const { slug, type, isFeatured, isBuiltin, destinationId } = params;
         const page = params.page ?? 1;
         const pageSize = params.pageSize ?? 10;
 
-        const where: Record<string, unknown> = {};
-        if (slug) where.slug = slug;
-        if (type) where.type = type;
-        if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
-        if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
-        if (destinationId) where.destinationId = destinationId;
+        const where = this.buildSearchWhere(params);
+        const { empty, additionalConditions } = await this.resolveDestinationIdFilter(
+            params.destinationId
+        );
 
-        const { items, total } = await this.model.findAll(where, { page, pageSize });
+        const buildEmptyPage = (total: number) => ({
+            data: [],
+            pagination: {
+                page,
+                pageSize,
+                total,
+                totalPages: 0,
+                hasNextPage: false,
+                hasPreviousPage: false
+            }
+        });
+        if (empty) {
+            return buildEmptyPage(0);
+        }
+
+        const { items, total } = await this.model.findAll(
+            where,
+            { page, pageSize },
+            additionalConditions
+        );
 
         // If no items, return early
         if (items.length === 0) {
-            return {
-                data: [],
-                pagination: {
-                    page,
-                    pageSize,
-                    total,
-                    totalPages: 0,
-                    hasNextPage: false,
-                    hasPreviousPage: false
-                }
-            };
+            return buildEmptyPage(total);
         }
 
         // Get all POI IDs from the current page
