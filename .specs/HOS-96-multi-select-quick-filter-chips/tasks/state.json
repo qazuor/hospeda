@@ -637,66 +637,66 @@
             "id": "T-020",
             "title": "Write regression suite for the shipped ?category=A,B latent bug",
             "description": "Write a dedicated regression integration test suite (`apps/api`) proving the exact input that fails on `main` today — the sidebar already serializes `?category=A,B` for events/blog, which the backend silently rejects/mismatches — now matches both categories once expressed as `?categories=A,B` end-to-end (schema → model → service → route). This suite is explicitly framed as RED before T-006/T-007 land and GREEN after, so it cannot be satisfied by a partial fix.\n\n**Files:** new or extended integration test file(s) under `apps/api/test/` (or the existing events/posts route test files) — e.g. `apps/api/test/routes/public/events.categories-regression.test.ts` and the posts equivalent.\n\n**Tests:** AAA — (1) `GET /api/v1/public/events?categories=MUSIC,CULTURE` returns events of both categories, count > 0 for a fixture with both present; (2) same for `GET /api/v1/public/posts?categories=A,B`; (3) explicitly assert the response is NOT an error and NOT an empty/mismatched set (the exact failure mode being regressed).\n\n**Acceptance mapping:** M-3, US-9 (AC5).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-006", "T-007"],
             "blocks": ["T-027"],
             "subtasks": [
                 {
                     "title": "Write events ?categories=A,B regression test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write posts ?categories=A,B regression test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["test", "regression", "api"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T17:50:00Z",
+                "completed": "2026-07-10T18:12:00Z"
             }
         },
         {
             "id": "T-021",
             "title": "Write backward-compatibility regression suite across all three facets",
             "description": "Write an integration test suite asserting the singular params (`type`, `category`) keep working standalone, and that when both singular and array are present, the array wins — across accommodations, events, and posts. This locks in the precedence rule from the model branches (T-004, T-005, and the pre-existing accommodation model).\n\n**Files:** `apps/api/test/routes/public/` — extend or add test files for accommodations, events, posts covering the backward-compat matrix.\n\n**Tests:** AAA — (1) `GET /accommodations?type=HOTEL` still returns hotels; (2) `GET /events?category=MUSIC` still returns music events; (3) `GET /posts?category=A` still returns category-A posts; (4) `GET /accommodations?type=HOTEL&types=CABIN,APARTMENT` returns cabins+apartments (array wins, not hotel); (5) same both-present-array-wins assertion for events and posts; (6) dedicated landings (`/alojamientos/tipo/hotel/`, `/publicaciones/categoria/{slug}/`) still resolve 200 via their internal singular-value query path.\n\n**Acceptance mapping:** US-10 (all AC).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-006", "T-007"],
             "blocks": ["T-027"],
             "subtasks": [
                 {
                     "title": "Write singular-param-still-works tests for all three facets",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write both-present array-wins tests for all three facets",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify dedicated landings still resolve via singular path",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["test", "regression", "api"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T17:50:00Z",
+                "completed": "2026-07-10T18:12:00Z"
             }
         },
         {
@@ -710,36 +710,36 @@
             "subtasks": [
                 {
                     "title": "Write empty-array-param unfiltered tests (3 facets)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write duplicate-member de-dup tests (3 facets)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write whitespace-CSV parse tests (3 facets)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write all-values-selected == unfiltered tests (3 facets)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write invalid-member strict-400 tests (3 facets)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["test", "edge-case"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T17:50:00Z",
+                "completed": "2026-07-10T18:12:00Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 13,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 14,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 1.9
     }
