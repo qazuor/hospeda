@@ -53,6 +53,9 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
+import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
+import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
+import { XCircleIcon } from '@repo/icons';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -66,6 +69,17 @@ const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 const pageSize = 9;
 const q = url.searchParams.get('q') ?? undefined;
 const category = url.searchParams.get('category') ?? undefined;
+/**
+ * Active `categories` values (the postCategory facet's array `paramKey`) —
+ * computed once, up front, and reused for both the API fetch (below) and the
+ * category chip active/href state (HOS-96 T-012). Singular `category` is
+ * still read and forwarded too (backward compat — the array takes
+ * precedence server-side when both are present, US-10).
+ */
+const postCategoryActiveValues = readFacetActiveValues({
+    searchParams: url.searchParams,
+    paramKey: FACET_CONFIG_BY_ID.postCategory.paramKey
+});
 
 /**
  * Maps the URL's user-friendly sort key (e.g. `newest`, `mostSaved`) to the
@@ -125,6 +139,11 @@ const result = await postsApi.list({
     pageSize,
     q,
     category,
+    // HOS-96 T-012: forward the accumulated multi-select values as a CSV
+    // string (never the raw JS array — `serializeParams` in `api/client.ts`
+    // does `String(value)`, which on an array yields a comma-joined string
+    // too, but relying on that implicit coercion is fragile; join explicitly).
+    categories: postCategoryActiveValues.length > 0 ? postCategoryActiveValues.join(',') : undefined,
     sortBy: sortResolved.sortBy,
     sortOrder: sortResolved.sortOrder,
     isFeatured: isFeatured ?? undefined,
@@ -291,19 +310,23 @@ const itemListEntries = cards.map((card) => ({
     name: card.title,
 }));
 
-/** Quick-filter chips: top post categories. Hrefs use lowercase slugs consistent
- * with the [category] route which normalises incoming slugs via resolvePostCategorySlug.
+/** Quick-filter chips: top post categories.
  * BETA-113 (icon parity): each chip's icon is resolved via `@repo/icons`'
  * `getPostCategoryIcon`, the same canonical post-category → icon mapping used
  * elsewhere in the platform (no local mapping needed — every category slug
  * below already exists in `POST_CATEGORY_VISUALS`).
  *
- * HOS-96 T-009: each chip's `active`/`aria-pressed` state is computed from
- * the `categories` array query param (the postCategory facet's `paramKey`),
- * so several categories can read as simultaneously active once the URL
- * carries more than one value. The href itself is intentionally UNCHANGED
- * here (still the dedicated `/publicaciones/categoria/{slug}/` landing) —
- * switching it to the in-place multi-value toggle is a later HOS-96 task.
+ * HOS-96 T-012: the chip href is now a real in-place multi-select toggle on
+ * `categories` (via `buildMultiToggleParamHref`, keyed on the postCategory
+ * facet's `paramKey`) instead of navigating to the dedicated
+ * `/publicaciones/categoria/{slug}/` route — clicking a second chip
+ * accumulates instead of replacing (US-1). The dedicated landing itself
+ * renders no chip row of its own (verified — it fixes the category via the
+ * URL path instead), so there is no "escape from the landing's own chips"
+ * case to handle there; it stays intact and unmodified as the single-value
+ * canonical entry (US-6). `postCategoryActiveValues` (computed once, near
+ * the top of this file) already drives both the `categories` fetch param
+ * above and each chip's `active`/`aria-pressed` state here.
  */
 const POST_CATEGORY_CHIP_DEFS = [
     { value: 'CULTURE',    slug: 'culture',    label: t('blog.categories.culture',    'Cultura') },
@@ -316,20 +339,32 @@ const POST_CATEGORY_CHIP_DEFS = [
     { value: 'TIPS',       slug: 'tips',       label: t('blog.categories.tips',       'Consejos') }
 ] as const;
 
-const postCategoryActiveValues = readFacetActiveValues({
-    searchParams: url.searchParams,
-    paramKey: FACET_CONFIG_BY_ID.postCategory.paramKey
-});
-
 const postCategoryChips = POST_CATEGORY_CHIP_DEFS.map(({ value, slug, label }) => {
     const active = postCategoryActiveValues.includes(value);
     return {
         label,
-        href: buildUrl({ locale, path: `/publicaciones/categoria/${slug}/` }),
+        href: buildMultiToggleParamHref({
+            baseUrl,
+            searchParams: paginationParams,
+            key: FACET_CONFIG_BY_ID.postCategory.paramKey,
+            value
+        }),
         icon: getPostCategoryIcon({ category: slug }),
         active,
         ariaPressed: active
     };
+});
+
+// HOS-96 T-010/T-012: "Clear (N)" bulk-reset chip — appears only once 2+
+// categories are active (US-4).
+const postCategoryClearChip = buildClearFacetChip({
+    baseUrl,
+    searchParams: paginationParams,
+    paramKey: FACET_CONFIG_BY_ID.postCategory.paramKey,
+    count: postCategoryActiveValues.length,
+    labelTemplate: t('common.filterChips.clearLabel'),
+    ariaLabelTemplate: t('common.filterChips.clearAriaLabel'),
+    icon: XCircleIcon
 });
 ---
 
@@ -384,7 +419,7 @@ const postCategoryChips = POST_CATEGORY_CHIP_DEFS.map(({ value, slug, label }) =
     />
 
     <FilterChips
-        chips={postCategoryChips}
+        chips={postCategoryClearChip ? [...postCategoryChips, postCategoryClearChip] : postCategoryChips}
         ariaLabel={t('blog.categoryChips.ariaLabel', 'Filtrar por categoría de publicación')}
         showScrollButtons
         prevLabel={t('common.prev', 'Anterior')}

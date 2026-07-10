@@ -31,6 +31,9 @@ import { buildUrl } from '@/lib/urls';
 import { resolvePromotedFacetCanonical } from '@/lib/seo/promoted-facet-canonical';
 import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
+import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
+import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
+import { XCircleIcon } from '@repo/icons';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
@@ -432,16 +435,23 @@ const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalB
 /**
  * Quick-filter type chips shown above the listing grid (HOS-97). Uses the
  * canonical enum so any new accommodation type is picked up automatically.
- * The slug for the route is the lowercased enum value with `_` → `-` (e.g.
- * `COUNTRY_HOUSE` → `country-house`) to match `tipo/[type]/index.astro`.
  *
- * This row still navigates to a dedicated `/alojamientos/tipo/{slug}/` route
- * (route-nav, not yet an in-place `?types=` toggle — that switch lands in a
- * later HOS-96 task). HOS-96 T-009: each chip's `active`/`aria-pressed` state
- * is now computed from the `types` array query param (the accommodationType
- * facet's `paramKey` — already the multi-select source of truth end-to-end,
- * see `facet-config.ts`), so several types can read as simultaneously active
- * once the URL carries more than one value (e.g. via the sidebar).
+ * HOS-96 T-011: the chip href is now a real in-place multi-select toggle on
+ * `types` (via `buildMultiToggleParamHref`, keyed on the accommodationType
+ * facet's `paramKey`) instead of navigating to the dedicated
+ * `/alojamientos/tipo/{slug}/` route — clicking a second chip accumulates
+ * rather than replacing (US-1). `baseUrl` is the BASE listing (not the
+ * dedicated landing), so a chip clicked while landing-adjacent always lands
+ * on the base listing with the accumulated `types` param (US-6 AC4); the
+ * dedicated landing itself renders no chip row of its own (verified — it
+ * fixes the type via the URL path instead), so there is no "escape from the
+ * landing's own chips" case to handle there. The dedicated landing stays
+ * intact and unmodified as the single-value canonical entry (US-6).
+ *
+ * HOS-96 T-009: each chip's `active`/`aria-pressed` state is computed from
+ * the `types` array query param (the accommodationType facet's `paramKey` —
+ * already the multi-select source of truth end-to-end, see
+ * `facet-config.ts`), so several types can read as simultaneously active.
  */
 const typeActiveValues = readFacetActiveValues({
     searchParams: url.searchParams,
@@ -449,15 +459,32 @@ const typeActiveValues = readFacetActiveValues({
 });
 const typeChips = Object.values(AccommodationTypeEnum).map((value) => {
     const enumValue = String(value);
-    const slug = enumValue.toLowerCase().replace(/_/g, '-');
     const active = typeActiveValues.includes(enumValue);
     return {
         label: getAccommodationTypeLabel({ type: enumValue, t }),
-        href: buildUrl({ locale, path: `/alojamientos/tipo/${slug}/` }),
+        href: buildMultiToggleParamHref({
+            baseUrl,
+            searchParams: url.searchParams,
+            key: FACET_CONFIG_BY_ID.accommodationType.paramKey,
+            value: enumValue
+        }),
         icon: getAccommodationTypeIcon({ type: enumValue }),
         active,
         ariaPressed: active
     };
+});
+
+// HOS-96 T-010/T-011: "Clear (N)" bulk-reset chip — appears only once 2+
+// types are active (US-4), reusing the removable active-filter-chip pattern
+// via the shared, generic i18n label/aria-label templates.
+const typeClearChip = buildClearFacetChip({
+    baseUrl,
+    searchParams: url.searchParams,
+    paramKey: FACET_CONFIG_BY_ID.accommodationType.paramKey,
+    count: typeActiveValues.length,
+    labelTemplate: t('common.filterChips.clearLabel'),
+    ariaLabelTemplate: t('common.filterChips.clearAriaLabel'),
+    icon: XCircleIcon
 });
 
 // Build initial filter params for the sidebar (avoids hydration flash).
@@ -664,7 +691,7 @@ const emptyStateSuggestions = [
 	/>
 
 	<FilterChips
-		chips={typeChips}
+		chips={typeClearChip ? [...typeChips, typeClearChip] : typeChips}
 		ariaLabel={t('accommodations.typeChips.ariaLabel', 'Filtrar por tipo de alojamiento')}
 		showScrollButtons
 		prevLabel={t('common.prev', 'Anterior')}

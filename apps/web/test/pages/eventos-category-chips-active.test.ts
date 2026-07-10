@@ -2,9 +2,11 @@
  * @file eventos-category-chips-active.test.ts
  * @description Source-based assertions that the events listing's category
  * quick-filter chips compute `active`/`ariaPressed` from the `categories`
- * array query param (the eventCategory facet's `paramKey`), while the chip
- * href stays on the existing single-select `?category=` toggle for now — the
- * href migration is a later HOS-96 task (T-011/12/13), not this one.
+ * array query param (the eventCategory facet's `paramKey`). HOS-96 T-013
+ * switched the chip href itself to the real multi-select toggle on
+ * `categories` too (superseding the original T-009 "href stays single-select
+ * for now" interim state) — see `eventos-multiselect-wiring.test.ts` for the
+ * full T-013 coverage (accumulate/remove/Clear(N)/API-forwarding).
  */
 
 import { readFileSync } from 'node:fs';
@@ -25,9 +27,10 @@ describe('eventos/index.astro — category chip active/aria-pressed state (HOS-9
         expect(src).toMatch(/readFacetActiveValues\(\{[^}]*searchParams:\s*url\.searchParams/);
     });
 
-    it('still builds each chip href via buildToggleParamHref keyed on the singular category param (unchanged href)', () => {
-        expect(src).toContain("key: 'category',");
-        expect(src).toContain('buildToggleParamHref({');
+    it('builds each chip href via buildMultiToggleParamHref keyed on the categories array param (HOS-96 T-013)', () => {
+        expect(src).toContain('FACET_CONFIG_BY_ID.eventCategory.paramKey');
+        expect(src).toContain('buildMultiToggleParamHref({');
+        expect(src).not.toContain("key: 'category',");
     });
 
     it('passes both active and ariaPressed on each category chip', () => {

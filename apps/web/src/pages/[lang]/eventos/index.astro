@@ -53,7 +53,9 @@ import {
     DEFAULT_EVENT_CATEGORIES
 } from '@/lib/event-listing-summary';
 import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
-import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
+import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
+import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
+import { XCircleIcon } from '@repo/icons';
 import {
     computeWhenQueryBounds,
     EVENT_DATE_FILTER_VALUES,
@@ -80,6 +82,17 @@ const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 const pageSize = 9;
 const q = url.searchParams.get('q') ?? undefined;
 const category = url.searchParams.get('category') ?? undefined;
+/**
+ * Active `categories` values (the eventCategory facet's array `paramKey`) —
+ * computed once, up front, and reused for both the API fetch (below) and the
+ * category chip active/href state (HOS-96 T-013). Singular `category` is
+ * still read and forwarded too (backward compat — old links / the array
+ * takes precedence server-side when both are present, US-10).
+ */
+const activeCategories = readFacetActiveValues({
+    searchParams: url.searchParams,
+    paramKey: FACET_CONFIG_BY_ID.eventCategory.paramKey
+});
 /**
  * Maps the URL's user-friendly sort key (e.g. `upcoming`, `newest`) to the
  * backend `(sortBy, sortOrder)` pair. Encoding direction in the key lets the
@@ -172,6 +185,11 @@ const result = await eventsApi.list({
     pageSize,
     q,
     category,
+    // HOS-96 T-013: forward the accumulated multi-select values as a CSV
+    // string (never the raw JS array — `serializeParams` in `api/client.ts`
+    // does `String(value)`, which on an array yields a comma-joined string
+    // too, but relying on that implicit coercion is fragile; join explicitly).
+    categories: activeCategories.length > 0 ? activeCategories.join(',') : undefined,
     sortBy: sortResolved.sortBy,
     sortOrder: sortResolved.sortOrder,
     startDateAfter,
@@ -377,20 +395,19 @@ const paginationParams = new URLSearchParams(url.searchParams);
 paginationParams.delete('page');
 
 /**
- * Category quick-filter chips. Like the temporal chips, these filter the
- * listing in place via `?category=ENUM` (preserving every active filter and
- * resetting to page 1) instead of navigating to a separate /categoria/ page.
- * Values are the EventCategoryEnum members the API expects.
+ * Category quick-filter chips. HOS-96 T-013: hrefs now toggle the real
+ * multi-select `categories` array param in place via
+ * `buildMultiToggleParamHref` (preserving every active filter and resetting
+ * to page 1) — clicking a second chip accumulates instead of replacing
+ * (US-1). Events has no dedicated per-category landing, so there is no
+ * landing-escape case to handle here (unlike accommodations/blog). Values
+ * are the EventCategoryEnum members the API expects.
  *
- * HOS-96 T-009: each chip's `active`/`aria-pressed` state is now computed
- * from the `categories` array query param (the eventCategory facet's
- * `paramKey`) rather than the singular `category` used above for the href —
- * the href itself is intentionally UNCHANGED here (still single-select
- * toggle on `category`); switching it to the multi-value toggle is a later
- * HOS-96 task. Until that lands, clicking a chip still filters correctly via
- * `category`, but the chip only visually reads as active/pressed once the
- * URL also carries the value under `categories` (e.g. a crafted multi-value
- * URL, or once the sidebar/href migration lands).
+ * `activeCategories` (computed once, near the top of this file) already
+ * drives both the `categories` fetch param above and each chip's
+ * `active`/`aria-pressed` state here, so href, visual state, and the API
+ * request are all coherent (this also resolves the T-009 temporary
+ * "chip filters but doesn't visually highlight" gap).
  */
 const CATEGORY_CHIP_DEFS = [
     { value: 'MUSIC', label: t('events.categories.music', 'Música') },
@@ -403,31 +420,36 @@ const CATEGORY_CHIP_DEFS = [
     { value: 'WORKSHOP', label: t('events.categories.workshop', 'Taller') }
 ] as const;
 
-const categoryActiveValues = readFacetActiveValues({
-    searchParams: url.searchParams,
-    paramKey: FACET_CONFIG_BY_ID.eventCategory.paramKey
-});
-
 const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
-    const isActive = category === value;
-    const active = categoryActiveValues.includes(value);
+    const active = activeCategories.includes(value);
     // BETA-113 (icon parity): reuse the same category → icon mapping the
     // event cards already use, so a category shows the identical icon on its
     // card and in this quick-filter chip.
     const icon = getEventCategoryIconComponent(value);
     return {
         label,
-        href: buildToggleParamHref({
+        href: buildMultiToggleParamHref({
             baseUrl,
             searchParams: paginationParams,
-            key: 'category',
-            value,
-            isActive
+            key: FACET_CONFIG_BY_ID.eventCategory.paramKey,
+            value
         }),
         active,
         ariaPressed: active,
         icon
     };
+});
+
+// HOS-96 T-010/T-013: "Clear (N)" bulk-reset chip — appears only once 2+
+// categories are active (US-4).
+const categoryClearChip = buildClearFacetChip({
+    baseUrl,
+    searchParams: paginationParams,
+    paramKey: FACET_CONFIG_BY_ID.eventCategory.paramKey,
+    count: activeCategories.length,
+    labelTemplate: t('common.filterChips.clearLabel'),
+    ariaLabelTemplate: t('common.filterChips.clearAriaLabel'),
+    icon: XCircleIcon
 });
 
 // ItemList JSON-LD entries — the visible page of event cards, routed through
@@ -495,7 +517,7 @@ const itemListEntries = cards.map((card) => ({
 	-->
 	<!-- Category chips -->
 	<FilterChips
-		chips={categoryChips}
+		chips={categoryClearChip ? [...categoryChips, categoryClearChip] : categoryChips}
 		ariaLabel={t('events.categoryChips.ariaLabel', 'Filtrar por categoría de evento')}
 		showScrollButtons
 		prevLabel={t('common.prev', 'Anterior')}

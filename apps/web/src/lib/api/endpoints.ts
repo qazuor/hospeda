@@ -649,6 +649,13 @@ export const eventsApi = {
         sortOrder?: 'asc' | 'desc';
         isFeatured?: boolean;
         category?: string;
+        /**
+         * Filter events by multiple categories (comma-separated
+         * `EventCategoryEnum` members, e.g. `'MUSIC,CULTURE'`). When both
+         * `category` and `categories` are present, the backend's array
+         * takes precedence (HOS-96 US-2/US-9/US-10).
+         */
+        categories?: string;
         /** Filter events by destination UUID (resolved via event_locations.destination_id). */
         destinationId?: string;
         /** ISO date string — only return events starting on or after this date. */
@@ -720,6 +727,13 @@ export const postsApi = {
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
         category?: string;
+        /**
+         * Filter posts by multiple categories (comma-separated
+         * `PostCategoryEnum` members, e.g. `'CULTURE,GASTRONOMY'`). When both
+         * `category` and `categories` are present, the backend's array
+         * takes precedence (HOS-96 US-2/US-9/US-10).
+         */
+        categories?: string;
         /** Filter posts by author UUID */
         authorId?: string;
         /** Filter posts by destination UUID (mapped server-side to `relatedDestinationId`). */

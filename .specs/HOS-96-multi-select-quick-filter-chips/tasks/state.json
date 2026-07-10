@@ -346,101 +346,101 @@
             "id": "T-011",
             "title": "Switch accommodation-type chip to in-place multi-toggle",
             "description": "On `apps/web/src/pages/[lang]/alojamientos/index.astro`, switch the type chip row from dedicated-route navigation (`/alojamientos/tipo/{slug}/`) to in-place `buildMultiToggleParamHref` toggling against the `types` array param (per the facet config from T-001), using the active-state/aria-pressed rendering from T-009 and the Clear(N) chip from T-010. The dedicated landing route itself is NOT modified (stays alive per T-017/US-6) — only the chip's `href` computation changes.\n\n**Files:** `apps/web/src/pages/[lang]/alojamientos/index.astro`.\n\n**Tests (component/integration, `apps/web`):** AAA — (1) clicking \"Hotel\" from an unfiltered listing → URL `?types=HOTEL`; (2) with `?types=HOTEL`, clicking \"Cabaña\" → `?types=HOTEL,CABIN` (accumulates, not replaces); (3) clicking the active \"Hotel\" chip while `?types=HOTEL,CABIN` → `?types=CABIN`; (4) clicking a chip while on the dedicated landing that adds a second value navigates to the base listing with both values (`/alojamientos/?types=HOTEL,CABIN`), not the landing.\n\n**Acceptance mapping:** US-1 (AC1, AC2), US-3 (AC1, AC2), US-6 (AC4).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-010"],
             "blocks": ["T-017", "T-023", "T-024"],
             "subtasks": [
                 {
                     "title": "Replace dedicated-route href with buildMultiToggleParamHref against types param",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify dedicated landing route untouched",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write accumulate/remove/landing-escape tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "accommodations"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T17:45:00Z",
+                "completed": "2026-07-10T18:05:00Z"
             }
         },
         {
             "id": "T-012",
             "title": "Switch blog/post-category chip to in-place multi-toggle",
             "description": "On the blog/publications listing page, switch the category chip row from dedicated-route navigation (`/publicaciones/categoria/{slug}/`) to in-place `buildMultiToggleParamHref` toggling against the `categories` array param (now backed by T-007's service forwarding), using the active-state/aria-pressed rendering from T-009 and Clear(N) from T-010. The dedicated landing route is NOT modified (stays alive per T-019/US-6).\n\n**Files:** `apps/web/src/pages/[lang]/publicaciones/index.astro` (confirm exact path).\n\n**Tests (component/integration, `apps/web`):** same matrix as T-011 applied to blog categories — accumulate, remove, landing-escape to base listing with multi-value param.\n\n**Acceptance mapping:** US-1 (AC1, AC2), US-3 (AC1, AC2), US-6 (AC4).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-010", "T-007"],
             "blocks": ["T-015", "T-019", "T-023"],
             "subtasks": [
                 {
                     "title": "Replace dedicated-route href with buildMultiToggleParamHref against categories param",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify dedicated landing route untouched",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write accumulate/remove/landing-escape tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "blog"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T17:45:00Z",
+                "completed": "2026-07-10T18:05:00Z"
             }
         },
         {
             "id": "T-013",
             "title": "Switch events-category chip from single to multi toggle",
             "description": "On the events listing page, the category chip already toggles in-place (via `buildToggleParamHref`, single-select). Switch it to `buildMultiToggleParamHref` against the `categories` array param (now backed by T-006's service forwarding), adding active-state/aria-pressed (T-009) and Clear(N) (T-010). No dedicated landing exists for events categories (per the facet config table), so there is no landing-escape case here.\n\n**Files:** `apps/web/src/pages/[lang]/eventos/index.astro` (confirm exact path).\n\n**Tests (component/integration, `apps/web`):** AAA — (1) clicking a second category chip accumulates (`?categories=A,B`, not replace); (2) clicking an active chip removes only that value; (3) removing the last active value drops the param entirely.\n\n**Acceptance mapping:** US-1 (AC1, AC2), US-3 (AC1, AC2), US-9 (AC4).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-010", "T-006"],
             "blocks": ["T-014", "T-018", "T-023"],
             "subtasks": [
                 {
                     "title": "Replace single-toggle href with buildMultiToggleParamHref against categories param",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write accumulate/remove tests for events categories",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "events"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T17:45:00Z",
+                "completed": "2026-07-10T18:05:00Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 16,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 1.9
     }

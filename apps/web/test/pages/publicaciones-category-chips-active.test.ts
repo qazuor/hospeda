@@ -2,9 +2,12 @@
  * @file publicaciones-category-chips-active.test.ts
  * @description Source-based assertions that the blog listing's category
  * quick-filter chips compute `active`/`ariaPressed` from the `categories`
- * array query param (the postCategory facet's `paramKey`), while the chip
- * href stays on the existing dedicated-route landing for now — the href
- * migration is a later HOS-96 task (T-011/12/13), not this one.
+ * array query param (the postCategory facet's `paramKey`). HOS-96 T-012
+ * switched the chip href itself to the real multi-select toggle on
+ * `categories` too (superseding the original T-009 "href stays on the
+ * dedicated-route landing for now" interim state) — see
+ * `publicaciones-multiselect-wiring.test.ts` for the full T-012 coverage
+ * (accumulate/remove/Clear(N)/API-forwarding).
  */
 
 import { readFileSync } from 'node:fs';
@@ -28,8 +31,14 @@ describe('publicaciones/index.astro — category chip active/aria-pressed state 
         expect(src).toMatch(/readFacetActiveValues\(\{[^}]*searchParams:\s*url\.searchParams/);
     });
 
-    it('still builds each chip href from the dedicated /publicaciones/categoria/{slug}/ landing (unchanged href)', () => {
-        expect(src).toContain('/publicaciones/categoria/');
+    it('builds each chip href via buildMultiToggleParamHref keyed on the categories array param (HOS-96 T-012)', () => {
+        const chipsBlock = src.slice(
+            src.indexOf('const postCategoryChips = POST_CATEGORY_CHIP_DEFS.map'),
+            src.indexOf('const postCategoryChips = POST_CATEGORY_CHIP_DEFS.map') + 400
+        );
+        expect(chipsBlock).toContain('buildMultiToggleParamHref({');
+        expect(chipsBlock).toContain('FACET_CONFIG_BY_ID.postCategory.paramKey');
+        expect(chipsBlock).not.toContain('path: `/publicaciones/categoria/');
     });
 
     it('passes both active and ariaPressed on each post category chip', () => {
