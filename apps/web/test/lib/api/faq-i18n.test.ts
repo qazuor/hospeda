@@ -43,6 +43,24 @@ describe('toDestinationFaqs — HOS-117 i18n resolution', () => {
     it('returns [] for a non-array input', () => {
         expect(toDestinationFaqs(undefined, 'es')).toEqual([]);
     });
+
+    it('prefers the legacy es text when the i18n object lacks the requested-locale key (no cross-fallback)', () => {
+        const raw = [
+            {
+                id: 'f1',
+                question: '¿Cómo llego?',
+                answer: 'En auto.',
+                // Partial i18n object: only en/pt translated, no es key.
+                questionI18n: { en: 'How do I get there?', pt: 'Como chego?' },
+                answerI18n: { en: 'By car.', pt: 'De carro.' }
+            }
+        ];
+        const [faq] = toDestinationFaqs(raw, 'es');
+        // es request must NOT surface the English/Portuguese text.
+        expect(faq.question).toBe('¿Cómo llego?');
+        expect(faq.answer).toBe('En auto.');
+        expect(faq.resolvedLocale).toBe('es');
+    });
 });
 
 describe('faqSetInLanguage — HOS-117 honest inLanguage', () => {

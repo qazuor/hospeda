@@ -38,7 +38,7 @@ import {
     extractGalleryItems,
     extractGalleryUrls
 } from '../media';
-import { type I18nTextLike, resolveI18nLocale, resolveI18nText } from '../resolve-i18n-text';
+import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
 
 // Re-export types from canonical source for backward compatibility
 export type {
@@ -78,6 +78,27 @@ export function toDestinationFaqs(raw: unknown, locale = 'es'): DetailFaq[] {
 }
 
 /**
+ * Resolves one FAQ text field for `locale` under the FAQ contract: use the
+ * requested locale's translation only when present, otherwise the legacy
+ * plain-text column, which is the authoritative Spanish (es) source. Unlike the
+ * generic resolveI18nText, this never cross-falls to another locale — so an
+ * i18n object missing the requested key never surfaces en/pt text over the
+ * legacy es content (HOS-117 / judgment-day C2).
+ */
+function resolveFaqField(
+    i18n: unknown,
+    legacy: unknown,
+    locale: string
+): { readonly text: string; readonly locale: 'es' | 'en' | 'pt' } {
+    if (i18n && typeof i18n === 'object') {
+        const localized = (i18n as I18nTextLike)[locale as keyof I18nTextLike];
+        if (localized) return { text: localized, locale: locale as 'es' | 'en' | 'pt' };
+    }
+    // No translation for the requested locale — the legacy column is the es source.
+    return { text: String(legacy ?? ''), locale: 'es' };
+}
+
+/**
  * Shared FAQ normalizer for every entity detail transform (accommodation,
  * destination, experience, gastronomy) — HOS-117. Resolves the localized
  * `questionI18n`/`answerI18n` fields for `locale`, falling back to the legacy
@@ -91,18 +112,16 @@ export function toDestinationFaqs(raw: unknown, locale = 'es'): DetailFaq[] {
 function mapDetailFaqs(raw: unknown, locale: string): DetailFaq[] {
     if (!Array.isArray(raw)) return [];
     return (raw as ReadonlyArray<Record<string, unknown>>).map((faq) => {
-        const questionValue = (faq.questionI18n as I18nTextLike | string) ?? faq.question;
-        const answerValue = (faq.answerI18n as I18nTextLike | string) ?? faq.answer;
-        const questionLocale = resolveI18nLocale(questionValue, locale);
-        const answerLocale = resolveI18nLocale(answerValue, locale);
+        const q = resolveFaqField(faq.questionI18n, faq.question, locale);
+        const a = resolveFaqField(faq.answerI18n, faq.answer, locale);
         return {
             id: String(faq.id || ''),
-            question: resolveI18nText(questionValue, locale) || String(faq.question || ''),
-            answer: resolveI18nText(answerValue, locale) || String(faq.answer || ''),
+            question: q.text,
+            answer: a.text,
             category: faq.category ? String(faq.category) : null,
             // Honest per-FAQ language: both fields must agree, else the pair is
             // mixed and we report the platform default (es).
-            resolvedLocale: questionLocale === answerLocale ? questionLocale : 'es'
+            resolvedLocale: q.locale === a.locale ? q.locale : 'es'
         };
     });
 }
