@@ -219,7 +219,7 @@
       "id": "T-008",
       "title": "Branch annual in TrialService.reactivateFromTrial",
       "description": "In `apps/api/src/services/trial.service.ts::reactivateFromTrial` (verified current anchor: line 941), thread `input.billingInterval` (default `'monthly'`) into the `resolveReactivationPlan({ billing, planId, billingInterval })` call (T-003). When the resolved `interval === 'annual'`: call `createAnnualSubscription` (T-001) instead of `createPaidSubscription` (~line 985), passing the annual `urls` variant (`AnnualReactivationCheckoutUrls`, T-004) and the SAME metadata keys the monthly branch already stamps — `metadata.supersedesSubscriptionId` (~975-980) and `metadata.convertedFromTrial` (~992-996) — UNCHANGED key names, so the reconcile cron's `inferTriggerSource`/`parseSupersededIds` helpers (`apps/api/src/cron/jobs/reactivation-supersession-reconcile.job.ts`) keep working without modification (T-014 depends on this). Still defer cancelling the old trial subscription to the confirmation webhook (unchanged deferred-cancel pattern, §6.4/§6.5) — do NOT synchronously cancel in either branch. Build the return value using the widened `ReactivateFromTrialResult` (T-004): annual returns `{ success: true, subscriptionId: localSubscriptionId, checkoutUrl, status: 'pending_provider', message }`.\n\nThe monthly branch must remain byte-for-byte unchanged (NG-3) — verify no diff in generated preapproval payload or metadata shape for the default/monthly path.\n\nTests (`apps/api/test/services/trial.service.test.ts`, `reactivateFromTrial (HOS-114)` describe block, line ~1667): add cases — `billingInterval: 'annual'` + trial-eligible plan with annual price → calls `createAnnualSubscription` (mock/spy) with `supersedesSubscriptionId` + `convertedFromTrial` metadata, returns `status: 'pending_provider'`; `billingInterval` omitted → unchanged monthly path (re-run existing assertions verbatim); `billingInterval: 'annual'` + plan has no annual price → propagates `NO_ANNUAL_PRICE` from the guard.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-001",
@@ -239,21 +239,21 @@
       ],
       "phase": "integration",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T19:50:15Z",
+        "completed": "2026-07-10T20:04:43Z"
       }
     },
     {
       "id": "T-009",
       "title": "Branch annual in TrialService.reactivateSubscription",
       "description": "In `apps/api/src/services/trial.service.ts::reactivateSubscription` (verified current anchor: line 1068), apply the SAME annual branch as T-008: thread `billingInterval` into `resolveReactivationPlan`, call `createAnnualSubscription` when `interval === 'annual'` with the same `supersedesSubscriptionId` metadata key (this method's `triggerSource` marker is `'subscription-reactivation'` — do NOT set `convertedFromTrial`, mirroring the existing monthly branch's distinction at ~line 1164). Preserve the existing `previousPlanId` resolution logic (from the canceled subscription being reactivated) — this is the one behavior that differs from T-008's method and must carry through unchanged for both intervals. Build the annual return value via the widened `ReactivateSubscriptionResult` (T-004): `{ success: true, subscriptionId: localSubscriptionId, previousPlanId, checkoutUrl, status: 'pending_provider', message }`.\n\nMonthly branch stays byte-for-byte unchanged (NG-3).\n\nTests (`apps/api/test/services/trial.service.test.ts`, `reactivateSubscription (HOS-114)` describe block, line ~1960): mirror T-008's new cases — annual success path (verify `createAnnualSubscription` call + metadata + `previousPlanId` preserved), monthly regression (unchanged), `NO_ANNUAL_PRICE` propagation.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-001",
@@ -273,21 +273,21 @@
       ],
       "phase": "integration",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T19:50:15Z",
+        "completed": "2026-07-10T20:04:43Z"
       }
     },
     {
       "id": "T-010",
       "title": "Wire billingInterval + URL resolution into reactivateTrialRoute",
       "description": "In `apps/api/src/routes/billing/trial.ts::reactivateTrialRoute` handler (line ~304-386): read `billingInterval` from the already-parsed body (`parseResult.data`, T-006 adds the field). Branch URL construction (OQ-3) — `'monthly'` (default): unchanged `{ paymentMethodReturnUrl: buildPaymentMethodReturnUrl(locale), notificationUrl: buildNotificationUrl() }`; `'annual'`: `{ successUrl: buildAnnualSuccessUrl(locale), cancelUrl: buildAnnualCancelUrl(locale), notificationUrl: buildNotificationUrl() }` using the now-shared builders from T-005. Pass `billingInterval` through to `trialService.reactivateFromTrial(...)` (T-008). Map the service result onto the response body — the existing object-literal return (`success`, `subscriptionId`, `checkoutUrl`, `status`, `message`) already forwards `result.status` verbatim, so no shape change needed there beyond the T-007 schema widening already covering `'pending_provider'`.\n\nTests (`apps/api/test/routes/trial-reactivate.test.ts`): add cases — request with `billingInterval: 'annual'` → 200 with `status: 'pending_provider'` and a `checkoutUrl` (mock the service call); request omitting `billingInterval` → unchanged monthly response (regression); confirm `mapSubscriptionCheckoutErrorToHttp` still correctly maps a `NO_ANNUAL_PRICE` throw to its HTTP status (check `subscription-checkout-error-http.ts` already has a mapping for this code — if not, that's a gap to flag, not silently swallow to 500).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-005",
@@ -308,21 +308,21 @@
       ],
       "phase": "integration",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T20:18:16Z",
+        "completed": "2026-07-10T20:45:14Z"
       }
     },
     {
       "id": "T-011",
       "title": "Wire billingInterval + URL resolution into reactivateSubscriptionRoute",
       "description": "Mirror T-010 for `apps/api/src/routes/billing/trial.ts::reactivateSubscriptionRoute` handler (line ~480-...): read `billingInterval` from the parsed body, branch URL construction the same way, pass through to `trialService.reactivateSubscription(...)` (T-009), map the result (including `previousPlanId`) onto the response.\n\nTests (`apps/api/test/routes/reactivate-subscription.test.ts`): mirror T-010's cases — annual success (200, `pending_provider`, `checkoutUrl`), monthly regression unchanged, `NO_ANNUAL_PRICE` error mapping.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-005",
@@ -343,21 +343,21 @@
       ],
       "phase": "integration",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T20:18:16Z",
+        "completed": "2026-07-10T20:45:14Z"
       }
     },
     {
       "id": "T-012",
       "title": "Export completeReactivationSupersession as a shared trigger",
       "description": "`completeReactivationSupersession` is currently a PRIVATE (non-exported) function in `apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts` (line ~235-292), called only by `processSubscriptionUpdated` on the `subscription_preapproval.created` -> ACTIVE transition (~line 809). For OQ-4, `payment-logic.ts::confirmAnnualSubscription` (T-013) needs to call the exact same logic on the annual `payment.updated` confirm path — duplicating the `supersedesSubscriptionId` metadata-parsing loop would violate this codebase's AC-7 single-source discipline (the same discipline that motivated extracting `completeSupersessionPairing` in the first place, per that file's own module JSDoc).\n\nExport `completeReactivationSupersession` from `subscription-logic.ts` (add `export` to the function declaration; no signature or behavior change) so `payment-logic.ts` can import and call it directly. If a circular-import risk exists between `payment-logic.ts` and `subscription-logic.ts` (both live in the same `routes/webhooks/mercadopago/` directory — check for existing cross-imports before assuming a cycle), instead move the function verbatim into a new shared module (e.g. `apps/api/src/services/billing/reactivation-supersession-trigger.ts`) and have BOTH `subscription-logic.ts` and `payment-logic.ts` import from there — prefer this shared-module approach if any doubt exists, since it also keeps `subscription-logic.ts` focused on subscription-status-transition dispatch only.\n\nTests: run the existing `apps/api/test/webhooks/subscription-logic.test.ts` suite unchanged (no behavior change, pure export/move) to confirm the monthly preapproval-confirm path still calls it correctly.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [],
       "blocks": [
@@ -372,21 +372,21 @@
       ],
       "phase": "integration",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T20:50:08Z",
+        "completed": "2026-07-10T20:55:21Z"
       }
     },
     {
       "id": "T-013",
       "title": "Call supersession trigger from confirmAnnualSubscription on payment.updated",
       "description": "In `apps/api/src/routes/webhooks/mercadopago/payment-logic.ts::confirmAnnualSubscription` (verified current anchor: line 107-...), call the shared `completeReactivationSupersession` (T-012) immediately after the local subscription status flips `pending_provider` -> `active` (right after the `db.update(billingSubscriptions).set({ status: ACTIVE, ... })` call at line ~242-245, alongside the existing `clearEntitlementCache(sub.customerId)` call at line ~252 — same insertion point, before the `syncFeaturedByEntitlementForOwner` block). Pass the newly-active local subscription row (`{ id: sub.id, customerId: sub.customerId, planId: sub.planId }`, matching the exact shape `completeReactivationSupersession` already expects) plus `metadata` (re-fetch or thread through from the initial row read — the function reads `metadata.supersedesSubscriptionId` / `metadata.convertedFromTrial`), `providerEventId: providerPaymentId`, and `source`.\n\nThis mirrors EXACTLY what `subscription-logic.ts::processSubscriptionUpdated` already does for the monthly preapproval-confirm path (line ~804-809) — same call shape, same error-isolation contract (the trigger never throws; a failure on one pairing never undoes the just-committed activation). A normal (non-reactivation) annual `/start-paid` confirmation has no `supersedesSubscriptionId` in its metadata, so the trigger no-ops for it exactly as it already does for a normal monthly `/start-paid` confirmation — no new guard needed.\n\nTests (`apps/api/test/routes/webhooks/payment-logic.test.ts`): add cases — a `payment.updated` event confirming an annual subscription whose local row carries `metadata.supersedesSubscriptionId` triggers a cancel + audit of the superseded subscription (mock `completeReactivationSupersession`/`completeSupersessionPairing` and assert the call); a normal (non-reactivation) annual confirmation with no `supersedesSubscriptionId` does NOT trigger any supersession call (regression — SPEC-141 D1 path unchanged); idempotent re-delivery of the same `payment.updated` event (subscription already `active`) short-circuits before reaching the trigger (existing early-return at line ~143-149 already covers this — assert it still does after the new call is added downstream).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-012"
@@ -406,21 +406,21 @@
       ],
       "phase": "integration",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T21:07:21Z",
+        "completed": "2026-07-10T22:55:04Z"
       }
     },
     {
       "id": "T-014",
       "title": "Verify + harden reactivation-supersession-reconcile cron for annual subs",
       "description": "Audit `apps/api/src/cron/jobs/reactivation-supersession-reconcile.job.ts`'s candidate query (verified current anchor: lines ~210-224). FINDING from anchor verification: the candidate query already filters ONLY on `status = ACTIVE AND metadata->>'supersedesSubscriptionId' IS NOT NULL` — it does NOT filter on `mpSubscriptionId` presence, so it is already interval-agnostic and should pick up a confirmed annual reactivation's `active` row exactly like a monthly one (OQ-4's concern — 'must verify the reconcile cron doesn't currently filter to preapproval-only subs' — resolves to: it does not). Similarly, `completeSupersessionPairing`'s (`reactivation-supersession-complete.ts`) provider-status check only inspects the SUPERSEDED (old) subscription's `mpSubscriptionId` — never the new one — so an annual NEW subscription (which never has an `mpSubscriptionId`) does not affect that logic path at all.\n\nThis task is primarily VERIFICATION + regression-test-writing, not a code change — only touch the cron file if the audit surfaces a real gap (e.g. an assumption elsewhere in the file that `newSubscription` always has a monthly interval; grep the whole file for `mpSubscriptionId`, `billingInterval`, `'month'`/`'year'` before concluding no change is needed).\n\nTests (`apps/api/test/cron/reactivation-supersession-reconcile.test.ts`): add a case seeding an ACTIVE subscription with `billingInterval: 'year'` and `metadata.supersedesSubscriptionId` set, no matching audit row yet — assert the cron picks it up as a candidate and calls `completeSupersessionPairing` for it, exactly as it would for a monthly candidate row.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-013"
@@ -437,21 +437,21 @@
       ],
       "phase": "integration",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T23:08:26Z",
+        "completed": "2026-07-10T23:31:26Z"
       }
     },
     {
       "id": "T-015",
       "title": "Update web reactivateSubscription() caller for billingInterval",
       "description": "In `apps/web/src/lib/api/endpoints-protected.ts::reactivateSubscription` (verified current anchor: line 633-642), add an optional `billingInterval?: 'monthly' | 'annual'` parameter, forwarded in the POST body alongside `planId`. Per this function's own JSDoc (line ~619-620), it currently has ZERO callers in the web app (dead code as of the HOS-114 investigation) — this is a low-risk type/param update, not a live user-facing change. Update the JSDoc example to show the annual case. Note: there is no equivalent `reactivateFromTrial` web wrapper at all today (only `reactivateSubscription` exists) — do not add one; out of scope (no spec requirement to add new web UI, only to keep the existing wrapper's contract in sync with the API).\n\nTests: extend the existing test coverage for this endpoint wrapper (locate via `apps/web/test/lib/api/endpoints-protected.test.ts` or equivalent — grep for `reactivateSubscription`) with a case passing `billingInterval: 'annual'` and asserting it's forwarded in the request body; existing monthly-default case must still pass unchanged.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 1,
       "blockedBy": [
         "T-010",
@@ -466,14 +466,14 @@
       ],
       "phase": "integration",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T23:37:39Z",
+        "completed": "2026-07-10T23:43:14Z"
       }
     },
     {
@@ -739,9 +739,9 @@
   ],
   "summary": {
     "total": 23,
-    "pending": 16,
+    "pending": 8,
     "inProgress": 0,
-    "completed": 7,
+    "completed": 15,
     "blocked": 0,
     "averageComplexity": 2.1
   }
