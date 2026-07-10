@@ -196,6 +196,7 @@
         "062-attraction-parque_municipal",
         "080-attraction-sede_carnaval"
     ],
+    "pointOfInterestIds": ["009-point-of-interest-complejo_termal_concordia"],
     "faqs": [
         {
             "question": "¿Cómo se llega a Concordia desde Buenos Aires?",

@@ -6,7 +6,8 @@ import {
     computeHierarchyPath,
     computeHierarchyPathIds,
     DestinationService,
-    isValidParentChildRelation
+    isValidParentChildRelation,
+    PointOfInterestService
 } from '@repo/service-core';
 import requiredManifest from '../manifest-required.json';
 import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
@@ -218,6 +219,10 @@ export const seedDestinations = createSeedFactory({
             $schema,
             id,
             attractionIds,
+            // HOS-113: destination↔POI M2M relation ids, built via the
+            // relationBuilder below (postProcess-equivalent step) — not a
+            // column on the destinations table.
+            pointOfInterestIds,
             averageRating,
             accommodationsCount,
             // FAQs are a 1-to-N child relation, not a column — seeded via postProcess (SPEC-158)
@@ -227,6 +232,7 @@ export const seedDestinations = createSeedFactory({
             $schema?: string;
             id?: string;
             attractionIds?: string[];
+            pointOfInterestIds?: string[];
             averageRating?: number;
             accommodationsCount?: number;
             faqs?: Array<{ question: string; answer: string; category?: string }>;
@@ -318,26 +324,79 @@ export const seedDestinations = createSeedFactory({
         return `"${destination.name}"${cityInfo}`;
     },
 
-    // Custom relation builder for attractions using the generic factory
-    relationBuilder: createServiceRelationBuilder({
-        serviceClass: AttractionService,
-        methodName: 'addAttractionToDestination',
-        extractIds: (destination) =>
-            (destination as { attractionIds?: string[] }).attractionIds || [],
-        entityType: 'attractions',
-        relationType: 'attractions',
-        buildParams: (destinationId, attractionId) => ({
-            destinationId,
-            attractionId
-        }),
-        // Use the same getEntityInfo for main entity
-        getMainEntityInfo: (destination) => {
-            const dest = destination as { name: string; location?: { city?: string } };
-            return `"${dest.name}"`;
-        },
-        // Get attraction info for related entities
-        getRelatedEntityInfo: (seedId, context) => {
-            return context.idMapper.getDisplayName('attractions', seedId);
-        }
-    })
+    // Relation builder for attractions, using the generic factory.
+    relationBuilder: buildDestinationRelations
 });
+
+/**
+ * Relation builder for attractions (destination ↔ attraction M2M).
+ * Extracted to a named const (rather than inline) so it can be composed with
+ * {@link pointOfInterestRelationBuilder} below — `SeedFactoryConfig` only
+ * accepts a single `relationBuilder` function per entity.
+ */
+const attractionRelationBuilder = createServiceRelationBuilder({
+    serviceClass: AttractionService,
+    methodName: 'addAttractionToDestination',
+    extractIds: (destination) => (destination as { attractionIds?: string[] }).attractionIds || [],
+    entityType: 'attractions',
+    relationType: 'attractions',
+    buildParams: (destinationId, attractionId) => ({
+        destinationId,
+        attractionId
+    }),
+    // Use the same getEntityInfo for main entity
+    getMainEntityInfo: (destination) => {
+        const dest = destination as { name: string; location?: { city?: string } };
+        return `"${dest.name}"`;
+    },
+    // Get attraction info for related entities
+    getRelatedEntityInfo: (seedId, context) => {
+        return context.idMapper.getDisplayName('attractions', seedId);
+    }
+});
+
+/**
+ * Relation builder for points of interest (destination ↔ POI M2M, HOS-113
+ * OQ-1). Mirrors {@link attractionRelationBuilder} exactly, targeting
+ * `PointOfInterestService.addPointOfInterestToDestination` and the
+ * `pointOfInterestIds` fixture array instead of `attractionIds`.
+ */
+const pointOfInterestRelationBuilder = createServiceRelationBuilder({
+    serviceClass: PointOfInterestService,
+    methodName: 'addPointOfInterestToDestination',
+    extractIds: (destination) =>
+        (destination as { pointOfInterestIds?: string[] }).pointOfInterestIds || [],
+    entityType: 'pointsOfInterest',
+    relationType: 'pointsOfInterest',
+    buildParams: (destinationId, pointOfInterestId) => ({
+        destinationId,
+        pointOfInterestId
+    }),
+    getMainEntityInfo: (destination) => {
+        const dest = destination as { name: string; location?: { city?: string } };
+        return `"${dest.name}"`;
+    },
+    getRelatedEntityInfo: (seedId, context) => {
+        return context.idMapper.getDisplayName('pointsOfInterest', seedId);
+    }
+});
+
+/**
+ * Combined relation builder run by the destinations seed factory: builds
+ * both the destination↔attraction and destination↔POI (HOS-113 T-026)
+ * relations for each destination, in sequence. `createSeedFactory` only
+ * invokes a single `relationBuilder` callback per entity, so both concerns
+ * are composed here rather than each being registered independently.
+ *
+ * @param result - The seed factory's create-result for this destination
+ * @param item - The raw (pre-normalization) destination fixture item
+ * @param context - Seed context (id mapper, actor, logger, ...)
+ */
+async function buildDestinationRelations(
+    result: unknown,
+    item: unknown,
+    context: SeedContext
+): Promise<void> {
+    await attractionRelationBuilder(result, item, context);
+    await pointOfInterestRelationBuilder(result, item, context);
+}

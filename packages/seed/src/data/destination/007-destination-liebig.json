@@ -229,6 +229,7 @@
         "031-attraction-costanera",
         "081-attraction-sendero_ecologico"
     ],
+    "pointOfInterestIds": ["002-point-of-interest-playa_banco_pelay"],
     "faqs": [
         {
             "question": "¿Cómo se llega a Pueblo Liebig?",
