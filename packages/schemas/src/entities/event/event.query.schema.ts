@@ -31,6 +31,14 @@ import { EventPriceSchema } from './subtypes/event.price.schema.js';
 export const EventFiltersSchema = z.object({
     // Basic filters
     category: EventCategoryEnumSchema.optional(),
+    /**
+     * Multi-value sibling of `category` (HOS-96 US-9). OR-union: matches any
+     * event whose `category` is in this array. Kept alongside the singular
+     * `category` for backward compatibility (US-10) — the array takes
+     * precedence when both are present (model-layer precedence, mirrors
+     * `AccommodationModel`'s `types`/`type`).
+     */
+    categories: z.array(EventCategoryEnumSchema).optional(),
     isFeatured: z.boolean().optional(),
     isVirtual: z.boolean().optional(),
 
@@ -108,6 +116,8 @@ export type EventFilters = z.infer<typeof EventFiltersSchema>;
 export const EventSearchSchema = BaseSearchSchema.extend({
     // Basic filters (flattened from EventFiltersSchema)
     category: EventCategoryEnumSchema.optional(),
+    /** Multi-value sibling of `category` — see {@link EventFiltersSchema.categories}. */
+    categories: z.array(EventCategoryEnumSchema).optional(),
     isFeatured: z.boolean().optional(),
     isVirtual: z.boolean().optional(),
 
