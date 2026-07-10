@@ -70,8 +70,9 @@ reproduces identically in production.
 - **G-3** The old subscription is cancelled/superseded **only after** the new
   preapproval is confirmed, so an abandoned checkout never leaves the user with
   no subscription at all.
-- **G-4** Existing phantom-active subscriptions already created by the buggy path
-  in staging/prod are identified and remediated (see OQ-4).
+- **G-4** Any phantom-active subscriptions already created by the buggy path in
+  staging/prod are identified (§12 query) and remediated if present — expected
+  zero, since the endpoints are currently unwired (§11 OQ-4).
 
 ## 4. Non-goals
 
@@ -82,6 +83,9 @@ reproduces identically in production.
   reuses the existing confirmation path; it does not redesign it.
 - **NG-3** New UI surfaces. The web reactivation buttons already exist; only their
   resulting behavior (redirect to MP) changes.
+- **NG-4** **Annual** (one-time) reactivation. Out of scope — annual uses a
+  structurally different checkout path and is rejected here (§6.1); it is deferred
+  to **HOS-123**.
 
 ## 5. Current baseline
 
@@ -107,34 +111,60 @@ reproduces identically in production.
 
 ## 6. Proposed design
 
-### 6.1 Paid vs free branch
+### 6.1 Plan resolution + validation guard (DECIDED — OQ-2 / OQ-5)
 
-Resolve the target plan first. If the plan is **paid** (has a monthly price),
-route through the card-collecting checkout contract; if the plan is **free**
-(no price), the current local-only create is actually correct — keep it, but
-make the intent explicit rather than accidental.
+Both endpoints today accept a fully user-supplied, **unvalidated** `planId`
+string (`apps/api/src/routes/billing/trial.ts:83-85` and `:458-460`) — no catalog
+check, no interval check, no paid-plan restriction. The fix adds a server-side
+guard as the first step of both reactivate methods:
 
-### 6.2 Paid reactivation
+1. Resolve `planId` against the plan catalog (`packages/billing/src/config/plans.config.ts`).
+   If it is unknown → throw (fail-closed).
+2. If it is a **free** plan (`monthlyPriceArs === 0`, e.g. `TOURIST_FREE_PLAN`) →
+   **reject** (`INVALID_REACTIVATION_PLAN`). Reactivation is only meaningful onto a
+   paid accommodation plan; the previous "free branch" is dropped as a real path
+   (there is no live caller for it, and trials are HOST-only paid plans). This
+   removes the accidental phantom-`active`-on-a-free-plan path entirely.
+3. If it is an **annual** plan → **reject** (`ANNUAL_REACTIVATION_UNSUPPORTED`).
+   Annual is architecturally incompatible with `billing.subscriptions.create()`
+   (see OQ-5 below); annual reactivation is deferred to **HOS-123**.
 
-Mirror `initiatePaidMonthlySubscription`:
+So HOS-114 is scoped to **monthly, paid** reactivation only, enforced explicitly
+rather than left to chance.
+
+### 6.2 Shared paid-create helper (DECIDED — OQ-1)
+
+`subscription-checkout.service.ts` already imports `TrialService`
+(`subscription-checkout.service.ts:50`), so having `trial.service.ts` import
+`initiatePaidMonthlySubscription` back would create a **circular ESM import**.
+`initiatePaidMonthlySubscription` is also first-subscription-oriented (promo/trial
+logic inline; the `ALREADY_SUBSCRIBED` guard at the route level is the opposite of
+the reactivation case), so it must NOT be reused wholesale.
+
+**Decision**: extract the low-level `mode:'paid'` create block
+(`subscription-checkout.service.ts:657-674` — the `subscriptions.create({...mode:'paid'})`
+call, the `checkoutUrl = providerInitPoint ?? providerSandboxInitPoint` resolution,
+and the `throw MISSING_INIT_POINT` fail-closed) into a **new shared low-level module** (e.g.
+`apps/api/src/services/billing/paid-subscription-create.ts`). Both
+`initiatePaidMonthlySubscription` and the two reactivate methods import that
+helper — one source of truth for the paid contract, no cycle. The helper takes a
+resolved `planId` + `priceId` (bridging the `planSlug` vs `planId` input
+mismatch: reactivate carries `planId`, the existing checkout function carries
+`planSlug`).
+
+### 6.3 Paid reactivation flow
+
+Using the §6.2 helper, each reactivate method (after the §6.1 guard):
 
 1. Ensure the customer exists.
 2. Resolve the monthly `priceId` for the target plan.
-3. `subscriptions.create({ customerId, planId, priceId, mode:'paid',
-   billingInterval:'monthly', paymentMethodReturnUrl, notificationUrl,
-   metadata: { source:'reactivate-from-trial' | 'reactivate-subscription', ... } })`.
-4. `checkoutUrl = providerInitPoint ?? providerSandboxInitPoint`; if absent
-   → throw (fail-closed).
-5. Return `{ checkoutUrl, subscriptionId, status:'incomplete' }` so the web
-   redirects the user to MercadoPago.
+3. Call the shared helper → real MP preapproval, `checkoutUrl`, fail-closed if
+   absent.
+4. Return `{ checkoutUrl, subscriptionId, status:'incomplete' }` so the web
+   redirects the user to MercadoPago. The created sub is `incomplete` until the
+   webhook confirms (grants no entitlements meanwhile — see §6.4 / OQ-3).
 
-**Strong candidate**: instead of duplicating steps 1–4 into `trial.service.ts`,
-have both reactivate methods **delegate** to a shared paid-checkout entry point
-(`initiatePaidMonthlySubscription` or a small extracted helper) so there is one
-source of truth for the paid contract. This is a real architecture decision —
-see OQ-1.
-
-### 6.3 Old-subscription supersession ordering (the important part)
+### 6.4 Old-subscription supersession ordering (the important part)
 
 Today reactivate cancels the previous subscription(s) **synchronously**, right
 after the (fake-active) create. With a real paid checkout the new subscription is
@@ -150,11 +180,19 @@ atomically. Confirm exactly where in the webhook path this belongs during
 implementation (`subscription_authorized_payment.created` / the activation
 handler that HOS-108 touched).
 
-### 6.4 Free reactivation
+### 6.5 Entitlement continuity during the `incomplete` window (DECIDED — OQ-3)
 
-Keep the local-only `subscriptions.create` (no `mode`), but assert the plan is
-free before taking this branch, and keep the synchronous cancel/audit/cache
-(no external dependency, so no ordering hazard).
+`loadEntitlements` (`apps/api/src/middlewares/entitlement.ts:441-448`) grants
+entitlements only for `active` / `trialing` / `comp` subscriptions — an
+`incomplete` sub grants **nothing**. This is what makes §6.4's deferred
+cancellation mandatory: `reactivateFromTrial` starts from an existing `trialing`
+sub (which DOES grant entitlements). If the new paid sub is created `incomplete`
+and the old `trialing` sub is cancelled immediately (today's ordering), the user
+loses all entitlements during the MP-checkout window — a regression versus even
+the current buggy behavior. The old sub therefore stays live (and keeps granting
+entitlements) until the webhook confirms the new one `active`; only then is it
+cancelled. This also correctly withholds paid features until payment is actually
+authorized (the new sub never grants anything while `incomplete`).
 
 ## 7. Data model / contracts
 
@@ -178,7 +216,8 @@ free before taking this branch, and keep the synchronous cancel/audit/cache
   is cancelled.
 - If the user abandons the MP checkout: the new sub stays `incomplete`, the old
   subscription remains untouched (per G-3), and entitlements are unchanged.
-- Free-plan reactivation (if any) stays instant.
+- Reactivation onto a free, unknown, or annual `planId` is rejected with a clear
+  error (§6.1) rather than silently creating a subscription.
 
 ## 9. Acceptance criteria
 
@@ -196,8 +235,18 @@ free before taking this branch, and keep the synchronous cancel/audit/cache
   the entitlement cache is cleared exactly once.
 - **AC-5** Regression tests reproduce the original bug (a reactivate call that
   ends `active` with no `mp_subscription_id`) and prove it no longer happens.
-- **AC-6** Existing phantom-active subs from the buggy path are remediated
-  (OQ-4 resolution), with a documented, reversible procedure.
+- **AC-6** Reactivation onto an unknown `planId` throws (fail-closed); onto a
+  **free** plan throws `INVALID_REACTIVATION_PLAN`; onto an **annual** plan throws
+  `ANNUAL_REACTIVATION_UNSUPPORTED` (deferred to HOS-123). No subscription row is
+  created in any of these cases.
+- **AC-7** The `mode:'paid'` create + `checkoutUrl` + `MISSING_INIT_POINT` logic
+  lives in exactly ONE shared helper module used by both
+  `initiatePaidMonthlySubscription` and the reactivate methods (no duplication, no
+  circular import).
+- **AC-8** The detection query (§12) is run against staging/prod before merge; if
+  it returns rows, they are remediated via a documented, reversible procedure with
+  owner sign-off. If it returns zero (expected, since the endpoints are currently
+  unwired), remediation is a no-op and this is recorded in the close-out.
 
 ## 10. Risks
 
@@ -210,33 +259,47 @@ free before taking this branch, and keep the synchronous cancel/audit/cache
 - **R-3** Billing CORE: this touches the checkout + webhook path → mandatory
   staging smoke against the real MP sandbox, and prod smoke before promotion
   (see labels below). The vitest MP stub cannot catch stub-vs-real divergence.
-- **R-4** Data remediation (OQ-4) may need to touch live prod rows — must be
-  scripted, reviewed, and reversible.
+- **R-4** Data remediation may need to touch live prod rows — must be scripted,
+  reviewed, and reversible. **Likely low/zero impact**: both endpoints are
+  currently unwired (no live web caller — `endpoints-protected.ts:622-631` defines
+  an unused wrapper; `/trial/reactivate` has none), so the phantom-sub count may be
+  0. Confirm with the §12 query before writing any remediation.
+- **R-5** Helper extraction (§6.2) touches the genuine `/start-paid` path (it now
+  calls the extracted helper too). A regression here breaks first-time checkout, so
+  the existing `/start-paid` tests + staging smoke must stay green after the
+  refactor.
 
-## 11. Open questions
+## 11. Resolved decisions
 
-- **OQ-1 (architecture — needs decision)** Delegate both reactivate methods to
-  the existing `initiatePaidMonthlySubscription` (single source of truth for the
-  paid contract) vs extract a shared helper vs duplicate the args inline? Owner
-  picked "route through paid checkout" for behavior; the code-sharing shape is
-  still open. Watch for a service-to-service coupling/cycle between
-  `trial.service.ts` and `subscription-checkout.service.ts`.
-- **OQ-2** Does `reactivateFromTrial` ever legitimately target a **free** plan,
-  or is it always trial→paid? Determines whether the free branch (§6.4) is dead
-  code we should drop or a real path to keep.
-- **OQ-3** Grace / entitlement continuity: while the new sub is `incomplete`
-  (user mid-checkout), what entitlements does the user have — the lapsed/old
-  ones, or none? Confirm this matches the `/start-paid` behavior and doesn't grant
-  paid features before payment is authorized.
-- **OQ-4 (data remediation)** How many phantom-active subs already exist in
-  staging/prod from the buggy path (query: `status='active'` AND
-  `mp_subscription_id IS NULL` AND created via reactivate metadata), and what's
-  the remediation — cancel + re-prompt for card, or migrate? This likely needs
-  its own follow-up + owner sign-off.
-- **OQ-5** Is `reactivateSubscription` reachable for **annual** (one-time) plans,
-  not just monthly? If so the paid contract differs (annual has no preapproval).
-  Confirm which billing intervals reach these methods (cf. HOS-115 annual-trial
-  branch).
+All open questions were resolved during spec review (2026-07-10) with owner
+input; evidence gathered from a read-only investigation of the current code.
+
+- **OQ-1 — code-sharing shape → EXTRACT a shared helper.** A direct
+  `trial.service.ts → initiatePaidMonthlySubscription` import is impossible
+  (circular ESM: `subscription-checkout.service.ts:50` already imports
+  `TrialService`), and that function is first-subscription-oriented. Resolution:
+  extract the low-level `mode:'paid'` create block into a new shared module both
+  sides import (§6.2). Duplication rejected. *(Owner-decided.)*
+- **OQ-2 — free-plan reactivation → REJECTED / branch dropped.** `planId` is
+  user-supplied and unvalidated today, and a free plan (`TOURIST_FREE_PLAN`,
+  `monthlyPriceArs:0`) is a real unguarded target. Reactivation is only meaningful
+  onto a paid plan; the fix validates the catalog and rejects free/unknown plans
+  (§6.1). The prior "free branch" is removed as dead code.
+- **OQ-3 — entitlement continuity → old sub stays live until webhook-confirm.**
+  `incomplete` grants no entitlements (`entitlement.ts:441-448`); the old
+  `trialing`/active sub must not be cancelled until the new one is confirmed
+  `active`, else the user loses entitlements mid-checkout (§6.5). This reinforces
+  the §6.4 deferred-cancellation design (no longer optional).
+- **OQ-4 — data remediation → run the query first; expected zero.** Both endpoints
+  are currently unwired (no live web caller), so the phantom-sub count is likely 0.
+  Detection query is in §12; remediation is conditional on it returning rows and
+  needs owner sign-off (AC-8, R-4).
+- **OQ-5 — annual → OUT OF SCOPE, rejected explicitly.** Annual is architecturally
+  incompatible with `billing.subscriptions.create()` (it uses
+  `billing.checkout.create({mode:'payment'})` + direct insert,
+  `subscription-checkout.service.ts:1162`). HOS-114 is monthly-only and rejects an
+  annual `planId` (§6.1); annual reactivation is deferred to **HOS-123**.
+  *(Owner-decided.)*
 
 ## 12. Implementation notes
 
@@ -251,7 +314,33 @@ free before taking this branch, and keep the synchronous cancel/audit/cache
 - Distinct from but adjacent to **HOS-108** (webhook activation) and **HOS-110**
   (no-card trial unification) — both stem from qzpay `mode:'paid'` create
   semantics. Reference their PRs (#2191 for HOS-108) when implementing the
-  webhook side.
+  webhook side. Annual reactivation follow-up is **HOS-123**.
+- **Route-level guard note**: the genuine `/start-paid` route blocks with
+  `ALREADY_SUBSCRIBED` when the customer already has an active/trialing/comp
+  accommodation sub (`apps/api/src/routes/billing/start-paid.ts:274-293`). That
+  guard is route-level, so it does NOT block the `TrialService`-mediated
+  reactivation path — but it confirms the extracted helper must be the *low-level*
+  create block, not the guarded route handler.
+
+### Phantom-sub detection query (AC-8 / OQ-4)
+
+Run against staging and prod before merge. Metadata markers are written by the
+two buggy methods (`convertedFromTrial:'true'` / `reactivatedFromCanceled:'true'`,
+`trial.service.ts:946-949` and `:1137-1141`):
+
+```sql
+SELECT id, customer_id, plan_id, status, mp_subscription_id, metadata, created_at
+FROM billing_subscriptions
+WHERE status = 'active'
+  AND mp_subscription_id IS NULL
+  AND (
+    metadata->>'convertedFromTrial' = 'true'
+    OR metadata->>'reactivatedFromCanceled' = 'true'
+  );
+```
+
+Zero rows ⇒ remediation is a no-op (record in close-out). Rows present ⇒ scripted,
+reversible remediation with owner sign-off.
 
 ## 13. Smoke gate
 
