@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "008-point-of-interest-mirador_costanera",
+    "slug": "mirador_costanera",
+    "lat": -32.475,
+    "long": -58.22,
+    "type": "VIEWPOINT",
+    "description": "Mirador panorámico sobre el río Uruguay a lo largo de la costanera",
+    "icon": "visibility",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "lifecycleState": "ACTIVE"
+}

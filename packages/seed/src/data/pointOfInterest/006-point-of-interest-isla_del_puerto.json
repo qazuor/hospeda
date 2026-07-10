@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "006-point-of-interest-isla_del_puerto",
+    "slug": "isla_del_puerto",
+    "lat": -32.487,
+    "long": -58.225,
+    "type": "NATURAL",
+    "description": "Isla fluvial frente a la costanera, con playas y senderos naturales",
+    "icon": "landscape",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 55,
+    "lifecycleState": "ACTIVE"
+}

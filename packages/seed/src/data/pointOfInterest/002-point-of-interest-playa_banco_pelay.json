@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "002-point-of-interest-playa_banco_pelay",
+    "slug": "playa_banco_pelay",
+    "lat": -32.465,
+    "long": -58.21,
+    "type": "BEACH",
+    "description": "Extenso banco de arena sobre el río Uruguay, popular balneario natural de la zona",
+    "icon": "beach_access",
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 85,
+    "lifecycleState": "ACTIVE"
+}

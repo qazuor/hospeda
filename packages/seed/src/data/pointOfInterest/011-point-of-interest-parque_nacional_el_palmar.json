@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "011-point-of-interest-parque_nacional_el_palmar",
+    "slug": "parque_nacional_el_palmar",
+    "lat": -31.8667,
+    "long": -58.2833,
+    "type": "PARK",
+    "description": "Parque nacional famoso por sus palmares de yatay centenarios",
+    "icon": "park",
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 78,
+    "lifecycleState": "ACTIVE"
+}

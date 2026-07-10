@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "007-point-of-interest-plaza_francisco_ramirez",
+    "slug": "plaza_francisco_ramirez",
+    "lat": -32.4822,
+    "long": -58.238,
+    "type": "PLAZA",
+    "description": "Plaza principal e histórica del centro de la ciudad",
+    "icon": "location_city",
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 70,
+    "lifecycleState": "ACTIVE"
+}

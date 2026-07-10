@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "012-point-of-interest-termas_de_federacion",
+    "slug": "termas_de_federacion",
+    "lat": -30.9757,
+    "long": -57.9114,
+    "type": "OTHER",
+    "description": "Parque acuático termal de aguas cálidas en la ciudad de Federación",
+    "icon": "hot_tub",
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 72,
+    "lifecycleState": "ACTIVE"
+}
