@@ -509,35 +509,35 @@
             "id": "T-016",
             "title": "Implement shared 2+-value SEO noindex/canonical predicate",
             "description": "Extend `resolvePromotedFacetCanonical` (`apps/web/src/lib/seo/promoted-facet-canonical.ts`) or add a sibling helper implementing ONE shared predicate, consumed by every affected listing: 0 values → indexable, canonical = base listing (unchanged); exactly 1 value → indexable, canonical = the facet's `dedicatedLandingPattern` from the T-001 config (unchanged existing behavior); 2+ values → `noindex,follow` + canonical = base listing without facet params (new rule, per resolved OQ-1). Must be a single function/predicate, not per-page duplicated logic.\n\n**Files:** `apps/web/src/lib/seo/promoted-facet-canonical.ts` (extend) or a new sibling in the same `apps/web/src/lib/seo/` directory.\n\n**Tests (unit, `apps/web`):** AAA — (1) 0 values → indexable + base canonical; (2) 1 value → indexable + dedicated-landing canonical; (3) 2 values → `noindex,follow` + base canonical (no `?` in the canonical href); (4) 3+ values → same 2+ behavior (not a special 3-value case); (5) predicate is the same function called for accommodations/events/blog (assert via a shared-import test, not copy-pasted logic per page).\n\n**Acceptance mapping:** US-7 (AC1, AC2, AC3, AC4, AC5).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-017", "T-018", "T-019"],
             "subtasks": [
                 {
                     "title": "Implement 0/1/2+ predicate extending resolvePromotedFacetCanonical",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests for the 0/1/2/3+ value matrix",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert single shared function used, not per-page duplication",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "seo"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T17:26:00Z",
+                "completed": "2026-07-10T17:31:00Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 18,
+        "pending": 17,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 1.9
     }
