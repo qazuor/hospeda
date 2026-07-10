@@ -117,9 +117,7 @@ describe('Point Of Interest Query Schemas', () => {
         it('should validate valid input', () => {
             const validInput = { pointOfInterestId: faker.string.uuid(), page: 1, pageSize: 10 };
 
-            expect(() =>
-                DestinationsByPointOfInterestInputSchema.parse(validInput)
-            ).not.toThrow();
+            expect(() => DestinationsByPointOfInterestInputSchema.parse(validInput)).not.toThrow();
         });
 
         it('should require pointOfInterestId', () => {
@@ -188,9 +186,9 @@ describe('Point Of Interest Query Schemas', () => {
             it('should validate destination count is non-negative', () => {
                 const invalidData = { ...createValidPointOfInterest(), destinationCount: -1 };
 
-                expect(() =>
-                    PointOfInterestWithDestinationCountSchema.parse(invalidData)
-                ).toThrow(ZodError);
+                expect(() => PointOfInterestWithDestinationCountSchema.parse(invalidData)).toThrow(
+                    ZodError
+                );
             });
         });
 
@@ -233,9 +231,7 @@ describe('Point Of Interest Query Schemas', () => {
             });
 
             it('should allow null stats', () => {
-                expect(() =>
-                    PointOfInterestStatsOutputSchema.parse({ stats: null })
-                ).not.toThrow();
+                expect(() => PointOfInterestStatsOutputSchema.parse({ stats: null })).not.toThrow();
             });
         });
     });

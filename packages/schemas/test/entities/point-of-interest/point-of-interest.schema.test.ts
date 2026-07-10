@@ -216,9 +216,9 @@ describe('PointOfInterestSchema', () => {
         });
 
         it('should reject a type not in the closed enum', () => {
-            expect(() =>
-                PointOfInterestSchema.parse({ ...baseData(), type: 'WATERFALL' })
-            ).toThrow(ZodError);
+            expect(() => PointOfInterestSchema.parse({ ...baseData(), type: 'WATERFALL' })).toThrow(
+                ZodError
+            );
         });
 
         it('should reject a lowercase type value', () => {

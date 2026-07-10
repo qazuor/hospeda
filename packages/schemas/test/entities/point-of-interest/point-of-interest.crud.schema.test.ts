@@ -50,17 +50,13 @@ describe('Point Of Interest CRUD Schemas', () => {
         it('should require slug on create (the i18n key, HOS-113 OQ-2)', () => {
             const { slug, ...incompleteInput } = createValidPointOfInterestCreateInput();
 
-            expect(() => PointOfInterestCreateInputSchema.parse(incompleteInput)).toThrow(
-                ZodError
-            );
+            expect(() => PointOfInterestCreateInputSchema.parse(incompleteInput)).toThrow(ZodError);
         });
 
         it('should require type on create', () => {
             const { type, ...incompleteInput } = createValidPointOfInterestCreateInput();
 
-            expect(() => PointOfInterestCreateInputSchema.parse(incompleteInput)).toThrow(
-                ZodError
-            );
+            expect(() => PointOfInterestCreateInputSchema.parse(incompleteInput)).toThrow(ZodError);
         });
 
         it('should validate slug pattern when provided', () => {
