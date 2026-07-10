@@ -101,6 +101,10 @@ describe('getMediaProvider()', () => {
         // validateApiEnv() does not call process.exit(1) before reaching the
         // media-provider branch being tested.
         process.env.HOSPEDA_AI_VAULT_MASTER_KEY = 'test-vault-master-key-0123456789abcd';
+        // Same production superRefine now also requires HOSPEDA_SOCIAL_VAULT_MASTER_KEY
+        // (min 32 chars) when NODE_ENV==='production'. Set a dummy value so
+        // validateApiEnv() reaches the media-provider branch under test.
+        process.env.HOSPEDA_SOCIAL_VAULT_MASTER_KEY = 'test-social-vault-key-0123456789abcd';
         // Env hardening made these service credentials prod-required. Provide
         // valid placeholders so validateApiEnv() reaches the media-provider
         // branch under test. Cloudinary is deliberately left empty above — it
