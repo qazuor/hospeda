@@ -48,12 +48,12 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 <BaseLayout
     locale={locale}
-    title={`${title} | Hospeda`}
+    title={title}
     description={description}
 >
     <SEOHead
         slot="head"
-        title={`${title} | Hospeda`}
+        title={title}
         description={description}
         locale={locale}
         canonical={canonicalUrl}

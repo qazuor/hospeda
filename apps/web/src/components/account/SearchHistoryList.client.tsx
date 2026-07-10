@@ -20,8 +20,9 @@
 
 import { SearchIcon } from '@repo/icons';
 import type { SearchHistoryFilters, UserSearchHistoryListItem } from '@repo/schemas';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
+import { translateApiError } from '@/lib/api-errors';
 import { formatRelativeTime } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -223,7 +224,12 @@ export function SearchHistoryList({
     userId: _userId,
     initialHistoryEnabled
 }: SearchHistoryListProps) {
-    const { t, tPlural } = createTranslations(locale);
+    // Memoized so `t` keeps a stable reference across renders — otherwise it
+    // recreates on every render, which cascades into the useCallback deps
+    // below (fetchEntries, etc.) and re-triggers the mount effect in an
+    // infinite loop (fetch -> setState -> render -> new `t` -> fetch -> ...).
+    // Same fix as ExternalReputationSection.client.tsx.
+    const { t, tPlural } = useMemo(() => createTranslations(locale), [locale]);
     const base = apiUrl.replace(/\/$/, '');
 
     // ── State ─────────────────────────────────────────────────────────────────
@@ -302,11 +308,15 @@ export function SearchHistoryList({
                     }
                     return;
                 }
-                throw new Error(body?.error?.message ?? fetchErrorMsg);
+                throw new Error(
+                    translateApiError({ error: body?.error, t, fallback: fetchErrorMsg })
+                );
             }
 
             if (!body?.success) {
-                throw new Error(body?.error?.message ?? fetchErrorMsg);
+                throw new Error(
+                    translateApiError({ error: body?.error, t, fallback: fetchErrorMsg })
+                );
             }
             if (isMountedRef.current) {
                 setEntries(body.data?.items ?? []);
@@ -320,7 +330,7 @@ export function SearchHistoryList({
                 setLoading(false);
             }
         }
-    }, [base, fetchErrorMsg]);
+    }, [base, fetchErrorMsg, t]);
 
     useEffect(() => {
         void fetchEntries();
@@ -343,7 +353,9 @@ export function SearchHistoryList({
                 });
                 const body = (await res.json()) as MutationResponse;
                 if (!res.ok || !body.success) {
-                    throw new Error(body.error?.message ?? deleteErrorMsg);
+                    throw new Error(
+                        translateApiError({ error: body.error, t, fallback: deleteErrorMsg })
+                    );
                 }
                 if (isMountedRef.current) {
                     setEntries((prev) => prev.filter((e) => e.id !== id));
@@ -360,7 +372,7 @@ export function SearchHistoryList({
                 }
             }
         },
-        [base, deleteErrorMsg, deleteSuccessMsg]
+        [base, deleteErrorMsg, deleteSuccessMsg, t]
     );
 
     // ── Clear all ─────────────────────────────────────────────────────────────
@@ -379,7 +391,9 @@ export function SearchHistoryList({
             });
             const body = (await res.json()) as MutationResponse;
             if (!res.ok || !body.success) {
-                throw new Error(body.error?.message ?? clearErrorMsg);
+                throw new Error(
+                    translateApiError({ error: body.error, t, fallback: clearErrorMsg })
+                );
             }
             if (isMountedRef.current) {
                 setEntries([]);
@@ -395,7 +409,7 @@ export function SearchHistoryList({
                 setIsClearing(false);
             }
         }
-    }, [base, clearErrorMsg, clearSuccessMsg]);
+    }, [base, clearErrorMsg, clearSuccessMsg, t]);
 
     // ── Toggle opt-out ────────────────────────────────────────────────────────
 
@@ -416,7 +430,9 @@ export function SearchHistoryList({
             });
             const body = (await res.json()) as MutationResponse;
             if (!res.ok || !body.success) {
-                throw new Error(body.error?.message ?? optOutErrorMsg);
+                throw new Error(
+                    translateApiError({ error: body.error, t, fallback: optOutErrorMsg })
+                );
             }
         } catch (err) {
             // Revert on failure
@@ -432,7 +448,7 @@ export function SearchHistoryList({
                 setIsTogglingPreference(false);
             }
         }
-    }, [base, isHistoryEnabled, optOutErrorMsg]);
+    }, [base, isHistoryEnabled, optOutErrorMsg, t]);
 
     // ─────────────────────────────────────────────────────────────────────────
 

@@ -1,259 +1,360 @@
 {
-  "version": "1.0",
-  "specRef": "HOS-115",
-  "title": "Grant the no-card trial on the annual first-time checkout path",
-  "created": "2026-07-09T18:08:48.000Z",
-  "tasks": [
-    {
-      "id": "T-001",
-      "title": "Widen annual checkout result type to allow the trial effect",
-      "description": "In apps/api/src/services/subscription-checkout.service.ts, widen InitiatePaidAnnualSubscriptionResult / CheckoutAppliedEffect so the annual initiator can return appliedEffect: 'trial' plus an optional promoCodeIgnored flag (monthly already does this). Pure type change, no runtime branch yet. Unit test: none new (compile-only); the annual branch tests in T-009 assert the new shape.",
-      "status": "completed",
-      "complexity": 1,
-      "blockedBy": [],
-      "blocks": ["T-002"],
-      "subtasks": [
-        { "title": "Add 'trial' to the annual result's appliedEffect union", "completed": false },
-        { "title": "Add optional promoCodeIgnored to the annual result type", "completed": false }
-      ],
-      "tags": ["api", "types", "billing"],
-      "phase": "core",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-07-09T18:08:48.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-002",
-      "title": "Add the trial-eligibility branch to initiatePaidAnnualSubscription",
-      "description": "Insert the trial branch into initiatePaidAnnualSubscription AFTER the COMP early-return and BEFORE the discount/upfront-charge path, mirroring initiatePaidMonthlySubscription (~L541-635): resolvePlanTrialConfig(plan.metadata) -> if plan declares a trial AND customer has zero prior subs -> trialService.startTrial() -> early return { appliedEffect: 'trial', localSubscriptionId, expiresAt, checkoutUrl: urls.successUrl (in-app sentinel), promoCodeIgnored when a discount code was dropped }. On startTrial() null (became ineligible), fall through to the unchanged annual paid path. Do NOT pass any interval (trial object is interval-agnostic). Unit tests in T-009. Spec AC-1/AC-2.",
-      "status": "completed",
-      "complexity": 3,
-      "blockedBy": ["T-001"],
-      "blocks": ["T-003", "T-009"],
-      "subtasks": [
-        { "title": "Resolve plan trial config + zero-prior-subs eligibility check", "completed": false },
-        { "title": "Call trialService.startTrial() and early-return the trial shape", "completed": false },
-        { "title": "Fall through to the paid annual path on null (ineligible)", "completed": false },
-        { "title": "Preserve COMP-then-trial-then-charge precedence order", "completed": false }
-      ],
-      "tags": ["api", "billing", "trial"],
-      "phase": "core",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-07-09T18:08:48.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-003",
-      "title": "Persist intendedInterval on the trial subscription metadata (both paths)",
-      "description": "Thread intendedInterval ('monthly' | 'annual') into TrialService.startTrial() and stamp it into the trial subscription's metadata: 'annual' from the annual branch (T-002), 'monthly' from the existing monthly branch. Metadata-only write on the row startTrial already creates; no schema change, no migration. This is the OQ-1 source of truth and the analytics dimension. Unit test in T-010. Spec AC-8, Design section 5.",
-      "status": "completed",
-      "complexity": 3,
-      "blockedBy": ["T-002"],
-      "blocks": ["T-004", "T-010"],
-      "subtasks": [
-        { "title": "Add intendedInterval to StartTrialInput and stamp into metadata", "completed": false },
-        { "title": "Pass 'annual' from the annual branch", "completed": false },
-        { "title": "Pass 'monthly' from the monthly branch", "completed": false }
-      ],
-      "tags": ["api", "billing", "trial"],
-      "phase": "core",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-07-09T18:08:48.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-004",
-      "title": "Append ?interval to the TRIAL_EXPIRED notification upgradeUrl",
-      "description": "In blockExpiredTrials() (apps/api/src/services/trial.service.ts), read intendedInterval from the expiring trial's metadata and append ?interval=<intendedInterval> to the existing upgradeUrl on the TRIAL_EXPIRED notification (nudge delivery path 1). Default gracefully when metadata lacks it. Unit test: notification payload carries the correct interval query param. Spec Design section 5, AC-9.",
-      "status": "completed",
-      "complexity": 2,
-      "blockedBy": ["T-003"],
-      "blocks": ["T-012"],
-      "subtasks": [
-        { "title": "Read intendedInterval from trial metadata in blockExpiredTrials", "completed": false },
-        { "title": "Append ?interval= to upgradeUrl with a safe default", "completed": false }
-      ],
-      "tags": ["api", "billing", "notifications"],
-      "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-07-09T18:08:48.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-005",
-      "title": "Web: show the trial copy under the annual toggle",
-      "description": "In apps/web/src/components/billing/PricingCardsGrid.astro, rename the trial line class off the interval-specific .pricing-card__trial--monthly to an interval-neutral class and drop it from the [data-billing='annual'] display:none rule (~L667-671) so 'N dias gratis' shows under BOTH monthly and annual toggles. Copy itself is interval-agnostic. Web test in T-013. Spec Design section 4, AC-6.",
-      "status": "completed",
-      "complexity": 2,
-      "blockedBy": [],
-      "blocks": ["T-006", "T-013"],
-      "subtasks": [
-        { "title": "Rename .pricing-card__trial--monthly to an interval-neutral class", "completed": false },
-        { "title": "Remove it from the annual hide rule", "completed": false }
-      ],
-      "tags": ["web", "billing", "ui"],
-      "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-07-09T18:08:48.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-006",
-      "title": "Web: pre-select the toggle from the ?interval query param",
-      "description": "In PricingCardsGrid.astro, read the ?interval= query param on load and set the initial data-billing on the .pricing-cards__container accordingly (nudge). A user manually flipping the toggle is never overridden; the query param wins over the monthly default. Same file as T-005 (sequence to avoid conflict). Web test in T-013. Spec Design section 5, AC-9.",
-      "status": "completed",
-      "complexity": 2,
-      "blockedBy": ["T-005"],
-      "blocks": ["T-013"],
-      "subtasks": [
-        { "title": "Read ?interval= (monthly|annual) on page load", "completed": false },
-        { "title": "Set initial data-billing from it, default monthly", "completed": false }
-      ],
-      "tags": ["web", "billing", "ui"],
-      "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-07-09T18:08:48.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-007",
-      "title": "i18n: confirm/adjust interval-neutral trial copy (es/en/pt)",
-      "description": "Review the pricing.trial string in packages/i18n for es/en/pt. Since the trial now shows on the annual toggle too, ensure the wording does not imply monthly-only. If already neutral ('N dias gratis' / '{days}-day free trial'), no change beyond confirming. Only edit if a locale implies monthly. Spec Design section 4.",
-      "status": "completed",
-      "complexity": 1,
-      "blockedBy": [],
-      "blocks": [],
-      "subtasks": [
-        { "title": "Audit pricing.trial in es/en/pt for monthly-implying wording", "completed": false },
-        { "title": "Adjust only if needed", "completed": false }
-      ],
-      "tags": ["i18n", "web"],
-      "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-07-09T18:08:48.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-008",
-      "title": "Fast-follow: expose intendedInterval on the trial-status surface",
-      "description": "OPTIONAL (secondary nudge path per spec). Extend the existing trial-status endpoint + its web consumer to return the logged-in user's most recent trial intendedInterval, so direct navigation (no query param) also pre-selects the toggle. Path 1 (T-004/T-006) is the must-have; this may ship as a fast-follow. Unit test: endpoint returns intendedInterval. Spec Design section 5 (path 2).",
-      "status": "completed",
-      "complexity": 3,
-      "blockedBy": ["T-003"],
-      "blocks": [],
-      "subtasks": [
-        { "title": "Return intendedInterval from the trial-status surface", "completed": false },
-        { "title": "Web: fall back to it when no ?interval= is present", "completed": false }
-      ],
-      "tags": ["api", "web", "billing"],
-      "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-07-09T18:08:48.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-009",
-      "title": "Unit tests: annual trial branch (eligibility + promo precedence)",
-      "description": "Cover AC-1 (eligible + annual -> trialing via startTrial, NO MP object, no charge, appliedEffect='trial'), AC-2 (not-eligible + annual -> unchanged upfront MP checkout, never 'trial'), AC-5 (promo precedence: comp wins/no trial, trial_extension adds days, discount discarded with promoCodeIgnored), AC-7 (cross-interval: consumed monthly trial -> not eligible for annual). Test file alongside the existing monthly checkout service tests. TDD: assert the T-002 branch behavior.",
-      "status": "completed",
-      "complexity": 3,
-      "blockedBy": ["T-002"],
-      "blocks": [],
-      "subtasks": [
-        { "title": "AC-1 eligible annual -> trial, no MP object", "completed": false },
-        { "title": "AC-2 not-eligible annual -> upfront charge", "completed": false },
-        { "title": "AC-5 promo precedence (comp/trial_extension/discount)", "completed": false },
-        { "title": "AC-7 cross-interval eligibility", "completed": false }
-      ],
-      "tags": ["api", "test", "billing"],
-      "phase": "testing",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-07-09T18:08:48.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-010",
-      "title": "Unit test: intendedInterval stamped on both paths",
-      "description": "Assert a trial started from the annual branch records metadata.intendedInterval='annual' and a trial started from the monthly branch records 'monthly' (AC-8). Test alongside trial/checkout service tests.",
-      "status": "completed",
-      "complexity": 2,
-      "blockedBy": ["T-003"],
-      "blocks": [],
-      "subtasks": [
-        { "title": "Annual branch stamps 'annual'", "completed": false },
-        { "title": "Monthly branch stamps 'monthly'", "completed": false }
-      ],
-      "tags": ["api", "test", "billing"],
-      "phase": "testing",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-07-09T18:08:48.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-011",
-      "title": "Integration test: annual trial via /start-paid + cancel-only expiry",
-      "description": "Cover AC-1 end-to-end (POST /start-paid billingInterval='annual' as trial-eligible -> trialing sub, no MP object created, correct response) and AC-3 (blockExpiredTrials cancels an annual-originated trialing sub past trialEnd with no charge, writes TRIAL_BLOCKED + trial_converted_at, sends TRIAL_EXPIRED). Uses the MP stub. Integration test file under apps/api/test.",
-      "status": "completed",
-      "complexity": 3,
-      "blockedBy": ["T-002", "T-004"],
-      "blocks": [],
-      "subtasks": [
-        { "title": "AC-1 route-level annual trial-eligible path", "completed": false },
-        { "title": "AC-3 expiry cron cancels annual trial (no charge)", "completed": false }
-      ],
-      "tags": ["api", "test", "billing"],
-      "phase": "testing",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-07-09T18:08:48.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-012",
-      "title": "Test: analytics reuses checkout_started for annual -> trial",
-      "description": "Assert the checkout_started analytics event for a trial-eligible annual start carries billingInterval='annual' AND appliedEffect='trial', and that NO new analytics event/property is introduced (AC-10, OQ-2). Wherever checkout analytics are emitted/asserted.",
-      "status": "completed",
-      "complexity": 2,
-      "blockedBy": ["T-002"],
-      "blocks": [],
-      "subtasks": [
-        { "title": "Assert billingInterval='annual' + appliedEffect='trial'", "completed": false },
-        { "title": "Assert no new event/property added", "completed": false }
-      ],
-      "tags": ["api", "test", "analytics"],
-      "phase": "testing",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-07-09T18:08:48.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-013",
-      "title": "Web test: annual toggle shows trial copy + ?interval pre-select",
-      "description": "Cover AC-6 (trial copy visible under both monthly and annual toggle, not display:none) and AC-9 (opening with ?interval=annual pre-selects data-billing='annual'; manual flip not overridden). Component/DOM test for PricingCardsGrid.astro behavior.",
-      "status": "completed",
-      "complexity": 2,
-      "blockedBy": ["T-005", "T-006"],
-      "blocks": [],
-      "subtasks": [
-        { "title": "AC-6 trial copy visible on annual", "completed": false },
-        { "title": "AC-9 ?interval pre-selects toggle", "completed": false }
-      ],
-      "tags": ["web", "test", "ui"],
-      "phase": "testing",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-07-09T18:08:48.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-014",
-      "title": "Docs + closeout: annual trial branch",
-      "description": "Update the billing endpoint-gate-matrix / trial-system docs to note the annual entry path now grants the no-card trial, and record intendedInterval metadata. Add status-needs-smoke-staging label at PR time (billing checkout surface, real MP sandbox). Fill closeout.md. No prod smoke needed (no CORE money mutation). Spec Smoke labels section.",
-      "status": "completed",
-      "complexity": 1,
-      "blockedBy": ["T-002", "T-005"],
-      "blocks": [],
-      "subtasks": [
-        { "title": "Update trial-system / gate-matrix docs", "completed": false },
-        { "title": "Apply status-needs-smoke-staging + closeout notes", "completed": false }
-      ],
-      "tags": ["docs", "billing"],
-      "phase": "docs",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-07-09T18:08:48.000Z", "started": null, "completed": null }
+    "version": "1.0",
+    "specRef": "HOS-115",
+    "title": "Grant the no-card trial on the annual first-time checkout path",
+    "created": "2026-07-09T18:08:48.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Widen annual checkout result type to allow the trial effect",
+            "description": "In apps/api/src/services/subscription-checkout.service.ts, widen InitiatePaidAnnualSubscriptionResult / CheckoutAppliedEffect so the annual initiator can return appliedEffect: 'trial' plus an optional promoCodeIgnored flag (monthly already does this). Pure type change, no runtime branch yet. Unit test: none new (compile-only); the annual branch tests in T-009 assert the new shape.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [
+                {
+                    "title": "Add 'trial' to the annual result's appliedEffect union",
+                    "completed": false
+                },
+                {
+                    "title": "Add optional promoCodeIgnored to the annual result type",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "types", "billing"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T18:08:48.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add the trial-eligibility branch to initiatePaidAnnualSubscription",
+            "description": "Insert the trial branch into initiatePaidAnnualSubscription AFTER the COMP early-return and BEFORE the discount/upfront-charge path, mirroring initiatePaidMonthlySubscription (~L541-635): resolvePlanTrialConfig(plan.metadata) -> if plan declares a trial AND customer has zero prior subs -> trialService.startTrial() -> early return { appliedEffect: 'trial', localSubscriptionId, expiresAt, checkoutUrl: urls.successUrl (in-app sentinel), promoCodeIgnored when a discount code was dropped }. On startTrial() null (became ineligible), fall through to the unchanged annual paid path. Do NOT pass any interval (trial object is interval-agnostic). Unit tests in T-009. Spec AC-1/AC-2.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Resolve plan trial config + zero-prior-subs eligibility check",
+                    "completed": false
+                },
+                {
+                    "title": "Call trialService.startTrial() and early-return the trial shape",
+                    "completed": false
+                },
+                {
+                    "title": "Fall through to the paid annual path on null (ineligible)",
+                    "completed": false
+                },
+                {
+                    "title": "Preserve COMP-then-trial-then-charge precedence order",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "billing", "trial"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T18:08:48.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Persist intendedInterval on the trial subscription metadata (both paths)",
+            "description": "Thread intendedInterval ('monthly' | 'annual') into TrialService.startTrial() and stamp it into the trial subscription's metadata: 'annual' from the annual branch (T-002), 'monthly' from the existing monthly branch. Metadata-only write on the row startTrial already creates; no schema change, no migration. This is the OQ-1 source of truth and the analytics dimension. Unit test in T-010. Spec AC-8, Design section 5.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-004", "T-010"],
+            "subtasks": [
+                {
+                    "title": "Add intendedInterval to StartTrialInput and stamp into metadata",
+                    "completed": false
+                },
+                { "title": "Pass 'annual' from the annual branch", "completed": false },
+                { "title": "Pass 'monthly' from the monthly branch", "completed": false }
+            ],
+            "tags": ["api", "billing", "trial"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T18:08:48.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Append ?interval to the TRIAL_EXPIRED notification upgradeUrl",
+            "description": "In blockExpiredTrials() (apps/api/src/services/trial.service.ts), read intendedInterval from the expiring trial's metadata and append ?interval=<intendedInterval> to the existing upgradeUrl on the TRIAL_EXPIRED notification (nudge delivery path 1). Default gracefully when metadata lacks it. Unit test: notification payload carries the correct interval query param. Spec Design section 5, AC-9.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Read intendedInterval from trial metadata in blockExpiredTrials",
+                    "completed": false
+                },
+                {
+                    "title": "Append ?interval= to upgradeUrl with a safe default",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "billing", "notifications"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T18:08:48.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Web: show the trial copy under the annual toggle",
+            "description": "In apps/web/src/components/billing/PricingCardsGrid.astro, rename the trial line class off the interval-specific .pricing-card__trial--monthly to an interval-neutral class and drop it from the [data-billing='annual'] display:none rule (~L667-671) so 'N dias gratis' shows under BOTH monthly and annual toggles. Copy itself is interval-agnostic. Web test in T-013. Spec Design section 4, AC-6.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-006", "T-013"],
+            "subtasks": [
+                {
+                    "title": "Rename .pricing-card__trial--monthly to an interval-neutral class",
+                    "completed": false
+                },
+                { "title": "Remove it from the annual hide rule", "completed": false }
+            ],
+            "tags": ["web", "billing", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T18:08:48.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Web: pre-select the toggle from the ?interval query param",
+            "description": "In PricingCardsGrid.astro, read the ?interval= query param on load and set the initial data-billing on the .pricing-cards__container accordingly (nudge). A user manually flipping the toggle is never overridden; the query param wins over the monthly default. Same file as T-005 (sequence to avoid conflict). Web test in T-013. Spec Design section 5, AC-9.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "Read ?interval= (monthly|annual) on page load", "completed": false },
+                { "title": "Set initial data-billing from it, default monthly", "completed": false }
+            ],
+            "tags": ["web", "billing", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T18:08:48.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "i18n: confirm/adjust interval-neutral trial copy (es/en/pt)",
+            "description": "Review the pricing.trial string in packages/i18n for es/en/pt. Since the trial now shows on the annual toggle too, ensure the wording does not imply monthly-only. If already neutral ('N dias gratis' / '{days}-day free trial'), no change beyond confirming. Only edit if a locale implies monthly. Spec Design section 4.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Audit pricing.trial in es/en/pt for monthly-implying wording",
+                    "completed": false
+                },
+                { "title": "Adjust only if needed", "completed": false }
+            ],
+            "tags": ["i18n", "web"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T18:08:48.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Fast-follow: expose intendedInterval on the trial-status surface",
+            "description": "OPTIONAL (secondary nudge path per spec). Extend the existing trial-status endpoint + its web consumer to return the logged-in user's most recent trial intendedInterval, so direct navigation (no query param) also pre-selects the toggle. Path 1 (T-004/T-006) is the must-have; this may ship as a fast-follow. Unit test: endpoint returns intendedInterval. Spec Design section 5 (path 2).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Return intendedInterval from the trial-status surface",
+                    "completed": false
+                },
+                {
+                    "title": "Web: fall back to it when no ?interval= is present",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "web", "billing"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T18:08:48.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Unit tests: annual trial branch (eligibility + promo precedence)",
+            "description": "Cover AC-1 (eligible + annual -> trialing via startTrial, NO MP object, no charge, appliedEffect='trial'), AC-2 (not-eligible + annual -> unchanged upfront MP checkout, never 'trial'), AC-5 (promo precedence: comp wins/no trial, trial_extension adds days, discount discarded with promoCodeIgnored), AC-7 (cross-interval: consumed monthly trial -> not eligible for annual). Test file alongside the existing monthly checkout service tests. TDD: assert the T-002 branch behavior.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "AC-1 eligible annual -> trial, no MP object", "completed": false },
+                { "title": "AC-2 not-eligible annual -> upfront charge", "completed": false },
+                {
+                    "title": "AC-5 promo precedence (comp/trial_extension/discount)",
+                    "completed": false
+                },
+                { "title": "AC-7 cross-interval eligibility", "completed": false }
+            ],
+            "tags": ["api", "test", "billing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T18:08:48.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Unit test: intendedInterval stamped on both paths",
+            "description": "Assert a trial started from the annual branch records metadata.intendedInterval='annual' and a trial started from the monthly branch records 'monthly' (AC-8). Test alongside trial/checkout service tests.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Annual branch stamps 'annual'", "completed": false },
+                { "title": "Monthly branch stamps 'monthly'", "completed": false }
+            ],
+            "tags": ["api", "test", "billing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T18:08:48.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Integration test: annual trial via /start-paid + cancel-only expiry",
+            "description": "Cover AC-1 end-to-end (POST /start-paid billingInterval='annual' as trial-eligible -> trialing sub, no MP object created, correct response) and AC-3 (blockExpiredTrials cancels an annual-originated trialing sub past trialEnd with no charge, writes TRIAL_BLOCKED + trial_converted_at, sends TRIAL_EXPIRED). Uses the MP stub. Integration test file under apps/api/test.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-004"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "AC-1 route-level annual trial-eligible path", "completed": false },
+                { "title": "AC-3 expiry cron cancels annual trial (no charge)", "completed": false }
+            ],
+            "tags": ["api", "test", "billing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T18:08:48.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Test: analytics reuses checkout_started for annual -> trial",
+            "description": "Assert the checkout_started analytics event for a trial-eligible annual start carries billingInterval='annual' AND appliedEffect='trial', and that NO new analytics event/property is introduced (AC-10, OQ-2). Wherever checkout analytics are emitted/asserted.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Assert billingInterval='annual' + appliedEffect='trial'",
+                    "completed": false
+                },
+                { "title": "Assert no new event/property added", "completed": false }
+            ],
+            "tags": ["api", "test", "analytics"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T18:08:48.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Web test: annual toggle shows trial copy + ?interval pre-select",
+            "description": "Cover AC-6 (trial copy visible under both monthly and annual toggle, not display:none) and AC-9 (opening with ?interval=annual pre-selects data-billing='annual'; manual flip not overridden). Component/DOM test for PricingCardsGrid.astro behavior.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-006"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "AC-6 trial copy visible on annual", "completed": false },
+                { "title": "AC-9 ?interval pre-selects toggle", "completed": false }
+            ],
+            "tags": ["web", "test", "ui"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T18:08:48.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Docs + closeout: annual trial branch",
+            "description": "Update the billing endpoint-gate-matrix / trial-system docs to note the annual entry path now grants the no-card trial, and record intendedInterval metadata. Add status-needs-smoke-staging label at PR time (billing checkout surface, real MP sandbox). Fill closeout.md. No prod smoke needed (no CORE money mutation). Spec Smoke labels section.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002", "T-005"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Update trial-system / gate-matrix docs", "completed": false },
+                { "title": "Apply status-needs-smoke-staging + closeout notes", "completed": false }
+            ],
+            "tags": ["docs", "billing"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-09T18:08:48.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 14,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 14,
+        "blocked": 0,
+        "averageComplexity": 2.1
     }
-  ],
-  "summary": {
-    "total": 14,
-    "pending": 0,
-    "inProgress": 0,
-    "completed": 14,
-    "blocked": 0,
-    "averageComplexity": 2.1
-  }
 }

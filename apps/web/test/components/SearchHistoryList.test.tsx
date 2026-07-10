@@ -11,6 +11,8 @@
  *  - Delete-one shows inline confirmation then calls DELETE /:id
  *  - Clear-all shows inline confirmation then calls DELETE /
  *  - Opt-out toggle calls PATCH /preferences and updates aria-checked
+ *  - API errors are translated via translateApiError instead of leaking the
+ *    raw English API message (BETA-143 regression: RATE_LIMIT_EXCEEDED)
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -19,10 +21,22 @@ import { SearchHistoryList } from '../../src/components/account/SearchHistoryLis
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
+/**
+ * Translated copy for `common.apiError.RATE_LIMIT_EXCEEDED`, mirroring the
+ * real Spanish translation shipped in `@repo/i18n`. Used to prove
+ * `translateApiError` (the real, un-mocked implementation) actually routes
+ * through `error.code` instead of falling back to the raw English API
+ * `message` (BETA-143 regression).
+ */
+const RATE_LIMIT_TRANSLATION = 'Demasiadas solicitudes, probá de nuevo en un momento.';
+
 vi.mock('../../src/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
-            if (!fallback) return _key;
+        t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
+            // Simulate a real i18n key lookup for the apiError code exercised
+            // by the RATE_LIMIT_EXCEEDED regression test below.
+            if (key === 'common.apiError.RATE_LIMIT_EXCEEDED') return RATE_LIMIT_TRANSLATION;
+            if (!fallback) return key;
             if (!params) return fallback;
             // Simple {{key}} interpolation for test assertions
             return Object.entries(params).reduce(
@@ -94,6 +108,25 @@ function makeErrorResponse(status = 500, message = 'Server error') {
         ok: false,
         status,
         json: async () => ({ success: false, error: { message } })
+    } as Response;
+}
+
+/**
+ * 429 rate-limit response shaped exactly like the real API's
+ * `{ error: { code, message } }` envelope (BETA-143). `message` is the raw,
+ * English, server-only string that must never reach the UI untranslated.
+ */
+function makeRateLimitErrorResponse() {
+    return {
+        ok: false,
+        status: 429,
+        json: async () => ({
+            success: false,
+            error: {
+                code: 'RATE_LIMIT_EXCEEDED',
+                message: 'Too many requests, please try again later.'
+            }
+        })
     } as Response;
 }
 
@@ -178,6 +211,23 @@ describe('SearchHistoryList', () => {
             await waitFor(() => {
                 expect(screen.getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
             });
+        });
+    });
+
+    // ── 2b. API error i18n (BETA-143 regression) ───────────────────────────────
+
+    describe('API error i18n (BETA-143 regression)', () => {
+        it('translates a RATE_LIMIT_EXCEEDED fetch error instead of leaking the raw English API message', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce(makeRateLimitErrorResponse());
+            renderComponent();
+
+            await waitFor(() => {
+                expect(screen.getByRole('alert')).toBeInTheDocument();
+            });
+
+            const alertText = screen.getByRole('alert').textContent ?? '';
+            expect(alertText).not.toMatch(/too many requests/i);
+            expect(alertText).toBe(RATE_LIMIT_TRANSLATION);
         });
     });
 
