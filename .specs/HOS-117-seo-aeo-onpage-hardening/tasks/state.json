@@ -13,14 +13,24 @@
             "blockedBy": [],
             "blocks": ["T-004", "T-005"],
             "subtasks": [
-                { "title": "Grep client:visible/client:idle/client:load usages", "completed": true },
-                { "title": "For each, compare SSR-rendered output vs hydrated state", "completed": true },
+                {
+                    "title": "Grep client:visible/client:idle/client:load usages",
+                    "completed": true
+                },
+                {
+                    "title": "For each, compare SSR-rendered output vs hydrated state",
+                    "completed": true
+                },
                 { "title": "Write checklist (compliant/offending + file:line)", "completed": true }
             ],
             "tags": ["seo", "audit", "web"],
             "phase": "setup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": "2026-07-09T18:56:00.000Z", "completed": "2026-07-09T19:05:00.000Z" }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": "2026-07-09T18:56:00.000Z",
+                "completed": "2026-07-09T19:05:00.000Z"
+            }
         },
         {
             "id": "T-002",
@@ -38,7 +48,11 @@
             "tags": ["seo", "audit", "web"],
             "phase": "setup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": "2026-07-09T20:05:00.000Z", "completed": "2026-07-09T20:08:00.000Z" }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": "2026-07-09T20:05:00.000Z",
+                "completed": "2026-07-09T20:08:00.000Z"
+            }
         },
         {
             "id": "T-003",
@@ -56,7 +70,11 @@
             "tags": ["performance", "cwv", "audit"],
             "phase": "setup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-004",
@@ -75,7 +93,11 @@
             "tags": ["seo", "aeo", "web", "bugfix"],
             "phase": "core",
             "qualityGate": { "lint": true, "typecheck": true, "tests": true },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": "2026-07-09T19:06:00.000Z", "completed": "2026-07-09T19:20:00.000Z" }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": "2026-07-09T19:06:00.000Z",
+                "completed": "2026-07-09T19:20:00.000Z"
+            }
         },
         {
             "id": "T-005",
@@ -93,7 +115,11 @@
             "tags": ["seo", "aeo", "web", "docs"],
             "phase": "core",
             "qualityGate": { "lint": true, "typecheck": true, "tests": true },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": "2026-07-09T19:25:00.000Z", "completed": "2026-07-09T19:45:00.000Z" }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": "2026-07-09T19:25:00.000Z",
+                "completed": "2026-07-09T19:45:00.000Z"
+            }
         },
         {
             "id": "T-006",
@@ -111,7 +137,11 @@
             "tags": ["seo", "web", "sitemap"],
             "phase": "core",
             "qualityGate": { "lint": true, "typecheck": true, "tests": true },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": "2026-07-09T20:05:00.000Z", "completed": "2026-07-09T20:15:00.000Z" }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": "2026-07-09T20:05:00.000Z",
+                "completed": "2026-07-09T20:15:00.000Z"
+            }
         },
         {
             "id": "T-007",
@@ -123,13 +153,23 @@
             "blocks": ["T-018"],
             "subtasks": [
                 { "title": "Emit BreadcrumbJsonLd in gastronomia/[slug].astro", "completed": true },
-                { "title": "Emit BreadcrumbJsonLd in experiencias/[slug].astro", "completed": true },
-                { "title": "Extend DETAIL_PAGES to 6 entities in the guard test", "completed": true }
+                {
+                    "title": "Emit BreadcrumbJsonLd in experiencias/[slug].astro",
+                    "completed": true
+                },
+                {
+                    "title": "Extend DETAIL_PAGES to 6 entities in the guard test",
+                    "completed": true
+                }
             ],
             "tags": ["seo", "aeo", "web", "json-ld"],
             "phase": "core",
             "qualityGate": { "lint": true, "typecheck": true, "tests": true },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": "2026-07-09T19:50:00.000Z", "completed": "2026-07-09T20:00:00.000Z" }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": "2026-07-09T19:50:00.000Z",
+                "completed": "2026-07-09T20:00:00.000Z"
+            }
         },
         {
             "id": "T-008",
@@ -147,7 +187,11 @@
             "tags": ["seo", "decision", "web"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-009",
@@ -158,13 +202,20 @@
             "blockedBy": ["T-008"],
             "blocks": ["T-010", "T-019"],
             "subtasks": [
-                { "title": "Implement gate/flag driving noindex + sitemap exclusion", "completed": false },
+                {
+                    "title": "Implement gate/flag driving noindex + sitemap exclusion",
+                    "completed": false
+                },
                 { "title": "Document coarse→granular degrade path", "completed": false }
             ],
             "tags": ["seo", "web", "demo-exclusion"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-010",
@@ -176,13 +227,20 @@
             "blocks": ["T-019"],
             "subtasks": [
                 { "title": "Add flag column + schema (structural migration)", "completed": false },
-                { "title": "Seed dual-write: baseline + numbered data-migration", "completed": false },
+                {
+                    "title": "Seed dual-write: baseline + numbered data-migration",
+                    "completed": false
+                },
                 { "title": "Wire flag into noindex + sitemap", "completed": false }
             ],
             "tags": ["seo", "db", "seed", "migration"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-011",
@@ -200,7 +258,11 @@
             "tags": ["aeo", "content", "seed"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-012",
@@ -218,7 +280,11 @@
             "tags": ["seo", "content", "web"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-013",
@@ -235,26 +301,34 @@
             "tags": ["docs", "seo"],
             "phase": "docs",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-014",
-            "title": "Wave 3 content i18n — macro task (decide OQ-2 split first)",
-            "description": "MACRO task, kept unsplit because OQ-2 may move it to its own sub-spec. Decide OQ-2 (split vs keep). If kept: migrate accommodation/destination text fields (name/description/faqs) from plain text to {es,en,pt} shape (structural migration + seed dual-write), wire resolveI18nText into consumers, and close the seo.ts per-locale gap so SEOHead + JSON-LD use the locale value. LARGE — atomize into ~4-6 sub-tasks via /replan if kept here. Ref US-9. Tests: resolveI18nText fallback + localized SEO/JSON-LD (T-020).",
-            "status": "pending",
+            "title": "Wave 3 content i18n — FAQ i18n support + destination SEO parity (retargeted)",
+            "description": "RETARGETED (2026-07-10, owner): SPEC-212 already shipped name/summary/description i18n infra + AI translation pipeline, so OQ-2 = keep-shrunk (no sub-spec). Reduced to: (1) add additive/nullable question_i18n/answer_i18n I18nText columns to all 4 FAQ tables (accommodation/destination/experience/gastronomy) + BaseFaqSchema/BaseFaqPublicSchema (owner chose 4 tables for schema consistency); (2) wire resolveI18nText into the 4 FAQ transforms with legacy-es fallback and emit honest FAQPage inLanguage via faqSetInLanguage on the accommodation+destination detail pages; (3) route destination detail title/meta through pickLocalizedSeo + resolve summary/description prose (name stays an untranslated proper noun). Seed stays Spanish-only via legacy fields (mirrors accommodation description under SPEC-212) — NO seed dual-write. Translations authored later by AI pipeline/real content, not this task. Ref US-9. Tests: T-020. Commits: db 0050 + web read-path.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "Decide OQ-2 (split to sub-spec or keep)", "completed": false },
-                { "title": "If kept: schema migration to {es,en,pt}", "completed": false },
-                { "title": "If kept: seed dual-write + wire resolveI18nText", "completed": false },
-                { "title": "If kept: locale-aware SEOHead + JSON-LD", "completed": false }
+                { "title": "Decide OQ-2 (kept-shrunk, no sub-spec) + 4-table scope", "completed": true },
+                { "title": "Additive i18n columns on 4 FAQ tables + Zod + migration 0050", "completed": true },
+                { "title": "Wire resolveI18nText into 4 FAQ transforms + honest inLanguage", "completed": true },
+                { "title": "Destination SEO parity: pickLocalizedSeo + summary/description i18n", "completed": true }
             ],
             "tags": ["i18n", "db", "seed", "seo"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": "2026-07-10T05:40:00.000Z",
+                "completed": "2026-07-10T06:15:00.000Z"
+            }
         },
         {
             "id": "T-015",
@@ -271,7 +345,11 @@
             "tags": ["performance", "rendering", "audit"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-016",
@@ -282,14 +360,21 @@
             "blockedBy": ["T-015"],
             "blocks": ["T-017"],
             "subtasks": [
-                { "title": "Check CF cache headers / hit ratio on catalog SSR", "completed": false },
+                {
+                    "title": "Check CF cache headers / hit ratio on catalog SSR",
+                    "completed": false
+                },
                 { "title": "Prerender truly-static pages if warranted", "completed": false },
                 { "title": "Record findings on Linear issue", "completed": false }
             ],
             "tags": ["performance", "rendering", "cloudflare"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-017",
@@ -306,7 +391,11 @@
             "tags": ["performance", "cwv"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-018",
@@ -324,7 +413,11 @@
             "tags": ["testing", "seo", "web"],
             "phase": "testing",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-019",
@@ -341,24 +434,35 @@
             "tags": ["testing", "seo", "demo-exclusion"],
             "phase": "testing",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-020",
             "title": "Wave 2/3 seed-coverage and i18n fallback tests",
             "description": "REFRAMED (replan 2026-07-09): Wave 2 FAQ-coverage assertion dropped (T-011 cancelled). Wave 3 (if in scope): resolveI18nText fallback (en/pt → es when translation absent) + localized SEO/JSON-LD name/description tests. Ref US-6/US-9. Tests: seed-count + i18n resolver.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014"],
             "blocks": ["T-021"],
             "subtasks": [
-                { "title": "FAQ coverage seed-count assertion", "completed": false },
-                { "title": "resolveI18nText fallback test (if Wave 3 in scope)", "completed": false }
+                { "title": "FAQ seed-count assertion (dropped — T-011 cancelled)", "completed": true },
+                {
+                    "title": "resolveI18nText/resolveI18nLocale fallback + faqSetInLanguage + toDestinationFaqs i18n tests",
+                    "completed": true
+                }
             ],
             "tags": ["testing", "aeo", "i18n"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": "2026-07-10T06:10:00.000Z",
+                "completed": "2026-07-10T06:15:00.000Z"
+            }
         },
         {
             "id": "T-021",
@@ -371,12 +475,19 @@
             "subtasks": [
                 { "title": "Write off-page follow-up note", "completed": false },
                 { "title": "Write closeout.md", "completed": false },
-                { "title": "Record decisions/migrations on Linear issue + smoke labels", "completed": false }
+                {
+                    "title": "Record decisions/migrations on Linear issue + smoke labels",
+                    "completed": false
+                }
             ],
             "tags": ["docs", "cleanup"],
             "phase": "docs",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-09T18:22:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-07-09T18:22:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-022",
@@ -399,9 +510,9 @@
     ],
     "summary": {
         "total": 17,
-        "pending": 10,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 9,
         "blocked": 0,
         "cancelled": 5,
         "averageComplexity": 2.2

@@ -1,0 +1,263 @@
+/**
+ * AccountButton.module.css
+ * Canonical button variants for the /mi-cuenta account islands (BETA-143).
+ *
+ * This file is NOT rendered directly — no component imports it as `styles`.
+ * Instead, each island's own co-located `*.module.css` composes one of these
+ * classes onto its existing local class name (e.g. `.submitBtn { composes:
+ * primary from './AccountButton.module.css'; }`), so JSX call-sites never
+ * change. This collapses the ~24 divergent button recipes that previously
+ * existed across account islands into a single shared set of variants.
+ *
+ * ALL values use CSS custom properties from @repo/design-tokens — no
+ * hardcoded colors/spacing/radii (web app golden rule).
+ */
+
+/* ── Primary — main call-to-action (submit, save, create) ────────────────── */
+
+.primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-5);
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+    border: 1px solid transparent;
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity var(--duration-normal, 0.4s) ease;
+}
+
+.primary:hover:not(:disabled) {
+    opacity: 0.88;
+}
+
+.primary:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Secondary — outlined brand action (change, select, alternate) ───────── */
+
+.secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-5);
+    background-color: transparent;
+    color: var(--brand-primary);
+    border: 1px solid var(--brand-primary);
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        color var(--duration-normal, 0.4s) ease;
+}
+
+.secondary:hover:not(:disabled) {
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+}
+
+.secondary:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Ghost — muted neutral action (back, cancel, retry) ───────────────────── */
+
+.ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background-color: transparent;
+    color: var(--core-muted-foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        border-color var(--duration-normal, 0.4s) ease,
+        color var(--duration-normal, 0.4s) ease;
+}
+
+.ghost:hover:not(:disabled) {
+    background-color: var(--core-foreground-a08);
+    border-color: var(--core-foreground);
+    color: var(--core-foreground);
+}
+
+.ghost:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.ghost:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Danger — page-level destructive action ───────────────────────────────── */
+
+.danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-5);
+    background-color: transparent;
+    color: var(--destructive);
+    border: 1px solid var(--destructive);
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        color var(--duration-normal, 0.4s) ease;
+}
+
+.danger:hover:not(:disabled) {
+    background-color: var(--destructive);
+    color: var(--destructive-foreground);
+}
+
+.danger:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Danger compact — per-row inline delete/remove action ─────────────────── */
+
+.dangerCompact {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    background-color: transparent;
+    color: var(--destructive);
+    border: 1px solid var(--destructive);
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color var(--duration-normal, 0.4s) ease;
+}
+
+.dangerCompact:hover:not(:disabled) {
+    background-color: var(--destructive-a10);
+}
+
+.dangerCompact:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.dangerCompact:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Secondary compact — per-row inline brand-outline action ──────────────── */
+
+.secondaryCompact {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    background-color: transparent;
+    color: var(--brand-primary);
+    border: 1px solid var(--brand-primary);
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color var(--duration-normal, 0.4s) ease;
+}
+
+.secondaryCompact:hover:not(:disabled) {
+    background-color: var(--brand-primary-a08);
+}
+
+.secondaryCompact:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.secondaryCompact:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Pagination — prev/next page controls ─────────────────────────────────── */
+
+.pagination {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2) var(--space-4);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        border-color var(--duration-normal, 0.4s) ease;
+}
+
+.pagination:hover:not(:disabled) {
+    background-color: var(--surface-warm);
+    border-color: var(--brand-primary);
+}
+
+.pagination:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.pagination:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}

@@ -19,6 +19,8 @@ import { buildUrl } from '@/lib/urls';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { Accommodation } from '@repo/schemas';
 import { LifecycleStatusEnum } from '@repo/schemas';
+import accountSectionStyles from '@/components/account/AccountSection.module.css';
+import btn from '@/components/account/AccountButton.module.css';
 import { DeleteButton } from './DeleteButton.client';
 import { PublishButton } from './PublishButton.client';
 import { UnpublishButton } from './UnpublishButton.client';
@@ -142,8 +144,15 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
         </span>
     </div>
 
-    <!-- CONTENT -->
-    <div class="prop-card__content">
+    <!--
+      CONTENT — carries the brand accent bar (BETA-143c), not the outer
+      `.prop-card`: the thumbnail is full-bleed at the top with
+      `overflow: hidden`, so a top-of-card bar there would render UNDER (or
+      visually clash with) the photo. Placing `.branded` on the content block
+      instead draws a clean accent line right below the image, above the
+      title — same brand-identity treatment, no image overlap.
+    -->
+    <div class:list={['prop-card__content', accountSectionStyles.branded]}>
         <h3 class="prop-card__name">{property.name}</h3>
 
         {locationText && (
@@ -167,7 +176,7 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
         <!-- ACTIONS -->
         <div class="prop-card__actions" role="group" aria-label={property.name}>
             <!-- Edit: always available (routes to web editor) -->
-            <a href={editUrl} class="prop-card__action prop-card__action--secondary">
+            <a href={editUrl} class:list={['prop-card__action', btn.secondaryCompact]}>
                 {t('host.properties.card.actions.edit', 'Editar')}
             </a>
 
@@ -175,7 +184,7 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
             {isActive && (
                 <a
                     href={viewOnSiteUrl}
-                    class="prop-card__action prop-card__action--secondary"
+                    class:list={['prop-card__action', btn.secondaryCompact]}
                     target="_blank"
                     rel="noopener noreferrer"
                 >
@@ -390,46 +399,11 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
         border-top: 1px solid var(--border);
     }
 
-    .prop-card__action {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 44px;
-        padding: 8px 14px;
-        border-radius: var(--radius-pill, 9999px);
-        font-family: var(--font-sans);
-        font-weight: 500;
-        font-size: 0.8125rem;
-        text-decoration: none;
-        white-space: nowrap;
-        transition: opacity 150ms ease-out, background-color 150ms ease-out;
-        cursor: pointer;
-    }
-
-    .prop-card__action:focus-visible {
-        outline: 2px solid var(--brand-primary);
-        outline-offset: 2px;
-    }
-
-    .prop-card__action--secondary {
-        background-color: var(--surface-warm, oklch(0.96 0.02 60));
-        color: var(--core-foreground, var(--core-foreground));
-        border: 1px solid var(--border);
-    }
-
-    .prop-card__action--secondary:hover {
-        background-color: var(--muted, oklch(0.93 0.01 60));
-    }
-
-    .prop-card__action--danger {
-        background-color: oklch(0.96 0.02 25);
-        color: oklch(0.45 0.20 25);
-        border: 1px solid oklch(0.88 0.06 25);
-    }
-
-    .prop-card__action--danger:hover {
-        background-color: oklch(0.92 0.04 25);
-    }
+    /* Layout hook only — colors/radius/spacing/font come from the shared
+       AccountButton compact variants (BETA-143e, see PropertyCard.astro
+       frontmatter `btn` import). Kept for the mobile full-width rule below;
+       the DeleteButton/UnpublishButton React islands render their own
+       equivalent classes since Astro-scoped styles don't reach islands. */
 
     @media (max-width: 360px) {
         .prop-card__actions {

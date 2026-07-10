@@ -30,6 +30,7 @@ import {
     pageRevalidationJob,
     partnerExpiryJob,
     pollApifyReputationRunsJob,
+    reactivationSupersessionReconcileJob,
     refreshExternalReputationJob,
     searchIndexRefreshJob,
     socialPublishDispatchJob,
@@ -76,7 +77,8 @@ export const cronJobs: CronJobDefinition[] = [
     socialPublishDispatchJob,
     pollApifyReputationRunsJob,
     partnerExpiryJob,
-    featuredByEntitlementReconcileJob
+    featuredByEntitlementReconcileJob,
+    reactivationSupersessionReconcileJob
 ];
 
 /**

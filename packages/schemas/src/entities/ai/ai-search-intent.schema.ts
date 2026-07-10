@@ -121,6 +121,29 @@ export const SearchIntentEntitiesSchema = z.object({
     /** Search radius in km (max 500). Only applied when `latitude` + `longitude` present. */
     radius: z.number().positive().max(500).optional(),
 
+    /**
+     * Geo "nearby destinations" expansion signal (HOS-111 T-012, G-9).
+     *
+     * `true` when the user's message is a conversational follow-up asking to
+     * widen the search to destinations near the current one (e.g. "y en
+     * destinos cercanos", "también cerca", "and nearby destinations too").
+     * The model infers this from the bounded conversation history that is
+     * already embedded in the prompt (`buildConversationalSearchPrompt`) —
+     * no new context plumbing is needed.
+     *
+     * Deliberately a plain boolean, NOT a duplicate `nearbyOfDestinationId`
+     * slot: the anchor destination is already resolvable from the existing
+     * location fields (`destinationId` / server-resolved `city`) carried
+     * forward turn-to-turn via the CURRENT FILTER SET mechanism. The
+     * search-chat handler (T-013) reads this flag and, when `true`, resolves
+     * the anchor's neighbors via `DestinationService.getNearby` and expands
+     * the search to include them.
+     *
+     * `false`/absent for a normal (non-expansion) query — the model MUST NOT
+     * set this from a single-turn message with no prior destination context.
+     */
+    expandToNearby: z.boolean().optional(),
+
     // ── Accommodation type ────────────────────────────────────────────────────
     /**
      * Type of accommodation requested (maps to `type` param).
@@ -207,6 +230,23 @@ export const SearchIntentEntitiesSchema = z.object({
      * Empty array is treated as absent (no feature filter applied).
      */
     featureSlugs: z.array(z.string()).optional(),
+
+    /**
+     * Destination attraction slugs matched from the locale-specific
+     * `ATTRACTION_ALLOWLIST` (HOS-111 T-015, G-11 — "una ciudad con carnavales").
+     *
+     * Mirrors `amenitySlugs`/`featureSlugs`: the model is only asked to emit
+     * CANONICAL slugs from the curated allowlist (never invented ones), and the
+     * route resolves them server-side. Unlike amenities/features (which resolve
+     * to accommodation-level filter UUIDs), attraction slugs resolve to the
+     * DESTINATIONS that have that attraction via `r_destination_attraction`
+     * (no accommodation↔attraction join exists for the MVP — spec §6 Phase 3) —
+     * the search-chat handler (T-016) turns the resolved set into a
+     * `destinationIds` constraint on the accommodation search, never a direct
+     * query param on this schema. Empty array is treated as absent (no
+     * attraction constraint applied).
+     */
+    attractionSlugs: z.array(z.string()).optional(),
 
     // ── Availability dates ────────────────────────────────────────────────────
     /**

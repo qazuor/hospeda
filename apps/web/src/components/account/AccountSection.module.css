@@ -1,0 +1,77 @@
+/* AccountSection.module.css */
+/* Shared "section card" recipe reused by every /mi-cuenta settings/form page. */
+/* ALL values use CSS custom properties from global.css. */
+/* Canonical source: previously defined in ProfileEditForm.module.css (BETA-143 5c). */
+/* Other modules reuse this via CSS Modules `composes: card from './AccountSection.module.css';` */
+
+/*
+ * Brand-identity-only treatment (BETA-143c): the top accent bar WITHOUT the
+ * card's own bg/border/radius/padding, so a sub-card that is already a full
+ * card in its own module can compose this to gain the top gradient bar
+ * without becoming a nested card. `.card` below composes it too, so both
+ * share this single `::before` definition.
+ *
+ * NOTE: `.branded` MUST stay declared ABOVE `.card` — postcss-modules-scope
+ * resolves same-file `composes` in a single top-down pass and requires the
+ * referenced local class to be defined before the `composes` statement.
+ */
+.branded {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.branded::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+    opacity: 0.65;
+    z-index: 0;
+}
+
+.card {
+    composes: branded;
+    background-color: var(--core-card);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-card);
+    padding: var(--space-6, 24px);
+    box-shadow: 0 1px 2px var(--core-foreground-a05);
+    transition:
+        box-shadow var(--duration-normal) ease,
+        border-color var(--duration-normal) ease;
+}
+
+.card:hover {
+    box-shadow: 0 6px 16px var(--core-foreground-a05);
+    border-color: var(--brand-primary-a20);
+}
+
+.cardTitle {
+    position: relative;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-5, 20px);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--core-foreground-a05);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* Small leading dot in brand color to mark each section header. */
+.cardTitle::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px var(--brand-primary-a12);
+}

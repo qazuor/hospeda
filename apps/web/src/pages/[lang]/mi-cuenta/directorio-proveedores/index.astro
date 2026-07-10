@@ -32,6 +32,7 @@ import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import accountSectionStyles from '@/components/account/AccountSection.module.css';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { TradesDirectory } from '@/components/host/host-trades/TradesDirectory.client';
 import { BuildingIcon, LockIcon } from '@repo/icons';
@@ -153,8 +154,10 @@ const accessDeniedCta = t('host-trades.accessDenied.cta', 'Ver planes de suscrip
     <AccountPageHeader title={title} description={subtitle} />
 
     {accessDenied ? (
-        /* Access-denied state (AC-5.3): tourist or non-host user */
-        <div class="trades-page__access-denied" role="alert">
+        /* Access-denied state (AC-5.3): tourist or non-host user — already a
+             standalone full-page card (bg/border/radius below), branded on
+             its own since it is no longer nested in AccountSectionCard. */
+        <div class:list={['trades-page__access-denied', accountSectionStyles.branded]} role="alert">
             <span class="trades-page__access-denied-icon" aria-hidden="true">
                 <LockIcon size={40} weight="duotone" />
             </span>
@@ -165,8 +168,8 @@ const accessDeniedCta = t('host-trades.accessDenied.cta', 'Ver planes de suscrip
             </a>
         </div>
     ) : fetchError ? (
-        /* Generic error state */
-        <div class="trades-page__error" role="alert">
+        /* Generic error state — same standalone-card treatment as above. */
+        <div class:list={['trades-page__error', accountSectionStyles.branded]} role="alert">
             <p class="trades-page__error-title">
                 {t('host.properties.empty.fetchError', 'No se pudo cargar la lista. Intentá recargar la página.')}
             </p>
@@ -175,7 +178,8 @@ const accessDeniedCta = t('host-trades.accessDenied.cta', 'Ver planes de suscrip
             </a>
         </div>
     ) : !isEmpty ? (
-        /* Trades island — hydrates when browser is idle (content is below the fold) */
+        /* Trades island — hydrates when browser is idle (content is below the fold).
+             Each TradeCard carries its own branded accent bar (no outer wrapper). */
         <TradesDirectory
             client:idle
             trades={trades as HostTradePublic[]}

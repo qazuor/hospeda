@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BaseAuditFields } from './audit.schema.js';
+import { i18nText } from './i18n.schema.js';
 import { IdSchema } from './id.schema.js';
 import { BaseLifecycleFields } from './lifecycle.schema.js';
 
@@ -28,6 +29,20 @@ export const BaseFaqSchema = z.object({
         })
         .min(10, { message: 'zodError.common.faq.answer.min' })
         .max(2000, { message: 'zodError.common.faq.answer.max' }),
+
+    /**
+     * Localized question ({es,en,pt}). Additive/nullable (HOS-117): the legacy `question`
+     * field remains the `es` fallback source. Read paths resolve this via resolveI18nText
+     * with `question` as the fallback. Same length bounds as the legacy field.
+     */
+    questionI18n: i18nText({ min: 10, max: 300 }).nullish(),
+
+    /**
+     * Localized answer ({es,en,pt}). Additive/nullable (HOS-117): the legacy `answer`
+     * field remains the `es` fallback source. Read paths resolve this via resolveI18nText
+     * with `answer` as the fallback. Same length bounds as the legacy field.
+     */
+    answerI18n: i18nText({ min: 10, max: 2000 }).nullish(),
 
     // Use .nullish() (not .optional()) because Drizzle returns `null` for unset columns.
     category: z
@@ -77,6 +92,8 @@ export type FaqUpdatePayloadType = z.infer<typeof FaqUpdatePayloadSchema>;
 export const BaseFaqPublicSchema = BaseFaqSchema.pick({
     question: true,
     answer: true,
+    questionI18n: true,
+    answerI18n: true,
     category: true,
     displayOrder: true
 });

@@ -316,4 +316,80 @@ describe('AttractionModel', () => {
             expect(result.total).toBe(1);
         });
     });
+
+    // ========================================================================
+    // HOS-111 T-016: findDestinationIdsBySlugs (attraction slug → destinations)
+    // ========================================================================
+    describe('findDestinationIdsBySlugs', () => {
+        it('should return an empty array without a DB round-trip when slugs is empty', async () => {
+            const result = await model.findDestinationIdsBySlugs([]);
+
+            expect(result).toEqual([]);
+            expect(getDb).not.toHaveBeenCalled();
+        });
+
+        it('should resolve slugs to attraction ids, then to de-duplicated destination ids', async () => {
+            const selectMock = vi
+                .fn()
+                // First call: attractions.slug IN (...) lookup.
+                .mockReturnValueOnce({
+                    from: () => ({
+                        where: () =>
+                            Promise.resolve([{ id: 'attraction-1' }, { id: 'attraction-2' }])
+                    })
+                })
+                // Second call: r_destination_attraction join lookup, with a
+                // duplicate destinationId to verify de-duplication.
+                .mockReturnValueOnce({
+                    from: () => ({
+                        innerJoin: () => ({
+                            where: () =>
+                                Promise.resolve([
+                                    { destinationId: 'dest-1' },
+                                    { destinationId: 'dest-2' },
+                                    { destinationId: 'dest-1' }
+                                ])
+                        })
+                    })
+                });
+            getDb.mockReturnValue({ select: selectMock });
+
+            const result = await model.findDestinationIdsBySlugs(['sede_carnaval', 'corsodromo']);
+
+            expect(result).toEqual(['dest-1', 'dest-2']);
+            expect(selectMock).toHaveBeenCalledTimes(2);
+            expect(logQuery).toHaveBeenCalled();
+        });
+
+        it('should return an empty array and skip the destination query when no attraction matches', async () => {
+            const selectMock = vi.fn().mockReturnValueOnce({
+                from: () => ({
+                    where: () => Promise.resolve([])
+                })
+            });
+            getDb.mockReturnValue({ select: selectMock });
+
+            const result = await model.findDestinationIdsBySlugs(['unknown_slug']);
+
+            expect(result).toEqual([]);
+            expect(selectMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('should throw DbError when the query fails', async () => {
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({
+                        where: () => {
+                            throw new Error('connection failed');
+                        }
+                    })
+                })
+            });
+
+            await expect(model.findDestinationIdsBySlugs(['sede_carnaval'])).rejects.toThrow(
+                'connection failed'
+            );
+            expect(logError).toHaveBeenCalled();
+        });
+    });
 });

@@ -10,6 +10,7 @@
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { WhatsNewPageList } from '@/components/account/WhatsNewPageList.client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -31,19 +32,15 @@ const description = t('account.pages.whatsNew.desc', 'Novedades y actualizacione
     <article class="whats-new-page">
         <AccountPageHeader title={title} description={description} />
 
-        <WhatsNewPageList locale={locale} client:idle />
+        <AccountSectionCard>
+            <WhatsNewPageList locale={locale} client:idle />
+        </AccountSectionCard>
     </article>
 </AccountLayout>
 
 <style>
     :global(.whats-new-page) {
         max-width: 720px;
-    }
-
-    :global(.whats-new-page__empty) {
-        padding: var(--space-8) 0;
-        text-align: center;
-        color: var(--core-muted-foreground);
     }
 
     :global(.whats-new-page__error) {

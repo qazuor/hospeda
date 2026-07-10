@@ -8,6 +8,7 @@
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { UserFavoritesList } from '@/components/account/UserFavoritesList.client';
 import { CreateCollectionCTA } from '@/components/account/CreateCollectionCTA.client';
 import { createTranslations } from '@/lib/i18n';
@@ -89,48 +90,50 @@ const usageRatio =
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="favoritos">
-	<div class="favoritos-header">
-		<div class="favoritos-header__title">
-			<AccountPageHeader title={title} />
+	<AccountSectionCard>
+		<div class="favoritos-header">
+			<div class="favoritos-header__title">
+				<AccountPageHeader title={title} />
+			</div>
+
+			{
+				usageLabel !== null && collectionUsage !== null && (
+					<div
+						class:list={[
+							'collection-usage',
+							{ 'collection-usage--warning': isAtLimit }
+						]}
+						aria-label={limitReachedLabel ?? usageLabel}
+						title={limitReachedLabel ?? usageLabel}
+					>
+						<span class="collection-usage__text">{usageLabel}</span>
+
+						<div
+							class="collection-usage__bar-track"
+							role="progressbar"
+							aria-valuenow={collectionUsage.current}
+							aria-valuemin={0}
+							aria-valuemax={collectionUsage.max}
+						>
+							<div
+								class="collection-usage__bar-fill"
+								style={`width: ${(usageRatio * 100).toFixed(1)}%`}
+							/>
+						</div>
+					</div>
+				)
+			}
+
+			<CreateCollectionCTA
+				client:load
+				locale={locale}
+				isAtLimit={isAtLimit}
+				maxCollections={collectionUsage?.max ?? 0}
+			/>
 		</div>
 
-		{
-			usageLabel !== null && collectionUsage !== null && (
-				<div
-					class:list={[
-						'collection-usage',
-						{ 'collection-usage--warning': isAtLimit }
-					]}
-					aria-label={limitReachedLabel ?? usageLabel}
-					title={limitReachedLabel ?? usageLabel}
-				>
-					<span class="collection-usage__text">{usageLabel}</span>
-
-					<div
-						class="collection-usage__bar-track"
-						role="progressbar"
-						aria-valuenow={collectionUsage.current}
-						aria-valuemin={0}
-						aria-valuemax={collectionUsage.max}
-					>
-						<div
-							class="collection-usage__bar-fill"
-							style={`width: ${(usageRatio * 100).toFixed(1)}%`}
-						/>
-					</div>
-				</div>
-			)
-		}
-
-		<CreateCollectionCTA
-			client:load
-			locale={locale}
-			isAtLimit={isAtLimit}
-			maxCollections={collectionUsage?.max ?? 0}
-		/>
-	</div>
-
-	<UserFavoritesList client:load locale={locale} apiUrl={apiUrl} />
+		<UserFavoritesList client:load locale={locale} apiUrl={apiUrl} />
+	</AccountSectionCard>
 </AccountLayout>
 
 <style>

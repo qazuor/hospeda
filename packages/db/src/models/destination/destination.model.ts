@@ -10,6 +10,7 @@ import {
     isNull,
     like,
     lte,
+    ne,
     or,
     type SQL,
     sql
@@ -22,8 +23,36 @@ import { userBookmarks } from '../../schemas/user/user_bookmark.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { buildWhereClause, safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
+import {
+    buildCoordinatesNotNullClause,
+    buildDistanceOrderByExpr,
+    buildJsonbCoordinateExprs,
+    buildWithinRadiusClause
+} from '../../utils/geo.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
+
+/**
+ * Fixed radius, in kilometers, used to resolve "nearby destinations" for the
+ * AI search chat geo-expansion follow-up (HOS-111 T-011, spec OQ-2 —
+ * RESOLVED: fixed radius, no UI control). 50 km from Colón covers Pueblo
+ * Liebig, San José, and Concepción del Uruguay (the owner's worked example).
+ */
+export const NEARBY_DESTINATION_RADIUS_KM = 50;
+
+/**
+ * Number of nearest destinations returned as a fallback when the fixed-radius
+ * query yields zero rows, so a "destinos cercanos" follow-up never comes back
+ * empty (HOS-111 T-011, OQ-2).
+ */
+export const NEARBY_DESTINATION_FALLBACK_COUNT = 5;
+
+/**
+ * Hard cap on the number of destinations returned by the radius pass, even
+ * when many fall inside the radius. Keeps the "nearby" result set small
+ * enough to be useful in a chat reply / filter chips list.
+ */
+export const NEARBY_DESTINATION_MAX_RESULTS = 10;
 
 /**
  * Synthetic sort field name that orders destinations by the number of active
@@ -646,6 +675,145 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                 this.entityName,
                 'findAncestors',
                 { destinationId },
+                (error as Error).message
+            );
+        }
+    }
+
+    /**
+     * Finds destinations geographically near an anchor destination (HOS-111
+     * T-011 — "nearby destinations" for the AI search chat geo-expansion
+     * follow-up, e.g. "y en destinos cercanos").
+     *
+     * Two-pass strategy (spec OQ-2, RESOLVED):
+     * 1. **Radius pass**: destinations with coordinates within `radiusKm` of
+     *    the anchor (default {@link NEARBY_DESTINATION_RADIUS_KM} = 50 km),
+     *    ordered nearest-first, capped at {@link NEARBY_DESTINATION_MAX_RESULTS}.
+     * 2. **Fallback pass**: when the radius pass returns ZERO rows, falls
+     *    back to the `fallbackCount` nearest destinations regardless of
+     *    radius (default {@link NEARBY_DESTINATION_FALLBACK_COUNT}), so a
+     *    "destinos cercanos" follow-up never comes back empty.
+     *
+     * Both passes are guarded by an explicit `coordinates IS NOT NULL` clause
+     * (R-1 — coordinates are optional on `destinations`; a row lacking them
+     * is excluded rather than silently ranking via NULL-propagation) and by
+     * the standard public/active visibility filter (mirrors
+     * `resolveDestinationIdFromCity` in `apps/api`'s search-chat handler —
+     * never resolves to a hidden/draft/deleted destination). The anchor
+     * itself is always excluded from its own "nearby" set.
+     *
+     * Returns an empty array (not an error) when the anchor destination does
+     * not exist or has no coordinates — there is nothing to compute distance
+     * from.
+     *
+     * @param params - Receive-object.
+     * @param params.destinationId - The anchor destination's UUID.
+     * @param params.radiusKm - Override for the fixed radius (km). Defaults
+     *   to {@link NEARBY_DESTINATION_RADIUS_KM}.
+     * @param params.fallbackCount - Override for the fallback N-nearest
+     *   count. Defaults to {@link NEARBY_DESTINATION_FALLBACK_COUNT}.
+     * @param tx - Optional transaction client.
+     * @returns Promise resolving to nearby destinations, nearest-first.
+     */
+    async findNearby(
+        params: {
+            readonly destinationId: string;
+            readonly radiusKm?: number;
+            readonly fallbackCount?: number;
+        },
+        tx?: DrizzleClient
+    ): Promise<Destination[]> {
+        const radiusKm = params.radiusKm ?? NEARBY_DESTINATION_RADIUS_KM;
+        const fallbackCount = params.fallbackCount ?? NEARBY_DESTINATION_FALLBACK_COUNT;
+
+        try {
+            const anchor = await this.findOne({ id: params.destinationId }, tx);
+            const anchorCoordinates = anchor?.location?.coordinates;
+            if (!anchor || !anchorCoordinates) {
+                logQuery(
+                    this.entityName,
+                    'findNearby',
+                    { destinationId: params.destinationId },
+                    []
+                );
+                return [];
+            }
+
+            const anchorLat = Number(anchorCoordinates.lat);
+            const anchorLong = Number(anchorCoordinates.long);
+            if (Number.isNaN(anchorLat) || Number.isNaN(anchorLong)) {
+                return [];
+            }
+
+            const db = this.getClient(tx);
+            const { latExpr, longExpr } = buildJsonbCoordinateExprs(destinations.location);
+            const baseWhereClauses: SQL<unknown>[] = [
+                isNull(destinations.deletedAt),
+                eq(destinations.visibility, 'PUBLIC'),
+                eq(destinations.lifecycleState, 'ACTIVE'),
+                ne(destinations.id, params.destinationId),
+                buildCoordinatesNotNullClause(destinations.location)
+            ];
+            const distanceOrderBy = buildDistanceOrderByExpr({
+                latCol: latExpr,
+                longCol: longExpr,
+                lat: anchorLat,
+                long: anchorLong,
+                order: 'asc'
+            });
+
+            const radiusClause = buildWithinRadiusClause({
+                latCol: latExpr,
+                longCol: longExpr,
+                lat: anchorLat,
+                long: anchorLong,
+                radiusKm
+            });
+
+            const radiusResults = await db
+                .select()
+                .from(destinations)
+                .where(and(...baseWhereClauses, radiusClause))
+                .orderBy(distanceOrderBy)
+                .limit(NEARBY_DESTINATION_MAX_RESULTS);
+
+            if (radiusResults.length > 0) {
+                logQuery(
+                    this.entityName,
+                    'findNearby',
+                    { destinationId: params.destinationId, radiusKm, strategy: 'radius' },
+                    radiusResults
+                );
+                return radiusResults as Destination[];
+            }
+
+            // Fallback: N nearest destinations regardless of radius — a
+            // "destinos cercanos" follow-up must never come back empty.
+            const fallbackResults = await db
+                .select()
+                .from(destinations)
+                .where(and(...baseWhereClauses))
+                .orderBy(distanceOrderBy)
+                .limit(fallbackCount);
+
+            logQuery(
+                this.entityName,
+                'findNearby',
+                { destinationId: params.destinationId, radiusKm, strategy: 'fallback' },
+                fallbackResults
+            );
+            return fallbackResults as Destination[];
+        } catch (error) {
+            logError(
+                this.entityName,
+                'findNearby',
+                { destinationId: params.destinationId },
+                error as Error
+            );
+            throw new DbError(
+                this.entityName,
+                'findNearby',
+                { destinationId: params.destinationId },
                 (error as Error).message
             );
         }

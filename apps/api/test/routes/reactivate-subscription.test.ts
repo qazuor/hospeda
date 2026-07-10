@@ -1,5 +1,6 @@
 /**
- * Unit tests for the POST /api/v1/protected/billing/trial/reactivate-subscription route handler.
+ * Unit tests for the POST /api/v1/protected/billing/trial/reactivate-subscription
+ * route handler (HOS-114).
  *
  * Tests cover:
  * - Billing not configured (503)
@@ -8,8 +9,10 @@
  * - No subscriptions found (500 HTTPException)
  * - Active subscription exists (500 HTTPException)
  * - Trialing subscription exists (500 HTTPException)
- * - Happy path: canceled to new active subscription
- * - Service throws error (500 HTTPException)
+ * - Happy path: real paid checkout (checkoutUrl + status=incomplete)
+ * - Service throws a plain error (500 HTTPException)
+ * - Service throws a `SubscriptionCheckoutError` (mapped 4xx/5xx via the
+ *   shared mapper)
  *
  * @module test/routes/reactivate-subscription
  */
@@ -88,7 +91,9 @@ vi.mock('../../src/utils/logger', () => ({
 
 vi.mock('../../src/utils/env', () => ({
     env: {
-        HOSPEDA_API_DEBUG_ERRORS: false
+        HOSPEDA_API_DEBUG_ERRORS: false,
+        HOSPEDA_SITE_URL: 'https://hospeda.test',
+        HOSPEDA_API_URL: 'https://api.hospeda.test'
     }
 }));
 
@@ -98,10 +103,17 @@ vi.mock('../../src/utils/env', () => ({
 
 // Importing the module triggers createSimpleRoute calls which populate handlers.
 import '../../src/routes/billing/trial';
+import { SubscriptionCheckoutError } from '../../src/services/billing/subscription-checkout-error';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** Expected checkout return URLs built by the handler for the default 'es' locale. */
+const EXPECTED_URLS = {
+    paymentMethodReturnUrl: 'https://hospeda.test/es/suscriptores/checkout/success/',
+    notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
+};
 
 /**
  * Creates a minimal mock Hono context for the handler.
@@ -220,49 +232,57 @@ describe('reactivateSubscriptionRoute handler', () => {
     });
 
     // -----------------------------------------------------------------------
-    // Service error paths
+    // Service error paths (HOS-114 T-015b: business errors now map to 4xx
+    // via SubscriptionCheckoutError, not a generic 500)
     // -----------------------------------------------------------------------
 
     describe('when no subscriptions found (nothing to reactivate)', () => {
-        it('should throw HTTPException 500', async () => {
+        it('should throw HTTPException 404 (NO_CANCELED_SUBSCRIPTION)', async () => {
             // Arrange
             const handler = getReactivateSubscriptionHandler();
             mockReactivateSubscription.mockRejectedValue(
-                new Error('No canceled subscription found to reactivate')
+                new SubscriptionCheckoutError(
+                    'NO_CANCELED_SUBSCRIPTION',
+                    'No canceled subscription found to reactivate'
+                )
             );
             const ctx = createMockContext({ body: { planId: 'plan_basic' } });
 
             // Act & Assert
             await expect(handler(ctx)).rejects.toMatchObject({
-                status: 500,
-                message: 'Failed to reactivate subscription'
+                status: 404,
+                message: 'No canceled subscription found to reactivate'
             });
         });
     });
 
     describe('when active subscription exists', () => {
-        it('should throw HTTPException 500', async () => {
+        it('should throw HTTPException 409 (ACTIVE_SUBSCRIPTION_EXISTS)', async () => {
             // Arrange
             const handler = getReactivateSubscriptionHandler();
             mockReactivateSubscription.mockRejectedValue(
-                new Error('Cannot reactivate: active subscription exists. Use plan-change instead.')
+                new SubscriptionCheckoutError(
+                    'ACTIVE_SUBSCRIPTION_EXISTS',
+                    'Cannot reactivate: active subscription exists. Use plan-change instead.'
+                )
             );
             const ctx = createMockContext({ body: { planId: 'plan_pro' } });
 
             // Act & Assert
             await expect(handler(ctx)).rejects.toMatchObject({
-                status: 500,
-                message: 'Failed to reactivate subscription'
+                status: 409,
+                message: 'Cannot reactivate: active subscription exists. Use plan-change instead.'
             });
         });
     });
 
     describe('when trialing subscription exists', () => {
-        it('should throw HTTPException 500', async () => {
+        it('should throw HTTPException 409 (ACTIVE_SUBSCRIPTION_EXISTS)', async () => {
             // Arrange
             const handler = getReactivateSubscriptionHandler();
             mockReactivateSubscription.mockRejectedValue(
-                new Error(
+                new SubscriptionCheckoutError(
+                    'ACTIVE_SUBSCRIPTION_EXISTS',
                     'Cannot reactivate: trialing subscription exists. Use plan-change instead.'
                 )
             );
@@ -270,8 +290,8 @@ describe('reactivateSubscriptionRoute handler', () => {
 
             // Act & Assert
             await expect(handler(ctx)).rejects.toMatchObject({
-                status: 500,
-                message: 'Failed to reactivate subscription'
+                status: 409,
+                message: 'Cannot reactivate: trialing subscription exists. Use plan-change instead.'
             });
         });
     });
@@ -281,12 +301,16 @@ describe('reactivateSubscriptionRoute handler', () => {
     // -----------------------------------------------------------------------
 
     describe('when reactivateSubscription succeeds', () => {
-        it('should return success=true with subscriptionId and previousPlanId', async () => {
+        it('should return the full result shape including checkoutUrl and status=incomplete', async () => {
             // Arrange
             const handler = getReactivateSubscriptionHandler();
             mockReactivateSubscription.mockResolvedValue({
+                success: true,
                 subscriptionId: 'sub_new_123',
-                previousPlanId: 'plan_old'
+                previousPlanId: 'plan_old',
+                checkoutUrl: 'https://mp.test/checkout/reactivate-sub-123',
+                status: 'incomplete',
+                message: 'Redirect to MercadoPago to complete reactivation'
             });
             const ctx = createMockContext({ body: { planId: 'plan_pro' } });
 
@@ -298,16 +322,22 @@ describe('reactivateSubscriptionRoute handler', () => {
                 success: true,
                 subscriptionId: 'sub_new_123',
                 previousPlanId: 'plan_old',
-                message: 'Successfully reactivated subscription'
+                checkoutUrl: 'https://mp.test/checkout/reactivate-sub-123',
+                status: 'incomplete',
+                message: 'Redirect to MercadoPago to complete reactivation'
             });
         });
 
-        it('should call reactivateSubscription with customerId and planId', async () => {
+        it('should call reactivateSubscription with customerId, planId, and the resolved checkout return URLs', async () => {
             // Arrange
             const handler = getReactivateSubscriptionHandler();
             mockReactivateSubscription.mockResolvedValue({
+                success: true,
                 subscriptionId: 'sub_new_456',
-                previousPlanId: null
+                previousPlanId: null,
+                checkoutUrl: 'https://mp.test/checkout/reactivate-sub-456',
+                status: 'incomplete',
+                message: 'Redirect to MercadoPago to complete reactivation'
             });
             const ctx = createMockContext({
                 billingCustomerId: 'cust_abc',
@@ -320,7 +350,8 @@ describe('reactivateSubscriptionRoute handler', () => {
             // Assert
             expect(mockReactivateSubscription).toHaveBeenCalledWith({
                 customerId: 'cust_abc',
-                planId: 'plan_enterprise'
+                planId: 'plan_enterprise',
+                urls: EXPECTED_URLS
             });
         });
     });
@@ -329,7 +360,7 @@ describe('reactivateSubscriptionRoute handler', () => {
     // Service throws error
     // -----------------------------------------------------------------------
 
-    describe('when service throws an error', () => {
+    describe('when service throws a plain error', () => {
         it('should throw HTTPException 500 with generic message', async () => {
             // Arrange
             const handler = getReactivateSubscriptionHandler();
@@ -341,6 +372,89 @@ describe('reactivateSubscriptionRoute handler', () => {
                 status: 500,
                 message: 'Failed to reactivate subscription'
             });
+        });
+    });
+
+    describe('when service throws a SubscriptionCheckoutError', () => {
+        it('should map PLAN_NOT_FOUND to HTTPException 404', async () => {
+            // Arrange
+            const handler = getReactivateSubscriptionHandler();
+            mockReactivateSubscription.mockRejectedValue(
+                new SubscriptionCheckoutError('PLAN_NOT_FOUND', "Plan 'x' not found")
+            );
+            const ctx = createMockContext({ body: { planId: 'unknown-plan' } });
+
+            // Act & Assert
+            await expect(handler(ctx)).rejects.toMatchObject({ status: 404 });
+        });
+
+        it('should map INVALID_REACTIVATION_PLAN to HTTPException 422', async () => {
+            // Arrange
+            const handler = getReactivateSubscriptionHandler();
+            mockReactivateSubscription.mockRejectedValue(
+                new SubscriptionCheckoutError('INVALID_REACTIVATION_PLAN', 'Free plan rejected')
+            );
+            const ctx = createMockContext({ body: { planId: 'free-plan' } });
+
+            // Act & Assert
+            await expect(handler(ctx)).rejects.toMatchObject({ status: 422 });
+        });
+
+        it('should map ANNUAL_REACTIVATION_UNSUPPORTED to HTTPException 422', async () => {
+            // Arrange
+            const handler = getReactivateSubscriptionHandler();
+            mockReactivateSubscription.mockRejectedValue(
+                new SubscriptionCheckoutError(
+                    'ANNUAL_REACTIVATION_UNSUPPORTED',
+                    'Annual reactivation is not supported'
+                )
+            );
+            const ctx = createMockContext({ body: { planId: 'annual-only-plan' } });
+
+            // Act & Assert
+            await expect(handler(ctx)).rejects.toMatchObject({ status: 422 });
+        });
+
+        it('should map MISSING_INIT_POINT to HTTPException 500', async () => {
+            // Arrange
+            const handler = getReactivateSubscriptionHandler();
+            mockReactivateSubscription.mockRejectedValue(
+                new SubscriptionCheckoutError('MISSING_INIT_POINT', 'No checkout URL')
+            );
+            const ctx = createMockContext({ body: { planId: 'plan_basic' } });
+
+            // Act & Assert
+            await expect(handler(ctx)).rejects.toMatchObject({ status: 500 });
+        });
+
+        it('should map ACTIVE_SUBSCRIPTION_EXISTS to HTTPException 409 (HOS-114 T-015b)', async () => {
+            // Arrange
+            const handler = getReactivateSubscriptionHandler();
+            mockReactivateSubscription.mockRejectedValue(
+                new SubscriptionCheckoutError(
+                    'ACTIVE_SUBSCRIPTION_EXISTS',
+                    'Cannot reactivate: active subscription exists. Use plan-change instead.'
+                )
+            );
+            const ctx = createMockContext({ body: { planId: 'plan_pro' } });
+
+            // Act & Assert
+            await expect(handler(ctx)).rejects.toMatchObject({ status: 409 });
+        });
+
+        it('should map NO_CANCELED_SUBSCRIPTION to HTTPException 404 (HOS-114 T-015b)', async () => {
+            // Arrange
+            const handler = getReactivateSubscriptionHandler();
+            mockReactivateSubscription.mockRejectedValue(
+                new SubscriptionCheckoutError(
+                    'NO_CANCELED_SUBSCRIPTION',
+                    'No canceled subscription found to reactivate'
+                )
+            );
+            const ctx = createMockContext({ body: { planId: 'plan_basic' } });
+
+            // Act & Assert
+            await expect(handler(ctx)).rejects.toMatchObject({ status: 404 });
         });
     });
 });

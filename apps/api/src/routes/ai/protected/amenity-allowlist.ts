@@ -50,15 +50,27 @@ export const AMENITY_ALLOWLIST: Readonly<Record<string, Readonly<Record<string, 
         asador: 'bbq',
         barbacoa: 'bbq',
         bbq: 'bbq',
-        'aire acondicionado': 'air-conditioning',
-        aire: 'air-conditioning',
+        // HOS-111 T-009: real DB slug is `air_conditioning` (underscore) — was
+        // wrongly mapped to `air-conditioning` (hyphen), which never resolves
+        // to a real amenity row. See `packages/seed/src/data/amenity/002-*.json`.
+        'aire acondicionado': 'air_conditioning',
+        aire: 'air_conditioning',
         estacionamiento: 'parking',
         garage: 'parking',
         cochera: 'parking',
         mascotas: 'pet_friendly',
         'acepta mascotas': 'pet_friendly',
         desayuno: 'breakfast',
-        'desayuno incluido': 'breakfast'
+        'desayuno incluido': 'breakfast',
+        // HOS-111 T-009: smoking is modeled INVERSELY — "libre de humo" (no
+        // smoking anywhere on the property) is the `smoke_free` amenity. The
+        // opposite ("se puede fumar") is the `smoking_area` FEATURE, not an
+        // amenity — see FEATURE_ALLOWLIST below. There is no literal `smoking`
+        // slug in either catalog.
+        'libre de humo': 'smoke_free',
+        'sin humo': 'smoke_free',
+        'sin humo de tabaco': 'smoke_free',
+        'no fumadores': 'smoke_free'
     },
     en: {
         pool: 'pool',
@@ -68,16 +80,22 @@ export const AMENITY_ALLOWLIST: Readonly<Record<string, Readonly<Record<string, 
         bbq: 'bbq',
         barbecue: 'bbq',
         grill: 'bbq',
-        'air conditioning': 'air-conditioning',
-        ac: 'air-conditioning',
-        'air conditioner': 'air-conditioning',
+        // HOS-111 T-009: real DB slug is `air_conditioning` (underscore).
+        'air conditioning': 'air_conditioning',
+        ac: 'air_conditioning',
+        'air conditioner': 'air_conditioning',
         parking: 'parking',
         garage: 'parking',
         pets: 'pet_friendly',
         'pet friendly': 'pet_friendly',
         'pet-friendly': 'pet_friendly',
         breakfast: 'breakfast',
-        'breakfast included': 'breakfast'
+        'breakfast included': 'breakfast',
+        // HOS-111 T-009: inverse smoking framing — see the `es` block above.
+        'smoke free': 'smoke_free',
+        'smoke-free': 'smoke_free',
+        'non-smoking': 'smoke_free',
+        'non smoking': 'smoke_free'
     },
     pt: {
         piscina: 'pool',
@@ -85,14 +103,18 @@ export const AMENITY_ALLOWLIST: Readonly<Record<string, Readonly<Record<string, 
         internet: 'wifi',
         churrasqueira: 'bbq',
         churrasco: 'bbq',
-        'ar condicionado': 'air-conditioning',
-        ar: 'air-conditioning',
+        // HOS-111 T-009: real DB slug is `air_conditioning` (underscore).
+        'ar condicionado': 'air_conditioning',
+        ar: 'air_conditioning',
         estacionamento: 'parking',
         garagem: 'parking',
         animais: 'pet_friendly',
         'aceita animais': 'pet_friendly',
         'café da manhã': 'breakfast',
-        'café incluído': 'breakfast'
+        'café incluído': 'breakfast',
+        // HOS-111 T-009: inverse smoking framing — see the `es` block above.
+        'livre de fumaça': 'smoke_free',
+        'não fumantes': 'smoke_free'
     }
 } as const;
 
@@ -147,12 +169,26 @@ export function matchAmenityTerms(text: string, locale: 'es' | 'en' | 'pt'): rea
  * / BBQ) are INTENTIONALLY absent — they have boolean shortcut slots or belong
  * in `AMENITY_ALLOWLIST`. See the anti-overlap rule in the module JSDoc.
  *
- * The 18 allowed feature slugs are:
+ * The 18 original allowed feature slugs are:
  * `river_front`, `natural_environment`, `silent_environment`, `quiet_zone`,
  * `rural_area`, `central_area`, `panoramic_view_extended`, `dock_access`,
  * `couple_suitable`, `family_suitable`, `ideal_for_groups`, `wedding_suitable`,
  * `rustic_style`, `modern_style`, `yoga_meditation_area`,
  * `spiritual_retreat_suitable`, `digital_detox_zone`, `sustainable_accommodation`.
+ *
+ * HOS-111 T-009 added 4 more (still environment/atmosphere concepts, not
+ * physical services — anti-overlap rule preserved):
+ * - `smoking_area` — INVERSE framing of the `smoke_free` amenity. "se puede
+ *   fumar" / "smoking allowed" describes a property FEATURE (a designated
+ *   smoking area exists), not a boolean amenity toggle.
+ * - `spa_front` — "Frente al balneario" (river/beach-front via a thermal spa
+ *   or balneario), sibling of `river_front` for the river/beach-front NL
+ *   coverage requirement (spec §5, §6 Phase 1 G-10).
+ * - `pet_friendly_area` / `pet_suitable` — more specific pet-related
+ *   environment descriptors ("área para mascotas" / "apto para mascotas"),
+ *   distinct from the generic `pet_friendly` AMENITY toggle ("acepta
+ *   mascotas"). A query can match both dictionaries at once when the NL
+ *   mentions both the generic amenity and the specific environment cue.
  *
  * @example
  * ```ts
@@ -205,7 +241,24 @@ export const FEATURE_ALLOWLIST: Readonly<Record<string, Readonly<Record<string, 
         'sin pantallas': 'digital_detox_zone',
         sustentable: 'sustainable_accommodation',
         ecológico: 'sustainable_accommodation',
-        sostenible: 'sustainable_accommodation'
+        sostenible: 'sustainable_accommodation',
+        // HOS-111 T-009: smoking INVERSE framing (feature side) — see
+        // AMENITY_ALLOWLIST for the `smoke_free` counterpart.
+        'se puede fumar': 'smoking_area',
+        'permite fumar': 'smoking_area',
+        'zona para fumadores': 'smoking_area',
+        'área para fumar': 'smoking_area',
+        // HOS-111 T-009: river/beach-front via balneario (thermal spa /
+        // riverside bathing area) — sibling of `river_front`.
+        'frente al balneario': 'spa_front',
+        'cerca del balneario': 'spa_front',
+        'sobre el balneario': 'spa_front',
+        // HOS-111 T-009: specific pet-related environment descriptors
+        // (distinct from the generic `pet_friendly` amenity).
+        'área para mascotas': 'pet_friendly_area',
+        'zona para mascotas': 'pet_friendly_area',
+        'apto para mascotas': 'pet_suitable',
+        'ideal para mascotas': 'pet_suitable'
     },
     en: {
         riverfront: 'river_front',
@@ -251,7 +304,20 @@ export const FEATURE_ALLOWLIST: Readonly<Record<string, Readonly<Record<string, 
         'screen free': 'digital_detox_zone',
         sustainable: 'sustainable_accommodation',
         eco: 'sustainable_accommodation',
-        'eco friendly': 'sustainable_accommodation'
+        'eco friendly': 'sustainable_accommodation',
+        // HOS-111 T-009: smoking INVERSE framing (feature side).
+        'smoking allowed': 'smoking_area',
+        'smoking permitted': 'smoking_area',
+        'smoking area': 'smoking_area',
+        // HOS-111 T-009: river/beach-front via balneario/spa.
+        'spa front': 'spa_front',
+        'near the spa': 'spa_front',
+        'thermal spa front': 'spa_front',
+        // HOS-111 T-009: specific pet-related environment descriptors.
+        'pet area': 'pet_friendly_area',
+        'pet-friendly area': 'pet_friendly_area',
+        'pet suitable': 'pet_suitable',
+        'suitable for pets': 'pet_suitable'
     },
     pt: {
         'frente ao rio': 'river_front',
@@ -294,7 +360,17 @@ export const FEATURE_ALLOWLIST: Readonly<Record<string, Readonly<Record<string, 
         'detox digital': 'digital_detox_zone',
         'desconexão digital': 'digital_detox_zone',
         sustentável: 'sustainable_accommodation',
-        ecológico: 'sustainable_accommodation'
+        ecológico: 'sustainable_accommodation',
+        // HOS-111 T-009: smoking INVERSE framing (feature side).
+        'permite fumar': 'smoking_area',
+        'área para fumantes': 'smoking_area',
+        'zona para fumantes': 'smoking_area',
+        // HOS-111 T-009: river/beach-front via balneario/spa.
+        'frente ao balneário': 'spa_front',
+        'perto do balneário': 'spa_front',
+        // HOS-111 T-009: specific pet-related environment descriptors.
+        'área para animais': 'pet_friendly_area',
+        'apto para animais': 'pet_suitable'
     }
 } as const;
 

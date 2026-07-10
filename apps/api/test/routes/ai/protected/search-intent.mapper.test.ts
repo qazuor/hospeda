@@ -620,6 +620,20 @@ describe('mapIntentToSearchParams — whitelist enforcement', () => {
         expect(result.features).toBeUndefined();
     });
 
+    it('expandToNearby internal hint is never emitted as a param (HOS-111 T-012/T-013)', () => {
+        // expandToNearby is a pure signal read by the search-chat route handler
+        // (T-013) to trigger nearby-destination resolution — it is never a
+        // valid AccommodationSearchHttp query param, so the whitelist mapper
+        // must drop it like locationType/amenitySlugs/featureSlugs.
+        const entities = {
+            destinationId: '11111111-1111-4111-8111-111111111111',
+            expandToNearby: true
+        };
+        const result = mapIntentToSearchParams(entities);
+        expect('expandToNearby' in result).toBe(false);
+        expect(result.destinationId).toBe('11111111-1111-4111-8111-111111111111');
+    });
+
     it('empty entities object returns empty record', () => {
         const result = mapIntentToSearchParams({});
         expect(Object.keys(result)).toHaveLength(0);

@@ -40,6 +40,7 @@ export const webNamespaces = [
     'about',
     'faq',
     'benefits',
+    'features',
     'error',
     'pricing',
     'privacy',
@@ -125,6 +126,7 @@ import exchangeRateEn from './locales/en/exchange-rate.json';
 import experienceEn from './locales/en/experience.json';
 import externalReputationEn from './locales/en/external-reputation.json';
 import faqEn from './locales/en/faq.json';
+import featuresEn from './locales/en/features.json';
 import fieldsEn from './locales/en/fields.json';
 import footerEn from './locales/en/footer.json';
 import gastronomyEn from './locales/en/gastronomy.json';
@@ -174,6 +176,7 @@ import exchangeRateEs from './locales/es/exchange-rate.json';
 import experienceEs from './locales/es/experience.json';
 import externalReputationEs from './locales/es/external-reputation.json';
 import faqEs from './locales/es/faq.json';
+import featuresEs from './locales/es/features.json';
 import fieldsEs from './locales/es/fields.json';
 import footerEs from './locales/es/footer.json';
 import gastronomyEs from './locales/es/gastronomy.json';
@@ -224,6 +227,7 @@ import exchangeRatePt from './locales/pt/exchange-rate.json';
 import experiencePt from './locales/pt/experience.json';
 import externalReputationPt from './locales/pt/external-reputation.json';
 import faqPt from './locales/pt/faq.json';
+import featuresPt from './locales/pt/features.json';
 import fieldsPt from './locales/pt/fields.json';
 import footerPt from './locales/pt/footer.json';
 import gastronomyPt from './locales/pt/gastronomy.json';
@@ -278,6 +282,7 @@ export const rawWebTranslations = {
         'exchange-rate': exchangeRateEs,
         'external-reputation': externalReputationEs,
         faq: faqEs,
+        features: featuresEs,
         footer: footerEs,
         home: homeEs,
         host: hostEs,
@@ -326,6 +331,7 @@ export const rawWebTranslations = {
         'exchange-rate': exchangeRateEn,
         'external-reputation': externalReputationEn,
         faq: faqEn,
+        features: featuresEn,
         footer: footerEn,
         home: homeEn,
         host: hostEn,
@@ -374,6 +380,7 @@ export const rawWebTranslations = {
         'exchange-rate': exchangeRatePt,
         'external-reputation': externalReputationPt,
         faq: faqPt,
+        features: featuresPt,
         footer: footerPt,
         home: homePt,
         host: hostPt,

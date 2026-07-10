@@ -351,6 +351,13 @@
             "when": 1783427545180,
             "tag": "0049_tiny_firebird",
             "breakpoints": true
+        },
+        {
+            "idx": 50,
+            "version": "7",
+            "when": 1783673400562,
+            "tag": "0050_flimsy_captain_marvel",
+            "breakpoints": true
         }
     ]
 }

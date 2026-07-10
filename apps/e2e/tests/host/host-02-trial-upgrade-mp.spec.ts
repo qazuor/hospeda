@@ -1,9 +1,9 @@
 /**
  * HOST-02 — Trial → upgrade to paid plan via MercadoPago sandbox.
  *
- * Actors: HOST on a trial subscription, completing payment via the MP
- *         sandbox checkout; the API receives a signed webhook
- *         confirmation; the host's subscription transitions to active.
+ * Actors: HOST on a trial subscription, reactivating to a paid plan via the
+ *         MP sandbox checkout (HOS-114: redirect-to-checkout contract, not a
+ *         synchronous upgrade); the API receives a signed webhook.
  * Tags: @p0 @host @billing @real-payment
  *
  * Preconditions:
@@ -14,16 +14,30 @@
  *     (Phase 0 owner-manual: T-001 + T-002).
  *
  * What this validates (the "real-real" payment test):
- *  1. POST `/api/v1/protected/billing/trial/reactivate` returns 2xx
- *     with `subscriptionId` non-null — the trial was successfully
- *     converted to a paid subscription on the QZPay/MP side.
- *  2. After the simulated webhook confirmation, DB invariants:
- *     - The host's trial subscription transitions to status='active'
- *       OR a new active subscription replaces it (depending on the
- *       handler's semantics).
- *     - The customer row is preserved (not duplicated).
- *  3. /me + protected accommodations list still work (the user's
- *     experience is uninterrupted by the upgrade).
+ *  1. POST `/api/v1/protected/billing/trial/reactivate` returns 2xx with
+ *     `checkoutUrl` + `status: 'incomplete'` (HOS-114 contract: reactivation
+ *     to a paid plan now routes through a real card-collecting MercadoPago
+ *     checkout instead of completing synchronously) — the caller is expected
+ *     to redirect the user to `checkoutUrl` to authorize recurring billing.
+ *  2. Immediately after the call, the new subscription is NOT active (it is
+ *     `incomplete` until the `subscription_preapproval.created` webhook
+ *     confirms it — HOS-114 AC-1), and the old trial subscription is still
+ *     `trialing` (deferred-cancellation ordering — HOS-114 AC-3): abandoning
+ *     the MP checkout at this point must leave the user with their original
+ *     trial intact, never with nothing.
+ *  3. The customer row is preserved (not duplicated).
+ *  4. /me + protected accommodations list still work (the user's
+ *     experience is uninterrupted while checkout is pending).
+ *
+ * NOTE on webhook confirmation: this test's synthetic webhook step below
+ * posts a `payment.updated` event (see `postPaymentApprovedWebhook`), which
+ * is NOT the `subscription_preapproval.created`/`.updated` event that drives
+ * the HOS-114 supersession (old-sub cancel + entitlement clear) — that
+ * requires a real MP-issued preapproval id this synthetic helper cannot
+ * construct. Full webhook-driven activation + supersession coverage lives in
+ * `apps/api/test/webhooks/subscription-logic.test.ts` and
+ * `apps/api/test/services/trial.service.test.ts`; this E2E test only proves
+ * the checkout-redirect contract and the pre-confirmation invariants.
  *
  * Why we don't drive the MP sandbox UI in CI:
  *   The MP sandbox checkout pages are external HTML controlled by MP.
@@ -64,7 +78,7 @@ test.describe('HOST-02: trial → MP upgrade @p0 @host @billing @real-payment', 
         userId = null;
     });
 
-    test('reactivate-trial → simulated webhook → active subscription, customer not duplicated', async ({
+    test('reactivate-trial → checkout redirect returned, old sub not cancelled, customer not duplicated', async ({
         page
     }) => {
         // ── Gate: env credentials present? ────────────────────────────────
@@ -146,16 +160,65 @@ test.describe('HOST-02: trial → MP upgrade @p0 @host @billing @real-payment', 
         const reactivateBody = (await reactivateRes.json()) as {
             success?: boolean;
             subscriptionId?: string | null;
-            data?: { subscriptionId?: string | null };
+            checkoutUrl?: string | null;
+            status?: string;
+            message?: string;
+            data?: {
+                subscriptionId?: string | null;
+                checkoutUrl?: string | null;
+                status?: string;
+            };
         };
         const newSubscriptionId =
             reactivateBody.subscriptionId ?? reactivateBody.data?.subscriptionId ?? null;
+        const checkoutUrl = reactivateBody.checkoutUrl ?? reactivateBody.data?.checkoutUrl ?? null;
+        const responseStatus = reactivateBody.status ?? reactivateBody.data?.status;
+
         expect(
             newSubscriptionId,
             'reactivate must return non-null subscriptionId on success'
         ).toBeTruthy();
+        // HOS-114 AC-1: reactivation to a paid plan now returns a MercadoPago
+        // checkout redirect instead of completing synchronously.
+        expect(
+            checkoutUrl,
+            'reactivate must return a non-null checkoutUrl (HOS-114 card-collecting checkout contract)'
+        ).toBeTruthy();
+        expect(responseStatus, 'reactivate response status must be incomplete').toBe('incomplete');
+
+        // ── 1b. Pre-confirmation DB invariants (HOS-114 AC-1 / AC-3) ───────
+        // The new subscription must NOT be locally active yet (no phantom-
+        // active sub with no MP preapproval — the original HOS-114 bug), and
+        // the old trial subscription must still be intact/trialing since
+        // cancellation is deferred to webhook confirmation.
+        const subsBeforeWebhook = await execSQL<{
+            id: string;
+            status: string;
+            mp_subscription_id: string | null;
+        }>(
+            `SELECT id, status, mp_subscription_id FROM billing_subscriptions
+             WHERE customer_id = $1
+             ORDER BY created_at DESC`,
+            [customerId]
+        );
+        const newSubBeforeWebhook = subsBeforeWebhook.find((s) => s.id === newSubscriptionId);
+        expect(
+            newSubBeforeWebhook?.status,
+            'new reactivation subscription must be incomplete (not phantom-active) before webhook confirmation'
+        ).toBe('incomplete');
+        const originalTrialSubBeforeWebhook = subsBeforeWebhook.find(
+            (s) => s.id === trialSubscriptionId
+        );
+        expect(
+            originalTrialSubBeforeWebhook?.status,
+            'original trial subscription must remain trialing until the new preapproval is confirmed (HOS-114 AC-3, deferred cancellation)'
+        ).toBe('trialing');
 
         // ── 2. Simulate MP payment.updated webhook ────────────────────────
+        // NOTE: this does NOT drive the subscription_preapproval confirmation
+        // that would flip the new sub to active and cancel the old one (see
+        // module doc above) — it only proves the API accepts a signed webhook
+        // without erroring while a reactivation checkout is pending.
         // The payment id is opaque to the test — what matters is that the
         // signed webhook arrives at the API and the API processes it
         // without 5xx.
@@ -179,37 +242,35 @@ test.describe('HOST-02: trial → MP upgrade @p0 @host @billing @real-payment', 
             'exactly one billing customer per user; reactivate must not duplicate'
         ).toBe(1);
 
-        // ── 4. The active subscription path: at least one row reflects the
-        //       paid plan (either by mutation or replacement). ────────────
-        const activeSubs = await execSQL<{ id: string; status: string; plan_id: string }>(
+        // ── 4. Post-webhook: HOS-114 deferred-cancellation ordering still
+        //       holds. Since the synthetic `payment.updated` webhook above is
+        //       not the `subscription_preapproval.created`/`.updated` event
+        //       that drives supersession (see module doc), the pending
+        //       checkout is effectively "abandoned" from the API's point of
+        //       view at this point in the test — which is exactly the AC-3
+        //       scenario: the old subscription must remain untouched and the
+        //       new one must still not be active. ─────────────────────────
+        const subsAfterWebhook = await execSQL<{ id: string; status: string; plan_id: string }>(
             `SELECT id, status, plan_id FROM billing_subscriptions
              WHERE customer_id = $1
              ORDER BY created_at DESC`,
             [customerId]
         );
         expect(
-            activeSubs.length >= 1,
-            `should have at least one subscription row (got ${activeSubs.length})`
+            subsAfterWebhook.length >= 2,
+            `expected both the original trial sub and the new reactivation sub to still exist (got ${subsAfterWebhook.length})`
         ).toBe(true);
 
-        // The trial sub may now be 'cancelled'/'replaced' or upgraded;
-        // what matters is that there exists exactly one subscription
-        // for the customer that is NOT 'trialing' anymore — the upgrade
-        // either mutated the same row or replaced it.
-        const nonTrialingSubs = activeSubs.filter((s) => s.status !== 'trialing');
+        const trialSubAfter = subsAfterWebhook.find((s) => s.id === trialSubscriptionId);
         expect(
-            nonTrialingSubs.length >= 1,
-            `expected at least one non-trialing subscription after upgrade; got ${JSON.stringify(activeSubs.map((s) => ({ status: s.status })))}`
-        ).toBe(true);
+            trialSubAfter?.status,
+            'HOS-114 AC-3: original trial subscription must NOT be cancelled while the new preapproval is unconfirmed'
+        ).toBe('trialing');
 
-        // Sanity: the trial subscription either exists with a non-trialing
-        // status or has been removed/cancelled.
-        const trialSubAfter = activeSubs.find((s) => s.id === trialSubscriptionId);
-        if (trialSubAfter) {
-            expect(
-                trialSubAfter.status,
-                'original trial subscription must NOT remain trialing after upgrade'
-            ).not.toBe('trialing');
-        }
+        const newSubAfter = subsAfterWebhook.find((s) => s.id === newSubscriptionId);
+        expect(
+            newSubAfter?.status,
+            'HOS-114 AC-1: new subscription must not become locally active without real MP confirmation'
+        ).toBe('incomplete');
     });
 });

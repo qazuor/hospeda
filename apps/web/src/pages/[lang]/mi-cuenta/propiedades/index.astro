@@ -26,9 +26,11 @@ import { webLogger as logger } from '@/lib/logger';
 import { MAX_ACCOMMODATIONS_LIMIT_KEY, parseUsageResponse } from '@/lib/host/usage-badge';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import accountSectionStyles from '@/components/account/AccountSection.module.css';
 import PropertyCard from '@/components/host/PropertyCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { BuildingIcon } from '@repo/icons';
+import btn from '@/components/account/AccountButton.module.css';
 
 export const prerender = false;
 
@@ -127,7 +129,7 @@ const isEmpty = properties.length === 0;
             <AccountPageHeader title={title} description={subtitle} />
         </div>
         {!isEmpty && !fetchError && (
-            <a href={publishNewUrl} class="props-page__cta-btn">
+            <a href={publishNewUrl} class:list={['props-page__cta-btn', btn.primary]}>
                 {t('host.properties.list.publishAnother', 'Publicar otra')}
             </a>
         )}
@@ -151,19 +153,23 @@ const isEmpty = properties.length === 0;
     )}
 
     {fetchError ? (
-        /* Error state (e.g. API down or permission denied). Showing this
-             distinctly avoids the previous contradictory UI where the empty
-             state and the fetch error were rendered together. */
-        <div class="props-page__error" role="alert">
+        /* Error state (e.g. API down or permission denied). Already a
+             standalone full-page card (bg/border/radius below); branded on
+             its own since it is no longer nested in AccountSectionCard. */
+        <div class:list={['props-page__error', accountSectionStyles.branded]} role="alert">
             <p class="props-page__error-title">
                 {t('host.properties.empty.fetchError', 'No se pudo cargar la lista. Intentá recargar la página.')}
             </p>
-            <a href={Astro.url.pathname} class="props-page__cta-btn props-page__cta-btn--centered">
+            <a
+                href={Astro.url.pathname}
+                class:list={['props-page__cta-btn', 'props-page__cta-btn--centered', btn.primary]}
+            >
                 {t('host.properties.error.retry', 'Reintentar')}
             </a>
         </div>
     ) : !isEmpty ? (
-        /* Properties grid */
+        /* Properties grid — each PropertyCard carries its own branded accent
+             bar (no outer wrapper). */
         <div class="props-page__grid" role="list" aria-label={title}>
             {properties.map((property) => (
                 <div class="props-page__item" role="listitem" data-reveal="up">
@@ -267,32 +273,14 @@ const isEmpty = properties.length === 0;
         flex-direction: column;
     }
 
-    /* ── CTA button ── */
+    /* ── CTA button ──
+       Colors/radius/padding/font come from the shared AccountButton
+       `.primary` variant (BETA-143e, see the `btn` import above). This local
+       class only supplies layout (self-alignment) and the anchor-specific
+       underline reset. */
     .props-page__cta-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 44px;
-        padding: 0.625rem 1.25rem;
-        border-radius: var(--radius-pill, 9999px);
-        background-color: var(--brand-primary);
-        color: var(--primary-foreground, #ffffff);
-        font-family: var(--font-sans);
-        font-weight: 600;
-        font-size: 0.9375rem;
-        text-decoration: none;
-        white-space: nowrap;
-        transition: opacity 150ms ease-out;
         align-self: flex-start;
-    }
-
-    .props-page__cta-btn:hover {
-        opacity: 0.88;
-    }
-
-    .props-page__cta-btn:focus-visible {
-        outline: 2px solid var(--brand-primary);
-        outline-offset: 2px;
+        text-decoration: none;
     }
 
     .props-page__cta-btn--centered {

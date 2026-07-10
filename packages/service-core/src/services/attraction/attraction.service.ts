@@ -22,6 +22,9 @@ import {
     type AttractionUpdateInput,
     AttractionUpdateInputSchema,
     type CountResponse,
+    type DestinationIdsByAttractionSlugsInput,
+    DestinationIdsByAttractionSlugsInputSchema,
+    type DestinationIdsByAttractionSlugsOutput,
     type DestinationsByAttractionInput,
     DestinationsByAttractionInputSchema,
     ServiceErrorCode
@@ -452,6 +455,46 @@ export class AttractionService extends BaseCrudRelatedService<
                     id: destinationIds
                 });
                 return { destinations };
+            }
+        });
+    }
+
+    /**
+     * Bulk-resolves attraction SLUGS (not a single UUID) to the destinations
+     * that have them, via `r_destination_attraction` (HOS-111 T-016, G-11 —
+     * "una ciudad con carnavales"). Consumed by the AI search-chat handler,
+     * which only has NL-matched slugs from the curated allowlist (T-015),
+     * never a pre-resolved attraction UUID — this is the slug-bulk sibling of
+     * {@link getDestinationsByAttraction} (single UUID, paginated).
+     *
+     * No accommodation↔attraction join exists for the MVP (spec §6 Phase 3):
+     * the caller constrains the accommodation search's `destinationIds`
+     * directly with the returned set.
+     *
+     * @param actor - The actor performing the action.
+     * @param params - The params containing the attraction slugs to resolve.
+     * @param ctx - Optional service context carrying transaction and hookState.
+     * @returns De-duplicated destination UUIDs (never throws NOT_FOUND — an
+     *   unmatched slug or a destination-less attraction simply yields fewer,
+     *   or zero, ids; the caller treats an empty result as "skip constraint").
+     */
+    public async getDestinationIdsByAttractionSlugs(
+        actor: Actor,
+        params: DestinationIdsByAttractionSlugsInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<DestinationIdsByAttractionSlugsOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getDestinationIdsByAttractionSlugs',
+            input: { ...params, actor },
+            schema: DestinationIdsByAttractionSlugsInputSchema,
+            ctx,
+            execute: async (validatedParams, _actor, resolvedCtx) => {
+                await this._canList(actor);
+                const destinationIds = await this.model.findDestinationIdsBySlugs(
+                    validatedParams.slugs,
+                    resolvedCtx.tx
+                );
+                return { destinationIds };
             }
         });
     }

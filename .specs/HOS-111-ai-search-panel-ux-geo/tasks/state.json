@@ -280,7 +280,7 @@
             "id": "T-009",
             "title": "Verify & extend NL amenities/features resolution (G-10, AC-10)",
             "description": "Confirm the intent allowlist + extraction prompt map natural language to the REAL slugs and add any missing mappings: pets (pet_friendly amenity / pet_friendly_area, pet_suitable features), smoking INVERSE (\"se pueda fumar\"→smoking_area feature; \"libre de humo\"→smoke_free amenity), A/C (air_conditioning amenity), river/beach-front via existing features (Frente al río / Frente al balneario). Files: apps/api search-chat intent prompt/allowlist + packages/schemas ai-search-intent schema if needed. Tests: unit tests asserting each NL phrase resolves to the expected slug(s).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": [],
@@ -301,21 +301,21 @@
             "tags": ["api", "intent", "schemas"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-09T10:19:25.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-09T19:01:20.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "Extract shared Haversine helper from accommodation.model.ts (G-9 foundation)",
             "description": "Extract buildHaversineDistanceExpr({latCol, longCol, lat, long}) and a withinRadius variant from the private buildGeoRadiusClause / buildDistanceOrderExpr in accommodation.model.ts into a reusable place in packages/db, so destination↔destination and destination↔accommodation distance share one formula (Earth radius 6371 km). Guard coordinates IS NOT NULL and cast the string {lat, long} (key is long, not lng) to numeric. This helper is also the HOS-113/POI dependency. Files: packages/db (new helper module) + accommodation.model.ts refactor to use it. Tests: unit tests for the distance expr / withinRadius against known coordinate pairs.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-011"],
@@ -336,21 +336,21 @@
             "tags": ["db", "geo"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-09T10:19:25.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-09T19:01:20.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Nearby-destination resolution: ~50km radius + fallback to N nearest (G-9, OQ-2)",
             "description": "Add a resolver that, given an anchor destinationId, finds destinations with coordinates within a fixed radius (~50 km, tunable via a constant, no UI), guarded by coordinates IS NOT NULL, with a FALLBACK to the N nearest destinations when the radius is empty so a follow-up never comes back empty. Uses the T-010 helper. Files: packages/db destination model + packages/service-core destination service. Tests: unit tests for radius hit, empty-radius fallback, and null-coordinate exclusion.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010"],
             "blocks": ["T-013"],
@@ -371,21 +371,21 @@
             "tags": ["db", "service", "geo"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-09T10:19:25.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-09T19:01:20.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Intent slot + prompt for nearby expansion (G-9)",
             "description": "Add an optional intent slot (e.g. expandToNearby: boolean or nearbyOfDestinationId) to the ai-search-intent schema and reinforce the extraction prompt so conversational follow-ups (\"y en destinos cercanos\", \"también cerca\") produce that signal, leveraging the message history the endpoint already sends. Files: packages/schemas ai-search-intent.schema.ts + apps/api search-chat prompt. Tests: unit tests asserting follow-up phrases set the nearby signal and that unrelated messages don't.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-013"],
@@ -406,21 +406,21 @@
             "tags": ["api", "intent", "schemas"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-09T10:19:25.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-09T19:01:20.000Z"
             }
         },
         {
             "id": "T-013",
             "title": "Wire nearby expansion into search-chat handler + emit resolved destinations in SSE (G-9, AC-9)",
             "description": "In the search-chat handler, when the nearby signal is present, resolve the anchor destination's neighbors (T-011) and turn it into a multi-destination / geo-radius accommodation search; emit the resolved destination set in the filters SSE frame so the UI can show which destinations were included. Files: apps/api search-chat.ts handler. Tests: integration test for \"cabaña en Colón, y también en destinos cercanos\" returning Colón + ~50km neighbors and the filters frame listing them.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011", "T-012"],
             "blocks": ["T-014", "T-018"],
@@ -441,21 +441,21 @@
             "tags": ["api", "geo"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-09T10:19:25.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-09T19:01:20.000Z"
             }
         },
         {
             "id": "T-014",
             "title": "UI: show which nearby destinations were included (G-9, AC-9)",
             "description": "Render the resolved nearby-destination set from the filters SSE frame in the panel (chips or a line like \"incluyendo Pueblo Liebig, San José, C. del Uruguay\") so it's clear which destinations were searched. Files: apps/web/src/components/ai-search/SearchChatPanel.client.tsx, useSearchChat.ts. Tests: component test asserting the included destinations render when the frame carries them.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013"],
             "blocks": [],
@@ -476,21 +476,21 @@
             "tags": ["web", "ui"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-09T10:19:25.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-09T19:01:20.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "attractionSlugs intent slot + curated attraction allowlist in prompt (G-11)",
             "description": "Add an optional attractionSlugs slot to the ai-search-intent schema (mirroring amenitySlugs/featureSlugs) and inject a curated attraction allowlist into the extraction prompt so the model emits canonical attraction slugs (e.g. \"carnavales\"). Files: packages/schemas ai-search-intent.schema.ts + apps/api search-chat prompt. Tests: unit tests asserting NL attraction mentions resolve to canonical slugs and off-allowlist terms don't hallucinate.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-016"],
@@ -511,21 +511,21 @@
             "tags": ["api", "intent", "schemas"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-09T10:19:25.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-09T20:43:35.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "Attraction → destinations → constrain accommodation search (G-11, AC-11)",
             "description": "Resolve emitted attraction slug(s) to attraction rows, find destinations that have them via r_destination_attraction, and constrain the accommodation search to those destinations (no accommodation↔attraction join for the MVP). Files: apps/api search-chat handler + packages/service-core / packages/db attraction+destination resolution. Tests: integration test for \"una ciudad con carnavales\" constraining results to destinations with that attraction.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-015", "T-017"],
             "blocks": ["T-018"],
@@ -546,21 +546,21 @@
             "tags": ["api", "db", "service"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-09T10:19:25.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-09T20:43:35.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "Support multi-destinationId filter in accommodation query schema (G-11)",
             "description": "If the accommodation query schema does not already accept multiple destinationIds, add a multi-destinationId filter (used by attraction resolution T-016, and optionally by nearby expansion T-013). Files: packages/schemas accommodation.query.schema.ts + packages/db accommodation.model.ts query builder. Tests: unit tests asserting the query returns accommodations across multiple destinationIds.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-016"],
@@ -581,21 +581,21 @@
             "tags": ["schemas", "db"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-09T10:19:25.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-09T20:43:35.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "Cross-cutting integration/E2E tests for geo + attraction flows (AC-12)",
             "description": "Add end-to-end/integration coverage for the conversational geo-nearby flow and the attraction-constrained flow through the search-chat endpoint, plus regression guards. Files: apps/api search-chat test suite. Tests: E2E asserting AC-9 (Colón + nearby) and AC-11 (carnavales) behave end-to-end; typecheck/lint/tests green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-013", "T-016"],
             "blocks": ["T-019"],
@@ -616,21 +616,21 @@
             "tags": ["api", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-09T10:19:25.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-09T20:43:35.000Z"
             }
         },
         {
             "id": "T-019",
             "title": "Close-out notes + doc touch-ups",
             "description": "Fill .specs/HOS-111-ai-search-panel-ux-geo/closeout.md with what shipped per phase, PRs, tests, and any follow-ups (e.g. HOS-113 dependency on the extracted Haversine helper). Update any web/ai-search component doc if present. Files: .specs/HOS-111-ai-search-panel-ux-geo/closeout.md.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-018"],
             "blocks": [],
@@ -647,22 +647,22 @@
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-09T10:19:25.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-09T20:43:35.000Z"
             }
         }
     ],
     "summary": {
         "total": 19,
-        "pending": 11,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 19,
         "blocked": 0,
         "averageComplexity": 2.4
     }

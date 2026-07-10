@@ -6,11 +6,12 @@
  * Follows the same approach SPEC-199's single-shot search-intent prompt builder
  * used (now retired in T-013) — it produces the dynamic
  * `prompt` string passed to `aiService.generateObject({ feature: 'search' })`,
- * embedding the locale-specific amenity/feature allowlists. On top of that it
- * injects the **conversational state** so the model can refine an accumulated
- * filter set across turns:
+ * embedding the locale-specific amenity/feature/attraction allowlists. On top
+ * of that it injects the **conversational state** so the model can refine an
+ * accumulated filter set across turns:
  *
- *   1. the locale-specific amenity + feature slug allowlists (same as SPEC-199),
+ *   1. the locale-specific amenity + feature + attraction slug allowlists
+ *      (amenity/feature same as SPEC-199; attraction added HOS-111 T-015),
  *   2. the CURRENT FILTER SET (the accumulated entities from prior turns), when present,
  *   3. the bounded recent conversation history, and
  *   4. the new user message.
@@ -34,8 +35,14 @@
  * @module apps/api/routes/ai/protected/search-chat.prompt
  */
 
-import type { AiChatMessage, AiMessage, SearchIntentEntities } from '@repo/schemas';
+import type {
+    AiChatMessage,
+    AiMessage,
+    AttractionLocationConflict,
+    SearchIntentEntities
+} from '@repo/schemas';
 import { AMENITY_ALLOWLIST, FEATURE_ALLOWLIST } from './amenity-allowlist.js';
+import { ATTRACTION_ALLOWLIST } from './attraction-allowlist.js';
 
 /**
  * Maximum number of trailing conversation messages embedded in the prompt.
@@ -66,9 +73,18 @@ const buildAllowlistLines = (locale: 'es' | 'en' | 'pt'): readonly string[] => {
     >;
     const featureSlugs = [...new Set(Object.values(featureDict))].join(', ');
 
+    // HOS-111 T-015: attraction allowlist values are arrays of slugs (one NL
+    // concept, e.g. "carnaval", can span several distinct attraction rows) —
+    // flatten before de-duplicating, unlike the single-slug amenity/feature dicts.
+    const attractionDict = (ATTRACTION_ALLOWLIST[locale] ?? ATTRACTION_ALLOWLIST.es) as Readonly<
+        Record<string, readonly string[]>
+    >;
+    const attractionSlugs = [...new Set(Object.values(attractionDict).flat())].join(', ');
+
     return [
         `Allowed amenity slugs for this request (match user mentions to these; ignore any amenity not in this list): ${amenitySlugs}`,
-        `Allowed feature slugs for this request (environment/atmosphere/aptitude/style only; match user mentions to these; ignore any feature not in this list): ${featureSlugs}`
+        `Allowed feature slugs for this request (environment/atmosphere/aptitude/style only; match user mentions to these; ignore any feature not in this list): ${featureSlugs}`,
+        `Allowed destination attraction slugs for this request (match user mentions of a destination attraction, e.g. "a city with carnival", to these canonical slugs in entities.attractionSlugs; ignore any attraction not in this list — never invent a slug): ${attractionSlugs}`
     ];
 };
 
@@ -110,6 +126,15 @@ export function buildConversationalSearchPrompt({
         lines.push(
             'CURRENT FILTER SET (the accumulated state of this search conversation — return the COMPLETE updated set, applying the new message as a delta):',
             JSON.stringify(currentFilters),
+            '',
+            // HOS-111 T-012: reinforce nearby-expansion detection from the
+            // conversation history. Only meaningful when a prior filter set
+            // (and therefore a destination to expand from) already exists.
+            'NEARBY EXPANSION: if the new user message asks to widen the search to nearby/surrounding destinations ' +
+                '(e.g. "y en destinos cercanos", "también cerca", "and nearby destinations too", "cerca de ahí también"), ' +
+                'set entities.expandToNearby = true in your output, IN ADDITION TO returning the rest of the CURRENT FILTER SET fields unchanged. ' +
+                'Only set expandToNearby = true when the CURRENT FILTER SET already carries a destination to expand from — ' +
+                'never infer it from a message with no prior search context.',
             ''
         );
     }
@@ -193,18 +218,26 @@ export function buildSearchReplySystemPrompt({
  * @param params.message - The new user message for this turn.
  * @param params.extractedFilters - The validated entities from `generateObject`.
  *   Serialised as a context note so the reply can cite what was found.
+ * @param params.attractionLocationConflict - HOS-111 T-016: present only when
+ *   the turn asked for both a location and an attraction that share no
+ *   destination (or the attraction matched nothing). When present, a note is
+ *   injected instructing the model to explain there are ZERO results because
+ *   no destination combines the two, and to suggest loosening a filter — so the
+ *   reply names the conflict instead of a generic empty-state acknowledgment.
  * @returns An ordered `AiMessage[]` ready for `aiService.streamText({ messages })`.
  */
 export function buildSearchReplyMessages({
     systemPrompt,
     history,
     message,
-    extractedFilters
+    extractedFilters,
+    attractionLocationConflict
 }: {
     readonly systemPrompt: string;
     readonly history: readonly AiChatMessage[];
     readonly message: string;
     readonly extractedFilters: SearchIntentEntities;
+    readonly attractionLocationConflict?: AttractionLocationConflict;
 }): AiMessage[] {
     const recentHistory = history.slice(-CONVERSATION_HISTORY_LIMIT);
 
@@ -218,9 +251,30 @@ export function buildSearchReplyMessages({
         ...recentHistory.map((m) => ({ role: m.role, content: m.content })),
         // Inject filters as an assistant context note so the model can cite what
         // was searched without the user having to repeat it.
-        { role: 'assistant', content: filtersContext },
-        { role: 'user', content: message }
+        { role: 'assistant', content: filtersContext }
     ];
+
+    // HOS-111 T-016: on an attraction/location conflict, tell the model the
+    // search returned ZERO results and why, so it explains the conflict rather
+    // than acknowledging a search that did not actually run.
+    if (attractionLocationConflict !== undefined) {
+        const locationPhrase =
+            attractionLocationConflict.locationLabel === undefined
+                ? 'the requested location'
+                : `the requested location (${attractionLocationConflict.locationLabel})`;
+        const attractionPhrase = attractionLocationConflict.attractionSlugs.join(', ');
+        messages.push({
+            role: 'system',
+            content:
+                `IMPORTANT — NO RESULTS: there is NO destination that combines ${locationPhrase} ` +
+                `with the requested attraction (${attractionPhrase}). The search returned ZERO ` +
+                'accommodations. Briefly and warmly explain that no destination matches both, name ' +
+                'the conflict, and suggest loosening one filter (e.g. dropping the location or the ' +
+                'attraction). Do NOT invent results or destinations.'
+        });
+    }
+
+    messages.push({ role: 'user', content: message });
 
     return messages;
 }

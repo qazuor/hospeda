@@ -15,6 +15,7 @@
 
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { CollectionBookmarkRemoveBtn } from '@/components/account/CollectionBookmarkRemoveBtn.client';
 import { CollectionDetailActions } from '@/components/account/CollectionDetailActions.client';
 import { EditableNote } from '@/components/account/EditableNote';
@@ -238,6 +239,7 @@ const apiBase = getApiUrl();
 		</ol>
 	</nav>
 
+	<AccountSectionCard>
 	<!-- ------------------------------------------------------------------ -->
 	<!-- Error state — only reached on 5xx or other unexpected failures.    -->
 	<!-- 404 / 400 are handled by the early redirect above.                  -->
@@ -512,6 +514,7 @@ const apiBase = getApiUrl();
 			</div>
 		)
 	}
+	</AccountSectionCard>
 </AccountLayout>
 
 <style>

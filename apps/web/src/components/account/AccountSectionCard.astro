@@ -1,0 +1,22 @@
+---
+/**
+ * @file AccountSectionCard.astro
+ * @description Canonical account "section card" wrapper. Imports the shared
+ * AccountSection.module.css recipe directly (same Vite CSS-Modules class map
+ * that ProfileEditForm/PreferenceToggles compose), so Astro pages and React
+ * islands render one single-source card. Optional title renders the dot-bullet
+ * section heading; omit it on single-card pages (the page H1 already titles them).
+ */
+import styles from './AccountSection.module.css';
+
+interface Props {
+    readonly title?: string;
+}
+
+const { title } = Astro.props;
+---
+
+<section class={styles.card}>
+    {title && <h2 class={styles.cardTitle}>{title}</h2>}
+    <slot />
+</section>

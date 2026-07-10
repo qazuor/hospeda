@@ -387,6 +387,69 @@ describe('SearchIntentEntitiesSchema', () => {
         expect(result.success).toBe(false);
     });
 
+    // ── attractionSlugs (HOS-111 T-015, G-11) ────────────────────────────────
+
+    it('accepts attractionSlugs as an array of strings', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({
+            attractionSlugs: ['sede_carnaval', 'corsodromo']
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.attractionSlugs).toEqual(['sede_carnaval', 'corsodromo']);
+        }
+    });
+
+    it('accepts an empty attractionSlugs array', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({ attractionSlugs: [] });
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects attractionSlugs containing non-string elements', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({
+            attractionSlugs: ['sede_carnaval', 42]
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('defaults attractionSlugs to undefined (absent) when not provided', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({});
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.attractionSlugs).toBeUndefined();
+        }
+    });
+
+    // ── expandToNearby (HOS-111 T-012, G-9) ──────────────────────────────────
+
+    it('accepts expandToNearby: true', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({ expandToNearby: true });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.expandToNearby).toBe(true);
+        }
+    });
+
+    it('accepts expandToNearby: false', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({ expandToNearby: false });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.expandToNearby).toBe(false);
+        }
+    });
+
+    it('defaults to undefined (absent) when not provided', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({});
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.expandToNearby).toBeUndefined();
+        }
+    });
+
+    it('rejects a non-boolean expandToNearby', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({ expandToNearby: 'yes' });
+        expect(result.success).toBe(false);
+    });
+
     // ── NOT strict — extra keys stripped ─────────────────────────────────────
 
     it('strips extra unknown keys (entities schema is NOT strict)', () => {
@@ -435,6 +498,7 @@ describe('SearchIntentEntitiesSchema', () => {
             hasParking: true,
             amenitySlugs: ['pool', 'wifi'],
             featureSlugs: ['river_front', 'quiet_zone'],
+            attractionSlugs: ['sede_carnaval', 'corsodromo'],
             checkIn: '2026-12-20',
             checkOut: '2026-12-27'
         };
@@ -454,6 +518,7 @@ describe('SearchIntentEntitiesSchema', () => {
             expect(result.data.maxRating).toBe(5);
             expect(result.data.amenitySlugs).toEqual(['pool', 'wifi']);
             expect(result.data.featureSlugs).toEqual(['river_front', 'quiet_zone']);
+            expect(result.data.attractionSlugs).toEqual(['sede_carnaval', 'corsodromo']);
             expect(result.data.checkIn).toBe('2026-12-20');
             expect(result.data.checkOut).toBe('2026-12-27');
         }

@@ -180,6 +180,10 @@ const FS_EXCLUSIONS: ReadonlySet<string> = new Set([
     'conversations/protected/owner/system-actor.ts',
     // Pure amenity/feature allowlist data + matching helpers consumed by search-chat.ts (not a Hono route)
     'ai/protected/amenity-allowlist.ts',
+    // Pure attraction allowlist data + matching helpers consumed by search-chat.ts (not a Hono route) — HOS-111
+    'ai/protected/attraction-allowlist.ts',
+    // Pure attraction→destination resolver consumed by search-chat.ts (not a Hono route) — HOS-111
+    'ai/protected/attraction-resolver.ts',
     // Pure intent→search-params mapper consumed by search-chat.ts (not a Hono route)
     'ai/protected/search-intent.mapper.ts',
     // Per-request prompt builder for search-chat (not a Hono route) — SPEC-212 T-003/T-006
@@ -187,7 +191,9 @@ const FS_EXCLUSIONS: ReadonlySet<string> = new Set([
     // Best-effort conversation persistence helper for search-chat (not a Hono route) — SPEC-212 T-007
     'ai/protected/search-chat.persistence.ts',
     // Pure AI output schema + prompt builder + RawExtraction mapper for import-from-url (not a Hono route) — SPEC-222 T-020
-    'accommodation/protected/import-from-url.ai.ts'
+    'accommodation/protected/import-from-url.ai.ts',
+    // Shared MP return/notification URL builders consumed by start-paid.ts + trial.ts (not a Hono route) — HOS-114
+    'billing/checkout-return-urls.ts'
 ]);
 
 /**

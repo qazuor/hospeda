@@ -591,7 +591,10 @@ export function PlanPurchaseButton({
 
         const billingClass = billingInterval === 'annual' ? 'annual' : 'monthly';
         const amountEl = card.querySelector<HTMLElement>(`.pricing-card__amount--${billingClass}`);
-        const trialEl = card.querySelector<HTMLElement>('.pricing-card__trial--monthly');
+        // HOS-115: the trial line is now interval-neutral (`.pricing-card__trial`,
+        // visible under both toggles) — the old `--monthly`-only selector would
+        // silently stop matching anything once the class was renamed.
+        const trialEl = card.querySelector<HTMLElement>('.pricing-card__trial');
 
         const injected: Element[] = [];
         let trialOriginal: string | null = null;

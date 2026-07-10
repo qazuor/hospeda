@@ -84,6 +84,15 @@ describe('PostHogScript.astro — snippet rendering pattern', () => {
         expect(source).toContain('window.posthog.init(posthogKey, {');
     });
 
+    it('enables pageleave and web vitals capture for Web Analytics health', () => {
+        // $pageleave powers accurate bounce rate + session duration, and
+        // $web_vitals feeds Core Web Vitals (LCP/INP/CLS/FCP). Both are off by
+        // default in this snippet, so the init config must enable them
+        // explicitly. Guards the PostHog Web Analytics health-check fixes.
+        expect(source).toContain('capture_pageleave: true');
+        expect(source).toContain('capture_performance: { web_vitals: true }');
+    });
+
     it('must gate rendering on dev mode and key presence', () => {
         // shouldRender = !isDev && posthogKey.length > 0
         expect(source).toContain('const isDev = import.meta.env.DEV === true');

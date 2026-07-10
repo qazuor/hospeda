@@ -10,6 +10,7 @@ import { FavoriteIcon, StarIcon, CreditCardIcon, BuildingIcon, ChatIcon } from '
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import styles from './AccountSection.module.css';
 
 interface Props {
     readonly locale: SupportedLocale;
@@ -42,7 +43,7 @@ const statMessagesDesc = t('account.pages.dashboard.stats.messagesDesc', 'Consul
     {isHost ? (
         <>
             <!-- Host: Properties stat -->
-            <article class="account__stat-card">
+            <article class:list={['account__stat-card', styles.branded]}>
                 <div class="account__stat-card-header">
                     <h3 class="account__stat-card-title">{statPropertiesLabel}</h3>
                     <span class="account__stat-icon" aria-hidden="true">
@@ -57,7 +58,7 @@ const statMessagesDesc = t('account.pages.dashboard.stats.messagesDesc', 'Consul
             </article>
 
             <!-- Host: Unread messages stat -->
-            <article class="account__stat-card">
+            <article class:list={['account__stat-card', styles.branded]}>
                 <div class="account__stat-card-header">
                     <h3 class="account__stat-card-title">{statMessagesLabel}</h3>
                     <span class="account__stat-icon" aria-hidden="true">
@@ -74,7 +75,7 @@ const statMessagesDesc = t('account.pages.dashboard.stats.messagesDesc', 'Consul
     ) : (
         <>
             <!-- Tourist: Favorites stat -->
-            <article class="account__stat-card">
+            <article class:list={['account__stat-card', styles.branded]}>
                 <div class="account__stat-card-header">
                     <h3 class="account__stat-card-title">{statFavoritesLabel}</h3>
                     <span class="account__stat-icon" aria-hidden="true">
@@ -89,7 +90,7 @@ const statMessagesDesc = t('account.pages.dashboard.stats.messagesDesc', 'Consul
             </article>
 
             <!-- Tourist: Reviews stat -->
-            <article class="account__stat-card">
+            <article class:list={['account__stat-card', styles.branded]}>
                 <div class="account__stat-card-header">
                     <h3 class="account__stat-card-title">{statReviewsLabel}</h3>
                     <span class="account__stat-icon" aria-hidden="true">
@@ -106,7 +107,7 @@ const statMessagesDesc = t('account.pages.dashboard.stats.messagesDesc', 'Consul
     )}
 
     <!-- Subscription stat — always rendered for both roles -->
-    <article class="account__stat-card">
+    <article class:list={['account__stat-card', styles.branded]}>
         <div class="account__stat-card-header">
             <h3 class="account__stat-card-title">{statSubscriptionLabel}</h3>
             <span class="account__stat-icon" aria-hidden="true">

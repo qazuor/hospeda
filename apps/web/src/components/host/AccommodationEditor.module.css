@@ -46,40 +46,13 @@
 }
 
 /* ── Section card ─────────────────────────────────────────────────────────
-   Same visual convention as ProfileEditForm.module.css `.section` (SPEC-208
-   era account forms): tokenized surface, uniform radius, subtle elevation,
-   and a brand-gradient accent bar. The inner section component keeps its own
-   bare `<fieldset>` (border:none; padding:0) — it renders fine nested here. */
+   Same visual convention as the canonical AccountSectionCard recipe (BETA-143
+   rollout) — tokenized surface, uniform radius, subtle elevation, and a
+   brand-gradient accent bar. The inner section component keeps its own bare
+   `<fieldset>` (border:none; padding:0) — it renders fine nested here. */
 
 .card {
-    position: relative;
-    background-color: var(--core-card);
-    border: 1px solid var(--core-foreground-a08);
-    border-radius: var(--radius-card);
-    padding: var(--space-6, 24px);
-    box-shadow: 0 1px 2px var(--core-foreground-a05);
-    overflow: hidden;
-    isolation: isolate;
-    transition:
-        box-shadow var(--duration-normal) ease,
-        border-color var(--duration-normal) ease;
-}
-
-.card:hover {
-    box-shadow: 0 6px 16px var(--core-foreground-a05);
-    border-color: var(--brand-primary-a20);
-}
-
-.card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
-    opacity: 0.65;
-    z-index: 0;
+    composes: card from "../account/AccountSection.module.css";
 }
 
 .actions {

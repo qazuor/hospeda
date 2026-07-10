@@ -8,6 +8,8 @@
  * T-049d: Each card now includes an inline note editor via `EditableNote`.
  */
 
+import { BookmarkIcon } from '@repo/icons';
+import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import type { SupportedLocale } from '@/lib/i18n';
 import { EditableNote } from './EditableNote';
 import styles from './UserFavoritesList.module.css';
@@ -77,26 +79,26 @@ export function resolveEntityUrl(
 
 // ─── EmptyFavorites ───────────────────────────────────────────────────────────
 
+/** Props for {@link EmptyFavorites}. */
+export interface EmptyFavoritesProps {
+    /** Bold heading shown under the icon (e.g. "No tenés favoritos en esta categoría"). */
+    readonly title: string;
+    /** Supporting sentence explaining the empty state. */
+    readonly description: string;
+}
+
 /**
- * Minimal inline empty state component.
- * EmptyState.astro cannot be used in React islands, so this is a plain-React
- * equivalent that uses the same CSS custom properties.
+ * Empty state shown for a favorites/collections section with no items.
+ * Wraps the shared `AccountEmptyState` React island so this section matches
+ * the canonical "nothing yet" recipe used across `/mi-cuenta`.
  */
-export function EmptyFavorites({ label }: { readonly label: string }) {
+export function EmptyFavorites({ title, description }: EmptyFavoritesProps) {
     return (
-        <div
-            style={{
-                textAlign: 'center',
-                padding: 'var(--space-10, 40px) var(--space-6, 24px)',
-                color: 'var(--core-muted-foreground)',
-                fontFamily: 'var(--font-sans)',
-                background: 'var(--core-card)',
-                borderRadius: 'var(--radius-card)',
-                border: '1px dashed var(--border)'
-            }}
-        >
-            <p style={{ margin: 0 }}>{label}</p>
-        </div>
+        <AccountEmptyState
+            title={title}
+            description={description}
+            icon={<BookmarkIcon size={28} />}
+        />
     );
 }
 

@@ -13,6 +13,7 @@
 /* ── Plan card ─────────────────────────────────────────────────────────────── */
 
 .planCard {
+    composes: branded from "./AccountSection.module.css";
     background-color: var(--core-card);
     border: 1px solid var(--border, oklch(0.8 0 0));
     border-radius: var(--radius-card, 24px);
@@ -177,6 +178,7 @@
 /* ── Actions row ───────────────────────────────────────────────────────────── */
 
 .actionsCard {
+    composes: branded from "./AccountSection.module.css";
     background-color: var(--core-card);
     border: 1px solid var(--border, oklch(0.8 0 0));
     border-radius: var(--radius-card, 24px);
@@ -204,93 +206,18 @@
 /* ── Buttons ───────────────────────────────────────────────────────────────── */
 
 .btnPrimary {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2, 8px);
-    padding: var(--space-2, 8px) var(--space-5, 20px);
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--primary-foreground);
-    background-color: var(--brand-primary, oklch(0.5 0.18 260));
-    border: none;
-    border-radius: var(--radius-button, 8px);
-    cursor: pointer;
+    composes: primary from "./AccountButton.module.css";
     text-decoration: none;
-    transition: opacity var(--duration-normal, 0.4s) ease;
-    min-height: 40px;
-    white-space: nowrap;
-}
-
-.btnPrimary:hover:not(:disabled) {
-    opacity: 0.85;
-}
-
-.btnPrimary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
 }
 
 .btnSecondary {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2, 8px);
-    padding: var(--space-2, 8px) var(--space-5, 20px);
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--brand-primary, oklch(0.5 0.18 260));
-    background-color: transparent;
-    border: 1px solid var(--brand-primary, oklch(0.5 0.18 260));
-    border-radius: var(--radius-button, 8px);
-    cursor: pointer;
+    composes: secondary from "./AccountButton.module.css";
     text-decoration: none;
-    transition:
-        background-color var(--duration-normal, 0.4s) ease,
-        color var(--duration-normal, 0.4s) ease;
-    min-height: 40px;
-    white-space: nowrap;
-}
-
-.btnSecondary:hover:not(:disabled) {
-    background-color: var(--brand-primary, oklch(0.5 0.18 260));
-    color: var(--primary-foreground);
-}
-
-.btnSecondary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
 }
 
 .btnDanger {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2, 8px);
-    padding: var(--space-2, 8px) var(--space-5, 20px);
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--destructive, oklch(0.55 0.22 25));
-    background-color: transparent;
-    border: 1px solid var(--destructive, oklch(0.55 0.22 25));
-    border-radius: var(--radius-button, 8px);
-    cursor: pointer;
+    composes: danger from "./AccountButton.module.css";
     text-decoration: none;
-    transition:
-        background-color var(--duration-normal, 0.4s) ease,
-        color var(--duration-normal, 0.4s) ease;
-    min-height: 40px;
-    white-space: nowrap;
-}
-
-.btnDanger:hover:not(:disabled) {
-    background-color: var(--destructive, oklch(0.55 0.22 25));
-    color: var(--destructive-foreground);
-}
-
-.btnDanger:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
 }
 
 .btnAdmin {
@@ -336,6 +263,21 @@
 .upgradeLink:hover {
     opacity: 0.75;
     text-decoration: underline;
+}
+
+/* `.planCard` is a column flex container with no `align-items` set, so it
+   defaults to `stretch` — the "Cambiar plan" button (and the "Ver planes
+   disponibles" fallback link) are direct children and would otherwise
+   stretch to the card's full width, rendering as an oversized bordered bar
+   instead of a compact button matching the "Descargar factura" / "Pausar" /
+   "Cancelar" siblings below (those live inside `.actionsRow`, a row flex
+   container, so they never hit this stretch behavior). BETA-143e.
+   NOTE: kept AFTER the base `.upgradeLink`/`.btnSecondary` rules so the
+   higher-specificity `.planCard > …` selectors don't precede them
+   (biome noDescendingSpecificity). */
+.planCard > .btnSecondary,
+.planCard > .upgradeLink {
+    align-self: flex-start;
 }
 
 /* ── Confirmation modal ─────────────────────────────────────────────────────── */
