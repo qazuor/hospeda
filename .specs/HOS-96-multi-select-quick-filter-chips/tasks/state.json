@@ -311,35 +311,35 @@
             "id": "T-010",
             "title": "Add \"Clear (N)\" bulk-reset chip",
             "description": "Add a \"Limpiar (N)\" chip to the chip row that appears only when a facet has 2+ active values, showing the live count `N`. It reuses the existing removable \"active filter chip\" pattern from `apps/web/src/pages/[lang]/alojamientos/index.astro` (~L520-525) for visual/interaction parity. Its href removes the whole facet's array param (via a param-delete, not per-value toggle) while preserving every other param, and drops `page`. Accessible name includes the count, e.g. `aria-label=\"Limpiar 2 filtros de tipo\"` — add the i18n string in `@repo/i18n`.\n\n**Files:** the shared chip-row rendering helper/caller from T-009, plus a new i18n key in `packages/i18n/src/locales/{es,en,pt}/...` (e.g. `filters.clearCount`).\n\n**Tests (component, `apps/web`):** AAA — (1) 2+ active values → \"Limpiar (2)\" chip renders with correct count; (2) 0 or 1 active value → chip is absent; (3) activating it removes the facet's array param entirely while preserving other params, and drops `page`; (4) `aria-label` includes the numeric count.\n\n**Acceptance mapping:** US-4 (all AC).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": ["T-011", "T-012", "T-013"],
             "subtasks": [
                 {
                     "title": "Add Clear(N) chip generation logic reusing removable-chip pattern",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add i18n key for the accessible label with count",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write component tests for appear/absent thresholds, param removal, aria-label",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "component", "i18n"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T17:15:00Z",
+                "completed": "2026-07-10T17:40:00Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 17,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 1.9
     }

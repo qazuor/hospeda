@@ -274,6 +274,24 @@ describe('FilterChips.astro', () => {
         });
     });
 
+    describe('HOS-96 T-010 — per-chip ariaLabel override (Clear (N) accessible name)', () => {
+        it('defines an optional readonly ariaLabel on ChipItem', () => {
+            expect(src).toContain('readonly ariaLabel?: string');
+        });
+
+        it('destructures ariaLabel from each chip when mapping', () => {
+            expect(src).toMatch(/chips\.map\(\(\{[^}]*ariaLabel[^}]*\}\)/);
+        });
+
+        it('renders aria-label on the anchor driven by the per-chip ariaLabel (undefined by default → attribute omitted, chip text stays the accessible name)', () => {
+            // Scoped to the <a ...> opening tag specifically, since the
+            // component-level `ariaLabel` prop already renders an identical
+            // `aria-label={ariaLabel}` expression on the <nav> above — a
+            // plain `toContain` here would be a false positive predating T-010.
+            expect(src).toMatch(/<a\s[\s\S]*?aria-label=\{ariaLabel\}[\s\S]*?>/);
+        });
+    });
+
     describe('HOS-97 — href-agnostic canonical component', () => {
         it('does not hardcode any query-param toggle or route-nav logic (caller-resolved hrefs)', () => {
             expect(src).not.toContain('URLSearchParams');

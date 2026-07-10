@@ -81,6 +81,10 @@
         "PLAN_DISABLED": "O plano selecionado não está mais disponível. Escolha outro plano para continuar."
     },
     "filters": "Filtros",
+    "filterChips": {
+        "clearLabel": "Limpar ({{count}})",
+        "clearAriaLabel": "Limpar {{count}} filtros"
+    },
     "goHome": "Voltar ao início",
     "in": "em",
     "loadMore": "Carregar mais",

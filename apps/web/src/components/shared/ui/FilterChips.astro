@@ -57,6 +57,18 @@ interface ChipItem {
      * experiencias), so this is fully backward compatible.
      */
     readonly ariaPressed?: boolean;
+    /**
+     * When defined, overrides the anchor's accessible name via
+     * `aria-label` (HOS-96 T-010). Needed for chips whose desired accessible
+     * name differs from their visible text — e.g. the "Clear (N)" bulk-reset
+     * chip built by `buildClearFacetChip`, whose visible label is the terse
+     * `"Limpiar (2)"` but whose accessible name is the more descriptive
+     * `"Limpiar 2 filtros"`. Left `undefined` (the default — no attribute
+     * rendered at all) for every other chip, which keeps relying on its own
+     * visible text as the accessible name, so this is fully backward
+     * compatible.
+     */
+    readonly ariaLabel?: string;
     /** Optional leading icon component (already resolved by the caller). */
     readonly icon?: ComponentType<IconProps>;
 }
@@ -103,13 +115,14 @@ const {
     <nav class="filter-chips__nav" aria-label={ariaLabel}>
         <div class="filter-chips__fade-wrapper">
             <ul class="filter-chips__list" role="list" data-filter-chips-list>
-                {chips.map(({ label, href, active, icon: Icon, ariaPressed }) => (
+                {chips.map(({ label, href, active, icon: Icon, ariaPressed, ariaLabel }) => (
                     <li class="filter-chips__item">
                         <a
                             href={href}
                             class:list={['filter-chips__chip', { 'filter-chips__chip--active': active }]}
                             aria-current={active ? 'true' : undefined}
                             aria-pressed={typeof ariaPressed === 'boolean' ? (ariaPressed ? 'true' : 'false') : undefined}
+                            aria-label={ariaLabel}
                         >
                             {Icon && (
                                 <span class="filter-chips__chip-icon" aria-hidden="true">

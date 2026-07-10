@@ -81,6 +81,10 @@
         "PLAN_DISABLED": "The selected plan is no longer available. Please choose a different plan to continue."
     },
     "filters": "Filters",
+    "filterChips": {
+        "clearLabel": "Clear ({{count}})",
+        "clearAriaLabel": "Clear {{count}} filters"
+    },
     "goHome": "Back to home",
     "in": "in",
     "loadMore": "Load more",
