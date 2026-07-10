@@ -239,5 +239,43 @@ describe('sendEmail', () => {
             expect(result.success).toBe(false);
             expect(result.error).toBe('Unknown error');
         });
+
+        it('should return a clear timeout error instead of hanging when the provider never responds', async () => {
+            // Arrange — simulate AbortSignal.timeout() firing: fetch rejects with a
+            // DOMException named 'TimeoutError', which is what Node's fetch/undici
+            // implementation throws when the passed `signal` aborts.
+            fetchMock.mockRejectedValue(
+                new DOMException('The operation was aborted', 'TimeoutError')
+            );
+
+            // Act
+            const result = await sendEmail({
+                client: TEST_CLIENT,
+                to: 'test@example.com',
+                subject: 'Test',
+                react: mockReact
+            });
+
+            // Assert
+            expect(result.success).toBe(false);
+            expect(result.error).toBe('Email send timed out after 10000ms');
+        });
+
+        it('should pass an AbortSignal to fetch so the call is bounded by a timeout', async () => {
+            // Arrange
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            // Act
+            await sendEmail({
+                client: TEST_CLIENT,
+                to: 'test@example.com',
+                subject: 'Test',
+                react: mockReact
+            });
+
+            // Assert
+            const [, init] = fetchMock.mock.calls[0] ?? [];
+            expect((init as RequestInit).signal).toBeInstanceOf(AbortSignal);
+        });
     });
 });
