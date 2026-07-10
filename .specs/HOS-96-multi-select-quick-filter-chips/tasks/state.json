@@ -43,202 +43,202 @@
             "id": "T-002",
             "title": "Add categories array query param to EventSearchHttpSchema",
             "description": "In `@repo/schemas`, extend `EventSearchHttpSchema` with `categories: createArrayQueryParam('Filter by multiple event categories')` (reuse the existing `createArrayQueryParam` helper from `packages/schemas/src/api/http/base-http.schema.ts`), keeping the existing singular `category` enum field unchanged.\n\n**Files:** `packages/schemas/src/entities/event/event.http.schema.ts` (or wherever `EventSearchHttpSchema` lives — confirm exact path first).\n\n**Tests (unit, `@repo/schemas`):** AAA pattern — (1) schema accepts `categories` as CSV `?categories=A,B` and parses to `['A','B']`; (2) accepts repeated-key form; (3) accepts singular `category` alone with no `categories`; (4) accepts both present simultaneously (schema-level, no precedence logic here — that's the model's job); (5) rejects an invalid enum member in the array with a Zod error; (6) empty string `categories=` parses to `undefined`.\n\n**Acceptance mapping:** US-9 (AC1), US-10 (AC2), US-11 (AC1, AC2).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-004", "T-022"],
             "subtasks": [
                 {
                     "title": "Add categories field to EventSearchHttpSchema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write schema unit tests (CSV, repeated, singular-only, both-present, invalid member, empty)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schema", "api", "events"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-10T16:09:12Z"
             }
         },
         {
             "id": "T-003",
             "title": "Add categories array query param to PostSearchHttpSchema",
             "description": "In `@repo/schemas`, extend `PostSearchHttpSchema` with `categories: createArrayQueryParam('Filter by multiple post categories')`, keeping the existing singular `category` enum field unchanged.\n\n**Files:** `packages/schemas/src/entities/post/post.http.schema.ts` (confirm exact path).\n\n**Tests (unit, `@repo/schemas`):** same matrix as T-002 applied to `PostSearchHttpSchema` — CSV parse, repeated-key, singular-only, both-present, invalid member rejected, empty→undefined.\n\n**Acceptance mapping:** US-9 (AC1), US-10 (AC2), US-11 (AC1, AC2).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-005", "T-022"],
             "subtasks": [
                 {
                     "title": "Add categories field to PostSearchHttpSchema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write schema unit tests (CSV, repeated, singular-only, both-present, invalid member, empty)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schema", "api", "blog"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-10T16:09:12Z"
             }
         },
         {
             "id": "T-004",
             "title": "Add manual inArray/eq category WHERE branch to EventModel",
             "description": "In `@repo/db`, add a manual WHERE branch to `EventModel` mirroring `AccommodationModel`'s existing `types`/`type` precedence exactly: `if (params.categories?.length) whereClauses.push(inArray(events.category, params.categories)); else if (params.category) whereClauses.push(eq(events.category, params.category));`. This bypasses the generic `buildWhereClause`, which does NOT convert an array into `inArray` (falls through to invalid `eq(column, arrayValue)`).\n\n**Files:** `packages/db/src/models/event/event.model.ts`.\n\n**Tests (unit, `@repo/db`):** AAA — (1) `categories` with 1 value produces `inArray(events.category, [v])`; (2) `categories` with N values produces `inArray` with all N; (3) only singular `category` present produces `eq`; (4) both present → array wins (assert the built clause reflects `categories`, not `category`); (5) `categories` empty array / undefined → no category clause at all (not `inArray([])`). Assert produced SQL/clause type explicitly (guards the latent `eq(column, arrayValue)` bug from ever regressing).\n\n**Acceptance mapping:** US-2 (AC3, AC5), US-9 (AC2), US-10 (AC3), US-11 (AC2).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-006", "T-022"],
             "subtasks": [
                 {
                     "title": "Add inArray/eq precedence branch to EventModel WHERE builder",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write model unit tests (1 value, N values, singular-only, both-present precedence, empty/undefined)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "model", "events"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-10T16:09:12Z"
             }
         },
         {
             "id": "T-005",
             "title": "Add manual inArray/eq category WHERE branch to PostModel",
             "description": "In `@repo/db`, add the same manual WHERE branch to `PostModel` mirroring `AccommodationModel`/`EventModel`: `if (params.categories?.length) whereClauses.push(inArray(posts.category, params.categories)); else if (params.category) whereClauses.push(eq(posts.category, params.category));`.\n\n**Files:** `packages/db/src/models/post/post.model.ts`.\n\n**Tests (unit, `@repo/db`):** same matrix as T-004 applied to `PostModel` — 1 value, N values, singular-only, both-present precedence (array wins), empty/undefined → no clause.\n\n**Acceptance mapping:** US-2 (AC4, AC5), US-9 (AC2), US-10 (AC3), US-11 (AC2).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-007", "T-022"],
             "subtasks": [
                 {
                     "title": "Add inArray/eq precedence branch to PostModel WHERE builder",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write model unit tests (1 value, N values, singular-only, both-present precedence, empty/undefined)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "model", "blog"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-10T16:09:12Z"
             }
         },
         {
             "id": "T-006",
             "title": "Forward filters.categories in event.service.ts",
             "description": "In `@repo/service-core`, ensure `event.service.ts` passes `filters.categories` through to `EventModel` (the public list route passes HTTP params straight to the service, so confirm no field gets dropped/renamed in the mapping layer). If the service already spreads all HTTP params generically, add an explicit test proving `categories` survives the pass-through rather than assuming it.\n\n**Files:** `packages/service-core/src/services/event/event.service.ts`.\n\n**Tests (integration, `@repo/service-core` + `apps/api`):** (1) service-level test asserting `filters.categories` reaches the model call; (2) API integration test `GET /api/v1/public/events?categories=A,B` returns the union of events with `category ∈ {A,B}`, and `count >= single-value count`; (3) **regression test** — the exact `?category=A,B`-equivalent input (now `?categories=A,B`) that returns nothing/errors on `main` today must match both categories (RED on main, GREEN after this task).\n\n**Acceptance mapping:** US-2 (AC3), US-9 (AC3, AC5), M-2, M-3.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": ["T-013", "T-020", "T-021"],
             "subtasks": [
                 {
                     "title": "Verify/forward filters.categories in event.service.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write service pass-through test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write API integration test (union + count comparison)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write regression test for the exact ?category=A,B bug input",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service", "api", "events"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-10T16:09:12Z"
             }
         },
         {
             "id": "T-007",
             "title": "Forward filters.categories in post.service.ts",
             "description": "In `@repo/service-core`, ensure `post.service.ts` passes `filters.categories` through to `PostModel`, mirroring T-006 for the blog/posts endpoint.\n\n**Files:** `packages/service-core/src/services/post/post.service.ts`.\n\n**Tests (integration, `@repo/service-core` + `apps/api`):** (1) service-level pass-through test; (2) API integration test `GET /api/v1/public/posts?categories=A,B` returns the union, count >= single-value; (3) **regression test** for the `?category=A,B`-equivalent input on posts (RED on main, GREEN after).\n\n**Acceptance mapping:** US-2 (AC4), US-9 (AC3, AC5), M-2, M-3.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-012", "T-020", "T-021"],
             "subtasks": [
                 {
                     "title": "Verify/forward filters.categories in post.service.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write service pass-through test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write API integration test (union + count comparison)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write regression test for the exact ?category=A,B bug input",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service", "api", "blog"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-10T16:09:12Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 26,
+        "pending": 20,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 1.9
     }
