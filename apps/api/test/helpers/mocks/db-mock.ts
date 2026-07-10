@@ -808,12 +808,17 @@ export function createDbMock() {
         HostTradeModel: GenericMockModel,
         NotificationScheduleModel: GenericMockModel,
         OwnerPromotionModel: GenericMockModel,
+        // HOS-113 T-021: PointOfInterestService (+ its default related model)
+        // is instantiated at module scope by the new public POI routes, same
+        // collection-breaking risk as every other model in this block.
+        PointOfInterestModel: GenericMockModel,
         PostModel: GenericMockModel,
         PostSponsorModel: GenericMockModel,
         PostSponsorshipModel: GenericMockModel,
         RAccommodationAmenityModel: GenericMockModel,
         RAccommodationFeatureModel: GenericMockModel,
         RDestinationAttractionModel: GenericMockModel,
+        RDestinationPointOfInterestModel: GenericMockModel,
         RevalidationConfigModel: GenericMockModel,
         RevalidationLogModel: GenericMockModel,
         SponsorshipLevelModel: GenericMockModel,
