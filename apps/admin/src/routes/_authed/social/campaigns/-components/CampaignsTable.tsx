@@ -23,10 +23,14 @@ function formatDate(d: Date | undefined | null): string {
     if (!d) return '—';
     const date = d instanceof Date ? d : new Date(d);
     if (Number.isNaN(date.getTime())) return '—';
+    // These are date-only values stored as UTC-midnight timestamps. Format in
+    // UTC so a browser behind UTC (Argentina, UTC-3) doesn't roll the calendar
+    // date back a day (2027-01-01 → "31 dic 2026").
     return new Intl.DateTimeFormat('es-AR', {
         day: '2-digit',
         month: 'short',
-        year: 'numeric'
+        year: 'numeric',
+        timeZone: 'UTC'
     }).format(date);
 }
 
