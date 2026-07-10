@@ -41,7 +41,7 @@ Run the manual pass on at least these pages:
 | Gastronomy detail | first valid `/es/gastronomia/<slug>/` |
 | Experiences list | `/es/experiencias/` |
 | Experience detail | first valid `/es/experiencias/<slug>/` |
-| Pricing | `/es/suscriptores/precios/` |
+| Pricing | `/es/suscriptores/planes/` |
 
 Also do a quick smoke on:
 
