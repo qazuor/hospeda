@@ -1,6 +1,6 @@
 import type { Post, PostMonthlyTrendItem } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { posts } from '../../schemas/post/post.dbschema.ts';
 import { userBookmarks } from '../../schemas/user/user_bookmark.dbschema.ts';
@@ -35,6 +35,46 @@ function buildMostSavedOrderExpr(order: 'asc' | 'desc'): SQL {
           AND ${userBookmarks.entityType} = 'POST'
           AND ${userBookmarks.deletedAt} IS NULL
     ) ${direction}`;
+}
+
+/**
+ * Extracts the `categories` (array, OR union) / `category` (singular) post
+ * filter from a generic `where` record and converts it into a manual
+ * `inArray`/`eq` SQL condition, mirroring `AccommodationModel`'s `types`/`type`
+ * precedence: the array wins when both are present, and an empty array is
+ * treated as "no filter" (never `inArray([])`).
+ *
+ * This is REQUIRED because `categories` is not a real column on the `posts`
+ * table (only the singular `category` is) — the generic `buildWhereClause`
+ * helper has no way to turn it into `inArray()`, so passing it straight
+ * through would silently skip it as an unknown key, dropping the filter
+ * entirely instead of applying it (HOS-96 US-2/US-9 — the shipped latent bug:
+ * the sidebar already serializes `?category=A,B`/`?categories=A,B` but the
+ * backend never filtered by it).
+ *
+ * @param where - The raw filter record as received from the service layer.
+ * @returns The `where` record with `category`/`categories` stripped (so the
+ *   generic `buildWhereClause` never sees them), plus the manual SQL
+ *   condition to push into `additionalConditions` (if any).
+ */
+function extractPostCategoryCondition(where: Record<string, unknown>): {
+    where: Record<string, unknown>;
+    condition?: SQL<unknown>;
+} {
+    const { category, categories, ...rest } = where;
+    if (Array.isArray(categories) && categories.length > 0) {
+        return {
+            where: rest,
+            condition: inArray(posts.category, categories as (typeof posts.category._.data)[])
+        };
+    }
+    if (category !== undefined) {
+        return {
+            where: rest,
+            condition: eq(posts.category, category as typeof posts.category._.data)
+        };
+    }
+    return { where: rest, condition: undefined };
 }
 
 export class PostModel extends BaseModelImpl<Post> {
@@ -82,12 +122,27 @@ export class PostModel extends BaseModelImpl<Post> {
         additionalConditions?: SQL[],
         tx?: DrizzleClient
     ): Promise<{ items: Post[]; total: number }> {
+        // HOS-96: strip category/categories from the generic where record and
+        // convert them into a manual inArray/eq condition BEFORE either branch
+        // below builds its query — see extractPostCategoryCondition() JSDoc.
+        const { where: sanitizedWhere, condition: categoryCondition } =
+            extractPostCategoryCondition(where ?? {});
+        const mergedConditions: SQL[] = [
+            ...(additionalConditions ?? []),
+            ...(categoryCondition ? [categoryCondition] : [])
+        ];
+
         if (options?.sortBy !== MOST_SAVED_SORT_FIELD) {
-            return super.findAll(where, options, additionalConditions, tx);
+            return super.findAll(
+                sanitizedWhere,
+                options,
+                mergedConditions.length > 0 ? mergedConditions : undefined,
+                tx
+            );
         }
 
         const db = this.getClient(tx);
-        const safeWhere = where ?? {};
+        const safeWhere = sanitizedWhere;
         const page = options.page ?? 1;
         const pageSize = options.pageSize ?? 10;
         const sortOrder: 'asc' | 'desc' = options.sortOrder ?? 'desc';
@@ -100,8 +155,8 @@ export class PostModel extends BaseModelImpl<Post> {
 
             const allConditions: SQL[] = [];
             if (baseWhereClause) allConditions.push(baseWhereClause);
-            if (additionalConditions && additionalConditions.length > 0) {
-                allConditions.push(...additionalConditions);
+            if (mergedConditions.length > 0) {
+                allConditions.push(...mergedConditions);
             }
 
             const finalWhereClause =
@@ -125,7 +180,7 @@ export class PostModel extends BaseModelImpl<Post> {
             const [items, total] = await Promise.all([
                 itemsQuery,
                 this.count(safeWhere, {
-                    additionalConditions,
+                    additionalConditions: mergedConditions,
                     tx
                 })
             ]);
@@ -143,6 +198,60 @@ export class PostModel extends BaseModelImpl<Post> {
             } catch {}
             throw new DbError(this.entityName, 'findAll', logContext, err.message);
         }
+    }
+
+    /**
+     * Overrides {@link BaseModelImpl.findAllWithRelations} to apply the same
+     * manual `categories`/`category` branch as {@link findAll} (HOS-96
+     * US-2/US-9), so the public search endpoint — which loads relations (e.g.
+     * `author`) — reflects the same OR-union filter as the plain item query.
+     */
+    override async findAllWithRelations(
+        relations: Record<string, boolean | Record<string, unknown>>,
+        where: Record<string, unknown> = {},
+        options: {
+            page?: number;
+            pageSize?: number;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+        } = {},
+        additionalConditions?: SQL[],
+        tx?: DrizzleClient
+    ): Promise<{ items: Post[]; total: number }> {
+        const { where: sanitizedWhere, condition: categoryCondition } =
+            extractPostCategoryCondition(where ?? {});
+        const mergedConditions: SQL[] = [
+            ...(additionalConditions ?? []),
+            ...(categoryCondition ? [categoryCondition] : [])
+        ];
+
+        return super.findAllWithRelations(
+            relations,
+            sanitizedWhere,
+            options,
+            mergedConditions.length > 0 ? mergedConditions : undefined,
+            tx
+        );
+    }
+
+    /**
+     * Overrides {@link BaseModelImpl.count} to apply the same manual
+     * `categories`/`category` branch as {@link findAll} and
+     * {@link findAllWithRelations} (HOS-96 US-2/US-9), so the public count
+     * endpoint (which drives pagination totals) reflects the exact same
+     * OR-union filter as the items query.
+     */
+    override async count(
+        where: Record<string, unknown>,
+        options?: { additionalConditions?: SQL[]; tx?: DrizzleClient }
+    ): Promise<number> {
+        const { where: sanitizedWhere, condition: categoryCondition } =
+            extractPostCategoryCondition(where ?? {});
+        const mergedConditions: SQL[] = [
+            ...(options?.additionalConditions ?? []),
+            ...(categoryCondition ? [categoryCondition] : [])
+        ];
+        return super.count(sanitizedWhere, { ...options, additionalConditions: mergedConditions });
     }
 
     /** Atomically increment the likes counter by 1 */

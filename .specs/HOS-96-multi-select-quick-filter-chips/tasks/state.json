@@ -8,486 +8,696 @@
             "id": "T-001",
             "title": "Define per-facet multi-select filter config model",
             "description": "Create a single web-side config module (e.g. `apps/web/src/lib/filters/facet-config.ts`) declaring, per filterable facet: `paramKey` (plural array param), `singularParamKey` (existing scalar param kept for back-compat), `operator` (`'AND' | 'OR'`), `enum` (the underlying Zod enum), and `dedicatedLandingPattern` (optional, e.g. `/alojamientos/tipo/{slug}/`).\n\nRepresent all four facets from the spec's config table: accommodation type (`types`/`type`, OR, `AccommodationTypeEnum`, dedicated landing), event category (`categories`/`category`, OR, `EventCategoryEnum`, no dedicated landing), blog/post category (`categories`/`category`, OR, `PostCategoryEnum`, dedicated landing), destination attraction (`attractions`, AND, client-side-only, explicitly flagged `outOfBackendScope: true` and NOT touched by any other task — US-12).\n\nMake the shape extensible (a typed array/record) so a sibling issue (HOS-97's gastronomía/experiencias) can add an entry without editing logic elsewhere.\n\n**Files:** new `apps/web/src/lib/filters/facet-config.ts` (or equivalent path matching existing `apps/web/src/lib/filters/` structure).\n\n**Tests (unit, `apps/web`):** AAA — assert each of the 4 facet entries has the exact declared shape/values from the spec table; assert `destinos` entry is `operator: 'AND'` and carries the out-of-backend-scope flag; assert the config is read-only (`as const` / `readonly`) so it can't be mutated at runtime.\n\n**Acceptance mapping:** supports US-1..US-11 (backing config for every multi-select facet); US-12 (destinos documented, not touched).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-011", "T-012", "T-013", "T-016"],
             "subtasks": [
                 {
                     "title": "Define TS types for facet config entry (paramKey, singularParamKey, operator, enum, dedicatedLandingPattern, outOfBackendScope)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Populate accommodation-type, event-category, blog-category, destination-attraction entries",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests asserting shape + destinos AND/out-of-scope flag",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["config", "web"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T15:32:14Z",
+                "completed": "2026-07-10T15:39:18Z"
+            }
         },
         {
             "id": "T-002",
             "title": "Add categories array query param to EventSearchHttpSchema",
             "description": "In `@repo/schemas`, extend `EventSearchHttpSchema` with `categories: createArrayQueryParam('Filter by multiple event categories')` (reuse the existing `createArrayQueryParam` helper from `packages/schemas/src/api/http/base-http.schema.ts`), keeping the existing singular `category` enum field unchanged.\n\n**Files:** `packages/schemas/src/entities/event/event.http.schema.ts` (or wherever `EventSearchHttpSchema` lives — confirm exact path first).\n\n**Tests (unit, `@repo/schemas`):** AAA pattern — (1) schema accepts `categories` as CSV `?categories=A,B` and parses to `['A','B']`; (2) accepts repeated-key form; (3) accepts singular `category` alone with no `categories`; (4) accepts both present simultaneously (schema-level, no precedence logic here — that's the model's job); (5) rejects an invalid enum member in the array with a Zod error; (6) empty string `categories=` parses to `undefined`.\n\n**Acceptance mapping:** US-9 (AC1), US-10 (AC2), US-11 (AC1, AC2).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-004", "T-022"],
             "subtasks": [
-                { "title": "Add categories field to EventSearchHttpSchema", "completed": false },
+                {
+                    "title": "Add categories field to EventSearchHttpSchema",
+                    "completed": true
+                },
                 {
                     "title": "Write schema unit tests (CSV, repeated, singular-only, both-present, invalid member, empty)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schema", "api", "events"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": "2026-07-10T16:09:12Z"
+            }
         },
         {
             "id": "T-003",
             "title": "Add categories array query param to PostSearchHttpSchema",
             "description": "In `@repo/schemas`, extend `PostSearchHttpSchema` with `categories: createArrayQueryParam('Filter by multiple post categories')`, keeping the existing singular `category` enum field unchanged.\n\n**Files:** `packages/schemas/src/entities/post/post.http.schema.ts` (confirm exact path).\n\n**Tests (unit, `@repo/schemas`):** same matrix as T-002 applied to `PostSearchHttpSchema` — CSV parse, repeated-key, singular-only, both-present, invalid member rejected, empty→undefined.\n\n**Acceptance mapping:** US-9 (AC1), US-10 (AC2), US-11 (AC1, AC2).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-005", "T-022"],
             "subtasks": [
-                { "title": "Add categories field to PostSearchHttpSchema", "completed": false },
+                {
+                    "title": "Add categories field to PostSearchHttpSchema",
+                    "completed": true
+                },
                 {
                     "title": "Write schema unit tests (CSV, repeated, singular-only, both-present, invalid member, empty)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schema", "api", "blog"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": "2026-07-10T16:09:12Z"
+            }
         },
         {
             "id": "T-004",
             "title": "Add manual inArray/eq category WHERE branch to EventModel",
             "description": "In `@repo/db`, add a manual WHERE branch to `EventModel` mirroring `AccommodationModel`'s existing `types`/`type` precedence exactly: `if (params.categories?.length) whereClauses.push(inArray(events.category, params.categories)); else if (params.category) whereClauses.push(eq(events.category, params.category));`. This bypasses the generic `buildWhereClause`, which does NOT convert an array into `inArray` (falls through to invalid `eq(column, arrayValue)`).\n\n**Files:** `packages/db/src/models/event/event.model.ts`.\n\n**Tests (unit, `@repo/db`):** AAA — (1) `categories` with 1 value produces `inArray(events.category, [v])`; (2) `categories` with N values produces `inArray` with all N; (3) only singular `category` present produces `eq`; (4) both present → array wins (assert the built clause reflects `categories`, not `category`); (5) `categories` empty array / undefined → no category clause at all (not `inArray([])`). Assert produced SQL/clause type explicitly (guards the latent `eq(column, arrayValue)` bug from ever regressing).\n\n**Acceptance mapping:** US-2 (AC3, AC5), US-9 (AC2), US-10 (AC3), US-11 (AC2).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-006", "T-022"],
             "subtasks": [
                 {
                     "title": "Add inArray/eq precedence branch to EventModel WHERE builder",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write model unit tests (1 value, N values, singular-only, both-present precedence, empty/undefined)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "model", "events"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": "2026-07-10T16:09:12Z"
+            }
         },
         {
             "id": "T-005",
             "title": "Add manual inArray/eq category WHERE branch to PostModel",
             "description": "In `@repo/db`, add the same manual WHERE branch to `PostModel` mirroring `AccommodationModel`/`EventModel`: `if (params.categories?.length) whereClauses.push(inArray(posts.category, params.categories)); else if (params.category) whereClauses.push(eq(posts.category, params.category));`.\n\n**Files:** `packages/db/src/models/post/post.model.ts`.\n\n**Tests (unit, `@repo/db`):** same matrix as T-004 applied to `PostModel` — 1 value, N values, singular-only, both-present precedence (array wins), empty/undefined → no clause.\n\n**Acceptance mapping:** US-2 (AC4, AC5), US-9 (AC2), US-10 (AC3), US-11 (AC2).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-007", "T-022"],
             "subtasks": [
                 {
                     "title": "Add inArray/eq precedence branch to PostModel WHERE builder",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write model unit tests (1 value, N values, singular-only, both-present precedence, empty/undefined)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "model", "blog"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": "2026-07-10T16:09:12Z"
+            }
         },
         {
             "id": "T-006",
             "title": "Forward filters.categories in event.service.ts",
             "description": "In `@repo/service-core`, ensure `event.service.ts` passes `filters.categories` through to `EventModel` (the public list route passes HTTP params straight to the service, so confirm no field gets dropped/renamed in the mapping layer). If the service already spreads all HTTP params generically, add an explicit test proving `categories` survives the pass-through rather than assuming it.\n\n**Files:** `packages/service-core/src/services/event/event.service.ts`.\n\n**Tests (integration, `@repo/service-core` + `apps/api`):** (1) service-level test asserting `filters.categories` reaches the model call; (2) API integration test `GET /api/v1/public/events?categories=A,B` returns the union of events with `category ∈ {A,B}`, and `count >= single-value count`; (3) **regression test** — the exact `?category=A,B`-equivalent input (now `?categories=A,B`) that returns nothing/errors on `main` today must match both categories (RED on main, GREEN after this task).\n\n**Acceptance mapping:** US-2 (AC3), US-9 (AC3, AC5), M-2, M-3.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": ["T-013", "T-020", "T-021"],
             "subtasks": [
                 {
                     "title": "Verify/forward filters.categories in event.service.ts",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Write service pass-through test", "completed": false },
+                {
+                    "title": "Write service pass-through test",
+                    "completed": true
+                },
                 {
                     "title": "Write API integration test (union + count comparison)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write regression test for the exact ?category=A,B bug input",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service", "api", "events"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": "2026-07-10T16:09:12Z"
+            }
         },
         {
             "id": "T-007",
             "title": "Forward filters.categories in post.service.ts",
             "description": "In `@repo/service-core`, ensure `post.service.ts` passes `filters.categories` through to `PostModel`, mirroring T-006 for the blog/posts endpoint.\n\n**Files:** `packages/service-core/src/services/post/post.service.ts`.\n\n**Tests (integration, `@repo/service-core` + `apps/api`):** (1) service-level pass-through test; (2) API integration test `GET /api/v1/public/posts?categories=A,B` returns the union, count >= single-value; (3) **regression test** for the `?category=A,B`-equivalent input on posts (RED on main, GREEN after).\n\n**Acceptance mapping:** US-2 (AC4), US-9 (AC3, AC5), M-2, M-3.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-012", "T-020", "T-021"],
             "subtasks": [
                 {
                     "title": "Verify/forward filters.categories in post.service.ts",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Write service pass-through test", "completed": false },
+                {
+                    "title": "Write service pass-through test",
+                    "completed": true
+                },
                 {
                     "title": "Write API integration test (union + count comparison)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write regression test for the exact ?category=A,B bug input",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service", "api", "blog"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": "2026-07-10T16:09:12Z"
+            }
         },
         {
             "id": "T-008",
             "title": "Create buildMultiToggleParamHref helper",
             "description": "In `apps/web/src/lib/filters/`, add a new helper (sibling to `toggle-query-param.ts`'s `buildToggleParamHref`), e.g. `buildMultiToggleParamHref`, that accumulates/removes a value inside a CSV array query param: adding a value not currently present appends it (or sets the param if absent); clicking an already-present value removes just that value; removing the last remaining value drops the param entirely (no empty `?key=` left behind). It must preserve every other query param (`q`, `sortBy`, other facets) and always drop `page`. RO-RO pattern, named export, JSDoc, Zod-free (pure string/URLSearchParams logic), `import type` where relevant.\n\n**Files:** new `apps/web/src/lib/filters/toggle-multi-query-param.ts` (or colocated in `toggle-query-param.ts` if under 500 lines — match existing file's convention).\n\n**Tests (unit, `apps/web`):** AAA — (1) empty param + add value → `?k=a`; (2) `?k=a` + add `b` → `?k=a,b` (order preserved, append not replace); (3) `?k=a,b,c` + remove `b` → `?k=a,c`; (4) `?k=a` + remove `a` → param removed entirely, not `?k=`; (5) preserves unrelated params (`q`, `sortBy`, other facet keys); (6) always drops `page` regardless of add/remove; (7) adding a third value to `?k=a,b` → `?k=a,b,c` preserving order.\n\n**Acceptance mapping:** US-1 (all AC), US-3 (all AC).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-009"],
             "subtasks": [
                 {
                     "title": "Implement buildMultiToggleParamHref (add/remove/drop-last, preserve params, drop page)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests for add/append/remove/last-removal/preserve/drop-page",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["helper", "web"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T16:55:00Z",
+                "completed": "2026-07-10T17:05:33Z"
+            }
         },
         {
             "id": "T-009",
             "title": "Render per-value active state and aria-pressed on chip rows",
             "description": "Extend the chip-row rendering used by accommodation/event/blog listings (callers of `FilterChips.astro`) so each chip computes `active = values.includes(v)` against the facet's array param values (from `buildMultiToggleParamHref`'s target param), and renders `aria-pressed=\"true\"|\"false\"` accordingly. `FilterChips.astro` itself stays href-agnostic (per HOS-97) — this task changes the **caller** logic that computes `href`/`active` per chip, not the component's internal markup contract, unless a prop is missing to pass `aria-pressed` through (in which case add it minimally).\n\n**Files:** the accommodation/event/blog listing pages that render `FilterChips` (e.g. under `apps/web/src/pages/[lang]/alojamientos/`, `.../eventos/`, `.../publicaciones/`), plus `FilterChips.astro` only if an `aria-pressed` passthrough prop is missing.\n\n**Tests (component, `apps/web`):** AAA — (1) given `?types=HOTEL,CABIN`, the Hotel and Cabaña chips render `aria-pressed=\"true\"`, all others `\"false\"`; (2) given zero active values, all chips render `aria-pressed=\"false\"`; (3) multiple chips can be simultaneously active (not mutually exclusive).\n\n**Acceptance mapping:** US-5 (AC1), UX Considerations \"Multi active visual state\".",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "Compute active/aria-pressed per chip value from URL param in each listing caller",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add aria-pressed passthrough to FilterChips.astro if missing",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write component tests for multi-active and zero-active states",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "component", "a11y"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T17:10:00Z",
+                "completed": "2026-07-10T17:25:00Z"
+            }
         },
         {
             "id": "T-010",
             "title": "Add \"Clear (N)\" bulk-reset chip",
             "description": "Add a \"Limpiar (N)\" chip to the chip row that appears only when a facet has 2+ active values, showing the live count `N`. It reuses the existing removable \"active filter chip\" pattern from `apps/web/src/pages/[lang]/alojamientos/index.astro` (~L520-525) for visual/interaction parity. Its href removes the whole facet's array param (via a param-delete, not per-value toggle) while preserving every other param, and drops `page`. Accessible name includes the count, e.g. `aria-label=\"Limpiar 2 filtros de tipo\"` — add the i18n string in `@repo/i18n`.\n\n**Files:** the shared chip-row rendering helper/caller from T-009, plus a new i18n key in `packages/i18n/src/locales/{es,en,pt}/...` (e.g. `filters.clearCount`).\n\n**Tests (component, `apps/web`):** AAA — (1) 2+ active values → \"Limpiar (2)\" chip renders with correct count; (2) 0 or 1 active value → chip is absent; (3) activating it removes the facet's array param entirely while preserving other params, and drops `page`; (4) `aria-label` includes the numeric count.\n\n**Acceptance mapping:** US-4 (all AC).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": ["T-011", "T-012", "T-013"],
             "subtasks": [
                 {
                     "title": "Add Clear(N) chip generation logic reusing removable-chip pattern",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Add i18n key for the accessible label with count", "completed": false },
+                {
+                    "title": "Add i18n key for the accessible label with count",
+                    "completed": true
+                },
                 {
                     "title": "Write component tests for appear/absent thresholds, param removal, aria-label",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "component", "i18n"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T17:15:00Z",
+                "completed": "2026-07-10T17:40:00Z"
+            }
         },
         {
             "id": "T-011",
             "title": "Switch accommodation-type chip to in-place multi-toggle",
             "description": "On `apps/web/src/pages/[lang]/alojamientos/index.astro`, switch the type chip row from dedicated-route navigation (`/alojamientos/tipo/{slug}/`) to in-place `buildMultiToggleParamHref` toggling against the `types` array param (per the facet config from T-001), using the active-state/aria-pressed rendering from T-009 and the Clear(N) chip from T-010. The dedicated landing route itself is NOT modified (stays alive per T-017/US-6) — only the chip's `href` computation changes.\n\n**Files:** `apps/web/src/pages/[lang]/alojamientos/index.astro`.\n\n**Tests (component/integration, `apps/web`):** AAA — (1) clicking \"Hotel\" from an unfiltered listing → URL `?types=HOTEL`; (2) with `?types=HOTEL`, clicking \"Cabaña\" → `?types=HOTEL,CABIN` (accumulates, not replaces); (3) clicking the active \"Hotel\" chip while `?types=HOTEL,CABIN` → `?types=CABIN`; (4) clicking a chip while on the dedicated landing that adds a second value navigates to the base listing with both values (`/alojamientos/?types=HOTEL,CABIN`), not the landing.\n\n**Acceptance mapping:** US-1 (AC1, AC2), US-3 (AC1, AC2), US-6 (AC4).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-010"],
             "blocks": ["T-017", "T-023", "T-024"],
             "subtasks": [
                 {
                     "title": "Replace dedicated-route href with buildMultiToggleParamHref against types param",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Verify dedicated landing route untouched", "completed": false },
-                { "title": "Write accumulate/remove/landing-escape tests", "completed": false }
+                {
+                    "title": "Verify dedicated landing route untouched",
+                    "completed": true
+                },
+                {
+                    "title": "Write accumulate/remove/landing-escape tests",
+                    "completed": true
+                }
             ],
             "tags": ["web", "accommodations"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T17:45:00Z",
+                "completed": "2026-07-10T18:05:00Z"
+            }
         },
         {
             "id": "T-012",
             "title": "Switch blog/post-category chip to in-place multi-toggle",
             "description": "On the blog/publications listing page, switch the category chip row from dedicated-route navigation (`/publicaciones/categoria/{slug}/`) to in-place `buildMultiToggleParamHref` toggling against the `categories` array param (now backed by T-007's service forwarding), using the active-state/aria-pressed rendering from T-009 and Clear(N) from T-010. The dedicated landing route is NOT modified (stays alive per T-019/US-6).\n\n**Files:** `apps/web/src/pages/[lang]/publicaciones/index.astro` (confirm exact path).\n\n**Tests (component/integration, `apps/web`):** same matrix as T-011 applied to blog categories — accumulate, remove, landing-escape to base listing with multi-value param.\n\n**Acceptance mapping:** US-1 (AC1, AC2), US-3 (AC1, AC2), US-6 (AC4).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-010", "T-007"],
             "blocks": ["T-015", "T-019", "T-023"],
             "subtasks": [
                 {
                     "title": "Replace dedicated-route href with buildMultiToggleParamHref against categories param",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Verify dedicated landing route untouched", "completed": false },
-                { "title": "Write accumulate/remove/landing-escape tests", "completed": false }
+                {
+                    "title": "Verify dedicated landing route untouched",
+                    "completed": true
+                },
+                {
+                    "title": "Write accumulate/remove/landing-escape tests",
+                    "completed": true
+                }
             ],
             "tags": ["web", "blog"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T17:45:00Z",
+                "completed": "2026-07-10T18:05:00Z"
+            }
         },
         {
             "id": "T-013",
             "title": "Switch events-category chip from single to multi toggle",
             "description": "On the events listing page, the category chip already toggles in-place (via `buildToggleParamHref`, single-select). Switch it to `buildMultiToggleParamHref` against the `categories` array param (now backed by T-006's service forwarding), adding active-state/aria-pressed (T-009) and Clear(N) (T-010). No dedicated landing exists for events categories (per the facet config table), so there is no landing-escape case here.\n\n**Files:** `apps/web/src/pages/[lang]/eventos/index.astro` (confirm exact path).\n\n**Tests (component/integration, `apps/web`):** AAA — (1) clicking a second category chip accumulates (`?categories=A,B`, not replace); (2) clicking an active chip removes only that value; (3) removing the last active value drops the param entirely.\n\n**Acceptance mapping:** US-1 (AC1, AC2), US-3 (AC1, AC2), US-9 (AC4).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-010", "T-006"],
             "blocks": ["T-014", "T-018", "T-023"],
             "subtasks": [
                 {
                     "title": "Replace single-toggle href with buildMultiToggleParamHref against categories param",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write accumulate/remove tests for events categories",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "events"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T17:45:00Z",
+                "completed": "2026-07-10T18:05:00Z"
+            }
         },
         {
             "id": "T-014",
             "title": "Rename events sidebar FilterGroup id category to categories",
             "description": "In the events sidebar configuration for `FilterSidebar.client.tsx`, rename the category `FilterGroup` id from `category` to `categories` so `filter-reducer.ts`'s existing CSV serialization (`params.set(id, values.join(','))`) writes the array param the backend now accepts (T-006). This closes the latent bug where the sidebar already let users tick 2+ categories but serialized under the rejected singular key.\n\n**Files:** the events sidebar filter-group config (wherever `FilterSidebar` is instantiated for the events listing), `filter-reducer.ts` only if it hardcodes the `category` id anywhere (it should not — it's generic).\n\n**Tests (frontend, `apps/web`):** AAA — (1) checking 2 category boxes in the events sidebar and firing navigation writes `?categories=A,B` (not `?category=A,B`); (2) a single checked box still writes a working param (`?categories=A` or backward-compatible `?category=A` per the chosen single-value serialization — assert whichever the reducer actually does); (3) sidebar checkbox state reflects an existing `?categories=A,B` URL on load.\n\n**Acceptance mapping:** US-5 (AC3), US-9 (AC4, AC5), M-3.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013"],
             "blocks": ["T-024", "T-026"],
             "subtasks": [
                 {
                     "title": "Rename events sidebar FilterGroup id category to categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write sidebar serialization + load-state tests for events categories",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "sidebar", "events"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T18:06:00Z",
+                "completed": "2026-07-10T18:18:00Z"
+            }
         },
         {
             "id": "T-015",
             "title": "Rename blog sidebar FilterGroup id category to categories",
             "description": "Same rename as T-014, applied to the blog/publications sidebar's category `FilterGroup` id (`category` → `categories`), aligning with the backend's new `categories` array param (T-007).\n\n**Files:** the blog sidebar filter-group config (wherever `FilterSidebar` is instantiated for the publications listing).\n\n**Tests (frontend, `apps/web`):** same matrix as T-014 applied to blog categories — multi-select serialization under `categories` key, sidebar reflects an existing multi-value URL on load.\n\n**Acceptance mapping:** US-5 (AC3), US-9 (AC4, AC5), M-3.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": ["T-024", "T-026"],
             "subtasks": [
                 {
                     "title": "Rename blog sidebar FilterGroup id category to categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write sidebar serialization + load-state tests for blog categories",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "sidebar", "blog"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T18:06:00Z",
+                "completed": "2026-07-10T18:18:00Z"
+            }
         },
         {
             "id": "T-016",
             "title": "Implement shared 2+-value SEO noindex/canonical predicate",
             "description": "Extend `resolvePromotedFacetCanonical` (`apps/web/src/lib/seo/promoted-facet-canonical.ts`) or add a sibling helper implementing ONE shared predicate, consumed by every affected listing: 0 values → indexable, canonical = base listing (unchanged); exactly 1 value → indexable, canonical = the facet's `dedicatedLandingPattern` from the T-001 config (unchanged existing behavior); 2+ values → `noindex,follow` + canonical = base listing without facet params (new rule, per resolved OQ-1). Must be a single function/predicate, not per-page duplicated logic.\n\n**Files:** `apps/web/src/lib/seo/promoted-facet-canonical.ts` (extend) or a new sibling in the same `apps/web/src/lib/seo/` directory.\n\n**Tests (unit, `apps/web`):** AAA — (1) 0 values → indexable + base canonical; (2) 1 value → indexable + dedicated-landing canonical; (3) 2 values → `noindex,follow` + base canonical (no `?` in the canonical href); (4) 3+ values → same 2+ behavior (not a special 3-value case); (5) predicate is the same function called for accommodations/events/blog (assert via a shared-import test, not copy-pasted logic per page).\n\n**Acceptance mapping:** US-7 (AC1, AC2, AC3, AC4, AC5).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-017", "T-018", "T-019"],
             "subtasks": [
                 {
                     "title": "Implement 0/1/2+ predicate extending resolvePromotedFacetCanonical",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Write unit tests for the 0/1/2/3+ value matrix", "completed": false },
+                {
+                    "title": "Write unit tests for the 0/1/2/3+ value matrix",
+                    "completed": true
+                },
                 {
                     "title": "Assert single shared function used, not per-page duplication",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "seo"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T17:26:00Z",
+                "completed": "2026-07-10T17:31:00Z"
+            }
         },
         {
             "id": "T-017",
             "title": "Wire 2+-value SEO predicate into accommodations listing head",
             "description": "Call the shared predicate from T-016 in `apps/web/src/pages/[lang]/alojamientos/index.astro`'s `<head>` rendering (robots meta + canonical link), replacing/complementing the existing single-value `resolvePromotedFacetCanonical` call so it now also handles the 2+ case for the `types` param.\n\n**Files:** `apps/web/src/pages/[lang]/alojamientos/index.astro`.\n\n**Tests (SEO, `apps/web`):** AAA — (1) `/alojamientos/?types=HOTEL,CABIN` head emits `<meta name=\"robots\" content=\"noindex,follow\">` and canonical = `/alojamientos/` (no query); (2) `/alojamientos/?types=HOTEL` head is indexable with canonical = `/alojamientos/tipo/hotel/`; (3) `/alojamientos/` (0 values) indexable with base canonical; (4) `/alojamientos/tipo/hotel/` (dedicated landing) still resolves 200 and emits its existing canonical, unchanged.\n\n**Acceptance mapping:** US-6 (AC1, AC3), US-7 (AC1-AC4).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-016", "T-011"],
             "blocks": ["T-026"],
             "subtasks": [
                 {
                     "title": "Wire shared predicate into accommodations listing head",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write SEO tests for 0/1/2 value states and dedicated landing",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "seo", "accommodations"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T18:20:00Z",
+                "completed": "2026-07-10T18:45:00Z"
+            }
         },
         {
             "id": "T-018",
             "title": "Wire 2+-value SEO predicate into events listing head",
             "description": "Call the shared predicate from T-016 in the events listing page's `<head>` rendering for the `categories` param. Since events have no dedicated single-value landing, the 1-value case falls back to whatever the predicate defines for a facet without `dedicatedLandingPattern` (indexable, base-listing canonical — confirm this fallback in T-016's implementation).\n\n**Files:** `apps/web/src/pages/[lang]/eventos/index.astro`.\n\n**Tests (SEO, `apps/web`):** AAA — (1) `/eventos/?categories=MUSIC,CULTURE` head emits `noindex,follow` + base canonical; (2) `/eventos/?categories=MUSIC` (1 value, no dedicated landing) is indexable with base-listing canonical; (3) `/eventos/` (0 values) indexable with base canonical.\n\n**Acceptance mapping:** US-7 (AC1-AC4).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-016", "T-013"],
             "blocks": ["T-026"],
             "subtasks": [
-                { "title": "Wire shared predicate into events listing head", "completed": false },
+                {
+                    "title": "Wire shared predicate into events listing head",
+                    "completed": true
+                },
                 {
                     "title": "Write SEO tests for 0/1/2 value states (no-dedicated-landing fallback)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "seo", "events"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T18:20:00Z",
+                "completed": "2026-07-10T18:45:00Z"
+            }
         },
         {
             "id": "T-019",
             "title": "Wire 2+-value SEO predicate into blog listing head",
             "description": "Call the shared predicate from T-016 in the blog/publications listing page's `<head>` rendering for the `categories` param, preserving the existing dedicated-landing canonical for 1 value.\n\n**Files:** `apps/web/src/pages/[lang]/publicaciones/index.astro`.\n\n**Tests (SEO, `apps/web`):** AAA — (1) `/publicaciones/?categories=A,B` head emits `noindex,follow` + base canonical; (2) `/publicaciones/?categories=A` indexable with canonical = `/publicaciones/categoria/{slug}/`; (3) `/publicaciones/` (0 values) indexable, base canonical; (4) `/publicaciones/categoria/{slug}/` dedicated landing still resolves and emits its canonical, unchanged.\n\n**Acceptance mapping:** US-6 (AC2, AC3), US-7 (AC1-AC4).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-016", "T-012"],
             "blocks": ["T-026"],
             "subtasks": [
-                { "title": "Wire shared predicate into blog listing head", "completed": false },
+                {
+                    "title": "Wire shared predicate into blog listing head",
+                    "completed": true
+                },
                 {
                     "title": "Write SEO tests for 0/1/2 value states and dedicated landing",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "seo", "blog"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T18:20:00Z",
+                "completed": "2026-07-10T18:45:00Z"
+            }
         },
         {
             "id": "T-020",
             "title": "Write regression suite for the shipped ?category=A,B latent bug",
             "description": "Write a dedicated regression integration test suite (`apps/api`) proving the exact input that fails on `main` today — the sidebar already serializes `?category=A,B` for events/blog, which the backend silently rejects/mismatches — now matches both categories once expressed as `?categories=A,B` end-to-end (schema → model → service → route). This suite is explicitly framed as RED before T-006/T-007 land and GREEN after, so it cannot be satisfied by a partial fix.\n\n**Files:** new or extended integration test file(s) under `apps/api/test/` (or the existing events/posts route test files) — e.g. `apps/api/test/routes/public/events.categories-regression.test.ts` and the posts equivalent.\n\n**Tests:** AAA — (1) `GET /api/v1/public/events?categories=MUSIC,CULTURE` returns events of both categories, count > 0 for a fixture with both present; (2) same for `GET /api/v1/public/posts?categories=A,B`; (3) explicitly assert the response is NOT an error and NOT an empty/mismatched set (the exact failure mode being regressed).\n\n**Acceptance mapping:** M-3, US-9 (AC5).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-006", "T-007"],
             "blocks": ["T-027"],
             "subtasks": [
-                { "title": "Write events ?categories=A,B regression test", "completed": false },
-                { "title": "Write posts ?categories=A,B regression test", "completed": false }
+                {
+                    "title": "Write events ?categories=A,B regression test",
+                    "completed": true
+                },
+                {
+                    "title": "Write posts ?categories=A,B regression test",
+                    "completed": true
+                }
             ],
             "tags": ["test", "regression", "api"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T17:50:00Z",
+                "completed": "2026-07-10T18:12:00Z"
+            }
         },
         {
             "id": "T-021",
             "title": "Write backward-compatibility regression suite across all three facets",
             "description": "Write an integration test suite asserting the singular params (`type`, `category`) keep working standalone, and that when both singular and array are present, the array wins — across accommodations, events, and posts. This locks in the precedence rule from the model branches (T-004, T-005, and the pre-existing accommodation model).\n\n**Files:** `apps/api/test/routes/public/` — extend or add test files for accommodations, events, posts covering the backward-compat matrix.\n\n**Tests:** AAA — (1) `GET /accommodations?type=HOTEL` still returns hotels; (2) `GET /events?category=MUSIC` still returns music events; (3) `GET /posts?category=A` still returns category-A posts; (4) `GET /accommodations?type=HOTEL&types=CABIN,APARTMENT` returns cabins+apartments (array wins, not hotel); (5) same both-present-array-wins assertion for events and posts; (6) dedicated landings (`/alojamientos/tipo/hotel/`, `/publicaciones/categoria/{slug}/`) still resolve 200 via their internal singular-value query path.\n\n**Acceptance mapping:** US-10 (all AC).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-006", "T-007"],
             "blocks": ["T-027"],
             "subtasks": [
                 {
                     "title": "Write singular-param-still-works tests for all three facets",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write both-present array-wins tests for all three facets",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify dedicated landings still resolve via singular path",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["test", "regression", "api"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T17:50:00Z",
+                "completed": "2026-07-10T18:12:00Z"
+            }
         },
         {
             "id": "T-022",
@@ -500,43 +710,68 @@
             "subtasks": [
                 {
                     "title": "Write empty-array-param unfiltered tests (3 facets)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Write duplicate-member de-dup tests (3 facets)", "completed": false },
-                { "title": "Write whitespace-CSV parse tests (3 facets)", "completed": false },
+                {
+                    "title": "Write duplicate-member de-dup tests (3 facets)",
+                    "completed": true
+                },
+                {
+                    "title": "Write whitespace-CSV parse tests (3 facets)",
+                    "completed": true
+                },
                 {
                     "title": "Write all-values-selected == unfiltered tests (3 facets)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Write invalid-member strict-400 tests (3 facets)", "completed": false }
+                {
+                    "title": "Write invalid-member strict-400 tests (3 facets)",
+                    "completed": true
+                }
             ],
             "tags": ["test", "edge-case"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T17:50:00Z",
+                "completed": "2026-07-10T18:12:00Z"
+            }
         },
         {
             "id": "T-023",
             "title": "Write destinos no-op regression guard",
             "description": "Assert `apps/web/src/pages/[lang]/destinos/index.astro`'s filter logic (`activeIds` Set from `?attractions=a,b`, `cardMatchesFilter()` AND, the `is:inline` reconcile + `startViewTransition` script, `showFilters=false`, full-dataset SSR) has NO functional diff after this spec's implementation. Run this after the three chip-switch tasks (T-011/T-012/T-013) land, to catch any accidental shared-helper coupling.\n\n**Files:** no production changes expected — this task is test-only; extend/verify `apps/web` destinos test file(s) if a diff-detection assertion is worth adding (e.g. a snapshot of the filter function's behavior).\n\n**Tests:** (1) run the existing destinos test suite and confirm 100% green with zero modification; (2) add (if not already covered) an explicit assertion that destinos' `AND` semantics and client-side-only behavior are unchanged by the new multi-select facets' code paths (no accidental import of `buildMultiToggleParamHref` or the new facet config into destinos' logic).\n\n**Acceptance mapping:** US-12 (all AC), M-8.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-011", "T-012", "T-013"],
             "blocks": ["T-027"],
             "subtasks": [
                 {
                     "title": "Run existing destinos suite, confirm green with no modification",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add explicit no-coupling assertion (destinos doesn't import new multi-select helpers)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["test", "regression", "destinos"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T18:47:00Z",
+                "completed": "2026-07-10T19:05:00Z"
+            }
         },
         {
             "id": "T-024",
@@ -549,25 +784,33 @@
             "subtasks": [
                 {
                     "title": "Write chip+sidebar agreement test for a crafted multi-value URL (all 3 facets)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write sidebar-check-then-navigate reflects-in-chip test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write categories-key serialization assertion for events/blog sidebar",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write crafted-URL-alone reproduces state test (no in-memory store proof)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["test", "frontend", "a11y"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T18:47:00Z",
+                "completed": "2026-07-10T19:05:00Z"
+            }
         },
         {
             "id": "T-025",
@@ -578,81 +821,108 @@
             "blockedBy": ["T-024"],
             "blocks": ["T-027"],
             "subtasks": [
-                { "title": "Write back-navigation restores-prior-state test", "completed": false },
+                {
+                    "title": "Write back-navigation restores-prior-state test",
+                    "completed": true
+                },
                 {
                     "title": "Write forward-navigation restores-later-state test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write no-stale-selection-survives-popstate assertion",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["test", "frontend", "navigation"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T18:47:00Z",
+                "completed": "2026-07-10T19:05:00Z"
+            }
         },
         {
             "id": "T-026",
             "title": "Document per-facet operator model and URL-as-state principle",
             "description": "Add a section to `apps/web/CLAUDE.md` documenting: (1) the per-facet multi-select config model (`paramKey`/`singularParamKey`/`operator`/`enum`/`dedicatedLandingPattern`) introduced in T-001, with accommodation `types` as the blueprint and events/blog `categories` as the replication; (2) the principle that the URL query param is the ONLY shared state between chips and the sidebar (no in-memory store); (3) a note that the sidebar-vs-backend latent bug (`?category=A,B` silently failing) is now closed; (4) the 2+-value SEO `noindex`/canonical rule and where its shared predicate lives, so a future facet (HOS-97 gastronomía/experiencias) can be added by declaring config, not new logic.\n\n**Files:** `apps/web/CLAUDE.md`.\n\n**Tests:** none (documentation-only task); verify the doc renders correctly and cross-links to `apps/web/src/lib/filters/facet-config.ts` and `apps/web/src/lib/seo/promoted-facet-canonical.ts`.\n\n**Acceptance mapping:** supports maintainability goals from Architecture/Dependencies sections; no direct US (documentation deliverable from Implementation Approach Phase 7).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-014", "T-015", "T-017", "T-018", "T-019"],
             "blocks": ["T-027"],
             "subtasks": [
                 {
                     "title": "Add per-facet config model section to apps/web/CLAUDE.md",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document URL-as-single-source principle and closed latent bug",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document 2+-value SEO predicate location and extensibility note",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "web"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T18:46:00Z",
+                "completed": "2026-07-10T18:52:00Z"
+            }
         },
         {
             "id": "T-027",
             "title": "Write closeout.md and record decisions on the Linear issue",
             "description": "File `.specs/HOS-96-multi-select-quick-filter-chips/closeout.md` summarizing what shipped (per-facet config model, events/blog `categories` stack, multi-toggle helper + chip/sidebar wiring, SEO 2+-value rule), which PRs implemented it, and test results (unit/model/service/API/frontend/SEO/regression suites green). Update the Linear `HOS-96` issue with the same summary plus the four resolved OQ decisions (OQ-1..OQ-4, already pinned in the spec) as a decision log. Per project convention, this feature is entirely internal (no third-party integration) so no `status-needs-smoke-staging`/`-prod` label is required by default; apply `status-needs-smoke-staging` only if the owner wants a live SEO/index verification pass, per the spec's own note.\n\n**Files:** new `.specs/HOS-96-multi-select-quick-filter-chips/closeout.md`; Linear issue `HOS-96` (via the standard `/closeIssue` flow, not a hand-rolled state write).\n\n**Tests:** none (closeout task); verify all prior tasks' quality gates are green before filing.\n\n**Acceptance mapping:** closes the spec per Implementation Approach Phase 7.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-020", "T-021", "T-022", "T-023", "T-024", "T-025", "T-026"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Write closeout.md summarizing shipped work + test results",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Record OQ-1..OQ-4 decision log on the Linear issue",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Apply status-needs-smoke-staging label only if owner wants live SEO verification",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "closeout"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T19:10:00Z",
+                "completed": "2026-07-10T21:16:00Z"
+            }
         }
     ],
     "summary": {
         "total": 27,
-        "pending": 27,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 27,
         "blocked": 0,
         "averageComplexity": 1.9
     }

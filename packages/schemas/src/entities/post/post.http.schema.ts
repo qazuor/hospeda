@@ -22,6 +22,16 @@ export const PostSearchHttpSchema = BaseHttpSearchSchema.extend({
     // Basic filters with HTTP coercion
     status: LifecycleStatusEnumSchema.optional(),
     category: PostCategoryEnumSchema.optional(),
+    /**
+     * Multi-value sibling of `category` (HOS-96 US-9). Accepts CSV
+     * (`?categories=CULTURE,GASTRONOMY`) or repeated query params. Kept
+     * alongside the singular `category` enum for backward compatibility
+     * (US-10); when both are present the array takes precedence in the model
+     * layer, mirroring `AccommodationModel`'s `types`/`type` blueprint.
+     */
+    categories: createArrayQueryParam('Filter by multiple post categories').pipe(
+        z.array(PostCategoryEnumSchema).optional()
+    ),
     isFeatured: createBooleanQueryParam('Filter featured posts'),
     isPublished: createBooleanQueryParam('Filter published posts'),
 
@@ -284,6 +294,7 @@ export const httpToDomainPostSearch = (httpParams: PostSearchHttp): PostSearchIn
     // Post-specific filters that exist in both HTTP and domain schemas
     status: httpParams.status,
     category: httpParams.category,
+    categories: httpParams.categories,
     isFeatured: httpParams.isFeatured,
     isPublished: httpParams.isPublished,
     authorId: httpParams.authorId,

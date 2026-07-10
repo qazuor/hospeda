@@ -83,7 +83,24 @@ describe('buildEventsFilterGroups — date presets', () => {
             now: NOW
         });
 
-        expect(groups.find((g) => g.id === 'category')).toBeUndefined();
+        expect(groups.find((g) => g.id === 'categories')).toBeUndefined();
         expect(groups.find((g) => g.id === 'date')).toBeDefined();
+    });
+});
+
+describe('buildEventsFilterGroups — category group id (HOS-96 T-014)', () => {
+    it('names the category checkbox group "categories" (plural, array paramKey) — NOT the old singular "category"', () => {
+        const groups = buildEventsFilterGroups({ t, destinations: [], now: NOW });
+        const categoryGroup = groups.find((g) => g.type === 'checkbox');
+
+        expect(categoryGroup).toBeDefined();
+        expect(categoryGroup?.id).toBe('categories');
+        expect(groups.find((g) => g.id === 'category')).toBeUndefined();
+    });
+
+    it('includes the categories group by default (excludeCategory defaults to false)', () => {
+        const groups = buildEventsFilterGroups({ t, destinations: [], now: NOW });
+
+        expect(groups.find((g) => g.id === 'categories')).toBeDefined();
     });
 });

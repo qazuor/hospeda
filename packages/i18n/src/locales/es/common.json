@@ -83,6 +83,10 @@
         "PLAN_DISABLED": "El plan seleccionado ya no está disponible. Elegí otro plan para continuar."
     },
     "filters": "Filtros",
+    "filterChips": {
+        "clearLabel": "Limpiar ({{count}})",
+        "clearAriaLabel": "Limpiar {{count}} filtros"
+    },
     "goHome": "Volver al inicio",
     "in": "en",
     "loadMore": "Cargar más",

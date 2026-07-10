@@ -60,8 +60,17 @@ export function buildEventsFilterGroups({
         return { value, label: t(i18nKey, fallback), from: range.from, to: range.to };
     });
 
+    // HOS-96 T-014: id is the PLURAL array paramKey ('categories', matching
+    // the eventCategory facet's `paramKey` in `facet-config.ts`), not the
+    // legacy singular 'category'. `filter-reducer.ts`'s generic
+    // `initStateFromParams`/`buildParamsFromState`/`TOGGLE_CHECKBOX` are all
+    // keyed on `group.id`, so this single rename makes 2+ checked categories
+    // serialize as `?categories=A,B` (accepted end-to-end since HOS-96
+    // T-002/T-013) instead of the silently-rejected `?category=A,B`. The
+    // singular `category` param is still accepted on READ elsewhere
+    // (backward compat, US-10) — only the sidebar's own group id changes.
     const categoryGroup: FilterGroup = {
-        id: 'category',
+        id: 'categories',
         label: t('events.filters.category', 'Categoría'),
         type: 'checkbox',
         options: [

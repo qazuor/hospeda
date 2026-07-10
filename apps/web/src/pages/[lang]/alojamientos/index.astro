@@ -28,7 +28,12 @@ import { webLogger } from '@/lib/logger';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { resolvePromotedFacetCanonical } from '@/lib/seo/promoted-facet-canonical';
+import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
+import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
+import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
+import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
+import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
+import { XCircleIcon } from '@repo/icons';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
@@ -181,6 +186,11 @@ const result = await accommodationsApi.list({
 	pageSize,
 	q,
 	types,
+	// HOS-96 pre-merge review (Option A): forward the legacy singular `type`
+	// too (backend applies `types` OR, else `type`), so an old `?type=HOTEL`
+	// link filters the grid — matching how it now drives the SEO canonical and
+	// chip/sidebar highlight. Mirrors events/blog, which already forward both.
+	type: url.searchParams.get('type') ?? undefined,
 	destinationIds,
 	minPrice,
 	maxPrice,
@@ -378,12 +388,31 @@ const itemListEntries = cards.map((card) => ({
 
 const baseUrl = buildUrl({ locale, path: 'alojamientos' });
 
-// SPEC-306 OQ-3: when exactly one `types` value is selected and it is the
-// ONLY active facet/filter, canonicalize to that type's first-class landing
-// instead of the base listing — the single URL search engines should credit
-// for this exact result set. Any additional filter active alongside the type
-// falls through to the base-listing canonical (OQ-3's "combinations
-// canonicalize to base" rule).
+/**
+ * Active `types` values (the accommodationType facet's array `paramKey`) —
+ * computed once, hoisted here so it can drive the SEO decision below AND be
+ * reused by the type chips / Clear(N) chip / sidebar seed further down
+ * (HOS-96 T-017; no duplicate `readFacetActiveValues` call).
+ *
+ * HOS-96 pre-merge review (Option A): also passes `singularParamKey` so a
+ * legacy singular-only link (`?type=HOTEL`, no `types`) still resolves an
+ * active value here — otherwise the dedicated-landing SEO canonical
+ * (`/alojamientos/tipo/{slug}/`) and the chip/sidebar highlight were
+ * silently lost even though the value was still a valid, recognized type.
+ */
+const typeActiveValues = readFacetActiveValues({
+	searchParams: url.searchParams,
+	paramKey: FACET_CONFIG_BY_ID.accommodationType.paramKey,
+	singularParamKey: FACET_CONFIG_BY_ID.accommodationType.singularParamKey
+});
+
+// SPEC-306 OQ-3 / HOS-96 US-6/US-7 (T-017): the shared `resolveFacetSeoDecision`
+// predicate decides both `noindex` and the canonical target for this facet's
+// active values in ONE call — 0 values or another filter active -> indexable,
+// base canonical; exactly 1 value, no other filter -> indexable, canonical is
+// the type's first-class dedicated landing; 2+ values -> noindex,follow + base
+// canonical (no per-page-divergent slug transform — that logic lives once,
+// inside the predicate).
 const hasOtherAccommodationFilters = Boolean(
 	q ||
 		destinationIds ||
@@ -409,14 +438,23 @@ const hasOtherAccommodationFilters = Boolean(
 		(adults !== undefined && adults !== 2) ||
 		(childrenCount !== undefined && childrenCount !== 0)
 );
-const singlePromotedType = resolvePromotedFacetCanonical({
-	facetValues: typesArray,
+const facetSeoDecision = resolveFacetSeoDecision({
+	facetValues: typeActiveValues,
 	hasOtherFilters: hasOtherAccommodationFilters,
-	validEnumValues: Object.values(AccommodationTypeEnum)
+	validEnumValues: Object.values(AccommodationTypeEnum),
+	dedicatedLandingPattern: FACET_CONFIG_BY_ID.accommodationType.dedicatedLandingPattern
 });
-const canonicalBaseUrl = singlePromotedType
-	? buildUrl({ locale, path: `alojamientos/tipo/${singlePromotedType.toLowerCase().replace(/_/g, '-')}` })
-	: baseUrl;
+const canonicalBaseUrl =
+	facetSeoDecision.canonical.kind === 'dedicatedLanding' &&
+	FACET_CONFIG_BY_ID.accommodationType.dedicatedLandingPattern
+		? buildUrl({
+				locale,
+				path: FACET_CONFIG_BY_ID.accommodationType.dedicatedLandingPattern.replace(
+					'{slug}',
+					facetSeoDecision.canonical.slug
+				)
+			})
+		: baseUrl;
 
 // Self-canonical for paginated pages (SPEC-157 follow-up). Pages 2+ are served
 // at `/{locale}/alojamientos/page/{n}/` via an Astro.rewrite to this listing
@@ -430,31 +468,74 @@ const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalB
 /**
  * Quick-filter type chips shown above the listing grid (HOS-97). Uses the
  * canonical enum so any new accommodation type is picked up automatically.
- * The slug for the route is the lowercased enum value with `_` → `-` (e.g.
- * `COUNTRY_HOUSE` → `country-house`) to match `tipo/[type]/index.astro`.
  *
- * This row navigates to a dedicated `/alojamientos/tipo/{slug}/` route
- * (route-nav, not an in-place `?types=` toggle), so — matching the previous
- * `AccommodationTypeBadge` behavior on this page — no chip is ever marked
- * `active` here; the per-type landing page is what renders in a filtered
- * state.
+ * HOS-96 T-011: the chip href is now a real in-place multi-select toggle on
+ * `types` (via `buildMultiToggleParamHref`, keyed on the accommodationType
+ * facet's `paramKey`) instead of navigating to the dedicated
+ * `/alojamientos/tipo/{slug}/` route — clicking a second chip accumulates
+ * rather than replacing (US-1). `baseUrl` is the BASE listing (not the
+ * dedicated landing), so a chip clicked while landing-adjacent always lands
+ * on the base listing with the accumulated `types` param (US-6 AC4); the
+ * dedicated landing itself renders no chip row of its own (verified — it
+ * fixes the type via the URL path instead), so there is no "escape from the
+ * landing's own chips" case to handle there. The dedicated landing stays
+ * intact and unmodified as the single-value canonical entry (US-6).
+ *
+ * HOS-96 T-009: each chip's `active`/`aria-current` state is computed from
+ * the `types` array query param (the accommodationType facet's `paramKey` —
+ * already the multi-select source of truth end-to-end, see
+ * `facet-config.ts`), so several types can read as simultaneously active.
+ * `aria-current` (not `aria-pressed`) is what `FilterChips.astro` renders —
+ * `aria-pressed` briefly existed here but was removed after the CI a11y
+ * sweep flagged it as an `aria-allowed-attr` violation (invalid on `<a>`).
+ * `typeActiveValues` itself is computed once, above, alongside the SEO
+ * decision (T-017) — reused here, not recomputed.
  */
 const typeChips = Object.values(AccommodationTypeEnum).map((value) => {
     const enumValue = String(value);
-    const slug = enumValue.toLowerCase().replace(/_/g, '-');
+    const active = typeActiveValues.includes(enumValue);
     return {
         label: getAccommodationTypeLabel({ type: enumValue, t }),
-        href: buildUrl({ locale, path: `/alojamientos/tipo/${slug}/` }),
-        icon: getAccommodationTypeIcon({ type: enumValue })
+        href: buildMultiToggleParamHref({
+            baseUrl,
+            searchParams: url.searchParams,
+            key: FACET_CONFIG_BY_ID.accommodationType.paramKey,
+            value: enumValue,
+            singularKey: FACET_CONFIG_BY_ID.accommodationType.singularParamKey
+        }),
+        icon: getAccommodationTypeIcon({ type: enumValue }),
+        active
     };
+});
+
+// HOS-96 T-010/T-011: "Clear (N)" bulk-reset chip — appears only once 2+
+// types are active (US-4), reusing the removable active-filter-chip pattern
+// via the shared, generic i18n label/aria-label templates. HOS-96 pre-merge
+// review: also deletes the legacy singular `type` param, so clearing a
+// mixed/legacy URL fully resets the facet instead of leaving a stale
+// `?type=` behind.
+const typeClearChip = buildClearFacetChip({
+    baseUrl,
+    searchParams: url.searchParams,
+    paramKey: FACET_CONFIG_BY_ID.accommodationType.paramKey,
+    singularParamKey: FACET_CONFIG_BY_ID.accommodationType.singularParamKey,
+    count: typeActiveValues.length,
+    labelTemplate: t('common.filterChips.clearLabel'),
+    ariaLabelTemplate: t('common.filterChips.clearAriaLabel'),
+    icon: XCircleIcon
 });
 
 // Build initial filter params for the sidebar (avoids hydration flash).
 // The encoded `sortKey` is what the SortPopover reads — NOT the resolved
 // backend sortBy column, which is internal to this page.
+// HOS-96 pre-merge review: seeded from `typeActiveValues` (fallback-aware),
+// not the raw `types` URL string, so the sidebar's `types` checkbox group
+// stays coherent with the chip row and SEO decision for a legacy
+// singular-only `?type=HOTEL` link too — mirrors the events/blog pages,
+// which already seed their sidebar from their own hoisted active-values var.
 const initialParams: Record<string, string> = {};
 if (q) initialParams.q = q;
-if (types) initialParams.types = types;
+if (typeActiveValues.length > 0) initialParams.types = typeActiveValues.join(',');
 if (destinationIds) initialParams.destinationIds = destinationIds;
 if (minPrice !== undefined) initialParams.minPrice = String(minPrice);
 if (maxPrice !== undefined) initialParams.maxPrice = String(maxPrice);
@@ -614,6 +695,7 @@ const emptyStateSuggestions = [
 	title={t('accommodations.title', 'Alojamientos')}
 	description={t('accommodations.description', 'Encontrá los mejores alojamientos del Litoral Entrerriano.')}
 	canonicalPath={canonicalPath}
+	noindex={facetSeoDecision.noindex}
 	showFilters={true}
 	filterPosition="left"
 	ogTagline={t('accommodations.tagline', 'Encontrá tu lugar ideal')}
@@ -653,7 +735,7 @@ const emptyStateSuggestions = [
 	/>
 
 	<FilterChips
-		chips={typeChips}
+		chips={typeClearChip ? [...typeChips, typeClearChip] : typeChips}
 		ariaLabel={t('accommodations.typeChips.ariaLabel', 'Filtrar por tipo de alojamiento')}
 		showScrollButtons
 		prevLabel={t('common.prev', 'Anterior')}

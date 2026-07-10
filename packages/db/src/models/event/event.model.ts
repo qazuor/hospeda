@@ -1,6 +1,6 @@
 import type { Event } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
-import { and, count, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { events } from '../../schemas/event/event.dbschema.ts';
 import { userBookmarks } from '../../schemas/user/user_bookmark.dbschema.ts';
@@ -53,6 +53,46 @@ function buildMostSavedOrderExpr(order: 'asc' | 'desc'): SQL {
           AND ${userBookmarks.entityType} = 'EVENT'
           AND ${userBookmarks.deletedAt} IS NULL
     ) ${direction}`;
+}
+
+/**
+ * Extracts the `categories` (array, OR union) / `category` (singular) event
+ * filter from a generic `where` record and converts it into a manual
+ * `inArray`/`eq` SQL condition, mirroring `AccommodationModel`'s `types`/`type`
+ * precedence: the array wins when both are present, and an empty array is
+ * treated as "no filter" (never `inArray([])`).
+ *
+ * This is REQUIRED because `categories` is not a real column on the `events`
+ * table (only the singular `category` is) — the generic `buildWhereClause`
+ * helper has no way to turn it into `inArray()`, so passing it straight
+ * through would silently skip it as an unknown key, dropping the filter
+ * entirely instead of applying it (HOS-96 US-2/US-9 — the shipped latent bug:
+ * the sidebar already serializes `?category=A,B`/`?categories=A,B` but the
+ * backend never filtered by it).
+ *
+ * @param where - The raw filter record as received from the service layer.
+ * @returns The `where` record with `category`/`categories` stripped (so the
+ *   generic `buildWhereClause` never sees them), plus the manual SQL
+ *   condition to push into `additionalConditions` (if any).
+ */
+function extractEventCategoryCondition(where: Record<string, unknown>): {
+    where: Record<string, unknown>;
+    condition?: SQL<unknown>;
+} {
+    const { category, categories, ...rest } = where;
+    if (Array.isArray(categories) && categories.length > 0) {
+        return {
+            where: rest,
+            condition: inArray(events.category, categories as (typeof events.category._.data)[])
+        };
+    }
+    if (category !== undefined) {
+        return {
+            where: rest,
+            condition: eq(events.category, category as typeof events.category._.data)
+        };
+    }
+    return { where: rest, condition: undefined };
 }
 
 /**
@@ -114,15 +154,30 @@ export class EventModel extends BaseModelImpl<Event> {
         additionalConditions?: SQL[],
         tx?: DrizzleClient
     ): Promise<{ items: Event[]; total: number }> {
+        // HOS-96: strip category/categories from the generic where record and
+        // convert them into a manual inArray/eq condition BEFORE either branch
+        // below builds its query — see extractEventCategoryCondition() JSDoc.
+        const { where: sanitizedWhere, condition: categoryCondition } =
+            extractEventCategoryCondition(where ?? {});
+        const mergedConditions: SQL[] = [
+            ...(additionalConditions ?? []),
+            ...(categoryCondition ? [categoryCondition] : [])
+        ];
+
         const sortBy = options?.sortBy;
         const isSyntheticSort =
             sortBy === MOST_SAVED_SORT_FIELD || sortBy === START_DATE_SORT_FIELD;
         if (!isSyntheticSort) {
-            return super.findAll(where, options, additionalConditions, tx);
+            return super.findAll(
+                sanitizedWhere,
+                options,
+                mergedConditions.length > 0 ? mergedConditions : undefined,
+                tx
+            );
         }
 
         const db = this.getClient(tx);
-        const safeWhere = where ?? {};
+        const safeWhere = sanitizedWhere;
         const page = options?.page ?? 1;
         const pageSize = options?.pageSize ?? 10;
         const sortOrder: 'asc' | 'desc' =
@@ -136,8 +191,8 @@ export class EventModel extends BaseModelImpl<Event> {
 
             const allConditions: SQL[] = [];
             if (baseWhereClause) allConditions.push(baseWhereClause);
-            if (additionalConditions && additionalConditions.length > 0) {
-                allConditions.push(...additionalConditions);
+            if (mergedConditions.length > 0) {
+                allConditions.push(...mergedConditions);
             }
 
             const finalWhereClause =
@@ -164,7 +219,7 @@ export class EventModel extends BaseModelImpl<Event> {
             const [items, total] = await Promise.all([
                 itemsQuery,
                 this.count(safeWhere, {
-                    additionalConditions,
+                    additionalConditions: mergedConditions,
                     tx
                 })
             ]);
@@ -207,15 +262,31 @@ export class EventModel extends BaseModelImpl<Event> {
         additionalConditions?: SQL[],
         tx?: DrizzleClient
     ): Promise<{ items: Event[]; total: number }> {
+        // HOS-96: strip category/categories from the generic where record and
+        // convert them into a manual inArray/eq condition BEFORE either branch
+        // below builds its query — see extractEventCategoryCondition() JSDoc.
+        const { where: sanitizedWhere, condition: categoryCondition } =
+            extractEventCategoryCondition(where ?? {});
+        const mergedConditions: SQL[] = [
+            ...(additionalConditions ?? []),
+            ...(categoryCondition ? [categoryCondition] : [])
+        ];
+
         const sortBy = options.sortBy;
         if (sortBy !== START_DATE_SORT_FIELD) {
-            return super.findAllWithRelations(relations, where, options, additionalConditions, tx);
+            return super.findAllWithRelations(
+                relations,
+                sanitizedWhere,
+                options,
+                mergedConditions.length > 0 ? mergedConditions : undefined,
+                tx
+            );
         }
 
         warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
 
         const db = this.getClient(tx);
-        const safeWhere = where ?? {};
+        const safeWhere = sanitizedWhere;
         const page = options.page ?? 1;
         const pageSize = options.pageSize ?? 10;
         const sortOrder: 'asc' | 'desc' = options.sortOrder ?? 'asc';
@@ -228,8 +299,8 @@ export class EventModel extends BaseModelImpl<Event> {
 
             const allConditions: SQL[] = [];
             if (baseWhereClause) allConditions.push(baseWhereClause);
-            if (additionalConditions && additionalConditions.length > 0) {
-                allConditions.push(...additionalConditions);
+            if (mergedConditions.length > 0) {
+                allConditions.push(...mergedConditions);
             }
 
             const finalWhereClause =
@@ -256,7 +327,7 @@ export class EventModel extends BaseModelImpl<Event> {
                     limit: pageSize,
                     offset
                 }),
-                this.count(safeWhere, { additionalConditions, tx })
+                this.count(safeWhere, { additionalConditions: mergedConditions, tx })
             ]);
 
             // DRIZZLE-LIMITATION: relational query widens nullable JSONB columns vs the Event entity type; the projection returns the same row shape used elsewhere.
@@ -431,6 +502,26 @@ export class EventModel extends BaseModelImpl<Event> {
             } catch {}
             throw new DbError(this.entityName, 'searchWithRelations', params, err.message);
         }
+    }
+
+    /**
+     * Overrides {@link BaseModelImpl.count} to apply the same manual
+     * `categories`/`category` branch as {@link findAll} and
+     * {@link findAllWithRelations} (HOS-96 US-2/US-9), so the public count
+     * endpoint (which drives pagination totals) reflects the exact same
+     * OR-union filter as the items query.
+     */
+    override async count(
+        where: Record<string, unknown>,
+        options?: { additionalConditions?: SQL[]; tx?: DrizzleClient }
+    ): Promise<number> {
+        const { where: sanitizedWhere, condition: categoryCondition } =
+            extractEventCategoryCondition(where ?? {});
+        const mergedConditions: SQL[] = [
+            ...(options?.additionalConditions ?? []),
+            ...(categoryCondition ? [categoryCondition] : [])
+        ];
+        return super.count(sanitizedWhere, { ...options, additionalConditions: mergedConditions });
     }
 }
 

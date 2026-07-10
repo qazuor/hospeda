@@ -21,6 +21,16 @@ import { stripShapeDefaults } from '../../utils/utils.js';
 export const EventSearchHttpSchema = BaseHttpSearchSchema.extend({
     // Basic filters with HTTP coercion
     category: EventCategoryEnumSchema.optional(),
+    /**
+     * Multi-value sibling of `category` (HOS-96 US-9). Accepts CSV
+     * (`?categories=MUSIC,CULTURE`) or repeated query params. Kept alongside
+     * the singular `category` enum for backward compatibility (US-10); when
+     * both are present the array takes precedence in the model layer,
+     * mirroring `AccommodationModel`'s `types`/`type` blueprint.
+     */
+    categories: createArrayQueryParam('Filter by multiple event categories').pipe(
+        z.array(EventCategoryEnumSchema).optional()
+    ),
     isFeatured: createBooleanQueryParam('Filter featured events'),
     isVirtual: createBooleanQueryParam('Filter virtual events'),
 
@@ -220,6 +230,7 @@ export const httpToDomainEventSearch = (httpParams: EventSearchHttp): EventSearc
 
     // Event-specific filters that exist in both HTTP and domain schemas
     category: httpParams.category,
+    categories: httpParams.categories,
     isFeatured: httpParams.isFeatured,
     isVirtual: httpParams.isVirtual,
     minPrice: httpParams.minPrice,

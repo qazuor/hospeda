@@ -53,7 +53,9 @@ import {
     DEFAULT_EVENT_CATEGORIES
 } from '@/lib/event-listing-summary';
 import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
-import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
+import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
+import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
+import { XCircleIcon } from '@repo/icons';
 import {
     computeWhenQueryBounds,
     EVENT_DATE_FILTER_VALUES,
@@ -67,7 +69,9 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
-import { resolvePromotedFacetCanonical } from '@/lib/seo/promoted-facet-canonical';
+import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
+import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
+import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
 import { EventCategoryEnum } from '@repo/schemas';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -78,6 +82,25 @@ const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 const pageSize = 9;
 const q = url.searchParams.get('q') ?? undefined;
 const category = url.searchParams.get('category') ?? undefined;
+/**
+ * Active `categories` values (the eventCategory facet's array `paramKey`) —
+ * computed once, up front, and reused for both the API fetch (below) and the
+ * category chip active/href state (HOS-96 T-013). Singular `category` is
+ * still read and forwarded too (backward compat — old links / the array
+ * takes precedence server-side when both are present, US-10).
+ *
+ * HOS-96 pre-merge review (Option A): also passes `singularParamKey` so a
+ * legacy singular-only link (`?category=MUSIC`, no `categories`) still
+ * resolves an active value here — otherwise the grid kept filtering
+ * correctly (the singular value is forwarded to the API separately below)
+ * but the dedicated-landing SEO canonical (SPEC-306) and the chip/sidebar
+ * highlight were silently lost.
+ */
+const activeCategories = readFacetActiveValues({
+    searchParams: url.searchParams,
+    paramKey: FACET_CONFIG_BY_ID.eventCategory.paramKey,
+    singularParamKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey
+});
 /**
  * Maps the URL's user-friendly sort key (e.g. `upcoming`, `newest`) to the
  * backend `(sortBy, sortOrder)` pair. Encoding direction in the key lets the
@@ -170,6 +193,11 @@ const result = await eventsApi.list({
     pageSize,
     q,
     category,
+    // HOS-96 T-013: forward the accumulated multi-select values as a CSV
+    // string (never the raw JS array — `serializeParams` in `api/client.ts`
+    // does `String(value)`, which on an array yields a comma-joined string
+    // too, but relying on that implicit coercion is fragile; join explicitly).
+    categories: activeCategories.length > 0 ? activeCategories.join(',') : undefined,
     sortBy: sortResolved.sortBy,
     sortOrder: sortResolved.sortOrder,
     startDateAfter,
@@ -254,12 +282,18 @@ const sortOptions = [
 
 const baseUrl = buildUrl({ locale, path: 'eventos' });
 
-// SPEC-306 OQ-3: when `category` is the ONLY active facet/filter (no other
-// query params refining the result set), canonicalize to the category's
-// first-class landing instead of the base listing — that's the single URL
-// search engines should credit for this exact result set. Any additional
-// filter active alongside `category` falls through to the base-listing
-// canonical (OQ-3's "combinations canonicalize to base" rule).
+// SPEC-306 OQ-3 / HOS-96 US-6/US-7 (T-018): the shared `resolveFacetSeoDecision`
+// predicate decides both `noindex` and the canonical target for this facet's
+// active values in ONE call — 0 values or another filter active -> indexable,
+// base canonical; exactly 1 value, no other filter -> indexable, canonical is
+// the category's first-class dedicated landing (SPEC-306's
+// `/eventos/categoria/{slug}/`, preserved per owner decision — see
+// `facet-config.ts`'s `eventCategory.dedicatedLandingPattern`); 2+ values ->
+// noindex,follow + base canonical. Driven by `activeCategories` (the plural
+// array, computed once near the top of this file) — NOT the singular
+// `category`, which the superseded inline call used incorrectly (a latent
+// gap: a crafted `?categories=A,B` URL never triggered the old single-value
+// canonical logic at all, since it only ever looked at `category`).
 const hasOtherEventFilters = Boolean(
     q ||
         when !== 'all' ||
@@ -272,14 +306,23 @@ const hasOtherEventFilters = Boolean(
         startDateAfterFilter ||
         startDateBeforeFilter
 );
-const singlePromotedCategory = resolvePromotedFacetCanonical({
-    facetValues: category ? [category] : [],
+const facetSeoDecision = resolveFacetSeoDecision({
+    facetValues: activeCategories,
     hasOtherFilters: hasOtherEventFilters,
-    validEnumValues: Object.values(EventCategoryEnum)
+    validEnumValues: Object.values(EventCategoryEnum),
+    dedicatedLandingPattern: FACET_CONFIG_BY_ID.eventCategory.dedicatedLandingPattern
 });
-const canonicalBaseUrl = singlePromotedCategory
-    ? buildUrl({ locale, path: `eventos/categoria/${singlePromotedCategory.toLowerCase().replace(/_/g, '-')}` })
-    : baseUrl;
+const canonicalBaseUrl =
+    facetSeoDecision.canonical.kind === 'dedicatedLanding' &&
+    FACET_CONFIG_BY_ID.eventCategory.dedicatedLandingPattern
+        ? buildUrl({
+              locale,
+              path: FACET_CONFIG_BY_ID.eventCategory.dedicatedLandingPattern.replace(
+                  '{slug}',
+                  facetSeoDecision.canonical.slug
+              )
+          })
+        : baseUrl;
 
 // Self-canonical for paginated pages (SPEC-157 follow-up). Pages 2+ are served
 // at `/{locale}/eventos/page/{n}/` via an Astro.rewrite to this listing with
@@ -332,12 +375,20 @@ const resolvedCards = cards.map((card) => {
 /**
  * Build the `initialParams` record for FilterSidebar so server-rendered state
  * matches the URL on first paint (avoids hydration flash).
- * Keys match the URL param names emitted by FilterSidebar's reducer.
+ * Keys match the URL param names emitted by FilterSidebar's reducer — which
+ * means they must match each `FilterGroup.id`, NOT necessarily the raw URL
+ * param name. `FilterSidebar.client.tsx` seeds its initial state exclusively
+ * from THIS prop (`initStateFromParams({ ..., params: initialParams ?? {} })`)
+ * — it never reads `window.location.search` itself — so the `categories`
+ * checkbox group (HOS-96 T-014 renamed its id from `category` to `categories`)
+ * must be seeded under the `categories` key here, reusing the same
+ * `activeCategories` array already computed above for the API fetch (T-013),
+ * or the sidebar would silently desync from the URL on load.
  * `price` dual-range maps to `priceMin` / `priceMax` via the `id: 'price'` group.
  */
 const sidebarInitialParams: Record<string, string> = {};
 if (q)              sidebarInitialParams['q']        = q;
-if (category)       sidebarInitialParams['category'] = category;
+if (activeCategories.length > 0) sidebarInitialParams['categories'] = activeCategories.join(',');
 if (isFeaturedParam === 'true') sidebarInitialParams['isFeatured'] = 'true';
 if (destinationId)  sidebarInitialParams['destinationId'] = destinationId;
 if (startDateAfterFilter)  sidebarInitialParams['startDateAfter']  = startDateAfterFilter;
@@ -375,11 +426,22 @@ const paginationParams = new URLSearchParams(url.searchParams);
 paginationParams.delete('page');
 
 /**
- * Category quick-filter chips. Like the temporal chips, these filter the
- * listing in place via `?category=ENUM` (preserving every active filter and
- * resetting to page 1) instead of navigating to a separate /categoria/ page.
- * The chip matching the active category is highlighted; clicking it clears the
- * filter (toggle). Values are the EventCategoryEnum members the API expects.
+ * Category quick-filter chips. HOS-96 T-013: hrefs now toggle the real
+ * multi-select `categories` array param in place via
+ * `buildMultiToggleParamHref` (preserving every active filter and resetting
+ * to page 1) — clicking a second chip accumulates instead of replacing
+ * (US-1). Events has no dedicated per-category landing, so there is no
+ * landing-escape case to handle here (unlike accommodations/blog). Values
+ * are the EventCategoryEnum members the API expects.
+ *
+ * `activeCategories` (computed once, near the top of this file) already
+ * drives both the `categories` fetch param above and each chip's
+ * `active`/`aria-current` state here, so href, visual state, and the API
+ * request are all coherent (this also resolves the T-009 temporary
+ * "chip filters but doesn't visually highlight" gap). `aria-current` (not
+ * `aria-pressed`) is what `FilterChips.astro` renders — `aria-pressed`
+ * briefly existed here but was removed after the CI a11y sweep flagged it as
+ * an `aria-allowed-attr` violation (invalid on `<a>`).
  */
 const CATEGORY_CHIP_DEFS = [
     { value: 'MUSIC', label: t('events.categories.music', 'Música') },
@@ -393,23 +455,38 @@ const CATEGORY_CHIP_DEFS = [
 ] as const;
 
 const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
-    const isActive = category === value;
+    const active = activeCategories.includes(value);
     // BETA-113 (icon parity): reuse the same category → icon mapping the
     // event cards already use, so a category shows the identical icon on its
     // card and in this quick-filter chip.
     const icon = getEventCategoryIconComponent(value);
     return {
         label,
-        href: buildToggleParamHref({
+        href: buildMultiToggleParamHref({
             baseUrl,
             searchParams: paginationParams,
-            key: 'category',
+            key: FACET_CONFIG_BY_ID.eventCategory.paramKey,
             value,
-            isActive
+            singularKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey
         }),
-        active: isActive,
+        active,
         icon
     };
+});
+
+// HOS-96 T-010/T-013: "Clear (N)" bulk-reset chip — appears only once 2+
+// categories are active (US-4). HOS-96 pre-merge review: also deletes the
+// legacy singular `category` param, so clearing a mixed/legacy URL fully
+// resets the facet instead of leaving a stale `?category=` behind.
+const categoryClearChip = buildClearFacetChip({
+    baseUrl,
+    searchParams: paginationParams,
+    paramKey: FACET_CONFIG_BY_ID.eventCategory.paramKey,
+    singularParamKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey,
+    count: activeCategories.length,
+    labelTemplate: t('common.filterChips.clearLabel'),
+    ariaLabelTemplate: t('common.filterChips.clearAriaLabel'),
+    icon: XCircleIcon
 });
 
 // ItemList JSON-LD entries — the visible page of event cards, routed through
@@ -425,6 +502,7 @@ const itemListEntries = cards.map((card) => ({
 	title={t('events.title', 'Eventos')}
 	description={t('events.description', 'Descubrí eventos culturales, deportivos y gastronómicos del Litoral.')}
 	canonicalPath={canonicalPath}
+	noindex={facetSeoDecision.noindex}
 	showFilters={true}
 	filterPosition="left"
 	totalCount={total}
@@ -477,7 +555,7 @@ const itemListEntries = cards.map((card) => ({
 	-->
 	<!-- Category chips -->
 	<FilterChips
-		chips={categoryChips}
+		chips={categoryClearChip ? [...categoryChips, categoryClearChip] : categoryChips}
 		ariaLabel={t('events.categoryChips.ariaLabel', 'Filtrar por categoría de evento')}
 		showScrollButtons
 		prevLabel={t('common.prev', 'Anterior')}
