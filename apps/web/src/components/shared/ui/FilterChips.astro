@@ -46,6 +46,17 @@ interface ChipItem {
     readonly href: string;
     /** When true, the chip renders in the active/selected state. */
     readonly active?: boolean;
+    /**
+     * When defined, renders `aria-pressed="true"/"false"` on the chip anchor
+     * (HOS-96 US-5, OQ-2 resolved: chips stay `<a>` + `aria-pressed`, not
+     * `<button>`, since each href stays a valid navigable/shareable URL).
+     * Multi-select callers pass the per-value active state here so several
+     * chips can read as simultaneously pressed. Left `undefined` (the
+     * default — no attribute rendered at all) for single-select chip rows
+     * that don't participate in multi-select (e.g. HOS-97 gastronomía /
+     * experiencias), so this is fully backward compatible.
+     */
+    readonly ariaPressed?: boolean;
     /** Optional leading icon component (already resolved by the caller). */
     readonly icon?: ComponentType<IconProps>;
 }
@@ -92,12 +103,13 @@ const {
     <nav class="filter-chips__nav" aria-label={ariaLabel}>
         <div class="filter-chips__fade-wrapper">
             <ul class="filter-chips__list" role="list" data-filter-chips-list>
-                {chips.map(({ label, href, active, icon: Icon }) => (
+                {chips.map(({ label, href, active, icon: Icon, ariaPressed }) => (
                     <li class="filter-chips__item">
                         <a
                             href={href}
                             class:list={['filter-chips__chip', { 'filter-chips__chip--active': active }]}
                             aria-current={active ? 'true' : undefined}
+                            aria-pressed={typeof ariaPressed === 'boolean' ? (ariaPressed ? 'true' : 'false') : undefined}
                         >
                             {Icon && (
                                 <span class="filter-chips__chip-icon" aria-hidden="true">

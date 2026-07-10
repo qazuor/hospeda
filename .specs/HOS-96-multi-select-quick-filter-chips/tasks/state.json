@@ -276,35 +276,35 @@
             "id": "T-009",
             "title": "Render per-value active state and aria-pressed on chip rows",
             "description": "Extend the chip-row rendering used by accommodation/event/blog listings (callers of `FilterChips.astro`) so each chip computes `active = values.includes(v)` against the facet's array param values (from `buildMultiToggleParamHref`'s target param), and renders `aria-pressed=\"true\"|\"false\"` accordingly. `FilterChips.astro` itself stays href-agnostic (per HOS-97) — this task changes the **caller** logic that computes `href`/`active` per chip, not the component's internal markup contract, unless a prop is missing to pass `aria-pressed` through (in which case add it minimally).\n\n**Files:** the accommodation/event/blog listing pages that render `FilterChips` (e.g. under `apps/web/src/pages/[lang]/alojamientos/`, `.../eventos/`, `.../publicaciones/`), plus `FilterChips.astro` only if an `aria-pressed` passthrough prop is missing.\n\n**Tests (component, `apps/web`):** AAA — (1) given `?types=HOTEL,CABIN`, the Hotel and Cabaña chips render `aria-pressed=\"true\"`, all others `\"false\"`; (2) given zero active values, all chips render `aria-pressed=\"false\"`; (3) multiple chips can be simultaneously active (not mutually exclusive).\n\n**Acceptance mapping:** US-5 (AC1), UX Considerations \"Multi active visual state\".",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "Compute active/aria-pressed per chip value from URL param in each listing caller",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add aria-pressed passthrough to FilterChips.astro if missing",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write component tests for multi-active and zero-active states",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "component", "a11y"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T17:10:00Z",
+                "completed": "2026-07-10T17:25:00Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 19,
+        "pending": 18,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 1.9
     }

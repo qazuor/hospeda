@@ -15,9 +15,12 @@
  *
  * Reading is tolerant of both URL encodings of an array param — CSV
  * (`?types=HOTEL,CABIN`) and repeated keys (`?types=HOTEL&types=CABIN`) — and
- * trims whitespace around members. The resulting param is normalized to a
- * single de-duplicated CSV param, preserving first-seen order (resolved OQ-4).
+ * trims whitespace around members (via {@link readFacetActiveValues}, the
+ * shared reader). The resulting param is normalized to a single de-duplicated
+ * CSV param, preserving first-seen order (resolved OQ-4).
  */
+
+import { readFacetActiveValues } from './read-facet-active-values';
 
 interface BuildMultiToggleParamHrefParams {
     /** Canonical listing base URL (trailing slash, no query string). */
@@ -28,23 +31,6 @@ interface BuildMultiToggleParamHrefParams {
     readonly key: string;
     /** Candidate value for this chip (added if absent, removed if present). */
     readonly value: string;
-}
-
-/**
- * Read the current de-duplicated, order-preserving list of values for an array
- * query param, tolerating both CSV and repeated-key encodings plus whitespace.
- *
- * @param searchParams - Current URL search params.
- * @param key - Array param key to read.
- * @returns Unique values in first-seen order.
- */
-function readParamValues(searchParams: URLSearchParams, key: string): readonly string[] {
-    const raw = searchParams
-        .getAll(key)
-        .flatMap((entry) => entry.split(','))
-        .map((member) => member.trim())
-        .filter((member) => member.length > 0);
-    return [...new Set(raw)];
 }
 
 /**
@@ -72,7 +58,7 @@ export function buildMultiToggleParamHref({
     key,
     value
 }: BuildMultiToggleParamHrefParams): string {
-    const current = readParamValues(searchParams, key);
+    const current = readFacetActiveValues({ searchParams, paramKey: key });
     const next = current.includes(value)
         ? current.filter((member) => member !== value)
         : [...current, value];

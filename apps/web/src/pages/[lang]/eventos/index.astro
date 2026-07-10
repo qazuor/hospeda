@@ -68,6 +68,8 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
 import { resolvePromotedFacetCanonical } from '@/lib/seo/promoted-facet-canonical';
+import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
+import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
 import { EventCategoryEnum } from '@repo/schemas';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -378,8 +380,17 @@ paginationParams.delete('page');
  * Category quick-filter chips. Like the temporal chips, these filter the
  * listing in place via `?category=ENUM` (preserving every active filter and
  * resetting to page 1) instead of navigating to a separate /categoria/ page.
- * The chip matching the active category is highlighted; clicking it clears the
- * filter (toggle). Values are the EventCategoryEnum members the API expects.
+ * Values are the EventCategoryEnum members the API expects.
+ *
+ * HOS-96 T-009: each chip's `active`/`aria-pressed` state is now computed
+ * from the `categories` array query param (the eventCategory facet's
+ * `paramKey`) rather than the singular `category` used above for the href —
+ * the href itself is intentionally UNCHANGED here (still single-select
+ * toggle on `category`); switching it to the multi-value toggle is a later
+ * HOS-96 task. Until that lands, clicking a chip still filters correctly via
+ * `category`, but the chip only visually reads as active/pressed once the
+ * URL also carries the value under `categories` (e.g. a crafted multi-value
+ * URL, or once the sidebar/href migration lands).
  */
 const CATEGORY_CHIP_DEFS = [
     { value: 'MUSIC', label: t('events.categories.music', 'Música') },
@@ -392,8 +403,14 @@ const CATEGORY_CHIP_DEFS = [
     { value: 'WORKSHOP', label: t('events.categories.workshop', 'Taller') }
 ] as const;
 
+const categoryActiveValues = readFacetActiveValues({
+    searchParams: url.searchParams,
+    paramKey: FACET_CONFIG_BY_ID.eventCategory.paramKey
+});
+
 const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
     const isActive = category === value;
+    const active = categoryActiveValues.includes(value);
     // BETA-113 (icon parity): reuse the same category → icon mapping the
     // event cards already use, so a category shows the identical icon on its
     // card and in this quick-filter chip.
@@ -407,7 +424,8 @@ const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
             value,
             isActive
         }),
-        active: isActive,
+        active,
+        ariaPressed: active,
         icon
     };
 });

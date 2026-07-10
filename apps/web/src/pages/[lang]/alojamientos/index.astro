@@ -29,6 +29,8 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { resolvePromotedFacetCanonical } from '@/lib/seo/promoted-facet-canonical';
+import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
+import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
@@ -433,19 +435,28 @@ const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalB
  * The slug for the route is the lowercased enum value with `_` → `-` (e.g.
  * `COUNTRY_HOUSE` → `country-house`) to match `tipo/[type]/index.astro`.
  *
- * This row navigates to a dedicated `/alojamientos/tipo/{slug}/` route
- * (route-nav, not an in-place `?types=` toggle), so — matching the previous
- * `AccommodationTypeBadge` behavior on this page — no chip is ever marked
- * `active` here; the per-type landing page is what renders in a filtered
- * state.
+ * This row still navigates to a dedicated `/alojamientos/tipo/{slug}/` route
+ * (route-nav, not yet an in-place `?types=` toggle — that switch lands in a
+ * later HOS-96 task). HOS-96 T-009: each chip's `active`/`aria-pressed` state
+ * is now computed from the `types` array query param (the accommodationType
+ * facet's `paramKey` — already the multi-select source of truth end-to-end,
+ * see `facet-config.ts`), so several types can read as simultaneously active
+ * once the URL carries more than one value (e.g. via the sidebar).
  */
+const typeActiveValues = readFacetActiveValues({
+    searchParams: url.searchParams,
+    paramKey: FACET_CONFIG_BY_ID.accommodationType.paramKey
+});
 const typeChips = Object.values(AccommodationTypeEnum).map((value) => {
     const enumValue = String(value);
     const slug = enumValue.toLowerCase().replace(/_/g, '-');
+    const active = typeActiveValues.includes(enumValue);
     return {
         label: getAccommodationTypeLabel({ type: enumValue, t }),
         href: buildUrl({ locale, path: `/alojamientos/tipo/${slug}/` }),
-        icon: getAccommodationTypeIcon({ type: enumValue })
+        icon: getAccommodationTypeIcon({ type: enumValue }),
+        active,
+        ariaPressed: active
     };
 });
 

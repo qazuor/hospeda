@@ -247,6 +247,33 @@ describe('FilterChips.astro', () => {
         });
     });
 
+    describe('HOS-96 T-009 — aria-pressed passthrough (multi-select toggle semantics)', () => {
+        it('defines an optional readonly ariaPressed boolean on ChipItem', () => {
+            expect(src).toContain('readonly ariaPressed?: boolean');
+        });
+
+        it('destructures ariaPressed from each chip when mapping', () => {
+            expect(src).toMatch(/chips\.map\(\(\{[^}]*ariaPressed[^}]*\}\)/);
+        });
+
+        it('renders aria-pressed="true"/"false" driven by ariaPressed when defined', () => {
+            expect(src).toContain(
+                "aria-pressed={typeof ariaPressed === 'boolean' ? (ariaPressed ? 'true' : 'false') : undefined}"
+            );
+        });
+
+        it('omits aria-pressed entirely when ariaPressed is undefined (backward compatible with single-select callers)', () => {
+            // The false branch of the ternary must resolve to the `undefined` literal
+            // (not the string 'false'), so Astro drops the attribute altogether.
+            expect(src).toMatch(/aria-pressed=\{[^}]*:\s*undefined\}/);
+        });
+
+        it('keeps aria-current/active class behavior unchanged alongside aria-pressed', () => {
+            expect(src).toContain("aria-current={active ? 'true' : undefined}");
+            expect(src).toContain('filter-chips__chip--active');
+        });
+    });
+
     describe('HOS-97 — href-agnostic canonical component', () => {
         it('does not hardcode any query-param toggle or route-nav logic (caller-resolved hrefs)', () => {
             expect(src).not.toContain('URLSearchParams');
