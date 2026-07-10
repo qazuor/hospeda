@@ -1,6 +1,6 @@
 # TODOs: SEO/AEO on-page hardening (HOS-117)
 
-Status: in-progress | Progress: 15/17 active tasks (Wave 0; T-013/T-018; T-014 FAQ i18n; T-020 tests; T-022 410 Gone; Wave 4 CWV/rendering). Remaining: T-012 landings, T-021 closeout.
+Status: in-progress | Progress: 16/17 active tasks (Wave 0; T-013/T-018; T-014 FAQ i18n; T-020 tests; T-022 410 Gone; Wave 4 CWV/rendering; T-012 landings). Remaining: T-021 closeout.
 
 > **Replan 2026-07-09**: owner will delete all example/seed data from prod within
 > 2-3 days. Wave 1 (demo-content exclusion) is obsolete — deleting the data
@@ -32,8 +32,12 @@ Status: in-progress | Progress: 15/17 active tasks (Wave 0; T-013/T-018; T-014 F
 
 ## Wave 2 — Coverage & docs polish (P2)
 
-- [ ] T-012: Programmatic landings — geo×type go/no-go + unique-prose requirement (complexity: 2)
-      Note: actual prose depends on real content (post purge).
+- [x] T-012: Programmatic landings — geo×type go/no-go + unique-prose requirement (complexity: 2)
+      Done 2026-07-10 (doc: apps/web/docs/seo/programmatic-landings.md). Only the 13 by-type
+      landings are indexed (unique SEO meta, no body prose); comodidades/caracteristicas are
+      noindex. Unique-intro-prose requirement recorded (i18n key per type), authoring DEFERRED
+      to real content. geo×type = NO-GO (deferred): ~1000 thin near-duplicate pages, no content
+      to justify, geo browse already served by /destinos/[slug]/alojamientos/.
 - [x] T-013: Update json-ld-audit.md to typed-component reality (complexity: 1) [blocked by T-007 ✓]
       Done 2026-07-10: rewrote to typed-component reality, all 6 entities
       (+ RestaurantJsonLd / TouristAttractionJsonLd), points to json-ld-coverage.test.ts.
