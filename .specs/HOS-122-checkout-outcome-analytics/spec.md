@@ -69,11 +69,11 @@ the general result surface product needs to reason about conversion.
   only.
 - **NG-2** — No `checkout_started` reshuffle or property additions to it.
 - **NG-3** — No general typed PostHog event-name registry in this spec (see
-  OQ-1 — proposed as a separate follow-up).
+  D-6 — proposed as a separate follow-up).
 - **NG-4** — No "trial → converted to paid" downstream conversion event in this
-  spec (see OQ-4 — the `intendedInterval` attribution field HOS-115 already
-  persists makes it a clean follow-up).
-- **NG-5** — No new `checkout_failed` error event (see OQ-3).
+  spec (see D-9 — the `intendedInterval` attribution field HOS-115 already
+  persists makes it a clean follow-up, tracked as its own Linear issue).
+- **NG-5** — No new `checkout_failed` error event (see D-8).
 
 ## 5. Current baseline
 
@@ -151,6 +151,11 @@ present for every successful outcome (comp/trial/discount/paid), so it stitches
 `checkout_started` → `checkout_completed` without time-proximity heuristics. Both
 events share the same `distinctId` (`actor.id`) and `billingInterval`.
 
+**D-5 — `$set` a `last_checkout_outcome` person property** (OQ-5 resolved: yes) on
+the same `checkout_completed` capture, mirroring how `subscription_payment_succeeded`
+`$set`s `plan_status`. Near-zero cost, enables cohorting by a person's most recent
+checkout outcome. Property name `last_checkout_outcome` (owner-confirmed 2026-07-10).
+
 Capture call (mirrors the existing non-blocking pattern):
 
 ```ts
@@ -167,7 +172,9 @@ try {
       promoCodeIgnored: result.promoCodeIgnored ?? false,
       localSubscriptionId: result.localSubscriptionId,
       amount: amountMajor,                             // reuse value computed for checkout_started
-      currency: priceForInterval?.currency ?? null
+      currency: priceForInterval?.currency ?? null,
+      // D-5 (OQ-5 resolved yes): persist last outcome on the person for cohorting
+      $set: { last_checkout_outcome: result.appliedEffect ?? 'paid' }
     }
   });
 } catch (phErr) {
@@ -228,33 +235,30 @@ None. No user-facing surface. (The web client already gets `appliedEffect` in th
 - **R-2** — Double-counting if a caller retries `start-paid`. Same exposure as
   `checkout_started` today; `localSubscriptionId` lets analysis dedupe. Not made
   worse by this spec.
-- **R-3** — Event-name typo has no compile-time guard (no registry — see OQ-1).
+- **R-3** — Event-name typo has no compile-time guard (no registry — see D-6).
   Mitigation: the new name is asserted by tests (AC-1..AC-4).
 
-## 11. Open questions
+## 11. Resolved decisions
 
-- **OQ-1** — Introduce a typed PostHog event-name registry/union as part of this
-  spec, or keep the inline-string-literal convention? **Recommendation: out of
-  scope** (YAGNI for a single new event); file a separate `kind-needs-spec`
-  follow-up if a registry is wanted platform-wide. *Owner decision.*
-- **OQ-2** — Event name: `checkout_completed` (recommended) vs `checkout_result`
-  vs `checkout_outcome`. `checkout_completed` reads as the natural funnel step
-  after `checkout_started`. *Owner decision.*
-- **OQ-3** — Also emit a `checkout_failed` event when `initiatePaid*Subscription`
-  throws before resolving? **Recommendation: no** — `checkout_started` already
-  measures attempts, the absence of a paired `checkout_completed` is the drop-off
-  signal, and `payment_failed` covers post-checkout payment failures. *Owner
-  decision.*
-- **OQ-4** — Include a downstream "trial → converted to paid" conversion event
-  (reusing `metadata.intendedInterval` for interval attribution)?
-  **Recommendation: separate follow-up spec** — it belongs to the conversion
-  surface, not the checkout surface, and needs its own capture point (webhook /
-  cron), not this route. *Owner decision.*
-- **OQ-5** — Set a PostHog person property via `$set` on `checkout_completed`
-  (e.g. `last_checkout_outcome`, `plan_status`) as `subscription_payment_succeeded`
-  does? Low cost, useful for cohorting. **Recommendation: yes, `$set` a
-  `last_checkout_outcome` person property**, but confirm the property naming
-  convention with the owner. *Owner decision.*
+All open questions were resolved with the owner on 2026-07-10.
+
+- **D-6 (was OQ-1) — No typed event-name registry in this spec.** Keep the
+  existing inline-string-literal convention; a platform-wide registry is YAGNI for
+  a single new event and, if wanted, gets its own `kind-needs-spec` follow-up.
+  Tests blind the event name (R-3).
+- **D-7 (was OQ-2) — Event name is `checkout_completed`.** Reads as the natural
+  funnel step after `checkout_started` (symmetric started/completed pair).
+- **D-8 (was OQ-3) — No `checkout_failed` event.** `checkout_started` already
+  measures attempts; the absence of a paired `checkout_completed` (joinable via
+  `localSubscriptionId`) IS the drop-off signal; `payment_failed` covers
+  post-checkout payment failures. Less code, no lost signal.
+- **D-9 (was OQ-4) — "trial → converted to paid" conversion event is a separate
+  follow-up spec**, tracked as **HOS-130**. It belongs to the conversion surface
+  (capture point is a webhook/cron, not this route) and would reuse the
+  `metadata.intendedInterval` HOS-115 already persists. Out of scope here to keep
+  HOS-122 a ~1-file change.
+- **D-10 (was OQ-5) — Yes, `$set` a `last_checkout_outcome` person property** on
+  the `checkout_completed` capture (see D-5). Owner-confirmed the property name.
 
 ## 12. Implementation notes
 
