@@ -152,4 +152,71 @@ describe('translateApiError', () => {
             expect(message).not.toBe('Invalid email or password');
         });
     });
+
+    // BETA-146: failure modes that arrive WITHOUT a machine-readable code but
+    // carry an HTTP status (client timeout, network/offline, raw rate-limit).
+    describe('status-based fallback (BETA-146)', () => {
+        it('maps a network failure (status 0, no code) to the network message', () => {
+            const message = translateApiError({
+                error: { status: 0, message: 'Network error' },
+                locale: 'es'
+            });
+            expect(message).toBe('No pudimos conectar con el servidor. Probá de nuevo.');
+        });
+
+        it('maps a client-side timeout (status 408, no code) to the timeout message', () => {
+            const message = translateApiError({
+                error: { status: 408, message: 'Request timeout after 8000ms' },
+                locale: 'es'
+            });
+            expect(message).toBe('La solicitud tardó demasiado. Probá de nuevo.');
+        });
+
+        it('does not leak the raw English message for a code-less timeout', () => {
+            const message = translateApiError({
+                error: { status: 408, message: 'Request timeout after 8000ms' },
+                locale: 'es'
+            });
+            expect(message).not.toMatch(/Request timeout/);
+        });
+
+        it('maps a raw rate-limit (status 429, no code) to the rate-limit message', () => {
+            const message = translateApiError({
+                error: { status: 429, message: 'API request failed with status 429' },
+                locale: 'es'
+            });
+            expect(message).toBe(
+                'Demasiadas solicitudes. Esperá unos segundos y volvé a intentar.'
+            );
+        });
+
+        it('maps the timeout status in English too', () => {
+            const message = translateApiError({
+                error: { status: 408, message: 'Request timeout' },
+                locale: 'en'
+            });
+            expect(message).toBe('The request took too long. Please try again.');
+        });
+
+        it('prefers an explicit code over the status mapping', () => {
+            const message = translateApiError({
+                error: {
+                    status: 503,
+                    code: 'SERVICE_UNAVAILABLE',
+                    message: 'Service unavailable.'
+                },
+                locale: 'es'
+            });
+            expect(message).toMatch(/servicio no está disponible/i);
+        });
+
+        it('falls through to the raw/generic message for an unmapped code-less status', () => {
+            // 500 is intentionally NOT mapped (minimal policy) → keeps prior behaviour.
+            const message = translateApiError({
+                error: { status: 500, message: 'API request failed with status 500' },
+                locale: 'es'
+            });
+            expect(message).toBe('API request failed with status 500');
+        });
+    });
 });
