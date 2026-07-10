@@ -226,11 +226,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         schedule: '0 2 * * *',
         description: 'Expire trial subscriptions whose period has ended.'
     },
-    // 'trial-pre-end-notif' intentionally omitted: the job is disabled
-    // (HOS-115, duplicate of notification-schedule's TRIAL_ENDING_REMINDER
-    // sender — see the comment on trialPreEndNotifJob in
-    // cron/jobs/trial-pre-end-notif.job.ts). The manifest sync guard
-    // (schedules-manifest.test.ts) requires disabled jobs to be absent here.
+    // 'trial-pre-end-notif' intentionally omitted: the job was DELETED (HOS-121).
+    // It duplicated notification-schedule's TRIAL_ENDING_REMINDER sender; its two
+    // robustness advantages (skip-tolerant D-3 window + durable
+    // billing_subscription_events dedup) were ported into
+    // notification-schedule.job.ts, then the duplicate cron was removed. There is
+    // no registered job by this name anymore — this note is kept only to explain
+    // the gap for anyone tracing the SPEC-126 D5 / HOS-115 history.
     {
         name: 'webhook-retry',
         displayName: 'Reintento de webhooks',

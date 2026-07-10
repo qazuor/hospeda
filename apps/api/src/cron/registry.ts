@@ -36,7 +36,6 @@ import {
     socialPublishDispatchJob,
     subscriptionPollJob,
     trialExpiryJob,
-    trialPreEndNotifJob,
     webhookRetryJob
 } from './jobs/index.js';
 import type { CronJobDefinition } from './types';
@@ -65,7 +64,6 @@ export const cronJobs: CronJobDefinition[] = [
     conversationTokenReminderJob,
     conversationTokenCleanupJob,
     newsletterCloseCampaignsJob,
-    trialPreEndNotifJob,
     abandonedPendingSubsJob,
     applyScheduledPlanChangesJob,
     finalizeCancelledSubsJob,

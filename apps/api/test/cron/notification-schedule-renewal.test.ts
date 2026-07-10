@@ -981,7 +981,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             // Assert
             expect(result.details).toMatchObject({
                 renewalsSent: 2,
-                trialsEnding3Days: 0,
+                trialsEndingPrimary: 0,
                 trialsEnding1Day: 0
             });
         });

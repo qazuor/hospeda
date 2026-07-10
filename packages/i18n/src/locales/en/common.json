@@ -60,6 +60,7 @@
         "UNAUTHORIZED": "You need to sign in to do this.",
         "FORBIDDEN": "You don't have permission to do this.",
         "NOT_FOUND": "We couldn't find what you were looking for.",
+        "GONE": "This content is no longer available.",
         "ALREADY_EXISTS": "That resource already exists.",
         "INTERNAL_ERROR": "Something went wrong on our side. Please try again in a moment.",
         "NETWORK_ERROR": "We couldn't reach the server. Please try again.",
