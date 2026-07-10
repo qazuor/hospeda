@@ -10,6 +10,7 @@
  */
 
 import type { QZPayBilling, QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
+import { createMercadoPagoAdapter } from '@repo/billing';
 import {
     and,
     billingAddonPurchases,
@@ -33,6 +34,7 @@ import {
     syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
 import { getPostHogClient } from '../../../lib/posthog';
+import { qzpayLogger } from '../../../lib/qzpay-logger';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { AddonService } from '../../../services/addon.service';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
@@ -43,6 +45,7 @@ import { resolveOwnerUserId } from '../../../services/subscription-pause.service
 import { apiLogger } from '../../../utils/logger';
 import { sendNotification } from '../../../utils/notification-helper';
 import { sendPaymentFailureNotifications, sendPaymentSuccessNotification } from './notifications';
+import { completeReactivationSupersession } from './subscription-logic';
 import {
     extractAddonFromReference,
     extractAddonMetadata,
@@ -115,13 +118,13 @@ export async function confirmAnnualSubscription(input: {
     const { annualSubscriptionId, providerPaymentId, amount, currency, billing, source } = input;
 
     const db = getDb();
+    // Full-row select (not a column projection): HOS-123 T-013 needs
+    // `sub.metadata` below to drive `completeReactivationSupersession`, and a
+    // full row is exactly the shape `subscription-logic.ts::processSubscriptionUpdated`
+    // already passes as `localSubscription` on the monthly path — reusing the
+    // same select shape keeps both paths structurally aligned.
     const rows = await db
-        .select({
-            id: billingSubscriptions.id,
-            customerId: billingSubscriptions.customerId,
-            status: billingSubscriptions.status,
-            planId: billingSubscriptions.planId
-        })
+        .select()
         .from(billingSubscriptions)
         .where(
             and(
@@ -250,6 +253,50 @@ export async function confirmAnnualSubscription(input: {
     // annual plan and sees their features blocked until the TTL expires.
     // Synchronous, in-process, no I/O — safe to call unconditionally.
     clearEntitlementCache(sub.customerId);
+
+    // HOS-123 T-013: complete the deferred reactivation supersession for the
+    // annual one-time-payment path — mirrors the identical trigger already
+    // wired into the monthly preapproval webhook
+    // (`subscription-logic.ts::processSubscriptionUpdated`, HOS-114 T-007).
+    // `completeReactivationSupersession` reads `sub.metadata.supersedesSubscriptionId`
+    // and no-ops immediately when absent — the case for every normal
+    // (non-reactivation) annual /start-paid confirmation, exactly the same
+    // no-op the monthly path already relies on for a normal monthly
+    // /start-paid confirm. No new guard is needed here.
+    //
+    // `completeReactivationSupersession` itself never throws (see its JSDoc:
+    // it delegates per-pairing to `completeSupersessionPairing`, which
+    // swallows and reports its own outcome), so a supersession failure on
+    // one pairing can never undo the activation already committed above.
+    // The one extra failure mode specific to THIS call site — constructing
+    // the MP adapter, which the monthly path already receives from its
+    // caller and this one-time-payment path does not — is wrapped in its
+    // own try/catch so a transient adapter-construction error is equally
+    // non-blocking.
+    try {
+        const paymentAdapter = createMercadoPagoAdapter({ logger: qzpayLogger });
+        await completeReactivationSupersession({
+            billing,
+            paymentAdapter,
+            db,
+            localSubscription: sub,
+            providerEventId: providerPaymentId,
+            source
+        });
+    } catch (supersessionErr) {
+        apiLogger.error(
+            {
+                annualSubscriptionId,
+                providerPaymentId,
+                source,
+                error:
+                    supersessionErr instanceof Error
+                        ? supersessionErr.message
+                        : String(supersessionErr)
+            },
+            'Annual subscription activation: reactivation supersession trigger failed — activation already committed, superseded subscription may need manual cancellation'
+        );
+    }
 
     // SPEC-309 T-010: sync featuredByEntitlement via the shared resolver
     // (T-004) — the subscription's status was flipped to ACTIVE just above,
