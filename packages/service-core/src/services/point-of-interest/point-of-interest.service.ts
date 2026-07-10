@@ -1,15 +1,41 @@
 import { DestinationModel, PointOfInterestModel, RDestinationPointOfInterestModel } from '@repo/db';
-import type { CountResponse, PointOfInterest } from '@repo/schemas';
+import type {
+    CountResponse,
+    Destination,
+    DestinationIdType,
+    DestinationPointOfInterestRelation,
+    PointOfInterest,
+    PointOfInterestIdType
+} from '@repo/schemas';
 import {
+    type DestinationIdsByPointOfInterestSlugsInput,
+    DestinationIdsByPointOfInterestSlugsInputSchema,
+    type DestinationIdsByPointOfInterestSlugsOutput,
+    type DestinationsByPointOfInterestInput,
+    DestinationsByPointOfInterestInputSchema,
+    type PointOfInterestAddToDestinationInput,
+    PointOfInterestAddToDestinationInputSchema,
     PointOfInterestCreateInputSchema,
     type PointOfInterestListWithCountsResponse,
+    type PointOfInterestRemoveFromDestinationInput,
+    PointOfInterestRemoveFromDestinationInputSchema,
     type PointOfInterestSearchInput,
     PointOfInterestSearchInputSchema,
-    PointOfInterestUpdateInputSchema
+    PointOfInterestUpdateInputSchema,
+    type PointsOfInterestByDestinationInput,
+    PointsOfInterestByDestinationInputSchema,
+    ServiceErrorCode
 } from '@repo/schemas';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
-import type { Actor, PaginatedListOutput, ServiceConfig, ServiceContext } from '../../types';
+import {
+    type Actor,
+    type PaginatedListOutput,
+    type ServiceConfig,
+    type ServiceContext,
+    ServiceError,
+    type ServiceOutput
+} from '../../types';
 import {
     normalizeCreateInput,
     normalizeListInput,
@@ -141,6 +167,307 @@ export class PointOfInterestService extends BaseCrudRelatedService<
     }
     protected createDefaultRelatedModel(): RDestinationPointOfInterestModel {
         return new RDestinationPointOfInterestModel();
+    }
+
+    /**
+     * Adds a point of interest to a destination, ensuring validation,
+     * permissions, and uniqueness (HOS-113 OQ-1, M2M). Optimized to run
+     * existence checks in parallel. Mirrors
+     * `AttractionService.addAttractionToDestination`.
+     * @param actor - The actor performing the action
+     * @param params - The params required to add the POI to the destination
+     * @param ctx - Optional service context carrying transaction and hookState.
+     */
+    public async addPointOfInterestToDestination(
+        actor: Actor,
+        params: PointOfInterestAddToDestinationInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ relation: DestinationPointOfInterestRelation }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'addPointOfInterestToDestination',
+            input: { ...params, actor },
+            schema: PointOfInterestAddToDestinationInputSchema,
+            ctx,
+            execute: async (validatedParams, actor) => {
+                await this._canAddPointOfInterestToDestination(actor);
+                const { destinationId, pointOfInterestId } = validatedParams;
+
+                // Run all existence checks in parallel for better performance
+                const [pointOfInterest, destination, existing] = await Promise.all([
+                    this.model.findOne({ id: pointOfInterestId as PointOfInterestIdType }),
+                    this.destinationModel.findOne({ id: destinationId as DestinationIdType }),
+                    this.relatedModel.findOne({
+                        destinationId: destinationId as DestinationIdType,
+                        pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                    })
+                ]);
+
+                if (!pointOfInterest) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Point of interest not found'
+                    );
+                }
+                if (!destination) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+                }
+                if (existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.ALREADY_EXISTS,
+                        'Point of interest already added to destination'
+                    );
+                }
+
+                // Create the relation
+                const relation = await this.relatedModel.create({
+                    destinationId: destinationId as DestinationIdType,
+                    pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                });
+
+                // If the model returns just an id or number, fetch the full relation
+                let fullRelation = relation;
+                if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
+                    const found = await this.relatedModel.findOne({
+                        destinationId: destinationId as DestinationIdType,
+                        pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                    });
+                    if (!found) {
+                        throw new ServiceError(
+                            ServiceErrorCode.INTERNAL_ERROR,
+                            'Failed to create relation'
+                        );
+                    }
+                    fullRelation = found;
+                }
+                return { relation: fullRelation as DestinationPointOfInterestRelation };
+            }
+        });
+    }
+
+    /**
+     * Removes a point of interest from a destination.
+     * @param actor - The actor performing the action
+     * @param params - The params required to remove the POI from the destination
+     * @param ctx - Optional service context carrying transaction and hookState.
+     */
+    public async removePointOfInterestFromDestination(
+        actor: Actor,
+        params: PointOfInterestRemoveFromDestinationInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ relation: DestinationPointOfInterestRelation }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'removePointOfInterestFromDestination',
+            input: { ...params, actor },
+            schema: PointOfInterestRemoveFromDestinationInputSchema,
+            ctx,
+            execute: async (validatedParams, actor) => {
+                await this._canRemovePointOfInterestFromDestination(actor);
+                const { destinationId, pointOfInterestId } = validatedParams;
+                // Verify point of interest exists
+                const pointOfInterest = await this.model.findOne({
+                    id: pointOfInterestId as PointOfInterestIdType
+                });
+                if (!pointOfInterest) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Point of interest not found'
+                    );
+                }
+                const destination = await this.destinationModel.findOne({
+                    id: destinationId as DestinationIdType
+                });
+                if (!destination) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+                }
+                // Verify that the relation exists
+                const existing = await this.relatedModel.findOne({
+                    destinationId: destinationId as DestinationIdType,
+                    pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                });
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Point of interest relation not found for this destination'
+                    );
+                }
+                // Remove the relation (soft delete)
+                const relation = await this.relatedModel.softDelete({
+                    destinationId: destinationId as DestinationIdType,
+                    pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                });
+                if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
+                    const fullRelation = await this.relatedModel.findOne({
+                        destinationId: destinationId as DestinationIdType,
+                        pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                    });
+                    if (!fullRelation) {
+                        throw new ServiceError(
+                            ServiceErrorCode.INTERNAL_ERROR,
+                            'Failed to remove relation'
+                        );
+                    }
+                    return { relation: fullRelation };
+                }
+                if (!relation) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to remove relation'
+                    );
+                }
+                return { relation: relation as DestinationPointOfInterestRelation };
+            }
+        });
+    }
+
+    /**
+     * Lists all points of interest for a destination.
+     * Optimized to use parallel queries instead of sequential ones.
+     * @param actor - The actor performing the action
+     * @param params - The params containing the destination ID
+     * @param ctx - Optional service context carrying transaction and hookState.
+     */
+    public async getPointsOfInterestForDestination(
+        actor: Actor,
+        params: PointsOfInterestByDestinationInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ pointsOfInterest: PointOfInterest[] }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getPointsOfInterestForDestination',
+            input: { ...params, actor },
+            schema: PointsOfInterestByDestinationInputSchema,
+            ctx,
+            execute: async (validatedParams, actor) => {
+                await this._canList(actor);
+                const { destinationId } = validatedParams;
+
+                // Run existence check and data fetch in parallel
+                const [destination, relationsResult] = await Promise.all([
+                    this.destinationModel.findOne({
+                        id: destinationId as DestinationIdType
+                    }),
+                    this.relatedModel.findAll({ destinationId })
+                ]);
+
+                if (!destination) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+                }
+
+                const { items: relations } = relationsResult;
+
+                // If no relations, return empty array early
+                if (relations.length === 0) {
+                    return { pointsOfInterest: [] };
+                }
+
+                const poiIds = relations.map(
+                    (r: DestinationPointOfInterestRelation) => r.pointOfInterestId
+                );
+
+                // Fetch all points of interest in one query, sorted by displayWeight DESC
+                const { items: pointsOfInterest } = await this.model.findAll({ id: poiIds });
+                const sorted = [...pointsOfInterest].sort(
+                    (a, b) => (b.displayWeight ?? 50) - (a.displayWeight ?? 50)
+                );
+                return { pointsOfInterest: sorted };
+            }
+        });
+    }
+
+    /**
+     * Lists all destinations for a given point of interest (HOS-113 OQ-1 —
+     * M2M, so a POI may legitimately map to more than one destination).
+     * Optimized to use parallel queries instead of sequential ones.
+     * @param actor - The actor performing the action
+     * @param params - The params containing the point of interest ID
+     * @param ctx - Optional service context carrying transaction and hookState.
+     */
+    public async getDestinationsByPointOfInterest(
+        actor: Actor,
+        params: DestinationsByPointOfInterestInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ destinations: Destination[] }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getDestinationsByPointOfInterest',
+            input: { ...params, actor },
+            schema: DestinationsByPointOfInterestInputSchema,
+            ctx,
+            execute: async (validatedParams, actor) => {
+                await this._canList(actor);
+                const { pointOfInterestId } = validatedParams;
+
+                // Run existence check and data fetch in parallel
+                const [pointOfInterest, relationsResult] = await Promise.all([
+                    this.model.findOne({
+                        id: pointOfInterestId as PointOfInterestIdType
+                    }),
+                    this.relatedModel.findAll({ pointOfInterestId })
+                ]);
+
+                if (!pointOfInterest) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Point of interest not found'
+                    );
+                }
+
+                const { items: relations } = relationsResult;
+
+                // If no relations, return empty array early
+                if (relations.length === 0) {
+                    return { destinations: [] };
+                }
+
+                const destinationIds = relations.map(
+                    (r: DestinationPointOfInterestRelation) => r.destinationId
+                );
+
+                // Fetch all destinations in one query
+                const { items: destinations } = await this.destinationModel.findAll({
+                    id: destinationIds
+                });
+                return { destinations };
+            }
+        });
+    }
+
+    /**
+     * Bulk-resolves point-of-interest SLUGS (not a single UUID) to the
+     * destinations that have them, via `r_destination_point_of_interest`
+     * (HOS-113 §6.2/§6.3 — accommodation proximity search and AI search
+     * resolution entry point). Consumed by the AI search-chat handler and
+     * the `resolvePoiToCoordinates` helper (Phase 2/3), which only have
+     * NL-matched slugs from a curated allowlist, never a pre-resolved POI
+     * UUID — this is the slug-bulk sibling of
+     * {@link getDestinationsByPointOfInterest} (single UUID, paginated).
+     * Mirrors `AttractionService.getDestinationIdsByAttractionSlugs`
+     * exactly.
+     *
+     * @param actor - The actor performing the action.
+     * @param params - The params containing the point-of-interest slugs to resolve.
+     * @param ctx - Optional service context carrying transaction and hookState.
+     * @returns De-duplicated destination UUIDs (never throws NOT_FOUND — an
+     *   unmatched slug or a destination-less POI simply yields fewer, or
+     *   zero, ids; the caller treats an empty result as "skip constraint").
+     */
+    public async getDestinationIdsByPointOfInterestSlugs(
+        actor: Actor,
+        params: DestinationIdsByPointOfInterestSlugsInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<DestinationIdsByPointOfInterestSlugsOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getDestinationIdsByPointOfInterestSlugs',
+            input: { ...params, actor },
+            schema: DestinationIdsByPointOfInterestSlugsInputSchema,
+            ctx,
+            execute: async (validatedParams, _actor, resolvedCtx) => {
+                await this._canList(actor);
+                const destinationIds = await this.model.findDestinationIdsBySlugs(
+                    validatedParams.slugs,
+                    resolvedCtx.tx
+                );
+                return { destinationIds };
+            }
+        });
     }
 
     protected async _executeSearch(
