@@ -260,6 +260,7 @@ export const AccommodationCreateHttpSchema = z.object({
 
     // Contact information (flat fields mapped to ContactInfoSchema in converter)
     phone: z.string().optional(),
+    whatsapp: z.string().optional(),
     email: z
         .string()
         .email({ message: 'zodError.common.contact.personalEmail.invalid' })
@@ -621,11 +622,13 @@ export const httpToDomainAccommodationCreate = (
 
     // Contact info mapping from flat HTTP fields to nested ContactInfoSchema
     ...(httpData.phone !== undefined ||
+    httpData.whatsapp !== undefined ||
     httpData.email !== undefined ||
     httpData.website !== undefined
         ? {
               contactInfo: {
                   mobilePhone: httpData.phone || '',
+                  whatsapp: httpData.whatsapp,
                   personalEmail: httpData.email,
                   website: httpData.website
               }
@@ -857,11 +860,13 @@ export const httpToDomainAccommodationUpdate = (
     // Critically, do NOT inject `mobilePhone: ''` when `phone` is absent — that
     // empty-string default would clobber the stored phone via the JSONB merge.
     ...(httpData.phone !== undefined ||
+    httpData.whatsapp !== undefined ||
     httpData.email !== undefined ||
     httpData.website !== undefined
         ? {
               contactInfo: {
                   ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
+                  ...(httpData.whatsapp === undefined ? {} : { whatsapp: httpData.whatsapp }),
                   ...(httpData.email === undefined ? {} : { personalEmail: httpData.email }),
                   ...(httpData.website === undefined ? {} : { website: httpData.website })
               }

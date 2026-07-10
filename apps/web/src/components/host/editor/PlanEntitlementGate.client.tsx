@@ -51,7 +51,7 @@ export interface PlanEntitlementGateProps {
  * ```tsx
  * <PlanEntitlementGate
  *   entitlementKey="can_use_rich_description"
- *   upgradeUrl="/suscriptores/precios/"
+ *   upgradeUrl="/suscriptores/planes/"
  * >
  *   <RichTextEditor {...props} />
  * </PlanEntitlementGate>

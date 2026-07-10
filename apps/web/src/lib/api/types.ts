@@ -210,6 +210,7 @@ export interface AccommodationEditData {
     readonly featureIds: readonly string[];
     // Phase B: contact info (flat HTTP fields mapped to ContactInfoSchema)
     readonly phone: string;
+    readonly whatsapp: string;
     readonly email: string;
     readonly website: string;
     // Phase B: social networks (flat HTTP fields mapped to SocialNetworkSchema)

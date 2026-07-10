@@ -1,12 +1,21 @@
 /**
- * Soft-deleted resource access tests (SPEC-092 T-087).
+ * Soft-deleted resource access tests (SPEC-092 T-087, refined by HOS-117 T-022).
  *
  * Validates the contract that public endpoints MUST NOT leak data about
- * soft-deleted resources:
+ * soft-deleted resources, with a deliberate carve-out for previously-PUBLIC
+ * content:
  *  - GET on a soft-deleted entity returns null body (or 404) without
- *    revealing the entity ever existed.
+ *    revealing the entity ever existed — UNLESS the entity was PUBLIC
+ *    (indexable) before deletion, in which case it returns 410 GONE so
+ *    crawlers/LLM fetchers deindex the URL fast. A 410 discloses that a
+ *    PUBLIC URL is gone, but that URL was already publicly discoverable, so
+ *    this is not an enumeration leak.
+ *  - A soft-deleted PRIVATE/RESTRICTED entity (never publicly discoverable)
+ *    stays uniformly 404 — indistinguishable from a genuinely-nonexistent
+ *    slug. This preserves the original anti-enumeration contract for content
+ *    that was never public.
  *  - Error responses for soft-deleted resources do not leak titles,
- *    internal IDs, or audit info.
+ *    internal IDs, or audit info, regardless of status code (404 or 410).
  *  - Admin endpoints with `includeDeleted=true` flag DO surface them.
  *
  * Soft-delete behavior at the model layer (`deletedAt IS NULL` filter)
@@ -105,19 +114,44 @@ describe('Soft-deleted resource access — public route contract', () => {
         expect(JSON.stringify(body)).not.toMatch(/title|adminInfo|internal_id/i);
     });
 
-    it('does NOT differentiate between soft-deleted and never-existed in the response shape', async () => {
-        // Both branches must produce the same observable response so an
-        // attacker cannot enumerate previously-existing slugs.
+    it('does NOT differentiate between a soft-deleted PRIVATE entity and never-existed (anti-enumeration holds)', async () => {
+        // Content that was never publicly discoverable must produce the same
+        // observable response whether it never existed or was deleted, so an
+        // attacker cannot enumerate previously-existing PRIVATE/RESTRICTED
+        // slugs. Both branches surface as ServiceErrorCode.NOT_FOUND -> 404:
+        // `BaseCrudRead.getByField` throws NOT_FOUND directly when no row
+        // matches (it never resolves as `{ data: null }` — see
+        // `packages/service-core/src/base/base.crud.read.ts`), and a
+        // soft-deleted PRIVATE row resolves through the same NOT_FOUND path
+        // via the service's visibility gate. Same code, same status, same
+        // body shape.
         const responses: Array<{ status: number; bodyShape: string }> = [];
 
         for (const scenario of [
-            { name: 'never-existed', value: null },
-            { name: 'soft-deleted', value: null }
+            {
+                name: 'never-existed',
+                result: {
+                    success: false,
+                    error: { code: ServiceErrorCode.NOT_FOUND, message: 'Accommodation not found' }
+                }
+            },
+            {
+                name: 'soft-deleted-private',
+                // A soft-deleted PRIVATE entity resolves through the service's
+                // visibility gate to NOT_FOUND, same as never-existed.
+                result: {
+                    success: false,
+                    error: { code: ServiceErrorCode.NOT_FOUND, message: 'Accommodation not found' }
+                }
+            }
         ]) {
-            mockGetBySlug.mockResolvedValueOnce({ success: true, data: scenario.value });
+            mockGetBySlug.mockResolvedValueOnce(scenario.result);
             const app = new Hono();
             app.get('/api/v1/public/accommodations/slug/:slug', async (c) => {
                 const result = await mockGetBySlug(null, c.req.param('slug'));
+                if (result.error) {
+                    return c.json({ success: false, error: { code: result.error.code } }, 404);
+                }
                 return c.json(result.data);
             });
             const response = await app.request(
@@ -131,14 +165,56 @@ describe('Soft-deleted resource access — public route contract', () => {
         }
 
         expect(responses[0]?.status).toBe(responses[1]?.status);
-        expect(responses[0]?.bodyShape).toBe(responses[1]?.bodyShape);
+        expect(responses[0]?.status).toBe(404);
     });
 
-    it('uses ServiceErrorCode.NOT_FOUND as the wire-level error code for missing entities', () => {
+    it('DOES distinguish a soft-deleted PUBLIC entity (410) from never-existed/never-public (404) — deliberate deindex signal', async () => {
+        // Refined product decision (HOS-117 T-022): a PUBLIC entity that gets
+        // soft-deleted was already indexable/discoverable, so surfacing 410
+        // instead of 404 does not leak anything new — it's a deliberate signal
+        // for crawlers/LLM fetchers to deindex the URL fast.
+        mockGetBySlug.mockResolvedValueOnce({
+            success: false,
+            error: { code: ServiceErrorCode.GONE, message: 'Accommodation is gone' }
+        });
+
+        const app = new Hono();
+        app.get('/api/v1/public/accommodations/slug/:slug', async (c) => {
+            const result = await mockGetBySlug(null, c.req.param('slug'));
+            if (result.error) {
+                const status = result.error.code === ServiceErrorCode.GONE ? 410 : 404;
+                return c.json({ success: false, error: { code: result.error.code } }, status);
+            }
+            return c.json(result.data);
+        });
+
+        const response = await app.request(
+            '/api/v1/public/accommodations/slug/formerly-public-hotel'
+        );
+        const body = await response.json();
+
+        expect(response.status).toBe(410);
+        expect(response.status).not.toBe(404);
+        expect(body.error.code).toBe(ServiceErrorCode.GONE);
+        // The invariant that DOES still hold regardless of status code: no
+        // leak of the entity's title, internal id, or audit info.
+        expect(JSON.stringify(body)).not.toMatch(/title|adminInfo|internal_id/i);
+    });
+
+    it('uses ServiceErrorCode.NOT_FOUND as the wire-level error code for missing / never-public entities', () => {
         // Locks the contract: the public route maps `result.error.code` to
-        // ServiceErrorCode.NOT_FOUND so the global error handler renders 404.
+        // ServiceErrorCode.NOT_FOUND so the global error handler renders 404
+        // for genuinely-nonexistent slugs and for soft-deleted PRIVATE content.
         expect(ServiceErrorCode.NOT_FOUND).toBeDefined();
         expect(typeof ServiceErrorCode.NOT_FOUND).toBe('string');
+    });
+
+    it('uses ServiceErrorCode.GONE as the wire-level error code for soft-deleted formerly-PUBLIC entities', () => {
+        // Locks the refined contract: the public route maps `result.error.code`
+        // GONE to HTTP 410 (ERROR_CODE_TO_HTTP / handleRouteError), distinct
+        // from the 404 mapping for NOT_FOUND.
+        expect(ServiceErrorCode.GONE).toBeDefined();
+        expect(typeof ServiceErrorCode.GONE).toBe('string');
     });
 });
 

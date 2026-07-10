@@ -89,18 +89,21 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         addExperienceFaq: (...args: unknown[]) => faqHelpers.addExperienceFaq(...args),
         updateExperienceFaq: (...args: unknown[]) => faqHelpers.updateExperienceFaq(...args),
         removeExperienceFaq: (...args: unknown[]) => faqHelpers.removeExperienceFaq(...args),
-        reorderExperienceFaqs: (...args: unknown[]) => faqHelpers.reorderExperienceFaqs(...args),
-        ServiceError: class ServiceError extends Error {
-            constructor(
-                public readonly code: string,
-                message: string
-            ) {
-                super(message);
-            }
-        }
+        reorderExperienceFaqs: (...args: unknown[]) => faqHelpers.reorderExperienceFaqs(...args)
+        // NOTE (HOS-117 T-022): `ServiceError` is intentionally NOT overridden here
+        // (previously a standalone stub class was spread in after `...actual`,
+        // shadowing the real one). Route handlers do `throw new ServiceError(...)`
+        // imported from '@repo/service-core', while `handleRouteError` checks
+        // `error instanceof ServiceError` against the real class imported from
+        // '@repo/service-core/types'. A stub class here fails that instanceof
+        // check and every thrown ServiceError silently falls through to a generic
+        // 500 instead of its mapped status code. Keeping the real `actual.ServiceError`
+        // (via the `...actual` spread above) is required for any test in this file
+        // that asserts a specific HTTP status for a thrown ServiceError.
     };
 });
 
+import { ServiceErrorCode } from '@repo/schemas';
 import { initApp } from '../../../src/app';
 import type { AppOpenAPI } from '../../../src/types';
 import { validateApiEnv } from '../../../src/utils/env';
@@ -292,6 +295,21 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(200);
                 const body = (await res.json()) as { data: unknown };
                 expect(body.data).toBeNull();
+            });
+
+            it('returns 410 when the service reports GONE for a soft-deleted slug (HOS-117 T-022)', async () => {
+                experienceSvc.getBySlug.mockResolvedValue({
+                    error: { code: ServiceErrorCode.GONE, message: 'Experience is gone' }
+                });
+
+                const res = await app.request('/api/v1/public/experiences/slug/soft-deleted', {
+                    headers: publicHeaders
+                });
+
+                expect(res.status).toBe(410);
+                const body = (await res.json()) as { success: boolean; error?: { code: string } };
+                expect(body.success).toBe(false);
+                expect(body.error?.code).toBe(ServiceErrorCode.GONE);
             });
         });
 

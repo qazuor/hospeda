@@ -13,10 +13,13 @@
  *      specific than `code`).
  *   2. Otherwise, if `error.code` is known and has a translation under
  *      `common.apiError.<CODE>`, use it.
- *   3. Otherwise fall back to the API's `message` (the English text).
- *   4. If neither is available, use the provided `fallback` (already
+ *   3. Otherwise, if the error carries only an HTTP `status` with a clear
+ *      user-facing meaning (network `0`, timeout `408`, rate-limit `429`),
+ *      map it to a dedicated `common.apiError.*` message (BETA-146).
+ *   4. Otherwise fall back to the API's `message` (the English text).
+ *   5. If neither is available, use the provided `fallback` (already
  *      localized by the caller).
- *   5. As a last resort, use the generic `common.apiError.GENERIC`
+ *   6. As a last resort, use the generic `common.apiError.GENERIC`
  *      translation.
  *
  * Translation keys live under the `common` namespace JSON, flattened by
@@ -52,7 +55,32 @@ export interface ApiErrorShape {
      * UI can show copy specific to the failure mode.
      */
     readonly reason?: string | null;
+    /**
+     * HTTP status of the failed request. Some failure modes never carry a
+     * machine-readable `code` — a client-side timeout (`408`), a network/offline
+     * failure (`0`), or a raw upstream response with no JSON error body. When no
+     * `code` (or `reason`) resolves, `translateApiError` maps a small set of these
+     * statuses to a dedicated localized message (BETA-146).
+     */
+    readonly status?: number | null;
 }
+
+/**
+ * Statuses that only arrive WITHOUT a machine-readable error `code` yet still
+ * have a clear user-facing meaning. Mapped to an existing (or dedicated)
+ * `common.apiError.*` translation key so the user sees a specific message
+ * instead of the generic fallback (BETA-146).
+ *
+ * Intentionally minimal: the three cases the API client produces code-less
+ * (`0` = network/offline, `408` = client-side timeout, `429` = raw rate-limit
+ * with no JSON body). All other statuses keep falling through to the generic
+ * message, since they normally arrive with a proper `code`.
+ */
+const HTTP_STATUS_MESSAGE_KEY: Readonly<Record<number, string>> = Object.freeze({
+    0: 'NETWORK_ERROR',
+    408: 'TIMEOUT',
+    429: 'RATE_LIMIT_EXCEEDED'
+});
 
 /**
  * Signature of a translation function accepted by `translateApiError`.
@@ -157,6 +185,17 @@ export function translateApiError(params: {
         // `t()` returns the translation if present, otherwise the fallback
         // (the API's English message), otherwise the generic localized text.
         return t(`common.apiError.${error.code}`, apiMessage || genericFallback);
+    }
+
+    // No `code` (or `reason`) resolved — some failure modes only carry an HTTP
+    // status (client-side timeout, network/offline, raw rate-limit). Map the few
+    // statuses with a clear meaning to a dedicated localized message instead of
+    // the raw English `message` or the generic fallback (BETA-146). Guard against
+    // the `[MISSING:` sentinel so an absent key falls through, never leaks.
+    const statusKey = error?.status == null ? undefined : HTTP_STATUS_MESSAGE_KEY[error.status];
+    if (statusKey) {
+        const statusText = t(`common.apiError.${statusKey}`);
+        if (statusText && !statusText.startsWith('[MISSING:')) return statusText;
     }
 
     return apiMessage || genericFallback;

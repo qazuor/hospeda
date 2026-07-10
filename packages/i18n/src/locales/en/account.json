@@ -16,6 +16,7 @@
     "whatsNewPanel": {
         "title": "What's New",
         "empty": "No updates yet",
+        "emptyDesc": "When we ship platform improvements or new features, you'll see them here.",
         "markAllRead": "Mark all as read",
         "seeEntry": "View"
     },

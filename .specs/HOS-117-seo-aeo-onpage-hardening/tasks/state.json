@@ -290,21 +290,21 @@
             "id": "T-013",
             "title": "Update json-ld-audit.md to typed-component reality",
             "description": "Rewrite apps/web/docs/seo/json-ld-audit.md to describe the current typed JSON-LD components (not the obsolete pre-SPEC-157 inline-object pattern), list all 6 entities + their components, and point at json-ld-coverage.test.ts as the enforced contract. Ref US-8. Tests: none (docs).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-007"],
             "blocks": [],
             "subtasks": [
-                { "title": "Describe typed components + 6 entities", "completed": false },
-                { "title": "Point to the CI guard test as the contract", "completed": false }
+                { "title": "Describe typed components + 6 entities", "completed": true },
+                { "title": "Point to the CI guard test as the contract", "completed": true }
             ],
             "tags": ["docs", "seo"],
             "phase": "docs",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
             "timestamps": {
                 "created": "2026-07-09T18:22:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T04:50:00.000Z",
+                "completed": "2026-07-10T05:00:00.000Z"
             }
         },
         {
@@ -401,22 +401,22 @@
             "id": "T-018",
             "title": "Wave 0 raw-SSR-HTML tests",
             "description": "Assert on rendered HTML string (no hydration): the 5 counters carry real final values (never 0+); empty destinations emit noindex,follow and are absent from the sitemap while non-empty stay indexed; 6/6 detail entities emit BreadcrumbJsonLd. Extends/complements json-ld-coverage.test.ts. Ref US-1/US-2/US-3/US-4. Tests: integration suite on SSR output.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004", "T-005", "T-006", "T-007"],
             "blocks": ["T-021"],
             "subtasks": [
-                { "title": "Counter final-value SSR test", "completed": false },
-                { "title": "Empty-destination noindex + sitemap-absence test", "completed": false },
-                { "title": "6/6 BreadcrumbJsonLd coverage test", "completed": false }
+                { "title": "Counter final-value SSR test", "completed": true },
+                { "title": "Empty-destination noindex + sitemap-absence test", "completed": true },
+                { "title": "6/6 BreadcrumbJsonLd coverage test", "completed": true }
             ],
             "tags": ["testing", "seo", "web"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
             "timestamps": {
                 "created": "2026-07-09T18:22:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T04:45:00.000Z",
+                "completed": "2026-07-10T05:00:00.000Z"
             }
         },
         {
@@ -492,37 +492,27 @@
         {
             "id": "T-022",
             "title": "Serve 410 Gone for deleted entity URLs (post example-data purge)",
-            "description": "ADDED (replan 2026-07-09). After example/seed data is deleted from prod, the old accommodation/post/gastronomy/experience detail URLs must return 410 Gone (not 404) so Google/LLM fetchers deindex them fast. Verify current behavior for an unknown/deleted published slug and return 410 for these entity routes (at least during the post-purge window). This is the real-value replacement for the cancelled Wave 1 gate. Ref US-3/US-5 spirit. Tests: integration asserting a deleted/unknown slug yields HTTP 410 on these entity routes.",
-            "status": "pending",
+            "description": "ADDED (replan 2026-07-09). DONE 2026-07-10. New ServiceErrorCode.GONE -> HTTP 410. Public getBySlug/getById of a soft-deleted entity returns 410 ONLY when it was visibility PUBLIC (owner-refined '410 only for published' 2026-07-10); deleted PRIVATE/DRAFT/RESTRICTED -> 404 uniform (preserves SPEC-092 T-087 anti-enumeration); never-existed -> 404. Applied across accommodation/experience/gastronomy/post _canView (post gap fixed: soft-deleted PUBLIC post leaked 200). GONE logged as info (HOS-109). 4 web detail routes propagate; editar.astro treats 410 as clean redirect (fix from judgment-day round 1). Judgment-day APPROVED (round 2). Tests green: service-core 134, api routes 74, web 54, integration soft-delete-access 8. NOTE: apps/api test/integration/** is dead in CI (no test:integration script reaches it) - follow-up candidate.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                {
-                    "title": "Check current 404-vs-410 behavior for unknown entity slugs",
-                    "completed": false
-                },
-                {
-                    "title": "Return 410 Gone on accommodation/post/gastronomy/experience detail routes",
-                    "completed": false
-                },
-                { "title": "Integration test for the 410 response", "completed": false }
+                { "title": "Check current 404-vs-410 behavior for unknown entity slugs", "completed": true },
+                { "title": "Return 410 Gone on accommodation/post/gastronomy/experience detail routes", "completed": true },
+                { "title": "Integration test for the 410 response", "completed": true }
             ],
             "tags": ["seo", "web"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": {
-                "created": "2026-07-09T20:40:00.000Z",
-                "started": null,
-                "completed": null
-            }
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": { "created": "2026-07-09T20:40:00.000Z", "started": "2026-07-09T21:00:00.000Z", "completed": "2026-07-10T04:40:00.000Z" }
         }
     ],
     "summary": {
         "total": 17,
-        "pending": 5,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 15,
         "blocked": 0,
         "cancelled": 5,
         "averageComplexity": 2.2

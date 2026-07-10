@@ -18,6 +18,8 @@ export type ErrorLogLevel = 'error' | 'warn' | 'info';
  *
  * - `NOT_FOUND` (404) and `UNAUTHORIZED` (401) are routine guest/browsing
  *   outcomes → `info`.
+ * - `GONE` (410) is a routine read of a soft-deleted entity (crawler/LLM
+ *   deindex signal), not a fault → `info`.
  * - `FORBIDDEN` (403) is a permission denial that doubles as a probing signal,
  *   so it stays slightly louder → `warn`.
  *
@@ -31,6 +33,7 @@ export const resolveErrorLogLevel = (code: ServiceErrorCode | undefined): ErrorL
     switch (code) {
         case ServiceErrorCode.NOT_FOUND:
         case ServiceErrorCode.UNAUTHORIZED:
+        case ServiceErrorCode.GONE:
             return 'info';
         case ServiceErrorCode.FORBIDDEN:
             return 'warn';

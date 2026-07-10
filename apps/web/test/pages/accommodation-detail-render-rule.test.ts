@@ -49,3 +49,19 @@ describe('accommodation detail render rule — SPEC-187 P2-T9', () => {
         expect(PAGE_SRC).not.toContain('EntitlementKey.');
     });
 });
+
+describe('accommodation detail 404/410 handling — HOS-117 T-022', () => {
+    it('returns 404 when the API call fails without a GONE status', () => {
+        expect(PAGE_SRC).toContain('if (!result.ok)');
+    });
+
+    it('propagates 410 (GONE) for soft-deleted entities, 404 otherwise', () => {
+        expect(PAGE_SRC).toContain(
+            'if (!result.ok) return new Response(null, { status: result.error.status === 410 ? 410 : 404 });'
+        );
+    });
+
+    it('returns 404 when the slug resolves to no data', () => {
+        expect(PAGE_SRC).toContain('if (!result.data) return new Response(null, { status: 404 });');
+    });
+});

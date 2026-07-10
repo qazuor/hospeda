@@ -37,6 +37,14 @@ describe('editar.astro', () => {
         expect(src).toContain('mi-cuenta/propiedades/');
     });
 
+    it('should also treat 410 Gone as a clean redirect (HOS-117 T-022)', () => {
+        // The shared _canView now returns 410 (not 404) when the owner opens
+        // their own soft-deleted PUBLIC accommodation. The redirect branch must
+        // include 410 so it redirects cleanly instead of logging a false
+        // "fetch failed" warning.
+        expect(src).toContain('accomResponse.status === 410');
+    });
+
     it('should have auth guard', () => {
         expect(src).toContain('Astro.locals.user');
         expect(src).toContain('buildLoginRedirect');
