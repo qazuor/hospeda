@@ -12,10 +12,19 @@ import StatusPage from '@/components/shared/StatusPage.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { SearchIcon, ChatIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
+import { createTranslations, DEFAULT_LOCALE } from '@/lib/i18n';
+import { extractLocaleFromPath } from '@/lib/middleware-helpers';
 import { buildUrl } from '@/lib/urls';
 
-const locale = (Astro.locals?.locale ?? 'es') as SupportedLocale;
+// The 404 page is reached via an internal `context.rewrite('/404')`, where
+// `Astro.locals.locale` is not populated for the rewritten route. Recover the
+// locale from the ORIGINAL request path: `Astro.originPathname` holds the
+// pre-rewrite pathname (e.g. "/en/foo/"), unlike `Astro.url.pathname` which
+// reflects the rewritten "/404" route. Fall back to url path, then locals, then
+// the default locale.
+const originalPath = Astro.originPathname ?? Astro.url.pathname;
+const { locale: pathLocale } = extractLocaleFromPath({ path: originalPath });
+const locale = (pathLocale ?? Astro.locals?.locale ?? DEFAULT_LOCALE) as SupportedLocale;
 const { t } = createTranslations(locale);
 const homeUrl = buildUrl({ locale, path: '/' });
 const searchUrl = buildUrl({ locale, path: 'busqueda' });
@@ -63,7 +72,7 @@ const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 		<GradientButton
 			slot="actions"
 			href={searchUrl}
-			label="Buscar"
+			label={t('error.404.search')}
 			variant="primary"
 			shape="rounded"
 		>
@@ -72,7 +81,7 @@ const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 		<GradientButton
 			slot="actions"
 			href={feedbackWithParams}
-			label="Reportar enlace roto"
+			label={t('error.404.reportBrokenLink')}
 			variant="outline-primary"
 			shape="rounded"
 		>
