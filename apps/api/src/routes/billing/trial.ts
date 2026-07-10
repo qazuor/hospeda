@@ -34,6 +34,8 @@ import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { createAdminRoute, createSimpleRoute } from '../../utils/route-factory';
 import {
+    buildAnnualCancelUrl,
+    buildAnnualSuccessUrl,
     buildNotificationUrl,
     buildPaymentMethodReturnUrl,
     resolveReturnUrlLocale
@@ -336,19 +338,32 @@ export const reactivateTrialRoute = createSimpleRoute({
             });
         }
 
-        const { planId } = parseResult.data;
+        const { planId, billingInterval } = parseResult.data;
         const billing = getQZPayBilling();
         const trialService = new TrialService(billing);
         const locale = resolveReturnUrlLocale(c);
+
+        // HOS-123 OQ-3: monthly (default) keeps the pre-existing MercadoPago
+        // preapproval return-URL shape unchanged; annual routes through the
+        // hosted-checkout success/cancel URL shape instead.
+        const urls =
+            billingInterval === 'annual'
+                ? {
+                      successUrl: buildAnnualSuccessUrl(locale),
+                      cancelUrl: buildAnnualCancelUrl(locale),
+                      notificationUrl: buildNotificationUrl()
+                  }
+                : {
+                      paymentMethodReturnUrl: buildPaymentMethodReturnUrl(locale),
+                      notificationUrl: buildNotificationUrl()
+                  };
 
         try {
             const result = await trialService.reactivateFromTrial({
                 customerId: billingCustomerId,
                 planId,
-                urls: {
-                    paymentMethodReturnUrl: buildPaymentMethodReturnUrl(locale),
-                    notificationUrl: buildNotificationUrl()
-                }
+                billingInterval,
+                urls
             });
 
             return {
@@ -512,19 +527,32 @@ export const reactivateSubscriptionRoute = createSimpleRoute({
             });
         }
 
-        const { planId } = parseResult.data;
+        const { planId, billingInterval } = parseResult.data;
         const billing = getQZPayBilling();
         const trialService = new TrialService(billing);
         const locale = resolveReturnUrlLocale(c);
+
+        // HOS-123 OQ-3: monthly (default) keeps the pre-existing MercadoPago
+        // preapproval return-URL shape unchanged; annual routes through the
+        // hosted-checkout success/cancel URL shape instead.
+        const urls =
+            billingInterval === 'annual'
+                ? {
+                      successUrl: buildAnnualSuccessUrl(locale),
+                      cancelUrl: buildAnnualCancelUrl(locale),
+                      notificationUrl: buildNotificationUrl()
+                  }
+                : {
+                      paymentMethodReturnUrl: buildPaymentMethodReturnUrl(locale),
+                      notificationUrl: buildNotificationUrl()
+                  };
 
         try {
             const result = await trialService.reactivateSubscription({
                 customerId: billingCustomerId,
                 planId,
-                urls: {
-                    paymentMethodReturnUrl: buildPaymentMethodReturnUrl(locale),
-                    notificationUrl: buildNotificationUrl()
-                }
+                billingInterval,
+                urls
             });
 
             return {

@@ -116,6 +116,16 @@ const EXPECTED_URLS = {
 };
 
 /**
+ * Expected ANNUAL checkout return URLs built by the handler for the default
+ * 'es' locale (HOS-123).
+ */
+const EXPECTED_ANNUAL_URLS = {
+    successUrl: 'https://hospeda.test/es/suscriptores/checkout/success/',
+    cancelUrl: 'https://hospeda.test/es/suscriptores/checkout/failure/',
+    notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
+};
+
+/**
  * Creates a minimal mock Hono context for the handler.
  */
 function createMockContext(
@@ -351,8 +361,108 @@ describe('reactivateSubscriptionRoute handler', () => {
             expect(mockReactivateSubscription).toHaveBeenCalledWith({
                 customerId: 'cust_abc',
                 planId: 'plan_enterprise',
+                billingInterval: 'monthly',
                 urls: EXPECTED_URLS
             });
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-123: annual billingInterval
+    // -----------------------------------------------------------------------
+
+    describe('when billingInterval is "annual"', () => {
+        it('should build annual checkout URLs, pass billingInterval through, and return status=pending_provider with previousPlanId', async () => {
+            // Arrange
+            const handler = getReactivateSubscriptionHandler();
+            mockReactivateSubscription.mockResolvedValue({
+                success: true,
+                subscriptionId: 'sub_annual_sub_1',
+                previousPlanId: 'plan_old_annual',
+                checkoutUrl: 'https://mp.test/checkout/annual-sub-1',
+                status: 'pending_provider',
+                message: 'Redirect to MercadoPago to complete reactivation'
+            });
+            const ctx = createMockContext({
+                billingCustomerId: 'cust_annual',
+                body: { planId: 'plan_pro', billingInterval: 'annual' }
+            });
+
+            // Act
+            const result = await handler(ctx);
+
+            // Assert
+            expect(result).toEqual({
+                success: true,
+                subscriptionId: 'sub_annual_sub_1',
+                previousPlanId: 'plan_old_annual',
+                checkoutUrl: 'https://mp.test/checkout/annual-sub-1',
+                status: 'pending_provider',
+                message: 'Redirect to MercadoPago to complete reactivation'
+            });
+            expect(mockReactivateSubscription).toHaveBeenCalledWith({
+                customerId: 'cust_annual',
+                planId: 'plan_pro',
+                billingInterval: 'annual',
+                urls: EXPECTED_ANNUAL_URLS
+            });
+        });
+    });
+
+    describe('when billingInterval is omitted (defaults to monthly)', () => {
+        it('should produce the exact same monthly URLs, service call, and response as before HOS-123 (NG-3 regression)', async () => {
+            // Arrange
+            const handler = getReactivateSubscriptionHandler();
+            mockReactivateSubscription.mockResolvedValue({
+                success: true,
+                subscriptionId: 'sub_default_monthly',
+                previousPlanId: 'plan_old',
+                checkoutUrl: 'https://mp.test/checkout/default-monthly-sub',
+                status: 'incomplete',
+                message: 'Redirect to MercadoPago to complete reactivation'
+            });
+            const ctx = createMockContext({
+                billingCustomerId: 'cust_default',
+                body: { planId: 'plan_pro' }
+            });
+
+            // Act
+            const result = await handler(ctx);
+
+            // Assert
+            expect(result).toEqual({
+                success: true,
+                subscriptionId: 'sub_default_monthly',
+                previousPlanId: 'plan_old',
+                checkoutUrl: 'https://mp.test/checkout/default-monthly-sub',
+                status: 'incomplete',
+                message: 'Redirect to MercadoPago to complete reactivation'
+            });
+            expect(mockReactivateSubscription).toHaveBeenCalledWith({
+                customerId: 'cust_default',
+                planId: 'plan_pro',
+                billingInterval: 'monthly',
+                urls: EXPECTED_URLS
+            });
+        });
+    });
+
+    describe('when service throws NO_ANNUAL_PRICE', () => {
+        it('should map to an HTTPException 404 (not a 500)', async () => {
+            // Arrange
+            const handler = getReactivateSubscriptionHandler();
+            mockReactivateSubscription.mockRejectedValue(
+                new SubscriptionCheckoutError(
+                    'NO_ANNUAL_PRICE',
+                    "Plan 'plan_pro' has no active annual price"
+                )
+            );
+            const ctx = createMockContext({
+                body: { planId: 'plan_pro', billingInterval: 'annual' }
+            });
+
+            // Act & Assert
+            await expect(handler(ctx)).rejects.toMatchObject({ status: 404 });
         });
     });
 
