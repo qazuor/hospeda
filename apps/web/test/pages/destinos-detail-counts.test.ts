@@ -98,4 +98,18 @@ describe('destinos/[...path].astro — real counts (T-045)', () => {
             expect(src).toContain('destinationsApi.getStats');
         });
     });
+
+    describe('thin-content noindex (HOS-117 T-006/T-018)', () => {
+        it('computes isThinContent via isThinDestination fed from stats', () => {
+            expect(src).toContain("import { isThinDestination } from '@/lib/seo/thin-destination'");
+            expect(src).toContain('const isThinContent = isThinDestination({');
+            expect(src).toContain('accommodationsCount: stats.accommodationsCount');
+            expect(src).toContain('attractionsCount: stats.attractionsCount');
+            expect(src).toContain('eventsCount: stats.eventsCount');
+        });
+
+        it('passes noindex={isThinContent} into DetailLayout', () => {
+            expect(src).toContain('noindex={isThinContent}');
+        });
+    });
 });
