@@ -1064,6 +1064,51 @@
                 "planId": {
                     "invalidType": "El ID del plan tiene un tipo de dato inválido",
                     "min": "El ID del plan debe tener al menos {{min}} caracteres"
+                },
+                "response": {
+                    "checkoutUrl": {
+                        "invalid": "La URL de pago no es válida",
+                        "invalidType": "La URL de pago tiene un tipo de dato inválido"
+                    },
+                    "message": {
+                        "invalidType": "El mensaje tiene un tipo de dato inválido"
+                    },
+                    "status": {
+                        "invalid": "El estado no es válido"
+                    },
+                    "subscriptionId": {
+                        "invalidType": "El subscription id tiene un tipo de dato inválido"
+                    },
+                    "success": {
+                        "invalidType": "El resultado exitoso debe ser un booleano"
+                    }
+                }
+            },
+            "reactivateSubscription": {
+                "planId": {
+                    "invalidType": "El ID del plan tiene un tipo de dato inválido",
+                    "min": "El ID del plan debe tener al menos {{min}} caracteres"
+                },
+                "response": {
+                    "checkoutUrl": {
+                        "invalid": "La URL de pago no es válida",
+                        "invalidType": "La URL de pago tiene un tipo de dato inválido"
+                    },
+                    "message": {
+                        "invalidType": "El mensaje tiene un tipo de dato inválido"
+                    },
+                    "previousPlanId": {
+                        "invalidType": "El previous plan id tiene un tipo de dato inválido"
+                    },
+                    "status": {
+                        "invalid": "El estado no es válido"
+                    },
+                    "subscriptionId": {
+                        "invalidType": "El subscription id tiene un tipo de dato inválido"
+                    },
+                    "success": {
+                        "invalidType": "El resultado exitoso debe ser un booleano"
+                    }
                 }
             },
             "start": {

@@ -35,6 +35,116 @@ export const ReactivateTrialRequestSchema = z.object({
 export type ReactivateTrialRequest = z.infer<typeof ReactivateTrialRequestSchema>;
 
 /**
+ * Response body for `POST /api/v1/protected/billing/trial/reactivate`
+ * (HOS-114).
+ *
+ * Reactivation to a paid plan now routes through a real card-collecting
+ * MercadoPago checkout, mirroring `/start-paid` — the caller MUST redirect
+ * the user to `checkoutUrl`. The created subscription is `status: 'incomplete'`
+ * (qzpay's raw provider status, NOT the normalized `SubscriptionStatusEnum`
+ * used for locally-stored rows) until the `subscription_preapproval.created`
+ * webhook confirms it.
+ */
+export const ReactivateTrialResponseSchema = z.object({
+    success: z.boolean({
+        message: 'zodError.billing.trial.reactivate.response.success.invalidType'
+    }),
+    subscriptionId: z
+        .string({
+            message: 'zodError.billing.trial.reactivate.response.subscriptionId.invalidType'
+        })
+        .nullable(),
+    /** MercadoPago checkout URL the caller must redirect the user to. */
+    checkoutUrl: z
+        .string({
+            message: 'zodError.billing.trial.reactivate.response.checkoutUrl.invalidType'
+        })
+        .url({ message: 'zodError.billing.trial.reactivate.response.checkoutUrl.invalid' })
+        .nullable(),
+    /**
+     * qzpay's raw preapproval status at creation time. Always `'incomplete'`
+     * for a successful call — the subscription is not yet confirmed by
+     * MercadoPago.
+     */
+    status: z.enum(['incomplete'], {
+        message: 'zodError.billing.trial.reactivate.response.status.invalid'
+    }),
+    message: z.string({
+        message: 'zodError.billing.trial.reactivate.response.message.invalidType'
+    })
+});
+
+/** TypeScript type inferred from ReactivateTrialResponseSchema */
+export type ReactivateTrialResponse = z.infer<typeof ReactivateTrialResponseSchema>;
+
+/**
+ * Schema for reactivating a canceled subscription (not necessarily a trial
+ * conversion — see `ReactivateSubscriptionInput` in `@repo/service-core`).
+ * Same shape as {@link ReactivateTrialRequestSchema}; kept as a distinct
+ * schema so the two request contracts can evolve independently.
+ */
+export const ReactivateSubscriptionRequestSchema = z.object({
+    /** The ID of the plan to reactivate the subscription for */
+    planId: z
+        .string({
+            message: 'zodError.billing.trial.reactivateSubscription.planId.invalidType'
+        })
+        .min(1, { message: 'zodError.billing.trial.reactivateSubscription.planId.min' })
+});
+
+/** TypeScript type inferred from ReactivateSubscriptionRequestSchema */
+export type ReactivateSubscriptionRequest = z.infer<typeof ReactivateSubscriptionRequestSchema>;
+
+/**
+ * Response body for `POST /api/v1/protected/billing/trial/reactivate-subscription`
+ * (HOS-114). Mirrors {@link ReactivateTrialResponseSchema}, plus the previous
+ * plan id carried over from the canceled subscription being reactivated.
+ */
+export const ReactivateSubscriptionResponseSchema = z.object({
+    success: z.boolean({
+        message: 'zodError.billing.trial.reactivateSubscription.response.success.invalidType'
+    }),
+    subscriptionId: z
+        .string({
+            message:
+                'zodError.billing.trial.reactivateSubscription.response.subscriptionId.invalidType'
+        })
+        .nullable(),
+    /** Previous plan ID (from the canceled subscription), or null. */
+    previousPlanId: z
+        .string({
+            message:
+                'zodError.billing.trial.reactivateSubscription.response.previousPlanId.invalidType'
+        })
+        .nullable()
+        .optional(),
+    /** MercadoPago checkout URL the caller must redirect the user to. */
+    checkoutUrl: z
+        .string({
+            message:
+                'zodError.billing.trial.reactivateSubscription.response.checkoutUrl.invalidType'
+        })
+        .url({
+            message: 'zodError.billing.trial.reactivateSubscription.response.checkoutUrl.invalid'
+        })
+        .nullable(),
+    /**
+     * qzpay's raw preapproval status at creation time. Always `'incomplete'`
+     * for a successful call — the subscription is not yet confirmed by
+     * MercadoPago.
+     */
+    status: z.enum(['incomplete'], {
+        message: 'zodError.billing.trial.reactivateSubscription.response.status.invalid'
+    }),
+    message: z.string({
+        message: 'zodError.billing.trial.reactivateSubscription.response.message.invalidType'
+    })
+});
+
+/** TypeScript type inferred from ReactivateSubscriptionResponseSchema */
+export type ReactivateSubscriptionResponse = z.infer<typeof ReactivateSubscriptionResponseSchema>;
+
+/**
  * Schema for extending an active trial (admin operation).
  * Adds a specified number of extra days to the trial end date.
  */
