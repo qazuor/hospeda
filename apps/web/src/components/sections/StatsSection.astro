@@ -16,6 +16,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import { AnimatedCounter } from '@/components/sections/AnimatedCounter.client';
 import type { StatItemData } from '@/data/types';
+import { isMeaningfulStat } from '@/lib/home-guards';
 import { revealStagger } from '@/lib/reveal-stagger';
 
 interface Props {
@@ -29,10 +30,18 @@ interface Props {
 
 const { locale, stats = [], suffixes = [] } = Astro.props;
 
+// Pair each stat with its (index-aligned) suffix, then drop any stat whose value
+// would render a misleading "0+" (zero, negative, NaN, Infinity) — e.g. a cold
+// start or a failed stats fetch. SSR-first: never emit a fake number to crawlers
+// or LLM fetchers. Mirrors the hero social-proof guard (shouldShowSocialProof).
+const visibleStats = stats
+  .map((stat, index) => ({ stat, suffix: suffixes[index] }))
+  .filter(({ stat }) => isMeaningfulStat({ value: stat.value }));
+
 const t = createT(locale);
 ---
 
-{stats.length > 0 && (
+{visibleStats.length > 0 && (
 <section
   class="stats-section"
   aria-label={t('home.statistics.title', 'Nuestros números')}
@@ -63,7 +72,7 @@ const t = createT(locale);
 
     <!-- Stat cards -->
     <div class="stats-section__cards">
-      {stats.map((stat, i) => (
+      {visibleStats.map(({ stat, suffix }, i) => (
         <div
           class="stats-section__card"
           data-reveal="up"
@@ -74,7 +83,7 @@ const t = createT(locale);
             value={stat.value}
             label={t(stat.labelKey)}
             icon={stat.icon}
-            suffix={suffixes[i]}
+            suffix={suffix}
             variant="counter"
             locale={locale}
           />

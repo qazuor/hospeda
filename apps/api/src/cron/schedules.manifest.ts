@@ -226,13 +226,11 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         schedule: '0 2 * * *',
         description: 'Expire trial subscriptions whose period has ended.'
     },
-    {
-        name: 'trial-pre-end-notif',
-        displayName: 'Aviso de fin de prueba',
-        category: 'billing',
-        schedule: '0 13 * * *',
-        description: 'Daily reminder emails for trials ending in 1-3 days (D-3 and D-1 variants).'
-    },
+    // 'trial-pre-end-notif' intentionally omitted: the job is disabled
+    // (HOS-115, duplicate of notification-schedule's TRIAL_ENDING_REMINDER
+    // sender — see the comment on trialPreEndNotifJob in
+    // cron/jobs/trial-pre-end-notif.job.ts). The manifest sync guard
+    // (schedules-manifest.test.ts) requires disabled jobs to be absent here.
     {
         name: 'webhook-retry',
         displayName: 'Reintento de webhooks',

@@ -24,6 +24,7 @@ import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { PromotionForm } from '@/components/host/PromotionForm.client';
 
 export const prerender = false;
@@ -50,5 +51,7 @@ if (!promotionId) {
 <AccountLayout locale={locale} title={title} description={description} activeSection="promociones">
     <AccountPageHeader title={title} description={description} />
 
-    <PromotionForm client:load locale={locale} mode="edit" promotionId={promotionId} />
+    <AccountSectionCard>
+        <PromotionForm client:load locale={locale} mode="edit" promotionId={promotionId} />
+    </AccountSectionCard>
 </AccountLayout>

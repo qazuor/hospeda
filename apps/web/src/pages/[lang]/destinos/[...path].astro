@@ -14,6 +14,7 @@ import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.a
 import PlaceJsonLd from '@/components/seo/PlaceJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
+import { isThinDestination } from '@/lib/seo/thin-destination';
 import { LocationMap } from '@/components/maps/LocationMap.client';
 import DestinationDetailHeader from '@/components/destination/DestinationDetailHeader.astro';
 import DestinationGallery from '@/components/destination/DestinationGallery.astro';
@@ -419,6 +420,15 @@ const safeDescriptionHtml = renderContent({
 	raw: rawDescription,
 	siteOrigin: Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin
 });
+
+// Thin-content guard (HOS-117 T-006 / US-3): a destination with no accommodations,
+// events, or attractions is noindex'ed (and excluded from the sitemap) via the
+// shared isThinDestination predicate — single source of the rule, no divergence.
+const isThinContent = isThinDestination({
+	accommodationsCount: stats.accommodationsCount,
+	attractionsCount: stats.attractionsCount,
+	eventsCount: stats.eventsCount
+});
 ---
 
 <DetailLayout
@@ -431,6 +441,7 @@ const safeDescriptionHtml = renderContent({
 	ogRating={stats.averageRating > 0 ? stats.averageRating.toFixed(1) : undefined}
 	showBreadcrumbs={true}
 	showSidebar={true}
+	noindex={isThinContent}
 >
 	<PlaceJsonLd
 		slot="head-extra"

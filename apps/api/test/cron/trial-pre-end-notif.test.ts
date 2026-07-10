@@ -106,8 +106,12 @@ describe('trialPreEndNotifJob definition', () => {
         expect(trialPreEndNotifJob.schedule).toBe('0 13 * * *');
     });
 
-    it('is enabled by default', () => {
-        expect(trialPreEndNotifJob.enabled).toBe(true);
+    it('is disabled (HOS-115: duplicate of notification-schedule.job.ts TRIAL_ENDING_REMINDER)', () => {
+        // Kept registered (see registry.ts) but disabled so the scheduler
+        // skips it — do not flip back to true without first porting its
+        // D-3 skip-tolerant window + durable dedup ledger into
+        // notification-schedule.job.ts (see the comment on this job).
+        expect(trialPreEndNotifJob.enabled).toBe(false);
     });
 
     it('uses a 5-minute timeout', () => {

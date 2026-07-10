@@ -35,7 +35,13 @@ const trialStatusResponseSchema = z.object({
     startedAt: z.string().nullable(),
     expiresAt: z.string().nullable(),
     daysRemaining: z.number(),
-    planSlug: z.string().nullable()
+    planSlug: z.string().nullable(),
+    /**
+     * The billing interval the customer selected when they started their
+     * most recent trial (HOS-115 §5, nudge delivery path 2). `null` when
+     * there is no trial, or the trial recorded no interval.
+     */
+    intendedInterval: z.enum(['monthly', 'annual']).nullable()
 });
 
 /**

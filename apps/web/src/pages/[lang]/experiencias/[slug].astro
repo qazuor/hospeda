@@ -17,6 +17,7 @@ import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
 import TouristAttractionJsonLd from '@/components/seo/TouristAttractionJsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import ExperienceHero from '@/components/experience/ExperienceHero.astro';
 import ExperienceInfo from '@/components/experience/ExperienceInfo.astro';
 import ExperienceContactCTA from '@/components/experience/ExperienceContactCTA.astro';
@@ -162,6 +163,17 @@ const seoDescription =
     experience.seo?.description?.trim() ||
     experience.summary ||
     t('experience.listing.subtitle', 'Experiencias y servicios en el Litoral Entrerriano');
+
+// --- Breadcrumb JSON-LD (HOS-117 T-007) ---
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const breadcrumbItems = [
+    { name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
+    {
+        name: t('experience.listing.title', 'Experiencias'),
+        url: `${siteOrigin}/${locale}/experiencias/`
+    },
+    { name: experience.name, url: `${siteOrigin}${Astro.url.pathname}` }
+];
 ---
 
 <DetailLayout
@@ -183,6 +195,7 @@ const seoDescription =
         url={canonicalPath}
         image={experience.featuredImage.url}
     />
+    <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
     <Breadcrumbs
         slot="breadcrumbs"
         locale={locale}

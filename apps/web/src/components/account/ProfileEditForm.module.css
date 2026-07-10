@@ -9,63 +9,16 @@
 }
 
 /* ── Section card ──────────────────────────────────────────────────────── */
+/* Canonical "section card" recipe — shared across /mi-cuenta pages via */
+/* AccountSection.module.css (BETA-143 5c). This is the source these values */
+/* were extracted from; keep visual parity with the shared module. */
 
 .section {
-    position: relative;
-    background-color: var(--core-card);
-    border: 1px solid var(--core-foreground-a08);
-    border-radius: var(--radius-card);
-    padding: var(--space-6, 24px);
-    box-shadow: 0 1px 2px var(--core-foreground-a05);
-    overflow: hidden;
-    isolation: isolate;
-    transition:
-        box-shadow var(--duration-normal) ease,
-        border-color var(--duration-normal) ease;
-}
-
-.section:hover {
-    box-shadow: 0 6px 16px var(--core-foreground-a05);
-    border-color: var(--brand-primary-a20);
-}
-
-/* Brand accent bar across the top of every section. */
-.section::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
-    opacity: 0.65;
-    z-index: 0;
+    composes: card from "./AccountSection.module.css";
 }
 
 .sectionTitle {
-    position: relative;
-    font-family: var(--font-heading);
-    font-weight: 700;
-    font-size: 1.125rem;
-    color: var(--core-foreground);
-    margin: 0 0 var(--space-5, 20px);
-    padding-bottom: var(--space-3);
-    border-bottom: 1px solid var(--core-foreground-a05);
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-}
-
-/* Small leading dot in brand color to mark each section header. */
-.sectionTitle::before {
-    content: "";
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: var(--radius-pill);
-    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
-    flex-shrink: 0;
-    box-shadow: 0 0 0 3px var(--brand-primary-a12);
+    composes: cardTitle from "./AccountSection.module.css";
 }
 
 /* ── Fields grid ───────────────────────────────────────────────────────── */
@@ -276,23 +229,5 @@
 }
 
 .submitBtn {
-    padding: var(--space-2, 8px) var(--space-5, 20px);
-    background-color: var(--brand-primary);
-    color: var(--primary-foreground);
-    border: none;
-    border-radius: var(--radius-button, 8px);
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity var(--duration-normal, 0.4s) ease;
-}
-
-.submitBtn:hover:not(:disabled) {
-    opacity: 0.88;
-}
-
-.submitBtn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    composes: primary from "./AccountButton.module.css";
 }

@@ -28,6 +28,7 @@ import {
     type ReactivateFromTrialInput,
     type ReactivateSubscriptionInput,
     type ReactivateSubscriptionResult,
+    resolveIntendedInterval,
     resolvePlanTrialConfig,
     type StartTrialInput,
     type TrialEndingSubscription,
@@ -76,6 +77,63 @@ const BLOCK_EXPIRED_TRIALS_LOCK_KEY = 1004;
 const BLOCK_EXPIRED_TRIALS_BATCH_SIZE = 200;
 
 /**
+ * Web path (with locale) to the owner pricing page that renders
+ * `PricingCardsGrid.astro` — the ONLY page with the monthly/annual billing
+ * toggle (HOS-115 §5). `/mi-cuenta/suscripcion` (the account subscription
+ * page previously used here) renders `SubscriptionDashboard` instead, which
+ * has no toggle — a `?interval=` query param appended to that URL would be
+ * silently ignored. Every trial-eligible plan today is an owner plan (see
+ * {@link DEFAULT_TRIAL_PLAN_SLUG}), so the owner pricing page is the correct,
+ * single nudge target for every trial regardless of which plan it started on.
+ */
+const TRIAL_UPGRADE_PATH = '/es/suscriptores/planes/';
+
+/**
+ * Builds the trial→paid conversion nudge URL sent on both trial-lifecycle
+ * notifications that link to the pricing page — `TRIAL_EXPIRED` (HOS-115 §5,
+ * nudge delivery path 1) and `TRIAL_ENDING_REMINDER` (the pre-expiry
+ * reminder, same nudge design). Appends `?interval=<intendedInterval>` when
+ * the trial recorded a valid intent, so the pricing page can pre-select the
+ * same toggle the customer started from instead of defaulting to monthly.
+ * Degrades gracefully — the query param is simply omitted — when
+ * `intendedInterval` is missing or not one of the two known values (e.g. a
+ * trial started via the accommodation-publish auto-start flow, which records
+ * no interval choice at all).
+ *
+ * Single source of truth for this URL for the two ACTIVE notification call
+ * sites: `blockExpiredTrials` below (`TRIAL_EXPIRED`) and
+ * `notification-schedule.job.ts`'s `TRIAL_ENDING_REMINDER` sends. Both call
+ * this same function rather than building the link inline, so the nudge
+ * target/shape never drifts between the two.
+ *
+ * A third sender once existed — `trial-pre-end-notif.job.ts` (SPEC-126 D5)
+ * also sent `TRIAL_ENDING_REMINDER`, duplicating `notification-schedule`'s
+ * send and building its own divergent `/cuenta/planes` link inline instead
+ * of calling this function. It was disabled (`enabled: false`) under
+ * HOS-115 as a duplicate-cron fix, so that stale link no longer circulates.
+ * The file is kept (not deleted) pending a follow-up that ports its
+ * robustness advantages into `notification-schedule.job.ts` — see the
+ * comment on `trialPreEndNotifJob` for details. Once ported and the file is
+ * deleted, this will again be literally the only call site pattern in play.
+ *
+ * @param input.siteUrl - `HOSPEDA_SITE_URL` (no trailing slash expected).
+ * @param input.intendedInterval - Raw value read off the trial
+ *   subscription's `metadata.intendedInterval` (unknown/untyped at the
+ *   source — the QZPay SDK does not narrow subscription metadata).
+ * @returns The absolute upgrade URL, with `?interval=` appended only when a
+ *   valid interval was recorded.
+ */
+export function buildTrialUpgradeUrl(input: {
+    readonly siteUrl: string;
+    readonly intendedInterval?: unknown;
+}): string {
+    const { siteUrl, intendedInterval } = input;
+    const base = `${siteUrl}${TRIAL_UPGRADE_PATH}`;
+    const resolved = resolveIntendedInterval(intendedInterval);
+    return resolved ? `${base}?interval=${resolved}` : base;
+}
+
+/**
  * Result of a reconciliation run for a single customer.
  */
 export interface ReconcileResult {
@@ -121,6 +179,12 @@ export class TrialService {
      * (`HOSPEDA_TRIAL_DAYS_OVERRIDE=0`) still disables every trial regardless
      * of any extension promo supplied.
      *
+     * `input.intendedInterval` (HOS-115) is stamped as-is into the created
+     * subscription's `metadata.intendedInterval` — the trial object itself
+     * carries no price/interval, so this is the sole record of which
+     * checkout toggle (monthly/annual) the customer started from, read back
+     * later to nudge the pricing page at conversion.
+     *
      * @param input - Trial start parameters
      * @returns Trial subscription ID, or `null` if billing is disabled, the
      *   resolved plan has no trial, or the customer already has a
@@ -132,7 +196,7 @@ export class TrialService {
             return null;
         }
 
-        const { customerId, accommodationId, extraTrialDays } = input;
+        const { customerId, accommodationId, extraTrialDays, intendedInterval } = input;
         const planSlug = input.planSlug ?? DEFAULT_TRIAL_PLAN_SLUG;
 
         try {
@@ -228,7 +292,13 @@ export class TrialService {
                     ...(accommodationId ? { triggeredByAccommodationId: accommodationId } : {}),
                     // HOS-110 W1: audit trail for a trial_extension promo code that
                     // lengthened this trial beyond the plan's base trialDays.
-                    ...(extraTrialDays ? { extraTrialDaysFromPromo: String(extraTrialDays) } : {})
+                    ...(extraTrialDays ? { extraTrialDaysFromPromo: String(extraTrialDays) } : {}),
+                    // HOS-115 §5: the checkout entry interval the customer originally
+                    // chose (monthly/annual), stamped as-is so the post-trial
+                    // conversion nudge can pre-select the same toggle. Omitted for
+                    // trial-start paths with no interval choice (e.g. the
+                    // accommodation-publish auto-start flow).
+                    ...(intendedInterval ? { intendedInterval } : {})
                 }
             });
 
@@ -281,7 +351,8 @@ export class TrialService {
                 startedAt: null,
                 expiresAt: null,
                 daysRemaining: 0,
-                planSlug: null
+                planSlug: null,
+                intendedInterval: null
             };
         }
 
@@ -298,7 +369,8 @@ export class TrialService {
                     startedAt: null,
                     expiresAt: null,
                     daysRemaining: 0,
-                    planSlug: null
+                    planSlug: null,
+                    intendedInterval: null
                 };
             }
 
@@ -330,12 +402,21 @@ export class TrialService {
                         startedAt: null,
                         expiresAt: null,
                         daysRemaining: 0,
-                        planSlug: null
+                        planSlug: null,
+                        intendedInterval: null
                     };
                 }
 
                 // Historical canceled/ended sub with a trial — fetch plan for its slug.
                 const historicalPlan = await this.billing.plans.get(historicalTrialSub.planId);
+                // HOS-115 §5 nudge delivery path 2: read back the interval this
+                // (most-recent, per the sort above) trial recorded so a user who
+                // navigates directly to the pricing page — no `?interval=` query
+                // param — still gets the toggle pre-selected to their original intent.
+                const historicalIntendedInterval = resolveIntendedInterval(
+                    (historicalTrialSub.metadata as Record<string, unknown> | undefined)
+                        ?.intendedInterval
+                );
                 return {
                     isOnTrial: false,
                     isExpired: true,
@@ -346,7 +427,8 @@ export class TrialService {
                         ? new Date(historicalTrialSub.trialEnd).toISOString()
                         : null,
                     daysRemaining: 0,
-                    planSlug: historicalPlan?.name || null
+                    planSlug: historicalPlan?.name || null,
+                    intendedInterval: historicalIntendedInterval
                 };
             }
 
@@ -364,6 +446,15 @@ export class TrialService {
             const daysRemaining =
                 trialEnd && !isExpired ? calculateTrialDaysRemaining({ trialEnd, now }) : 0;
 
+            // HOS-115 §5 nudge delivery path 2 (see comment above the historical
+            // branch). Read regardless of status — harmless when the sub already
+            // converted to `active`, since the value simply mirrors the trial the
+            // customer started from.
+            const intendedInterval = resolveIntendedInterval(
+                (activeSubscription.metadata as Record<string, unknown> | undefined)
+                    ?.intendedInterval
+            );
+
             return {
                 isOnTrial,
                 isExpired,
@@ -372,7 +463,8 @@ export class TrialService {
                     : null,
                 expiresAt: trialEnd ? trialEnd.toISOString() : null,
                 daysRemaining,
-                planSlug: plan?.name || null
+                planSlug: plan?.name || null,
+                intendedInterval
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -392,7 +484,8 @@ export class TrialService {
                 startedAt: null,
                 expiresAt: null,
                 daysRemaining: 0,
-                planSlug: null
+                planSlug: null,
+                intendedInterval: null
             };
         }
     }
@@ -668,6 +761,13 @@ export class TrialService {
 
                     // Send TRIAL_EXPIRED notification (fire-and-forget)
                     if (this.sendNotification && customer && plan) {
+                        // HOS-115 §5: nudge delivery path 1 — read back the interval the
+                        // customer originally chose (stamped by `startTrial` at grant
+                        // time) and append it to the upgrade link so the pricing page
+                        // can pre-select the same toggle instead of defaulting to monthly.
+                        const intendedInterval = (
+                            subscription.metadata as Record<string, string> | undefined
+                        )?.intendedInterval;
                         this.sendNotification({
                             type: NotificationType.TRIAL_EXPIRED,
                             recipientEmail: customer.email,
@@ -676,7 +776,10 @@ export class TrialService {
                             customerId: customer.id,
                             planName: plan.name,
                             trialEndDate: trialEnd.toISOString(),
-                            upgradeUrl: `${env.HOSPEDA_SITE_URL}/mi-cuenta/suscripcion`
+                            upgradeUrl: buildTrialUpgradeUrl({
+                                siteUrl: env.HOSPEDA_SITE_URL,
+                                intendedInterval
+                            })
                         });
 
                         apiLogger.debug(
@@ -1210,6 +1313,16 @@ export class TrialService {
                             continue;
                         }
 
+                        // HOS-115 §5: read back the interval the customer originally
+                        // chose (stamped by `startTrial` at grant time) so the
+                        // pre-expiry reminder nudge can carry the same
+                        // `?interval=` hint as the TRIAL_EXPIRED notification.
+                        // See `buildTrialUpgradeUrl` for how this degrades
+                        // gracefully when the trial recorded no interval choice.
+                        const intendedInterval = (
+                            subscription.metadata as Record<string, string> | undefined
+                        )?.intendedInterval;
+
                         endingSoon.push({
                             id: subscription.id,
                             customerId: customer.id,
@@ -1218,7 +1331,8 @@ export class TrialService {
                             userId: String(customer.metadata?.userId || ''),
                             planSlug: plan.name,
                             trialEnd,
-                            daysRemaining
+                            daysRemaining,
+                            ...(intendedInterval ? { intendedInterval } : {})
                         });
 
                         apiLogger.debug(

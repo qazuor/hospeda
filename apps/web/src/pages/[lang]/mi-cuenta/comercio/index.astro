@@ -13,6 +13,7 @@
  */
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { isCommerceOwnerRole } from '@/lib/account-roles';
 import { fetchOwnerCommerceListings } from '@/lib/commerce/owner-listings';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -44,43 +45,45 @@ const listings = await fetchOwnerCommerceListings({ cookieHeader });
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="comercio">
     <AccountPageHeader title={title} description={subtitle || undefined} />
 
-    {
-        listings.length === 0 ? (
-            <p class="mc-empty">{t('commerce.owner.list.empty', '')}</p>
-        ) : (
-            <ul class="mc-list">
-                {listings.map((listing) => (
-                    <li class="mc-list__item">
-                        <div class="mc-list__main">
-                            <span class="mc-list__name">{listing.name}</span>
-                            <span class="mc-badge">
-                                {t(`commerce.owner.list.badge.${listing.vertical}`, listing.vertical)}
-                            </span>
-                            <span
-                                class:list={[
-                                    'mc-visibility',
-                                    listing.isPublic ? 'mc-visibility--public' : 'mc-visibility--hidden'
-                                ]}
+    <AccountSectionCard>
+        {
+            listings.length === 0 ? (
+                <p class="mc-empty">{t('commerce.owner.list.empty', '')}</p>
+            ) : (
+                <ul class="mc-list">
+                    {listings.map((listing) => (
+                        <li class="mc-list__item">
+                            <div class="mc-list__main">
+                                <span class="mc-list__name">{listing.name}</span>
+                                <span class="mc-badge">
+                                    {t(`commerce.owner.list.badge.${listing.vertical}`, listing.vertical)}
+                                </span>
+                                <span
+                                    class:list={[
+                                        'mc-visibility',
+                                        listing.isPublic ? 'mc-visibility--public' : 'mc-visibility--hidden'
+                                    ]}
+                                >
+                                    {listing.isPublic
+                                        ? t('commerce.visibility.active', 'Activo')
+                                        : t('commerce.visibility.hidden', 'Oculto')}
+                                </span>
+                            </div>
+                            <a
+                                class="mc-list__edit"
+                                href={buildUrl({
+                                    locale,
+                                    path: `mi-cuenta/comercio/${listing.vertical}/${listing.id}/editar`
+                                })}
                             >
-                                {listing.isPublic
-                                    ? t('commerce.visibility.active', 'Activo')
-                                    : t('commerce.visibility.hidden', 'Oculto')}
-                            </span>
-                        </div>
-                        <a
-                            class="mc-list__edit"
-                            href={buildUrl({
-                                locale,
-                                path: `mi-cuenta/comercio/${listing.vertical}/${listing.id}/editar`
-                            })}
-                        >
-                            {t('commerce.owner.list.edit', 'Editar')}
-                        </a>
-                    </li>
-                ))}
-            </ul>
-        )
-    }
+                                {t('commerce.owner.list.edit', 'Editar')}
+                            </a>
+                        </li>
+                    ))}
+                </ul>
+            )
+        }
+    </AccountSectionCard>
 </AccountLayout>
 
 <style>

@@ -450,7 +450,7 @@ describe('Trial Expiry Cron Job', () => {
                 customerId: 'cust_1',
                 planName: 'owner-basico',
                 trialEndDate: new Date().toISOString(),
-                upgradeUrl: 'https://hospeda.com.ar/mi-cuenta/suscripcion'
+                upgradeUrl: 'https://hospeda.com.ar/es/suscriptores/planes/'
             };
             (senderArg as (p: typeof samplePayload) => void)(samplePayload);
 

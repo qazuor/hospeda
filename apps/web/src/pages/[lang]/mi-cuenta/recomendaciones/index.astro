@@ -21,6 +21,7 @@ import { buildUrl } from '@/lib/urls';
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { RecommendationsFeed } from '@/components/account/RecommendationsFeed.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -43,9 +44,11 @@ const apiUrl = getApiUrl();
 <AccountLayout locale={locale} title={title} description={description} activeSection="recomendaciones">
     <AccountPageHeader title={title} description={description} />
 
-    <RecommendationsFeed
-        client:visible
-        locale={locale}
-        apiUrl={apiUrl}
-    />
+    <AccountSectionCard>
+        <RecommendationsFeed
+            client:visible
+            locale={locale}
+            apiUrl={apiUrl}
+        />
+    </AccountSectionCard>
 </AccountLayout>
