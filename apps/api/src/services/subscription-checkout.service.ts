@@ -20,11 +20,7 @@
  * @module services/subscription-checkout.service
  */
 
-import type {
-    QZPayBilling,
-    QZPayPollingResourceType,
-    QZPaySubscriptionWithHelpers
-} from '@qazuor/qzpay-core';
+import type { QZPayBilling, QZPayPollingResourceType } from '@qazuor/qzpay-core';
 import { TEST_DAILY_PLAN } from '@repo/billing';
 import {
     billingSubscriptions,
@@ -831,12 +827,16 @@ export async function initiateCommerceMonthlySubscription(
         );
     }
 
-    const subscription: QZPaySubscriptionWithHelpers = await billing.subscriptions.create({
+    // AC-7: the `mode: 'paid'` create + checkoutUrl resolution + fail-closed
+    // MISSING_INIT_POINT guard live in the shared `createPaidSubscription`
+    // helper (`billing/paid-subscription-create.ts`), same as the accommodation
+    // and reactivation flows. Pure extraction — no behavior change versus the
+    // previous inline block.
+    const { subscription, checkoutUrl } = await createPaidSubscription({
+        billing,
         customerId,
         planId: plan.id,
         priceId: monthlyPrice.id,
-        mode: 'paid',
-        billingInterval: 'monthly',
         paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
         notificationUrl: urls.notificationUrl,
         metadata: {
@@ -847,14 +847,6 @@ export async function initiateCommerceMonthlySubscription(
             entityId
         }
     });
-
-    const checkoutUrl = subscription.providerInitPoint ?? subscription.providerSandboxInitPoint;
-    if (!checkoutUrl) {
-        throw new SubscriptionCheckoutError(
-            'MISSING_INIT_POINT',
-            'Payment provider did not return a checkout URL'
-        );
-    }
 
     // D3 + D4 are wrapped in a single transaction so the commerce path can never
     // end up with a billing_subscriptions row stamped 'commerce' but no link row
@@ -949,12 +941,12 @@ export async function initiatePartnerMonthlySubscription(
         );
     }
 
-    const subscription: QZPaySubscriptionWithHelpers = await billing.subscriptions.create({
+    // AC-7: shared `createPaidSubscription` helper — see the commerce flow above.
+    const { subscription, checkoutUrl } = await createPaidSubscription({
+        billing,
         customerId,
         planId: plan.id,
         priceId: monthlyPrice.id,
-        mode: 'paid',
-        billingInterval: 'monthly',
         paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
         notificationUrl: urls.notificationUrl,
         metadata: {
@@ -964,14 +956,6 @@ export async function initiatePartnerMonthlySubscription(
             partnerId
         }
     });
-
-    const checkoutUrl = subscription.providerInitPoint ?? subscription.providerSandboxInitPoint;
-    if (!checkoutUrl) {
-        throw new SubscriptionCheckoutError(
-            'MISSING_INIT_POINT',
-            'Payment provider did not return a checkout URL'
-        );
-    }
 
     await withTransaction(async (tx) => {
         await tx
