@@ -17,6 +17,7 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { isHostRole } from '@/lib/account-roles';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { HostDashboard } from '@/components/host/HostDashboard.client';
@@ -33,6 +34,12 @@ const description = t('host.dashboard.pageDescription', 'Resumen de tus propieda
 const user = Astro.locals.user;
 if (!user) {
     return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+// Role gate: only host-level roles may reach the host dashboard. A plain
+// tourist reaching this URL directly is redirected back to the account home.
+if (!isHostRole(user.role)) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
 }
 ---
 

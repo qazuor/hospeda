@@ -11,7 +11,12 @@
 import type { QZPayBilling, QZPayWebhookEvent } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 import { extractMPSubscriptionEventData } from '@qazuor/qzpay-mercadopago';
-import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
+import {
+    billingSubscriptionEvents,
+    billingSubscriptions,
+    getDb,
+    type QZPayBillingSubscription
+} from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
@@ -26,6 +31,7 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../../services/addon-lifecycle.service.js';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service.js';
+import { completeSupersessionPairing } from '../../../services/billing/reactivation-supersession-complete.js';
 import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -199,6 +205,90 @@ export function shouldSendAdminAlert(previousStatus: string, newStatus: string):
         previousStatus !== SubscriptionStatusEnum.CANCELLED &&
         previousStatus !== SubscriptionStatusEnum.EXPIRED
     );
+}
+
+/**
+ * Completes the deferred old-subscription supersession for a paid
+ * reactivation (HOS-114 T-007).
+ *
+ * `TrialService.reactivateFromTrial` / `reactivateSubscription` (T-005/T-006)
+ * create the new paid subscription with `mode:'paid'` and stamp
+ * `supersedesSubscriptionId` in its metadata (a single id, or a comma-joined
+ * list for the defensive multi-sub case), but deliberately do NOT cancel the
+ * old subscription synchronously — see spec §6.4/§6.5. This function
+ * completes that swap once the new subscription's webhook-confirmed
+ * `PENDING_PROVIDER -> ACTIVE` transition has already been committed by the
+ * caller: for each superseded id it delegates the actual cancel + audit work
+ * to the shared {@link completeSupersessionPairing} (HOS-114 T-015/T-016),
+ * which is also the implementation the T-016 reconcile-backstop cron calls —
+ * see that module's JSDoc for the idempotency guarantee, the T-015a
+ * cancel-verification hardening, and the error-isolation contract.
+ *
+ * Only invoked by {@link processSubscriptionUpdated} when the observed
+ * transition is exactly `PENDING_PROVIDER -> ACTIVE` — callers MUST NOT
+ * invoke this for any other transition (pause/cancel/past-due/etc. must
+ * never trigger a supersession swap).
+ *
+ * @param input - The billing instance, DB handle, the just-activated local
+ *   subscription row, and webhook context for logging/audit.
+ */
+async function completeReactivationSupersession({
+    billing,
+    paymentAdapter,
+    db,
+    localSubscription,
+    providerEventId,
+    source
+}: {
+    billing: QZPayBilling;
+    paymentAdapter: QZPayMercadoPagoAdapter;
+    db: ReturnType<typeof getDb>;
+    localSubscription: QZPayBillingSubscription;
+    providerEventId: string;
+    source: string;
+}): Promise<void> {
+    const metadata = (localSubscription.metadata ?? {}) as Record<string, unknown>;
+    const supersedesRaw = metadata.supersedesSubscriptionId;
+
+    if (typeof supersedesRaw !== 'string' || supersedesRaw.trim() === '') {
+        // Normal /start-paid activation (no reactivation intent) — no-op.
+        return;
+    }
+
+    const supersededIds = supersedesRaw
+        .split(',')
+        .map((id) => id.trim())
+        .filter((id) => id.length > 0);
+
+    if (supersededIds.length === 0) {
+        return;
+    }
+
+    // Infer which reactivation flavor this was from the markers T-005/T-006
+    // stamp on the NEW subscription's metadata, so the audit row preserves
+    // the same triggerSource the pre-T-005/T-006 inline code used to write.
+    const isTrialReactivation = metadata.convertedFromTrial === 'true';
+    const triggerSource = isTrialReactivation ? 'trial-reactivation' : 'subscription-reactivation';
+
+    for (const supersededId of supersededIds) {
+        // completeSupersessionPairing never throws — it swallows and reports
+        // its own outcome, so a failure on one pairing can never undo the
+        // activation this function is called after, or block the others.
+        await completeSupersessionPairing({
+            billing,
+            paymentAdapter,
+            db,
+            newSubscription: {
+                id: localSubscription.id,
+                customerId: localSubscription.customerId,
+                planId: localSubscription.planId
+            },
+            supersededId,
+            triggerSource,
+            providerEventId,
+            source
+        });
+    }
 }
 
 /**
@@ -699,6 +789,32 @@ export async function processSubscriptionUpdated({
 
     // Clear entitlement cache to reflect status change immediately
     clearEntitlementCache(localSubscription.customerId);
+
+    // HOS-114 T-007: complete the deferred reactivation supersession, but
+    // STRICTLY on the activation transition (PENDING_PROVIDER -> ACTIVE).
+    // This function handles every status transition (pause/cancel/past-due/
+    // resume) — gating tightly here prevents the swap from ever firing on an
+    // unrelated transition. No-ops immediately if the just-activated
+    // subscription carries no `supersedesSubscriptionId` (a plain
+    // /start-paid activation, not a reactivation). Runs AFTER
+    // clearEntitlementCache above — the entitlement cache for
+    // `localSubscription.customerId` is already cleared exactly once by that
+    // call; the superseded subscription belongs to the SAME customer for
+    // both reactivation flows, so no second clear is needed here (see
+    // completeReactivationSupersession JSDoc / spec AC-4).
+    if (
+        previousStatus === SubscriptionStatusEnum.PENDING_PROVIDER &&
+        mappedStatus === SubscriptionStatusEnum.ACTIVE
+    ) {
+        await completeReactivationSupersession({
+            billing,
+            paymentAdapter,
+            db,
+            localSubscription,
+            providerEventId,
+            source
+        });
+    }
 
     // SPEC-239 T-050: reconcile any commerce listing linked to this subscription.
     // No-op for accommodation subs (no commerce_listing_subscriptions row).

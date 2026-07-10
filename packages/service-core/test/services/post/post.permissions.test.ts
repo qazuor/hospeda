@@ -1,5 +1,5 @@
 import type { PostIdType, UserIdType } from '@repo/schemas';
-import { PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     checkCanCommentPost,
@@ -110,6 +110,75 @@ describe('checkCanViewPost', () => {
             id: getMockId('user', 'not-author') as UserIdType
         });
         expect(() => checkCanViewPost(actor, privatePost)).toThrow(ServiceError);
+    });
+
+    // HOS-117 T-022: a soft-deleted PUBLIC post previously leaked a full 200
+    // (checkCanViewPost had no deletedAt guard at all). Now non-author,
+    // non-POST_VIEW_ALL actors get GONE (410, deindex) — but only when the post
+    // was PUBLIC (indexable) before deletion; the author and staff with
+    // POST_VIEW_ALL still see it for management.
+    it('should throw GONE for a soft-deleted PUBLIC post when actor is not the author and lacks POST_VIEW_ALL', () => {
+        const deletedPost = createMockPost({
+            ...post,
+            visibility: VisibilityEnum.PUBLIC,
+            deletedAt: new Date()
+        });
+        const guestActor = createActor({
+            ...baseActor,
+            id: getMockId('user', 'not-author') as UserIdType
+        });
+        try {
+            checkCanViewPost(guestActor, deletedPost);
+            throw new Error('Should have thrown');
+        } catch (err) {
+            expect(err).toBeInstanceOf(ServiceError);
+            if (err instanceof ServiceError) {
+                expect(err.code).toBe(ServiceErrorCode.GONE);
+            }
+        }
+    });
+
+    it('should throw NOT_FOUND (not GONE) for a soft-deleted PRIVATE post — anti-enumeration (SPEC-092 T-087)', () => {
+        // A PRIVATE post was never publicly discoverable, so its deletion must
+        // stay a uniform 404 (never distinguishable from never-existed).
+        const deletedPrivatePost = createMockPost({
+            ...post,
+            visibility: VisibilityEnum.PRIVATE,
+            deletedAt: new Date()
+        });
+        const guestActor = createActor({
+            ...baseActor,
+            id: getMockId('user', 'not-author') as UserIdType
+        });
+        try {
+            checkCanViewPost(guestActor, deletedPrivatePost);
+            throw new Error('Should have thrown');
+        } catch (err) {
+            expect(err).toBeInstanceOf(ServiceError);
+            if (err instanceof ServiceError) {
+                expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+            }
+        }
+    });
+
+    it('should allow the author to view their own soft-deleted post', () => {
+        const deletedPost = createMockPost({
+            ...post,
+            visibility: VisibilityEnum.PUBLIC,
+            deletedAt: new Date()
+        });
+        const authorActor = createActor({ id: authorId, role: RoleEnum.USER });
+        expect(() => checkCanViewPost(authorActor, deletedPost)).not.toThrow();
+    });
+
+    it('should allow staff with POST_VIEW_ALL to view a soft-deleted post', () => {
+        const deletedPost = createMockPost({ ...post, deletedAt: new Date() });
+        const staffActor = createActor({
+            ...baseActor,
+            id: getMockId('user', 'staff') as UserIdType,
+            permissions: [PermissionEnum.POST_VIEW_ALL]
+        });
+        expect(() => checkCanViewPost(staffActor, deletedPost)).not.toThrow();
     });
 });
 

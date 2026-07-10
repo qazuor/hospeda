@@ -169,6 +169,29 @@ function buildMockBilling() {
     };
 }
 
+/** HOS-114: MP checkout return URLs required by the paid reactivation flow. */
+const REACTIVATION_URLS = {
+    paymentMethodReturnUrl: 'https://hospeda.test/es/suscriptores/checkout/success/',
+    notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
+};
+
+/** HOS-114: a paid, monthly plan fixture accepted by the reactivation plan guard. */
+function buildPaidMonthlyPlanFixture(): Record<string, unknown> {
+    return {
+        id: PLAN_ID,
+        name: 'owner-basico',
+        prices: [
+            {
+                id: 'price-monthly-1',
+                billingInterval: 'month',
+                intervalCount: 1,
+                active: true,
+                unitAmount: 3_500_000
+            }
+        ]
+    };
+}
+
 // ----------------------------------------------------------------
 // Test suite
 // ----------------------------------------------------------------
@@ -467,49 +490,94 @@ describe('Trial Lifecycle Integration', () => {
     // ----------------------------------------------------------------
     // Step 7: Reactivate from trial
     // ----------------------------------------------------------------
-    describe('reactivateFromTrial', () => {
-        it('should cancel the trial subscription and create a new paid subscription', async () => {
-            // Arrange: customer has one trialing subscription
+    describe('reactivateFromTrial (HOS-114)', () => {
+        it('should create a real paid preapproval and return a checkoutUrl, leaving the trial subscription untouched', async () => {
+            // Arrange: customer has one trialing subscription; the plan guard needs a
+            // plan with an active monthly price row.
             const trialSub = buildTrialingSubscription();
             mockBilling.subscriptions.getByCustomerId.mockResolvedValue([trialSub]);
-            mockBilling.subscriptions.create.mockResolvedValue({ id: PAID_SUBSCRIPTION_ID });
-
-            // Act
-            const newSubscriptionId = await service.reactivateFromTrial({
-                customerId: CUSTOMER_ID,
-                planId: PLAN_ID
+            mockBilling.plans.list.mockResolvedValue({ data: [buildPaidMonthlyPlanFixture()] });
+            mockBilling.subscriptions.create.mockResolvedValue({
+                id: PAID_SUBSCRIPTION_ID,
+                status: 'incomplete',
+                providerInitPoint: 'https://mp.test/checkout/reactivate-int'
             });
 
-            // Assert
-            expect(newSubscriptionId).toBe(PAID_SUBSCRIPTION_ID);
+            // Act
+            const result = await service.reactivateFromTrial({
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                urls: REACTIVATION_URLS
+            });
 
-            // Previous trial subscription should have been cancelled
-            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledWith(SUBSCRIPTION_ID);
+            // Assert — real paid preapproval contract
+            expect(result).toEqual({
+                success: true,
+                subscriptionId: PAID_SUBSCRIPTION_ID,
+                checkoutUrl: 'https://mp.test/checkout/reactivate-int',
+                status: 'incomplete',
+                message: expect.any(String)
+            });
 
-            // New paid subscription should have been created without trialDays
+            // Deferred to the webhook (HOS-114 T-007): the old trial subscription
+            // must NOT be cancelled synchronously here.
+            expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+
+            // New paid subscription created via the real mode:'paid' contract,
+            // carrying the superseded trial's id for the webhook to complete.
             expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
                 expect.objectContaining({
                     customerId: CUSTOMER_ID,
                     planId: PLAN_ID,
-                    metadata: expect.objectContaining({ convertedFromTrial: 'true' })
+                    mode: 'paid',
+                    billingInterval: 'monthly',
+                    paymentMethodReturnUrl: REACTIVATION_URLS.paymentMethodReturnUrl,
+                    notificationUrl: REACTIVATION_URLS.notificationUrl,
+                    metadata: expect.objectContaining({
+                        convertedFromTrial: 'true',
+                        supersedesSubscriptionId: SUBSCRIPTION_ID
+                    })
                 })
             );
         });
 
-        it('should create a paid subscription even when no prior trial exists', async () => {
+        it('should create a paid preapproval even when no prior trial exists', async () => {
             // Arrange: no existing subscriptions
             mockBilling.subscriptions.getByCustomerId.mockResolvedValue([]);
-            mockBilling.subscriptions.create.mockResolvedValue({ id: PAID_SUBSCRIPTION_ID });
+            mockBilling.plans.list.mockResolvedValue({ data: [buildPaidMonthlyPlanFixture()] });
+            mockBilling.subscriptions.create.mockResolvedValue({
+                id: PAID_SUBSCRIPTION_ID,
+                status: 'incomplete',
+                providerInitPoint: 'https://mp.test/checkout/reactivate-int'
+            });
 
             // Act
-            const newSubscriptionId = await service.reactivateFromTrial({
+            const result = await service.reactivateFromTrial({
                 customerId: CUSTOMER_ID,
-                planId: PLAN_ID
+                planId: PLAN_ID,
+                urls: REACTIVATION_URLS
             });
 
             // Assert
-            expect(newSubscriptionId).toBe(PAID_SUBSCRIPTION_ID);
+            expect(result.subscriptionId).toBe(PAID_SUBSCRIPTION_ID);
+            expect(result.checkoutUrl).toBe('https://mp.test/checkout/reactivate-int');
             expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+        });
+
+        it('should reject an unknown planId and create no subscription (plan guard, fail-closed)', async () => {
+            // Arrange
+            mockBilling.plans.list.mockResolvedValue({ data: [] });
+
+            // Act & Assert
+            await expect(
+                service.reactivateFromTrial({
+                    customerId: CUSTOMER_ID,
+                    planId: 'unknown-plan-id',
+                    urls: REACTIVATION_URLS
+                })
+            ).rejects.toMatchObject({ name: 'SubscriptionCheckoutError', code: 'PLAN_NOT_FOUND' });
+
+            expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
         });
 
         it('should throw when billing is disabled', async () => {
@@ -518,7 +586,11 @@ describe('Trial Lifecycle Integration', () => {
 
             // Act & Assert
             await expect(
-                disabledService.reactivateFromTrial({ customerId: CUSTOMER_ID, planId: PLAN_ID })
+                disabledService.reactivateFromTrial({
+                    customerId: CUSTOMER_ID,
+                    planId: PLAN_ID,
+                    urls: REACTIVATION_URLS
+                })
             ).rejects.toThrow('Billing not enabled');
         });
     });

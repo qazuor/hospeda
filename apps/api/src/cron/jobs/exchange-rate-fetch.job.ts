@@ -31,7 +31,7 @@ import type { CronJobDefinition } from '../types.js';
  *
  * Lock key 1008 is next in the billing/cron sequence (SPEC-194 T-020):
  *   1001 webhook-retry  | 1002 notification-schedule | 1003 dunning
- *   1004 block-expired-trials | 1005 trial-pre-end-notif
+ *   1004 block-expired-trials | 1005 (free — trial-pre-end-notif retired, HOS-121)
  *   1006 abandoned-pending-subs | 1007 subscription-poll
  *   1008 exchange-rate-fetch  ← this job
  */

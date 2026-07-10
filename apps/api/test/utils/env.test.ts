@@ -41,8 +41,9 @@ const createValidTestEnv = (overrides: Record<string, string | undefined> = {}) 
 });
 
 // Production-valid env. In production the schema requires REDIS, the AI vault
-// master key, and the prod-only service credentials (env hardening). Tests that
-// assert a successful production startup use this so they don't trip those guards.
+// master key, the social vault master key, and the prod-only service credentials
+// (env hardening). Tests that assert a successful production startup use this so
+// they don't trip those guards.
 const createValidProdEnv = (overrides: Record<string, string | undefined> = {}) =>
     createValidTestEnv({
         NODE_ENV: 'production',
@@ -50,6 +51,7 @@ const createValidProdEnv = (overrides: Record<string, string | undefined> = {}) 
         API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar',
         HOSPEDA_REDIS_URL: 'redis://prod:6379',
         HOSPEDA_AI_VAULT_MASTER_KEY: 'a'.repeat(32),
+        HOSPEDA_SOCIAL_VAULT_MASTER_KEY: 'b'.repeat(32),
         HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'APP_USR-test-token',
         HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: 'test-webhook-secret',
         HOSPEDA_EMAIL_API_KEY: 'test-email-api-key',
@@ -489,6 +491,50 @@ describe('Environment Configuration', () => {
             const envModule = await import('../../src/utils/env');
             envModule.validateApiEnv();
             expect(envModule.env.HOSPEDA_AI_VAULT_MASTER_KEY).toBeUndefined();
+        });
+
+        it('should require HOSPEDA_SOCIAL_VAULT_MASTER_KEY in production (social vault fail-fast)', async () => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+
+            process.env = createValidProdEnv({
+                // Explicitly removed to prove production requires it. Without this
+                // key the API boots but every social credential save/rotate fails
+                // at runtime with a generic 500 (the bug fix/social-secrets-save).
+                HOSPEDA_SOCIAL_VAULT_MASTER_KEY: undefined
+            });
+
+            const { validateApiEnv } = await import('../../src/utils/env');
+            expect(() => validateApiEnv()).toThrow('Process exit');
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
+        });
+
+        it('should accept HOSPEDA_SOCIAL_VAULT_MASTER_KEY in production when provided', async () => {
+            const masterKey = 'b'.repeat(32);
+            process.env = createValidProdEnv({
+                HOSPEDA_SOCIAL_VAULT_MASTER_KEY: masterKey
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_SOCIAL_VAULT_MASTER_KEY).toBe(masterKey);
+        });
+
+        it('should NOT require HOSPEDA_SOCIAL_VAULT_MASTER_KEY in non-production environments', async () => {
+            process.env = createValidTestEnv({
+                NODE_ENV: 'test',
+                // Explicitly removed to prove non-production does not require it.
+                HOSPEDA_SOCIAL_VAULT_MASTER_KEY: undefined
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_SOCIAL_VAULT_MASTER_KEY).toBeUndefined();
         });
 
         it('should require HOSPEDA_SENTRY_DSN in production (Sentry prod hardening)', async () => {

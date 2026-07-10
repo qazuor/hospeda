@@ -614,3 +614,59 @@ describe('ImportFromUrl i18n keys', () => {
         });
     }
 });
+
+// ---------------------------------------------------------------------------
+// BETA-154: non-ok error mapping (403 / 429 / other) instead of one generic msg
+// ---------------------------------------------------------------------------
+
+describe('ImportFromUrl — non-ok error mapping (BETA-154)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockUseImportStatus.mockReturnValue(IDLE_POLL_RESULT);
+    });
+
+    /** Fill URL, tick legal, submit against a mocked non-ok result, return the alert. */
+    async function submitWithError(error: unknown) {
+        mockImportFromUrl.mockResolvedValueOnce({ ok: false, error });
+        render(<ImportFromUrl locale="es" />);
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        fireEvent.change(screen.getByRole('textbox', { name: /URL/i }), {
+            target: { value: 'https://www.airbnb.com.ar/rooms/789' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: /Importar/i }));
+        await waitFor(() => expect(mockImportFromUrl).toHaveBeenCalledTimes(1));
+        return screen.findByRole('alert');
+    }
+
+    it('shows the permission-specific message on a 403', async () => {
+        const alert = await submitWithError({ status: 403, code: 'FORBIDDEN' });
+        expect(alert).toHaveTextContent(/no tenés permiso para importar/i);
+    });
+
+    it('shows the rate-limit message on a 429', async () => {
+        const alert = await submitWithError({ status: 429 });
+        expect(alert).toHaveTextContent(/demasiadas importaciones/i);
+    });
+
+    it('surfaces the specific API error for other statuses via translateApiError', async () => {
+        const alert = await submitWithError({ status: 400, message: 'Bad specific input' });
+        expect(alert).toHaveTextContent('Bad specific input');
+    });
+
+    it('fires onError("unknown") on any non-ok result', async () => {
+        const onError = vi.fn();
+        mockImportFromUrl.mockResolvedValueOnce({ ok: false, error: { status: 403 } });
+        render(
+            <ImportFromUrl
+                locale="es"
+                onError={onError}
+            />
+        );
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        fireEvent.change(screen.getByRole('textbox', { name: /URL/i }), {
+            target: { value: 'https://www.airbnb.com.ar/rooms/789' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: /Importar/i }));
+        await waitFor(() => expect(onError).toHaveBeenCalledWith('unknown'));
+    });
+});

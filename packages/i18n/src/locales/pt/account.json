@@ -16,6 +16,7 @@
     "whatsNewPanel": {
         "title": "Novidades",
         "empty": "Nenhuma novidade ainda",
+        "emptyDesc": "Quando publicarmos melhorias ou novos recursos da plataforma, você vai vê-los aqui.",
         "markAllRead": "Marcar tudo como lido",
         "seeEntry": "Ver"
     },

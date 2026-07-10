@@ -152,6 +152,40 @@ describe('SocialHashtagService.create', () => {
     });
 });
 
+describe('SocialHashtagService.getSearchableColumns', () => {
+    /**
+     * Regression test (bug fix): `social_hashtags` has NO `name` column — the
+     * base `BaseCrudService.getSearchableColumns()` default is `['name']`,
+     * which silently matches no column and makes the `search` query param a
+     * no-op (the admin hashtag-suggestion dropdown never narrows results).
+     * `SocialHashtagService` overrides it to return `['hashtag']`, the
+     * table's actual free-text column. This test guards against the override
+     * being removed or reverted to the base default.
+     */
+    class ExposedSocialHashtagService extends SocialHashtagService {
+        public exposeGetSearchableColumns(): string[] {
+            return this.getSearchableColumns();
+        }
+    }
+
+    it('should return ["hashtag"], not the base default ["name"]', () => {
+        // Arrange
+        const modelMock = createModelMock();
+        const loggerMock = createLoggerMock();
+        const service = new ExposedSocialHashtagService(
+            { logger: loggerMock },
+            modelMock as unknown as SocialHashtagModel
+        );
+
+        // Act
+        const columns = service.exposeGetSearchableColumns();
+
+        // Assert
+        expect(columns).toEqual(['hashtag']);
+        expect(columns).not.toContain('name');
+    });
+});
+
 describe('SocialHashtagService.list', () => {
     let service: SocialHashtagService;
     let modelMock: ReturnType<typeof createModelMock>;

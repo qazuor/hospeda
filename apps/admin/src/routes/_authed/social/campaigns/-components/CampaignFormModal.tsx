@@ -7,7 +7,7 @@
 
 import type { TranslationKey } from '@repo/i18n';
 import { type SocialCampaign, SocialCampaignCreateSchema } from '@repo/schemas';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -46,7 +46,7 @@ const EMPTY_FORM: FormState = {
     endsAt: ''
 };
 
-function isoDatePart(d: Date | undefined): string {
+function isoDatePart(d: Date | null | undefined): string {
     if (!d) return '';
     return d instanceof Date ? d.toISOString().slice(0, 10) : '';
 }
@@ -76,6 +76,17 @@ export function CampaignFormModal({ open, onOpenChange, item }: CampaignFormModa
     const createMutation = useCreateSocialCampaign();
     const updateMutation = useUpdateSocialCampaign();
     const isPending = createMutation.isPending || updateMutation.isPending;
+
+    // Re-seed the form whenever the modal opens for a given row. The component
+    // stays mounted across opens (parent only toggles `open`/`item`), so the
+    // `useState` initializer runs once with `item === null` and would otherwise
+    // keep showing an empty form on every edit.
+    useEffect(() => {
+        if (open) {
+            setForm(item ? itemToForm(item) : EMPTY_FORM);
+            setFieldErrors({});
+        }
+    }, [open, item]);
 
     const handleOpenChange = (next: boolean) => {
         if (!next) {

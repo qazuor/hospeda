@@ -559,6 +559,13 @@ export interface DetailFaq {
     readonly question: string;
     readonly answer: string;
     readonly category: string | null;
+    /**
+     * Locale the resolved `question`/`answer` text is actually in (HOS-117).
+     * Set by the transforms from the FAQ's i18n fields with legacy-text fallback,
+     * so consumers can declare an honest `inLanguage` on FAQPage JSON-LD instead
+     * of blindly echoing the page locale. Absent on FAQs not routed through i18n.
+     */
+    readonly resolvedLocale?: 'es' | 'en' | 'pt';
 }
 
 /**

@@ -106,11 +106,14 @@ test.describe('RES-03: Cloudinary missing-asset tolerance @p0 @resilience @accom
             `post-delete public GET must not 5xx (got ${afterRes.status()})`
         ).toBe(true);
 
-        if (afterRes.status() !== 404) {
+        // 404 (never existed) and 410 Gone (soft-deleted, HOS-117) are both
+        // definitive "not visible to public" outcomes — nothing more to check.
+        // For any other status, the payload must carry no orphaned entity data.
+        if (afterRes.status() !== 404 && afterRes.status() !== 410) {
             const body = (await afterRes.json()) as { data?: unknown };
             expect(
                 body.data === null || body.data === undefined,
-                `post-delete public GET should return null/404, got data=${JSON.stringify(body.data).slice(0, 100)}`
+                `post-delete public GET should be 404/410 or return null data, got status=${afterRes.status()} data=${JSON.stringify(body.data ?? null).slice(0, 100)}`
             ).toBe(true);
         }
     });

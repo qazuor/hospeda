@@ -30,12 +30,12 @@ import {
     pageRevalidationJob,
     partnerExpiryJob,
     pollApifyReputationRunsJob,
+    reactivationSupersessionReconcileJob,
     refreshExternalReputationJob,
     searchIndexRefreshJob,
     socialPublishDispatchJob,
     subscriptionPollJob,
     trialExpiryJob,
-    trialPreEndNotifJob,
     webhookRetryJob
 } from './jobs/index.js';
 import type { CronJobDefinition } from './types';
@@ -64,7 +64,6 @@ export const cronJobs: CronJobDefinition[] = [
     conversationTokenReminderJob,
     conversationTokenCleanupJob,
     newsletterCloseCampaignsJob,
-    trialPreEndNotifJob,
     abandonedPendingSubsJob,
     applyScheduledPlanChangesJob,
     finalizeCancelledSubsJob,
@@ -76,7 +75,8 @@ export const cronJobs: CronJobDefinition[] = [
     socialPublishDispatchJob,
     pollApifyReputationRunsJob,
     partnerExpiryJob,
-    featuredByEntitlementReconcileJob
+    featuredByEntitlementReconcileJob,
+    reactivationSupersessionReconcileJob
 ];
 
 /**

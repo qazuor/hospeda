@@ -10,7 +10,7 @@ All PostgreSQL advisory locks used in the Hospeda platform. Lock IDs must be uni
 | 1002 | `apps/api/src/cron/jobs/notification-schedule.job.ts` | Prevent overlapping notification schedule cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-034 |
 | 1003 | `apps/api/src/cron/jobs/dunning.job.ts` | Prevent overlapping dunning cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-021 |
 | 1004 | `apps/api/src/services/trial.service.ts` | Prevent overlapping `blockExpiredTrials` batch runs | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-064 |
-| 1005 | `apps/api/src/cron/jobs/trial-pre-end-notif.job.ts` | Prevent overlapping trial pre-end notification cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-064 |
+| 1005 | _(free — retired)_ | Formerly `trial-pre-end-notif.job.ts`; that duplicate cron was deleted (HOS-121) after its robustness was ported into `notification-schedule.job.ts` (lock 1002). Key 1005 is available for reuse. | — | SPEC-064 / HOS-121 |
 | 1006 | `apps/api/src/cron/jobs/abandoned-pending-subs.job.ts` | Prevent overlapping abandoned pending subscriptions cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-143 |
 | 1007 | `apps/api/src/cron/jobs/subscription-poll.job.ts` | Prevent overlapping subscription poll cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-143 |
 | 1008 | `apps/api/src/cron/jobs/exchange-rate-fetch.job.ts` | Prevent overlapping exchange rate fetch cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-194 |

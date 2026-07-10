@@ -94,8 +94,8 @@ Server-side variables use `HOSPEDA_*` prefix. Client-side (browser-safe) variabl
 /{locale}/mi-cuenta/resenas/                  Reviews (protected)
 /{locale}/mi-cuenta/suscripcion/              Subscription (protected)
 /{locale}/suscriptores/                       Subscriber landing (public)
-/{locale}/suscriptores/precios/propietarios/  Owner pricing (public)
-/{locale}/suscriptores/precios/turistas/      Tourist pricing (public)
+/{locale}/suscriptores/planes/                Owner pricing (public)
+/{locale}/suscriptores/turistas/              Tourist pricing (public)
 /{locale}/suscriptores/propietarios/          Owner landing (public)
 /{locale}/contacto/                           Contact form
 /{locale}/faq/                                FAQ
