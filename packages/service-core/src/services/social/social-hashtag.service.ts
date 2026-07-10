@@ -51,6 +51,17 @@ export class SocialHashtagService extends BaseCrudService<
         return undefined;
     }
 
+    /**
+     * The `social_hashtags` table's free-text column is `hashtag`, not the
+     * base default `name` (which does not exist on this table). Without this
+     * override `adminList()`'s built-in search silently matches no column and
+     * returns the full catalog unfiltered — the admin hashtag-suggestion
+     * dropdown never narrows by the typed query.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['hashtag'];
+    }
+
     constructor(ctx: ServiceConfig, model?: SocialHashtagModel) {
         super(ctx, SocialHashtagService.ENTITY_NAME);
         this.model = model ?? new RealSocialHashtagModel();

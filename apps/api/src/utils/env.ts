@@ -108,6 +108,25 @@ const ApiEnvSchema = ApiEnvBaseSchema.superRefine((data, ctx) => {
                 'HOSPEDA_AI_VAULT_MASTER_KEY is required in production (vault crypto cannot decrypt AI provider credentials without it)'
         });
     }
+    // Social credential vault master key is REQUIRED in production: the vault
+    // crypto throws when the key is missing, so without it the API boots but
+    // every social credential save/rotate fails at runtime with a generic 500.
+    // Mirrors the AI vault guard above so the deploy fails fast at startup
+    // instead of silently breaking the social automation surface (HOS-64 was
+    // registered "optional until the vault migration runs"; the feature is now
+    // live, so the key is prod-required).
+    if (
+        data.NODE_ENV === 'production' &&
+        (!data.HOSPEDA_SOCIAL_VAULT_MASTER_KEY ||
+            data.HOSPEDA_SOCIAL_VAULT_MASTER_KEY.trim() === '')
+    ) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['HOSPEDA_SOCIAL_VAULT_MASTER_KEY'],
+            message:
+                'HOSPEDA_SOCIAL_VAULT_MASTER_KEY is required in production (vault crypto cannot encrypt/decrypt social credentials without it)'
+        });
+    }
     // OAuth cross-validation: require secret when client ID is set
     if (data.HOSPEDA_GOOGLE_CLIENT_ID && !data.HOSPEDA_GOOGLE_CLIENT_SECRET) {
         ctx.addIssue({
