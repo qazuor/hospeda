@@ -396,5 +396,36 @@ describe('NotificationScheduleService', () => {
             });
             expectForbiddenError(result);
         });
+
+        it('should skip a double-advance when the row streak already differs from the caller-observed streak (AC-10)', async () => {
+            // A concurrent/previous run already advanced this row from 1 to 2;
+            // this call still believes the streak was 1 when it dispatched.
+            const scheduleRow = makeScheduleRow({ streakCount: 2 });
+            asMock(modelMock.findById).mockResolvedValue(scheduleRow);
+
+            const result = await service.advanceSchedule(SYSTEM_ACTOR, {
+                scheduleId: SCHEDULE_ID,
+                currentStreakCount: 1
+            });
+
+            expectSuccess(result);
+            // Returns the current (already-advanced) row unchanged, no further mutation.
+            expect(result.data?.streakCount).toBe(2);
+            expect(asMock(modelMock.update)).not.toHaveBeenCalled();
+        });
+
+        it('should return null (not the stale row) when the row was already cancelled by a concurrent advance', async () => {
+            const scheduleRow = makeScheduleRow({ streakCount: 3, cancelledAt: new Date() });
+            asMock(modelMock.findById).mockResolvedValue(scheduleRow);
+
+            const result = await service.advanceSchedule(SYSTEM_ACTOR, {
+                scheduleId: SCHEDULE_ID,
+                currentStreakCount: 2
+            });
+
+            expectSuccess(result);
+            expect(result.data).toBeNull();
+            expect(asMock(modelMock.update)).not.toHaveBeenCalled();
+        });
     });
 });

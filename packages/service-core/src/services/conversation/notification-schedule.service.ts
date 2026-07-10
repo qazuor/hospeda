@@ -368,6 +368,25 @@ export class NotificationScheduleService extends BaseService {
                     );
                 }
 
+                // Double-advance guard (AC-10 / OQ-3): if a concurrent or previous run
+                // already advanced this schedule's streak past the value the caller
+                // observed when it dispatched the email, do NOT advance again. This can
+                // happen when two overlapping cron runs both resolve and send for the
+                // same schedule before either persists — each claims a DIFFERENT schedule
+                // via the Redis idempotency key in the normal case, but this guard closes
+                // the residual race window at the DB layer regardless.
+                if (schedule.streakCount !== validated.currentStreakCount) {
+                    this.logger.debug(
+                        {
+                            scheduleId: validated.scheduleId,
+                            expectedStreakCount: validated.currentStreakCount,
+                            actualStreakCount: schedule.streakCount
+                        },
+                        'Streak already advanced — skipping double-advance'
+                    );
+                    return schedule.cancelledAt ? null : schedule;
+                }
+
                 const now = new Date();
 
                 if (validated.currentStreakCount >= MAX_STREAK) {
