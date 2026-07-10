@@ -63,6 +63,7 @@
         "ALREADY_EXISTS": "That resource already exists.",
         "INTERNAL_ERROR": "Something went wrong on our side. Please try again in a moment.",
         "NETWORK_ERROR": "We couldn't reach the server. Please try again.",
+        "TIMEOUT": "The request took too long. Please try again.",
         "LIMIT_REACHED": "You've reached your plan's limit. Upgrade to continue.",
         "BAD_REQUEST": "That request isn't valid.",
         "CONFLICT": "The resource conflicts with the current state.",

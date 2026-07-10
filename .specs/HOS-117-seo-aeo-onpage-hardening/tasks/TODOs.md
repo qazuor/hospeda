@@ -1,6 +1,6 @@
 # TODOs: SEO/AEO on-page hardening (HOS-117)
 
-Status: in-progress | Progress: 8/17 active tasks (Wave 0 shipped PR #2217; T-014 FAQ i18n + T-020 tests done)
+Status: in-progress | Progress: 15/17 active tasks (Wave 0; T-013/T-018; T-014 FAQ i18n; T-020 tests; T-022 410 Gone; Wave 4 CWV/rendering). Remaining: T-012 landings, T-021 closeout.
 
 > **Replan 2026-07-09**: owner will delete all example/seed data from prod within
 > 2-3 days. Wave 1 (demo-content exclusion) is obsolete — deleting the data
@@ -12,7 +12,8 @@ Status: in-progress | Progress: 8/17 active tasks (Wave 0 shipped PR #2217; T-01
 
 - [x] T-001: Audit client:* islands for SSR↔hydration mismatch (complexity: 3)
 - [x] T-002: Confirm thin-content predicate + count fields (complexity: 2)
-- [ ] T-003: Capture baseline CWV measurement + page inventory (complexity: 2)
+- [x] T-003: Capture baseline CWV measurement + page inventory (complexity: 2)
+      CWV already "Good" (lab prod + field staging); baseline + inventory on HOS-117 (Linear comment).
 
 ## Wave 0 — Credibility bugs (P0) ✅ shipped (PR #2217)
 
@@ -23,13 +24,19 @@ Status: in-progress | Progress: 8/17 active tasks (Wave 0 shipped PR #2217; T-01
 
 ## Post-purge cleanup (replaces Wave 1)
 
-- [ ] T-022: Serve 410 Gone for deleted entity URLs (complexity: 2) [NEW]
+- [x] T-022: Serve 410 Gone for deleted entity URLs (complexity: 2) [NEW]
+      Done 2026-07-10: ServiceErrorCode.GONE -> 410, gated to visibility PUBLIC
+      ("410 only for published" — owner call); deleted PRIVATE/DRAFT -> 404 uniform
+      (anti-enum preserved). 4 services + api maps + 4 web routes + editar.astro fix.
+      Judgment-day APPROVED. Tests green.
 
 ## Wave 2 — Coverage & docs polish (P2)
 
 - [ ] T-012: Programmatic landings — geo×type go/no-go + unique-prose requirement (complexity: 2)
       Note: actual prose depends on real content (post purge).
-- [ ] T-013: Update json-ld-audit.md to typed-component reality (complexity: 1) [blocked by T-007 ✓]
+- [x] T-013: Update json-ld-audit.md to typed-component reality (complexity: 1) [blocked by T-007 ✓]
+      Done 2026-07-10: rewrote to typed-component reality, all 6 entities
+      (+ RestaurantJsonLd / TouristAttractionJsonLd), points to json-ld-coverage.test.ts.
 
 ## Wave 3 — Content i18n (P2) ✅ FAQ i18n support + destination SEO parity
 
@@ -45,16 +52,26 @@ Status: in-progress | Progress: 8/17 active tasks (Wave 0 shipped PR #2217; T-01
       legacy fields (mirrors accommodation description) — NO seed dual-write;
       translations authored later by AI pipeline / real content.
 
-## Wave 4 — Rendering strategy & CWV (P2, measurement-gated)
+## Wave 4 — Rendering strategy & CWV (P2, measurement-gated) ✅ documentation-only
 
-- [ ] T-015: Classify pages prerender / SSR+edge-cache / pure-SSR (complexity: 2) [blocked by T-003]
-- [ ] T-016: Verify Cloudflare edge caching; prerender static pages (complexity: 3) [blocked by T-015]
-- [ ] T-017: Measurement-gated CWV fixes before/after (complexity: 2) [blocked by T-016]
+Outcome: CWV already "Good" (T-003), so Wave 4 is analysis, not fixes. Full write-up
+in `apps/web/docs/seo/rendering-strategy.md`.
+
+- [x] T-015: Classify pages prerender / SSR+edge-cache / pure-SSR (complexity: 2) [blocked by T-003 ✓]
+      100% SSR today; anti-myth documented. Prerender of static pages BLOCKED by per-request CSP (HOS-74).
+- [x] T-016: Verify Cloudflare edge caching (complexity: 3) [blocked by T-015 ✓]
+      Verified: catalog 0% edge-cached (all cf-cache-status:DYNAMIC); pricing s-maxage headers are dead
+      no-ops (CF doesn't cache HTML without a Cache Rule). Prerender blocked by CSP. Deferred scaling
+      follow-up filed as HOS-124 (CSP→native security.csp, unblocks prerender + edge-cache).
+- [x] T-017: Measurement-gated CWV fixes before/after (complexity: 2) [blocked by T-016 ✓]
+      No fix applied — measurement (T-003) shows "Good"; the gate correctly yields no change.
 
 ## Testing
 
-- [ ] T-018: Wave 0 raw-SSR-HTML tests (complexity: 3) [blocked by T-004✓ T-005✓ T-006✓ T-007✓]
-      Note: largely done inline with each Wave 0 task — verify + consolidate.
+- [x] T-018: Wave 0 raw-SSR-HTML tests (complexity: 3) [blocked by T-004✓ T-005✓ T-006✓ T-007✓]
+      Done 2026-07-10: gap analysis showed counters (AnimatedCounter behavioral),
+      sitemap exclusion, and 6/6 breadcrumb were already covered. Filled the 2 real
+      wiring gaps: StatsSection isMeaningfulStat filter + destinos noindex={isThinContent}.
 - [x] T-020: Wave 3 i18n fallback tests (complexity: 2) [blocked by T-014 ✓]
       resolveI18nText/resolveI18nLocale fallback + faqSetInLanguage + toDestinationFaqs
       i18n tests (resolve-i18n-text.test.ts, faq-i18n.test.ts). Wave 2 FAQ-coverage

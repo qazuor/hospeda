@@ -20,6 +20,7 @@ export interface ContactInfoSectionProps {
     readonly data: AccommodationEditData;
     readonly errors: Readonly<{
         phone?: string;
+        whatsapp?: string;
         email?: string;
         website?: string;
     }>;
@@ -59,6 +60,25 @@ export function ContactInfoSection({
     const handleNumberChange = (value: string) => {
         setPhoneNumber(value);
         onFieldChange('phone', composePhoneValue({ country: phoneCountry, number: value }));
+    };
+
+    // WhatsApp mirrors the phone split (BETA-151): `data.whatsapp` is a single
+    // string parsed into a country + number pair and recomposed on every change.
+    const [whatsappCountry, setWhatsappCountry] = useState<PhoneCountry>(
+        () => parsePhoneValue(data.whatsapp).country
+    );
+    const [whatsappNumber, setWhatsappNumber] = useState<string>(
+        () => parsePhoneValue(data.whatsapp).number
+    );
+
+    const handleWhatsappCountryChange = (country: PhoneCountry) => {
+        setWhatsappCountry(country);
+        onFieldChange('whatsapp', composePhoneValue({ country, number: whatsappNumber }));
+    };
+
+    const handleWhatsappNumberChange = (value: string) => {
+        setWhatsappNumber(value);
+        onFieldChange('whatsapp', composePhoneValue({ country: whatsappCountry, number: value }));
     };
 
     return (
@@ -115,6 +135,60 @@ export function ContactInfoSection({
                         role="alert"
                     >
                         {errors.phone}
+                    </span>
+                )}
+            </div>
+
+            <div className={styles.field}>
+                <fieldset className={styles.phoneFieldset}>
+                    <legend className={styles.fieldLabel}>
+                        {t('host.properties.editor.field.whatsapp', 'WhatsApp')}
+                    </legend>
+                    <div className={styles.phoneRow}>
+                        <div className={styles.phoneCountryField}>
+                            <label
+                                htmlFor="acc-whatsapp-country"
+                                className={styles.fieldSubLabel}
+                            >
+                                {t('host.properties.editor.field.phoneCountry', 'País')}
+                            </label>
+                            <CountryCodeCombobox
+                                locale={locale}
+                                id="acc-whatsapp-country"
+                                value={whatsappCountry}
+                                onChange={handleWhatsappCountryChange}
+                            />
+                        </div>
+                        <div className={styles.phoneNumberField}>
+                            <label
+                                htmlFor="acc-whatsapp-number"
+                                className={styles.fieldSubLabel}
+                            >
+                                {t('host.properties.editor.field.phoneNumber', 'Número')}
+                            </label>
+                            <input
+                                id="acc-whatsapp-number"
+                                type="tel"
+                                inputMode="tel"
+                                className={`${styles.fieldInput} ${styles.phoneNumberInput}`}
+                                value={whatsappNumber}
+                                onChange={(e) => handleWhatsappNumberChange(e.target.value)}
+                                placeholder="9 343 1234567"
+                                aria-invalid={Boolean(errors.whatsapp)}
+                                aria-describedby={
+                                    errors.whatsapp ? 'acc-whatsapp-error' : undefined
+                                }
+                            />
+                        </div>
+                    </div>
+                </fieldset>
+                {errors.whatsapp && (
+                    <span
+                        id="acc-whatsapp-error"
+                        className={styles.fieldError}
+                        role="alert"
+                    >
+                        {errors.whatsapp}
                     </span>
                 )}
             </div>

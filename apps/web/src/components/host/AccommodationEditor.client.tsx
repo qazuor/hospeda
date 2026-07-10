@@ -68,6 +68,7 @@ type FieldErrors = {
     basePrice?: string;
     currency?: string;
     phone?: string;
+    whatsapp?: string;
     email?: string;
     website?: string;
     facebookUrl?: string;
@@ -278,6 +279,9 @@ export function AccommodationEditor({
             // Phase B: Contact info (flat HTTP fields)
             if (current.phone !== initial.phone) {
                 payload.phone = current.phone;
+            }
+            if (current.whatsapp !== initial.whatsapp) {
+                payload.whatsapp = current.whatsapp;
             }
             if (current.email !== initial.email) {
                 payload.email = current.email;

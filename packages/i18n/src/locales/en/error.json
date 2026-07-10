@@ -4,7 +4,9 @@
         "heading": "Page not found",
         "description": "Sorry, the page you are looking for does not exist or has been moved.",
         "message": "Sorry, the page you are looking for does not exist or has been moved.",
-        "goHome": "Go to home"
+        "goHome": "Go to home",
+        "search": "Search",
+        "reportBrokenLink": "Report broken link"
     },
     "500": {
         "title": "Server error",
@@ -12,7 +14,8 @@
         "description": "Sorry, something went wrong on our servers. Please try again later.",
         "message": "Sorry, something went wrong. Please try again later.",
         "retry": "Retry",
-        "goHome": "Go to home"
+        "goHome": "Go to home",
+        "reportProblem": "Report problem"
     },
     "form": {
         "validation-failed": "Form validation failed. Please fix the errors and try again.",

@@ -269,6 +269,63 @@ describe('Accommodation Permissions', () => {
         );
     });
 
+    // HOS-117 T-022: soft-deleted accommodations that were PUBLIC (indexable)
+    // before deletion are permanently GONE (410), distinct from NOT_FOUND (404,
+    // never existed) — so crawlers/LLM fetchers deindex the URL fast. Unlike the
+    // lifecycle/suspended/plan-restricted gates below, this check has NO
+    // owner/staff exemption: even ACCOMMODATION_VIEW_ALL staff and the owner get
+    // GONE via the generic public-facing checkCanView (admin views use
+    // checkCanAdminView instead, which does not check deletedAt).
+    it('checkCanView throws GONE for a soft-deleted PUBLIC accommodation, for any actor', () => {
+        const deleted = {
+            ...withOwner(mockUserId, VisibilityEnum.PUBLIC),
+            deletedAt: new Date()
+        };
+
+        for (const actor of [
+            createActor([], 'someone-else'),
+            createActor([], mockUserId), // the owner
+            createActor([PermissionEnum.ACCOMMODATION_VIEW_ALL], 'staff-id')
+        ]) {
+            try {
+                checkCanView(actor, deleted);
+                throw new Error('Should have thrown');
+            } catch (err) {
+                expect(err).toBeInstanceOf(ServiceError);
+                if (err instanceof ServiceError) {
+                    expect(err.code).toBe(ServiceErrorCode.GONE);
+                }
+            }
+        }
+    });
+
+    // Refined product decision: a deleted PRIVATE/RESTRICTED accommodation was
+    // never publicly discoverable, so its deletion must stay a uniform 404 to
+    // preserve the anti-enumeration contract (SPEC-092 T-087) — its past
+    // existence is never disclosed, regardless of who's asking.
+    it('checkCanView throws NOT_FOUND (not GONE) for a soft-deleted PRIVATE accommodation, for any actor', () => {
+        const deleted = {
+            ...withOwner(mockUserId, VisibilityEnum.PRIVATE),
+            deletedAt: new Date()
+        };
+
+        for (const actor of [
+            createActor([], 'someone-else'),
+            createActor([], mockUserId), // the owner
+            createActor([PermissionEnum.ACCOMMODATION_VIEW_ALL], 'staff-id')
+        ]) {
+            try {
+                checkCanView(actor, deleted);
+                throw new Error('Should have thrown');
+            } catch (err) {
+                expect(err).toBeInstanceOf(ServiceError);
+                if (err instanceof ServiceError) {
+                    expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+                }
+            }
+        }
+    });
+
     it('checkCanView hides a service-suspended owner accommodation as NOT_FOUND for the public', () => {
         const suspended = {
             ...withOwner(otherUserId, VisibilityEnum.PUBLIC),

@@ -228,12 +228,20 @@ export class GastronomyService extends BaseCommerceListingService<
     protected _canView(actor: Actor, entity: Gastronomy): void {
         checkGastronomyCanView(actor);
 
-        // Non-admin actors receive NOT_FOUND for soft-deleted listings.
+        // Soft-deleted listings existed but are permanently gone. Only those that
+        // were PUBLIC (indexable) surface as GONE (410) so crawlers/LLM fetchers
+        // deindex the URL fast; deleted PRIVATE content that was never public
+        // returns NOT_FOUND (404, uniform) to preserve the anti-enumeration
+        // contract (SPEC-092 T-087). Staff with COMMERCE_VIEW_ALL still see it
+        // for management (HOS-117 T-022).
         if (
             entity.deletedAt !== null &&
             entity.deletedAt !== undefined &&
             !hasPermission(actor, PermissionEnum.COMMERCE_VIEW_ALL)
         ) {
+            if (entity.visibility === VisibilityEnum.PUBLIC) {
+                throw new ServiceError(ServiceErrorCode.GONE, 'Gastronomy is gone');
+            }
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy not found');
         }
 

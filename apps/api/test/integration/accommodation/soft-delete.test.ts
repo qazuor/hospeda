@@ -357,12 +357,17 @@ describe('DELETE /accommodations/:id (Soft Delete)', () => {
                 });
 
                 // After soft delete, behavior can vary by implementation:
-                // - 404: soft deleted items filtered from queries (common)
+                // - 404: soft deleted items filtered from queries (common), or
+                //   the item was never publicly visible (PRIVATE/RESTRICTED) —
+                //   anti-enumeration contract (SPEC-092 T-087)
+                // - 410: the item WAS publicly visible (PUBLIC) before deletion —
+                //   deliberate GONE signal for crawlers/LLM fetchers to deindex
+                //   fast (HOS-117 T-022, refined to be visibility-gated)
                 // - 200: items returned with deletedAt field (less common but valid)
-                expect([200, 404]).toContain(getResponse.status);
+                expect([200, 404, 410]).toContain(getResponse.status);
 
                 const getData = await getResponse.json();
-                if (getResponse.status === 404) {
+                if (getResponse.status === 404 || getResponse.status === 410) {
                     expect(getData).toHaveProperty('success', false);
                     expect(getData).toHaveProperty('error');
                 } else if (getResponse.status === 200) {

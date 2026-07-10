@@ -58,22 +58,22 @@
             "id": "T-003",
             "title": "Capture baseline CWV measurement and page inventory",
             "description": "Record a baseline LCP/CLS/INP measurement (PostHog web-vitals or Lighthouse) for key page types and build a page inventory for Wave 4 classification. Informs OQ-3 (perf work is measurement-gated). Ref US-10. Tests: none (measurement artifact attached to Linear issue); output feeds T-015/T-017.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-015", "T-017"],
             "subtasks": [
-                { "title": "Measure LCP/CLS/INP on home, listing, detail", "completed": false },
-                { "title": "Build public-page inventory", "completed": false },
-                { "title": "Attach numbers to HOS-117 Linear issue", "completed": false }
+                { "title": "Measure LCP/CLS/INP on home, listing, detail", "completed": true },
+                { "title": "Build public-page inventory", "completed": true },
+                { "title": "Attach numbers to HOS-117 Linear issue", "completed": true }
             ],
             "tags": ["performance", "cwv", "audit"],
             "phase": "setup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
             "timestamps": {
                 "created": "2026-07-09T18:22:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T16:45:00.000Z",
+                "completed": "2026-07-10T17:10:00.000Z"
             }
         },
         {
@@ -290,21 +290,21 @@
             "id": "T-013",
             "title": "Update json-ld-audit.md to typed-component reality",
             "description": "Rewrite apps/web/docs/seo/json-ld-audit.md to describe the current typed JSON-LD components (not the obsolete pre-SPEC-157 inline-object pattern), list all 6 entities + their components, and point at json-ld-coverage.test.ts as the enforced contract. Ref US-8. Tests: none (docs).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-007"],
             "blocks": [],
             "subtasks": [
-                { "title": "Describe typed components + 6 entities", "completed": false },
-                { "title": "Point to the CI guard test as the contract", "completed": false }
+                { "title": "Describe typed components + 6 entities", "completed": true },
+                { "title": "Point to the CI guard test as the contract", "completed": true }
             ],
             "tags": ["docs", "seo"],
             "phase": "docs",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
             "timestamps": {
                 "created": "2026-07-09T18:22:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T04:50:00.000Z",
+                "completed": "2026-07-10T05:00:00.000Z"
             }
         },
         {
@@ -334,89 +334,89 @@
             "id": "T-015",
             "title": "Classify each public page: prerender / SSR+edge-cache / pure-SSR",
             "description": "Using the T-003 page inventory, classify every public page as prerender-candidate, SSR+edge-cache, or pure-SSR, each with a reason. Document the anti-myth in the spec/docs: SSR vs prerender does NOT change indexability; prerender only helps CWV via TTFB/CDN. Ref US-10. Tests: none (classification artifact).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-016"],
             "subtasks": [
-                { "title": "Classify each page with rationale", "completed": false },
-                { "title": "Document SSR-vs-prerender anti-myth", "completed": false }
+                { "title": "Classify each page with rationale", "completed": true },
+                { "title": "Document SSR-vs-prerender anti-myth", "completed": true }
             ],
             "tags": ["performance", "rendering", "audit"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
             "timestamps": {
                 "created": "2026-07-09T18:22:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T17:15:00.000Z",
+                "completed": "2026-07-10T17:24:00.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "Verify Cloudflare edge caching of catalog SSR; prerender truly-static pages",
-            "description": "Verify whether Cloudflare actually caches catalog SSR responses (cache headers / hit-ratio evidence; scheduleRevalidationBatch revalidation already exists). Prerender the pages classified truly-static (legal/marketing) in T-015 if warranted. Any header change is infra/config recorded on the Linear issue, not a new route. Ref US-10. Tests: none code; evidence attached to issue.",
-            "status": "pending",
+            "description": "VERIFIED (2026-07-10): Cloudflare caches NO HTML — every prod response is cf-cache-status:DYNAMIC, incl. pricing pages that already send s-maxage (dead no-op; CF doesn't cache text/html without a Cache Rule). Catalog SSR hits the Node origin every request (0% edge cache). Prerendering truly-static pages is BLOCKED by the per-request middleware CSP (HOS-74) — a prerendered page ships with no CSP. Outcome (owner, CWV already Good): documentation-only, no code/infra change. Deferred scaling follow-ups filed as HOS-124 (CSP->native security.csp) which unblocks prerender + edge-cache. Findings in apps/web/docs/seo/rendering-strategy.md + HOS-117 comments.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-015"],
             "blocks": ["T-017"],
             "subtasks": [
                 {
                     "title": "Check CF cache headers / hit ratio on catalog SSR",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Prerender truly-static pages if warranted", "completed": false },
-                { "title": "Record findings on Linear issue", "completed": false }
+                { "title": "Prerender truly-static pages if warranted (BLOCKED by CSP/HOS-74 -> deferred to HOS-124)", "completed": true },
+                { "title": "Record findings on Linear issue", "completed": true }
             ],
             "tags": ["performance", "rendering", "cloudflare"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
             "timestamps": {
                 "created": "2026-07-09T18:22:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T17:15:00.000Z",
+                "completed": "2026-07-10T17:24:00.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "Measurement-gated CWV fixes (before/after LCP/CLS/INP)",
-            "description": "For any perf fix, measure CWV before (baseline from T-003), apply, re-measure after; commit only with numbers on the Linear issue (OQ-3 process gate). No perf fix without measurement. Ref US-10. Tests: none automated; measurement recorded on issue.",
-            "status": "pending",
+            "description": "OQ-3 process gate: no perf fix without before/after measurement. Outcome (2026-07-10): the T-003 baseline shows CWV already 'Good' across all page types (LCP 1.0-1.3s, CLS ~0, field INP p75 64ms), so the gate correctly yields NO fix — nothing to improve at current traffic. Any future CWV work rides the deferred HOS-124 edge-cache/prerender follow-ups. Ref US-10.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-016"],
             "blocks": [],
             "subtasks": [
-                { "title": "Measure before, apply fix, measure after", "completed": false },
-                { "title": "Attach before/after numbers to Linear issue", "completed": false }
+                { "title": "Measure before, apply fix, measure after (no fix warranted — CWV Good)", "completed": true },
+                { "title": "Attach before/after numbers to Linear issue (baseline recorded in T-003)", "completed": true }
             ],
             "tags": ["performance", "cwv"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
             "timestamps": {
                 "created": "2026-07-09T18:22:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T17:24:00.000Z",
+                "completed": "2026-07-10T17:24:00.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "Wave 0 raw-SSR-HTML tests",
             "description": "Assert on rendered HTML string (no hydration): the 5 counters carry real final values (never 0+); empty destinations emit noindex,follow and are absent from the sitemap while non-empty stay indexed; 6/6 detail entities emit BreadcrumbJsonLd. Extends/complements json-ld-coverage.test.ts. Ref US-1/US-2/US-3/US-4. Tests: integration suite on SSR output.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004", "T-005", "T-006", "T-007"],
             "blocks": ["T-021"],
             "subtasks": [
-                { "title": "Counter final-value SSR test", "completed": false },
-                { "title": "Empty-destination noindex + sitemap-absence test", "completed": false },
-                { "title": "6/6 BreadcrumbJsonLd coverage test", "completed": false }
+                { "title": "Counter final-value SSR test", "completed": true },
+                { "title": "Empty-destination noindex + sitemap-absence test", "completed": true },
+                { "title": "6/6 BreadcrumbJsonLd coverage test", "completed": true }
             ],
             "tags": ["testing", "seo", "web"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
             "timestamps": {
                 "created": "2026-07-09T18:22:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T04:45:00.000Z",
+                "completed": "2026-07-10T05:00:00.000Z"
             }
         },
         {
@@ -492,37 +492,27 @@
         {
             "id": "T-022",
             "title": "Serve 410 Gone for deleted entity URLs (post example-data purge)",
-            "description": "ADDED (replan 2026-07-09). After example/seed data is deleted from prod, the old accommodation/post/gastronomy/experience detail URLs must return 410 Gone (not 404) so Google/LLM fetchers deindex them fast. Verify current behavior for an unknown/deleted published slug and return 410 for these entity routes (at least during the post-purge window). This is the real-value replacement for the cancelled Wave 1 gate. Ref US-3/US-5 spirit. Tests: integration asserting a deleted/unknown slug yields HTTP 410 on these entity routes.",
-            "status": "pending",
+            "description": "ADDED (replan 2026-07-09). DONE 2026-07-10. New ServiceErrorCode.GONE -> HTTP 410. Public getBySlug/getById of a soft-deleted entity returns 410 ONLY when it was visibility PUBLIC (owner-refined '410 only for published' 2026-07-10); deleted PRIVATE/DRAFT/RESTRICTED -> 404 uniform (preserves SPEC-092 T-087 anti-enumeration); never-existed -> 404. Applied across accommodation/experience/gastronomy/post _canView (post gap fixed: soft-deleted PUBLIC post leaked 200). GONE logged as info (HOS-109). 4 web detail routes propagate; editar.astro treats 410 as clean redirect (fix from judgment-day round 1). Judgment-day APPROVED (round 2). Tests green: service-core 134, api routes 74, web 54, integration soft-delete-access 8. NOTE: apps/api test/integration/** is dead in CI (no test:integration script reaches it) - follow-up candidate.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                {
-                    "title": "Check current 404-vs-410 behavior for unknown entity slugs",
-                    "completed": false
-                },
-                {
-                    "title": "Return 410 Gone on accommodation/post/gastronomy/experience detail routes",
-                    "completed": false
-                },
-                { "title": "Integration test for the 410 response", "completed": false }
+                { "title": "Check current 404-vs-410 behavior for unknown entity slugs", "completed": true },
+                { "title": "Return 410 Gone on accommodation/post/gastronomy/experience detail routes", "completed": true },
+                { "title": "Integration test for the 410 response", "completed": true }
             ],
             "tags": ["seo", "web"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": {
-                "created": "2026-07-09T20:40:00.000Z",
-                "started": null,
-                "completed": null
-            }
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": { "created": "2026-07-09T20:40:00.000Z", "started": "2026-07-09T21:00:00.000Z", "completed": "2026-07-10T04:40:00.000Z" }
         }
     ],
     "summary": {
         "total": 17,
-        "pending": 9,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 15,
         "blocked": 0,
         "cancelled": 5,
         "averageComplexity": 2.2
