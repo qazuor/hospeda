@@ -60,6 +60,7 @@
         "UNAUTHORIZED": "Necesitás iniciar sesión para realizar esta acción.",
         "FORBIDDEN": "No tenés permiso para realizar esta acción.",
         "NOT_FOUND": "No encontramos lo que buscabas.",
+        "GONE": "Este contenido ya no está disponible.",
         "ALREADY_EXISTS": "Ese recurso ya existe.",
         "INTERNAL_ERROR": "Algo salió mal del lado nuestro. Intentá de nuevo en un momento.",
         "NETWORK_ERROR": "No pudimos conectar con el servidor. Probá de nuevo.",
