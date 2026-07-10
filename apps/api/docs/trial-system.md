@@ -459,25 +459,24 @@ Both read paths tolerate `unknown` metadata shapes (the QZPay `metadata` column 
 strictly typed) — `resolveIntendedInterval()` is the single validation point, never a raw
 cast to a specific type.
 
-### 3. Duplicate reminder cron disabled
+### 3. Duplicate reminder cron removed
 
 `trial-pre-end-notif.job.ts` (SPEC-126 D5, advisory lock 1005) independently sent the same
 `NotificationType.TRIAL_ENDING_REMINDER` email that `notification-schedule.job.ts`
 (SPEC-064, ~3.5 months older and the canonical sender) already sends, causing duplicate
 emails. Its `upgradeUrl` also pointed at the dead `/cuenta/planes` route with no user
-linkage (`userId: null`). HOS-115 flips `enabled: false` on the job definition — the file
-is **not** deleted, because it has two robustness properties `notification-schedule.job.ts`
-still lacks and that a follow-up must port over before the file can be removed:
+linkage (`userId: null`). HOS-115 first soft-disabled it (`enabled: false`); **HOS-121**
+then ported its two robustness properties into `notification-schedule.job.ts` and
+**deleted the file** (and freed advisory lock 1005):
 
-1. The skip-tolerant D-3 window (`daysRemaining >= 2`) so a missed cron day doesn't drop
-   the D-3 reminder entirely.
-2. A durable `billing_subscription_events` dedup ledger (vs. `notification-schedule`'s
-   weaker in-memory/log-based dedup), which survives process restarts and multi-replica
-   races.
-
-**Follow-up: HOS-121** tracks porting these two improvements into
-`notification-schedule.job.ts`; only once that lands should `trial-pre-end-notif.job.ts`
-be deleted outright.
+1. The skip-tolerant primary ("D-3") window — now a config-aware
+   `[trialReminderDays-1, trialReminderDays]` range (default covers days 3 and 2) so a
+   missed cron day doesn't drop the primary reminder. The day-1 reminder stays exact.
+2. A durable `billing_subscription_events` dedup ledger (event types
+   `TRIAL_PRE_END_NOTIF_D3` / `_D1`), written on the autocommit connection and backed by a
+   partial UNIQUE index, which survives process restarts and multi-replica races — vs. the
+   Redis-TTL + in-memory Map dedup, which `notification-schedule.job.ts` still uses for
+   `RENEWAL_REMINDER` only.
 
 ### Gate matrix impact
 
