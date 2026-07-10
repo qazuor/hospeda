@@ -33,10 +33,12 @@ no landmark-with-coordinates entity:
    for amenities/features/attractions).
 
 POI is a **new, distinct entity** — NOT an extension of the `attractions`
-catalog. Structurally it mirrors `attractions` closely (M2M to destinations,
-slug-keyed i18n display, curated seed) but adds the one thing attractions lack:
-geographic coordinates. Display names come from `@repo/i18n` keyed by slug
-(SPEC-266), so POI carries **no `name` column**.
+catalog. It borrows two established patterns: the **M2M-to-destinations +
+curated `--required` seed** shape from `attractions`, and the **i18n-by-slug
+display (no `name` column)** from `amenities`/`features` (SPEC-266). On top of
+those it adds the one thing neither has: geographic coordinates. Display names
+come from `@repo/i18n` keyed by slug, so POI carries **no `name` column** —
+unlike `attractions`, which does keep a literal `name` column.
 
 ## 2. Problem
 
@@ -95,16 +97,21 @@ Verified against the codebase 2026-07-10 (see HOS-113 research notes):
   or a plain numeric `AnyColumn`. **The HOS-111 spec.md still describes this in
   future tense — that text is stale; the code shipped.**
 - **`attractions`** (`packages/db/src/schemas/destination/attraction.dbschema.ts`):
-  `id`, `slug` (unique), `description?`, `icon?`, `isBuiltin`, `isFeatured`,
-  `displayWeight`, `lifecycleState`, full BaseModel audit columns. **No `name`
-  column** (dropped — display via i18n by slug, SPEC-266) and **no coordinates**.
-  M2M via `r_destination_attraction.dbschema.ts` (composite PK, cascade both
-  sides, indexed both directions). Zod 6-file set at
+  `id`, **`name` (`text().notNull()`, line 21)**, `slug` (unique), `description?`,
+  `icon?`, `isBuiltin`, `isFeatured`, `displayWeight`, `lifecycleState`, full
+  BaseModel audit columns. **Has a literal `name` column** (NOT i18n-by-slug) and
+  **no coordinates**. M2M via `r_destination_attraction.dbschema.ts` (composite
+  PK, cascade both sides, indexed both directions). Zod 6-file set at
   `packages/schemas/src/entities/attraction/`. Service at
   `packages/service-core/src/services/attraction/`. Seeded as a `--required`
   group (`packages/seed/src/required/attractions.seed.ts` + `src/data/attraction/*.json`
   + `manifest-required.json`), with a separate relationship-seed step for the
-  join table. This is the structural template to mirror almost 1:1.
+  join table. **This is the template for POI's M2M + seed + service structure.**
+- **`amenities`/`features`** (`packages/db/src/schemas/accommodation/amenity.dbschema.ts`):
+  **no `name` column — only `slug`** (dropped in SPEC-266; display labels come
+  from `@repo/i18n` keyed by slug). **This is the template for POI's
+  i18n-by-slug display** (per resolved OQ-2). POI = attraction's structure with
+  amenity's slug-only naming.
 - **Destination hydration of attractions**: `DestinationService` does NOT eager-load
   attractions on the base read; `getBySlug`/`getByPath` call a private
   `_withAttractions()` that batch-loads via `DestinationModel.getAttractionsMap`
@@ -354,11 +361,12 @@ the service is built read-capable + seed-writable so that follow-up is additive.
     `DestinationPOISection.astro`.
   - **(Deferred) Phase 5**: multi-marker map pins (extend `LocationMap`); admin
     CRUD surface.
-- **POI mirrors `attraction` almost 1:1** — same M2M join-table shape, slug-keyed
-  i18n display (no `name`), `isBuiltin`/`isFeatured`/`displayWeight`, curated
-  `--required` seed with a relationship step. The ONLY structural additions are:
-  `lat`/`long` numeric columns and the `type` enum. Copy the attraction layer by
-  layer (schema → model → service → seed → i18n) and layer these two on top.
+- **POI = attraction's structure + amenity's naming + coordinates.** Take the
+  M2M join-table shape, `isBuiltin`/`isFeatured`/`displayWeight`, and curated
+  `--required` seed-with-relationship-step from `attraction` (copy schema → model
+  → service → seed layer by layer). But drop attraction's literal `name` column
+  and use the `amenity`/`feature` **slug-only + i18n-by-slug** naming instead (per
+  OQ-2). The additions on top: `lat`/`long` numeric columns and the `type` enum.
 - Reuse `@repo/db` `utils/geo.ts` directly. Pass POI's numeric `lat`/`long`
   columns to `buildHaversineDistanceExpr` — no JSONB extraction, no `::numeric`.
 - Cross-check every AI allowlist slug against the seed JSON before shipping
