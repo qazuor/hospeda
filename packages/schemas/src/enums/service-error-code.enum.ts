@@ -62,5 +62,13 @@ export enum ServiceErrorCode {
      * Clients should treat this as a permanent condition and not retry without
      * selecting a different plan.
      */
-    PLAN_DISABLED = 'PLAN_DISABLED'
+    PLAN_DISABLED = 'PLAN_DISABLED',
+    /**
+     * The requested entity existed but has been (soft-)deleted and is permanently
+     * gone. Maps to HTTP 410 Gone — distinct from NOT_FOUND (404, never existed).
+     * Emitted on public reads of a soft-deleted accommodation/post/gastronomy/
+     * experience so crawlers and LLM fetchers deindex the URL fast instead of
+     * treating it as a transient 404. Clients should not retry.
+     */
+    GONE = 'GONE'
 }
