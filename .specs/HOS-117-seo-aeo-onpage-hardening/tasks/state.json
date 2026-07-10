@@ -268,22 +268,22 @@
             "id": "T-012",
             "title": "Review programmatic landings for unique prose; decide geo×type dimension",
             "description": "Review existing landings (tipo/[type], comodidades/[slug], caracteristicas/[slug]) so each has (or gets a documented plan for) unique intro prose, not just a filtered list. Evaluate adding a geo×type landing dimension (e.g. /destino/cabañas/) and record go/no-go with duplicate-content risk + unique-prose requirement per landing. Ref US-7. Tests: none (content/decision); prose additions covered by existing render tests. NOTE (replan 2026-07-09): keep the geo×type go/no-go + unique-prose REQUIREMENT as infra, but the actual prose depends on real content (post example-data purge).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Audit current landings for unique prose", "completed": false },
-                { "title": "Add/plan unique intro prose per landing", "completed": false },
-                { "title": "Record geo×type go/no-go with risk", "completed": false }
+                { "title": "Audit current landings for unique prose", "completed": true },
+                { "title": "Add/plan unique intro prose per landing (plan documented; authoring deferred to real content)", "completed": true },
+                { "title": "Record geo×type go/no-go with risk", "completed": true }
             ],
             "tags": ["seo", "content", "web"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
             "timestamps": {
                 "created": "2026-07-09T18:22:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T19:25:00.000Z",
+                "completed": "2026-07-10T19:38:00.000Z"
             }
         },
         {
@@ -510,9 +510,9 @@
     ],
     "summary": {
         "total": 17,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 15,
+        "completed": 16,
         "blocked": 0,
         "cancelled": 5,
         "averageComplexity": 2.2
