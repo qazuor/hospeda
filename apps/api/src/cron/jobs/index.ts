@@ -39,6 +39,7 @@ export { notificationScheduleJob } from './notification-schedule.job.js';
 export { pageRevalidationJob } from './page-revalidation.job.js';
 export { partnerExpiryJob } from './partner-expiry.job.js';
 export { pollApifyReputationRunsJob } from './poll-apify-reputation-runs.job.js';
+export { reactivationSupersessionReconcileJob } from './reactivation-supersession-reconcile.job.js';
 export { refreshExternalReputationJob } from './refresh-external-reputation.job.js';
 export { searchIndexRefreshJob } from './search-index-refresh.job.js';
 export { socialPublishDispatchJob } from './social-publish-dispatch.job.js';

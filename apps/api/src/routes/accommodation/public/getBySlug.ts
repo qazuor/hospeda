@@ -133,7 +133,9 @@ async function fetchFaqs(accommodationId: string) {
             id: accommodationFaqs.id,
             question: accommodationFaqs.question,
             answer: accommodationFaqs.answer,
-            category: accommodationFaqs.category
+            category: accommodationFaqs.category,
+            questionI18n: accommodationFaqs.questionI18n,
+            answerI18n: accommodationFaqs.answerI18n
         })
         .from(accommodationFaqs)
         .where(
@@ -148,7 +150,9 @@ async function fetchFaqs(accommodationId: string) {
         id: r.id,
         question: r.question,
         answer: r.answer,
-        category: r.category ?? null
+        category: r.category ?? null,
+        questionI18n: r.questionI18n ?? null,
+        answerI18n: r.answerI18n ?? null
     }));
 }
 

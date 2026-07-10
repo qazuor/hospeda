@@ -1,4 +1,4 @@
-import type { AdminInfoType } from '@repo/schemas';
+import type { AdminInfoType, I18nText } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
@@ -24,6 +24,10 @@ export const experienceFaqs = pgTable(
             .references(() => experiences.id, { onDelete: 'cascade' }),
         question: text('question').notNull(),
         answer: text('answer').notNull(),
+        // HOS-117: additive nullable I18nText columns for multi-language FAQ content.
+        // Legacy question/answer stay as the es fallback source (search_index matview depends on them).
+        questionI18n: jsonb('question_i18n').$type<I18nText>(),
+        answerI18n: jsonb('answer_i18n').$type<I18nText>(),
         category: text('category'),
         /** Display order for FAQ items within an experience listing. NULLS LAST in queries. */
         displayOrder: integer('display_order'),

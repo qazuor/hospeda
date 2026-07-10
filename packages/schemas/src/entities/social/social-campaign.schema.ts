@@ -13,8 +13,8 @@ export const SocialCampaignSchema = z.object({
     slug: z.string().min(1, { message: 'zodError.socialCampaign.slug.required' }),
     description: z.string().optional(),
     active: z.boolean().default(true),
-    startsAt: z.coerce.date().optional(),
-    endsAt: z.coerce.date().optional(),
+    startsAt: z.coerce.date().nullable().optional(),
+    endsAt: z.coerce.date().nullable().optional(),
     ...BaseAuditFields
 });
 

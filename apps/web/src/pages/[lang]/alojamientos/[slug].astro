@@ -43,7 +43,7 @@ import PromotionBanner from '@/components/accommodation/PromotionBanner.astro';
 import { accommodationsApi, ownerPromotionsApi, postsApi, eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import type { OwnerPromotionPublicItem } from '@/lib/api/endpoints';
 import { billingApi, priceAlertsApi, userBookmarksApi } from '@/lib/api/endpoints-protected';
-import { toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
+import { faqSetInLanguage, toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
@@ -496,7 +496,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
     />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
     {faqSections.length > 0 && (
-        <FAQPageJsonLd slot="head-extra" sections={faqSections} />
+        <FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={faqSetInLanguage(accommodation.faqs, locale)} />
     )}
 
     <Breadcrumbs

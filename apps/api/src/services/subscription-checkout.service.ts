@@ -20,11 +20,7 @@
  * @module services/subscription-checkout.service
  */
 
-import type {
-    QZPayBilling,
-    QZPayPollingResourceType,
-    QZPaySubscriptionWithHelpers
-} from '@qazuor/qzpay-core';
+import type { QZPayBilling, QZPayPollingResourceType } from '@qazuor/qzpay-core';
 import { TEST_DAILY_PLAN } from '@repo/billing';
 import {
     billingSubscriptions,
@@ -44,10 +40,20 @@ import {
 } from '@repo/service-core';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
+import { createPaidSubscription } from './billing/paid-subscription-create.js';
+import type { SubscriptionCheckoutErrorCode } from './billing/subscription-checkout-error.js';
+import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
 import { resolveCheckoutPromoPlan } from './subscription-checkout-promo.service.js';
 import { createCompSubscription } from './subscription-comp-create.service.js';
 import { applySignupDiscountToMonthly } from './subscription-discount-signup.service.js';
 import { TrialService } from './trial.service.js';
+
+export type { SubscriptionCheckoutErrorCode };
+// HOS-114 T-002: re-exported from the sibling `billing/subscription-checkout-error.js`
+// module (not defined here) so every existing importer of these two symbols
+// from THIS file keeps working unchanged. See that module's JSDoc for why the
+// error type had to move (avoiding a circular import with `trial.service.ts`).
+export { SubscriptionCheckoutError };
 
 /**
  * Time-to-live applied to a `pending_provider` subscription before the
@@ -153,43 +159,6 @@ async function schedulePollingForSubscription(input: SchedulePollingInput): Prom
             },
             'Failed to enqueue subscription polling job — webhook is the only path now'
         );
-    }
-}
-
-/**
- * Error codes surfaced by {@link initiatePaidMonthlySubscription}. Each
- * value maps to a distinct user-facing condition; route handlers
- * translate them to HTTP status codes.
- */
-export type SubscriptionCheckoutErrorCode =
-    | 'PLAN_NOT_FOUND'
-    | 'NO_MONTHLY_PRICE'
-    | 'NO_ANNUAL_PRICE'
-    | 'NO_MATCHING_PRICE'
-    | 'CUSTOMER_NOT_FOUND'
-    | 'MISSING_INIT_POINT'
-    | 'INVALID_PROMO_CODE'
-    | 'SUBSCRIPTION_NOT_FOUND'
-    | 'SAME_PLAN'
-    | 'NOT_AN_UPGRADE'
-    // SPEC-262 T-012 P2: the FAIL-CLOSED discount mutation was rejected by MP and
-    // the just-created subscription was cancelled. Maps to HTTP 502 (provider
-    // rejected our amount change) — distinct from INVALID_PROMO_CODE (422) which
-    // is a bad/inactive code, not a provider failure.
-    | 'DISCOUNT_APPLY_FAILED';
-
-/**
- * Domain-level error thrown by {@link initiatePaidMonthlySubscription}.
- * Carries a discriminated `code` so callers can branch on the failure
- * mode without parsing `message`.
- */
-export class SubscriptionCheckoutError extends Error {
-    constructor(
-        public readonly code: SubscriptionCheckoutErrorCode,
-        message: string
-    ) {
-        super(message);
-        this.name = 'SubscriptionCheckoutError';
     }
 }
 
@@ -654,12 +623,16 @@ export async function initiatePaidMonthlySubscription(
     // trial_extension forwards freeTrialDays to delay the first recurring charge.
     const freeTrialDays = promoPlan.kind === 'trial' ? promoPlan.freeTrialDays : undefined;
 
-    const subscription: QZPaySubscriptionWithHelpers = await billing.subscriptions.create({
+    // HOS-114 T-002/T-003: the `mode: 'paid'` create + checkoutUrl resolution
+    // + fail-closed MISSING_INIT_POINT guard now live in the shared
+    // `createPaidSubscription` helper (`billing/paid-subscription-create.ts`),
+    // also reused by the paid-reactivation flow. Pure extraction — no
+    // behavior change versus the previous inline block.
+    const { subscription, checkoutUrl } = await createPaidSubscription({
+        billing,
         customerId,
         planId: plan.id,
         priceId: monthlyPrice.id,
-        mode: 'paid',
-        billingInterval: 'monthly',
         paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
         notificationUrl: urls.notificationUrl,
         // SPEC-126 D9: extra free-trial days are forwarded to the MP
@@ -672,15 +645,6 @@ export async function initiatePaidMonthlySubscription(
             ...(promoCode === undefined ? {} : { promoCode })
         }
     });
-
-    const checkoutUrl = subscription.providerInitPoint ?? subscription.providerSandboxInitPoint;
-
-    if (!checkoutUrl) {
-        throw new SubscriptionCheckoutError(
-            'MISSING_INIT_POINT',
-            'Payment provider did not return a checkout URL'
-        );
-    }
 
     // ── DISCOUNT branch (SPEC-262 T-012 P2) ───────────────────────────────────
     // The preapproval was created at FULL price. Mutate it down to the discounted
@@ -863,12 +827,16 @@ export async function initiateCommerceMonthlySubscription(
         );
     }
 
-    const subscription: QZPaySubscriptionWithHelpers = await billing.subscriptions.create({
+    // AC-7: the `mode: 'paid'` create + checkoutUrl resolution + fail-closed
+    // MISSING_INIT_POINT guard live in the shared `createPaidSubscription`
+    // helper (`billing/paid-subscription-create.ts`), same as the accommodation
+    // and reactivation flows. Pure extraction — no behavior change versus the
+    // previous inline block.
+    const { subscription, checkoutUrl } = await createPaidSubscription({
+        billing,
         customerId,
         planId: plan.id,
         priceId: monthlyPrice.id,
-        mode: 'paid',
-        billingInterval: 'monthly',
         paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
         notificationUrl: urls.notificationUrl,
         metadata: {
@@ -879,14 +847,6 @@ export async function initiateCommerceMonthlySubscription(
             entityId
         }
     });
-
-    const checkoutUrl = subscription.providerInitPoint ?? subscription.providerSandboxInitPoint;
-    if (!checkoutUrl) {
-        throw new SubscriptionCheckoutError(
-            'MISSING_INIT_POINT',
-            'Payment provider did not return a checkout URL'
-        );
-    }
 
     // D3 + D4 are wrapped in a single transaction so the commerce path can never
     // end up with a billing_subscriptions row stamped 'commerce' but no link row
@@ -981,12 +941,12 @@ export async function initiatePartnerMonthlySubscription(
         );
     }
 
-    const subscription: QZPaySubscriptionWithHelpers = await billing.subscriptions.create({
+    // AC-7: shared `createPaidSubscription` helper — see the commerce flow above.
+    const { subscription, checkoutUrl } = await createPaidSubscription({
+        billing,
         customerId,
         planId: plan.id,
         priceId: monthlyPrice.id,
-        mode: 'paid',
-        billingInterval: 'monthly',
         paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
         notificationUrl: urls.notificationUrl,
         metadata: {
@@ -996,14 +956,6 @@ export async function initiatePartnerMonthlySubscription(
             partnerId
         }
     });
-
-    const checkoutUrl = subscription.providerInitPoint ?? subscription.providerSandboxInitPoint;
-    if (!checkoutUrl) {
-        throw new SubscriptionCheckoutError(
-            'MISSING_INIT_POINT',
-            'Payment provider did not return a checkout URL'
-        );
-    }
 
     await withTransaction(async (tx) => {
         await tx

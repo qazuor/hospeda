@@ -14,17 +14,30 @@
  * @module routes/billing/trial
  */
 
-import { PermissionEnum } from '@repo/schemas';
+import {
+    PermissionEnum,
+    ReactivateSubscriptionRequestSchema,
+    ReactivateSubscriptionResponseSchema,
+    ReactivateTrialRequestSchema,
+    ReactivateTrialResponseSchema
+} from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
+import { SubscriptionCheckoutError } from '../../services/billing/subscription-checkout-error';
+import { mapSubscriptionCheckoutErrorToHttp } from '../../services/billing/subscription-checkout-error-http';
 import { TrialService } from '../../services/trial.service';
 import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { createAdminRoute, createSimpleRoute } from '../../utils/route-factory';
+import {
+    buildNotificationUrl,
+    buildPaymentMethodReturnUrl,
+    resolveReturnUrlLocale
+} from './checkout-return-urls';
 
 /**
  * Trial status response schema
@@ -74,22 +87,6 @@ const extendTrialResponseSchema = z.object({
     success: z.boolean(),
     previousTrialEnd: z.string().nullable(),
     newTrialEnd: z.string().nullable(),
-    message: z.string()
-});
-
-/**
- * Reactivate from trial request schema
- */
-const reactivateTrialRequestSchema = z.object({
-    planId: z.string().min(1, 'Plan ID is required')
-});
-
-/**
- * Reactivate from trial response schema
- */
-const reactivateTrialResponseSchema = z.object({
-    success: z.boolean(),
-    subscriptionId: z.string().nullable(),
     message: z.string()
 });
 
@@ -295,20 +292,23 @@ export const extendTrialRoute = createAdminRoute({
 
 /**
  * POST /api/v1/protected/billing/trial/reactivate
- * Convert an expired or active trial to a paid subscription
+ * Convert an expired or active trial to a real, card-collecting paid
+ * subscription (HOS-114).
  *
- * This endpoint cancels any existing trial subscription and creates
- * a new paid subscription on the specified plan.
- *
+ * The response no longer represents a synchronously-completed reactivation:
+ * it returns a `checkoutUrl` the caller MUST redirect the user to. The
+ * previous trial subscription stays live (still granting entitlements)
+ * until the MercadoPago preapproval is confirmed by the webhook, which then
+ * completes the swap (HOS-114 T-007).
  */
 export const reactivateTrialRoute = createSimpleRoute({
     method: 'post',
     path: '/reactivate',
     summary: 'Reactivate from trial',
     description:
-        'Convert trial subscription to a paid plan. Cancels existing trial and creates new subscription.',
+        'Convert a trial subscription to a paid plan via a real MercadoPago checkout. Returns a checkoutUrl to redirect the user to; the previous trial is cancelled only after the webhook confirms the new preapproval.',
     tags: ['Billing', 'Trial'],
-    responseSchema: reactivateTrialResponseSchema,
+    responseSchema: ReactivateTrialResponseSchema,
     handler: async (c) => {
         const billingEnabled = c.get('billingEnabled');
 
@@ -327,7 +327,7 @@ export const reactivateTrialRoute = createSimpleRoute({
         }
 
         const body = await c.req.json();
-        const parseResult = reactivateTrialRequestSchema.safeParse(body);
+        const parseResult = ReactivateTrialRequestSchema.safeParse(body);
 
         if (!parseResult.success) {
             throw new HTTPException(400, {
@@ -339,19 +339,30 @@ export const reactivateTrialRoute = createSimpleRoute({
         const { planId } = parseResult.data;
         const billing = getQZPayBilling();
         const trialService = new TrialService(billing);
+        const locale = resolveReturnUrlLocale(c);
 
         try {
-            const subscriptionId = await trialService.reactivateFromTrial({
+            const result = await trialService.reactivateFromTrial({
                 customerId: billingCustomerId,
-                planId
+                planId,
+                urls: {
+                    paymentMethodReturnUrl: buildPaymentMethodReturnUrl(locale),
+                    notificationUrl: buildNotificationUrl()
+                }
             });
 
             return {
-                success: true,
-                subscriptionId,
-                message: 'Successfully converted trial to paid subscription'
+                success: result.success,
+                subscriptionId: result.subscriptionId,
+                checkoutUrl: result.checkoutUrl,
+                status: result.status,
+                message: result.message
             };
         } catch (error) {
+            if (error instanceof SubscriptionCheckoutError) {
+                throw mapSubscriptionCheckoutErrorToHttp(error);
+            }
+
             const errorMessage = error instanceof Error ? error.message : String(error);
 
             apiLogger.error(
@@ -453,40 +464,27 @@ export const checkExpiryRoute = createAdminRoute({
 });
 
 /**
- * Reactivate subscription request schema (for canceled subscriptions)
- */
-const reactivateSubscriptionRequestSchema = z.object({
-    planId: z.string().min(1, 'Plan ID is required')
-});
-
-/**
- * Reactivate subscription response schema
- */
-const reactivateSubscriptionResponseSchema = z.object({
-    success: z.boolean(),
-    subscriptionId: z.string().nullable(),
-    previousPlanId: z.string().nullable().optional(),
-    message: z.string()
-});
-
-/**
  * POST /api/v1/protected/billing/trial/reactivate-subscription
- * Reactivate a canceled subscription by creating a new one on the specified plan.
+ * Reactivate a canceled subscription via a real, card-collecting paid
+ * checkout (HOS-114).
  *
  * Unlike /reactivate (trial-to-paid only), this endpoint handles any canceled
- * subscription regardless of whether it originated from a trial.
- *
- * Rejects if the user has an active or trialing subscription (use plan-change instead).
+ * subscription regardless of whether it originated from a trial. Rejects if
+ * the user has an active or trialing subscription (use plan-change instead).
  * Rejects if no canceled subscription exists (nothing to reactivate).
+ *
+ * The response returns a `checkoutUrl` the caller MUST redirect the user to;
+ * the canceled subscription is superseded only after the webhook confirms
+ * the new preapproval (HOS-114 T-007).
  */
 export const reactivateSubscriptionRoute = createSimpleRoute({
     method: 'post',
     path: '/reactivate-subscription',
     summary: 'Reactivate canceled subscription',
     description:
-        'Reactivate a canceled subscription by creating a new paid subscription on the specified plan.',
+        'Reactivate a canceled subscription via a real MercadoPago checkout on the specified plan. Returns a checkoutUrl to redirect the user to.',
     tags: ['Billing'],
-    responseSchema: reactivateSubscriptionResponseSchema,
+    responseSchema: ReactivateSubscriptionResponseSchema,
     handler: async (c) => {
         const billingEnabled = c.get('billingEnabled');
 
@@ -505,7 +503,7 @@ export const reactivateSubscriptionRoute = createSimpleRoute({
         }
 
         const body = await c.req.json();
-        const parseResult = reactivateSubscriptionRequestSchema.safeParse(body);
+        const parseResult = ReactivateSubscriptionRequestSchema.safeParse(body);
 
         if (!parseResult.success) {
             throw new HTTPException(400, {
@@ -517,20 +515,31 @@ export const reactivateSubscriptionRoute = createSimpleRoute({
         const { planId } = parseResult.data;
         const billing = getQZPayBilling();
         const trialService = new TrialService(billing);
+        const locale = resolveReturnUrlLocale(c);
 
         try {
             const result = await trialService.reactivateSubscription({
                 customerId: billingCustomerId,
-                planId
+                planId,
+                urls: {
+                    paymentMethodReturnUrl: buildPaymentMethodReturnUrl(locale),
+                    notificationUrl: buildNotificationUrl()
+                }
             });
 
             return {
-                success: true,
+                success: result.success,
                 subscriptionId: result.subscriptionId,
                 previousPlanId: result.previousPlanId,
-                message: 'Successfully reactivated subscription'
+                checkoutUrl: result.checkoutUrl,
+                status: result.status,
+                message: result.message
             };
         } catch (error) {
+            if (error instanceof SubscriptionCheckoutError) {
+                throw mapSubscriptionCheckoutErrorToHttp(error);
+            }
+
             const errorMessage = error instanceof Error ? error.message : String(error);
 
             apiLogger.error(

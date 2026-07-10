@@ -47,6 +47,7 @@ import { captureBillingError } from '../../lib/sentry';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
+import { mapSubscriptionCheckoutErrorToHttp } from '../../services/billing/subscription-checkout-error-http';
 import {
     initiatePaidAnnualSubscription,
     initiatePaidMonthlySubscription,
@@ -56,76 +57,14 @@ import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
-
-/**
- * Supported locale values for the user-facing return URLs.
- *
- * Must stay in sync with `apps/web/src/lib/i18n.ts` SUPPORTED_LOCALES.
- * The checkout pages (`[lang]/suscriptores/checkout/{success,failure,pending}`)
- * exist for all three locales via Astro's `[lang]` routing.
- */
-const SUPPORTED_RETURN_URL_LOCALES = ['es', 'en', 'pt'] as const;
-type ReturnUrlLocale = (typeof SUPPORTED_RETURN_URL_LOCALES)[number];
-
-/** Fallback locale when the user has no preference or the preference is unknown. */
-const DEFAULT_RETURN_URL_LOCALE: ReturnUrlLocale = 'es';
-
-/**
- * Resolves the locale to embed in MP return URLs from the authenticated user's
- * web language preference (`user.settings.languageWeb`).
- *
- * Falls back to `'es'` when:
- * - There is no authenticated user on the context.
- * - The user has no `settings.languageWeb` value.
- * - The stored value is not one of the three supported locales.
- *
- * @param c - Hono context carrying the Better Auth session user.
- * @returns A supported locale string for use in URL path prefixes.
- */
-function resolveReturnUrlLocale(c: Context): ReturnUrlLocale {
-    const user = c.get('user') as { settings?: Record<string, unknown> } | null | undefined;
-    const rawLocale = user?.settings?.languageWeb;
-
-    if (
-        typeof rawLocale === 'string' &&
-        (SUPPORTED_RETURN_URL_LOCALES as readonly string[]).includes(rawLocale)
-    ) {
-        return rawLocale as ReturnUrlLocale;
-    }
-
-    return DEFAULT_RETURN_URL_LOCALE;
-}
-
-/**
- * MercadoPago `back_url` for the preapproval (monthly subscriptions).
- *
- * MP requires a non-empty `back_url` at preapproval-create time and
- * redirects the user there after they authorise the recurring charge.
- * The URL MUST land on an existing route — Astro's locale middleware
- * rewrites unknown segments (e.g. `/billing/return`) into a 404 surface,
- * so we point directly at the checkout success page which already exists
- * at `apps/web/src/pages/[lang]/suscriptores/checkout/success.astro` and
- * is set up to read `?status=` / `?preapproval_id=` query parameters MP
- * appends post-authorise.
- *
- * History: until 2026-05-21 this returned
- * `${HOSPEDA_SITE_URL}/billing/return`, which Astro's middleware rewrote
- * to `/es/return/` (404). Surfaced during staging smoke as Finding #8.
- *
- * @param locale - User's preferred return-URL locale (e.g. `'es'`, `'en'`, `'pt'`).
- */
-function buildPaymentMethodReturnUrl(locale: ReturnUrlLocale): string {
-    return `${env.HOSPEDA_SITE_URL}/${locale}/suscriptores/checkout/success/`;
-}
-
-/**
- * Webhook destination for the MP preapproval. We pass the application-wide
- * URL explicitly so MercadoPago always reaches this API, even when a
- * legacy app-wide URL exists in the MP dashboard.
- */
-function buildNotificationUrl(): string {
-    return `${env.HOSPEDA_API_URL}/api/v1/webhooks/mercadopago`;
-}
+import {
+    buildNotificationUrl,
+    buildPaymentMethodReturnUrl,
+    DEFAULT_RETURN_URL_LOCALE,
+    type ReturnUrlLocale,
+    resolveReturnUrlLocale,
+    SUPPORTED_RETURN_URL_LOCALES
+} from './checkout-return-urls';
 
 /**
  * MP Checkout return URLs for the annual one-time flow.
@@ -162,44 +101,6 @@ function buildAnnualCancelUrl(locale: ReturnUrlLocale): string {
 // cancel. Pending payments today fall back to the cancel URL until the
 // service is extended to thread the pending URL through to MP's
 // `back_urls.pending`. Tracked as a follow-up.
-
-/**
- * Map a `SubscriptionCheckoutError` from the service layer to an HTTP
- * exception. Keeping this mapping at the route boundary keeps the
- * service framework-agnostic.
- */
-function mapServiceErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
-    switch (err.code) {
-        case 'PLAN_NOT_FOUND':
-        case 'NO_MONTHLY_PRICE':
-        case 'NO_ANNUAL_PRICE':
-        case 'NO_MATCHING_PRICE':
-        case 'CUSTOMER_NOT_FOUND':
-        case 'SUBSCRIPTION_NOT_FOUND':
-            return new HTTPException(404, { message: err.message });
-        case 'INVALID_PROMO_CODE':
-        case 'SAME_PLAN':
-        case 'NOT_AN_UPGRADE':
-            return new HTTPException(422, { message: err.message });
-        case 'DISCOUNT_APPLY_FAILED':
-            // SPEC-262 T-012 P2: MP rejected our fail-closed discount mutation and
-            // the just-created subscription was cancelled. The code itself is valid
-            // (so NOT 422) — the payment provider refused the amount change. 502
-            // (Bad Gateway) signals an upstream-provider failure, consistent with
-            // the SPEC-149 provider-error mapping family.
-            return new HTTPException(502, { message: err.message });
-        case 'MISSING_INIT_POINT':
-            return new HTTPException(500, { message: err.message });
-        default: {
-            // Defensive: the union should be exhaustive, but TS doesn't
-            // enforce that downstream consumers add new codes here. Fall
-            // back to a generic 500 with the original message.
-            const exhaustive: never = err.code;
-            void exhaustive;
-            return new HTTPException(500, { message: err.message });
-        }
-    }
-}
 
 /**
  * Handler for the start-paid endpoint.
@@ -445,7 +346,7 @@ export const handleStartPaidSubscription = async (
                     'Paid subscription created without providerInitPoint -- payment adapter misconfigured'
                 );
             }
-            throw mapServiceErrorToHttp(error);
+            throw mapSubscriptionCheckoutErrorToHttp(error);
         }
 
         if (error instanceof HTTPException) {

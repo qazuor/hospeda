@@ -277,5 +277,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         schedule: '0 */6 * * *',
         description:
             'Correct drift between accommodations.featuredByEntitlement and its plan/addon billing sources of truth (SPEC-309 T-014 backstop).'
+    },
+    {
+        name: 'reactivation-supersession-reconcile',
+        displayName: 'Reconciliación de reactivaciones pagas',
+        category: 'billing',
+        schedule: '0 * * * *',
+        description:
+            'Backstop for HOS-114 paid reactivations: cancels + audits any superseded subscription the webhook left orphaned (e.g. a transient provider cancel failure).'
     }
 ];

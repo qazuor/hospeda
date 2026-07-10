@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { I18nTextSchema } from '../../common/i18n.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { GastronomySchema } from './gastronomy.schema.js';
 
@@ -110,6 +111,9 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
                 id: z.string().uuid(),
                 question: z.string(),
                 answer: z.string(),
+                // HOS-117: localized FAQ text (nullable until translations are written).
+                questionI18n: I18nTextSchema.nullish(),
+                answerI18n: I18nTextSchema.nullish(),
                 category: z.string().nullable()
             })
         )

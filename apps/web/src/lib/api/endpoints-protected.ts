@@ -15,6 +15,7 @@ import type {
     KeepSelections,
     PlanChangeResponse,
     PriceAlertResponse,
+    ReactivateSubscriptionResponse,
     UserBookmark,
     UserCancelSubscriptionResponse,
     UserProtected,
@@ -609,21 +610,31 @@ export const billingApi = {
     },
 
     /**
-     * Reactivate a cancelled or expired subscription.
+     * Reactivate a cancelled or expired subscription onto a paid plan.
+     *
+     * As of HOS-114, reactivation routes through a real card-collecting
+     * MercadoPago checkout — the response is not a synchronous success but a
+     * `checkoutUrl` the caller MUST redirect the user to; the subscription
+     * stays `status: 'incomplete'` until the `subscription_preapproval.created`
+     * webhook confirms it. Note: this wrapper currently has no callers in the
+     * web app (dead code as of HOS-114 investigation notes).
      *
      * @param params - Plan ID to reactivate with
-     * @returns Whether the reactivation succeeded
+     * @returns The checkout redirect payload for the new (incomplete) subscription
      *
      * @example
      * ```ts
      * const result = await billingApi.reactivateSubscription({ planId: 'plan-uuid' });
+     * if (result.success && result.data.checkoutUrl) {
+     *     window.location.href = result.data.checkoutUrl;
+     * }
      * ```
      */
     reactivateSubscription({
         planId
     }: {
         readonly planId: string;
-    }): Promise<ApiResult<{ readonly success: boolean }>> {
+    }): Promise<ApiResult<ReactivateSubscriptionResponse>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/trial/reactivate-subscription`,
             body: { planId }

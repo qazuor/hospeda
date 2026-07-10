@@ -1,6 +1,6 @@
 # TODOs: SEO/AEO on-page hardening (HOS-117)
 
-Status: in-progress | Progress: 8/17 active tasks (Wave 0 + T-018/T-013; T-022 in PR #2225)
+Status: in-progress | Progress: 10/17 active tasks (Wave 0; T-013/T-018; T-014 FAQ i18n + T-020 tests; T-022 in PR #2225)
 
 > **Replan 2026-07-09**: owner will delete all example/seed data from prod within
 > 2-3 days. Wave 1 (demo-content exclusion) is obsolete — deleting the data
@@ -33,10 +33,19 @@ Status: in-progress | Progress: 8/17 active tasks (Wave 0 + T-018/T-013; T-022 i
       Done 2026-07-10: rewrote to typed-component reality, all 6 entities
       (+ RestaurantJsonLd / TouristAttractionJsonLd), points to json-ld-coverage.test.ts.
 
-## Wave 3 — Content i18n (P2, likely own sub-spec — OQ-2)
+## Wave 3 — Content i18n (P2) ✅ FAQ i18n support + destination SEO parity
 
-- [ ] T-014: Content i18n macro ({es,en,pt} entity text) (complexity: 3)
-      Recommendation: split to its own sub-spec — infra for real content, large.
+- [x] T-014: FAQ i18n support + destination SEO parity (complexity: 3)
+      Retargeted 2026-07-10 (owner): SPEC-212 already shipped name/desc i18n +
+      AI translation pipeline → OQ-2 = keep-shrunk, no sub-spec. Owner chose
+      4-table schema scope (accommodation/destination/experience/gastronomy).
+      Additive question_i18n/answer_i18n columns (migration 0050) + BaseFaqSchema;
+      resolveI18nText wired into the 4 FAQ transforms with legacy-es fallback;
+      honest FAQPage inLanguage via faqSetInLanguage (accommodation+destination);
+      destination detail title/meta via pickLocalizedSeo + summary/description
+      i18n (name stays untranslated proper noun). Seed stays Spanish-only via
+      legacy fields (mirrors accommodation description) — NO seed dual-write;
+      translations authored later by AI pipeline / real content.
 
 ## Wave 4 — Rendering strategy & CWV (P2, measurement-gated)
 
@@ -50,8 +59,10 @@ Status: in-progress | Progress: 8/17 active tasks (Wave 0 + T-018/T-013; T-022 i
       Done 2026-07-10: gap analysis showed counters (AnimatedCounter behavioral),
       sitemap exclusion, and 6/6 breadcrumb were already covered. Filled the 2 real
       wiring gaps: StatsSection isMeaningfulStat filter + destinos noindex={isThinContent}.
-- [ ] T-020: Wave 3 i18n fallback tests (complexity: 2) [blocked by T-014]
-      Reframed: Wave 2 FAQ-coverage assertion dropped (T-011 cancelled).
+- [x] T-020: Wave 3 i18n fallback tests (complexity: 2) [blocked by T-014 ✓]
+      resolveI18nText/resolveI18nLocale fallback + faqSetInLanguage + toDestinationFaqs
+      i18n tests (resolve-i18n-text.test.ts, faq-i18n.test.ts). Wave 2 FAQ-coverage
+      assertion dropped (T-011 cancelled).
 
 ## Docs
 

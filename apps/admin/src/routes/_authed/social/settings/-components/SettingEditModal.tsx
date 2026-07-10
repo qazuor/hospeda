@@ -13,7 +13,7 @@
 
 import type { TranslationKey } from '@repo/i18n';
 import type { SocialSetting } from '@repo/schemas';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -58,6 +58,18 @@ export function SettingEditModal({ open, onOpenChange, item }: SettingEditModalP
 
     const updateMutation = useUpdateSocialSetting();
     const isPending = updateMutation.isPending;
+
+    // Re-seed the input whenever the modal opens for a given row. The component
+    // stays mounted across edits (the parent only toggles `open`/`item`), so the
+    // `useState` initializer runs only once — without this effect the input keeps
+    // stale state from a previous edit (typing "5" into a leftover "5" saved "55").
+    useEffect(() => {
+        if (open && item) {
+            setValue(item.type === 'secret' ? '' : (item.value ?? ''));
+            setValueError(null);
+            setApiError(null);
+        }
+    }, [open, item]);
 
     const handleOpenChange = (next: boolean) => {
         if (!next) {
