@@ -47,7 +47,10 @@ vi.mock('../../../src/utils/logger.js', () => ({
  * A minimal Drizzle-like `db` fake supporting the two sequential
  * `.select().from().where().limit()` calls `completeSupersessionPairing`
  * issues (idempotency check, then the superseded-row lookup) and one
- * `.insert().values()` call.
+ * `.insert().values().onConflictDoNothing()` call — the trailing
+ * `onConflictDoNothing()` is the atomic backstop against the partial
+ * unique index added in
+ * `packages/db/src/migrations/extras/029-hos114-supersession-audit-unique.index.sql`.
  */
 function makeDbFake(
     options: {
@@ -70,12 +73,13 @@ function makeDbFake(
         };
     });
 
-    const insertValues = insertShouldFail
+    const onConflictDoNothing = insertShouldFail
         ? vi.fn().mockRejectedValue(new Error('audit insert failed'))
         : vi.fn().mockResolvedValue(undefined);
+    const insertValues = vi.fn().mockReturnValue({ onConflictDoNothing });
     const insert = vi.fn().mockReturnValue({ values: insertValues });
 
-    return { select, insert, insertValues };
+    return { select, insert, insertValues, onConflictDoNothing };
 }
 
 const NEW_SUBSCRIPTION = { id: 'sub-new-001', customerId: 'cust-001', planId: 'plan-001' };

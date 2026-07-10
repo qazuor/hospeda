@@ -165,13 +165,11 @@ export interface CompleteSupersessionPairingInput {
  *    EXISTENCE, not the superseded subscription's status — the
  *    `subscription-reactivation` (lapsed) flow supersedes a subscription
  *    that is ALREADY `cancelled` by definition, so a status-based guard
- *    would permanently skip that flow's audit.
- *    // TODO(HOS-114 follow-up): this check-then-insert has no DB-level
- *    // uniqueness guarantee — a webhook/cron race could in theory write two
- *    // audit rows for one pairing (no money impact either way, cancel is
- *    // idempotent). Proper fix is a partial unique index on
- *    // (subscription_id, metadata->>'supersededSubscriptionId') via the
- *    // extras migration carril — deferred, tracked as a HOS-114 follow-up.
+ *    would permanently skip that flow's audit. This SELECT is a fast-path
+ *    only — the real uniqueness guarantee is the DB-level partial unique
+ *    index (`packages/db/src/migrations/extras/029-hos114-supersession-audit-unique.index.sql`),
+ *    which Step 5's `.onConflictDoNothing()` insert relies on to stay
+ *    atomic against a concurrent webhook/cron race on the same pairing.
  * 2. **Superseded row lookup** — skip (`'superseded-not-found'`) if
  *    `supersededId` does not resolve to a row (bad/stale metadata). Also
  *    reads `mpSubscriptionId`, which decides the Step 4 verification source.
@@ -193,7 +191,13 @@ export interface CompleteSupersessionPairingInput {
  *    so the pairing stays eligible for a future retry (webhook redelivery or
  *    the T-016 reconcile cron).
  * 5. **Audit insert** — once confirmed terminal, writes the
- *    `billing_subscription_events` row and returns `'completed'`.
+ *    `billing_subscription_events` row and returns `'completed'`. The insert
+ *    carries `.onConflictDoNothing()`, backed by the partial unique index on
+ *    `(subscription_id, metadata->>'supersededSubscriptionId')`
+ *    (`packages/db/src/migrations/extras/029-hos114-supersession-audit-unique.index.sql`),
+ *    so a webhook/cron race that both pass the Step 1 fast-path SELECT can
+ *    never write two audit rows for the same pairing — the DB itself is now
+ *    the source of truth for "at most one", not just the SELECT guard.
  *
  * Never throws — any unexpected error is caught, logged, Sentry-captured,
  * and reported as `'error'` so a failure on one pairing can never abort a
@@ -218,10 +222,8 @@ export async function completeSupersessionPairing(
     } = input;
 
     try {
-        // ── Step 1: idempotency guard ──────────────────────────────────────
-        // TODO(HOS-114 follow-up): partial unique index on
-        // (subscription_id, metadata->>'supersededSubscriptionId') to make
-        // one-audit-per-pairing atomic instead of check-then-insert.
+        // ── Step 1: idempotency guard (fast path only — see Step 5 for the
+        // DB-level atomic backstop) ─────────────────────────────────────────
         const [existingAuditRow] = await db
             .select({ id: billingSubscriptionEvents.id })
             .from(billingSubscriptionEvents)
@@ -352,22 +354,27 @@ export async function completeSupersessionPairing(
             return 'cancel-did-not-take';
         }
 
-        // ── Step 5: audit insert ────────────────────────────────────────────
-        await db.insert(billingSubscriptionEvents).values({
-            subscriptionId: newSubscription.id,
-            previousStatus: normalizedSupersededStatus,
-            newStatus: SubscriptionStatusEnum.ACTIVE,
-            triggerSource,
-            providerEventId,
-            metadata: {
-                supersededSubscriptionId: supersededId,
-                customerId: newSubscription.customerId,
-                planId: newSubscription.planId,
-                ...(triggerSource === 'trial-reactivation'
-                    ? { convertedFromTrial: 'true' }
-                    : { reactivatedFromCanceled: 'true' })
-            }
-        });
+        // ── Step 5: audit insert (atomic backstop via onConflictDoNothing —
+        // see the partial unique index at
+        // packages/db/src/migrations/extras/029-hos114-supersession-audit-unique.index.sql) ──
+        await db
+            .insert(billingSubscriptionEvents)
+            .values({
+                subscriptionId: newSubscription.id,
+                previousStatus: normalizedSupersededStatus,
+                newStatus: SubscriptionStatusEnum.ACTIVE,
+                triggerSource,
+                providerEventId,
+                metadata: {
+                    supersededSubscriptionId: supersededId,
+                    customerId: newSubscription.customerId,
+                    planId: newSubscription.planId,
+                    ...(triggerSource === 'trial-reactivation'
+                        ? { convertedFromTrial: 'true' }
+                        : { reactivatedFromCanceled: 'true' })
+                }
+            })
+            .onConflictDoNothing();
 
         apiLogger.info(
             { subscriptionId: newSubscription.id, supersededId, triggerSource, source },

@@ -1,0 +1,44 @@
+-- =============================================================================
+-- 029-hos114-supersession-audit-unique.index.sql
+-- Partial UNIQUE index enforcing "exactly one supersession-completion audit
+-- row per (new subscription, superseded subscription) pairing" (HOS-114
+-- follow-up).
+--
+-- Why this file exists:
+--   `completeSupersessionPairing()`
+--   (apps/api/src/services/billing/reactivation-supersession-complete.ts)
+--   guards idempotency with a check-then-insert: SELECT for an existing
+--   `billing_subscription_events` row keyed on
+--   `(subscription_id, metadata->>'supersededSubscriptionId')`, then INSERT
+--   if none exists. That guard is application-level only — a webhook
+--   delivery and the T-016 hourly reconcile cron racing on the SAME pairing
+--   could both pass the SELECT before either INSERT commits, producing two
+--   audit rows for one pairing. No money impact (the underlying
+--   `billing.subscriptions.cancel()` call is itself idempotent — see the
+--   module JSDoc), but the "exactly one audit per pairing" guarantee was
+--   only best-effort. A partial UNIQUE index over a JSON expression
+--   (`metadata->>'supersededSubscriptionId'`) cannot be declared in the
+--   Drizzle TS schema, so per the Carril 2 golden rule (packages/db/CLAUDE.md
+--   "Migrations") it lives here, not in `src/migrations/`.
+--
+-- Predicate and expression MUST match exactly what the app writes: the JSON
+-- key is camelCase `supersededSubscriptionId` (see the `.values(...)` call
+-- in `completeSupersessionPairing`), and the column pairing is
+-- `(subscription_id, metadata->>'supersededSubscriptionId')` — the same pair
+-- the existing SELECT guard filters on.
+--
+-- Safe to apply on any already-seeded environment: as of this migration, the
+-- reactivate-from-trial / reactivate-subscription endpoints that produce
+-- supersession rows were unwired until the HOS-114 fix landed, so no
+-- existing `billing_subscription_events` row has a non-null
+-- `metadata->>'supersededSubscriptionId'` that could violate this
+-- constraint on creation.
+--
+-- Idempotency:
+--   CREATE UNIQUE INDEX IF NOT EXISTS is itself idempotent; no DO block
+--   needed.
+-- =============================================================================
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_subscription_events_supersession_pairing
+    ON billing_subscription_events (subscription_id, (metadata ->> 'supersededSubscriptionId'))
+    WHERE metadata ->> 'supersededSubscriptionId' IS NOT NULL;
