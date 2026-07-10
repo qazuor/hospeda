@@ -619,20 +619,51 @@ describe('ExperienceService._projectPublicEntity', () => {
 // ---------------------------------------------------------------------------
 
 describe('ExperienceService._canView', () => {
-    it('should throw NOT_FOUND for deleted entity when actor lacks COMMERCE_VIEW_ALL', () => {
+    it('should throw GONE for a deleted PUBLIC entity when actor lacks COMMERCE_VIEW_ALL', () => {
         // The deleted-at gate fires first (before the owner check), so both owner
-        // and non-owner actors without COMMERCE_VIEW_ALL receive NOT_FOUND.
-        const entity = makeExperienceEntity({ deletedAt: new Date() });
+        // and non-owner actors without COMMERCE_VIEW_ALL receive GONE (HOS-117
+        // T-022) — but only because this listing was PUBLIC (indexable) before
+        // deletion. Refined product decision: 410 is reserved for content that
+        // was actually publicly discoverable.
+        const entity = makeExperienceEntity({
+            visibility: VisibilityEnum.PUBLIC,
+            deletedAt: new Date()
+        });
         const service = makeService(entity);
-        // Owner without COMMERCE_VIEW_ALL → NOT_FOUND (matches gastronomy parity)
-        expect(() => (service as AnyService)._canView(ownerActor, entity)).toThrow();
-        // Non-owner, non-staff also gets NOT_FOUND
+        // Owner without COMMERCE_VIEW_ALL → GONE (matches gastronomy parity)
+        expect(() => (service as AnyService)._canView(ownerActor, entity)).toThrow(
+            expect.objectContaining({ code: ServiceErrorCode.GONE })
+        );
+        // Non-owner, non-staff also gets GONE
         const nonOwner: Actor = { id: OTHER_USER, role: RoleEnum.USER, permissions: [] };
-        expect(() => (service as AnyService)._canView(nonOwner, entity)).toThrow();
+        expect(() => (service as AnyService)._canView(nonOwner, entity)).toThrow(
+            expect.objectContaining({ code: ServiceErrorCode.GONE })
+        );
+    });
+
+    it('should throw NOT_FOUND (not GONE) for a deleted PRIVATE entity — anti-enumeration (SPEC-092 T-087)', () => {
+        // A PRIVATE listing was never publicly discoverable, so its deletion
+        // must not be observably distinguishable from never-existed (uniform
+        // 404), preserving the anti-enumeration contract.
+        const entity = makeExperienceEntity({
+            visibility: VisibilityEnum.PRIVATE,
+            deletedAt: new Date()
+        });
+        const service = makeService(entity);
+        const nonOwner: Actor = { id: OTHER_USER, role: RoleEnum.USER, permissions: [] };
+        expect(() => (service as AnyService)._canView(nonOwner, entity)).toThrow(
+            expect.objectContaining({ code: ServiceErrorCode.NOT_FOUND })
+        );
+        expect(() => (service as AnyService)._canView(ownerActor, entity)).toThrow(
+            expect.objectContaining({ code: ServiceErrorCode.NOT_FOUND })
+        );
     });
 
     it('should allow staff with COMMERCE_VIEW_ALL to view deleted entities', () => {
-        const entity = makeExperienceEntity({ deletedAt: new Date() });
+        const entity = makeExperienceEntity({
+            visibility: VisibilityEnum.PUBLIC,
+            deletedAt: new Date()
+        });
         const service = makeService(entity);
         expect(() => (service as AnyService)._canView(staffActor, entity)).not.toThrow();
     });

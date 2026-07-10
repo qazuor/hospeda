@@ -426,6 +426,55 @@ describe('GastronomyService._projectPublicEntity', () => {
 });
 
 // ---------------------------------------------------------------------------
+// _canView (visibility gate) — HOS-117 T-022
+// ---------------------------------------------------------------------------
+
+describe('GastronomyService._canView', () => {
+    it('should throw GONE for a deleted PUBLIC entity when actor lacks COMMERCE_VIEW_ALL', () => {
+        // The deleted-at gate fires first (before the owner check), so both owner
+        // and non-owner actors without COMMERCE_VIEW_ALL receive GONE (410,
+        // deindex) instead of NOT_FOUND (404, never existed) — but only because
+        // this listing was PUBLIC (indexable) before deletion.
+        const entity = makeGastronomyEntity({
+            visibility: VisibilityEnum.PUBLIC,
+            deletedAt: new Date()
+        });
+        const service = makeService(entity);
+        expect(() => (service as AnyService)._canView(ownerActor, entity)).toThrow(
+            expect.objectContaining({ code: ServiceErrorCode.GONE })
+        );
+        expect(() => (service as AnyService)._canView(otherUserActor, entity)).toThrow(
+            expect.objectContaining({ code: ServiceErrorCode.GONE })
+        );
+    });
+
+    it('should throw NOT_FOUND (not GONE) for a deleted PRIVATE entity — anti-enumeration (SPEC-092 T-087)', () => {
+        // A PRIVATE listing was never publicly discoverable, so its deletion
+        // must stay a uniform 404 (never distinguishable from never-existed).
+        const entity = makeGastronomyEntity({
+            visibility: VisibilityEnum.PRIVATE,
+            deletedAt: new Date()
+        });
+        const service = makeService(entity);
+        expect(() => (service as AnyService)._canView(otherUserActor, entity)).toThrow(
+            expect.objectContaining({ code: ServiceErrorCode.NOT_FOUND })
+        );
+        expect(() => (service as AnyService)._canView(ownerActor, entity)).toThrow(
+            expect.objectContaining({ code: ServiceErrorCode.NOT_FOUND })
+        );
+    });
+
+    it('should allow staff with COMMERCE_VIEW_ALL to view deleted entities', () => {
+        const entity = makeGastronomyEntity({
+            visibility: VisibilityEnum.PUBLIC,
+            deletedAt: new Date()
+        });
+        const service = makeService(entity);
+        expect(() => (service as AnyService)._canView(staffActor, entity)).not.toThrow();
+    });
+});
+
+// ---------------------------------------------------------------------------
 // ENTITY_NAME
 // ---------------------------------------------------------------------------
 
