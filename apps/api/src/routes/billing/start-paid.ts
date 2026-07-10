@@ -249,30 +249,31 @@ export const handleStartPaidSubscription = async (
             );
         }
 
+        // Resolve the interval price ONCE, shared by both the pre-decision
+        // `checkout_started` event and the post-decision `checkout_completed`
+        // event (HOS-122). Best-effort: the daily test plan has only a 'day'
+        // price, so `priceForInterval` resolves to `undefined` (no 'month'/'year'
+        // match) and `amountMajor`/`currency` fall back to `null` via optional
+        // chaining. This lookup is a pure array find and cannot throw.
+        const priceForInterval = targetPlan?.prices.find((p) =>
+            body.billingInterval === 'annual'
+                ? p.billingInterval === 'year'
+                : p.billingInterval === 'month'
+        );
+        // `unitAmount` is stored in centavos, but the payment_failed /
+        // subscription_payment_succeeded events capture MP's transaction_amount
+        // in MAJOR units (ARS pesos). Normalize to major units here so `amount`
+        // has ONE unit across the whole checkout→payment funnel.
+        const amountMajor =
+            typeof priceForInterval?.unitAmount === 'number'
+                ? priceForInterval.unitAmount / 100
+                : null;
+
         // Fire-and-forget product analytics for checkout initiation. Wrapped in
         // try/catch so a misbehaving PostHog client can NEVER break the checkout
         // — this handler must proceed to initiate the subscription regardless of
-        // analytics outcome. Mirrors the pattern in payment-logic.ts. The amount
-        // is resolved best-effort from the plan price matching the interval.
-        // Verified safe for the daily test plan too: it has only a 'day' price,
-        // so `priceForInterval` resolves to `undefined` here (no 'month'/'year'
-        // match) — `amountMajor`/`currency` fall back to `null` via optional
-        // chaining, and the whole block is already wrapped in try/catch, so
-        // this can never throw regardless of which prices a plan carries.
+        // analytics outcome. Mirrors the pattern in payment-logic.ts.
         try {
-            const priceForInterval = targetPlan?.prices.find((p) =>
-                body.billingInterval === 'annual'
-                    ? p.billingInterval === 'year'
-                    : p.billingInterval === 'month'
-            );
-            // `unitAmount` is stored in centavos, but the payment_failed /
-            // subscription_payment_succeeded events capture MP's transaction_amount
-            // in MAJOR units (ARS pesos). Normalize to major units here so `amount`
-            // has ONE unit across the whole checkout→payment funnel.
-            const amountMajor =
-                typeof priceForInterval?.unitAmount === 'number'
-                    ? priceForInterval.unitAmount / 100
-                    : null;
             getPostHogClient()?.capture({
                 distinctId: actor.id,
                 event: 'checkout_started',
@@ -333,6 +334,48 @@ export const handleStartPaidSubscription = async (
             },
             'Paid subscription initiated, awaiting provider authorization'
         );
+
+        // HOS-122: outcome-side product analytics. Captured AFTER `result`
+        // resolves, so it carries the normalized checkout `outcome` that
+        // `checkout_started` structurally cannot (the trial/comp/discount/paid
+        // decision is only known here). `appliedEffect` is absent for a plain
+        // paid checkout, so normalize `undefined` → 'paid' — analytics must
+        // never encode "property missing means paid". Stitchable to
+        // `checkout_started` via `localSubscriptionId`. Same non-blocking
+        // try/catch contract: analytics can never break checkout, and no event
+        // is emitted when `initiatePaid*Subscription` throws (the outer catch
+        // handles that path).
+        try {
+            const outcome = result.appliedEffect ?? 'paid';
+            getPostHogClient()?.capture({
+                distinctId: actor.id,
+                event: 'checkout_completed',
+                properties: {
+                    planSlug: body.planSlug,
+                    billingInterval: body.billingInterval,
+                    outcome,
+                    promoCode: body.promoCode ?? null,
+                    promoCodeIgnored: result.promoCodeIgnored ?? false,
+                    localSubscriptionId: result.localSubscriptionId,
+                    amount: amountMajor,
+                    currency: priceForInterval?.currency ?? null,
+                    // Persist the last checkout outcome on the person for
+                    // cohorting (HOS-122 D-10), mirroring how
+                    // subscription_payment_succeeded $sets plan_status.
+                    $set: { last_checkout_outcome: outcome }
+                }
+            });
+        } catch (phErr) {
+            apiLogger.warn(
+                {
+                    userId: actor.id,
+                    planSlug: body.planSlug,
+                    localSubscriptionId: result.localSubscriptionId,
+                    error: phErr instanceof Error ? phErr.message : String(phErr)
+                },
+                'PostHog capture failed for checkout_completed (non-blocking)'
+            );
+        }
 
         return result;
     } catch (error) {
