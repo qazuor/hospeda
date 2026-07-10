@@ -3,7 +3,7 @@
  * @description Unit tests for `readFacetActiveValues`, the shared helper that
  * reads a multi-select facet's currently active values from the URL's array
  * query param (HOS-96 T-009). Used by quick-filter chip rows to compute each
- * chip's `active` / `aria-pressed` state.
+ * chip's `active` / `aria-current` state.
  */
 
 import { describe, expect, it } from 'vitest';

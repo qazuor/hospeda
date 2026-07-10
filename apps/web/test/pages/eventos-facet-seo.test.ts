@@ -191,7 +191,7 @@ describe('events facet SEO — legacy singular-only URL regression (HOS-96 pre-m
 });
 
 describe('events chip active state — legacy singular-only URL (HOS-96 pre-merge review, chip-active regression)', () => {
-    it('?category=MUSIC (singular-only) resolves MUSIC as active via the fallback, ready to drive aria-pressed="true"', () => {
+    it('?category=MUSIC (singular-only) resolves MUSIC as active via the fallback, ready to drive aria-current="true" (NOT aria-pressed — invalid ARIA on an <a>, removed post-a11y-sweep)', () => {
         const activeValues = readFacetActiveValues({
             searchParams: new URLSearchParams('category=MUSIC'),
             paramKey: FACET_CONFIG_BY_ID.eventCategory.paramKey,

@@ -156,7 +156,7 @@ describe('accommodations facet SEO — legacy singular-only URL regression (HOS-
 });
 
 describe('accommodations chip active state — legacy singular-only URL (HOS-96 pre-merge review, chip-active regression)', () => {
-    it('?type=HOTEL (singular-only) resolves HOTEL as active via the fallback, ready to drive aria-pressed="true"', () => {
+    it('?type=HOTEL (singular-only) resolves HOTEL as active via the fallback, ready to drive aria-current="true" (NOT aria-pressed — invalid ARIA on an <a>, removed post-a11y-sweep)', () => {
         const activeValues = readFacetActiveValues({
             searchParams: new URLSearchParams('type=HOTEL'),
             paramKey: FACET_CONFIG_BY_ID.accommodationType.paramKey,

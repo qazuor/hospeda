@@ -165,7 +165,7 @@ describe('blog facet SEO — legacy singular-only URL regression (HOS-96 pre-mer
 });
 
 describe('blog chip active state — legacy singular-only URL (HOS-96 pre-merge review, chip-active regression)', () => {
-    it('?category=CULTURE (singular-only) resolves CULTURE as active via the fallback, ready to drive aria-pressed="true"', () => {
+    it('?category=CULTURE (singular-only) resolves CULTURE as active via the fallback, ready to drive aria-current="true" (NOT aria-pressed — invalid ARIA on an <a>, removed post-a11y-sweep)', () => {
         const activeValues = readFacetActiveValues({
             searchParams: new URLSearchParams('category=CULTURE'),
             paramKey: FACET_CONFIG_BY_ID.postCategory.paramKey,

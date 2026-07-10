@@ -44,19 +44,20 @@ interface ChipItem {
     readonly label: string;
     /** Target URL for the chip anchor. */
     readonly href: string;
-    /** When true, the chip renders in the active/selected state. */
-    readonly active?: boolean;
     /**
-     * When defined, renders `aria-pressed="true"/"false"` on the chip anchor
-     * (HOS-96 US-5, OQ-2 resolved: chips stay `<a>` + `aria-pressed`, not
-     * `<button>`, since each href stays a valid navigable/shareable URL).
-     * Multi-select callers pass the per-value active state here so several
-     * chips can read as simultaneously pressed. Left `undefined` (the
-     * default — no attribute rendered at all) for single-select chip rows
-     * that don't participate in multi-select (e.g. HOS-97 gastronomía /
-     * experiencias), so this is fully backward compatible.
+     * When true, the chip renders in the active/selected state — drives both
+     * the `filter-chips__chip--active` class and `aria-current="true"` on the
+     * anchor (HOS-96 US-5, OQ-2 resolved: chips stay `<a>`, not `<button>`,
+     * since each href stays a valid navigable/shareable URL). Multi-select
+     * callers pass the per-value active state here so several chips can read
+     * as simultaneously current. `aria-current` (not `aria-pressed`) is the
+     * correct ARIA state for this: `aria-pressed` is only valid on elements
+     * with `role="button"`, which an `<a href>` does not have — using it here
+     * was a real `aria-allowed-attr` violation, caught by the CI a11y sweep
+     * and removed (it briefly existed as a HOS-96 T-009 `ariaPressed` prop;
+     * do not reintroduce it).
      */
-    readonly ariaPressed?: boolean;
+    readonly active?: boolean;
     /**
      * When defined, overrides the anchor's accessible name via
      * `aria-label` (HOS-96 T-010). Needed for chips whose desired accessible
@@ -115,13 +116,12 @@ const {
     <nav class="filter-chips__nav" aria-label={ariaLabel}>
         <div class="filter-chips__fade-wrapper">
             <ul class="filter-chips__list" role="list" data-filter-chips-list>
-                {chips.map(({ label, href, active, icon: Icon, ariaPressed, ariaLabel }) => (
+                {chips.map(({ label, href, active, icon: Icon, ariaLabel }) => (
                     <li class="filter-chips__item">
                         <a
                             href={href}
                             class:list={['filter-chips__chip', { 'filter-chips__chip--active': active }]}
                             aria-current={active ? 'true' : undefined}
-                            aria-pressed={typeof ariaPressed === 'boolean' ? (ariaPressed ? 'true' : 'false') : undefined}
                             aria-label={ariaLabel}
                         >
                             {Icon && (

@@ -436,9 +436,12 @@ paginationParams.delete('page');
  *
  * `activeCategories` (computed once, near the top of this file) already
  * drives both the `categories` fetch param above and each chip's
- * `active`/`aria-pressed` state here, so href, visual state, and the API
+ * `active`/`aria-current` state here, so href, visual state, and the API
  * request are all coherent (this also resolves the T-009 temporary
- * "chip filters but doesn't visually highlight" gap).
+ * "chip filters but doesn't visually highlight" gap). `aria-current` (not
+ * `aria-pressed`) is what `FilterChips.astro` renders — `aria-pressed`
+ * briefly existed here but was removed after the CI a11y sweep flagged it as
+ * an `aria-allowed-attr` violation (invalid on `<a>`).
  */
 const CATEGORY_CHIP_DEFS = [
     { value: 'MUSIC', label: t('events.categories.music', 'Música') },
@@ -467,7 +470,6 @@ const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
             singularKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey
         }),
         active,
-        ariaPressed: active,
         icon
     };
 });

@@ -1,8 +1,11 @@
 /**
  * @file alojamientos-type-chips-active.test.ts
  * @description Source-based assertions that the accommodations listing's
- * quick-filter type chips compute `active`/`ariaPressed` from the `types`
- * array query param (HOS-96 T-009). Astro components cannot be rendered in
+ * quick-filter type chips compute `active` from the `types` array query
+ * param (HOS-96 T-009), which drives `aria-current` on the chip anchor (NOT
+ * `aria-pressed` — removed post-T-009 after the CI a11y sweep flagged it as
+ * an `aria-allowed-attr` violation; `aria-pressed` is only valid on
+ * `role="button"`, not an `<a href>`). Astro components cannot be rendered in
  * Vitest, so we assert against the source text — following this repo's
  * established `.astro` testing convention.
  */
@@ -17,7 +20,7 @@ const src = readFileSync(
     'utf8'
 );
 
-describe('alojamientos/index.astro — type chip active/aria-pressed state (HOS-96 T-009)', () => {
+describe('alojamientos/index.astro — type chip active/aria-current state (HOS-96 T-009)', () => {
     it('imports readFacetActiveValues and FACET_CONFIG_BY_ID', () => {
         expect(src).toContain('readFacetActiveValues');
         expect(src).toContain('FACET_CONFIG_BY_ID');
@@ -28,13 +31,14 @@ describe('alojamientos/index.astro — type chip active/aria-pressed state (HOS-
         expect(src).toMatch(/readFacetActiveValues\(\{[^}]*searchParams:\s*url\.searchParams/);
     });
 
-    it('passes both active and ariaPressed on each type chip', () => {
-        expect(src).toMatch(/typeChips\s*=[\s\S]*?\bactive[\s\S]*?ariaPressed/);
+    it('passes active on each type chip (drives aria-current + the active class in FilterChips.astro; NOT ariaPressed, removed post-a11y-sweep)', () => {
+        expect(src).toMatch(/typeChips\s*=[\s\S]*?\bactive\b/);
+        expect(src).not.toContain('ariaPressed');
     });
 });
 
 describe('readFacetActiveValues — accommodation types.includes() logic used by the page (HOS-96 T-009)', () => {
-    it('given ?types=HOTEL,CABIN, Hotel and Cabaña resolve active/aria-pressed true, others false', () => {
+    it('given ?types=HOTEL,CABIN, Hotel and Cabaña resolve active/aria-current true, others false', () => {
         const activeValues = readFacetActiveValues({
             searchParams: new URLSearchParams('types=HOTEL,CABIN'),
             paramKey: 'types'

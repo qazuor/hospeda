@@ -394,7 +394,10 @@ const itemListEntries = cards.map((card) => ({
  * case to handle there; it stays intact and unmodified as the single-value
  * canonical entry (US-6). `postCategoryActiveValues` (computed once, near
  * the top of this file) already drives both the `categories` fetch param
- * above and each chip's `active`/`aria-pressed` state here.
+ * above and each chip's `active`/`aria-current` state here. `aria-current`
+ * (not `aria-pressed`) is what `FilterChips.astro` renders — `aria-pressed`
+ * briefly existed here but was removed after the CI a11y sweep flagged it as
+ * an `aria-allowed-attr` violation (invalid on `<a>`).
  */
 const POST_CATEGORY_CHIP_DEFS = [
     { value: 'CULTURE',    slug: 'culture',    label: t('blog.categories.culture',    'Cultura') },
@@ -419,8 +422,7 @@ const postCategoryChips = POST_CATEGORY_CHIP_DEFS.map(({ value, slug, label }) =
             singularKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey
         }),
         icon: getPostCategoryIcon({ category: slug }),
-        active,
-        ariaPressed: active
+        active
     };
 });
 

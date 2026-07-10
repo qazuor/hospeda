@@ -7,9 +7,15 @@
  *
  * Proof strategy per facet:
  * 1. Chip side: `readFacetActiveValues` is the exact function every listing
- *    page calls to compute each chip's `active`/`aria-pressed` state (see
- *    `alojamientos|eventos|publicaciones/index.astro`). Calling it directly
- *    with a crafted `URLSearchParams` IS the chip-active computation.
+ *    page calls to compute each chip's `active`/`aria-current` state (see
+ *    `alojamientos|eventos|publicaciones/index.astro` — the chip anchor
+ *    itself carries `aria-current`, NOT `aria-pressed`, which is only valid
+ *    ARIA on `role="button"`, not an `<a href>`; a HOS-96 T-009 `ariaPressed`
+ *    prop was removed after the CI a11y sweep flagged the violation). Calling
+ *    `readFacetActiveValues` directly with a crafted `URLSearchParams` IS the
+ *    chip-active computation. The sidebar's own `aria-pressed` assertions
+ *    below (on `FilterGroupContent`'s real `<button>` checkboxes) are
+ *    unrelated and correct as-is — `aria-pressed` IS valid ARIA on a button.
  * 2. Sidebar side: mounting a REAL `FilterSidebar` (via
  *    `@testing-library/react`, the same render pattern used for HOS-96
  *    T-014/T-015) with `initialParams` built the same way the page builds

@@ -2,7 +2,7 @@
  * @file read-facet-active-values.ts
  * @description Shared helper reading a multi-select facet's currently active
  * values from the URL's array query param (HOS-96 T-009). Quick-filter chip
- * rows use it to compute each chip's `active` / `aria-pressed` state from the
+ * rows use it to compute each chip's `active` / `aria-current` state from the
  * facet's declared `paramKey` (see `facet-config.ts`) — the URL is the single
  * shared source of truth for active filter state across chips, the sidebar,
  * and back/forward navigation (spec US-5).

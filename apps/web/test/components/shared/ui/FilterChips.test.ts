@@ -247,29 +247,39 @@ describe('FilterChips.astro', () => {
         });
     });
 
-    describe('HOS-96 T-009 — aria-pressed passthrough (multi-select toggle semantics)', () => {
-        it('defines an optional readonly ariaPressed boolean on ChipItem', () => {
-            expect(src).toContain('readonly ariaPressed?: boolean');
+    describe('HOS-96 — active state uses aria-current, NEVER aria-pressed on the chip <a> (a11y sweep fix)', () => {
+        // `aria-pressed` is only valid ARIA on elements with `role="button"` —
+        // an `<a href>` does not have that implicit role, so `aria-pressed`
+        // there is an `aria-allowed-attr` violation. HOS-96 T-009 originally
+        // added an `ariaPressed` prop for this; the CI a11y sweep caught the
+        // resulting violation on `/alojamientos/`, `/eventos/`, and
+        // `/publicaciones/`, and the owner decided to drop it in favor of
+        // `aria-current` (already valid on `<a>`, already implemented,
+        // already covers the same "this chip is the active one" semantics —
+        // see the `chip rendering` describe block above for its own
+        // dedicated coverage).
+        //
+        // NOTE: assertions below are scoped to the actual field
+        // declaration/destructure/attribute (not a blanket "does not contain
+        // the string anywhere"), since this very comment block legitimately
+        // mentions `ariaPressed`/`aria-pressed` in prose to document the fix.
+        it('does not define an ariaPressed field on ChipItem (removed — do not reintroduce it)', () => {
+            expect(src).not.toContain('readonly ariaPressed?: boolean');
         });
 
-        it('destructures ariaPressed from each chip when mapping', () => {
-            expect(src).toMatch(/chips\.map\(\(\{[^}]*ariaPressed[^}]*\}\)/);
+        it('does not destructure ariaPressed when mapping chips', () => {
+            expect(src).not.toMatch(/chips\.map\(\(\{[^}]*ariaPressed[^}]*\}\)/);
         });
 
-        it('renders aria-pressed="true"/"false" driven by ariaPressed when defined', () => {
-            expect(src).toContain(
-                "aria-pressed={typeof ariaPressed === 'boolean' ? (ariaPressed ? 'true' : 'false') : undefined}"
-            );
+        it('never renders an aria-pressed attribute on the chip anchor', () => {
+            expect(src).not.toMatch(/aria-pressed=\{/);
         });
 
-        it('omits aria-pressed entirely when ariaPressed is undefined (backward compatible with single-select callers)', () => {
-            // The false branch of the ternary must resolve to the `undefined` literal
-            // (not the string 'false'), so Astro drops the attribute altogether.
-            expect(src).toMatch(/aria-pressed=\{[^}]*:\s*undefined\}/);
-        });
-
-        it('keeps aria-current/active class behavior unchanged alongside aria-pressed', () => {
+        it('the chip <a> renders aria-current driven by active — true when active, attribute omitted (undefined) when inactive', () => {
             expect(src).toContain("aria-current={active ? 'true' : undefined}");
+        });
+
+        it('keeps the filter-chips__chip--active class alongside aria-current (both driven by the same active flag)', () => {
             expect(src).toContain('filter-chips__chip--active');
         });
     });

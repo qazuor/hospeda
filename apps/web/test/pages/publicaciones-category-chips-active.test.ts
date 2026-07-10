@@ -1,13 +1,15 @@
 /**
  * @file publicaciones-category-chips-active.test.ts
  * @description Source-based assertions that the blog listing's category
- * quick-filter chips compute `active`/`ariaPressed` from the `categories`
- * array query param (the postCategory facet's `paramKey`). HOS-96 T-012
- * switched the chip href itself to the real multi-select toggle on
- * `categories` too (superseding the original T-009 "href stays on the
- * dedicated-route landing for now" interim state) — see
- * `publicaciones-multiselect-wiring.test.ts` for the full T-012 coverage
- * (accumulate/remove/Clear(N)/API-forwarding).
+ * quick-filter chips compute `active` from the `categories` array query
+ * param (the postCategory facet's `paramKey`), which drives `aria-current`
+ * on the chip anchor (NOT `aria-pressed` — removed post-T-009 after the CI
+ * a11y sweep flagged it as an `aria-allowed-attr` violation; `aria-pressed`
+ * is only valid on `role="button"`, not an `<a href>`). HOS-96 T-012 switched
+ * the chip href itself to the real multi-select toggle on `categories` too
+ * (superseding the original T-009 "href stays on the dedicated-route landing
+ * for now" interim state) — see `publicaciones-multiselect-wiring.test.ts`
+ * for the full T-012 coverage (accumulate/remove/Clear(N)/API-forwarding).
  */
 
 import { readFileSync } from 'node:fs';
@@ -20,7 +22,7 @@ const src = readFileSync(
     'utf8'
 );
 
-describe('publicaciones/index.astro — category chip active/aria-pressed state (HOS-96 T-009)', () => {
+describe('publicaciones/index.astro — category chip active/aria-current state (HOS-96 T-009)', () => {
     it('imports readFacetActiveValues and FACET_CONFIG_BY_ID', () => {
         expect(src).toContain('readFacetActiveValues');
         expect(src).toContain('FACET_CONFIG_BY_ID');
@@ -41,13 +43,14 @@ describe('publicaciones/index.astro — category chip active/aria-pressed state 
         expect(chipsBlock).not.toContain('path: `/publicaciones/categoria/');
     });
 
-    it('passes both active and ariaPressed on each post category chip', () => {
-        expect(src).toMatch(/postCategoryChips\s*=[\s\S]*?\bactive[\s\S]*?ariaPressed/);
+    it('passes active on each post category chip (drives aria-current + the active class in FilterChips.astro; NOT ariaPressed, removed post-a11y-sweep)', () => {
+        expect(src).toMatch(/postCategoryChips\s*=[\s\S]*?\bactive\b/);
+        expect(src).not.toContain('ariaPressed');
     });
 });
 
 describe('readFacetActiveValues — post categories.includes() logic used by the page (HOS-96 T-009)', () => {
-    it('given ?categories=CULTURE,GASTRONOMY, Cultura and Gastronomía resolve active/aria-pressed true, others false', () => {
+    it('given ?categories=CULTURE,GASTRONOMY, Cultura and Gastronomía resolve active/aria-current true, others false', () => {
         const activeValues = readFacetActiveValues({
             searchParams: new URLSearchParams('categories=CULTURE,GASTRONOMY'),
             paramKey: 'categories'
