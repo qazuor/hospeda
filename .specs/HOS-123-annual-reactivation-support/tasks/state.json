@@ -38,7 +38,7 @@
       "id": "T-002",
       "title": "Refactor initiatePaidAnnualSubscription to consume createAnnualSubscription",
       "description": "In `apps/api/src/services/subscription-checkout.service.ts::initiatePaidAnnualSubscription`, replace the extracted block (local row insert through polling schedule, ~1296-1445 minus comp/trial branches which stay put at ~1147-1269) with a call to the new `createAnnualSubscription` helper from T-001. Keep the promo_code_id stamp (~1367-1383) and the discount redemption gate (~1308-1340) in THIS function — they are promo-specific and out of the extracted helper's scope. No behavior change intended (byte-for-byte identical MP payload, same response shape).\n\nTests: run the existing annual-path suites and confirm zero diffs — `apps/api/test/services/subscription-checkout.service.test.ts` (annual describe blocks) and `apps/api/test/services/subscription-checkout-promo-branches.test.ts` (annual discount branch). Add one new assertion confirming `createAnnualSubscription` is called with the resolved plan/price/urls (spy/mock) so future regressions in the call-site wiring are caught explicitly, not just via end-to-end behavior.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-001"
@@ -54,21 +54,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T17:59:18Z",
+        "completed": "2026-07-10T18:29:30Z"
       }
     },
     {
       "id": "T-003",
       "title": "Extend resolveReactivationPlan to resolve the annual interval",
       "description": "In `apps/api/src/services/billing/reactivation-plan-guard.ts`, add a `findAnnualPrice`-equivalent lookup (duplicate, same non-import rationale already documented for `findMonthlyPrice` — do NOT import `subscription-checkout.service.ts`, per the ESM-cycle note at the top of this file). Add `billingInterval?: 'monthly' | 'annual'` to `ResolveReactivationPlanInput` (default `'monthly'` at the call site, not inside this function — keep this function's own default explicit for testability). Widen `ResolveReactivationPlanResult` to `{ plan, priceId, interval: 'monthly' | 'annual' }`.\n\nValidation order per interval:\n- `billingInterval` omitted or `'monthly'` (default): UNCHANGED behavior byte-for-byte (NG-3) — `PLAN_NOT_FOUND` → no monthly price throws `ANNUAL_REACTIVATION_UNSUPPORTED` (this code stays for the monthly-request-hits-annual-only-plan case) → free monthly price throws `INVALID_REACTIVATION_PLAN`.\n- `billingInterval: 'annual'`: `PLAN_NOT_FOUND` (unchanged) → no active annual price throws a NEW code `NO_ANNUAL_PRICE` (reuse the existing `SubscriptionCheckoutError` code already used by `initiatePaidAnnualSubscription` at `subscription-checkout.service.ts:1129-1132`, for consistency across both callers) → free annual price (`unitAmount === 0`) throws `INVALID_REACTIVATION_PLAN`.\n\nUpdate the module JSDoc: the `ANNUAL_REACTIVATION_UNSUPPORTED` throw is no longer a permanent dead-end — annual reactivation is now supported via the `billingInterval: 'annual'` branch (this closes the 'deferred to HOS-123' note at line ~99 and ~147).\n\nTests (`apps/api/test/services/billing/reactivation-plan-guard.test.ts`): add cases — (1) `billingInterval: 'annual'` + plan has an active annual price → resolves `{ plan, priceId: annualPrice.id, interval: 'annual' }`; (2) `billingInterval: 'annual'` + plan has NO annual price → throws `NO_ANNUAL_PRICE`; (3) `billingInterval: 'annual'` + annual price `unitAmount === 0` → throws `INVALID_REACTIVATION_PLAN`; (4) unknown `planId` → `PLAN_NOT_FOUND` regardless of interval; (5) re-run all existing monthly-default cases unchanged to confirm no regression (NG-3).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [],
       "blocks": [
@@ -83,21 +83,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T18:32:16Z",
+        "completed": "2026-07-10T18:38:05Z"
       }
     },
     {
       "id": "T-004",
       "title": "Add billingInterval + discriminated urls union to trial.types.ts",
       "description": "In `packages/service-core/src/services/billing/addon/trial.types.ts`:\n- Add `readonly billingInterval?: 'monthly' | 'annual'` to `ReactivateFromTrialInput` (line ~131-138) and `ReactivateSubscriptionInput` (line ~167-174).\n- Split `ReactivationCheckoutUrls` (currently `{ paymentMethodReturnUrl, notificationUrl }`, line ~119-124) into a discriminated union: keep the existing shape as `MonthlyReactivationCheckoutUrls` (unchanged fields, for back-compat), add `AnnualReactivationCheckoutUrls = { successUrl, cancelUrl, notificationUrl }`, and export `ReactivationCheckoutUrls = MonthlyReactivationCheckoutUrls | AnnualReactivationCheckoutUrls` (OQ-3). Callers (routes, T-010/T-011) pick the right shape based on `billingInterval`.\n- Widen `ReactivateFromTrialResult` (line ~148-159) and `ReactivateSubscriptionResult` (line ~181-194): the `status: 'incomplete'` literal is qzpay's raw preapproval status and does NOT apply to the annual path (annual never calls qzpay's `subscriptions.create()` — it's a direct Drizzle insert with Hospeda's own `SubscriptionStatusEnum.PENDING_PROVIDER`). Widen `status` to `'incomplete' | 'pending_provider'` on both result interfaces, with updated JSDoc explaining the two value spaces (mirrors how the response schema will need the same widening in T-007).\n\nThis is a types-only change — no runtime logic. Verification: `pnpm --filter @repo/service-core typecheck` plus the downstream consumers exercised by T-008/T-009/T-010/T-011's test suites (no dedicated test file for this task; a pure interface change has no independent behavior to assert).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [],
       "blocks": [
@@ -114,21 +114,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "n/a"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T18:38:55Z",
+        "completed": "2026-07-10T18:41:17Z"
       }
     },
     {
       "id": "T-005",
       "title": "Move annual return-URL builders into shared checkout-return-urls.ts",
       "description": "`buildAnnualSuccessUrl` / `buildAnnualCancelUrl` currently live as PRIVATE, unexported functions in `apps/api/src/routes/billing/start-paid.ts` (lines ~90-96), even though `checkout-return-urls.ts`'s own module JSDoc explicitly states its purpose is to be the single shared builder for BOTH `/start-paid` and the reactivate routes (`apps/api/src/routes/billing/checkout-return-urls.ts:1-14`). Today it only has the monthly builders (`buildPaymentMethodReturnUrl`, `buildNotificationUrl`) — this is a real gap the reactivation routes (T-010/T-011) need closed before they can build annual URLs without duplicating logic.\n\nMove `buildAnnualSuccessUrl(locale)` and `buildAnnualCancelUrl(locale)` verbatim into `checkout-return-urls.ts`, export both, and update `start-paid.ts` to import them from there instead of defining them locally (no behavior change — same URL strings).\n\nTests: `apps/api/test/routes/*` — locate and re-run `start-paid`'s existing annual URL assertions (grep for `buildAnnualSuccessUrl`/`checkout/failure` in `apps/api/test/routes/billing/start-paid*.test.ts` or similar) to confirm the move didn't change behavior. Add a focused unit test in a new/existing `checkout-return-urls.test.ts` asserting both functions return the exact same locale-prefixed URLs as before.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 1,
       "blockedBy": [],
       "blocks": [
@@ -143,21 +143,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T18:42:44Z",
+        "completed": "2026-07-10T19:34:05Z"
       }
     },
     {
       "id": "T-006",
       "title": "Add billingInterval to reactivate request Zod schemas",
       "description": "In `packages/schemas/src/api/billing/trial.schema.ts`, add `billingInterval: z.enum(['monthly', 'annual']).default('monthly').optional()` (additive, per the schema compatibility policy — packages/schemas/CLAUDE.md 'additive-only': never rename/remove/tighten, only add optional fields or widen enums) to both `ReactivateTrialRequestSchema` (line ~25-32) and `ReactivateSubscriptionRequestSchema` (line ~86-93). Use the `zodError.billing.trial.reactivate.billingInterval.invalid` / `zodError.billing.trial.reactivateSubscription.billingInterval.invalid` message keys, matching the existing per-field message-key convention in this file. Add the corresponding i18n keys if `@repo/i18n` validates against a fixed key set (check `packages/i18n/src/locales/es/zodError.json` or equivalent for the existing `planId` keys' location and mirror it).\n\nTests: `packages/schemas` test suite for this file (locate via `packages/schemas/test/api/billing/trial.schema.test.ts` or equivalent) — add cases: `billingInterval` omitted parses with default `'monthly'` (regression); `'annual'` parses; an invalid value (`'quarterly'`) rejects.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 1,
       "blockedBy": [
         "T-004"
@@ -174,21 +174,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T19:38:41Z",
+        "completed": "2026-07-10T19:44:09Z"
       }
     },
     {
       "id": "T-007",
       "title": "Widen reactivate response Zod schemas for the annual result shape",
       "description": "In `packages/schemas/src/api/billing/trial.schema.ts`, widen `status` on `ReactivateTrialResponseSchema` (line ~48-75) and `ReactivateSubscriptionResponseSchema` (line ~103-...) from `z.enum(['incomplete'])` to `z.enum(['incomplete', 'pending_provider'])` — additive enum-widening, matches T-004's `ReactivateFromTrialResult`/`ReactivateSubscriptionResult` widening. `'incomplete'` stays the monthly value (qzpay raw preapproval status); `'pending_provider'` is the new annual value (Hospeda's own `SubscriptionStatusEnum`, since annual is a direct Drizzle insert, not a qzpay-facade create — see `subscription-checkout.service.ts` module JSDoc on `initiatePaidAnnualSubscription`). Do NOT change `checkoutUrl`, `subscriptionId`, or `message` — those fields already accommodate both flows unchanged.\n\nTests: `packages/schemas` suite for this file — add cases confirming both response schemas accept `status: 'pending_provider'` in addition to the existing `'incomplete'` case (regression). Also add/extend a `.compat.test.ts` fixture check (per the schema compat policy) confirming a historic `status: 'incomplete'` response payload still parses unchanged.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-004"
@@ -205,14 +205,14 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T19:38:41Z",
+        "completed": "2026-07-10T19:44:09Z"
       }
     },
     {
@@ -739,9 +739,9 @@
   ],
   "summary": {
     "total": 23,
-    "pending": 22,
+    "pending": 16,
     "inProgress": 0,
-    "completed": 1,
+    "completed": 7,
     "blocked": 0,
     "averageComplexity": 2.1
   }
