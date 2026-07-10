@@ -113,12 +113,11 @@ const TRIAL_UPGRADE_PATH = '/es/suscriptores/planes/';
  * A third sender once existed — `trial-pre-end-notif.job.ts` (SPEC-126 D5)
  * also sent `TRIAL_ENDING_REMINDER`, duplicating `notification-schedule`'s
  * send and building its own divergent `/cuenta/planes` link inline instead
- * of calling this function. It was disabled (`enabled: false`) under
- * HOS-115 as a duplicate-cron fix, so that stale link no longer circulates.
- * The file is kept (not deleted) pending a follow-up that ports its
- * robustness advantages into `notification-schedule.job.ts` — see the
- * comment on `trialPreEndNotifJob` for details. Once ported and the file is
- * deleted, this will again be literally the only call site pattern in play.
+ * of calling this function. It was disabled under HOS-115 as a duplicate-cron
+ * fix and then DELETED under HOS-121, once its two robustness advantages
+ * (skip-tolerant D-3 window + durable `billing_subscription_events` dedup)
+ * were ported into `notification-schedule.job.ts`. Its divergent link is gone;
+ * this function is again literally the only trial-nudge URL pattern in play.
  *
  * @param input.siteUrl - `HOSPEDA_SITE_URL` (no trailing slash expected).
  * @param input.intendedInterval - Raw value read off the trial

@@ -95,7 +95,7 @@ function makeCronCtx(dryRun = false) {
 
 describe('abandoned-pending-subs internals', () => {
     it('reserves advisory lock key 1006 (no overlap with sibling crons)', () => {
-        // Sibling keys: 1003 dunning, 1004 trial-expiry, 1005 trial-pre-end-notif.
+        // Sibling keys: 1003 dunning, 1004 trial-expiry (1005 free — HOS-121).
         // Drift would let two jobs share a lock and starve each other.
         expect(_internals.ADVISORY_LOCK_KEY).toBe(1006);
     });

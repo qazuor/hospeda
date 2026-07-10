@@ -36,7 +36,8 @@ import type { CronJobDefinition } from '../types.js';
 
 /**
  * Advisory lock key reserved for this job. Sibling billing crons use
- * 1003 (dunning), 1004 (trial-expiry), 1005 (trial-pre-end-notif).
+ * 1003 (dunning), 1004 (trial-expiry). (1005 is free — trial-pre-end-notif
+ * was retired in HOS-121.)
  */
 const ADVISORY_LOCK_KEY = 1006;
 
