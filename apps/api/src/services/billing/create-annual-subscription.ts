@@ -115,6 +115,18 @@ export interface CreateAnnualSubscriptionInput {
      */
     readonly metadata?: Readonly<Record<string, string>>;
     /**
+     * Pre-generated local subscription id override (HOS-123 T-002). When a
+     * caller must reference the row's id BEFORE it exists — e.g. the annual
+     * checkout's discount-redemption gate, which records
+     * `promo_code_usages.subscription_id` optimistically ahead of the
+     * `redeemAndRecordUsage` call that GATES whether this helper may even
+     * run — it generates the id itself and passes it here so the persisted
+     * row (and the checkout metadata's `annualSubscriptionId`) end up using
+     * that SAME id instead of a second, unrelated one. Omitted by every
+     * other caller, which gets a fresh `crypto.randomUUID()` as before.
+     */
+    readonly localSubscriptionId?: string;
+    /**
      * Drizzle client override for tests. Production callers omit it
      * and `getDb()` resolves the runtime client.
      */
@@ -307,7 +319,7 @@ export async function createAnnualSubscription(
 
     const now = new Date();
     const periodEnd = new Date(now.getTime() + ANNUAL_PERIOD_MS);
-    const localSubscriptionId = crypto.randomUUID();
+    const localSubscriptionId = input.localSubscriptionId ?? crypto.randomUUID();
 
     // Insert the local sub row BEFORE creating the provider checkout so
     // the localSubscriptionId can be embedded in the checkout metadata

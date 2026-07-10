@@ -40,6 +40,7 @@ import {
 } from '@repo/service-core';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
+import { createAnnualSubscription } from './billing/create-annual-subscription.js';
 import { createPaidSubscription } from './billing/paid-subscription-create.js';
 import type { SubscriptionCheckoutErrorCode } from './billing/subscription-checkout-error.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
@@ -1293,16 +1294,12 @@ export async function initiatePaidAnnualSubscription(
         }
     }
 
-    const customer = await billing.customers.get(customerId);
-    if (!customer) {
-        throw new SubscriptionCheckoutError(
-            'CUSTOMER_NOT_FOUND',
-            `Customer '${customerId}' not found`
-        );
-    }
-
-    const now = new Date();
-    const periodEnd = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+    // localSubscriptionId is generated here (not inside the helper) because
+    // the discount-redemption gate below must reference it BEFORE the local
+    // row exists (SPEC-262 C2: redemption must succeed before any discounted
+    // checkout is created). It is threaded into `createAnnualSubscription`
+    // (HOS-123 T-002) via `localSubscriptionId` so the persisted row ends up
+    // using this exact id instead of a second, unrelated one.
     const localSubscriptionId = crypto.randomUUID();
 
     // SPEC-262 C2: for annual discount, the redemption GATES the discounted
@@ -1312,13 +1309,21 @@ export async function initiatePaidAnnualSubscription(
     // at checkout-create time. If redemption fails (e.g. cap exhausted by a
     // concurrent request), we must NOT return the discounted URL — return a 422.
     //
-    // The local sub row is inserted BEFORE the MP checkout but AFTER redemption,
-    // so a redemption failure rejects cleanly without any orphan row.
+    // The local sub row does not exist yet at this point (it is created by
+    // `createAnnualSubscription` below, AFTER this gate passes), so a
+    // redemption failure rejects cleanly without any orphan row.
     //
     // Note: validatePromoCode (above) already checked maxUses as a best-effort
     // snapshot. redeemAndRecordUsage below acquires SELECT FOR UPDATE lock —
     // this is the authoritative, race-safe gate (see ADR-019).
     if (promoPlan.kind === 'discount') {
+        const discountCustomer = await billing.customers.get(customerId);
+        if (!discountCustomer) {
+            throw new SubscriptionCheckoutError(
+                'CUSTOMER_NOT_FOUND',
+                `Customer '${customerId}' not found`
+            );
+        }
         const { redeemAndRecordUsage } = await import('@repo/service-core');
         const redeemResult = await redeemAndRecordUsage({
             promoCodeId: promoPlan.promoCodeId,
@@ -1329,7 +1334,7 @@ export async function initiatePaidAnnualSubscription(
             subscriptionId: localSubscriptionId,
             discountAmount: annualPrice.unitAmount - chargeAmountCentavos,
             currency: 'ARS',
-            livemode: customer.livemode
+            livemode: discountCustomer.livemode
         });
         if (!redeemResult.success) {
             throw new SubscriptionCheckoutError(
@@ -1339,115 +1344,64 @@ export async function initiatePaidAnnualSubscription(
         }
     }
 
-    // Insert the local sub row BEFORE creating the provider checkout so
-    // the localSubscriptionId can be embedded in the checkout metadata
-    // (the webhook handler matches on it to flip the row to `active`).
-    // If the checkout call fails downstream, the row is left in
-    // `pending_provider` and the abandoned-pending-subs cron will
-    // collect it after the TTL — no manual rollback needed.
-    await db.insert(billingSubscriptions).values({
-        id: localSubscriptionId,
+    // HOS-123 T-002: delegate the create-and-persist mechanical block — the
+    // local `pending_provider` row insert, `billing.checkout.create({ mode:
+    // 'payment' })`, the `checkoutUrl`/`MISSING_INIT_POINT` guard, and the
+    // polling-fallback enqueue — to the shared `createAnnualSubscription`
+    // helper (HOS-123 T-001), instead of duplicating it inline. `planSlug` is
+    // threaded through the helper's generic `metadata` param together with
+    // `source: 'start-paid-annual'` so the persisted row's `metadata` stays
+    // byte-for-byte identical to the pre-refactor inline block (the helper's
+    // own hardcoded `source: 'create-annual-subscription'` is overridden by
+    // this spread). The one accepted side effect: the SAME metadata object is
+    // also merged onto the MP checkout session's metadata, so it now carries
+    // `source`/`planSlug` too — the pre-refactor inline block set `planSlug`
+    // there but never `source`. This is harmless: the `payment.updated`
+    // webhook matcher and every consumer key off `annualSubscriptionId`, not
+    // `source`.
+    const created = await createAnnualSubscription({
+        billing,
         customerId,
-        planId: plan.id,
-        billingInterval: 'year',
-        intervalCount: 1,
-        currentPeriodStart: now,
-        currentPeriodEnd: periodEnd,
-        status: 'pending_provider',
-        livemode: customer.livemode,
-        metadata: {
-            source: 'start-paid-annual',
-            createdBy: 'subscription-flow',
-            planSlug,
-            annualPriceId: annualPrice.id,
-            billingInterval: 'annual'
-        }
+        plan: { id: plan.id, name: plan.name, metadata: plan.metadata },
+        priceId: annualPrice.id,
+        chargeAmountCentavos,
+        urls,
+        localSubscriptionId,
+        ...(statementDescriptor ? { statementDescriptor } : {}),
+        metadata: { source: 'start-paid-annual', planSlug },
+        db
     });
 
     // Stamp promo_code_id on the pending row (best-effort — the redemption
     // record already exists from the gate above; this is purely for the FK
-    // audit trail on the subscription row itself).
+    // audit trail on the subscription row itself). Applied AFTER
+    // `createAnnualSubscription` returns (HOS-123 T-002) rather than
+    // interleaved between the row insert and the checkout.create call as
+    // before — the stamp only depends on the row existing, which it does by
+    // this point, and it remains non-fatal/best-effort either way.
     if (promoPlan.kind === 'discount') {
         try {
             await db.execute(
                 sql`UPDATE billing_subscriptions
                     SET promo_code_id = ${promoPlan.promoCodeId}
-                    WHERE id = ${localSubscriptionId}`
+                    WHERE id = ${created.localSubscriptionId}`
             );
         } catch (stampErr) {
             apiLogger.warn(
-                { localSubscriptionId, code: promoPlan.code, error: String(stampErr) },
+                {
+                    localSubscriptionId: created.localSubscriptionId,
+                    code: promoPlan.code,
+                    error: String(stampErr)
+                },
                 'Annual discount: failed to stamp promo_code_id (redemption already recorded — non-fatal)'
             );
         }
     }
 
-    // Split customer.name on the first whitespace for MP's payer fields
-    // (mirrors the qzpay-core monthly subscription create path).
-    const [firstName, ...rest] = (customer.name ?? '').trim().split(/\s+/);
-
-    const checkout = await billing.checkout.create({
-        mode: 'payment',
-        lineItems: [
-            {
-                // SPEC-262 T-012 P2: chargeAmountCentavos is the discounted amount
-                // when a discount code applied, else the full annual price.
-                unitAmount: chargeAmountCentavos,
-                currency: 'ARS',
-                quantity: 1,
-                title: `${getPlanDisplayName(plan)} (Annual)`,
-                categoryId: 'services'
-            }
-        ],
-        successUrl: urls.successUrl,
-        cancelUrl: urls.cancelUrl,
-        customerId,
-        customerEmail: customer.email,
-        ...(customer.name ? { customerName: customer.name } : {}),
-        ...(firstName ? { payerFirstName: firstName } : {}),
-        ...(rest.length > 0 ? { payerLastName: rest.join(' ') } : {}),
-        notificationUrl: urls.notificationUrl,
-        ...(statementDescriptor ? { statementDescriptor } : {}),
-        idempotencyKey: localSubscriptionId,
-        metadata: {
-            annualSubscriptionId: localSubscriptionId,
-            planSlug,
-            billingInterval: 'annual'
-        }
-    });
-
-    const checkoutUrl = checkout.providerInitPoint ?? checkout.providerSandboxInitPoint;
-    if (!checkoutUrl) {
-        throw new SubscriptionCheckoutError(
-            'MISSING_INIT_POINT',
-            'Payment provider did not return a checkout URL'
-        );
-    }
-
-    // SPEC-143 Finding #21 fallback: enqueue a polling job that flips
-    // the local subscription to `active` if the `payment.created`/
-    // `payment.updated` webhook for the annual one-time charge fails
-    // to arrive (current production state: MP Preferences only deliver
-    // legacy IPN, which the marker filter drops as duplicate).
-    //
-    // `checkout.id` is the LOCAL checkout-session UUID assigned by the
-    // qzpay-core orchestrator and propagated to MP as `external_reference`
-    // — the cron searches MP payments by that field. The webhook still
-    // wins when it does arrive; both call sites go through the
-    // idempotent `confirmAnnualSubscription`.
-    await schedulePollingForSubscription({
-        billing,
-        subscriptionId: localSubscriptionId,
-        providerResourceId: checkout.id,
-        resourceType: 'one_time_payment',
-        planSlug,
-        sourceLabel: 'start-paid-annual'
-    });
-
     return {
-        checkoutUrl,
-        localSubscriptionId,
-        expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
+        checkoutUrl: created.checkoutUrl,
+        localSubscriptionId: created.localSubscriptionId,
+        expiresAt: created.expiresAt,
         ...(appliedEffect ? { appliedEffect } : {})
     };
 }
