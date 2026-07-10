@@ -1,6 +1,6 @@
 # TODOs: SEO/AEO on-page hardening (HOS-117)
 
-Status: in-progress | Progress: 11/17 active tasks (Wave 0; T-013/T-018; T-014 FAQ i18n; T-020 tests; T-022 410 Gone)
+Status: in-progress | Progress: 15/17 active tasks (Wave 0; T-013/T-018; T-014 FAQ i18n; T-020 tests; T-022 410 Gone; Wave 4 CWV/rendering). Remaining: T-012 landings, T-021 closeout.
 
 > **Replan 2026-07-09**: owner will delete all example/seed data from prod within
 > 2-3 days. Wave 1 (demo-content exclusion) is obsolete — deleting the data
@@ -12,7 +12,8 @@ Status: in-progress | Progress: 11/17 active tasks (Wave 0; T-013/T-018; T-014 F
 
 - [x] T-001: Audit client:* islands for SSR↔hydration mismatch (complexity: 3)
 - [x] T-002: Confirm thin-content predicate + count fields (complexity: 2)
-- [ ] T-003: Capture baseline CWV measurement + page inventory (complexity: 2)
+- [x] T-003: Capture baseline CWV measurement + page inventory (complexity: 2)
+      CWV already "Good" (lab prod + field staging); baseline + inventory on HOS-117 (Linear comment).
 
 ## Wave 0 — Credibility bugs (P0) ✅ shipped (PR #2217)
 
@@ -51,11 +52,19 @@ Status: in-progress | Progress: 11/17 active tasks (Wave 0; T-013/T-018; T-014 F
       legacy fields (mirrors accommodation description) — NO seed dual-write;
       translations authored later by AI pipeline / real content.
 
-## Wave 4 — Rendering strategy & CWV (P2, measurement-gated)
+## Wave 4 — Rendering strategy & CWV (P2, measurement-gated) ✅ documentation-only
 
-- [ ] T-015: Classify pages prerender / SSR+edge-cache / pure-SSR (complexity: 2) [blocked by T-003]
-- [ ] T-016: Verify Cloudflare edge caching; prerender static pages (complexity: 3) [blocked by T-015]
-- [ ] T-017: Measurement-gated CWV fixes before/after (complexity: 2) [blocked by T-016]
+Outcome: CWV already "Good" (T-003), so Wave 4 is analysis, not fixes. Full write-up
+in `apps/web/docs/seo/rendering-strategy.md`.
+
+- [x] T-015: Classify pages prerender / SSR+edge-cache / pure-SSR (complexity: 2) [blocked by T-003 ✓]
+      100% SSR today; anti-myth documented. Prerender of static pages BLOCKED by per-request CSP (HOS-74).
+- [x] T-016: Verify Cloudflare edge caching (complexity: 3) [blocked by T-015 ✓]
+      Verified: catalog 0% edge-cached (all cf-cache-status:DYNAMIC); pricing s-maxage headers are dead
+      no-ops (CF doesn't cache HTML without a Cache Rule). Prerender blocked by CSP. Deferred scaling
+      follow-up filed as HOS-124 (CSP→native security.csp, unblocks prerender + edge-cache).
+- [x] T-017: Measurement-gated CWV fixes before/after (complexity: 2) [blocked by T-016 ✓]
+      No fix applied — measurement (T-003) shows "Good"; the gate correctly yields no change.
 
 ## Testing
 
