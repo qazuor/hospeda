@@ -636,7 +636,7 @@
       "id": "T-015",
       "title": "Create PointOfInterestModel",
       "description": "Create `packages/db/src/models/destination/point-of-interest.model.ts` mirroring `packages/db/src/models/destination/attraction.model.ts` (extends `BaseModel`, wires the `points_of_interest` Drizzle table from T-003, standard CRUD query builders). Unit tests: `packages/db/test/models/destination/point-of-interest.model.test.ts` mirroring `attraction.model.test.ts`'s coverage (create/find/update/soft-delete happy paths using the test DB harness).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-006"
@@ -648,15 +648,15 @@
       "subtasks": [
         {
           "title": "Create PointOfInterestModel extends BaseModel",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Wire points_of_interest table + standard query builders",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write model unit tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -666,21 +666,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T14:00:00.000Z",
+        "completed": "2026-07-10T14:15:00.000Z"
       }
     },
     {
       "id": "T-016",
       "title": "Create RDestinationPointOfInterestModel",
       "description": "Create `packages/db/src/models/destination/rDestinationPointOfInterest.model.ts` mirroring `rDestinationAttraction.model.ts` exactly (join-table model over T-004's schema, composite-key CRUD helpers). Unit tests: `packages/db/test/models/destination/rDestinationPointOfInterest.model.test.ts` mirroring the attraction join model's test coverage (add/remove relation, list by destination, list by POI).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-006",
@@ -693,15 +693,15 @@
       "subtasks": [
         {
           "title": "Create RDestinationPointOfInterestModel extends BaseModel",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Wire composite-key CRUD helpers",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write join model unit tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -711,21 +711,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T14:15:00.000Z",
+        "completed": "2026-07-10T14:25:00.000Z"
       }
     },
     {
       "id": "T-017",
       "title": "Create point-of-interest.normalizers.ts",
       "description": "Create `packages/service-core/src/services/point-of-interest/point-of-interest.normalizers.ts` mirroring `attraction.normalizers.ts`: `normalizeCreateInput`/`normalizeUpdateInput`/`normalizeListInput`/`normalizeViewInput` plus `normalizeAdminInfo`. Simpler than attraction's version since POI has no `name`-derived slug generation (slug is always provided by seed, not auto-generated) — mostly pass-through normalization. Unit tests: `packages/service-core/test/services/point-of-interest/point-of-interest.normalizers.test.ts` covering each normalizer function's identity/pass-through behavior and the adminInfo normalization edge case.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 1,
       "blockedBy": [
         "T-013"
@@ -736,15 +736,15 @@
       "subtasks": [
         {
           "title": "Implement normalizeCreateInput/UpdateInput",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Implement normalizeListInput/ViewInput/AdminInfo",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write normalizer unit tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -753,21 +753,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T14:25:00.000Z",
+        "completed": "2026-07-10T14:32:00.000Z"
       }
     },
     {
       "id": "T-018",
       "title": "Create point-of-interest.permissions.ts",
       "description": "Create `packages/service-core/src/services/point-of-interest/point-of-interest.permissions.ts` with `checkCanCreatePointOfInterest`/`UpdatePointOfInterest`/`DeletePointOfInterest`/`ViewPointOfInterest`/`RestorePointOfInterest`/`AdminList` functions, ALL consistently checking `PermissionEnum.POINT_OF_INTEREST_*` from T-014 (per T-014's deviation note — do not split between `DESTINATION_*` and `POINT_OF_INTEREST_*` like attraction does). Public read access (view) should NOT require a permission (POIs are a public catalog, mirroring how public GET routes work today). Unit tests: `point-of-interest.permissions.test.ts` covering allow/deny per permission function with mocked actors.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-014"
@@ -778,15 +778,15 @@
       "subtasks": [
         {
           "title": "Implement checkCanCreate/Update/Delete/RestorePointOfInterest",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Implement checkCanViewPointOfInterest + checkCanAdminList",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write permission unit tests (allow/deny cases)",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -796,21 +796,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T14:32:00.000Z",
+        "completed": "2026-07-10T14:40:00.000Z"
       }
     },
     {
       "id": "T-019",
       "title": "Create PointOfInterestService core CRUD",
       "description": "Create `packages/service-core/src/services/point-of-interest/point-of-interest.service.ts`: `PointOfInterestService extends BaseCrudRelatedService<PointOfInterest, PointOfInterestModel, RDestinationPointOfInterestModel, ...>` mirroring `attraction.service.ts`'s core shape — `static ENTITY_NAME = 'pointOfInterest'`, `getDefaultListRelations()`, `getSearchableColumns()` returning `['slug', 'description']` (no `name` per OQ-2), the 12 standard `_can*` hooks wired to T-018's permission checks, `_canAdminList` override, `createDefaultRelatedModel()`, and `_executeSearch`/`_executeCount`/`searchForList` overrides. Relation/resolver methods (addPointOfInterestToDestination etc.) are T-020, NOT this task. Unit tests: `packages/service-core/test/services/point-of-interest/point-of-interest.service.test.ts` covering create/read/update/soft-delete/restore happy paths + permission-denied cases, mirroring `attraction.service.test.ts` structure.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-015",
@@ -825,19 +825,19 @@
       "subtasks": [
         {
           "title": "Define PointOfInterestService class + ENTITY_NAME/getSearchableColumns",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Wire all _can* hooks to point-of-interest.permissions.ts",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Implement createDefaultRelatedModel + search/count overrides",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write core CRUD service unit tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -846,21 +846,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T14:40:00.000Z",
+        "completed": "2026-07-10T14:55:00.000Z"
       }
     },
     {
       "id": "T-020",
       "title": "Add relation and slug-resolution methods to PointOfInterestService",
       "description": "Add 5 public methods to `point-of-interest.service.ts` from T-019, mirroring attraction's equivalents: `addPointOfInterestToDestination`, `removePointOfInterestFromDestination`, `getPointsOfInterestForDestination`, `getDestinationsByPointOfInterest`, and `getDestinationIdsByPointOfInterestSlugs` (consumes T-009's `DestinationIdsByPointOfInterestSlugsSchema` — this is the AI-search and proximity-search entry point used by T-020's downstream consumers T-032 and T-039). Unit tests: extend `point-of-interest.service.test.ts` covering each relation method's happy path, the M2M case (one POI mapped to 2+ destinations), and `getDestinationIdsByPointOfInterestSlugs` with matched/unmatched slugs.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-019"
@@ -874,19 +874,19 @@
       "subtasks": [
         {
           "title": "Implement addPointOfInterestToDestination/remove",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Implement getPointsOfInterestForDestination/getDestinationsByPointOfInterest",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Implement getDestinationIdsByPointOfInterestSlugs",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write relation + slug-resolution unit tests incl. M2M case",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -895,14 +895,14 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T14:55:00.000Z",
+        "completed": "2026-07-10T15:15:00.000Z"
       }
     },
     {
@@ -2252,9 +2252,9 @@
   ],
   "summary": {
     "total": 52,
-    "pending": 38,
+    "pending": 32,
     "inProgress": 0,
-    "completed": 14,
+    "completed": 20,
     "blocked": 0,
     "averageComplexity": 2.1
   }
