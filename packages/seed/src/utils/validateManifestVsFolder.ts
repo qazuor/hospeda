@@ -37,7 +37,8 @@ const ENTITY_FOLDER_MAP: Record<string, string> = {
     hostTrades: 'hostTrade',
     gastronomies: 'gastronomy',
     gastronomyFaqs: 'gastronomy/faqs',
-    gastronomyReviews: 'gastronomy/reviews'
+    gastronomyReviews: 'gastronomy/reviews',
+    pointsOfInterest: 'pointOfInterest'
 };
 
 /**
