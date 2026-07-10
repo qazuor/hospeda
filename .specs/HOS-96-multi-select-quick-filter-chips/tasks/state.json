@@ -746,31 +746,31 @@
             "id": "T-023",
             "title": "Write destinos no-op regression guard",
             "description": "Assert `apps/web/src/pages/[lang]/destinos/index.astro`'s filter logic (`activeIds` Set from `?attractions=a,b`, `cardMatchesFilter()` AND, the `is:inline` reconcile + `startViewTransition` script, `showFilters=false`, full-dataset SSR) has NO functional diff after this spec's implementation. Run this after the three chip-switch tasks (T-011/T-012/T-013) land, to catch any accidental shared-helper coupling.\n\n**Files:** no production changes expected — this task is test-only; extend/verify `apps/web` destinos test file(s) if a diff-detection assertion is worth adding (e.g. a snapshot of the filter function's behavior).\n\n**Tests:** (1) run the existing destinos test suite and confirm 100% green with zero modification; (2) add (if not already covered) an explicit assertion that destinos' `AND` semantics and client-side-only behavior are unchanged by the new multi-select facets' code paths (no accidental import of `buildMultiToggleParamHref` or the new facet config into destinos' logic).\n\n**Acceptance mapping:** US-12 (all AC), M-8.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-011", "T-012", "T-013"],
             "blocks": ["T-027"],
             "subtasks": [
                 {
                     "title": "Run existing destinos suite, confirm green with no modification",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add explicit no-coupling assertion (destinos doesn't import new multi-select helpers)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["test", "regression", "destinos"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T18:47:00Z",
+                "completed": "2026-07-10T19:05:00Z"
             }
         },
         {
@@ -784,32 +784,32 @@
             "subtasks": [
                 {
                     "title": "Write chip+sidebar agreement test for a crafted multi-value URL (all 3 facets)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write sidebar-check-then-navigate reflects-in-chip test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write categories-key serialization assertion for events/blog sidebar",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write crafted-URL-alone reproduces state test (no in-memory store proof)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["test", "frontend", "a11y"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T18:47:00Z",
+                "completed": "2026-07-10T19:05:00Z"
             }
         },
         {
@@ -823,28 +823,28 @@
             "subtasks": [
                 {
                     "title": "Write back-navigation restores-prior-state test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write forward-navigation restores-later-state test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write no-stale-selection-survives-popstate assertion",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["test", "frontend", "navigation"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T18:47:00Z",
+                "completed": "2026-07-10T19:05:00Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 4,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 23,
+        "completed": 26,
         "blocked": 0,
         "averageComplexity": 1.9
     }
