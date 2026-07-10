@@ -8,28 +8,36 @@
             "id": "T-001",
             "title": "Define per-facet multi-select filter config model",
             "description": "Create a single web-side config module (e.g. `apps/web/src/lib/filters/facet-config.ts`) declaring, per filterable facet: `paramKey` (plural array param), `singularParamKey` (existing scalar param kept for back-compat), `operator` (`'AND' | 'OR'`), `enum` (the underlying Zod enum), and `dedicatedLandingPattern` (optional, e.g. `/alojamientos/tipo/{slug}/`).\n\nRepresent all four facets from the spec's config table: accommodation type (`types`/`type`, OR, `AccommodationTypeEnum`, dedicated landing), event category (`categories`/`category`, OR, `EventCategoryEnum`, no dedicated landing), blog/post category (`categories`/`category`, OR, `PostCategoryEnum`, dedicated landing), destination attraction (`attractions`, AND, client-side-only, explicitly flagged `outOfBackendScope: true` and NOT touched by any other task — US-12).\n\nMake the shape extensible (a typed array/record) so a sibling issue (HOS-97's gastronomía/experiencias) can add an entry without editing logic elsewhere.\n\n**Files:** new `apps/web/src/lib/filters/facet-config.ts` (or equivalent path matching existing `apps/web/src/lib/filters/` structure).\n\n**Tests (unit, `apps/web`):** AAA — assert each of the 4 facet entries has the exact declared shape/values from the spec table; assert `destinos` entry is `operator: 'AND'` and carries the out-of-backend-scope flag; assert the config is read-only (`as const` / `readonly`) so it can't be mutated at runtime.\n\n**Acceptance mapping:** supports US-1..US-11 (backing config for every multi-select facet); US-12 (destinos documented, not touched).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-011", "T-012", "T-013", "T-016"],
             "subtasks": [
                 {
                     "title": "Define TS types for facet config entry (paramKey, singularParamKey, operator, enum, dedicatedLandingPattern, outOfBackendScope)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Populate accommodation-type, event-category, blog-category, destination-attraction entries",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests asserting shape + destinos AND/out-of-scope flag",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["config", "web"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": "2026-07-10T15:32:14Z",
+                "completed": "2026-07-10T15:39:18Z"
+            }
         },
         {
             "id": "T-002",
@@ -40,7 +48,10 @@
             "blockedBy": [],
             "blocks": ["T-004", "T-022"],
             "subtasks": [
-                { "title": "Add categories field to EventSearchHttpSchema", "completed": false },
+                {
+                    "title": "Add categories field to EventSearchHttpSchema",
+                    "completed": false
+                },
                 {
                     "title": "Write schema unit tests (CSV, repeated, singular-only, both-present, invalid member, empty)",
                     "completed": false
@@ -48,8 +59,16 @@
             ],
             "tags": ["schema", "api", "events"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-003",
@@ -60,7 +79,10 @@
             "blockedBy": [],
             "blocks": ["T-005", "T-022"],
             "subtasks": [
-                { "title": "Add categories field to PostSearchHttpSchema", "completed": false },
+                {
+                    "title": "Add categories field to PostSearchHttpSchema",
+                    "completed": false
+                },
                 {
                     "title": "Write schema unit tests (CSV, repeated, singular-only, both-present, invalid member, empty)",
                     "completed": false
@@ -68,8 +90,16 @@
             ],
             "tags": ["schema", "api", "blog"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-004",
@@ -91,8 +121,16 @@
             ],
             "tags": ["db", "model", "events"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-005",
@@ -114,8 +152,16 @@
             ],
             "tags": ["db", "model", "blog"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-006",
@@ -130,7 +176,10 @@
                     "title": "Verify/forward filters.categories in event.service.ts",
                     "completed": false
                 },
-                { "title": "Write service pass-through test", "completed": false },
+                {
+                    "title": "Write service pass-through test",
+                    "completed": false
+                },
                 {
                     "title": "Write API integration test (union + count comparison)",
                     "completed": false
@@ -142,8 +191,16 @@
             ],
             "tags": ["service", "api", "events"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-007",
@@ -158,7 +215,10 @@
                     "title": "Verify/forward filters.categories in post.service.ts",
                     "completed": false
                 },
-                { "title": "Write service pass-through test", "completed": false },
+                {
+                    "title": "Write service pass-through test",
+                    "completed": false
+                },
                 {
                     "title": "Write API integration test (union + count comparison)",
                     "completed": false
@@ -170,8 +230,16 @@
             ],
             "tags": ["service", "api", "blog"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-008",
@@ -193,8 +261,16 @@
             ],
             "tags": ["helper", "web"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-009",
@@ -220,8 +296,16 @@
             ],
             "tags": ["web", "component", "a11y"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-010",
@@ -236,7 +320,10 @@
                     "title": "Add Clear(N) chip generation logic reusing removable-chip pattern",
                     "completed": false
                 },
-                { "title": "Add i18n key for the accessible label with count", "completed": false },
+                {
+                    "title": "Add i18n key for the accessible label with count",
+                    "completed": false
+                },
                 {
                     "title": "Write component tests for appear/absent thresholds, param removal, aria-label",
                     "completed": false
@@ -244,8 +331,16 @@
             ],
             "tags": ["web", "component", "i18n"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-011",
@@ -260,13 +355,27 @@
                     "title": "Replace dedicated-route href with buildMultiToggleParamHref against types param",
                     "completed": false
                 },
-                { "title": "Verify dedicated landing route untouched", "completed": false },
-                { "title": "Write accumulate/remove/landing-escape tests", "completed": false }
+                {
+                    "title": "Verify dedicated landing route untouched",
+                    "completed": false
+                },
+                {
+                    "title": "Write accumulate/remove/landing-escape tests",
+                    "completed": false
+                }
             ],
             "tags": ["web", "accommodations"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-012",
@@ -281,13 +390,27 @@
                     "title": "Replace dedicated-route href with buildMultiToggleParamHref against categories param",
                     "completed": false
                 },
-                { "title": "Verify dedicated landing route untouched", "completed": false },
-                { "title": "Write accumulate/remove/landing-escape tests", "completed": false }
+                {
+                    "title": "Verify dedicated landing route untouched",
+                    "completed": false
+                },
+                {
+                    "title": "Write accumulate/remove/landing-escape tests",
+                    "completed": false
+                }
             ],
             "tags": ["web", "blog"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-013",
@@ -309,8 +432,16 @@
             ],
             "tags": ["web", "events"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-014",
@@ -332,8 +463,16 @@
             ],
             "tags": ["web", "sidebar", "events"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-015",
@@ -355,8 +494,16 @@
             ],
             "tags": ["web", "sidebar", "blog"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-016",
@@ -371,7 +518,10 @@
                     "title": "Implement 0/1/2+ predicate extending resolvePromotedFacetCanonical",
                     "completed": false
                 },
-                { "title": "Write unit tests for the 0/1/2/3+ value matrix", "completed": false },
+                {
+                    "title": "Write unit tests for the 0/1/2/3+ value matrix",
+                    "completed": false
+                },
                 {
                     "title": "Assert single shared function used, not per-page duplication",
                     "completed": false
@@ -379,8 +529,16 @@
             ],
             "tags": ["web", "seo"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-017",
@@ -402,8 +560,16 @@
             ],
             "tags": ["web", "seo", "accommodations"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-018",
@@ -414,7 +580,10 @@
             "blockedBy": ["T-016", "T-013"],
             "blocks": ["T-026"],
             "subtasks": [
-                { "title": "Wire shared predicate into events listing head", "completed": false },
+                {
+                    "title": "Wire shared predicate into events listing head",
+                    "completed": false
+                },
                 {
                     "title": "Write SEO tests for 0/1/2 value states (no-dedicated-landing fallback)",
                     "completed": false
@@ -422,8 +591,16 @@
             ],
             "tags": ["web", "seo", "events"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-019",
@@ -434,7 +611,10 @@
             "blockedBy": ["T-016", "T-012"],
             "blocks": ["T-026"],
             "subtasks": [
-                { "title": "Wire shared predicate into blog listing head", "completed": false },
+                {
+                    "title": "Wire shared predicate into blog listing head",
+                    "completed": false
+                },
                 {
                     "title": "Write SEO tests for 0/1/2 value states and dedicated landing",
                     "completed": false
@@ -442,8 +622,16 @@
             ],
             "tags": ["web", "seo", "blog"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-020",
@@ -454,13 +642,27 @@
             "blockedBy": ["T-006", "T-007"],
             "blocks": ["T-027"],
             "subtasks": [
-                { "title": "Write events ?categories=A,B regression test", "completed": false },
-                { "title": "Write posts ?categories=A,B regression test", "completed": false }
+                {
+                    "title": "Write events ?categories=A,B regression test",
+                    "completed": false
+                },
+                {
+                    "title": "Write posts ?categories=A,B regression test",
+                    "completed": false
+                }
             ],
             "tags": ["test", "regression", "api"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-021",
@@ -486,8 +688,16 @@
             ],
             "tags": ["test", "regression", "api"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-022",
@@ -502,18 +712,35 @@
                     "title": "Write empty-array-param unfiltered tests (3 facets)",
                     "completed": false
                 },
-                { "title": "Write duplicate-member de-dup tests (3 facets)", "completed": false },
-                { "title": "Write whitespace-CSV parse tests (3 facets)", "completed": false },
+                {
+                    "title": "Write duplicate-member de-dup tests (3 facets)",
+                    "completed": false
+                },
+                {
+                    "title": "Write whitespace-CSV parse tests (3 facets)",
+                    "completed": false
+                },
                 {
                     "title": "Write all-values-selected == unfiltered tests (3 facets)",
                     "completed": false
                 },
-                { "title": "Write invalid-member strict-400 tests (3 facets)", "completed": false }
+                {
+                    "title": "Write invalid-member strict-400 tests (3 facets)",
+                    "completed": false
+                }
             ],
             "tags": ["test", "edge-case"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-023",
@@ -535,8 +762,16 @@
             ],
             "tags": ["test", "regression", "destinos"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-024",
@@ -566,8 +801,16 @@
             ],
             "tags": ["test", "frontend", "a11y"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-025",
@@ -578,7 +821,10 @@
             "blockedBy": ["T-024"],
             "blocks": ["T-027"],
             "subtasks": [
-                { "title": "Write back-navigation restores-prior-state test", "completed": false },
+                {
+                    "title": "Write back-navigation restores-prior-state test",
+                    "completed": false
+                },
                 {
                     "title": "Write forward-navigation restores-later-state test",
                     "completed": false
@@ -590,8 +836,16 @@
             ],
             "tags": ["test", "frontend", "navigation"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-026",
@@ -617,8 +871,16 @@
             ],
             "tags": ["docs", "web"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-027",
@@ -644,15 +906,23 @@
             ],
             "tags": ["docs", "closeout"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-10T09:22:26Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-10T09:22:26Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
         "total": 27,
-        "pending": 27,
+        "pending": 26,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 1.9
     }
