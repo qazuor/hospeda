@@ -68,9 +68,10 @@ fixture) requires adding a numbered migration in the **same PR** — see the roo
 [CLAUDE.md](../../CLAUDE.md) bullet "Seed dual-write rule (MANDATORY, HOS-25)" for the exact
 rule. `scripts/check-seed-dual-write.sh` enforces it in CI against a fixed set of guarded
 paths (`data/{amenity,attraction,destination,exchangeRate,exchangeRateConfig,feature,
-revalidationConfig,sponsorshipLevel,sponsorshipPackage,postTag}/**`, `data/user/required/**`,
-`data/tag/{internal,system}-*.json`, and `packages/billing/src/config/{plans,limits,
-entitlements,addons,promo-codes}.config.ts`); a PR can opt out with a literal
+revalidationConfig,sponsorshipLevel,sponsorshipPackage,postTag,pointOfInterest}/**`,
+`data/user/required/**`, `data/tag/{internal,system}-*.json`, and
+`packages/billing/src/config/{plans,limits,entitlements,addons,promo-codes}.config.ts`);
+a PR can opt out with a literal
 `[skip-seed-migration]: <reason>` marker in its description when a change genuinely needs no
 backfill. Full guard-path list and rationale, plus the run order
 (`db:migrate` → `db:apply-extras` → `db:seed:migrate`, schema before data), are in the
