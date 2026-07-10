@@ -245,31 +245,31 @@
             "id": "T-008",
             "title": "Create buildMultiToggleParamHref helper",
             "description": "In `apps/web/src/lib/filters/`, add a new helper (sibling to `toggle-query-param.ts`'s `buildToggleParamHref`), e.g. `buildMultiToggleParamHref`, that accumulates/removes a value inside a CSV array query param: adding a value not currently present appends it (or sets the param if absent); clicking an already-present value removes just that value; removing the last remaining value drops the param entirely (no empty `?key=` left behind). It must preserve every other query param (`q`, `sortBy`, other facets) and always drop `page`. RO-RO pattern, named export, JSDoc, Zod-free (pure string/URLSearchParams logic), `import type` where relevant.\n\n**Files:** new `apps/web/src/lib/filters/toggle-multi-query-param.ts` (or colocated in `toggle-query-param.ts` if under 500 lines — match existing file's convention).\n\n**Tests (unit, `apps/web`):** AAA — (1) empty param + add value → `?k=a`; (2) `?k=a` + add `b` → `?k=a,b` (order preserved, append not replace); (3) `?k=a,b,c` + remove `b` → `?k=a,c`; (4) `?k=a` + remove `a` → param removed entirely, not `?k=`; (5) preserves unrelated params (`q`, `sortBy`, other facet keys); (6) always drops `page` regardless of add/remove; (7) adding a third value to `?k=a,b` → `?k=a,b,c` preserving order.\n\n**Acceptance mapping:** US-1 (all AC), US-3 (all AC).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-009"],
             "subtasks": [
                 {
                     "title": "Implement buildMultiToggleParamHref (add/remove/drop-last, preserve params, drop page)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests for add/append/remove/last-removal/preserve/drop-page",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["helper", "web"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-10T09:22:26Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T16:55:00Z",
+                "completed": "2026-07-10T17:05:33Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 20,
+        "pending": 19,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 1.9
     }
