@@ -7,6 +7,7 @@
 import type { AccommodationEditData, DestinationData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import { AiTextImprovePanel } from './AiTextImprovePanel.client';
 import styles from './BasicInfoSection.module.css';
 import { PlanEntitlementGate } from './PlanEntitlementGate.client';
@@ -156,7 +157,7 @@ export function BasicInfoSection({
                                     'host.properties.editor.entitlement.richDescriptionHint',
                                     'Mejorá tu plan para dar formato a tu descripción (negritas, listas y más).'
                                 )}{' '}
-                                <a href="/suscriptores/precios/">
+                                <a href={buildUrl({ locale, path: 'suscriptores/planes' })}>
                                     {t(
                                         'host.properties.editor.entitlement.upgradeLink',
                                         'Mejorar plan'
