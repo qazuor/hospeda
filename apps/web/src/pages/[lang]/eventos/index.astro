@@ -88,10 +88,18 @@ const category = url.searchParams.get('category') ?? undefined;
  * category chip active/href state (HOS-96 T-013). Singular `category` is
  * still read and forwarded too (backward compat — old links / the array
  * takes precedence server-side when both are present, US-10).
+ *
+ * HOS-96 pre-merge review (Option A): also passes `singularParamKey` so a
+ * legacy singular-only link (`?category=MUSIC`, no `categories`) still
+ * resolves an active value here — otherwise the grid kept filtering
+ * correctly (the singular value is forwarded to the API separately below)
+ * but the dedicated-landing SEO canonical (SPEC-306) and the chip/sidebar
+ * highlight were silently lost.
  */
 const activeCategories = readFacetActiveValues({
     searchParams: url.searchParams,
-    paramKey: FACET_CONFIG_BY_ID.eventCategory.paramKey
+    paramKey: FACET_CONFIG_BY_ID.eventCategory.paramKey,
+    singularParamKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey
 });
 /**
  * Maps the URL's user-friendly sort key (e.g. `upcoming`, `newest`) to the
@@ -455,7 +463,8 @@ const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
             baseUrl,
             searchParams: paginationParams,
             key: FACET_CONFIG_BY_ID.eventCategory.paramKey,
-            value
+            value,
+            singularKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey
         }),
         active,
         ariaPressed: active,
@@ -464,11 +473,14 @@ const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
 });
 
 // HOS-96 T-010/T-013: "Clear (N)" bulk-reset chip — appears only once 2+
-// categories are active (US-4).
+// categories are active (US-4). HOS-96 pre-merge review: also deletes the
+// legacy singular `category` param, so clearing a mixed/legacy URL fully
+// resets the facet instead of leaving a stale `?category=` behind.
 const categoryClearChip = buildClearFacetChip({
     baseUrl,
     searchParams: paginationParams,
     paramKey: FACET_CONFIG_BY_ID.eventCategory.paramKey,
+    singularParamKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey,
     count: activeCategories.length,
     labelTemplate: t('common.filterChips.clearLabel'),
     ariaLabelTemplate: t('common.filterChips.clearAriaLabel'),

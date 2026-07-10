@@ -186,6 +186,11 @@ const result = await accommodationsApi.list({
 	pageSize,
 	q,
 	types,
+	// HOS-96 pre-merge review (Option A): forward the legacy singular `type`
+	// too (backend applies `types` OR, else `type`), so an old `?type=HOTEL`
+	// link filters the grid — matching how it now drives the SEO canonical and
+	// chip/sidebar highlight. Mirrors events/blog, which already forward both.
+	type: url.searchParams.get('type') ?? undefined,
 	destinationIds,
 	minPrice,
 	maxPrice,
@@ -386,12 +391,19 @@ const baseUrl = buildUrl({ locale, path: 'alojamientos' });
 /**
  * Active `types` values (the accommodationType facet's array `paramKey`) —
  * computed once, hoisted here so it can drive the SEO decision below AND be
- * reused by the type chips / Clear(N) chip further down (HOS-96 T-017; no
- * duplicate `readFacetActiveValues` call).
+ * reused by the type chips / Clear(N) chip / sidebar seed further down
+ * (HOS-96 T-017; no duplicate `readFacetActiveValues` call).
+ *
+ * HOS-96 pre-merge review (Option A): also passes `singularParamKey` so a
+ * legacy singular-only link (`?type=HOTEL`, no `types`) still resolves an
+ * active value here — otherwise the dedicated-landing SEO canonical
+ * (`/alojamientos/tipo/{slug}/`) and the chip/sidebar highlight were
+ * silently lost even though the value was still a valid, recognized type.
  */
 const typeActiveValues = readFacetActiveValues({
 	searchParams: url.searchParams,
-	paramKey: FACET_CONFIG_BY_ID.accommodationType.paramKey
+	paramKey: FACET_CONFIG_BY_ID.accommodationType.paramKey,
+	singularParamKey: FACET_CONFIG_BY_ID.accommodationType.singularParamKey
 });
 
 // SPEC-306 OQ-3 / HOS-96 US-6/US-7 (T-017): the shared `resolveFacetSeoDecision`
@@ -485,7 +497,8 @@ const typeChips = Object.values(AccommodationTypeEnum).map((value) => {
             baseUrl,
             searchParams: url.searchParams,
             key: FACET_CONFIG_BY_ID.accommodationType.paramKey,
-            value: enumValue
+            value: enumValue,
+            singularKey: FACET_CONFIG_BY_ID.accommodationType.singularParamKey
         }),
         icon: getAccommodationTypeIcon({ type: enumValue }),
         active,
@@ -495,11 +508,15 @@ const typeChips = Object.values(AccommodationTypeEnum).map((value) => {
 
 // HOS-96 T-010/T-011: "Clear (N)" bulk-reset chip — appears only once 2+
 // types are active (US-4), reusing the removable active-filter-chip pattern
-// via the shared, generic i18n label/aria-label templates.
+// via the shared, generic i18n label/aria-label templates. HOS-96 pre-merge
+// review: also deletes the legacy singular `type` param, so clearing a
+// mixed/legacy URL fully resets the facet instead of leaving a stale
+// `?type=` behind.
 const typeClearChip = buildClearFacetChip({
     baseUrl,
     searchParams: url.searchParams,
     paramKey: FACET_CONFIG_BY_ID.accommodationType.paramKey,
+    singularParamKey: FACET_CONFIG_BY_ID.accommodationType.singularParamKey,
     count: typeActiveValues.length,
     labelTemplate: t('common.filterChips.clearLabel'),
     ariaLabelTemplate: t('common.filterChips.clearAriaLabel'),
@@ -509,9 +526,14 @@ const typeClearChip = buildClearFacetChip({
 // Build initial filter params for the sidebar (avoids hydration flash).
 // The encoded `sortKey` is what the SortPopover reads — NOT the resolved
 // backend sortBy column, which is internal to this page.
+// HOS-96 pre-merge review: seeded from `typeActiveValues` (fallback-aware),
+// not the raw `types` URL string, so the sidebar's `types` checkbox group
+// stays coherent with the chip row and SEO decision for a legacy
+// singular-only `?type=HOTEL` link too — mirrors the events/blog pages,
+// which already seed their sidebar from their own hoisted active-values var.
 const initialParams: Record<string, string> = {};
 if (q) initialParams.q = q;
-if (types) initialParams.types = types;
+if (typeActiveValues.length > 0) initialParams.types = typeActiveValues.join(',');
 if (destinationIds) initialParams.destinationIds = destinationIds;
 if (minPrice !== undefined) initialParams.minPrice = String(minPrice);
 if (maxPrice !== undefined) initialParams.maxPrice = String(maxPrice);

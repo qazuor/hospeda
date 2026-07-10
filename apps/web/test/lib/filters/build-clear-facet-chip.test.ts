@@ -153,3 +153,37 @@ describe('buildClearFacetChip', () => {
         expect(chip?.href).toBe('/es/alojamientos/');
     });
 });
+
+describe('buildClearFacetChip — legacy singular-param fallback (HOS-96 pre-merge review, Option A)', () => {
+    it('deletes BOTH the plural paramKey and the singular legacy param when clearing a mixed URL', () => {
+        const chip = buildClearFacetChip({
+            baseUrl: '/es/eventos/',
+            searchParams: new URLSearchParams('categories=MUSIC,CULTURE&category=SPORTS&q=asado'),
+            paramKey: 'categories',
+            singularParamKey: 'category',
+            count: 2,
+            labelTemplate: LABEL_TEMPLATE,
+            ariaLabelTemplate: ARIA_LABEL_TEMPLATE,
+            icon: XCircleIcon
+        });
+        const params = new URLSearchParams(chip?.href.split('?')[1] ?? '');
+        expect(params.has('categories')).toBe(false);
+        expect(params.has('category')).toBe(false);
+        expect(params.get('q')).toBe('asado');
+    });
+
+    it('without singularParamKey, only the plural param is deleted (existing behavior unchanged)', () => {
+        const chip = buildClearFacetChip({
+            baseUrl: '/es/eventos/',
+            searchParams: new URLSearchParams('categories=MUSIC,CULTURE&category=SPORTS'),
+            paramKey: 'categories',
+            count: 2,
+            labelTemplate: LABEL_TEMPLATE,
+            ariaLabelTemplate: ARIA_LABEL_TEMPLATE,
+            icon: XCircleIcon
+        });
+        const params = new URLSearchParams(chip?.href.split('?')[1] ?? '');
+        expect(params.has('categories')).toBe(false);
+        expect(params.get('category')).toBe('SPORTS');
+    });
+});

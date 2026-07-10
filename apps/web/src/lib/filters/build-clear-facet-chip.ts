@@ -22,6 +22,13 @@
  * NOT wired into any listing page yet — that lands in T-011/12/13, which
  * will also switch the per-value chip hrefs to the multi-value toggle and
  * append this chip to each page's `chips` array.
+ *
+ * HOS-96 pre-merge review (Option A, owner-approved): optionally accepts the
+ * facet's legacy `singularParamKey` (e.g. `'category'`, `'type'`). When
+ * provided, the clear href deletes BOTH the plural `paramKey` and the
+ * singular param, so clearing fully resets a mixed/legacy URL (e.g.
+ * `?categories=A,B&category=C` -> both gone) instead of leaving a stale
+ * singular param behind.
  */
 
 import type { IconProps } from '@repo/icons';
@@ -34,6 +41,12 @@ interface BuildClearFacetChipParams {
     readonly searchParams: URLSearchParams;
     /** Array query param key to clear entirely (e.g. `'types'`, `'categories'`). */
     readonly paramKey: string;
+    /**
+     * The facet's legacy scalar query param (e.g. `'type'`, `'category'`).
+     * When provided, the clear href deletes this too, alongside `paramKey`.
+     * Omit for facets with no singular param, or to keep existing behavior.
+     */
+    readonly singularParamKey?: string;
     /**
      * Number of currently active values for this facet (e.g.
      * `readFacetActiveValues({ searchParams, paramKey }).length`, typically
@@ -97,6 +110,7 @@ export function buildClearFacetChip({
     baseUrl,
     searchParams,
     paramKey,
+    singularParamKey,
     count,
     labelTemplate,
     ariaLabelTemplate,
@@ -109,6 +123,9 @@ export function buildClearFacetChip({
     const params = new URLSearchParams(searchParams);
     params.delete('page');
     params.delete(paramKey);
+    if (singularParamKey) {
+        params.delete(singularParamKey);
+    }
     const qs = params.toString();
     const href = qs ? `${baseUrl}?${qs}` : baseUrl;
 

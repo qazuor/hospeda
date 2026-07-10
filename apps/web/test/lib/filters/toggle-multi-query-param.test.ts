@@ -145,3 +145,76 @@ describe('buildMultiToggleParamHref', () => {
         expect(query(href).get('types')).toBe('HOTEL,CABIN,APARTMENT');
     });
 });
+
+describe('buildMultiToggleParamHref — legacy singular-param fallback (HOS-96 pre-merge review, Option A)', () => {
+    it('?category=MUSIC + click CULTURE -> ?categories=MUSIC,CULTURE with NO category= remaining (seeds from singular, migrates to plural)', () => {
+        const href = buildMultiToggleParamHref({
+            baseUrl: '/es/eventos/',
+            searchParams: new URLSearchParams('category=MUSIC'),
+            key: 'categories',
+            value: 'CULTURE',
+            singularKey: 'category'
+        });
+        const params = query(href);
+        expect(params.get('categories')).toBe('MUSIC,CULTURE');
+        expect(params.has('category')).toBe(false);
+    });
+
+    it('?category=MUSIC + click MUSIC (toggle off the value seeded from the singular) -> bare baseUrl, no category= or categories= left', () => {
+        const href = buildMultiToggleParamHref({
+            baseUrl: '/es/eventos/',
+            searchParams: new URLSearchParams('category=MUSIC'),
+            key: 'categories',
+            value: 'MUSIC',
+            singularKey: 'category'
+        });
+        expect(href).toBe('/es/eventos/');
+        const params = query(href);
+        expect(params.has('category')).toBe(false);
+        expect(params.has('categories')).toBe(false);
+    });
+
+    it('the plural param wins over the singular when both are present (mirrors readFacetActiveValues)', () => {
+        const href = buildMultiToggleParamHref({
+            baseUrl: '/es/eventos/',
+            searchParams: new URLSearchParams('categories=CULTURE&category=MUSIC'),
+            key: 'categories',
+            value: 'SPORTS',
+            singularKey: 'category'
+        });
+        const params = query(href);
+        // Seeded from the plural (CULTURE), not the singular (MUSIC) — SPORTS
+        // is appended to CULTURE, and the stale singular is migrated away.
+        expect(params.get('categories')).toBe('CULTURE,SPORTS');
+        expect(params.has('category')).toBe(false);
+    });
+
+    it('preserves every OTHER unrelated param while migrating singular -> plural', () => {
+        const href = buildMultiToggleParamHref({
+            baseUrl: '/es/eventos/',
+            searchParams: new URLSearchParams('q=asado&category=MUSIC&sortBy=upcoming'),
+            key: 'categories',
+            value: 'CULTURE',
+            singularKey: 'category'
+        });
+        const params = query(href);
+        expect(params.get('q')).toBe('asado');
+        expect(params.get('sortBy')).toBe('upcoming');
+        expect(params.get('categories')).toBe('MUSIC,CULTURE');
+        expect(params.has('category')).toBe(false);
+    });
+
+    it('without singularKey, an old singular-only URL is left untouched (existing callers unaffected)', () => {
+        const href = buildMultiToggleParamHref({
+            baseUrl: '/es/eventos/',
+            searchParams: new URLSearchParams('category=MUSIC'),
+            key: 'categories',
+            value: 'CULTURE'
+        });
+        const params = query(href);
+        // No fallback seeding: current values start empty, so only CULTURE is added.
+        expect(params.get('categories')).toBe('CULTURE');
+        // The unrelated singular param is preserved as-is (never touched without singularKey).
+        expect(params.get('category')).toBe('MUSIC');
+    });
+});

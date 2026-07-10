@@ -92,6 +92,20 @@ describe('alojamientos/index.astro — type chips wired to real multi-select (HO
         it('types is read as a raw URL string, never a JS array (String(array) footgun guard)', () => {
             expect(src).toContain("const types = url.searchParams.get('types') ?? undefined;");
         });
+
+        // HOS-96 pre-merge review (Option A): a legacy `?type=HOTEL` link must
+        // actually filter the grid, not just drive the SEO canonical / chip
+        // highlight — so the singular `type` is forwarded to the API too
+        // (backend applies `types` OR, else `type`). Mirrors events/blog.
+        it('forwards the legacy singular type param so old ?type=HOTEL links filter the grid', () => {
+            const fetchBlock = src.slice(
+                src.indexOf('const result = await accommodationsApi.list({'),
+                src.indexOf('const result = await accommodationsApi.list({') + 700
+            );
+            expect(fetchBlock).toMatch(
+                /type:\s*url\.searchParams\.get\('type'\)\s*\?\?\s*undefined/
+            );
+        });
     });
 });
 

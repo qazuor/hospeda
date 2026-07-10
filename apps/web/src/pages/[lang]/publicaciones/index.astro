@@ -77,10 +77,18 @@ const category = url.searchParams.get('category') ?? undefined;
  * category chip active/href state (HOS-96 T-012). Singular `category` is
  * still read and forwarded too (backward compat — the array takes
  * precedence server-side when both are present, US-10).
+ *
+ * HOS-96 pre-merge review (Option A): also passes `singularParamKey` so a
+ * legacy singular-only link (`?category=CULTURE`, no `categories`) still
+ * resolves an active value here — otherwise the dedicated-landing SEO
+ * canonical (`/publicaciones/categoria/{slug}/`) and the chip/sidebar
+ * highlight were silently lost even though the grid kept filtering
+ * correctly (the singular value is forwarded to the API separately below).
  */
 const postCategoryActiveValues = readFacetActiveValues({
     searchParams: url.searchParams,
-    paramKey: FACET_CONFIG_BY_ID.postCategory.paramKey
+    paramKey: FACET_CONFIG_BY_ID.postCategory.paramKey,
+    singularParamKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey
 });
 
 /**
@@ -195,6 +203,7 @@ const filterSummary = buildPostListingSummary({
 const hasActiveFilters =
     Boolean(q) ||
     Boolean(category) ||
+    postCategoryActiveValues.length > 0 ||
     isFeatured === true ||
     Boolean(destinationId) ||
     Boolean(publishedAfterFilter) ||
@@ -406,7 +415,8 @@ const postCategoryChips = POST_CATEGORY_CHIP_DEFS.map(({ value, slug, label }) =
             baseUrl,
             searchParams: paginationParams,
             key: FACET_CONFIG_BY_ID.postCategory.paramKey,
-            value
+            value,
+            singularKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey
         }),
         icon: getPostCategoryIcon({ category: slug }),
         active,
@@ -415,11 +425,14 @@ const postCategoryChips = POST_CATEGORY_CHIP_DEFS.map(({ value, slug, label }) =
 });
 
 // HOS-96 T-010/T-012: "Clear (N)" bulk-reset chip — appears only once 2+
-// categories are active (US-4).
+// categories are active (US-4). HOS-96 pre-merge review: also deletes the
+// legacy singular `category` param, so clearing a mixed/legacy URL fully
+// resets the facet instead of leaving a stale `?category=` behind.
 const postCategoryClearChip = buildClearFacetChip({
     baseUrl,
     searchParams: paginationParams,
     paramKey: FACET_CONFIG_BY_ID.postCategory.paramKey,
+    singularParamKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey,
     count: postCategoryActiveValues.length,
     labelTemplate: t('common.filterChips.clearLabel'),
     ariaLabelTemplate: t('common.filterChips.clearAriaLabel'),

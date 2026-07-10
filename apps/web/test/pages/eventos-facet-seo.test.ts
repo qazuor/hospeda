@@ -6,10 +6,25 @@
  * `/eventos/categoria/{slug}/` landing (SPEC-306) as the 1-value canonical —
  * `facet-config.ts`'s `eventCategory.dedicatedLandingPattern` was corrected
  * from `undefined` to that pattern as part of this task. Replaces the
- * pre-existing inline `resolvePromotedFacetCanonical` call (which — a latent
- * gap predating this task — used the SINGULAR `category` value, not the
- * plural `activeCategories` array) with the shared predicate driven by
+ * pre-existing inline `resolvePromotedFacetCanonical` call (which — a real
+ * bug predating T-018 — used ONLY the SINGULAR `category` value, so a
+ * multi-value `?categories=A,B` URL never triggered the 2+-value
+ * noindex/base-canonical rule at all) with the shared predicate driven by
  * `activeCategories`.
+ *
+ * CORRECTED (HOS-96 pre-merge review, Option A): T-018's switch to
+ * `activeCategories` (`readFacetActiveValues`, PLURAL-param-only at the
+ * time) fixed that bug but introduced a NEW regression — a legacy
+ * singular-only link (`?category=MUSIC`, no `categories`) then resolved
+ * ZERO active values and lost its dedicated-landing canonical, even though
+ * the grid still filtered correctly (the singular value is forwarded to the
+ * API separately) and SPEC-306 explicitly says this canonical must be
+ * preserved. Fixed by teaching `readFacetActiveValues` an optional
+ * `singularParamKey` fallback (consulted only when the plural param is
+ * empty) and passing `FACET_CONFIG_BY_ID.eventCategory.singularParamKey`
+ * into the `activeCategories` call here — so a singular-only URL now
+ * resolves the SAME dedicated-landing canonical again, while a plural
+ * `?categories=A,B` URL still correctly triggers noindex+base.
  *
  * `.astro` frontmatter cannot render in Vitest — assertions are source-based,
  * paired with logic tests that exercise `resolveFacetSeoDecision` with the
@@ -21,6 +36,7 @@ import { resolve } from 'node:path';
 import { EventCategoryEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { FACET_CONFIG_BY_ID } from '../../src/lib/filters/facet-config';
+import { readFacetActiveValues } from '../../src/lib/filters/read-facet-active-values';
 import { resolveFacetSeoDecision } from '../../src/lib/seo/promoted-facet-canonical';
 
 const src = readFileSync(resolve(__dirname, '../../src/pages/[lang]/eventos/index.astro'), 'utf8');
@@ -63,6 +79,16 @@ describe('eventos/index.astro — facet SEO wiring (HOS-96 T-018)', () => {
     it('preserves the pagination-aware canonical (?page=N -> /page/N/) for the base case', () => {
         expect(src).toMatch(
             /const canonicalPath = page > 1 \? `\$\{canonicalBaseUrl\}page\/\$\{page\}\/` : canonicalBaseUrl;/
+        );
+    });
+
+    it('activeCategories is computed with the legacy singular fallback (HOS-96 pre-merge review, Option A)', () => {
+        const activeCategoriesBlock = src.slice(
+            src.indexOf('const activeCategories = readFacetActiveValues({'),
+            src.indexOf('const activeCategories = readFacetActiveValues({') + 250
+        );
+        expect(activeCategoriesBlock).toContain(
+            'singularParamKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey'
         );
     });
 });
@@ -110,6 +136,69 @@ describe('events facet SEO — composed resolveFacetSeoDecision behavior (HOS-96
             dedicatedLandingPattern
         });
         expect(decision).toEqual({ noindex: true, canonical: { kind: 'base' } });
+    });
+});
+
+describe('events facet SEO — legacy singular-only URL regression (HOS-96 pre-merge review, Option A)', () => {
+    const dedicatedLandingPattern = FACET_CONFIG_BY_ID.eventCategory.dedicatedLandingPattern;
+    const validEnumValues = Object.values(EventCategoryEnum);
+
+    it('?category=MUSIC (singular-only, no ?categories=) still resolves the dedicated-landing canonical (SPEC-306 preserved end-to-end, not just in isolation)', () => {
+        const activeValues = readFacetActiveValues({
+            searchParams: new URLSearchParams('category=MUSIC'),
+            paramKey: FACET_CONFIG_BY_ID.eventCategory.paramKey,
+            singularParamKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey
+        });
+        const decision = resolveFacetSeoDecision({
+            facetValues: activeValues,
+            hasOtherFilters: false,
+            validEnumValues,
+            dedicatedLandingPattern
+        });
+        expect(decision.noindex).toBe(false);
+        expect(decision.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'music' });
+    });
+
+    it('?categories=MUSIC,CULTURE (plural, 2 values) still correctly resolves noindex+base — the plural param still wins and the 2+ rule still fires', () => {
+        const activeValues = readFacetActiveValues({
+            searchParams: new URLSearchParams('categories=MUSIC,CULTURE'),
+            paramKey: FACET_CONFIG_BY_ID.eventCategory.paramKey,
+            singularParamKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey
+        });
+        const decision = resolveFacetSeoDecision({
+            facetValues: activeValues,
+            hasOtherFilters: false,
+            validEnumValues,
+            dedicatedLandingPattern
+        });
+        expect(decision).toEqual({ noindex: true, canonical: { kind: 'base' } });
+    });
+
+    it('both ?categories= and ?category= present -> the plural wins (mirrors backend precedence)', () => {
+        const activeValues = readFacetActiveValues({
+            searchParams: new URLSearchParams('categories=CULTURE&category=MUSIC'),
+            paramKey: FACET_CONFIG_BY_ID.eventCategory.paramKey,
+            singularParamKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey
+        });
+        const decision = resolveFacetSeoDecision({
+            facetValues: activeValues,
+            hasOtherFilters: false,
+            validEnumValues,
+            dedicatedLandingPattern
+        });
+        expect(decision.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'culture' });
+    });
+});
+
+describe('events chip active state — legacy singular-only URL (HOS-96 pre-merge review, chip-active regression)', () => {
+    it('?category=MUSIC (singular-only) resolves MUSIC as active via the fallback, ready to drive aria-pressed="true"', () => {
+        const activeValues = readFacetActiveValues({
+            searchParams: new URLSearchParams('category=MUSIC'),
+            paramKey: FACET_CONFIG_BY_ID.eventCategory.paramKey,
+            singularParamKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey
+        });
+        expect(activeValues.includes('MUSIC')).toBe(true);
+        expect(activeValues.includes('CULTURE')).toBe(false);
     });
 });
 

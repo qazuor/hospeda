@@ -18,6 +18,16 @@
  * trims whitespace around members (via {@link readFacetActiveValues}, the
  * shared reader). The resulting param is normalized to a single de-duplicated
  * CSV param, preserving first-seen order (resolved OQ-4).
+ *
+ * HOS-96 pre-merge review (Option A, owner-approved): optionally accepts the
+ * facet's legacy `singularKey` (e.g. `'category'`, `'type'`). When provided,
+ * (1) the CURRENT values are seeded via {@link readFacetActiveValues}'s own
+ * singular fallback, so toggling on an old `?category=MUSIC` URL correctly
+ * starts from `['MUSIC']` before adding/removing the clicked value; (2) the
+ * WRITE always deletes the singular param too (in addition to `page` and the
+ * plural `key`), migrating the URL from singular to plural on first
+ * interaction — no stale `?category=` left dangling next to the new
+ * `?categories=`.
  */
 
 import { readFacetActiveValues } from './read-facet-active-values';
@@ -31,6 +41,13 @@ interface BuildMultiToggleParamHrefParams {
     readonly key: string;
     /** Candidate value for this chip (added if absent, removed if present). */
     readonly value: string;
+    /**
+     * The facet's legacy scalar query param (e.g. `'type'`, `'category'`).
+     * When provided, seeds the current values from it if `key` is absent, and
+     * is always deleted on write (migrating singular -> plural). Omit for
+     * facets with no singular param, or to keep the existing behavior.
+     */
+    readonly singularKey?: string;
 }
 
 /**
@@ -56,9 +73,14 @@ export function buildMultiToggleParamHref({
     baseUrl,
     searchParams,
     key,
-    value
+    value,
+    singularKey
 }: BuildMultiToggleParamHrefParams): string {
-    const current = readFacetActiveValues({ searchParams, paramKey: key });
+    const current = readFacetActiveValues({
+        searchParams,
+        paramKey: key,
+        singularParamKey: singularKey
+    });
     const next = current.includes(value)
         ? current.filter((member) => member !== value)
         : [...current, value];
@@ -66,6 +88,9 @@ export function buildMultiToggleParamHref({
     const params = new URLSearchParams(searchParams);
     params.delete('page');
     params.delete(key);
+    if (singularKey) {
+        params.delete(singularKey);
+    }
     if (next.length > 0) {
         params.set(key, next.join(','));
     }

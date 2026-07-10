@@ -20,6 +20,7 @@ import { resolve } from 'node:path';
 import { PostCategoryEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { FACET_CONFIG_BY_ID } from '../../src/lib/filters/facet-config';
+import { readFacetActiveValues } from '../../src/lib/filters/read-facet-active-values';
 import { resolvePostCategorySlug } from '../../src/lib/post-category';
 import { resolveFacetSeoDecision } from '../../src/lib/seo/promoted-facet-canonical';
 
@@ -69,6 +70,16 @@ describe('publicaciones/index.astro — facet SEO wiring, NET-NEW (HOS-96 T-019)
             /const canonicalPath = page > 1 \? `\$\{canonicalBaseUrl\}page\/\$\{page\}\/` : canonicalBaseUrl;/
         );
     });
+
+    it('postCategoryActiveValues is computed with the legacy singular fallback (HOS-96 pre-merge review, Option A)', () => {
+        const activeValuesBlock = src.slice(
+            src.indexOf('const postCategoryActiveValues = readFacetActiveValues({'),
+            src.indexOf('const postCategoryActiveValues = readFacetActiveValues({') + 250
+        );
+        expect(activeValuesBlock).toContain(
+            'singularParamKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey'
+        );
+    });
 });
 
 describe('blog facet SEO — composed resolveFacetSeoDecision behavior (HOS-96 T-019)', () => {
@@ -114,6 +125,54 @@ describe('blog facet SEO — composed resolveFacetSeoDecision behavior (HOS-96 T
             dedicatedLandingPattern
         });
         expect(decision).toEqual({ noindex: true, canonical: { kind: 'base' } });
+    });
+});
+
+describe('blog facet SEO — legacy singular-only URL regression (HOS-96 pre-merge review, Option A)', () => {
+    const dedicatedLandingPattern = FACET_CONFIG_BY_ID.postCategory.dedicatedLandingPattern;
+    const validEnumValues = Object.values(PostCategoryEnum);
+
+    it('?category=CULTURE (singular-only, no ?categories=) resolves the dedicated-landing canonical /publicaciones/categoria/culture/', () => {
+        const activeValues = readFacetActiveValues({
+            searchParams: new URLSearchParams('category=CULTURE'),
+            paramKey: FACET_CONFIG_BY_ID.postCategory.paramKey,
+            singularParamKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey
+        });
+        const decision = resolveFacetSeoDecision({
+            facetValues: activeValues,
+            hasOtherFilters: false,
+            validEnumValues,
+            dedicatedLandingPattern
+        });
+        expect(decision.noindex).toBe(false);
+        expect(decision.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'culture' });
+    });
+
+    it('?categories=CULTURE,GASTRONOMY (plural, 2 values) still correctly resolves noindex+base', () => {
+        const activeValues = readFacetActiveValues({
+            searchParams: new URLSearchParams('categories=CULTURE,GASTRONOMY'),
+            paramKey: FACET_CONFIG_BY_ID.postCategory.paramKey,
+            singularParamKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey
+        });
+        const decision = resolveFacetSeoDecision({
+            facetValues: activeValues,
+            hasOtherFilters: false,
+            validEnumValues,
+            dedicatedLandingPattern
+        });
+        expect(decision).toEqual({ noindex: true, canonical: { kind: 'base' } });
+    });
+});
+
+describe('blog chip active state — legacy singular-only URL (HOS-96 pre-merge review, chip-active regression)', () => {
+    it('?category=CULTURE (singular-only) resolves CULTURE as active via the fallback, ready to drive aria-pressed="true"', () => {
+        const activeValues = readFacetActiveValues({
+            searchParams: new URLSearchParams('category=CULTURE'),
+            paramKey: FACET_CONFIG_BY_ID.postCategory.paramKey,
+            singularParamKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey
+        });
+        expect(activeValues.includes('CULTURE')).toBe(true);
+        expect(activeValues.includes('GASTRONOMY')).toBe(false);
     });
 });
 

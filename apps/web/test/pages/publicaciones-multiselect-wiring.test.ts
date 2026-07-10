@@ -167,4 +167,17 @@ describe('blog category multi-select — composed helper behavior (HOS-96 T-012)
         expect(categoriesParam).toBe('CULTURE,GASTRONOMY');
         expect(typeof categoriesParam).toBe('string');
     });
+
+    // Regression: a category-only filter (?categories=X) with zero results must
+    // render the WITH-FILTERS empty state (which offers a "clear filters" CTA),
+    // not the "no publications at all" variant. `hasActiveFilters` therefore has
+    // to account for the multi-select `categories` param, not just the legacy
+    // singular `category`. Caught in HOS-96 pre-merge review.
+    it('hasActiveFilters counts the multi-select categories param (empty-state CTA fix)', () => {
+        const block = src.slice(
+            src.indexOf('const hasActiveFilters'),
+            src.indexOf('const hasActiveFilters') + 320
+        );
+        expect(block).toMatch(/postCategoryActiveValues\.length\s*>\s*0/);
+    });
 });

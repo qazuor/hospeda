@@ -74,3 +74,58 @@ describe('readFacetActiveValues', () => {
         expect(values).toEqual([]);
     });
 });
+
+describe('readFacetActiveValues — legacy singular-param fallback (HOS-96 pre-merge review, Option A)', () => {
+    it('falls back to the singular param when the plural param is absent', () => {
+        const values = readFacetActiveValues({
+            searchParams: new URLSearchParams('type=HOTEL'),
+            paramKey: 'types',
+            singularParamKey: 'type'
+        });
+        expect(values).toEqual(['HOTEL']);
+    });
+
+    it('the plural param wins when BOTH are present (mirrors backend precedence)', () => {
+        const values = readFacetActiveValues({
+            searchParams: new URLSearchParams('types=CABIN&type=HOTEL'),
+            paramKey: 'types',
+            singularParamKey: 'type'
+        });
+        expect(values).toEqual(['CABIN']);
+    });
+
+    it('returns an empty array when neither the plural nor the singular param is present', () => {
+        const values = readFacetActiveValues({
+            searchParams: new URLSearchParams('q=rio'),
+            paramKey: 'types',
+            singularParamKey: 'type'
+        });
+        expect(values).toEqual([]);
+    });
+
+    it('reads the singular fallback the same tolerant way (trim, CSV split, dedup)', () => {
+        const values = readFacetActiveValues({
+            searchParams: new URLSearchParams('type= HOTEL , HOTEL '),
+            paramKey: 'types',
+            singularParamKey: 'type'
+        });
+        expect(values).toEqual(['HOTEL']);
+    });
+
+    it('without singularParamKey, absent plural still resolves to empty (existing callers unaffected)', () => {
+        const values = readFacetActiveValues({
+            searchParams: new URLSearchParams('category=MUSIC'),
+            paramKey: 'categories'
+        });
+        expect(values).toEqual([]);
+    });
+
+    it('events/blog: falls back to the singular category param', () => {
+        const values = readFacetActiveValues({
+            searchParams: new URLSearchParams('category=MUSIC'),
+            paramKey: 'categories',
+            singularParamKey: 'category'
+        });
+        expect(values).toEqual(['MUSIC']);
+    });
+});

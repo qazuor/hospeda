@@ -120,6 +120,15 @@ export const FACET_CONFIG_BY_ID: Readonly<Record<FacetId, FacetConfig>> = Object
         // `EventCategoryEnum` member against the landing route's own
         // `VALID_CATEGORIES` slug dictionary (no enum member contains `_`,
         // so both are simple lowercasing — e.g. `MUSIC` -> `music`).
+        // HOS-96 pre-merge review follow-up: T-018's `activeCategories`
+        // switch to the PLURAL `categories` param briefly broke this
+        // preservation claim for legacy SINGULAR-only links (`?category=X`
+        // resolved zero active values, losing this canonical) — fixed by
+        // `readFacetActiveValues`'s optional `singularParamKey` fallback
+        // (Option A, owner-approved), consulted by every page via
+        // `singularParamKey` below. The "PRESERVES that behavior" claim
+        // above is accurate again end-to-end (single AND plural URLs both
+        // covered), not just in isolation.
         dedicatedLandingPattern: '/eventos/categoria/{slug}/',
         outOfBackendScope: false
     }),
