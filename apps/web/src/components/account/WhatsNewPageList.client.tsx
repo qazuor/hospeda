@@ -31,8 +31,8 @@ export function WhatsNewPageList({ locale }: WhatsNewPageListProps) {
             <AccountEmptyState
                 title={t('account.whatsNewPanel.empty', 'No hay novedades aún')}
                 description={t(
-                    'account.pages.whatsNew.desc',
-                    'Novedades y actualizaciones de la plataforma'
+                    'account.whatsNewPanel.emptyDesc',
+                    'Cuando publiquemos mejoras o nuevas funciones de la plataforma, vas a verlas acá.'
                 )}
                 icon={<SparkleIcon size={28} />}
             />
