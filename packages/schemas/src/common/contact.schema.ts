@@ -26,6 +26,12 @@ export const ContactInfoSchema = z.object({
     mobilePhone: z.string().regex(InternationalPhoneRegex, {
         message: 'zodError.common.contact.mobilePhone.international'
     }),
+    whatsapp: z
+        .string()
+        .regex(InternationalPhoneRegex, {
+            message: 'zodError.common.contact.whatsapp.international'
+        })
+        .optional(),
     website: z.string().url({ message: 'zodError.common.contact.website.invalid' }).optional(),
     preferredEmail: PreferredContactEnumSchema.optional(),
     preferredPhone: PreferredContactEnumSchema.optional()

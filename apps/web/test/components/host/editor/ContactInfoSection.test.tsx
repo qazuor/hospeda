@@ -3,16 +3,21 @@
  * @description Tests for the ContactInfoSection form component.
  *
  * Covers:
- * - Renders the phone country combobox trigger + number field, email,
- *   website with initial values
- * - Parses an existing `data.phone` value into country + number
- * - Calls onFieldChange with the recomposed `phone` string when either the
- *   country (via CountryCodeCombobox) or the number input changes
+ * - Renders the phone country combobox trigger + number field, the WhatsApp
+ *   country combobox + number field, email, and website with initial values
+ * - Parses an existing `data.phone` / `data.whatsapp` value into country + number
+ * - Calls onFieldChange with the recomposed `phone` / `whatsapp` string when either
+ *   the country (via CountryCodeCombobox) or the number input changes
  * - Calls onFieldChange when email/website are modified
  * - Displays inline validation errors
+ *
+ * The phone and WhatsApp fields share the "País" / "Número" sub-labels, so each
+ * is wrapped in its own <fieldset> whose <legend> ("Teléfono" / "WhatsApp") is
+ * the accessible group name. Queries are scoped to the relevant group to avoid
+ * cross-field ambiguity (the same disambiguation an assistive-tech user relies on).
  */
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ContactInfoSectionProps } from '@/components/host/editor/ContactInfoSection.client';
 import { ContactInfoSection } from '@/components/host/editor/ContactInfoSection.client';
@@ -73,6 +78,7 @@ const MOCK_DATA = {
     amenityIds: [],
     featureIds: [],
     phone: '+54 9 343 1111111',
+    whatsapp: '',
     email: 'test@example.com',
     website: 'https://example.com',
     facebookUrl: '',
@@ -90,6 +96,16 @@ const DEFAULT_PROPS: ContactInfoSectionProps = {
     onFieldChange: vi.fn()
 };
 
+/** Scope queries to the phone <fieldset> (legend "Teléfono"). */
+function phoneGroup() {
+    return within(screen.getByRole('group', { name: /^teléfono$/i }));
+}
+
+/** Scope queries to the WhatsApp <fieldset> (legend "WhatsApp"). */
+function whatsappGroup() {
+    return within(screen.getByRole('group', { name: /^whatsapp$/i }));
+}
+
 describe('ContactInfoSection', () => {
     it('should render section title', () => {
         render(<ContactInfoSection {...DEFAULT_PROPS} />);
@@ -99,22 +115,22 @@ describe('ContactInfoSection', () => {
     it('should render a country combobox trigger and a number input for phone', () => {
         render(<ContactInfoSection {...DEFAULT_PROPS} />);
 
-        const countryTrigger = screen.getByRole('button', { name: /argentina/i });
+        const countryTrigger = phoneGroup().getByRole('button', { name: /argentina/i });
         expect(countryTrigger).toBeInTheDocument();
         expect(countryTrigger).toHaveAttribute('aria-haspopup', 'listbox');
 
-        const numberInput = screen.getByLabelText(/número/i) as HTMLInputElement;
+        const numberInput = phoneGroup().getByLabelText(/número/i) as HTMLInputElement;
         expect(numberInput.type).toBe('tel');
     });
 
     it('should parse an existing phone value into country + number', () => {
         render(<ContactInfoSection {...DEFAULT_PROPS} />);
 
-        expect(screen.getByRole('button', { name: /argentina/i })).toHaveTextContent(
+        expect(phoneGroup().getByRole('button', { name: /argentina/i })).toHaveTextContent(
             'Argentina (+54)'
         );
 
-        const numberInput = screen.getByLabelText(/número/i) as HTMLInputElement;
+        const numberInput = phoneGroup().getByLabelText(/número/i) as HTMLInputElement;
         expect(numberInput.value).toBe('9 343 1111111');
     });
 
@@ -126,11 +142,11 @@ describe('ContactInfoSection', () => {
             />
         );
 
-        expect(screen.getByRole('button', { name: /argentina/i })).toHaveTextContent(
+        expect(phoneGroup().getByRole('button', { name: /argentina/i })).toHaveTextContent(
             'Argentina (+54)'
         );
 
-        const numberInput = screen.getByLabelText(/número/i) as HTMLInputElement;
+        const numberInput = phoneGroup().getByLabelText(/número/i) as HTMLInputElement;
         expect(numberInput.value).toBe('343 1111111');
     });
 
@@ -142,11 +158,11 @@ describe('ContactInfoSection', () => {
             />
         );
 
-        expect(screen.getByRole('button', { name: /argentina/i })).toHaveTextContent(
+        expect(phoneGroup().getByRole('button', { name: /argentina/i })).toHaveTextContent(
             'Argentina (+54)'
         );
 
-        const numberInput = screen.getByLabelText(/número/i) as HTMLInputElement;
+        const numberInput = phoneGroup().getByLabelText(/número/i) as HTMLInputElement;
         expect(numberInput.value).toBe('');
     });
 
@@ -159,7 +175,7 @@ describe('ContactInfoSection', () => {
             />
         );
 
-        const numberInput = screen.getByLabelText(/número/i);
+        const numberInput = phoneGroup().getByLabelText(/número/i);
         fireEvent.change(numberInput, { target: { value: '9 343 2222222' } });
 
         expect(onFieldChange).toHaveBeenCalledWith('phone', '+54 9 343 2222222');
@@ -174,11 +190,14 @@ describe('ContactInfoSection', () => {
             />
         );
 
-        fireEvent.click(screen.getByRole('button', { name: /argentina/i }));
+        // The combobox trigger lives inside the phone fieldset; the dropdown
+        // listbox is portaled to document.body, so options are queried globally
+        // (only the phone combobox is open, so the match is unambiguous).
+        fireEvent.click(phoneGroup().getByRole('button', { name: /argentina/i }));
         fireEvent.mouseDown(screen.getByRole('option', { name: /uruguay/i }));
 
         expect(onFieldChange).toHaveBeenCalledWith('phone', '+598 9 343 1111111');
-        expect(screen.getByRole('button', { name: /uruguay/i })).toHaveTextContent(
+        expect(phoneGroup().getByRole('button', { name: /uruguay/i })).toHaveTextContent(
             'Uruguay (+598)'
         );
     });
@@ -192,10 +211,53 @@ describe('ContactInfoSection', () => {
             />
         );
 
-        fireEvent.click(screen.getByRole('button', { name: /argentina/i }));
+        // Trigger is in-group; the portaled search combobox is queried globally.
+        fireEvent.click(phoneGroup().getByRole('button', { name: /argentina/i }));
         fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Uru' } });
 
         expect(onFieldChange).not.toHaveBeenCalled();
+    });
+
+    it('should render a country combobox trigger and a number input for WhatsApp', () => {
+        render(<ContactInfoSection {...DEFAULT_PROPS} />);
+
+        const countryTrigger = whatsappGroup().getByRole('button', { name: /argentina/i });
+        expect(countryTrigger).toBeInTheDocument();
+        expect(countryTrigger).toHaveAttribute('aria-haspopup', 'listbox');
+
+        const numberInput = whatsappGroup().getByLabelText(/número/i) as HTMLInputElement;
+        expect(numberInput.type).toBe('tel');
+    });
+
+    it('should parse an existing whatsapp value into country + number', () => {
+        render(
+            <ContactInfoSection
+                {...DEFAULT_PROPS}
+                data={{ ...MOCK_DATA, whatsapp: '+598 9 343 3333333' }}
+            />
+        );
+
+        expect(whatsappGroup().getByRole('button', { name: /uruguay/i })).toHaveTextContent(
+            'Uruguay (+598)'
+        );
+
+        const numberInput = whatsappGroup().getByLabelText(/número/i) as HTMLInputElement;
+        expect(numberInput.value).toBe('9 343 3333333');
+    });
+
+    it('should recompose whatsapp via onFieldChange when the number is modified', () => {
+        const onFieldChange = vi.fn();
+        render(
+            <ContactInfoSection
+                {...DEFAULT_PROPS}
+                onFieldChange={onFieldChange}
+            />
+        );
+
+        const numberInput = whatsappGroup().getByLabelText(/número/i);
+        fireEvent.change(numberInput, { target: { value: '9 343 4444444' } });
+
+        expect(onFieldChange).toHaveBeenCalledWith('whatsapp', '+54 9 343 4444444');
     });
 
     it('should render email and website fields with initial values', () => {
@@ -249,7 +311,19 @@ describe('ContactInfoSection', () => {
         );
 
         expect(screen.getByRole('alert')).toHaveTextContent('Formato inválido');
-        expect(screen.getByLabelText(/número/i)).toHaveAttribute('aria-invalid', 'true');
+        expect(phoneGroup().getByLabelText(/número/i)).toHaveAttribute('aria-invalid', 'true');
+    });
+
+    it('should display validation error for whatsapp on the number input', () => {
+        render(
+            <ContactInfoSection
+                {...DEFAULT_PROPS}
+                errors={{ whatsapp: 'Formato inválido' }}
+            />
+        );
+
+        expect(screen.getByRole('alert')).toHaveTextContent('Formato inválido');
+        expect(whatsappGroup().getByLabelText(/número/i)).toHaveAttribute('aria-invalid', 'true');
     });
 
     it('should display validation error for email', () => {
