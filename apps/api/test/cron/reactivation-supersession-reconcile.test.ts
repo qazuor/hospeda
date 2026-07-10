@@ -26,6 +26,9 @@
  * 9. Multiple comma-joined superseded ids on one candidate row.
  * 10. `cancel-did-not-take` / `error` outcomes counted as errors, not
  *     corrected, and do NOT clear the entitlement cache.
+ * 11. HOS-123: an ACTIVE annual candidate (no `mpSubscriptionId`, no
+ *     preapproval) is picked up exactly like a monthly one — the candidate
+ *     query is interval-agnostic.
  *
  * @module test/cron/reactivation-supersession-reconcile
  */
@@ -265,6 +268,56 @@ describe('reactivation-supersession-reconcile cron job', () => {
                 }),
                 { capture: true }
             );
+        });
+    });
+
+    describe('HOS-123 regression: annual reactivation orphan (no mpSubscriptionId on the new subscription)', () => {
+        it('picks up an ACTIVE annual candidate exactly like a monthly one — the query is interval-agnostic', async () => {
+            // Annual reactivations (HOS-123) bypass the MercadoPago preapproval
+            // entirely, so the NEW subscription never has an `mpSubscriptionId`
+            // and carries `billingInterval: 'year'`. If the candidate query (or
+            // any hidden branch) assumed a monthly/preapproval-bearing new
+            // subscription, this row would be silently skipped — the exact
+            // double-charge-risk regression this cron exists to prevent.
+            queueSelectResults([
+                [
+                    {
+                        id: 'sub-new-annual',
+                        customerId: 'cust-annual',
+                        planId: 'plan-001',
+                        billingInterval: 'year',
+                        mpSubscriptionId: null,
+                        metadata: {
+                            supersedesSubscriptionId: 'sub-old-annual',
+                            reactivatedFromCanceled: 'true'
+                        }
+                    }
+                ],
+                [] // audit peek: none found — genuinely orphaned
+            ]);
+            mockCompleteSupersessionPairing.mockResolvedValue('completed');
+
+            const ctx = buildCtx();
+            const result = await reactivationSupersessionReconcileJob.handler(ctx);
+
+            expect(result.success).toBe(true);
+            expect(mockCompleteSupersessionPairing).toHaveBeenCalledOnce();
+            expect(mockCompleteSupersessionPairing).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    newSubscription: {
+                        id: 'sub-new-annual',
+                        customerId: 'cust-annual',
+                        planId: 'plan-001'
+                    },
+                    supersededId: 'sub-old-annual',
+                    triggerSource: 'subscription-reactivation',
+                    providerEventId: 'reactivation-supersession-reconcile-cron',
+                    source: 'reactivation-supersession-reconcile'
+                })
+            );
+            expect(result.details).toMatchObject({ checkedPairs: 1, corrected: 1, errors: 0 });
+            expect(mockClearEntitlementCache).toHaveBeenCalledTimes(1);
+            expect(mockClearEntitlementCache).toHaveBeenCalledWith('cust-annual');
         });
     });
 
