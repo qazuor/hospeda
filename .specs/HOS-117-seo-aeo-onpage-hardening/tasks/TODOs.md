@@ -1,6 +1,6 @@
 # TODOs: SEO/AEO on-page hardening (HOS-117)
 
-Status: in-progress | Progress: 6/17 active tasks (Wave 0 shipped in PR #2217)
+Status: in-progress | Progress: 7/17 active tasks (Wave 0 shipped in PR #2217; T-022 410 Gone done)
 
 > **Replan 2026-07-09**: owner will delete all example/seed data from prod within
 > 2-3 days. Wave 1 (demo-content exclusion) is obsolete — deleting the data
@@ -23,7 +23,11 @@ Status: in-progress | Progress: 6/17 active tasks (Wave 0 shipped in PR #2217)
 
 ## Post-purge cleanup (replaces Wave 1)
 
-- [ ] T-022: Serve 410 Gone for deleted entity URLs (complexity: 2) [NEW]
+- [x] T-022: Serve 410 Gone for deleted entity URLs (complexity: 2) [NEW]
+      Done 2026-07-10: ServiceErrorCode.GONE -> 410, gated to visibility PUBLIC
+      ("410 only for published" — owner call); deleted PRIVATE/DRAFT -> 404 uniform
+      (anti-enum preserved). 4 services + api maps + 4 web routes + editar.astro fix.
+      Judgment-day APPROVED. Tests green.
 
 ## Wave 2 — Coverage & docs polish (P2)
 
