@@ -107,7 +107,7 @@ export function checkCanRestorePointOfInterest(actor: Actor): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanAdminList(actor: Actor): void {
-    if (!actor || !actor.id || !hasPermission(actor, PermissionEnum.POINT_OF_INTEREST_VIEW)) {
+    if (!actor?.id || !hasPermission(actor, PermissionEnum.POINT_OF_INTEREST_VIEW)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: POINT_OF_INTEREST_VIEW required for admin list'
