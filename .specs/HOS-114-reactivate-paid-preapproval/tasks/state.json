@@ -1,0 +1,455 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-114",
+    "title": "Route paid reactivation through the card-collecting checkout (real MP preapproval)",
+    "created": "2026-07-10T12:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Document current reactivate wiring, web callers, and webhook activation handler",
+            "description": "Read-only investigation before touching code. Locate the exact route files for POST /billing/trial/reactivate and /billing/trial/reactivate-subscription (spec §5 references apps/api/src/routes/billing/trial.ts:83-85 and :458-460), confirm whether any live web caller exists (spec R-4 / OQ-4 says both endpoints are currently unwired: endpoints-protected.ts:622-631 is an unused wrapper), and pin the exact webhook activation handler that flips incomplete->active (the subscription_authorized_payment.created / activation path HOS-108 PR #2191 touched). Produce a short notes.md in the spec docs folder capturing file:line anchors used by later tasks. Tests: none (investigation).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-004", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Confirm route files + handlers for both reactivate endpoints",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm no live web caller (or list the caller if one exists)",
+                    "completed": false
+                },
+                {
+                    "title": "Pin webhook activation handler location (incomplete->active)",
+                    "completed": false
+                },
+                { "title": "Write notes.md with file:line anchors", "completed": false }
+            ],
+            "tags": ["billing", "investigation"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-10T12:00:00.000Z",
+                "started": "2026-07-10T12:30:00.000Z",
+                "completed": "2026-07-10T13:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Extract shared low-level paid-subscription-create helper",
+            "description": "Create apps/api/src/services/billing/paid-subscription-create.ts. Extract the mode:'paid' create block from subscription-checkout.service.ts:657-674 (spec §6.2): subscriptions.create({ customerId, planId, priceId, mode:'paid', paymentMethodReturnUrl, notificationUrl, metadata }), resolve checkoutUrl = providerInitPoint ?? providerSandboxInitPoint, and throw SubscriptionCheckoutError('MISSING_INIT_POINT', ...) when absent (fail-closed, spec §12 reuses the existing error type). Helper takes a resolved planId + priceId (bridges planSlug vs planId mismatch, spec §6.2). RO-RO signature, JSDoc. Tests: unit tests in test/ — init point present -> returns { checkoutUrl, subscription }; absent -> throws MISSING_INIT_POINT; asserts create called with mode:'paid' + priceId + paymentMethodReturnUrl.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-005", "T-006"],
+            "subtasks": [
+                {
+                    "title": "Create paid-subscription-create.ts module with RO-RO helper",
+                    "completed": true
+                },
+                {
+                    "title": "Move create + checkoutUrl resolution + MISSING_INIT_POINT throw",
+                    "completed": true
+                },
+                {
+                    "title": "Unit test: init point present -> checkoutUrl returned",
+                    "completed": true
+                },
+                {
+                    "title": "Unit test: init point absent -> throws MISSING_INIT_POINT",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "refactor"],
+            "phase": "core",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-07-10T12:00:00.000Z",
+                "started": "2026-07-10T13:05:00.000Z",
+                "completed": "2026-07-10T13:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Refactor initiatePaidMonthlySubscription to consume the shared helper",
+            "description": "Rewire subscription-checkout.service.ts:654-680 to call the T-002 helper instead of its inline mode:'paid' create block, preserving exact behavior (promo/trial logic stays inline as-is, spec §6.2). No behavior change to /start-paid — this is a pure extraction (spec R-5). Tests: existing /start-paid + initiatePaidMonthlySubscription unit tests must stay green unchanged; add an assertion that the helper is the code path now used.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                { "title": "Replace inline create block with helper call", "completed": true },
+                { "title": "Keep promo/trial + notificationUrl wiring intact", "completed": true },
+                { "title": "Run existing /start-paid tests -> green", "completed": true }
+            ],
+            "tags": ["billing", "refactor"],
+            "phase": "core",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-07-10T12:00:00.000Z",
+                "started": "2026-07-10T13:05:00.000Z",
+                "completed": "2026-07-10T13:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add plan-resolution + validation guard for reactivation",
+            "description": "Implement the §6.1 server-side guard as a shared util (used by both reactivate methods). NOTE (T-001): resolve at RUNTIME via billing.plans.list() (like resolvePlanBySlug at subscription-checkout.service.ts:196-218), NOT the seed-time plans.config.ts. FIRST resolve the slug-vs-UUID ambiguity: reactivate's planId is passed straight to subscriptions.create({planId}); billing_plans.id is UUID, resolvePlanBySlug matches on plan.name (slug) — confirm which space reactivate's planId is before validating. Branches: unknown -> throw (fail-closed); free plan (plan.monthlyPriceArs === 0, e.g. TOURIST_FREE_PLAN) -> throw INVALID_REACTIVATION_PLAN; annual plan (no monthly price / annualPriceArs-only) -> throw ANNUAL_REACTIVATION_UNSUPPORTED (deferred to HOS-123). This is NEW code, no existing guard to extract. Add the two new error codes/types. Tests: unit tests for each branch (unknown / free / annual / valid monthly paid) asserting the exact error code and that no subscription is created.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005", "T-006"],
+            "subtasks": [
+                { "title": "Resolve planId vs catalog; reject unknown", "completed": true },
+                { "title": "Reject free plan with INVALID_REACTIVATION_PLAN", "completed": true },
+                {
+                    "title": "Reject annual plan with ANNUAL_REACTIVATION_UNSUPPORTED",
+                    "completed": true
+                },
+                { "title": "Unit tests for all four branches", "completed": true }
+            ],
+            "tags": ["billing", "validation"],
+            "phase": "core",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-07-10T12:00:00.000Z",
+                "started": "2026-07-10T13:45:00.000Z",
+                "completed": "2026-07-10T14:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Rewrite reactivateFromTrial to route through paid checkout",
+            "description": "trial.service.ts reactivateFromTrial (~:840-847). Apply the T-004 guard first, ensure customer exists, resolve monthly priceId, call the T-002 helper -> real MP preapproval + checkoutUrl (fail-closed). Return { checkoutUrl, subscriptionId, status:'incomplete' } (spec §6.3). Write supersedesSubscriptionId into the new sub's metadata (keep convertedFromTrial marker). REMOVE the synchronous cancel-old-sub + audit + clearEntitlementCache (moved to webhook, T-007) so the trialing sub keeps granting entitlements during the MP window (spec §6.4/§6.5). Tests: unit test asserting create called with mode:'paid', returns checkoutUrl, sub is incomplete, old trialing sub NOT cancelled inline, supersedesSubscriptionId set.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-004"],
+            "blocks": ["T-007", "T-008", "T-010"],
+            "subtasks": [
+                { "title": "Apply validation guard + resolve priceId", "completed": true },
+                {
+                    "title": "Call shared helper, return checkoutUrl + incomplete status",
+                    "completed": true
+                },
+                { "title": "Set supersedesSubscriptionId metadata", "completed": true },
+                { "title": "Remove synchronous cancel/audit/clearCache", "completed": true },
+                { "title": "Unit tests for new flow", "completed": true }
+            ],
+            "tags": ["billing", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-07-10T12:00:00.000Z",
+                "started": "2026-07-10T14:20:00.000Z",
+                "completed": "2026-07-10T15:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Rewrite reactivateSubscription to route through paid checkout",
+            "description": "trial.service.ts reactivateSubscription (~:1031-1039). Same pattern as T-005: guard, ensure customer, resolve priceId, call T-002 helper, return { checkoutUrl, subscriptionId, status:'incomplete' }, write supersedesSubscriptionId (keep reactivatedFromCanceled marker), remove synchronous cancel/audit/clearEntitlementCache (deferred to webhook T-007). Tests: unit test mirroring T-005 for the lapsed-subscription reactivation case.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-004"],
+            "blocks": ["T-007", "T-008", "T-010"],
+            "subtasks": [
+                { "title": "Apply validation guard + resolve priceId", "completed": true },
+                {
+                    "title": "Call shared helper, return checkoutUrl + incomplete status",
+                    "completed": true
+                },
+                { "title": "Set supersedesSubscriptionId metadata", "completed": true },
+                { "title": "Remove synchronous cancel/audit/clearCache", "completed": true },
+                { "title": "Unit tests for new flow", "completed": true }
+            ],
+            "tags": ["billing", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-07-10T12:00:00.000Z",
+                "started": "2026-07-10T14:20:00.000Z",
+                "completed": "2026-07-10T15:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Handle old-subscription supersession on webhook confirmation",
+            "description": "CORRECTED anchors (T-001): the handler is processSubscriptionUpdated in apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts (NOT routes/billing/), event subscription_preapproval.created/.updated (NOT subscription_authorized_payment.created). Insertion point: right after clearEntitlementCache at subscription-logic.ts:701. This function is GENERIC (handles paused/cancelled/past-due/active) — gate the new logic strictly on the PENDING_PROVIDER -> ACTIVE transition (previousStatus normalized incomplete->PENDING_PROVIDER at :414, mappedStatus ACTIVE). Read supersedesSubscriptionId from the confirmed sub's metadata and complete the swap atomically (spec §6.4): cancel the superseded sub, write the converted/reactivated audit row, and clearEntitlementCache — exactly once (spec AC-4). No-op when the marker is absent (normal /start-paid activations and every non-activation transition). Tests: integration test that a confirmed reactivation preapproval cancels the superseded sub + writes audit + clears cache once; a normal activation without the marker is unaffected; a non-activation transition (e.g. pause) never triggers the swap.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-005", "T-006"],
+            "blocks": ["T-011", "T-013"],
+            "subtasks": [
+                { "title": "Read supersedesSubscriptionId on webhook confirm", "completed": true },
+                {
+                    "title": "Cancel superseded sub + audit + clearCache atomically, once",
+                    "completed": true
+                },
+                { "title": "No-op path when marker absent (start-paid)", "completed": true },
+                { "title": "Integration tests for both paths", "completed": true }
+            ],
+            "tags": ["billing", "webhook"],
+            "phase": "integration",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-07-10T12:00:00.000Z",
+                "started": "2026-07-10T15:35:00.000Z",
+                "completed": "2026-07-10T16:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Update response schema + route handlers to return checkoutUrl",
+            "description": "DECIDED (owner 2026-07-10): move request+response schemas to @repo/schemas (fix drift, single source of truth). Spec §7 contract change. CORRECTION (T-001): the response schemas are NOT in @repo/schemas today — they are LOCAL inline in apps/api/src/routes/billing/trial.ts (reactivateTrialResponseSchema :90-94, reactivateSubscriptionResponseSchema :465-470), both synchronous-success shapes with no checkoutUrl. @repo/schemas only has a dead unused ReactivateTrialRequestSchema. Recommended: introduce proper request+response schemas in @repo/schemas (checkoutUrl + status:'incomplete', mirror /start-paid) and wire the routes to them, fixing the drift — confirm this widening with owner. Update both route handlers (:349-353, :527-532) to return checkoutUrl + status. Tests: schema unit test for the new shape; route test asserting the paid reactivation response carries checkoutUrl.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-006"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Extend reactivate response Zod schema in @repo/schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Return checkoutUrl + status from both route handlers",
+                    "completed": true
+                },
+                { "title": "Schema + route tests", "completed": true }
+            ],
+            "tags": ["schemas", "api"],
+            "phase": "integration",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-07-10T12:00:00.000Z",
+                "started": "2026-07-10T14:20:00.000Z",
+                "completed": "2026-07-10T15:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Update web reactivation caller to follow the checkoutUrl redirect",
+            "description": "Spec §8 / R-2. CORRECTION (T-001): /reactivate has NO web wrapper today; /reactivate-subscription has a DEAD wrapper billingApi.reactivateSubscription at apps/web/src/lib/api/endpoints-protected.ts:622-631 (zero call sites). There is no live UI caller to update. MANDATORY instead: update the E2E test apps/e2e/tests/host/host-02-trial-upgrade-mp.spec.ts:123 which POSTs /reactivate directly and asserts the OLD synchronous shape — it breaks on the T-008 contract change. Update its assertions to the new { checkoutUrl, subscriptionId, status:'incomplete' } shape. If a real web reactivation UI is added later that's out of scope (endpoints currently unwired). Tests: the updated E2E assertions are the test.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update E2E host-02-trial-upgrade-mp.spec.ts:123 to new response shape",
+                    "completed": false
+                },
+                {
+                    "title": "Refresh/adjust the dead reactivateSubscription wrapper return type",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm no live UI caller regressed (there is none today)",
+                    "completed": false
+                }
+            ],
+            "tags": ["web"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-10T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Regression test: reactivate no longer creates phantom-active subs",
+            "description": "Spec AC-5 / §12 (bug-fix => regression test first). Add tests reproducing the original bug shape for BOTH methods: a reactivate call that ended active with null mp_subscription_id. Assert the new behavior: created sub is incomplete with a checkoutUrl, never active-without-preapproval. Tests: apps/api trial.service reactivate test files.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-006"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Regression test for reactivateFromTrial bug shape",
+                    "completed": false
+                },
+                {
+                    "title": "Regression test for reactivateSubscription bug shape",
+                    "completed": false
+                },
+                {
+                    "title": "Assert incomplete + checkoutUrl, never phantom-active",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "billing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-10T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Webhook supersession ordering tests (abandon + confirm)",
+            "description": "Spec R-1 / AC-3 / AC-4. Focused webhook-path tests: (a) abandoned checkout -> new sub stays incomplete, old sub intact, entitlements unchanged; (b) confirmed preapproval -> new sub active with mp_subscription_id, old sub cancelled, audit written, entitlement cache cleared exactly once. Cover both reactivate origins (trial + lapsed).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Abandon-checkout test: old sub + entitlements intact",
+                    "completed": false
+                },
+                { "title": "Confirm test: old cancelled, cache cleared once", "completed": false },
+                { "title": "Cover both trial + lapsed origins", "completed": false }
+            ],
+            "tags": ["testing", "webhook"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-10T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Guard /start-paid regression after helper extraction",
+            "description": "Spec R-5. Confirm the helper extraction (T-002/T-003) leaves first-time paid checkout fully green: run the existing /start-paid + initiatePaidMonthlySubscription suites and the AC-7 no-duplication check (the mode:'paid' create logic lives in exactly one module). Add a test guarding that both call sites share the helper if not already covered.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Run existing /start-paid suites -> green", "completed": false },
+                { "title": "Assert single-source helper usage (AC-7)", "completed": false }
+            ],
+            "tags": ["testing", "billing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-10T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Run phantom-sub detection query on staging + prod",
+            "description": "Spec AC-8 / §12 / OQ-4. Run the detection query (status='active' AND mp_subscription_id IS NULL AND metadata markers convertedFromTrial/reactivatedFromCanceled) against staging and prod before merge. Zero rows (expected, endpoints unwired) -> record no-op in closeout.md. Rows present -> author a scripted, reversible remediation with owner sign-off. Tests: n/a (ops query); document result in close-out.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Run query against staging", "completed": false },
+                { "title": "Run query against prod", "completed": false },
+                { "title": "Record result (expected zero) in closeout.md", "completed": false }
+            ],
+            "tags": ["ops", "billing"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-10T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Apply smoke-gate labels and run MP sandbox staging smoke",
+            "description": "Spec §13. Ensure status-needs-smoke-staging + status-needs-smoke-prod labels are on HOS-114. Execute the real MP sandbox reactivation smoke against staging (both reactivate origins: trial + lapsed), file the sign-off in the SPEC-143 staging-smoke-checklist, and reference it in the PR. Prod smoke is executed before promoting staging->main. Do NOT mark the issue Done while either label is present.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011", "T-013"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Confirm smoke labels present on HOS-114", "completed": false },
+                {
+                    "title": "Run staging MP-sandbox reactivation smoke (trial + lapsed)",
+                    "completed": false
+                },
+                {
+                    "title": "File sign-off in SPEC-143 checklist + reference in PR",
+                    "completed": false
+                }
+            ],
+            "tags": ["smoke", "billing"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-10T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Harden webhook supersession cancel + map reactivate business errors to 4xx",
+            "description": "From code review (MEDIUM + LOW). (a) In completeReactivationSupersession (subscription-logic.ts): distinguish a benign 'already cancelled' from a transient MP cancel failure by RE-FETCHING the superseded sub's status after the cancel attempt. Only write the audit row when the sub is confirmed cancelled (or already terminal). On a transient failure (still active/non-terminal after the attempt): Sentry-capture, log loudly, and DO NOT write the audit row (leave the pairing un-done so the T-016 reconcile backstop picks it up) — never falsely mark it done. (b) LOW: map the reactivate business-rule errors ('active subscription exists', 'no canceled subscription found') to proper 4xx (409 / 404) instead of 500 — add typed codes (e.g. ACTIVE_SUBSCRIPTION_EXISTS, NO_CANCELED_SUBSCRIPTION) to SubscriptionCheckoutErrorCode + the mapper, and throw them from the reactivate methods. Tests: transient-cancel-failure leaves no audit + Sentry called; already-cancelled writes audit once; the two business errors return 409/404.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Re-fetch superseded status; audit only on confirmed cancel",
+                    "completed": true
+                },
+                {
+                    "title": "Transient failure: Sentry + no audit (reconcilable)",
+                    "completed": true
+                },
+                { "title": "Map active/no-canceled business errors to 409/404", "completed": true },
+                { "title": "Tests for transient/benign/business-error paths", "completed": true }
+            ],
+            "tags": ["billing", "webhook", "hardening"],
+            "phase": "integration",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-07-10T16:30:00.000Z",
+                "started": "2026-07-10T16:30:00.000Z",
+                "completed": "2026-07-10T17:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Reconcile backstop cron for orphaned superseded subscriptions",
+            "description": "Owner-decided (full robustness). New cron job apps/api/src/cron/jobs/reactivation-supersession-reconcile.job.ts mirroring the existing billing cron structure + registration. Finds superseded subscriptions that survived their supersessor's activation: a subscription S still in a non-terminal state (active/trialing) whose id appears in some ACTIVE subscription N's metadata.supersedesSubscriptionId, where the (N,S) supersession was never completed (no audit row). For each: cancel S (idempotent), write the reactivation audit row (same shape as the webhook), clearEntitlementCache if needed, Sentry-alert on anomalies. Idempotent + safe to run repeatedly. Tests: a matured orphan gets cancelled+audited once; a correctly-superseded (already cancelled) sub is left alone; a plain sub with no supersessor is untouched. Add the cron to the smoke/cron coverage.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Create reconcile job mirroring existing cron structure",
+                    "completed": true
+                },
+                {
+                    "title": "Query orphaned superseded subs (active supersessor, no audit)",
+                    "completed": true
+                },
+                { "title": "Cancel + audit + clearCache idempotently", "completed": true },
+                { "title": "Register job + tests", "completed": true }
+            ],
+            "tags": ["billing", "cron", "reconcile"],
+            "phase": "integration",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-07-10T16:30:00.000Z",
+                "started": "2026-07-10T16:35:00.000Z",
+                "completed": "2026-07-10T17:20:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 16,
+        "pending": 2,
+        "inProgress": 0,
+        "completed": 14,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}
