@@ -909,7 +909,7 @@
       "id": "T-021",
       "title": "Create public POI API routes",
       "description": "Create `apps/api/src/routes/point-of-interest/public/{getById,getBySlug,list,index}.ts` mirroring `apps/api/src/routes/attraction/public/*.ts` exactly (using `createPublicListRoute`/equivalent factories, `PointOfInterestPublicSchema` from T-011, `PointOfInterestSearchHttpSchema` from T-010). Public read only per AC-5/§7 — no admin write routes (NG-5). Unit tests: `apps/api/test/routes/point-of-interest/public/*.test.ts` mirroring the attraction public route tests (200 list/getById/getBySlug happy paths, 404 for unknown slug).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-020"
@@ -920,19 +920,19 @@
       "subtasks": [
         {
           "title": "Create list.ts route",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Create getById.ts + getBySlug.ts routes",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Create index.ts route aggregator",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write public route unit tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -941,21 +941,21 @@
       ],
       "phase": "integration",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T15:15:00.000Z",
+        "completed": "2026-07-10T15:35:00.000Z"
       }
     },
     {
       "id": "T-022",
       "title": "Register POI routes in API app + route registration tests",
       "description": "Wire `pointOfInterestPublicRoutes` (T-021's `index.ts`) into the main Hono app's route registration (locate the file that mounts `attractionPublicRoutes` under `/api/v1/public/attractions` — same location, add `/api/v1/public/points-of-interest`). Update `apps/api/docs/route-architecture.md` reference table if it enumerates entities. Unit tests: an app-level integration test asserting `GET /api/v1/public/points-of-interest` returns 200 with the expected paginated shape (can be a thin smoke test alongside existing app-registration tests).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-021"
@@ -966,15 +966,15 @@
       "subtasks": [
         {
           "title": "Mount POI public routes at /api/v1/public/points-of-interest",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Update route-architecture.md if entity table exists",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write app-level route registration test",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -983,21 +983,21 @@
       ],
       "phase": "integration",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T15:35:00.000Z",
+        "completed": "2026-07-10T15:40:00.000Z"
       }
     },
     {
       "id": "T-023",
       "title": "Create seed data JSON fixtures for POIs",
       "description": "Create `packages/seed/src/data/pointOfInterest/*.json` (one file per POI, naming `NNN-point-of-interest-<slug>.json` mirroring attraction's `NNN-attraction-<slug>.json` convention). Author a curated initial set of 10-12 real Concepción del Uruguay / Litoral landmarks (e.g. autódromo, playa Banco Pelay, plaza principal, museums) covering all 9 `type` enum values at least once. Each fixture: `{ $schema, id, slug, lat, long, type, description?, icon?, isBuiltin: true, displayWeight, lifecycleState: 'ACTIVE' }` — NO `name` field (OQ-2). No unit tests for this task (pure data authoring); validation happens in T-024's seed factory run and T-030's i18n coverage test.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-013"
@@ -1010,11 +1010,11 @@
       "subtasks": [
         {
           "title": "Curate 10-12 real POIs covering all 9 type values",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write JSON fixtures with lat/long/type, no name field",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1023,21 +1023,21 @@
       ],
       "phase": "setup",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T15:40:00.000Z",
+        "completed": "2026-07-10T15:50:00.000Z"
       }
     },
     {
       "id": "T-024",
       "title": "Create pointsOfInterest.seed.ts required-seed factory",
       "description": "Create `packages/seed/src/required/pointsOfInterest.seed.ts` mirroring `attractions.seed.ts`'s `createSeedFactory({entityName: 'PointsOfInterest', serviceClass: PointOfInterestService, folder: 'src/data/pointOfInterest', files: requiredManifest.pointsOfInterest, normalizer, getEntityInfo})` — normalizer strips `$schema`/`id`/`lifecycleState` (keeps `slug` since it's the i18n key, unlike attraction which strips slug too... verify against T-023's fixture shape before stripping). Unit tests: `packages/seed/test/required/pointsOfInterest.seed.test.ts` mirroring the attraction seed factory test (loads fixtures, calls service.create, handles duplicate-slug idempotency).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-019",
@@ -1050,15 +1050,15 @@
       "subtasks": [
         {
           "title": "Create createSeedFactory config for pointsOfInterest",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Implement normalizer stripping non-domain fields",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write seed factory unit tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1067,21 +1067,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T15:50:00.000Z",
+        "completed": "2026-07-10T16:00:00.000Z"
       }
     },
     {
       "id": "T-025",
       "title": "Register pointsOfInterest in manifest-required.json and orchestrator",
       "description": "Add a `\"pointsOfInterest\": [...]` array entry to `packages/seed/src/data/manifest-required.json` listing every T-023 fixture filename, and wire `pointsOfInterest.seed.ts` (T-024) into the required-seed orchestrator that runs `--required` seed groups (locate where `attractions.seed.ts` is invoked, e.g. a `runRequiredSeeds` aggregator, and add the sibling call — order after destinations since the relationship seed in T-026 needs both). Unit tests: an orchestrator-level test asserting `pointsOfInterest` group is included in the `--required` run list.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 1,
       "blockedBy": [
         "T-024"
@@ -1092,15 +1092,15 @@
       "subtasks": [
         {
           "title": "Add pointsOfInterest array to manifest-required.json",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Wire seed factory into required-seed orchestrator",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write orchestrator inclusion test",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1109,21 +1109,21 @@
       ],
       "phase": "setup",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T16:00:00.000Z",
+        "completed": "2026-07-10T16:05:00.000Z"
       }
     },
     {
       "id": "T-026",
       "title": "Add destination-POI relationship seed step",
       "description": "Add a `relationBuilder` on `packages/seed/src/required/destinations.seed.ts` for POIs, mirroring the existing attraction `relationBuilder` (via `createServiceRelationBuilder({serviceClass: PointOfInterestService, methodName: 'addPointOfInterestToDestination', extractIds: (d) => d.pointOfInterestIds || [], entityType: 'pointsOfInterest', relationType: 'pointsOfInterest', buildParams: (destinationId, pointOfInterestId) => ({destinationId, pointOfInterestId}), ...})`). Add a `pointOfInterestIds: string[]` array to at least 3-4 `destination/*.json` fixtures referencing T-023's seed-ids, including at least one POI mapped to 2 destinations (M2M coverage, OQ-1). Unit tests: `destinations.seed.test.ts` extension covering the relation builder wiring the join rows correctly, including the multi-destination POI case.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-020",
@@ -1135,15 +1135,15 @@
       "subtasks": [
         {
           "title": "Add pointsOfInterest relationBuilder to destinations.seed.ts",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Add pointOfInterestIds to 3-4 destination fixtures incl. one M2M case",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write relationship seed unit tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1152,21 +1152,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T16:05:00.000Z",
+        "completed": "2026-07-10T16:15:00.000Z"
       }
     },
     {
       "id": "T-027",
       "title": "Update seed dual-write guard for pointOfInterest path",
       "description": "Add `'^packages/seed/src/data/pointOfInterest/'` to the `REQUIRED_DATA_DIR_PATTERNS` array in `scripts/check-seed-dual-write.sh` (same array that already lists `amenity`/`attraction`/`destination` etc.), so future edits to T-023's fixtures are caught by the CI dual-write guard (R-5). Also add the new path to the prose list of guarded paths in `packages/seed/CLAUDE.md`. Unit tests: run `scripts/check-seed-dual-write.sh` locally against a dummy uncommitted fixture edit to confirm it now flags a missing data-migration for the `pointOfInterest` path.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 1,
       "blockedBy": [
         "T-023"
@@ -1177,15 +1177,15 @@
       "subtasks": [
         {
           "title": "Add pointOfInterest glob to REQUIRED_DATA_DIR_PATTERNS",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Update packages/seed/CLAUDE.md guarded-paths list",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Verify guard fires on a dummy fixture edit",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1195,21 +1195,21 @@
       ],
       "phase": "setup",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T16:15:00.000Z",
+        "completed": "2026-07-10T16:20:00.000Z"
       }
     },
     {
       "id": "T-028",
       "title": "Write seed integration test for POI required group",
       "description": "Write an integration test (mirroring the existing attraction/destination seed integration test pattern, e.g. `packages/seed/test/integration/pointsOfInterest.seed.integration.test.ts`) that runs the `--required` seed pipeline against a test DB and asserts: (1) all T-023 POIs are present with correct `lat`/`long`/`type`/no-`name`; (2) the T-026 relationship rows exist in `r_destination_point_of_interest`, including the M2M case; (3) re-running the seed is idempotent (AC-3). This is the cross-component integration test — do NOT fold into T-024/T-026's unit tests.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-026",
@@ -1221,15 +1221,15 @@
       "subtasks": [
         {
           "title": "Write required-seed pipeline run test",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Assert POI rows + relationship rows including M2M case",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Assert idempotent re-run behavior",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1239,21 +1239,21 @@
       ],
       "phase": "testing",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T16:20:00.000Z",
+        "completed": "2026-07-10T16:35:00.000Z"
       }
     },
     {
       "id": "T-029",
       "title": "Add POI i18n display strings (es/en/pt)",
       "description": "Add `destinations.poiNames.<slug>` display-name strings for every T-023 seeded POI slug, plus `destinations.poiTypeLabels.<TYPE_ENUM_VALUE>` labels for all 9 `PointOfInterestTypeEnum` values, to the `@repo/i18n` locale files across `es`/`en`/`pt` (mirror the exact `amenityNames`/nesting shape in `packages/i18n/src/locales/es/accommodations.json`, likely as a new `destinations.json` key block or appended to an existing destination-scoped locale file — verify the actual file destination-scoped strings live in before creating a new one). Unit tests: none new here — covered by T-030's coverage test.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-023"
@@ -1265,11 +1265,11 @@
       "subtasks": [
         {
           "title": "Add poiNames.<slug> for every seeded POI in es/en/pt",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Add poiTypeLabels.<ENUM_VALUE> for all 9 types in es/en/pt",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1278,21 +1278,21 @@
       ],
       "phase": "setup",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T16:35:00.000Z",
+        "completed": "2026-07-10T16:45:00.000Z"
       }
     },
     {
       "id": "T-030",
       "title": "Write i18n coverage test for POI slugs",
       "description": "Write a test (e.g. `packages/i18n/test/point-of-interest-coverage.test.ts` or alongside the existing amenity/feature i18n-coverage test if one exists) that reads T-023/T-024's seeded POI slugs and asserts every slug has a `destinations.poiNames.<slug>` entry in ALL THREE locales (es/en/pt), and every `PointOfInterestTypeEnum` value has a `poiTypeLabels` entry in all three locales (R-6 mitigation, AC-7). This test must fail loudly if a future seed addition forgets its i18n string.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-029",
@@ -1304,15 +1304,15 @@
       "subtasks": [
         {
           "title": "Load seeded POI slugs from fixtures",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Assert poiNames coverage across es/en/pt",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Assert poiTypeLabels coverage across es/en/pt for all 9 enum values",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1322,14 +1322,14 @@
       ],
       "phase": "testing",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T16:45:00.000Z",
+        "completed": "2026-07-10T16:55:00.000Z"
       }
     },
     {
@@ -2252,10 +2252,11 @@
   ],
   "summary": {
     "total": 52,
-    "pending": 32,
+    "pending": 22,
     "inProgress": 0,
-    "completed": 20,
+    "completed": 30,
     "blocked": 0,
-    "averageComplexity": 2.1
+    "averageComplexity": 2.1,
+    "notes": "Phase 1 (T-001..T-030) COMPLETE. Phase 2 (proximity search, T-031+) not started."
   }
 }
