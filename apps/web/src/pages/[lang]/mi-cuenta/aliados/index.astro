@@ -20,6 +20,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { getAdminUrl } from '@/lib/env';
+import { isVisibleByRole, resolveDoorLabelKey } from '@/lib/nav-gating';
 
 export const prerender = false;
 
@@ -37,7 +38,11 @@ if (!door) {
 }
 
 const { t } = createTranslations(locale);
-const title = t(door.i18nKey);
+const labelKey = resolveDoorLabelKey({
+    door,
+    visibility: (node) => isVisibleByRole(node, user.role)
+});
+const title = t(labelKey);
 const description = t(door.subtitleI18nKey);
 ---
 

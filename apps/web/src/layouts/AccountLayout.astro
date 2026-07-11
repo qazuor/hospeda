@@ -22,7 +22,7 @@ import SEOHead from '@/components/seo/SEOHead.astro';
 import { getNavForSurface } from '@/config/navigation';
 import type { NavItem } from '@/config/navigation';
 import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
-import { isDoorVisible, isVisibleByRole } from '@/lib/nav-gating';
+import { isDoorVisible, isVisibleByRole, resolveDoorLabelKey } from '@/lib/nav-gating';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -181,7 +181,14 @@ const visibleDoors = ACCOUNT_DISCOVERY_DOORS.filter((door) =>
 										<span class="account-nav__door-icon" aria-hidden="true">
 											<DoorIcon size={18} weight="regular" aria-hidden="true" />
 										</span>
-										<span class="account-nav__door-label">{t(door.i18nKey)}</span>
+										<span class="account-nav__door-label">
+											{t(
+												resolveDoorLabelKey({
+													door,
+													visibility: (node) => isVisibleByRole(node, userRole),
+												}),
+											)}
+										</span>
 									</a>
 								</li>
 								);

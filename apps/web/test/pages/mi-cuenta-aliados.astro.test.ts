@@ -42,8 +42,12 @@ describe('mi-cuenta/aliados/index.astro (HOS-131 "Sumate como aliado" hub)', () 
         expect(source).toContain("path: 'mi-cuenta' }");
     });
 
-    it('resolves title/description from the door config via i18n, not hardcoded strings', () => {
-        expect(source).toContain('t(door.i18nKey)');
+    it('resolves the title via resolveDoorLabelKey (HOS-134 stateful label), and the subtitle via i18n, never hardcoded strings', () => {
+        expect(source).toContain(
+            "import { isVisibleByRole, resolveDoorLabelKey } from '@/lib/nav-gating';"
+        );
+        expect(source).toContain('resolveDoorLabelKey({');
+        expect(source).toContain('const title = t(labelKey);');
         expect(source).toContain('t(door.subtitleI18nKey)');
     });
 

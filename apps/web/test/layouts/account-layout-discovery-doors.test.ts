@@ -29,7 +29,7 @@ describe('AccountLayout — discovery-door wiring (HOS-131 §6.2/§6.3)', () => 
             "import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';"
         );
         expect(source).toContain(
-            "import { isDoorVisible, isVisibleByRole } from '@/lib/nav-gating';"
+            "import { isDoorVisible, isVisibleByRole, resolveDoorLabelKey } from '@/lib/nav-gating';"
         );
         expect(source).toContain(
             'isDoorVisible({ door, visibility: (node) => isVisibleByRole(node, userRole) })'
@@ -59,6 +59,16 @@ describe('AccountLayout — discovery-door wiring (HOS-131 §6.2/§6.3)', () => 
         expect(source).toContain('const isActiveDoor = doorSectionKey === activeSection;');
         expect(source).toContain("{ 'account-nav__door-link--active': isActiveDoor }");
         expect(source).toContain("aria-current={isActiveDoor ? 'page' : undefined}");
+    });
+
+    it('renders the door CTA label via resolveDoorLabelKey (HOS-134 stateful label), not a bare t(door.i18nKey)', () => {
+        expect(source).toContain(
+            "import { isDoorVisible, isVisibleByRole, resolveDoorLabelKey } from '@/lib/nav-gating';"
+        );
+        expect(source).toContain('resolveDoorLabelKey({');
+        expect(source).toContain('door,');
+        expect(source).toContain('visibility: (node) => isVisibleByRole(node, userRole),');
+        expect(source).not.toContain('{t(door.i18nKey)}');
     });
 });
 
