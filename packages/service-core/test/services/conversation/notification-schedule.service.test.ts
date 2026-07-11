@@ -427,5 +427,26 @@ describe('NotificationScheduleService', () => {
             expect(result.data).toBeNull();
             expect(asMock(modelMock.update)).not.toHaveBeenCalled();
         });
+
+        it('should return null and NOT re-issue the cancel update when the row is already terminal AND streakCount matches (terminal double-cancel guard, HOS-112 review)', async () => {
+            // The row is already at the terminal state (streak 3, cancelledAt set) —
+            // e.g. a previous run of the SAME schedule already persisted its advance
+            // right after sending, and a duplicate advance call slipped through
+            // (crash-retry, or a stale in-memory streakCount matching the terminal
+            // value). A streakCount-only comparison would NOT catch this, since
+            // streakCount stays 3 at the terminal transition — only cancelledAt
+            // changes. This guard must fire BEFORE the streakCount comparison.
+            const scheduleRow = makeScheduleRow({ streakCount: 3, cancelledAt: new Date() });
+            asMock(modelMock.findById).mockResolvedValue(scheduleRow);
+
+            const result = await service.advanceSchedule(SYSTEM_ACTOR, {
+                scheduleId: SCHEDULE_ID,
+                currentStreakCount: 3
+            });
+
+            expectSuccess(result);
+            expect(result.data).toBeNull();
+            expect(asMock(modelMock.update)).not.toHaveBeenCalled();
+        });
     });
 });
