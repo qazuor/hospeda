@@ -221,7 +221,8 @@
         "accommodationCount_one": "{{count}} alojamiento disponible",
         "accommodationCount_other": "{{count}} alojamientos disponibles",
         "eventCount_one": "{{count}} evento proximo",
-        "eventCount_other": "{{count}} eventos proximos"
+        "eventCount_other": "{{count}} eventos proximos",
+        "pointsOfInterestTitle": "Puntos de interés"
     },
     "rating": {
         "outOf": "de 5",

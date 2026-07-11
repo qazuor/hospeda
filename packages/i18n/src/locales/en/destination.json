@@ -221,7 +221,8 @@
         "accommodationCount_one": "{{count}} accommodation available",
         "accommodationCount_other": "{{count}} accommodations available",
         "eventCount_one": "{{count}} upcoming event",
-        "eventCount_other": "{{count}} upcoming events"
+        "eventCount_other": "{{count}} upcoming events",
+        "pointsOfInterestTitle": "Points of interest"
     },
     "rating": {
         "outOf": "out of 5",
