@@ -1336,7 +1336,7 @@
       "id": "T-031",
       "title": "Add poiId/poiSlug params to accommodation search schemas",
       "description": "Add optional `poiId`/`poiSlug` fields to `AccommodationSearchSchema`/`AccommodationFiltersSchema` (`packages/schemas/src/entities/accommodation/accommodation.query.schema.ts`, alongside the existing `latitude`/`longitude`/`radius` fields at lines ~53-55/105-107) and to the HTTP-coerced search schema (same file area line ~202-204, alongside `HttpQueryFields.latitude()`). Do not remove the existing lat/long/radius fields — both entry points coexist (T-034 handles precedence). Unit tests: extend `accommodation.query.schema.test.ts` covering `poiId`/`poiSlug` optional parsing and that providing neither is still valid (both remain optional).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-020"
@@ -1347,15 +1347,15 @@
       "subtasks": [
         {
           "title": "Add poiId/poiSlug to AccommodationSearchSchema/FiltersSchema",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Add poiId/poiSlug to HTTP-coerced search schema",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write schema unit tests for new optional params",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1365,21 +1365,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T21:55:00.000Z",
+        "completed": "2026-07-10T21:59:00.000Z"
       }
     },
     {
       "id": "T-032",
       "title": "Implement resolvePoiToCoordinates helper",
-      "description": "Implement `resolvePoiToCoordinates({ poiId?, poiSlug?, radius? }, ctx)` in a new `packages/service-core/src/services/accommodation/accommodation.poi-proximity.helper.ts`, calling `PointOfInterestService` (read-by-id or T-020's slug lookup path) to return `{ lat, long, radiusKm }` or a typed not-found error. NOTE (OQ-5, still open per spec §11): use `radiusKm = 5` as the default when none is provided — this is a PLACEHOLDER pending explicit owner confirmation; flag it clearly in the PR description so it can be confirmed before merge, do not treat 5km as final without sign-off. Unit tests: `accommodation.poi-proximity.helper.test.ts` covering found-by-id, found-by-slug, not-found, explicit-radius, and default-radius cases.",
-      "status": "pending",
+      "description": "Implement `resolvePoiToCoordinates({ poiId?, poiSlug?, radius? }, ctx)` in a new `packages/service-core/src/services/accommodation/accommodation.poi-proximity.helper.ts`, calling `PointOfInterestService` (read-by-id or T-020's slug lookup path) to return `{ lat, long, radiusKm }` or a typed not-found error. NOTE (OQ-5, RESOLVED — see T-037/spec §11): `radiusKm = 5` is the owner-confirmed default when none is provided (no longer a placeholder). Unit tests: `accommodation.poi-proximity.helper.test.ts` covering found-by-id, found-by-slug, not-found, explicit-radius, and default-radius cases.",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-031"
@@ -1390,15 +1390,15 @@
       "subtasks": [
         {
           "title": "Implement resolvePoiToCoordinates using PointOfInterestService",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Apply OQ-5 placeholder default radius (5km) when none given",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write resolution helper unit tests incl. not-found case",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1408,21 +1408,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T21:59:00.000Z",
+        "completed": "2026-07-10T22:03:00.000Z"
       }
     },
     {
       "id": "T-033",
       "title": "Wire resolved POI coordinates into accommodation search query",
       "description": "In `AccommodationService`'s search method, when `poiId`/`poiSlug` is present, call T-032's `resolvePoiToCoordinates` and feed the result into the EXISTING `latitude`/`longitude`/`radius` code path that already calls `buildWithinRadiusClause`/`buildDistanceOrderByExpr` in `accommodation.model.ts` (lines ~121/361) — per NG-2, write ZERO new distance SQL, purely reuse the existing geo.ts-backed path by populating the same params object it already consumes. Unit tests: extend `accommodation.service.test.ts` (or `.model.test.ts`) asserting that a `poiId` search produces IDENTICAL SQL/results to an equivalent direct `latitude`/`longitude`/`radius` search (NG-2 compliance assertion).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-032"
@@ -1434,15 +1434,15 @@
       "subtasks": [
         {
           "title": "Detect poiId/poiSlug in search params and resolve via T-032",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Feed resolved lat/long/radius into existing geo.ts-backed query path",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write parity test: poiId search == equivalent lat/long/radius search",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1452,21 +1452,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T22:03:00.000Z",
+        "completed": "2026-07-10T22:10:00.000Z"
       }
     },
     {
       "id": "T-034",
       "title": "Add poiId/latitude precedence validation",
       "description": "In the search-param normalization step (near T-033's integration point), define and implement precedence when BOTH a POI reference (`poiId`/`poiSlug`) AND explicit `latitude`/`longitude` are provided in the same request: the resolved POI's coordinates take precedence (documented behavior, not a validation error) since a POI reference is a more specific intent signal. Unit tests: edge-case unit test asserting POI coordinates win over conflicting explicit lat/long, and that providing both `poiId` and `poiSlug` together is a 400 validation error (ambiguous single-entry-point contract).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 1,
       "blockedBy": [
         "T-033"
@@ -1477,15 +1477,15 @@
       "subtasks": [
         {
           "title": "Implement POI-wins-over-explicit-latlong precedence",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Reject simultaneous poiId + poiSlug as 400",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write precedence + ambiguous-input unit tests",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1495,21 +1495,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T22:03:00.000Z",
+        "completed": "2026-07-10T22:10:00.000Z"
       }
     },
     {
       "id": "T-035",
       "title": "Wire poiId/poiSlug through accommodation public search route",
       "description": "Confirm/update `apps/api/src/routes/accommodation/public/list.ts` (or the dedicated search route if separate) passes T-031's new `poiId`/`poiSlug` query params straight through to `AccommodationService.search()` unchanged (the route is already a thin wrapper per project convention — likely no route-layer code change needed beyond the schema already covering it via `requestQuery`). Unit tests: `apps/api/test/routes/accommodation/public/list.test.ts` extension — a request with `?poiSlug=<seeded-slug>` returns 200 with proximity-filtered results.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-034",
@@ -1521,11 +1521,11 @@
       "subtasks": [
         {
           "title": "Verify route schema wiring passes poiId/poiSlug through",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write route-level test with poiSlug query param",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1535,21 +1535,21 @@
       ],
       "phase": "integration",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T22:10:00.000Z",
+        "completed": "2026-07-10T22:12:00.000Z"
       }
     },
     {
       "id": "T-036",
       "title": "Write near-POI accommodation search integration test",
       "description": "Write an end-to-end integration test seeding (or using T-028's seeded fixtures) a real POI plus 2-3 accommodations at known distances, then asserting `GET /api/v1/public/accommodations?poiSlug=<slug>` returns results correctly ranked/filtered by distance to the POI (AC-4), and that an unknown `poiSlug` returns a clean 404/400 rather than a silent empty result. This is the cross-component AC-4 acceptance test.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-035",
@@ -1562,15 +1562,15 @@
       "subtasks": [
         {
           "title": "Seed accommodations at known distances from a seeded POI",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Assert distance-ranked/filtered results for valid poiSlug",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Assert clean error for unknown poiSlug",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1580,21 +1580,21 @@
       ],
       "phase": "testing",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T22:12:00.000Z",
+        "completed": "2026-07-10T22:19:00.000Z"
       }
     },
     {
       "id": "T-037",
       "title": "Document OQ-5 default radius resolution in spec.md",
       "description": "Append a resolution note to `.specs/HOS-113-points-of-interest/spec.md` §11 (mirroring the existing 'Resolved (owner, 2026-07-10)' banner format used for OQ-1/2/3/6) recording the OQ-5 outcome: default radius = 5km when none given (T-032's placeholder), confirmed or amended based on actual owner sign-off obtained during Phase 2 implementation. If the owner has NOT yet confirmed by the time this task is reached, surface that explicitly instead of silently marking it resolved.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 1,
       "blockedBy": [
         "T-036"
@@ -1603,11 +1603,11 @@
       "subtasks": [
         {
           "title": "Confirm default radius value with owner",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Update spec.md §11 OQ-5 resolution banner",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1616,14 +1616,14 @@
       ],
       "phase": "docs",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T22:19:00.000Z",
+        "completed": "2026-07-10T22:21:00.000Z"
       }
     },
     {
@@ -2252,11 +2252,11 @@
   ],
   "summary": {
     "total": 52,
-    "pending": 22,
+    "pending": 15,
     "inProgress": 0,
-    "completed": 30,
+    "completed": 37,
     "blocked": 0,
     "averageComplexity": 2.1,
-    "notes": "Phase 1 (T-001..T-030) COMPLETE. Phase 2 (proximity search, T-031+) not started."
+    "notes": "Phase 1 (T-001..T-030) COMPLETE. Phase 2 (proximity search, T-031..T-037) COMPLETE -- poiId/poiSlug params, resolvePoiToCoordinates (OQ-5 default radius 5km, owner-confirmed), search wiring + precedence, route wiring, AC-4 integration test, spec.md OQ-5 resolution. Phase 3 (AI search, T-038+) not started."
   }
 }

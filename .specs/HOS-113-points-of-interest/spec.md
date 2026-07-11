@@ -14,8 +14,9 @@ areas:
 
 > **Open-question resolutions (owner, 2026-07-10)** — see §11 for detail.
 > OQ-1 → **M2M** (join table, not 1:N). OQ-2 → **i18n by slug** (no `name`
-> column, SPEC-266 pattern). OQ-3 → **closed `type` enum**. OQ-6 → **seed-only**
-> in Phase 1 (admin CRUD deferred). OQ-4/5/7 remain open, deferred to their phase.
+> column, SPEC-266 pattern). OQ-3 → **closed `type` enum**. OQ-5 → **default
+> proximity-search radius = 5km**. OQ-6 → **seed-only** in Phase 1 (admin CRUD
+> deferred). OQ-4/7 remain open, deferred to their phase.
 
 ## 1. Summary
 
@@ -192,8 +193,8 @@ skip `buildJsonbCoordinateExprs` and the `::numeric` cast entirely.
   reuses that path **with zero new geo SQL**.
 - Add a way to search "near POI X": accept a `poiId`/`poiSlug` param on the
   accommodation search that the API expands into lat/long/radius server-side
-  (preferred — keeps the coordinate contract server-side). Default radius TBD
-  (OQ-5).
+  (preferred — keeps the coordinate contract server-side). Default radius:
+  **5km** (OQ-5, RESOLVED — see §11).
 
 ### 6.3 AI search POI resolution
 
@@ -332,15 +333,31 @@ the service is built read-capable + seed-writable so that follow-up is additive.
   other`.
 - **OQ-6 (authoring) — RESOLVED: seed-only in Phase 1.** No admin CRUD UI now
   (NG-5); deferred follow-up.
+- **OQ-5 (proximity search entry + default radius) — RESOLVED (owner,
+  2026-07-10, confirmed during Phase 2 implementation): default radius =
+  5km.** `poiId`/`poiSlug` accommodation-search params are resolved
+  server-side (`AccommodationService._beforeSearch`, via the
+  `resolvePoiToCoordinates` helper — `packages/service-core/src/services/accommodation/accommodation.poi-proximity.helper.ts`)
+  to `{ lat, long, radius }`, which feeds the EXISTING `latitude`/`longitude`/
+  `radius` geo-search path (`@repo/db`'s `geo.ts`, NG-2 — zero new distance
+  SQL). `radiusKm` defaults to **5** when the caller does not supply an
+  explicit `radius`; an explicit `radius` always overrides the default. A
+  resolved POI's coordinates take precedence over any explicit
+  `latitude`/`longitude` also present in the same request (a POI reference is
+  a more specific intent signal); supplying both `poiId` AND `poiSlug`
+  together is a 400 `VALIDATION_ERROR` (single entry point, not two that
+  could disagree); an unresolvable `poiId`/`poiSlug` is a 404 `NOT_FOUND`
+  rather than a silent empty page. Rationale for 5km specifically: matches
+  a comfortable "walking/short-drive distance" radius around a landmark for
+  the target market (Concepción del Uruguay and the Litoral region), wide
+  enough to surface a meaningful result set from the current accommodation
+  density without being so wide it defeats the purpose of a "near X" search.
+  See HOS-113 T-031..T-037 (Phase 2).
 
 **Still open (deferred to their phase):**
 
 - **OQ-4 (destination map pins)** — Iteration 1 is list-only (recommended);
   multi-marker map pins deferred. Revisit when/if pins are pulled in.
-- **OQ-5 (proximity search entry + default radius)** — `poiId`/`poiSlug` param on
-  accommodation search expanded server-side to lat/long/radius (recommended
-  approach). Open: the default radius (e.g. 5km?) when none is given — decide in
-  Phase 2.
 - **OQ-7 (allowlist population)** — Curate the AI allowlist statically from the
   seed set (recommended, mirrors attractions); new seeded POIs need a matching
   allowlist entry to be AI-resolvable. Confirm in Phase 3.
@@ -353,8 +370,8 @@ the service is built read-capable + seed-writable so that follow-up is additive.
     fixtures + relationship seed + manifest + i18n strings + dual-write guard
     update. **No admin CRUD** (NG-5).
   - **Phase 2 — Proximity search (API)**: POI resolution + accommodation search
-    "near POI" (`poiId`/`poiSlug`), consuming `geo.ts`; decide default radius
-    (OQ-5).
+    "near POI" (`poiId`/`poiSlug`), consuming `geo.ts`; default radius = 5km
+    (OQ-5, RESOLVED). **DONE — T-031..T-037.**
   - **Phase 3 — AI search**: `poi-allowlist.ts` + `poi-resolver.ts` +
     `buildAllowlistLines` wiring + `poiSlugs` intent slot (OQ-7).
   - **Phase 4 — Destination detail (web)**: `_withPointsOfInterest()` hydration +
