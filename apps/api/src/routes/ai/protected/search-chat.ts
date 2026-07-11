@@ -38,6 +38,20 @@
  * block for how this combines with nearby-expansion (T-013) and a single
  * resolved `destinationId` when both fire in the same turn.
  *
+ * ## POI-constrained + proximity-centered search (HOS-113 §6.3, T-042)
+ *
+ * When the extracted entities carry `poiSlugs` (T-040 — a curated allowlist
+ * match against a NAMED landmark, e.g. "cerca del autódromo"), the handler
+ * resolves them via `resolvePoiConstraint` (T-039): on a `constrain` outcome
+ * it both narrows `params.destinationIds` (same intersect-or-no-match rule as
+ * attractions) AND overwrites `params.latitude`/`params.longitude`/
+ * `params.radius` with the matched landmark's own coordinates + the default
+ * (or model-extracted) radius — reusing the EXISTING "near POI" geo path
+ * (HOS-113 §6.2, NG-2: no new distance SQL). The resolved slugs are echoed
+ * back on the `filters` frame's `poiSlugs` field (T-043) so the UI/reply can
+ * cite what was resolved; an unmatched or conflicting mention silently skips
+ * the proximity constraint (R-4 — never a hallucinated slug, never a crash).
+ *
  * @module apps/api/routes/ai/protected/search-chat
  */
 
@@ -65,7 +79,7 @@ import {
     type SearchIntentOutput,
     SearchIntentOutputSchema
 } from '@repo/schemas';
-import { DestinationService } from '@repo/service-core';
+import { DEFAULT_POI_PROXIMITY_RADIUS_KM, DestinationService } from '@repo/service-core';
 import { createAiQuotaMiddleware } from '../../../middlewares/ai-quota.js';
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit.js';
 import { entitlementMiddleware } from '../../../middlewares/entitlement.js';
@@ -77,6 +91,7 @@ import {
     type StreamTextChunk
 } from '../../../utils/streaming-route-factory.js';
 import { resolveAttractionConstraint } from './attraction-resolver.js';
+import { resolvePoiConstraint } from './poi-resolver.js';
 import { persistSearchChatTurn } from './search-chat.persistence.js';
 import {
     buildConversationalSearchPrompt,
@@ -84,6 +99,9 @@ import {
     buildSearchReplySystemPrompt
 } from './search-chat.prompt.js';
 import { mapIntentToSearchParams } from './search-intent.mapper.js';
+
+/** Search-radius clamp shared with `search-intent.mapper.ts` (§5.3 clamp rule). */
+const MAX_POI_RADIUS_KM = 500;
 
 /** Best-effort persistence timeout (mirrors the chat route — SPEC-200 T-003). */
 const PERSISTENCE_TIMEOUT_MS = 1500;
@@ -586,6 +604,61 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         }
 
         // -----------------------------------------------------------------------
+        // Step 7.7 (HOS-113 §6.3): POI-constrained + proximity-centered search.
+        //
+        // When the model emitted poiSlugs (T-040), resolve them to the matched
+        // landmark's destinations + coordinates via resolvePoiConstraint (T-039).
+        // Recomputed from `params` AFTER the attraction step above, so a turn
+        // that carries BOTH an attraction and a POI mention combines all three
+        // constraints (location, attraction, POI) rather than the POI silently
+        // ignoring the attraction's narrowing.
+        //
+        // On `constrain`: narrow params.destinationIds to the (already
+        // intersected) set AND overwrite params.latitude/longitude/radius with
+        // the matched landmark's own coordinates — mirrors the documented
+        // precedence on `poiId`/`poiSlug` (HOS-113 §6.2): a resolved POI's
+        // coordinates take precedence over any explicit latitude/longitude
+        // already present. `radius` honors a model-extracted `entities.radius`
+        // when present (clamped, mirrors the mapper's own clamp rule),
+        // otherwise falls back to the Phase-2 default (5km).
+        //
+        // On `no-match`/`none`: deliberately NOT surfaced as a conflict frame
+        // (unlike attractionLocationConflict) — out of scope for this phase's
+        // tasks (T-038..T-044). The search simply proceeds without the
+        // proximity constraint; the resolved `poiSlugs` response field stays
+        // empty so the reply never cites an unresolved/hallucinated landmark
+        // (R-4).
+        // -----------------------------------------------------------------------
+        const poiSlugs = validatedEntities.poiSlugs ?? [];
+        const singularDestinationIdForPoi =
+            typeof params.destinationId === 'string' ? params.destinationId : undefined;
+        const currentDestinationIdsForPoi: string[] | undefined =
+            Array.isArray(params.destinationIds) && params.destinationIds.length > 0
+                ? params.destinationIds
+                : singularDestinationIdForPoi === undefined
+                  ? undefined
+                  : [singularDestinationIdForPoi];
+
+        const poiResolution = await resolvePoiConstraint({
+            actor,
+            poiSlugs,
+            currentDestinationIds: currentDestinationIdsForPoi
+        });
+
+        let resolvedPoiSlugs: string[] = [];
+        if (poiResolution.kind === 'constrain') {
+            params.destinationIds = poiResolution.destinationIds;
+            params.latitude = poiResolution.lat;
+            params.longitude = poiResolution.long;
+            const radiusKm =
+                validatedEntities.radius === undefined
+                    ? DEFAULT_POI_PROXIMITY_RADIUS_KM
+                    : Math.min(validatedEntities.radius, MAX_POI_RADIUS_KM);
+            params.radius = radiusKm;
+            resolvedPoiSlugs = [...poiResolution.poiSlugs];
+        }
+
+        // -----------------------------------------------------------------------
         // Step 8 (T-006): Build the reply system prompt + messages, then call
         // streamText to stream the natural-language acknowledgment.
         //
@@ -690,7 +763,12 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
                 // When present the web client MUST skip the accommodation search
                 // and render the empty-results + explanation state (an empty
                 // destinationIds array would return the full catalog).
-                attractionLocationConflict
+                attractionLocationConflict,
+                // HOS-113 T-043: the canonical POI slug(s) resolved this turn
+                // (empty array when no landmark was mentioned, matched nothing,
+                // or conflicted with the location constraint — R-4, never a
+                // hallucinated slug).
+                poiSlugs: resolvedPoiSlugs
             },
             stream,
             meta

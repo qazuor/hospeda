@@ -120,7 +120,11 @@ const {
     nextNearbyResult,
     nearbyGetCalls,
     nextAttractionResolveResult,
-    attractionResolveCalls
+    attractionResolveCalls,
+    nextPoiGetBySlugResult,
+    nextPoiDestinationIdsResult,
+    poiGetBySlugCalls,
+    poiDestinationIdsCalls
 } = vi.hoisted(() => ({
     generateObjectCalls: [] as Array<{ feature: string; prompt: string; locale: string }>,
     nextGenerateObjectResult: {
@@ -207,7 +211,31 @@ const {
             | { data?: never; error: { code: string; message: string } }
     },
     /** HOS-111 T-016: records every attraction-resolve call for assertions. */
-    attractionResolveCalls: [] as Array<{ slugs: string[] }>
+    attractionResolveCalls: [] as Array<{ slugs: string[] }>,
+    /**
+     * HOS-113 §6.3: controls what the mocked `PointOfInterestService.getBySlug`
+     * returns per-test. Default (NOT_FOUND) means "no landmark resolvable" so
+     * pre-existing tests that never set `poiSlugs` are unaffected.
+     */
+    nextPoiGetBySlugResult: {
+        current: { error: { code: 'NOT_FOUND', message: 'not found' } } as
+            | { data: { id: string; slug: string; lat: number; long: number }; error?: never }
+            | { data?: never; error: { code: string; message: string } }
+    },
+    /**
+     * HOS-113 §6.3: controls what the mocked
+     * `PointOfInterestService.getDestinationIdsByPointOfInterestSlugs` returns
+     * per-test. Default (empty destinationIds) means "no constraint".
+     */
+    nextPoiDestinationIdsResult: {
+        current: { data: { destinationIds: [] } } as
+            | { data: { destinationIds: string[] }; error?: never }
+            | { data?: never; error: { code: string; message: string } }
+    },
+    /** HOS-113 §6.3: records every `getBySlug` call for assertions. */
+    poiGetBySlugCalls: [] as Array<{ slug: string }>,
+    /** HOS-113 §6.3: records every `getDestinationIdsByPointOfInterestSlugs` call for assertions. */
+    poiDestinationIdsCalls: [] as Array<{ slugs: string[] }>
 }));
 
 // ---------------------------------------------------------------------------
@@ -426,6 +454,21 @@ vi.mock('@repo/service-core', async (importOriginal) => {
                 attractionResolveCalls.push({ slugs: params.slugs });
                 return nextAttractionResolveResult.current;
             }
+        },
+        // HOS-113 §6.3: mirrors the AttractionService mock above — controllable
+        // per-test without a real database.
+        PointOfInterestService: class {
+            async getBySlug(_actor: unknown, slug: string) {
+                poiGetBySlugCalls.push({ slug });
+                return nextPoiGetBySlugResult.current;
+            }
+            async getDestinationIdsByPointOfInterestSlugs(
+                _actor: unknown,
+                params: { slugs: string[] }
+            ) {
+                poiDestinationIdsCalls.push({ slugs: params.slugs });
+                return nextPoiDestinationIdsResult.current;
+            }
         }
     };
 });
@@ -487,6 +530,11 @@ const CONCEPCION_DEL_URUGUAY_UUID = '33333333-3333-4333-8333-333333333333';
 /** HOS-111 T-016: fixed UUIDs for the "attraction-matched destinations" AC-11 fixtures. */
 const GUALEGUAYCHU_UUID = '44444444-4444-4444-8444-444444444444';
 const GUALEGUAY_UUID = '55555555-5555-4555-8555-555555555555';
+
+/** HOS-113 §6.3: fixed lat/long + slug for the AC-6 "autódromo" fixture. */
+const AUTODROMO_POI_SLUG = 'autodromo_concepcion_del_uruguay';
+const AUTODROMO_LAT = -32.423;
+const AUTODROMO_LONG = -58.2591;
 
 // ---------------------------------------------------------------------------
 // Test app
@@ -648,6 +696,11 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
         // HOS-111 T-016: reset attraction-resolution stub state ("no constraint" default).
         nextAttractionResolveResult.current = { data: { destinationIds: [] } };
         attractionResolveCalls.length = 0;
+        // HOS-113 §6.3: reset POI-resolution stub state ("no landmark resolvable" default).
+        nextPoiGetBySlugResult.current = { error: { code: 'NOT_FOUND', message: 'not found' } };
+        nextPoiDestinationIdsResult.current = { data: { destinationIds: [] } };
+        poiGetBySlugCalls.length = 0;
+        poiDestinationIdsCalls.length = 0;
         // T-007: default happy-path persistence — resolves with a fixed conversation id.
         nextPersistPromise.current = Promise.resolve({
             conversationId: 'ffffffff-ffff-4fff-8fff-ffffffffffff'
@@ -2295,6 +2348,346 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(payload.attractionLocationConflict).toBeDefined();
             expect(payload.attractionLocationConflict?.attractionSlugs).toEqual(['sede_carnaval']);
             expect(payload.params.destinationIds).toBeUndefined();
+        });
+    });
+
+    // =========================================================================
+    // Gate 11 — HOS-113 T-042: POI-constrained + proximity-centered search
+    //
+    // "cerca del autódromo" → resolves the matched landmark's coordinates and
+    // centers the accommodation search on them (proximity), plus (when an
+    // existing location constraint is present) narrows params.destinationIds
+    // the same intersect-or-no-match way attractions do.
+    // =========================================================================
+
+    describe('Gate 11 — HOS-113 T-042: POI-constrained + proximity-centered search', () => {
+        it('matched: poiSlugs resolves and centers the search on the landmark coordinates (no other location constraint)', async () => {
+            // Arrange
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { poiSlugs: [AUTODROMO_POI_SLUG] }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'busco algo cerca del autódromo' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            expect(filtersFrame).toBeDefined();
+
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+
+            expect(poiGetBySlugCalls).toEqual([{ slug: AUTODROMO_POI_SLUG }]);
+            expect(poiDestinationIdsCalls).toEqual([{ slugs: [AUTODROMO_POI_SLUG] }]);
+            // Reuses the EXISTING geo path (NG-2) — same params fields as an
+            // explicit latitude/longitude/radius search.
+            expect(payload.params.latitude).toBe(AUTODROMO_LAT);
+            expect(payload.params.longitude).toBe(AUTODROMO_LONG);
+            expect(payload.params.radius).toBe(5);
+            expect(payload.params.destinationIds).toEqual([CONCEPCION_DEL_URUGUAY_UUID]);
+            expect(payload.poiSlugs).toEqual([AUTODROMO_POI_SLUG]);
+        });
+
+        it('intersects with an already-resolved destinationId when it HAS the matched POI', async () => {
+            // Arrange
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: {
+                        destinationId: CONCEPCION_DEL_URUGUAY_UUID,
+                        poiSlugs: [AUTODROMO_POI_SLUG]
+                    }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID, GUALEGUAYCHU_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [
+                        { role: 'user', content: 'en Concepción del Uruguay, cerca del autódromo' }
+                    ],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+
+            expect(payload.params.destinationIds).toEqual([CONCEPCION_DEL_URUGUAY_UUID]);
+            expect(payload.params.latitude).toBe(AUTODROMO_LAT);
+            expect(payload.params.longitude).toBe(AUTODROMO_LONG);
+            expect(payload.poiSlugs).toEqual([AUTODROMO_POI_SLUG]);
+        });
+
+        it('honors a model-extracted radius (clamped) instead of the default 5km', async () => {
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { poiSlugs: [AUTODROMO_POI_SLUG], radius: 12 }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID] }
+            };
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'a 12km del autódromo' }],
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            expect(payload.params.radius).toBe(12);
+        });
+
+        it('does not call the POI resolver when poiSlugs is absent, and poiSlugs defaults to []', async () => {
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { destinationId: CONCEPCION_DEL_URUGUAY_UUID }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cabaña en Concepción del Uruguay' }],
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            expect(poiGetBySlugCalls).toHaveLength(0);
+            expect(poiDestinationIdsCalls).toHaveLength(0);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+            expect(payload.params.latitude).toBeUndefined();
+            expect(payload.poiSlugs).toEqual([]);
+        });
+
+        it('AC-6: an unresolvable/hallucinated landmark mention yields empty poiSlugs, no proximity, and no crash', async () => {
+            // Arrange: the model emitted a slug the DB does not recognise (the
+            // allowlist matcher never invents slugs, but this exercises the
+            // defensive path if it ever did, or if the seed data drifted —
+            // R-4 hallucination defence at the resolver layer too).
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.6, entities: { poiSlugs: ['faro_imaginario'] } },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // Default stub state already returns NOT_FOUND for getBySlug.
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cerca del faro imaginario' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert: the turn still succeeds end-to-end (non-fatal contract).
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+            expect(payload.poiSlugs).toEqual([]);
+            expect(payload.params.latitude).toBeUndefined();
+            expect(payload.params.longitude).toBeUndefined();
+            // getDestinationIdsByPointOfInterestSlugs is never reached — the
+            // primary landmark's coordinates could not be resolved first.
+            expect(poiDestinationIdsCalls).toHaveLength(0);
+        });
+
+        it('no-match: an incompatible destination + POI silently skips proximity (not surfaced as a conflict)', async () => {
+            // Arrange: the resolved destination does not carry the matched POI.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: {
+                        destinationId: GUALEGUAYCHU_UUID,
+                        poiSlugs: [AUTODROMO_POI_SLUG]
+                    }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'en Gualeguaychú, cerca del autódromo' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+            // The proximity constraint is skipped (no destination shares the
+            // landmark) but the existing location constraint is left intact —
+            // deliberately no dedicated "conflict" frame for POIs (out of
+            // scope for T-038..T-044).
+            expect(payload.params.destinationId).toBe(GUALEGUAYCHU_UUID);
+            expect(payload.params.latitude).toBeUndefined();
+            expect(payload.poiSlugs).toEqual([]);
+        });
+
+        it('non-fatal: a POI-resolution failure is logged and the turn still completes without proximity', async () => {
+            // Arrange
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.9, entities: { poiSlugs: [AUTODROMO_POI_SLUG] } },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                error: { code: 'INTERNAL_ERROR', message: 'DB unavailable' }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cerca del autódromo' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert: the turn still succeeds end-to-end (non-fatal contract).
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+            expect(payload.poiSlugs).toEqual([]);
+            expect(payload.params.latitude).toBeUndefined();
+            expect(mockApiLogger.warn).toHaveBeenCalled();
         });
     });
 });
