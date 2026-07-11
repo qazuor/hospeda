@@ -282,7 +282,21 @@ describe('NotificationScheduleService', () => {
 
             expectSuccess(result);
             expect(result.data).toHaveLength(1);
-            expect(asMock(modelMock.findDue)).toHaveBeenCalledWith(now, undefined);
+            // Signature is findDue(now, limit?, tx?) — with no limit and no ctx,
+            // both trailing positional args resolve to undefined (HOS-133).
+            expect(asMock(modelMock.findDue)).toHaveBeenCalledWith(now, undefined, undefined);
+        });
+
+        it('should forward the batch limit to model.findDue for deterministic capping (HOS-133)', async () => {
+            const now = new Date();
+            asMock(modelMock.findDue).mockResolvedValue([makeScheduleRow()]);
+
+            await service.findDue(SYSTEM_ACTOR, { now, limit: 100 });
+
+            // The cap must reach the model so it becomes a SQL LIMIT (with ORDER
+            // BY pending_notification_at ASC), not a post-hoc JS slice — otherwise
+            // overflow rows can be starved non-deterministically.
+            expect(asMock(modelMock.findDue)).toHaveBeenCalledWith(now, 100, undefined);
         });
 
         it('should return FORBIDDEN when actor lacks CONVERSATION_VIEW_ANY', async () => {

@@ -1,4 +1,4 @@
-import { and, eq, isNull, lte, sql } from 'drizzle-orm';
+import { and, asc, eq, isNull, lte, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import type {
     InsertConversationNotificationSchedule,
@@ -44,18 +44,28 @@ export class NotificationScheduleModel extends BaseModelImpl<SelectConversationN
      * column — the cron job deletes or cancels rows after dispatch. The filter
      * here covers rows that are active and past their scheduled time.
      *
+     * Results are ordered by `pending_notification_at ASC` (oldest-due first) so
+     * that, when `limit` caps the batch, the same overflow rows are never
+     * perpetually skipped — draining the backlog fairly instead of relying on
+     * Postgres's non-deterministic physical row order (HOS-133). The order
+     * column is backed by `conv_notif_schedules_pending_idx`.
+     *
      * @param now - Reference timestamp (typically `new Date()`)
+     * @param limit - Optional maximum number of rows to return. When omitted, all
+     *   due rows are returned. Pushing the cap into SQL (vs. a JS `.slice`) keeps
+     *   the batch deterministic and avoids fetching rows that would be discarded.
      * @param tx - Optional transaction client
-     * @returns Schedules ready for email dispatch
+     * @returns Schedules ready for email dispatch, oldest-due first
      */
     async findDue(
         now: Date,
+        limit?: number,
         tx?: DrizzleClient
     ): Promise<SelectConversationNotificationSchedule[]> {
         const db = this.getClient(tx);
-        const ctx = { now };
+        const ctx = { now, limit };
         try {
-            const rows = await db
+            const baseQuery = db
                 .select()
                 .from(conversationNotificationSchedules)
                 .where(
@@ -63,7 +73,10 @@ export class NotificationScheduleModel extends BaseModelImpl<SelectConversationN
                         lte(conversationNotificationSchedules.pendingNotificationAt, now),
                         isNull(conversationNotificationSchedules.cancelledAt)
                     )
-                );
+                )
+                .orderBy(asc(conversationNotificationSchedules.pendingNotificationAt));
+
+            const rows = limit === undefined ? await baseQuery : await baseQuery.limit(limit);
 
             logQuery(this.entityName, 'findDue', ctx, { count: rows.length });
             return rows;

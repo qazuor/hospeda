@@ -329,6 +329,28 @@ describe('Conversation Token Reminder Cron Job', () => {
     });
 
     // -------------------------------------------------------------------------
+    // Batch limit (HOS-133)
+    // -------------------------------------------------------------------------
+
+    describe('Batch limit', () => {
+        it('passes the batch cap to findDueReminders for both windows so it is enforced as a SQL LIMIT, not a JS slice', async () => {
+            await conversationTokenReminderJob.handler(mockContext);
+
+            // The cap must reach the service (and thence the model's ORDER BY
+            // expires_at ASC LIMIT n) for both windows so overflow tokens drain
+            // deterministically instead of being non-deterministically starved.
+            expect(mockFindDueReminders).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({ reminderType: 'day15', limit: 200 })
+            );
+            expect(mockFindDueReminders).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({ reminderType: 'day25', limit: 200 })
+            );
+        });
+    });
+
+    // -------------------------------------------------------------------------
     // findDueReminders error
     // -------------------------------------------------------------------------
 

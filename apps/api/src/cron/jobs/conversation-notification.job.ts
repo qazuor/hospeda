@@ -224,7 +224,10 @@ export const conversationNotificationJob: CronJobDefinition = {
             // ---------------------------------------------------------------
             // Phase 0 — find due schedules. No transaction, no advisory lock.
             // ---------------------------------------------------------------
-            const dueResult = await schedSvc.findDue(SYSTEM_ACTOR, { now: new Date() });
+            const dueResult = await schedSvc.findDue(SYSTEM_ACTOR, {
+                now: new Date(),
+                limit: MAX_BATCH_SIZE
+            });
 
             if (dueResult.error) {
                 logger.error('Failed to query due notification schedules', {
@@ -239,7 +242,10 @@ export const conversationNotificationJob: CronJobDefinition = {
                 };
             }
 
-            const dueSchedules = (dueResult.data ?? []).slice(0, MAX_BATCH_SIZE);
+            // The batch cap is enforced in SQL (ORDER BY pending_notification_at
+            // ASC LIMIT MAX_BATCH_SIZE) inside findDue, so no JS slice is needed
+            // here — overflow rows drain deterministically on the next run (HOS-133).
+            const dueSchedules = dueResult.data ?? [];
 
             logger.info('Due notification schedules found', { total: dueSchedules.length });
 

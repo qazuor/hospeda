@@ -1,4 +1,4 @@
-import { and, eq, gte, isNull, lte } from 'drizzle-orm';
+import { and, asc, eq, gte, isNull, lte } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import type {
     InsertConversationAccessToken,
@@ -143,28 +143,38 @@ export class AccessTokenModel extends BaseModelImpl<SelectConversationAccessToke
      * reminder flag has not yet been set. Used by the cron job to dispatch
      * expiry reminder emails at day-15 and day-25 marks.
      *
+     * Results are ordered by `expires_at ASC` (closest-to-expiry first) so that,
+     * when `limit` caps the batch, the same overflow tokens are never
+     * perpetually skipped — draining the backlog fairly instead of relying on
+     * Postgres's non-deterministic physical row order (HOS-133). The order
+     * column is backed by `conversation_access_tokens_expiresAt_idx`.
+     *
      * @param windowStart - Lower bound of the expiry window (inclusive)
      * @param windowEnd - Upper bound of the expiry window (inclusive)
      * @param reminderType - `'day15'` or `'day25'` — selects the corresponding
      *   `*_reminder_sent_at IS NULL` filter
+     * @param limit - Optional maximum number of rows to return. When omitted, all
+     *   due rows are returned. Pushing the cap into SQL (vs. a JS `.slice`) keeps
+     *   the batch deterministic and avoids fetching rows that would be discarded.
      * @param tx - Optional transaction client
-     * @returns Token rows due for a reminder dispatch
+     * @returns Token rows due for a reminder dispatch, closest-to-expiry first
      */
     async findDueReminders(
         windowStart: Date,
         windowEnd: Date,
         reminderType: 'day15' | 'day25',
+        limit?: number,
         tx?: DrizzleClient
     ): Promise<SelectConversationAccessToken[]> {
         const db = this.getClient(tx);
-        const ctx = { windowStart, windowEnd, reminderType };
+        const ctx = { windowStart, windowEnd, reminderType, limit };
         try {
             const reminderFilter =
                 reminderType === 'day15'
                     ? isNull(conversationAccessTokens.day15ReminderSentAt)
                     : isNull(conversationAccessTokens.day25ReminderSentAt);
 
-            const rows = await db
+            const baseQuery = db
                 .select()
                 .from(conversationAccessTokens)
                 .where(
@@ -174,7 +184,10 @@ export class AccessTokenModel extends BaseModelImpl<SelectConversationAccessToke
                         isNull(conversationAccessTokens.revokedAt),
                         reminderFilter
                     )
-                );
+                )
+                .orderBy(asc(conversationAccessTokens.expiresAt));
+
+            const rows = limit === undefined ? await baseQuery : await baseQuery.limit(limit);
 
             logQuery(this.entityName, 'findDueReminders', ctx, { count: rows.length });
             return rows;
