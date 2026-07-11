@@ -62,6 +62,16 @@ import {
 } from './attraction.permissions';
 
 /**
+ * Upper bound for a single destination's attraction-relation lookup in
+ * {@link AttractionService.resolveDestinationIdFilter}. The base model caps
+ * `pageSize` at `MAX_PAGE_SIZE` (200), so this pulls the full relation set
+ * (not the default page of 20) and keeps the `destinationId` id-filter
+ * complete. A single destination realistically never has this many
+ * attractions.
+ */
+const DESTINATION_RELATIONS_PAGE_SIZE = 200;
+
+/**
  * Service for managing attractions. Implements business logic, permissions, and hooks for Attraction entities.
  * @extends BaseCrudRelatedService
  */
@@ -540,7 +550,10 @@ export class AttractionService extends BaseCrudRelatedService<
      * Reuses the same relation lookup as {@link getAttractionsForDestination}:
      * query the join table for every `attractionId` mapped to the
      * destination, then constrain the main query with
-     * `inArray(attractions.id, ids)`.
+     * `inArray(attractions.id, ids)`. The relation lookup requests the full
+     * page ({@link DESTINATION_RELATIONS_PAGE_SIZE}) rather than the model's
+     * default of 20, so the id-filter is not silently truncated for a
+     * destination with many attractions.
      *
      * @param destinationId - The destination id filter from search params,
      *   if any.
@@ -558,7 +571,10 @@ export class AttractionService extends BaseCrudRelatedService<
         if (!destinationId) {
             return { empty: false, additionalConditions: [] };
         }
-        const { items: relations } = await this.relatedModel.findAll({ destinationId });
+        const { items: relations } = await this.relatedModel.findAll(
+            { destinationId },
+            { page: 1, pageSize: DESTINATION_RELATIONS_PAGE_SIZE }
+        );
         if (relations.length === 0) {
             return { empty: true, additionalConditions: [] };
         }
@@ -571,7 +587,7 @@ export class AttractionService extends BaseCrudRelatedService<
     protected async _executeSearch(
         params: AttractionSearchInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<Attraction>> {
         const where = this.buildSearchWhere(params);
         const { empty, additionalConditions } = await this.resolveDestinationIdFilter(
@@ -580,7 +596,20 @@ export class AttractionService extends BaseCrudRelatedService<
         if (empty) {
             return { items: [], total: 0 };
         }
-        const { items, total } = await this.model.findAll(where, undefined, additionalConditions);
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params
+        // (SPEC-088) and re-publishes them via ctx.pagination. Forward them
+        // explicitly so the model uses the caller-provided page/pageSize
+        // instead of falling back to its default of 20.
+        const { items, total } = await this.model.findAll(
+            where,
+            {
+                page: ctx.pagination?.page ?? 1,
+                pageSize: ctx.pagination?.pageSize ?? 10,
+                sortBy: ctx.pagination?.sortBy,
+                sortOrder: ctx.pagination?.sortOrder
+            },
+            additionalConditions
+        );
         return { items, total };
     }
 

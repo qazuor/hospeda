@@ -90,18 +90,24 @@ describe('AttractionService destinationId search filter (HOS-125 regression — 
             expect(result.error).toBeUndefined();
             expect(result.data?.items).toHaveLength(2);
 
-            // The relation lookup was resolved via the join table.
-            expect(relatedModel.findAll).toHaveBeenCalledWith({ destinationId });
+            // The relation lookup was resolved via the join table, requesting
+            // the FULL relation page (not the model's default of 20) so the
+            // id-filter is never silently truncated for a busy destination.
+            expect(relatedModel.findAll).toHaveBeenCalledWith(
+                { destinationId },
+                { page: 1, pageSize: 200 }
+            );
 
             // `where` reaching model.findAll must NOT carry `destinationId` —
             // that column does not exist on `attractions`.
-            const [whereArg, , additionalConditionsArg] = asMock(model.findAll).mock.calls[0] as [
-                Record<string, unknown>,
-                unknown,
-                unknown[]
-            ];
+            const [whereArg, optionsArg, additionalConditionsArg] = asMock(model.findAll).mock
+                .calls[0] as [Record<string, unknown>, Record<string, unknown>, unknown[]];
             expect(whereArg).not.toHaveProperty('destinationId');
             expect(whereArg).toEqual({});
+
+            // Caller-provided pagination is forwarded to the model (SPEC-088
+            // ctx.pagination), not dropped to the default page.
+            expect(optionsArg).toMatchObject({ page: 1, pageSize: 10 });
 
             // The id filter is a real `inArray(attractions.id, ids)` condition —
             // asserted via the spied real `inArray`.
@@ -240,6 +246,51 @@ describe('AttractionService destinationId search filter (HOS-125 regression — 
             expect(result.data).toEqual([]);
             expect(result.pagination.total).toBe(0);
             expect(model.findAll).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * HOS-125 Round-1 review follow-ups: the join-table resolution must NOT be
+     * capped at the model's default page of 20 (which would silently truncate
+     * the id-filter for a destination with many attractions), and the public
+     * search path must honor caller-provided pagination (SPEC-088 ctx.pagination)
+     * rather than always returning page 1.
+     */
+    describe('pagination robustness', () => {
+        it('should request the full relation page so >20 attractions are not truncated', async () => {
+            const manyRelations = Array.from({ length: 25 }, (_, i) => ({
+                destinationId,
+                attractionId: getMockId('attraction', `attr-${i}`) as AttractionIdType
+            }));
+            asMock(relatedModel.findAll).mockResolvedValue({ items: manyRelations });
+            asMock(model.findAll).mockResolvedValue({ items: [attractionA], total: 1 });
+
+            await service.search(actor, { destinationId, page: 1, pageSize: 10 });
+
+            // The relation lookup asked for a page large enough to hold every
+            // relation (not the default 20), so all 25 ids reach the id-filter.
+            expect(relatedModel.findAll).toHaveBeenCalledWith(
+                { destinationId },
+                { page: 1, pageSize: 200 }
+            );
+            const [, ids] = asMock(mockedInArray).mock.calls[0] as [unknown, string[]];
+            expect(ids).toHaveLength(25);
+        });
+
+        it('should forward caller pagination to model.findAll on a plain search (no destinationId)', async () => {
+            asMock(model.findAll).mockResolvedValue({ items: [attractionA], total: 1 });
+
+            await service.search(actor, { name: 'Attraction A', page: 3, pageSize: 5 });
+
+            // No destinationId -> no join-table lookup at all.
+            expect(relatedModel.findAll).not.toHaveBeenCalled();
+            const [, optionsArg] = asMock(model.findAll).mock.calls[0] as [
+                unknown,
+                Record<string, unknown>
+            ];
+            // Caller-provided page/pageSize reach the model instead of the
+            // default page-1/20 (regression guard for the ignored-pagination bug).
+            expect(optionsArg).toMatchObject({ page: 3, pageSize: 5 });
         });
     });
 });
