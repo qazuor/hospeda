@@ -5,11 +5,14 @@
  *
  * Deliberately NOT resolved on the `/auth/me` hot path: that endpoint is hit by
  * every visitor (including anonymous ones on SSG pages) and must stay cheap.
- * Plan resolution instead uses the dedicated PROTECTED entitlements endpoint and
- * runs client-side, non-blocking, AFTER identify — so it can never slow the
- * public auth check or block rendering.
+ * Plan resolution instead reads through the shared `@/lib/entitlements-cache`
+ * module (the same 60 s cache `useMyEntitlements` uses), runs client-side,
+ * non-blocking, AFTER identify — so it can never slow the public auth check or
+ * block rendering, and never fires a SECOND network call for data the hook may
+ * already be fetching on the same page load.
  */
 
+import { getEntitlementsCached } from '@/lib/entitlements-cache';
 import { setPersonProperties } from './posthog-client';
 
 /**
@@ -26,35 +29,26 @@ export function __resetPlanPropertiesSyncedForTests(): void {
 }
 
 /**
- * Fetch the authenticated user's plan/tier from the protected entitlements
- * endpoint and set it as PostHog person properties. Best-effort and
+ * Fetch the authenticated user's plan/tier from the shared entitlements
+ * cache and set it as PostHog person properties. Best-effort and
  * non-blocking: any failure is swallowed. Users without an active paid
  * subscription report `plan: 'free'` / `plan_status: 'none'`.
  *
- * @param input - The API base URL (from `getApiUrl()`).
+ * @param _input - Unused. Kept for call-site backward compatibility; the API
+ *   base URL is now resolved internally by `@/lib/entitlements-cache`.
  */
-export async function syncPlanPersonProperties(input: { apiUrl: string }): Promise<void> {
+export async function syncPlanPersonProperties(_input: { apiUrl: string }): Promise<void> {
     if (synced || typeof window === 'undefined') return;
     synced = true;
     try {
-        const response = await fetch(`${input.apiUrl}/api/v1/protected/users/me/entitlements`, {
-            credentials: 'include'
-        });
-        if (!response.ok) {
-            // 401 (not authenticated) / transient error — allow a later retry.
-            synced = false;
-            return;
-        }
-        const json = (await response.json()) as {
-            data?: { plan?: { slug: string; status: string } | null };
-        };
-        const plan = json.data?.plan ?? null;
+        const { plan } = await getEntitlementsCached();
         setPersonProperties({
             plan: plan?.slug ?? 'free',
             plan_status: plan?.status ?? 'none'
         });
     } catch {
-        // Analytics-only: never surface. Allow a later retry.
+        // 401 (not authenticated) / network / transient error — swallow and
+        // allow a later retry.
         synced = false;
     }
 }

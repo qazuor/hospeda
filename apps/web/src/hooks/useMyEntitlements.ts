@@ -6,32 +6,26 @@
  * convenience object so callers can do `has('can_use_rich_description')`
  * instead of checking raw string arrays.
  *
- * Caches the result for 60 s (matching the API-side cache TTL) so that
- * all entitlement-gated fields on the same page share a single in-flight
- * request.
+ * The fetch + 60 s cache (matching the API-side cache TTL) live in the
+ * shared `@/lib/entitlements-cache` module — `syncPlanPersonProperties`
+ * (PostHog analytics) reads through the same cache, so an authenticated
+ * page load hits the endpoint at most once per TTL window instead of once
+ * per consumer.
  *
  * @module hooks/useMyEntitlements
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSession } from '@/lib/auth-client';
-import { getApiUrl } from '@/lib/env';
+import type { EntitlementsData } from '@/lib/entitlements-cache';
+import {
+    clearEntitlementsCache as clearSharedEntitlementsCache,
+    getEntitlementsCached
+} from '@/lib/entitlements-cache';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-/** Parsed response shape from the entitlements endpoint. */
-interface EntitlementsData {
-    readonly entitlements: readonly string[];
-    readonly limits: Readonly<Record<string, number>>;
-    readonly plan: {
-        readonly slug: string;
-        readonly name: string;
-        readonly status: string;
-    } | null;
-    readonly asOf: string;
-}
 
 /** Return type for useMyEntitlements. */
 export interface UseMyEntitlementsReturn {
@@ -52,67 +46,15 @@ export interface UseMyEntitlementsReturn {
 }
 
 // ---------------------------------------------------------------------------
-// Cache (module-level singleton — shared across all hook instances)
+// Cache
 // ---------------------------------------------------------------------------
 
-const CACHE_TTL_MS = 60_000;
-
-interface CacheEntry {
-    readonly data: EntitlementsData;
-    readonly timestamp: number;
-}
-
-let sharedCache: CacheEntry | null = null;
-
-function getCachedData(): EntitlementsData | null {
-    if (!sharedCache) return null;
-    if (Date.now() - sharedCache.timestamp > CACHE_TTL_MS) {
-        sharedCache = null;
-        return null;
-    }
-    return sharedCache.data;
-}
-
-function setCachedData(data: EntitlementsData): void {
-    sharedCache = { data, timestamp: Date.now() };
-}
-
 /**
- * Clear the module-level entitlements cache.
+ * Clear the shared entitlements cache (see `@/lib/entitlements-cache`).
  * Exported for test isolation only — not part of the public API.
  */
 export function clearEntitlementsCache(): void {
-    sharedCache = null;
-}
-
-// ---------------------------------------------------------------------------
-// Fetcher
-// ---------------------------------------------------------------------------
-
-async function fetchEntitlements(): Promise<EntitlementsData> {
-    const response = await fetch(`${getApiUrl()}/api/v1/protected/users/me/entitlements`, {
-        credentials: 'include',
-        headers: { Accept: 'application/json' }
-    });
-
-    if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        const message =
-            body && typeof body === 'object' && 'error' in body
-                ? (body as { error: { message: string } }).error.message
-                : `Entitlements request failed with status ${response.status}`;
-        throw new Error(message);
-    }
-
-    const raw = await response.json();
-    // API wraps in { success, data } — unwrap
-    const payload = raw?.data ?? raw;
-    return {
-        entitlements: payload.entitlements ?? [],
-        limits: payload.limits ?? {},
-        plan: payload.plan ?? null,
-        asOf: payload.asOf ?? ''
-    };
+    clearSharedEntitlementsCache();
 }
 
 // ---------------------------------------------------------------------------
@@ -136,13 +78,14 @@ async function fetchEntitlements(): Promise<EntitlementsData> {
  */
 export function useMyEntitlements(): UseMyEntitlementsReturn {
     // Initial state is deliberately hydration-safe: it must NOT depend on the
-    // module-level cache. During SSR the cache is always empty (isLoading=true),
-    // but on the client another island may have already populated it, so a lazy
-    // `() => getCachedData()` initializer would yield a DIFFERENT first render on
-    // the client (isLoading=false) and trip React's hydration mismatch on
-    // `aria-busy` (HOS-85). Both server and the first client render therefore
-    // start from `null`/`true`; the cache is read in the effect below, one tick
-    // later, once hydration has already matched.
+    // shared entitlements cache. During SSR the cache is always empty
+    // (isLoading=true), but on the client another island may have already
+    // populated it, so a lazy `() => getEntitlementsCached()` initializer
+    // would yield a DIFFERENT first render on the client (isLoading=false)
+    // and trip React's hydration mismatch on `aria-busy` (HOS-85). Both
+    // server and the first client render therefore start from `null`/`true`;
+    // the cache is read in the effect below, one tick later, once hydration
+    // has already matched.
     const [data, setData] = useState<EntitlementsData | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<Error | null>(null);
@@ -181,20 +124,15 @@ export function useMyEntitlements(): UseMyEntitlementsReturn {
             return;
         }
 
-        // If we have cached data, skip fetch
-        const cached = getCachedData();
-        if (cached) {
-            setData(cached);
-            setIsLoading(false);
-            return;
-        }
-
+        // getEntitlementsCached() resolves from the shared cache when fresh
+        // (skipping the network entirely) or shares a single in-flight fetch
+        // with any other consumer racing in at the same time (e.g.
+        // `syncPlanPersonProperties`), then populates the cache for both.
         let cancelled = false;
 
-        fetchEntitlements()
+        getEntitlementsCached()
             .then((result) => {
                 if (cancelled || !mountedRef.current) return;
-                setCachedData(result);
                 setData(result);
                 setError(null);
                 setIsLoading(false);
