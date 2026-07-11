@@ -2690,4 +2690,129 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(mockApiLogger.warn).toHaveBeenCalled();
         });
     });
+
+    // =========================================================================
+    // AC-6 (HOS-113 T-044) — AI chat POI resolution acceptance test
+    //
+    // Consolidated end-to-end checkpoint (as opposed to Gate 11's fine-grained,
+    // one-concern-per-test breakdown): a single scenario per outcome, each
+    // asserting every AC-6 bullet point together — resolved poiSlugs,
+    // proximity filtering applied via the landmark's real seeded coordinates
+    // (`autodromo_concepcion_del_uruguay`, cross-checked against
+    // `packages/seed/src/data/pointOfInterest/001-*.json`), and the
+    // no-hallucination / no-crash guarantee for an unresolvable mention.
+    // =========================================================================
+
+    describe('AC-6 (HOS-113 T-044) — AI chat POI resolution acceptance test', () => {
+        it('a NL mention of a seeded landmark resolves poiSlugs AND applies proximity ranking via the landmark coordinates', async () => {
+            // Arrange: "cerca del autódromo" is a real allowlisted alias
+            // (poi-allowlist.ts) for the real seeded slug
+            // autodromo_concepcion_del_uruguay (lat -32.423, long -58.2591).
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.92,
+                    entities: { poiSlugs: [AUTODROMO_POI_SLUG] }
+                },
+                usage: { promptTokens: 14, completionTokens: 7, totalTokens: 21 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [
+                        { role: 'user', content: 'quiero un alojamiento cerca del autódromo' }
+                    ],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            expect(filtersFrame).toBeDefined();
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+
+            // AC-6 bullet 1: the response's poiSlugs includes the resolved slug.
+            expect(payload.poiSlugs).toEqual([AUTODROMO_POI_SLUG]);
+
+            // AC-6 bullet 2: proximity filtering was applied using the POI's
+            // real seeded coordinates — the same latitude/longitude/radius
+            // params `AccommodationService.search` already consumes to build
+            // the Haversine `WITHIN RADIUS` clause (T-033, NG-2). This mirrors
+            // T-036's real-DB assertion at the boundary shared with this route.
+            expect(payload.params.latitude).toBe(AUTODROMO_LAT);
+            expect(payload.params.longitude).toBe(AUTODROMO_LONG);
+            expect(payload.params.radius).toBe(5);
+
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+        });
+
+        it('an unresolvable/hallucinated landmark mention yields empty poiSlugs with no invented slug and no crash', async () => {
+            // Arrange: no allowlist term matches this text, so
+            // entities.poiSlugs would normally stay absent — but even if a
+            // future provider drifts and emits an unrecognised slug directly,
+            // the resolver must degrade gracefully rather than invent
+            // destinations/coordinates for it (R-4).
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.4,
+                    entities: { poiSlugs: ['castillo_inventado'] }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // Default stub state: getBySlug → NOT_FOUND.
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cerca del castillo inventado' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert: the turn completes normally — no 5xx, no unhandled rejection.
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+
+            // AC-6 bullet 3: no hallucinated slug, no proximity applied, no crash.
+            expect(payload.poiSlugs).toEqual([]);
+            expect(payload.params.latitude).toBeUndefined();
+            expect(payload.params.longitude).toBeUndefined();
+            expect(payload.params.destinationIds).toBeUndefined();
+
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+        });
+    });
 });
