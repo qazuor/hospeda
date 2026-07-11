@@ -134,6 +134,11 @@ export const userBookmarksApi = {
     checkBulk(body: {
         readonly entityType: BookmarkEntityType;
         readonly entityIds: readonly string[];
+        /**
+         * SSR-only: raw `Cookie` header forwarded to the API so the request
+         * carries the user's session. Browser callers should omit this.
+         */
+        readonly cookieHeader?: string;
     }): Promise<
         ApiResult<{
             readonly checks: Readonly<
@@ -144,9 +149,11 @@ export const userBookmarksApi = {
             >;
         }>
     > {
+        const { cookieHeader, ...rest } = body;
         return apiClient.postProtected({
             path: `${PROTECTED}/user-bookmarks/check-bulk`,
-            body
+            body: rest,
+            cookieHeader
         });
     },
 
