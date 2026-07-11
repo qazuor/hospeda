@@ -76,10 +76,12 @@ const DEFAULT_PROPS = {
     currentPath: '/es/',
     logoSrc: '/logo.svg',
     homeHref: '/es/',
-    user: {
+    initialUser: {
+        id: 'u1',
         name: 'Ana García',
         email: 'ana@example.com'
-    }
+    },
+    initialRole: null as string | null
 };
 
 function renderMenu(overrides: Partial<typeof DEFAULT_PROPS> = {}) {
@@ -254,13 +256,46 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it('does not fetch permissions for a guest (no user prop)', () => {
+    // HOS: MobileMenu no longer skips resolution for a guest SSR hint. Since
+    // it no longer runs inside a server:defer island, `initialUser: null` on
+    // most public pages is only a HINT (middleware didn't parse the
+    // session there) — it may be WRONG for an actually-signed-in visitor.
+    // The hook must reconcile against the cache/fetch the same way UserMenu
+    // does, instead of trusting the hint outright (the old `skip: !user`
+    // behavior this test used to assert).
+    it('reconciles a guest hint with no cache present by fetching once (may be a signed-in visitor on an unparsed page)', async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ data: { actor: null, isAuthenticated: false } })
+        });
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        renderMenu({ initialUser: null });
+        openMenu();
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    it('does not fetch when a fresh guest cache already agrees with the guest hint (steady state, e.g. after UserMenu already resolved it)', () => {
+        sessionStorage.setItem(
+            AUTH_ME_CACHE_KEY,
+            JSON.stringify({
+                isAuthenticated: false,
+                user: null,
+                permissions: [],
+                role: null,
+                cachedAt: Date.now()
+            })
+        );
         const fetchMock = vi.fn();
         global.fetch = fetchMock as unknown as typeof fetch;
 
-        renderMenu({ user: null });
+        renderMenu({ initialUser: null });
         openMenu();
 
         expect(fetchMock).not.toHaveBeenCalled();
+        expect(screen.queryByRole('link', { name: /iniciar sesión/i })).toBeInTheDocument();
     });
 });

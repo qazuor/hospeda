@@ -3,7 +3,8 @@
  *
  * Pipeline (in order):
  * 1. Skip static assets and API routes
- * 2. Handle Server Island requests (parse session, skip locale enforcement)
+ * 2. Handle Server Island requests (skip locale enforcement; no session
+ *    parse — see the Step 2 block below for why)
  * 3. Enforce trailing slash (301 redirect before Astro resolves the route)
  * 4. Extract and validate locale from URL path; redirect invalid locales to default
  * 5. Set validated locale in context.locals
@@ -71,14 +72,23 @@ export const onRequest = defineMiddleware(async (context, next) => {
         return next();
     }
 
-    // Step 2: Server Island requests need session data but NOT locale validation.
-    // Astro routes Server Island requests via /_server-islands/* with their own
-    // internal resolution; injecting a locale redirect here would break them.
+    // Step 2: Server Island requests skip locale validation (Astro routes them
+    // via /_server-islands/* with their own internal resolution; injecting a
+    // locale redirect here would break them).
+    //
+    // This block used to ALSO call `parseSessionUser()` unconditionally for
+    // every Server Island request. `server:defer` islands are each a SEPARATE
+    // browser→server HTTP request, so an island mounted on every page (the
+    // mobile menu) fired an extra `get-session` call on EVERY page view
+    // site-wide, flooding the API's `auth` rate-limit bucket (50/5min per IP).
+    // Removed: the two islands that used to rely on this (`MobileMenuIsland`,
+    // `NextEventsSection`) now resolve auth state themselves — the mobile menu
+    // reads the shared client-side `authMeSnapshot` cache (see
+    // `MobileMenuIsland.astro`'s file doc), and `NextEventsSection` uses an
+    // optimistic client-hydration fallback (see its own comments) — neither
+    // depends on `Astro.locals.user` being populated here anymore.
     if (isServerIslandRoute({ path })) {
-        const user = await parseSessionUser({
-            cookieHeader: context.request.headers.get('cookie')
-        });
-        (context.locals as { user: typeof user }).user = user;
+        (context.locals as { user: null }).user = null;
         return next();
     }
 

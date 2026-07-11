@@ -173,25 +173,51 @@ describe('pages/[lang]/destinos/[slug]/eventos/index.astro — event bulk check'
 
 // ---------------------------------------------------------------------------
 // NextEventsSection.astro — homepage server:defer events bento
+//
+// HOS fix (get-session flood): this section's `isAuthenticated` used to come
+// from `Astro.locals.user`, populated only because middleware unconditionally
+// parsed the session for every `/_server-islands/*` request — the same
+// mechanism that made the mobile-menu island flood the API's `auth`
+// rate-limit bucket (it ran on EVERY page view). That middleware behavior
+// was removed, so `Astro.locals.user` is no longer reliable here. The SSR
+// bulk favorite pre-check (`checkBulk`) is gone with it; each card's
+// FavoriteButton now resolves its own favorited state via its existing
+// client-side hydration fallback (`checkStatus` on mount, real browser
+// cookie). See NextEventsSection.astro's isAuthenticated comment.
 // ---------------------------------------------------------------------------
 
-describe('components/sections/NextEventsSection.astro — event bulk check', () => {
+describe('components/sections/NextEventsSection.astro — no SSR bulk check (client-hydrated fallback)', () => {
     const src = readSrc('components/sections/NextEventsSection.astro');
 
-    assertBulkCheckPattern(src, 'NextEventsSection');
-
-    it('calls checkBulk with entityType EVENT', () => {
-        expect(src).toContain("entityType: 'EVENT'");
+    it('does NOT read Astro.locals.user (unreliable for server:defer requests post-fix)', () => {
+        // The prose comment explaining the fix legitimately mentions the
+        // literal string — assert on the actual read expression instead.
+        expect(src).not.toContain('Boolean(Astro.locals.user)');
+        expect(src).not.toMatch(/=\s*Astro\.locals\.user/);
     });
 
-    it('creates resolvedEventItems', () => {
-        expect(src).toContain('resolvedEventItems');
+    it('does NOT call checkBulk (SSR bulk pre-check removed)', () => {
+        expect(src).not.toContain('checkBulk');
+        expect(src).not.toContain("from '@/lib/api/endpoints-protected'");
+    });
+
+    it('hardcodes isAuthenticated to true so FavoriteButton always attempts client hydration', () => {
+        expect(src).toContain('const isAuthenticated = true;');
+    });
+
+    it('resolvedEventItems is a straight alias of eventItems (no favorite injection)', () => {
+        expect(src).toContain('const resolvedEventItems: EventCardData[] = eventItems;');
     });
 
     it('splits resolvedEventItems into bento grid zones', () => {
-        // featuredEvent and topEvents derive from resolvedEventItems
+        // featuredEvent and topEvents still derive from resolvedEventItems —
+        // this logic is unrelated to the removed bulk check.
         expect(src).toContain('resolvedEventItems.find(');
         expect(src).toContain('resolvedEventItems.filter(');
+    });
+
+    it('still forwards isAuthenticated to every event card', () => {
+        expect(src).toContain('isAuthenticated={isAuthenticated}');
     });
 });
 
