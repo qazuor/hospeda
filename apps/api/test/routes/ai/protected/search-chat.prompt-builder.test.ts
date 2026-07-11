@@ -46,6 +46,19 @@ describe('buildConversationalSearchPrompt', () => {
         expect(prompt).toContain('Allowed feature slugs for this request');
     });
 
+    it('embeds the locale destination attraction and point-of-interest allowlist lines (HOS-113 §6.3)', () => {
+        const prompt = buildConversationalSearchPrompt({
+            history: [],
+            message: MESSAGE,
+            locale: 'es'
+        });
+        expect(prompt).toContain('Allowed destination attraction slugs for this request');
+        expect(prompt).toContain('Allowed destination point-of-interest slugs for this request');
+        // Flattened + de-duplicated: the curated allowlist slugs appear verbatim.
+        expect(prompt).toContain('autodromo_concepcion_del_uruguay');
+        expect(prompt).toContain('entities.poiSlugs');
+    });
+
     it('embeds the new user message verbatim in triple quotes', () => {
         const prompt = buildConversationalSearchPrompt({
             history: [],

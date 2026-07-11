@@ -43,6 +43,7 @@ import type {
 } from '@repo/schemas';
 import { AMENITY_ALLOWLIST, FEATURE_ALLOWLIST } from './amenity-allowlist.js';
 import { ATTRACTION_ALLOWLIST } from './attraction-allowlist.js';
+import { POI_ALLOWLIST } from './poi-allowlist.js';
 
 /**
  * Maximum number of trailing conversation messages embedded in the prompt.
@@ -81,10 +82,18 @@ const buildAllowlistLines = (locale: 'es' | 'en' | 'pt'): readonly string[] => {
     >;
     const attractionSlugs = [...new Set(Object.values(attractionDict).flat())].join(', ');
 
+    // HOS-113 §6.3: POI allowlist values are also arrays of slugs (mirroring
+    // the attraction shape) — flatten before de-duplicating.
+    const poiDict = (POI_ALLOWLIST[locale] ?? POI_ALLOWLIST.es) as Readonly<
+        Record<string, readonly string[]>
+    >;
+    const poiSlugs = [...new Set(Object.values(poiDict).flat())].join(', ');
+
     return [
         `Allowed amenity slugs for this request (match user mentions to these; ignore any amenity not in this list): ${amenitySlugs}`,
         `Allowed feature slugs for this request (environment/atmosphere/aptitude/style only; match user mentions to these; ignore any feature not in this list): ${featureSlugs}`,
-        `Allowed destination attraction slugs for this request (match user mentions of a destination attraction, e.g. "a city with carnival", to these canonical slugs in entities.attractionSlugs; ignore any attraction not in this list — never invent a slug): ${attractionSlugs}`
+        `Allowed destination attraction slugs for this request (match user mentions of a destination attraction, e.g. "a city with carnival", to these canonical slugs in entities.attractionSlugs; ignore any attraction not in this list — never invent a slug): ${attractionSlugs}`,
+        `Allowed destination point-of-interest slugs for this request (match user mentions of a specific named landmark, e.g. "near the autódromo", to these canonical slugs in entities.poiSlugs; ignore any landmark not in this list — never invent a slug): ${poiSlugs}`
     ];
 };
 
