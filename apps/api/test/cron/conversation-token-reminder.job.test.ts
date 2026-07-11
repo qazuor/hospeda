@@ -1,18 +1,32 @@
 /**
  * Tests for the Conversation Token Reminder Cron Job
  *
- * Mocking strategy: mocks @repo/service-core (AccessTokenService) and @repo/email
- * so no real DB or email is needed.
+ * Mocking strategy: mocks @repo/db, @repo/service-core, @repo/email, and
+ * @repo/notifications so no real DB or email is needed. `resolveTokenContext`
+ * runs for REAL (imported, not mocked) against a fake `db`/`AccommodationModel`
+ * pair, mirroring the technique used for `resolveNotification` in
+ * `conversation-notification.job.test.ts`.
  *
  * Test scenarios:
- * - Job configuration (name, schedule, enabled flag)
- * - Advisory lock not acquired (skipped)
- * - Dry run mode (no emails dispatched)
- * - No due reminders (processed = 0)
- * - Day-15 reminder dispatched and marked
- * - Day-25 reminder dispatched and marked
- * - Email failure (errors counter incremented, reminder NOT marked)
- * - Missing RESEND API key (skips dispatch)
+ * - Job configuration (name, schedule, enabled flag, no advisory lock)
+ * - Dry run mode (skips email, returns wouldProcess counts, no sends/stamps)
+ * - Empty due lists for both windows (processed = 0)
+ * - findDueReminders error path (per window)
+ * - Missing HOSPEDA_EMAIL_API_KEY → skips dispatch
+ * - Unhandled exception → failure result
+ * - HOS-129: `sendEmail` never runs while a write transaction is open, and no
+ *   `pg_try_advisory_xact_lock` (or any other raw) statement is ever executed
+ *   anywhere in this job — the advisory lock was REMOVED entirely (AC-1/AC-3)
+ * - HOS-129: a successful send persists exactly one `markReminderSent` stamp
+ *   for that token/reminderType (AC-2)
+ * - HOS-129: a failed send does NOT persist a stamp and is counted as an error
+ * - HOS-129: a `markReminderSent` failure (or throw) AFTER a successful send is
+ *   counted as an error, logged, and does not propagate/rethrow (AC-4)
+ * - HOS-129: both day15 and day25 windows are processed in a normal run (AC-5)
+ *
+ * Resolve-branch coverage (conversation deleted, no anonymousEmail,
+ * accommodation missing) lives in
+ * `apps/api/test/cron/conversation-token-reminder.resolve.test.ts`.
  *
  * @module test/cron/conversation-token-reminder
  */
@@ -29,31 +43,28 @@ const {
     mockFindDueReminders,
     mockMarkReminderSent,
     mockSendEmail,
-    mockDbSelect,
-    mockDbSelectFrom,
-    mockDbSelectFromWhere,
-    mockDbSelectFromWhereLimit,
-    mockAccommodationFindById
+    mockAccommodationFindById,
+    dbRowsState,
+    txOpenState
 } = vi.hoisted(() => {
-    const mockWithTransaction = vi.fn();
-    const mockFindDueReminders = vi.fn();
-    const mockMarkReminderSent = vi.fn();
-    const mockSendEmail = vi.fn();
-    const mockDbSelectFromWhereLimit = vi.fn();
-    const mockDbSelectFromWhere = vi.fn().mockReturnValue({ limit: mockDbSelectFromWhereLimit });
-    const mockDbSelectFrom = vi.fn().mockReturnValue({ where: mockDbSelectFromWhere });
-    const mockDbSelect = vi.fn().mockReturnValue({ from: mockDbSelectFrom });
-    const mockAccommodationFindById = vi.fn();
+    const dbRowsState = {
+        conversationsById: new Map<string, Record<string, unknown>>(),
+        accommodationsById: new Map<string, Record<string, unknown>>()
+    };
+    const txOpenState = { open: false };
+
+    const mockAccommodationFindById = vi.fn(async (id: string) => {
+        return dbRowsState.accommodationsById.get(id) ?? null;
+    });
+
     return {
-        mockWithTransaction,
-        mockFindDueReminders,
-        mockMarkReminderSent,
-        mockSendEmail,
-        mockDbSelect,
-        mockDbSelectFrom,
-        mockDbSelectFromWhere,
-        mockDbSelectFromWhereLimit,
-        mockAccommodationFindById
+        mockWithTransaction: vi.fn(),
+        mockFindDueReminders: vi.fn(),
+        mockMarkReminderSent: vi.fn(),
+        mockSendEmail: vi.fn(),
+        mockAccommodationFindById,
+        dbRowsState,
+        txOpenState
     };
 });
 
@@ -76,20 +87,45 @@ vi.mock('@repo/notifications', () => ({
     ConversationTokenExpiringDay25: vi.fn().mockReturnValue({ type: 'mock-day25-template' })
 }));
 
-vi.mock('@repo/db', () => ({
-    withTransaction: (callback: Parameters<typeof mockWithTransaction>[0]) =>
-        mockWithTransaction(callback),
-    getDb: vi.fn().mockReturnValue({
-        select: mockDbSelect
-    }),
-    sql: vi.fn((strings: TemplateStringsArray) => ({ sql: strings.join('') })),
-    conversations: { id: 'id', deletedAt: 'deletedAt', accommodationId: 'accommodationId' },
-    AccommodationModel: vi.fn().mockImplementation(function () {
-        return {
-            findById: mockAccommodationFindById
-        };
-    })
-}));
+vi.mock('@repo/db', () => {
+    const conversationsTableRef = { id: 'id', deletedAt: 'deletedAt' };
+
+    /** Extracts the id compared via `eq(...)`, possibly wrapped in `and(...)`. */
+    const extractEqVal = (whereClause: unknown): string | undefined => {
+        const clause = whereClause as { and?: unknown[]; eq?: { val?: string } };
+        if (clause?.and) {
+            const eqEntry = clause.and.find(
+                (entry): entry is { eq: { val?: string } } =>
+                    typeof entry === 'object' && entry !== null && 'eq' in entry
+            );
+            return eqEntry?.eq?.val;
+        }
+        return clause?.eq?.val;
+    };
+
+    return {
+        withTransaction: mockWithTransaction,
+        getDb: vi.fn().mockImplementation(() => ({
+            select: vi.fn(() => ({
+                from: vi.fn(() => ({
+                    where: vi.fn((whereClause: unknown) => ({
+                        limit: vi.fn().mockImplementation(async () => {
+                            const conversationId = extractEqVal(whereClause);
+                            const row = conversationId
+                                ? dbRowsState.conversationsById.get(conversationId)
+                                : undefined;
+                            return row ? [row] : [];
+                        })
+                    }))
+                }))
+            }))
+        })),
+        conversations: conversationsTableRef,
+        AccommodationModel: vi.fn().mockImplementation(function () {
+            return { findById: mockAccommodationFindById };
+        })
+    };
+});
 
 vi.mock('drizzle-orm', () => ({
     and: vi.fn((...args: unknown[]) => ({ and: args })),
@@ -115,6 +151,56 @@ vi.mock('../../src/utils/logger.js', () => ({
 
 import { conversationTokenReminderJob } from '../../src/cron/jobs/conversation-token-reminder.job.js';
 import type { CronJobContext } from '../../src/cron/types.js';
+import { env } from '../../src/utils/env.js';
+
+// ---------------------------------------------------------------------------
+// Test helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Seeds a fully-resolvable token: conversation + accommodation. Returns the
+ * "due token" row object to hand to `mockFindDueReminders`.
+ */
+function seedResolvableToken(params: {
+    tokenId: string;
+    conversationId: string;
+    accommodationId: string;
+    recipientEmail: string;
+    daysUntilExpiry?: number;
+}) {
+    const {
+        tokenId,
+        conversationId,
+        accommodationId,
+        recipientEmail,
+        daysUntilExpiry = 15
+    } = params;
+
+    dbRowsState.conversationsById.set(conversationId, {
+        id: conversationId,
+        accommodationId,
+        anonymousEmail: recipientEmail,
+        anonymousName: 'Test Guest',
+        locale: 'es',
+        deletedAt: null
+    });
+    dbRowsState.accommodationsById.set(accommodationId, {
+        id: accommodationId,
+        name: 'Test Accommodation',
+        slug: 'test-accommodation'
+    });
+
+    return {
+        id: tokenId,
+        conversationId,
+        tokenHash: `hash-${tokenId}`,
+        expiresAt: new Date(Date.now() + daysUntilExpiry * 24 * 60 * 60 * 1000),
+        revokedAt: null,
+        day15ReminderSentAt: null,
+        day25ReminderSentAt: null,
+        createdAt: new Date()
+    };
+}
 
 // ---------------------------------------------------------------------------
 // Test setup
@@ -129,30 +215,23 @@ describe('Conversation Token Reminder Cron Job', () => {
     };
     let mockContext: CronJobContext;
 
-    const sampleToken = {
-        id: 'token-1',
-        conversationId: 'conv-1',
-        tokenHash: 'abc123',
-        expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-        revokedAt: null,
-        day15ReminderSentAt: null,
-        day25ReminderSentAt: null,
-        createdAt: new Date()
-    };
-
-    const sampleConversation = {
-        id: 'conv-1',
-        accommodationId: 'acc-1',
-        anonymousEmail: 'guest@example.com',
-        anonymousName: 'Test Guest',
-        locale: 'es',
-        deletedAt: null
-    };
-
-    const sampleAccommodation = {
-        id: 'acc-1',
-        name: 'Test Accommodation',
-        slug: 'test-accommodation'
+    /**
+     * Default `withTransaction` mock: tracks whether a write transaction is
+     * open (via `txOpenState`) for the AC-1 boundary assertion, and provides
+     * a `fakeTx.execute` spy so any test can assert it was NEVER called with
+     * a `pg_try_advisory_xact_lock` statement — there is no advisory lock in
+     * this job anymore (HOS-129), so `execute` should simply never be
+     * invoked by production code. Invoked once PER token (inside the
+     * per-window dispatch loop), not once for the whole batch.
+     */
+    const acquiredTransaction = async (callback: (tx: unknown) => Promise<unknown>) => {
+        txOpenState.open = true;
+        try {
+            const fakeTx = { execute: vi.fn().mockResolvedValue({ rows: [] }) };
+            return await callback(fakeTx);
+        } finally {
+            txOpenState.open = false;
+        }
     };
 
     beforeEach(() => {
@@ -169,32 +248,14 @@ describe('Conversation Token Reminder Cron Job', () => {
             dryRun: false
         };
 
-        // Default: transaction executes callback inline (lock acquired)
-        mockWithTransaction.mockImplementation(async function (
-            callback: (tx: unknown) => Promise<unknown>
-        ) {
-            const fakeTx = {
-                execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
-            };
-            return callback(fakeTx);
-        });
+        dbRowsState.conversationsById.clear();
+        dbRowsState.accommodationsById.clear();
+        txOpenState.open = false;
 
-        // Default: no due reminders
+        mockWithTransaction.mockImplementation(acquiredTransaction);
         mockFindDueReminders.mockResolvedValue({ data: [], error: null });
-        mockMarkReminderSent.mockResolvedValue({ data: sampleToken, error: null });
+        mockMarkReminderSent.mockResolvedValue({ data: {}, error: null });
         mockSendEmail.mockResolvedValue({ success: true, messageId: 'msg-abc' });
-
-        // Default: conversation select chain
-        mockDbSelect.mockReturnValue({ from: mockDbSelectFrom });
-        mockDbSelectFrom.mockReturnValue({ where: mockDbSelectFromWhere });
-        mockDbSelectFromWhere.mockReturnValue({ limit: mockDbSelectFromWhereLimit });
-        mockDbSelectFromWhereLimit.mockResolvedValue([sampleConversation]);
-
-        // Default: accommodation lookup
-        mockAccommodationFindById.mockResolvedValue({
-            data: sampleAccommodation,
-            error: null
-        });
     });
 
     afterEach(() => {
@@ -221,28 +282,9 @@ describe('Conversation Token Reminder Cron Job', () => {
         it('has a handler function', () => {
             expect(typeof conversationTokenReminderJob.handler).toBe('function');
         });
-    });
 
-    // -------------------------------------------------------------------------
-    // Advisory lock
-    // -------------------------------------------------------------------------
-
-    describe('Advisory lock', () => {
-        it('skips execution when advisory lock is not acquired', async () => {
-            mockWithTransaction.mockImplementation(async function (
-                callback: (tx: unknown) => Promise<unknown>
-            ) {
-                const fakeTx = {
-                    execute: vi.fn().mockResolvedValue({ rows: [{ acquired: false }] })
-                };
-                return callback(fakeTx);
-            });
-
-            const result = await conversationTokenReminderJob.handler(mockContext);
-
-            expect(result.success).toBe(true);
-            expect(result.processed).toBe(0);
-            expect(result.message).toContain('Skipped');
+        it('has a 2-minute timeout', () => {
+            expect(conversationTokenReminderJob.timeoutMs).toBe(120000);
         });
     });
 
@@ -251,8 +293,15 @@ describe('Conversation Token Reminder Cron Job', () => {
     // -------------------------------------------------------------------------
 
     describe('Dry run mode', () => {
-        it('does not send emails in dry run', async () => {
-            mockFindDueReminders.mockResolvedValue({ data: [sampleToken], error: null });
+        it('does not send emails or persist stamps in dry run', async () => {
+            const token = seedResolvableToken({
+                tokenId: 'token-dry',
+                conversationId: 'conv-dry',
+                accommodationId: 'acc-dry',
+                recipientEmail: 'guest@example.com'
+            });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [token], error: null });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [], error: null });
 
             const dryRunContext: CronJobContext = { ...mockContext, dryRun: true };
             const result = await conversationTokenReminderJob.handler(dryRunContext);
@@ -261,6 +310,7 @@ describe('Conversation Token Reminder Cron Job', () => {
             expect(result.processed).toBe(0);
             expect(result.message).toContain('Dry run');
             expect(mockSendEmail).not.toHaveBeenCalled();
+            expect(mockMarkReminderSent).not.toHaveBeenCalled();
         });
     });
 
@@ -269,7 +319,7 @@ describe('Conversation Token Reminder Cron Job', () => {
     // -------------------------------------------------------------------------
 
     describe('Empty due lists', () => {
-        it('returns success with processed = 0 when no tokens are due', async () => {
+        it('returns success with processed = 0 when no tokens are due in either window', async () => {
             const result = await conversationTokenReminderJob.handler(mockContext);
 
             expect(result.success).toBe(true);
@@ -279,37 +329,56 @@ describe('Conversation Token Reminder Cron Job', () => {
     });
 
     // -------------------------------------------------------------------------
-    // Successful day-15 dispatch
+    // findDueReminders error
     // -------------------------------------------------------------------------
 
-    describe('Day-15 reminder', () => {
-        it('dispatches email and marks reminder sent', async () => {
-            // Only day-15 returns results; day-25 returns empty
-            mockFindDueReminders
-                .mockResolvedValueOnce({ data: [sampleToken], error: null }) // day15
-                .mockResolvedValueOnce({ data: [], error: null }); // day25
+    describe('findDueReminders service error', () => {
+        it('logs the error and continues with an empty batch for that window', async () => {
+            mockFindDueReminders.mockResolvedValueOnce({
+                data: null,
+                error: { code: 'INTERNAL_ERROR', message: 'DB connection lost' }
+            });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [], error: null });
 
             const result = await conversationTokenReminderJob.handler(mockContext);
 
             expect(result.success).toBe(true);
-            expect(result.processed).toBeGreaterThanOrEqual(1);
-            expect(mockSendEmail).toHaveBeenCalledTimes(1);
-            expect(mockMarkReminderSent).toHaveBeenCalledWith(
-                expect.anything(),
-                expect.objectContaining({ tokenId: sampleToken.id, reminderType: 'day15' })
+            expect(result.processed).toBe(0);
+            expect(mockLogger.error).toHaveBeenCalledWith(
+                'Failed to query day-15 due reminder tokens',
+                expect.objectContaining({ error: 'DB connection lost' })
             );
         });
+    });
 
-        it('increments errors and does not mark reminder on email failure', async () => {
-            mockFindDueReminders
-                .mockResolvedValueOnce({ data: [sampleToken], error: null })
-                .mockResolvedValueOnce({ data: [], error: null });
-            mockSendEmail.mockResolvedValue({ success: false, error: 'SMTP error' });
+    // -------------------------------------------------------------------------
+    // Missing email API key
+    // -------------------------------------------------------------------------
 
-            const result = await conversationTokenReminderJob.handler(mockContext);
+    describe('Missing HOSPEDA_EMAIL_API_KEY', () => {
+        it('skips dispatch entirely when email is not configured', async () => {
+            const originalKey = env.HOSPEDA_EMAIL_API_KEY;
+            (env as { HOSPEDA_EMAIL_API_KEY: string }).HOSPEDA_EMAIL_API_KEY = '';
 
-            expect(result.errors).toBeGreaterThanOrEqual(1);
-            expect(mockMarkReminderSent).not.toHaveBeenCalled();
+            try {
+                const token = seedResolvableToken({
+                    tokenId: 'token-nokey',
+                    conversationId: 'conv-nokey',
+                    accommodationId: 'acc-nokey',
+                    recipientEmail: 'guest@example.com'
+                });
+                mockFindDueReminders.mockResolvedValueOnce({ data: [token], error: null });
+                mockFindDueReminders.mockResolvedValueOnce({ data: [], error: null });
+
+                const result = await conversationTokenReminderJob.handler(mockContext);
+
+                expect(result.success).toBe(true);
+                expect(result.message).toContain('Skipped');
+                expect(mockSendEmail).not.toHaveBeenCalled();
+            } finally {
+                (env as { HOSPEDA_EMAIL_API_KEY: string }).HOSPEDA_EMAIL_API_KEY =
+                    originalKey ?? '';
+            }
         });
     });
 
@@ -319,12 +388,235 @@ describe('Conversation Token Reminder Cron Job', () => {
 
     describe('Unhandled error', () => {
         it('catches unexpected exceptions and returns failure', async () => {
-            mockWithTransaction.mockRejectedValue(new Error('Unexpected crash'));
+            mockFindDueReminders.mockRejectedValue(new Error('Unexpected crash'));
 
             const result = await conversationTokenReminderJob.handler(mockContext);
 
             expect(result.success).toBe(false);
             expect(result.message).toContain('Failed');
+            expect(result.errors).toBeGreaterThan(0);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // HOS-129: dispatch/transaction boundary
+    // -------------------------------------------------------------------------
+
+    describe('Boundary: email dispatch runs with no transaction open; stamp persists per-token right after (AC-1/AC-3)', () => {
+        it('sends the email before any transaction is open, persists the stamp only after that send returns, and never executes an advisory-lock statement', async () => {
+            const token = seedResolvableToken({
+                tokenId: 'token-boundary',
+                conversationId: 'conv-boundary',
+                accommodationId: 'acc-boundary',
+                recipientEmail: 'guest-boundary@example.com'
+            });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [token], error: null });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [], error: null });
+
+            const txOpenDuringSend: boolean[] = [];
+            const callOrder: string[] = [];
+            mockSendEmail.mockImplementation(async () => {
+                txOpenDuringSend.push(txOpenState.open);
+                callOrder.push('send');
+                return { success: true, messageId: 'msg-boundary' };
+            });
+
+            const executedStatements: unknown[] = [];
+            mockWithTransaction.mockImplementation(
+                async (callback: (tx: unknown) => Promise<unknown>) => {
+                    txOpenState.open = true;
+                    callOrder.push('mark-tx-open');
+                    try {
+                        const fakeTx = {
+                            execute: vi.fn().mockImplementation(async (query: unknown) => {
+                                executedStatements.push(query);
+                                return { rows: [] };
+                            })
+                        };
+                        return await callback(fakeTx);
+                    } finally {
+                        txOpenState.open = false;
+                        callOrder.push('mark-tx-close');
+                    }
+                }
+            );
+
+            const result = await conversationTokenReminderJob.handler(mockContext);
+
+            expect(result.processed).toBe(1);
+            // No write transaction was open while sendEmail ran.
+            expect(txOpenDuringSend).toEqual([false]);
+            // The per-token mark transaction opens only AFTER this token's
+            // send has already completed.
+            expect(callOrder).toEqual(['send', 'mark-tx-open', 'mark-tx-close']);
+            // No `pg_try_advisory_xact_lock` (or any other raw) statement is
+            // ever executed — the advisory lock was removed from this job
+            // entirely.
+            expect(executedStatements).toHaveLength(0);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // HOS-129: per-item stamp persistence (AC-2)
+    // -------------------------------------------------------------------------
+
+    describe('Per-token reminder-sent stamp (AC-2)', () => {
+        it('marks exactly one reminder sent for a successful day-15 send', async () => {
+            const token = seedResolvableToken({
+                tokenId: 'token-day15',
+                conversationId: 'conv-day15',
+                accommodationId: 'acc-day15',
+                recipientEmail: 'guest-day15@example.com'
+            });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [token], error: null });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [], error: null });
+
+            const result = await conversationTokenReminderJob.handler(mockContext);
+
+            expect(result.success).toBe(true);
+            expect(mockSendEmail).toHaveBeenCalledTimes(1);
+            expect(mockMarkReminderSent).toHaveBeenCalledTimes(1);
+            expect(mockMarkReminderSent).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({ tokenId: token.id, reminderType: 'day15' }),
+                expect.objectContaining({ tx: expect.anything() })
+            );
+        });
+
+        it('marks exactly one reminder sent for a successful day-25 send', async () => {
+            const token = seedResolvableToken({
+                tokenId: 'token-day25',
+                conversationId: 'conv-day25',
+                accommodationId: 'acc-day25',
+                recipientEmail: 'guest-day25@example.com',
+                daysUntilExpiry: 5
+            });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [], error: null });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [token], error: null });
+
+            const result = await conversationTokenReminderJob.handler(mockContext);
+
+            expect(result.success).toBe(true);
+            expect(mockSendEmail).toHaveBeenCalledTimes(1);
+            expect(mockMarkReminderSent).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({ tokenId: token.id, reminderType: 'day25' }),
+                expect.anything()
+            );
+        });
+
+        it('does not persist a stamp when the send fails', async () => {
+            const token = seedResolvableToken({
+                tokenId: 'token-sendfail',
+                conversationId: 'conv-sendfail',
+                accommodationId: 'acc-sendfail',
+                recipientEmail: 'guest-sendfail@example.com'
+            });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [token], error: null });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [], error: null });
+            mockSendEmail.mockResolvedValue({ success: false, error: 'Brevo 500' });
+
+            const result = await conversationTokenReminderJob.handler(mockContext);
+
+            expect(mockMarkReminderSent).not.toHaveBeenCalled();
+            expect(result.processed).toBe(0);
+            expect(result.errors).toBeGreaterThan(0);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // HOS-129 (review): stamp persistence failure after successful send (AC-4)
+    // -------------------------------------------------------------------------
+
+    describe('Stamp persistence failure after successful send (AC-4)', () => {
+        it('counts a service-layer error result as an error and logs it, without rethrowing', async () => {
+            const token = seedResolvableToken({
+                tokenId: 'token-markfail',
+                conversationId: 'conv-markfail',
+                accommodationId: 'acc-markfail',
+                recipientEmail: 'guest-markfail@example.com'
+            });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [token], error: null });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [], error: null });
+            mockMarkReminderSent.mockResolvedValue({
+                data: null,
+                error: { code: 'INTERNAL_ERROR', message: 'DB write failed' }
+            });
+
+            const result = await conversationTokenReminderJob.handler(mockContext);
+
+            expect(mockSendEmail).toHaveBeenCalledTimes(1);
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(1);
+            expect(result.errors).toBeGreaterThan(0);
+            expect(mockLogger.warn).toHaveBeenCalledWith(
+                'Failed to mark reminder as sent',
+                expect.objectContaining({ tokenId: 'token-markfail' })
+            );
+        });
+
+        it('counts a thrown persistence exception as an error and logs it, without rethrowing', async () => {
+            const token = seedResolvableToken({
+                tokenId: 'token-markthrow',
+                conversationId: 'conv-markthrow',
+                accommodationId: 'acc-markthrow',
+                recipientEmail: 'guest-markthrow@example.com'
+            });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [token], error: null });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [], error: null });
+            mockWithTransaction.mockRejectedValue(new Error('DB connection lost mid-persist'));
+
+            const result = await conversationTokenReminderJob.handler(mockContext);
+
+            expect(mockSendEmail).toHaveBeenCalledTimes(1);
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(1);
+            expect(result.errors).toBeGreaterThan(0);
+            expect(mockLogger.warn).toHaveBeenCalledWith(
+                'Failed to persist reminder-sent stamp after send',
+                expect.objectContaining({ tokenId: 'token-markthrow' })
+            );
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // HOS-129: both windows processed (AC-5)
+    // -------------------------------------------------------------------------
+
+    describe('Both reminder windows processed in one run (AC-5)', () => {
+        it('dispatches day-15 and day-25 tokens in the same run', async () => {
+            const day15Token = seedResolvableToken({
+                tokenId: 'token-both-15',
+                conversationId: 'conv-both-15',
+                accommodationId: 'acc-both-15',
+                recipientEmail: 'guest-both-15@example.com'
+            });
+            const day25Token = seedResolvableToken({
+                tokenId: 'token-both-25',
+                conversationId: 'conv-both-25',
+                accommodationId: 'acc-both-25',
+                recipientEmail: 'guest-both-25@example.com',
+                daysUntilExpiry: 5
+            });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [day15Token], error: null });
+            mockFindDueReminders.mockResolvedValueOnce({ data: [day25Token], error: null });
+
+            const result = await conversationTokenReminderJob.handler(mockContext);
+
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(2);
+            expect(mockSendEmail).toHaveBeenCalledTimes(2);
+            expect(mockMarkReminderSent).toHaveBeenCalledTimes(2);
+            expect(mockMarkReminderSent).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({ tokenId: 'token-both-15', reminderType: 'day15' }),
+                expect.anything()
+            );
+            expect(mockMarkReminderSent).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({ tokenId: 'token-both-25', reminderType: 'day25' }),
+                expect.anything()
+            );
         });
     });
 });

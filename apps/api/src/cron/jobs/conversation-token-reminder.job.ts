@@ -14,13 +14,70 @@
  * stamped by `AccessTokenService.markReminderSent`, preventing future runs
  * from re-sending the same email.
  *
+ * ## Why email dispatch never shares a transaction with the DB write (HOS-129)
+ *
+ * `sendEmail` makes an HTTP call to Brevo per due token. An earlier
+ * implementation ran BOTH `findDueReminders` queries AND both per-window send
+ * loops inside a single `withTransaction` callback whose first statement was
+ * `pg_try_advisory_xact_lock(43021)` — so a slow/unresponsive email provider
+ * held one DB connection open for the whole run (up to 400 tokens across two
+ * windows), the same `idle_in_transaction_session_timeout` risk already fixed
+ * in `conversation-notification.job.ts` (HOS-112) and documented on
+ * `destination-weather-fetch.job.ts`. This job now runs two phases with the
+ * persist step folded into the dispatch loop, per-token:
+ *
+ *  1. **Resolve** (`findDueReminders` + per-token reads via
+ *     `resolveTokenContext`) — no transaction, no lock. Builds an in-memory
+ *     list of tokens due for each window.
+ *  2. **Dispatch + persist** — for each due token, sequentially:
+ *     - `await sendEmail(...)` — no transaction open, no lock held.
+ *     - On failure: count an error, log it, and move to the next token. No
+ *       stamp is written, so the token remains due and is retried on the next
+ *       daily run.
+ *     - On success: IMMEDIATELY persist that one token's `*_reminder_sent_at`
+ *       stamp via `AccessTokenService.markReminderSent`, in its OWN short
+ *       `withTransaction` call, right here in the loop — before moving on to
+ *       the next token. The stamp for a sent email can never be dropped as
+ *       part of a larger batch, because there is no larger batch — each
+ *       send/stamp pair is atomic-in-effect at the granularity that matters
+ *       (one token).
+ *
+ * ## There is no advisory lock in this job anymore
+ *
+ * Lock `43021` (see `packages/db/docs/advisory-locks.md`) has been REMOVED
+ * from this job — it is reserved but no longer acquired anywhere in this
+ * file. Unlike `conversation-notification.job.ts` (HOS-112), this job has no
+ * Redis idempotency claim at all: the durable dedup guard is the
+ * `*_reminder_sent_at` DB column itself, checked by `findDueReminders`'
+ * `IS NULL` filter. Two overlapping daily runs would each read the same
+ * "not yet reminded" tokens and could both send once before either stamps —
+ * a narrow race — but this job's own 24h cadence (`0 9 * * *`, non-overlapping
+ * in practice) makes that window effectively theoretical, and a duplicate
+ * reminder email is a low-severity outcome (same conclusion HOS-112 reached
+ * for lock `43020`: the lock added serialization overhead without closing a
+ * gap worth the tradeoff of holding it across external HTTP calls).
+ *
+ * ## Residual risk (accepted, no retry queue)
+ *
+ * A hard process crash between a successful `sendEmail` and that SAME
+ * token's stamp-transaction commit leaves the token un-stamped, so it is
+ * "due" again on the next daily run — one duplicate email. This is accepted
+ * (same tradeoff HOS-112 made for the notification job): a rare duplicate is
+ * preferable to building a retry queue for a non-critical reminder email.
+ * There is no catch-up mechanism for this case — it is a narrow, logged
+ * (`warn`), single-token blast radius, not a batch-wide one.
+ *
  * Schedule: daily at 09:00 UTC (6:00 AM Argentina time).
- * Advisory lock: 43021
  *
  * @module cron/jobs/conversation-token-reminder
  */
 
-import { AccommodationModel, conversations, getDb, sql, withTransaction } from '@repo/db';
+import {
+    AccommodationModel,
+    getDb,
+    type SelectConversationAccessToken,
+    withTransaction
+} from '@repo/db';
 import { createEmailClient, sendEmail } from '@repo/email';
 import {
     ConversationTokenExpiringDay15,
@@ -28,20 +85,20 @@ import {
 } from '@repo/notifications';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { AccessTokenService } from '@repo/service-core';
-import { and, eq, isNull } from 'drizzle-orm';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
-import type { CronJobDefinition } from '../types.js';
+import type { CronJobContext, CronJobDefinition } from '../types.js';
+import { resolveTokenContext } from './conversation-token-reminder.resolve.js';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-/** PostgreSQL advisory lock ID reserved for this job. */
-const ADVISORY_LOCK_ID = 43021;
-
-/** Maximum number of tokens processed per run. */
+/** Maximum number of tokens processed per run (per window). */
 const MAX_BATCH_SIZE = 200;
+
+/** The two reminder windows this job dispatches. */
+type ReminderType = 'day15' | 'day25';
 
 // ---------------------------------------------------------------------------
 // System actor
@@ -67,20 +124,104 @@ const SYSTEM_ACTOR = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// Discriminated union for withTransaction return
+// Per-token dispatch + persist
 // ---------------------------------------------------------------------------
 
-type CronTransactionResult =
-    | { readonly skipped: true }
-    | {
-          readonly skipped: false;
-          readonly success: boolean;
-          readonly message: string;
-          readonly processed: number;
-          readonly errors: number;
-          readonly durationMs: number;
-          readonly details?: Record<string, unknown>;
-      };
+/** Outcome of one token's dispatch-and-persist attempt. */
+interface DispatchOutcome {
+    /** Whether `sendEmail` reported success for this token. */
+    readonly sent: boolean;
+    /** Whether persisting the `*_reminder_sent_at` stamp failed AFTER a successful send. */
+    readonly markFailed: boolean;
+}
+
+/** Dependencies + data needed to dispatch and persist one token's reminder. */
+interface DispatchTokenReminderInput {
+    readonly tokenId: string;
+    readonly reminderType: ReminderType;
+    readonly recipientEmail: string;
+    readonly subject: string;
+    readonly emailTemplate: ReturnType<typeof ConversationTokenExpiringDay15>;
+    readonly emailClient: ReturnType<typeof createEmailClient>;
+    readonly accessTokenSvc: AccessTokenService;
+    readonly logger: CronJobContext['logger'];
+}
+
+/**
+ * Sends one token's reminder email and, on success, immediately persists its
+ * `*_reminder_sent_at` stamp in its own short transaction — no advisory lock,
+ * no batching across tokens. See the module doc-comment for the full
+ * two-phase rationale (HOS-129).
+ *
+ * A failed send returns `{ sent: false, markFailed: false }` and writes no
+ * stamp, so the token stays due and is retried on the next daily run. A
+ * successful send that fails to persist its stamp (DB error mid-transaction)
+ * returns `{ sent: true, markFailed: true }` — logged as a `warn`, never
+ * rethrown; the token is accepted as "may re-send once more" (see module
+ * doc-comment residual risk).
+ *
+ * @param input - Token/email data plus the dependencies needed to send and persist.
+ * @returns The dispatch outcome for the caller to fold into its counters.
+ */
+async function dispatchTokenReminder(input: DispatchTokenReminderInput): Promise<DispatchOutcome> {
+    const {
+        tokenId,
+        reminderType,
+        recipientEmail,
+        subject,
+        emailTemplate,
+        emailClient,
+        accessTokenSvc,
+        logger
+    } = input;
+
+    const emailResult = await sendEmail({
+        client: emailClient,
+        to: recipientEmail,
+        subject,
+        react: emailTemplate
+    });
+
+    if (!emailResult.success) {
+        logger.error(`Failed to send ${reminderType} token reminder`, {
+            tokenId,
+            error: emailResult.error
+        });
+        return { sent: false, markFailed: false };
+    }
+
+    logger.debug(`${reminderType} token reminder dispatched`, {
+        tokenId,
+        messageId: emailResult.messageId
+    });
+
+    // Persist THIS token's reminder-sent stamp right now, in its own short
+    // transaction — the core HOS-129 fix. No batching across tokens, so a
+    // crash window here can orphan at most this one token (see module
+    // doc-comment).
+    try {
+        const markResult = await withTransaction((tx) =>
+            accessTokenSvc.markReminderSent(SYSTEM_ACTOR, { tokenId, reminderType }, { tx })
+        );
+        if (markResult.error) {
+            logger.warn('Failed to mark reminder as sent', {
+                tokenId,
+                reminderType,
+                error: markResult.error.message
+            });
+            return { sent: true, markFailed: true };
+        }
+    } catch (persistError) {
+        logger.warn('Failed to persist reminder-sent stamp after send', {
+            tokenId,
+            reminderType,
+            error: persistError instanceof Error ? persistError.message : String(persistError)
+        });
+        return { sent: true, markFailed: true };
+    }
+
+    return { sent: true, markFailed: false };
+}
 
 // ---------------------------------------------------------------------------
 // Job definition
@@ -90,7 +231,8 @@ type CronTransactionResult =
  * Conversation token reminder cron job.
  *
  * Schedule: daily at 09:00 UTC
- * Advisory lock: 43021
+ * Advisory lock: none (removed HOS-129 — see module doc-comment; the
+ * `*_reminder_sent_at` DB column is the durable dedup guard).
  */
 export const conversationTokenReminderJob: CronJobDefinition = {
     name: 'conversation-token-reminder',
@@ -106,321 +248,206 @@ export const conversationTokenReminderJob: CronJobDefinition = {
         let errors = 0;
 
         try {
-            const cronResult = await withTransaction<CronTransactionResult>(async (_tx) => {
-                // Acquire advisory lock to prevent overlapping runs
-                const lockResult = await _tx.execute(
-                    sql`SELECT pg_try_advisory_xact_lock(${ADVISORY_LOCK_ID}) AS acquired`
-                );
-                if (!lockResult.rows[0]?.acquired) {
-                    return { skipped: true };
-                }
-
-                logger.info('Starting conversation-token-reminder cron', {
-                    dryRun,
-                    startedAt: startedAt.toISOString()
-                });
-
-                const accessTokenSvc = new AccessTokenService({ logger: apiLogger });
-
-                // Fetch tokens due for both reminder windows
-                const [day15Result, day25Result] = await Promise.all([
-                    accessTokenSvc.findDueReminders(SYSTEM_ACTOR, { reminderType: 'day15' }),
-                    accessTokenSvc.findDueReminders(SYSTEM_ACTOR, { reminderType: 'day25' })
-                ]);
-
-                if (day15Result.error) {
-                    logger.error('Failed to query day-15 due reminder tokens', {
-                        error: day15Result.error.message
-                    });
-                }
-                if (day25Result.error) {
-                    logger.error('Failed to query day-25 due reminder tokens', {
-                        error: day25Result.error.message
-                    });
-                }
-
-                const day15Tokens = (day15Result.data ?? []).slice(0, MAX_BATCH_SIZE);
-                const day25Tokens = (day25Result.data ?? []).slice(0, MAX_BATCH_SIZE);
-
-                logger.info('Token reminder candidates', {
-                    day15Count: day15Tokens.length,
-                    day25Count: day25Tokens.length
-                });
-
-                if (dryRun) {
-                    logger.info('Dry run — skipping email dispatch', {
-                        wouldProcessDay15: day15Tokens.length,
-                        wouldProcessDay25: day25Tokens.length
-                    });
-                    return {
-                        skipped: false,
-                        success: true,
-                        message: `Dry run: day15=${day15Tokens.length}, day25=${day25Tokens.length}`,
-                        processed: 0,
-                        errors: 0,
-                        durationMs: Date.now() - startedAt.getTime(),
-                        details: {
-                            dryRun: true,
-                            day15Count: day15Tokens.length,
-                            day25Count: day25Tokens.length
-                        }
-                    };
-                }
-
-                // Email client — bail early if not configured
-                const emailApiKey = env.HOSPEDA_EMAIL_API_KEY;
-                if (!emailApiKey) {
-                    logger.warn(
-                        'HOSPEDA_EMAIL_API_KEY not configured — skipping token reminder dispatch'
-                    );
-                    return {
-                        skipped: false,
-                        success: true,
-                        message: 'Skipped — email not configured',
-                        processed: 0,
-                        errors: 0,
-                        durationMs: Date.now() - startedAt.getTime()
-                    };
-                }
-
-                const emailClient = createEmailClient({ apiKey: emailApiKey });
-                const db = getDb();
-                const accommodationModel = new AccommodationModel();
-
-                // Helper: resolve recipient email and accommodation name for a token
-                const resolveTokenContext = async (
-                    tokenId: string,
-                    conversationId: string
-                ): Promise<{
-                    recipientEmail: string;
-                    accommodationName: string;
-                    locale: 'es' | 'en' | 'pt';
-                } | null> => {
-                    const convRows = await db
-                        .select()
-                        .from(conversations)
-                        .where(
-                            and(
-                                eq(conversations.id, conversationId),
-                                isNull(conversations.deletedAt)
-                            )
-                        )
-                        .limit(1);
-
-                    const conversation = convRows[0];
-                    if (!conversation) {
-                        logger.warn('Conversation not found or deleted — skipping token reminder', {
-                            tokenId,
-                            conversationId
-                        });
-                        return null;
-                    }
-
-                    const recipientEmail = conversation.anonymousEmail;
-                    if (!recipientEmail) {
-                        logger.warn(
-                            'No anonymous email on conversation — skipping token reminder',
-                            { tokenId, conversationId }
-                        );
-                        return null;
-                    }
-
-                    const accommodation = await accommodationModel.findById(
-                        conversation.accommodationId
-                    );
-                    if (!accommodation) {
-                        logger.warn('Accommodation not found — skipping token reminder', {
-                            tokenId,
-                            accommodationId: conversation.accommodationId
-                        });
-                        return null;
-                    }
-
-                    return {
-                        recipientEmail,
-                        accommodationName: accommodation.name ?? accommodation.slug,
-                        locale: (conversation.locale as 'es' | 'en' | 'pt' | undefined) ?? 'es'
-                    };
-                };
-
-                let day15Sent = 0;
-                let day25Sent = 0;
-
-                // Process day-15 reminders
-                for (const token of day15Tokens) {
-                    try {
-                        const resolved = await resolveTokenContext(token.id, token.conversationId);
-                        if (!resolved) {
-                            errors++;
-                            continue;
-                        }
-
-                        const { recipientEmail, accommodationName, locale } = resolved;
-                        const renewUrl = `${env.HOSPEDA_SITE_URL}/guest/messages/${token.conversationId}`;
-                        const expiryDate = token.expiresAt.toLocaleDateString('es-AR', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                        });
-
-                        const emailResult = await sendEmail({
-                            client: emailClient,
-                            to: recipientEmail,
-                            subject: `Tu enlace de acceso vence en 15 días — ${accommodationName}`,
-                            react: ConversationTokenExpiringDay15({
-                                accommodationName,
-                                renewUrl,
-                                expiryDate,
-                                locale
-                            })
-                        });
-
-                        if (!emailResult.success) {
-                            logger.error('Failed to send day-15 token reminder', {
-                                tokenId: token.id,
-                                error: emailResult.error
-                            });
-                            errors++;
-                            continue;
-                        }
-
-                        // Stamp the reminder-sent column to prevent re-dispatch
-                        const markResult = await accessTokenSvc.markReminderSent(SYSTEM_ACTOR, {
-                            tokenId: token.id,
-                            reminderType: 'day15'
-                        });
-
-                        if (markResult.error) {
-                            logger.warn('Failed to mark day-15 reminder as sent', {
-                                tokenId: token.id,
-                                error: markResult.error.message
-                            });
-                        }
-
-                        day15Sent++;
-                        processed++;
-
-                        logger.debug('Day-15 token reminder dispatched', {
-                            tokenId: token.id,
-                            messageId: emailResult.messageId
-                        });
-                    } catch (itemError) {
-                        errors++;
-                        logger.error('Unexpected error processing day-15 token reminder', {
-                            tokenId: token.id,
-                            error:
-                                itemError instanceof Error ? itemError.message : String(itemError)
-                        });
-                    }
-                }
-
-                // Process day-25 reminders
-                for (const token of day25Tokens) {
-                    try {
-                        const resolved = await resolveTokenContext(token.id, token.conversationId);
-                        if (!resolved) {
-                            errors++;
-                            continue;
-                        }
-
-                        const { recipientEmail, accommodationName, locale } = resolved;
-                        const renewUrl = `${env.HOSPEDA_SITE_URL}/guest/messages/${token.conversationId}`;
-                        const expiryDate = token.expiresAt.toLocaleDateString('es-AR', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                        });
-
-                        const emailResult = await sendEmail({
-                            client: emailClient,
-                            to: recipientEmail,
-                            subject: `¡Último aviso! Tu enlace vence en 5 días — ${accommodationName}`,
-                            react: ConversationTokenExpiringDay25({
-                                accommodationName,
-                                renewUrl,
-                                expiryDate,
-                                locale
-                            })
-                        });
-
-                        if (!emailResult.success) {
-                            logger.error('Failed to send day-25 token reminder', {
-                                tokenId: token.id,
-                                error: emailResult.error
-                            });
-                            errors++;
-                            continue;
-                        }
-
-                        const markResult = await accessTokenSvc.markReminderSent(SYSTEM_ACTOR, {
-                            tokenId: token.id,
-                            reminderType: 'day25'
-                        });
-
-                        if (markResult.error) {
-                            logger.warn('Failed to mark day-25 reminder as sent', {
-                                tokenId: token.id,
-                                error: markResult.error.message
-                            });
-                        }
-
-                        day25Sent++;
-                        processed++;
-
-                        logger.debug('Day-25 token reminder dispatched', {
-                            tokenId: token.id,
-                            messageId: emailResult.messageId
-                        });
-                    } catch (itemError) {
-                        errors++;
-                        logger.error('Unexpected error processing day-25 token reminder', {
-                            tokenId: token.id,
-                            error:
-                                itemError instanceof Error ? itemError.message : String(itemError)
-                        });
-                    }
-                }
-
-                const durationMs = Date.now() - startedAt.getTime();
-
-                logger.info('conversation-token-reminder cron completed', {
-                    day15Sent,
-                    day25Sent,
-                    errors,
-                    durationMs
-                });
-
-                return {
-                    skipped: false,
-                    success: true,
-                    message: `Sent day15=${day15Sent}, day25=${day25Sent}, errors=${errors}`,
-                    processed,
-                    errors,
-                    durationMs,
-                    details: { day15Sent, day25Sent }
-                };
+            logger.info('Starting conversation-token-reminder cron', {
+                dryRun,
+                startedAt: startedAt.toISOString()
             });
 
-            if (cronResult.skipped) {
+            const accessTokenSvc = new AccessTokenService({ logger: apiLogger });
+
+            // -----------------------------------------------------------
+            // Phase 0 — find due tokens for both windows. No transaction,
+            // no advisory lock.
+            // -----------------------------------------------------------
+            const [day15Result, day25Result] = await Promise.all([
+                accessTokenSvc.findDueReminders(SYSTEM_ACTOR, { reminderType: 'day15' }),
+                accessTokenSvc.findDueReminders(SYSTEM_ACTOR, { reminderType: 'day25' })
+            ]);
+
+            if (day15Result.error) {
+                logger.error('Failed to query day-15 due reminder tokens', {
+                    error: day15Result.error.message
+                });
+            }
+            if (day25Result.error) {
+                logger.error('Failed to query day-25 due reminder tokens', {
+                    error: day25Result.error.message
+                });
+            }
+
+            const day15Tokens = (day15Result.data ?? []).slice(0, MAX_BATCH_SIZE);
+            const day25Tokens = (day25Result.data ?? []).slice(0, MAX_BATCH_SIZE);
+
+            logger.info('Token reminder candidates', {
+                day15Count: day15Tokens.length,
+                day25Count: day25Tokens.length
+            });
+
+            if (dryRun) {
+                logger.info('Dry run — skipping email dispatch', {
+                    wouldProcessDay15: day15Tokens.length,
+                    wouldProcessDay25: day25Tokens.length
+                });
+                return {
+                    success: true,
+                    message: `Dry run: day15=${day15Tokens.length}, day25=${day25Tokens.length}`,
+                    processed: 0,
+                    errors: 0,
+                    durationMs: Date.now() - startedAt.getTime(),
+                    details: {
+                        dryRun: true,
+                        day15Count: day15Tokens.length,
+                        day25Count: day25Tokens.length
+                    }
+                };
+            }
+
+            // Email client — bail early if not configured
+            const emailApiKey = env.HOSPEDA_EMAIL_API_KEY;
+            if (!emailApiKey) {
                 logger.warn(
-                    'conversation-token-reminder cron: skipping — previous run holds advisory lock'
+                    'HOSPEDA_EMAIL_API_KEY not configured — skipping token reminder dispatch'
                 );
                 return {
                     success: true,
-                    message: 'Skipped — another instance is already running',
+                    message: 'Skipped — email not configured',
                     processed: 0,
                     errors: 0,
                     durationMs: Date.now() - startedAt.getTime()
                 };
             }
 
+            const emailClient = createEmailClient({ apiKey: emailApiKey });
+            const db = getDb();
+            const accommodationModel = new AccommodationModel();
+
+            let day15Sent = 0;
+            let day25Sent = 0;
+
+            // -----------------------------------------------------------
+            // Phase 1 — resolve + dispatch + persist, per token. No
+            // transaction, no advisory lock is ever open while
+            // `sendEmail` runs — see module doc-comment for the HOS-129
+            // rationale.
+            // -----------------------------------------------------------
+            const processWindow = async (
+                tokens: SelectConversationAccessToken[],
+                reminderType: ReminderType,
+                subjectFor: (accommodationName: string) => string,
+                templateFor: (params: {
+                    accommodationName: string;
+                    renewUrl: string;
+                    expiryDate: string;
+                    locale: 'es' | 'en' | 'pt';
+                }) => ReturnType<typeof ConversationTokenExpiringDay15>
+            ): Promise<number> => {
+                let sentCount = 0;
+
+                for (const token of tokens) {
+                    try {
+                        const resolved = await resolveTokenContext({
+                            tokenId: token.id,
+                            conversationId: token.conversationId,
+                            db,
+                            accommodationModel,
+                            logger
+                        });
+                        if (!resolved) {
+                            errors++;
+                            continue;
+                        }
+
+                        const { recipientEmail, accommodationName, locale } = resolved;
+                        const renewUrl = `${env.HOSPEDA_SITE_URL}/guest/messages/${token.conversationId}`;
+                        const expiryDate = token.expiresAt.toLocaleDateString('es-AR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        });
+
+                        const outcome = await dispatchTokenReminder({
+                            tokenId: token.id,
+                            reminderType,
+                            recipientEmail,
+                            subject: subjectFor(accommodationName),
+                            emailTemplate: templateFor({
+                                accommodationName,
+                                renewUrl,
+                                expiryDate,
+                                locale
+                            }),
+                            emailClient,
+                            accessTokenSvc,
+                            logger
+                        });
+
+                        if (!outcome.sent) {
+                            errors++;
+                            continue;
+                        }
+                        if (outcome.markFailed) {
+                            errors++;
+                        }
+
+                        sentCount++;
+                        processed++;
+                    } catch (itemError) {
+                        errors++;
+                        logger.error(`Unexpected error processing ${reminderType} token reminder`, {
+                            tokenId: token.id,
+                            error:
+                                itemError instanceof Error ? itemError.message : String(itemError)
+                        });
+                    }
+                }
+
+                return sentCount;
+            };
+
+            day15Sent = await processWindow(
+                day15Tokens,
+                'day15',
+                (accommodationName) =>
+                    `Tu enlace de acceso vence en 15 días — ${accommodationName}`,
+                ({ accommodationName, renewUrl, expiryDate, locale }) =>
+                    ConversationTokenExpiringDay15({
+                        accommodationName,
+                        renewUrl,
+                        expiryDate,
+                        locale
+                    })
+            );
+
+            day25Sent = await processWindow(
+                day25Tokens,
+                'day25',
+                (accommodationName) =>
+                    `¡Último aviso! Tu enlace vence en 5 días — ${accommodationName}`,
+                ({ accommodationName, renewUrl, expiryDate, locale }) =>
+                    ConversationTokenExpiringDay25({
+                        accommodationName,
+                        renewUrl,
+                        expiryDate,
+                        locale
+                    })
+            );
+
+            const durationMs = Date.now() - startedAt.getTime();
+
+            logger.info('conversation-token-reminder cron completed', {
+                day15Sent,
+                day25Sent,
+                errors,
+                durationMs
+            });
+
             return {
-                success: cronResult.success,
-                message: cronResult.message,
-                processed: cronResult.processed,
-                errors: cronResult.errors,
-                durationMs: cronResult.durationMs,
-                ...(cronResult.details ? { details: cronResult.details } : {})
+                success: true,
+                message: `Sent day15=${day15Sent}, day25=${day25Sent}, errors=${errors}`,
+                processed,
+                errors,
+                durationMs,
+                details: { day15Sent, day25Sent }
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
