@@ -130,6 +130,19 @@ describe('check-seed-dual-write.sh (HOS-25 T-024)', () => {
         expect(result.stdout).toContain('plans.config.ts');
     });
 
+    it('guards pointOfInterest JSON changes (HOS-113 T-027, R-5)', () => {
+        // Arrange
+        const changed =
+            'M\tpackages/seed/src/data/pointOfInterest/001-point-of-interest-autodromo_concepcion_del_uruguay.json';
+
+        // Act
+        const result = runGuard({ CHANGED_FILES_OVERRIDE: changed, MARKER_TEXT_OVERRIDE: '' });
+
+        // Assert
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('FAIL: baseline seed data changed');
+    });
+
     it('guards internal-/system- prefixed files in the mixed data/tag/ folder', () => {
         // Arrange
         const changed = 'M\tpackages/seed/src/data/tag/internal-001-revisar-contenido.json';

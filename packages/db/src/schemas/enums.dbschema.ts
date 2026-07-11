@@ -38,6 +38,7 @@ import {
     PermissionCategoryEnum,
     PermissionEffectEnum,
     PermissionEnum,
+    PointOfInterestTypeEnum,
     PostCategoryEnum,
     PreferredContactEnum,
     PriceCurrencyEnum,
@@ -129,6 +130,15 @@ export const PermissionEffectPgEnum = pgEnum(
 export const PermissionCategoryPgEnum = pgEnum(
     'permission_category_enum',
     enumToTuple(PermissionCategoryEnum)
+);
+
+/**
+ * PostgreSQL enum for point-of-interest categorization (HOS-113 OQ-3).
+ * Values: BEACH, STADIUM, PARK, MUSEUM, PLAZA, MONUMENT, VIEWPOINT, NATURAL, OTHER.
+ */
+export const PointOfInterestTypePgEnum = pgEnum(
+    'point_of_interest_type_enum',
+    enumToTuple(PointOfInterestTypeEnum)
 );
 
 export const PostCategoryPgEnum = pgEnum('post_category_enum', enumToTuple(PostCategoryEnum));

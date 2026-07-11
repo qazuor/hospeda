@@ -384,6 +384,15 @@
         "069-attraction-playa_fluvial",
         "028-attraction-complejo_termal_principal"
     ],
+    "pointOfInterestIds": [
+        "001-point-of-interest-autodromo_concepcion_del_uruguay",
+        "002-point-of-interest-playa_banco_pelay",
+        "004-point-of-interest-basilica_inmaculada_concepcion",
+        "005-point-of-interest-parque_unzue",
+        "006-point-of-interest-isla_del_puerto",
+        "007-point-of-interest-plaza_francisco_ramirez",
+        "008-point-of-interest-mirador_costanera"
+    ],
     "faqs": [
         {
             "question": "¿Cómo se llega a Concepción del Uruguay desde Buenos Aires?",

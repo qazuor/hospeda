@@ -94,6 +94,20 @@
         "087-attraction-vivero_municipal.json",
         "088-attraction-zona_comercial.json"
     ],
+    "pointsOfInterest": [
+        "001-point-of-interest-autodromo_concepcion_del_uruguay.json",
+        "002-point-of-interest-playa_banco_pelay.json",
+        "003-point-of-interest-palacio_san_jose.json",
+        "004-point-of-interest-basilica_inmaculada_concepcion.json",
+        "005-point-of-interest-parque_unzue.json",
+        "006-point-of-interest-isla_del_puerto.json",
+        "007-point-of-interest-plaza_francisco_ramirez.json",
+        "008-point-of-interest-mirador_costanera.json",
+        "009-point-of-interest-complejo_termal_concordia.json",
+        "010-point-of-interest-balneario_itape.json",
+        "011-point-of-interest-parque_nacional_el_palmar.json",
+        "012-point-of-interest-termas_de_federacion.json"
+    ],
     "destinations": [
         "100-destination-argentina.json",
         "101-destination-litoral.json",

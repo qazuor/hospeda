@@ -1,4 +1,29 @@
 {
+    "poiNames": {
+        "autodromo_concepcion_del_uruguay": "Concepción del Uruguay Racetrack",
+        "playa_banco_pelay": "Banco Pelay Beach",
+        "palacio_san_jose": "San José Palace",
+        "basilica_inmaculada_concepcion": "Basilica of the Immaculate Conception",
+        "parque_unzue": "Unzué Park",
+        "isla_del_puerto": "Port Island",
+        "plaza_francisco_ramirez": "Francisco Ramírez Square",
+        "mirador_costanera": "Costanera Viewpoint",
+        "complejo_termal_concordia": "Concordia Thermal Complex",
+        "balneario_itape": "Itapé Beach Resort",
+        "parque_nacional_el_palmar": "El Palmar National Park",
+        "termas_de_federacion": "Federación Hot Springs"
+    },
+    "poiTypeLabels": {
+        "BEACH": "Beach",
+        "STADIUM": "Stadium/Racetrack",
+        "PARK": "Park",
+        "MUSEUM": "Museum",
+        "PLAZA": "Plaza",
+        "MONUMENT": "Monument",
+        "VIEWPOINT": "Viewpoint",
+        "NATURAL": "Natural site",
+        "OTHER": "Other"
+    },
     "map": {
         "label": "Interactive map of destinations in Entre Ríos, Argentina",
         "viewDestination": "View destination {{name}}"

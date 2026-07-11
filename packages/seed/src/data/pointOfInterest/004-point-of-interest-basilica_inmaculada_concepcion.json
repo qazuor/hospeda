@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "004-point-of-interest-basilica_inmaculada_concepcion",
+    "slug": "basilica_inmaculada_concepcion",
+    "lat": -32.4823,
+    "long": -58.2375,
+    "type": "MONUMENT",
+    "description": "Basílica histórica que alberga los restos del General Justo José de Urquiza",
+    "icon": "church",
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 75,
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "001-point-of-interest-autodromo_concepcion_del_uruguay",
+    "slug": "autodromo_concepcion_del_uruguay",
+    "lat": -32.423,
+    "long": -58.2591,
+    "type": "STADIUM",
+    "description": "Autódromo de Concepción del Uruguay, sede de competencias de turismo carretera y motociclismo",
+    "icon": "stadium",
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 80,
+    "lifecycleState": "ACTIVE"
+}

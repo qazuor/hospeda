@@ -12,10 +12,15 @@ areas:
 
 # Points of Interest (POI) in destinations
 
+> **Open-question resolutions (owner, 2026-07-10)** — see §11 for detail.
+> OQ-1 → **M2M** (join table, not 1:N). OQ-2 → **i18n by slug** (no `name`
+> column, SPEC-266 pattern). OQ-3 → **closed `type` enum**. OQ-6 → **seed-only**
+> in Phase 1 (admin CRUD deferred). OQ-4/5/7 remain open, deferred to their phase.
+
 ## 1. Summary
 
-Introduce a first-class **Point of Interest (POI)** concept: a named landmark
-with geographic coordinates (`lat`/`long`), scoped to a single destination.
+Introduce a first-class **Point of Interest (POI)** concept: a coordinate-bearing
+landmark (`lat`/`long`) associated with **one or more destinations** (many-to-many).
 POIs power three capabilities that are impossible today because the codebase has
 no landmark-with-coordinates entity:
 
@@ -28,9 +33,12 @@ no landmark-with-coordinates entity:
    for amenities/features/attractions).
 
 POI is a **new, distinct entity** — NOT an extension of the `attractions`
-catalog. Attractions are a curated, icon/description catalog with NO coordinates
-and a many-to-many relation to destinations; POIs are coordinate-bearing named
-places belonging to exactly one destination.
+catalog. It borrows two established patterns: the **M2M-to-destinations +
+curated `--required` seed** shape from `attractions`, and the **i18n-by-slug
+display (no `name` column)** from `amenities`/`features` (SPEC-266). On top of
+those it adds the one thing neither has: geographic coordinates. Display names
+come from `@repo/i18n` keyed by slug, so POI carries **no `name` column** —
+unlike `attractions`, which does keep a literal `name` column.
 
 ## 2. Problem
 
@@ -41,14 +49,15 @@ places belonging to exactly one destination.
   single centroid is too coarse to answer "near the racetrack" or "near a
   specific beach".
 - `attractions` looks superficially similar but is the wrong tool: it has no
-  coordinates (`packages/db/src/schemas/destination/attraction.dbschema.ts`),
-  is a curated M2M catalog, and overloading it would corrupt a clean, shared
-  concept. HOS-113 must add a parallel entity, not mutate attractions.
+  coordinates (`packages/db/src/schemas/destination/attraction.dbschema.ts`) and
+  overloading it would corrupt a clean, shared concept. HOS-113 adds a parallel
+  entity, not a mutation of attractions.
 
 ## 3. Goals
 
-- **G-1** New `points_of_interest` table + Drizzle schema + Zod schema (6-file
-  set) + service + seed, following the established attraction/entity conventions.
+- **G-1** New `points_of_interest` table + `r_destination_point_of_interest`
+  join table + Drizzle schema + Zod schema (6-file set) + service + seed,
+  following the established attraction/entity conventions.
 - **G-2** Accommodation search can rank/filter by proximity to a resolved POI,
   reusing the **already-shipped** shared Haversine helper
   (`packages/db/src/utils/geo.ts`) — no geo extraction work is in scope.
@@ -67,10 +76,10 @@ places belonging to exactly one destination.
 - **NG-3** Multi-marker map rendering of POIs on the destination page in the
   first iteration (see R-2 / OQ-4 — `LocationMap` has no multi-marker mode; this
   is deferred unless explicitly pulled in).
-- **NG-4** User-generated / owner-submitted POIs. POIs are an editorial catalog
-  (seed + admin CRUD), not user content.
-- **NG-5** Full i18n translation of POI names. POIs are proper nouns of real
-  places (see OQ-2).
+- **NG-4** User-generated / owner-submitted POIs. POIs are an editorial catalog,
+  populated by seed.
+- **NG-5** Admin CRUD UI for POIs in Phase 1 (OQ-6). POIs are seed-only for now;
+  an admin management surface is a deferred follow-up.
 
 ## 5. Current baseline
 
@@ -88,20 +97,32 @@ Verified against the codebase 2026-07-10 (see HOS-113 research notes):
   or a plain numeric `AnyColumn`. **The HOS-111 spec.md still describes this in
   future tense — that text is stale; the code shipped.**
 - **`attractions`** (`packages/db/src/schemas/destination/attraction.dbschema.ts`):
-  `id`, `name`, `slug` (unique), `description?`, `icon?`, `isBuiltin`,
-  `isFeatured`, `displayWeight`, `lifecycleState`, full BaseModel audit columns.
-  **No coordinates.** M2M via `r_destination_attraction.dbschema.ts`. Zod 6-file
-  set at `packages/schemas/src/entities/attraction/`. Service at
+  `id`, **`name` (`text().notNull()`, line 21)**, `slug` (unique), `description?`,
+  `icon?`, `isBuiltin`, `isFeatured`, `displayWeight`, `lifecycleState`, full
+  BaseModel audit columns. **Has a literal `name` column** (NOT i18n-by-slug) and
+  **no coordinates**. M2M via `r_destination_attraction.dbschema.ts` (composite
+  PK, cascade both sides, indexed both directions). Zod 6-file set at
+  `packages/schemas/src/entities/attraction/`. Service at
   `packages/service-core/src/services/attraction/`. Seeded as a `--required`
   group (`packages/seed/src/required/attractions.seed.ts` + `src/data/attraction/*.json`
-  + `manifest-required.json`). This is the structural template to mirror.
+  + `manifest-required.json`), with a separate relationship-seed step for the
+  join table. **This is the template for POI's M2M + seed + service structure.**
+- **`amenities`/`features`** (`packages/db/src/schemas/accommodation/amenity.dbschema.ts`):
+  **no `name` column — only `slug`** (dropped in SPEC-266; display labels come
+  from `@repo/i18n` keyed by slug). **This is the template for POI's
+  i18n-by-slug display** (per resolved OQ-2). POI = attraction's structure with
+  amenity's slug-only naming.
+- **Destination hydration of attractions**: `DestinationService` does NOT eager-load
+  attractions on the base read; `getBySlug`/`getByPath` call a private
+  `_withAttractions()` that batch-loads via `DestinationModel.getAttractionsMap`
+  (junction-table batch query). POI hydration mirrors this exactly.
 - **Coordinate shapes**: `CoordinatesSchema`
   (`packages/schemas/src/common/location.schema.ts`) stores `{ lat, long }` as
   **strings** (key is `long`, not `lng`), requiring a `::numeric` cast in SQL.
   `accommodations.location`/`destinations.location` are JSONB with optional
   `coordinates`. A privacy-obfuscated `ApproximateLocationSchema` uses
   `{ lat, lng, radiusMeters }` (numbers, `lng`) — a different concept, do not
-  conflate.
+  conflate. POI is net-new and uses plain numeric columns instead (§6.1).
 - **AI search allowlist pattern** (three files):
   `apps/api/src/routes/ai/protected/{amenity,attraction}-allowlist.ts` define
   `Record<locale, Record<NLTerm, slug|slug[]>>` + a pure `match*Terms()` matcher;
@@ -117,53 +138,62 @@ Verified against the codebase 2026-07-10 (see HOS-113 research notes):
   `DestinationMiniMap.astro` → `LocationMap.client.tsx` supports a **single**
   marker/circle only — no multi-marker mode.
 - **Migrations**: three-carril setup (structural `db:generate`, extras,
-  seed data-migrations). Current migration head `0049_*`; a new table lands as
+  seed data-migrations). Current migration head `0049_*`; new tables land as
   `0050_*`. Net-new-table example to mirror: `0048_glossy_psylocke.sql`
   (`social_post_target_media`).
 
 ## 6. Proposed design
 
-### 6.1 Data model — `points_of_interest`
+### 6.1 Data model — `points_of_interest` + join table (M2M)
 
-A **1:N** relation (a POI belongs to exactly one destination via a direct FK),
-NOT the M2M join-table pattern attractions use. This matches the "scoped to a
-destination" wording and is structurally simpler (see OQ-1).
+**Relation: many-to-many** (OQ-1, owner decision). A POI belongs to one OR MORE
+destinations via a join table, exactly like attractions. The POI's coordinates
+live on the POI row (a single physical point); the join table is a pure
+destination↔POI mapping, letting a regional/border landmark surface from several
+destinations.
 
-Columns (mirroring BaseModel conventions):
+Table `points_of_interest` (mirroring BaseModel + attraction conventions):
 
 | Column | Type | Notes |
 | --- | --- | --- |
 | `id` | uuid PK | |
-| `destinationId` | uuid FK → `destinations` | `ON DELETE CASCADE`, indexed |
-| `name` | text | 3-100 chars, proper name (e.g. "Autódromo de Concepción del Uruguay") |
-| `slug` | text UNIQUE | auto-derived by service hook; regex allows underscores (SPEC-266 convention) |
+| `slug` | text UNIQUE | **the i18n key** (SPEC-266); regex allows underscores. Provided by seed. |
 | `lat` | double precision | **plain numeric column** — no string/JSONB baggage |
 | `long` | double precision | key named `long` for codebase consistency with `geo.ts` |
-| `type` | varchar (enum-backed) | POI category for icon/filter (beach, stadium, park, museum, …) — see OQ-3 |
-| `icon` | text? | nullable; may be derived from `type` |
-| `description` | text? | nullable, optional |
+| `type` | varchar (enum-backed) | closed `PointOfInterestTypeEnum` (OQ-3): `beach`, `stadium`, `park`, `museum`, `plaza`, `monument`, `viewpoint`, `natural`, `other` |
+| `icon` | text? | nullable; may be derived from `type` at render time |
+| `description` | text? | nullable, optional (not i18n in Phase 1) |
+| `isBuiltin` | boolean | mirrors attraction |
 | `isFeatured` | boolean | default false — surface ordering |
 | `displayWeight` | int | default 50 — ordering within a destination |
 | `lifecycleState` | enum | standard |
 | BaseModel audit | | `adminInfo`, `createdAt/By`, `updatedAt/By`, `deletedAt/By` |
 
+**No `name` column** (OQ-2). Display name resolves via `@repo/i18n` keyed by
+slug (`destinations.poiNames.<slug>`, es/en/pt), same as amenities/features
+after SPEC-266. `type` labels likewise resolve by enum value via i18n.
+
+Join table `r_destination_point_of_interest` (mirror `r_destination_attraction`):
+`destinationId` + `pointOfInterestId` composite PK, `ON DELETE CASCADE` both
+sides, indexed both directions.
+
 **Coordinate decision**: store `lat`/`long` as plain `double precision` numeric
 columns, NOT the string-in-JSONB shape that `accommodations`/`destinations` use.
-Since POI is a net-new table there is no legacy constraint, and
-`buildHaversineDistanceExpr` accepts a plain numeric `AnyColumn` directly — so we
+`buildHaversineDistanceExpr` accepts a plain numeric `AnyColumn` directly, so we
 skip `buildJsonbCoordinateExprs` and the `::numeric` cast entirely.
 
 ### 6.2 Accommodation proximity search
 
-- POI resolution produces a `{ lat, long, destinationId }`. The **existing**
-  accommodation search already accepts `latitude`/`longitude`/`radius` query
-  params and applies `buildWithinRadiusClause` / `buildDistanceOrderByExpr`
+- POI resolution produces `{ lat, long }` (+ the set of destinationIds it maps
+  to). The **existing** accommodation search already accepts
+  `latitude`/`longitude`/`radius` query params and applies
+  `buildWithinRadiusClause` / `buildDistanceOrderByExpr`
   (`accommodation.model.ts`). Feeding a POI's coordinates as the search center
   reuses that path **with zero new geo SQL**.
-- Add a way to search "near POI X": either a public endpoint that resolves a POI
-  slug/id → coordinates, or accept a `poiId`/`poiSlug` param on the accommodation
-  search that the API expands into lat/long/radius server-side (preferred — keeps
-  the coordinate contract server-side). Default radius TBD (OQ-5).
+- Add a way to search "near POI X": accept a `poiId`/`poiSlug` param on the
+  accommodation search that the API expands into lat/long/radius server-side
+  (preferred — keeps the coordinate contract server-side). Default radius TBD
+  (OQ-5).
 
 ### 6.3 AI search POI resolution
 
@@ -175,9 +205,9 @@ Mirror the attraction three-file pattern:
    matcher (substring, case-insensitive, dedup, never invents a slug).
 2. Wire it into `search-chat.prompt.ts` `buildAllowlistLines(locale)` as an
    additional instruction line.
-3. `poi-resolver.ts` — matched slug → POI row → `{ lat, long, destinationId }`,
-   intersected with any existing location constraint (same intersect-or-no-match
-   rule as attractions).
+3. `poi-resolver.ts` — matched slug → POI row → `{ lat, long }` + mapped
+   destinationIds, intersected with any existing location constraint (same
+   intersect-or-no-match rule as attractions).
 4. Add a `poiSlugs` slot to `SearchIntentEntitiesSchema` mirroring
    `attractionSlugs`.
 
@@ -187,46 +217,55 @@ HOS-111 lesson T-009 — silent slug mismatch).
 ### 6.4 Destination detail (web)
 
 - API: extend the destination detail hydration to include the destination's POIs
-  (parallel to `_withAttractions()` — a `_withPointsOfInterest()` batch load, or
-  a dedicated `GET /destinations/:id/points-of-interest`).
+  — a `_withPointsOfInterest()` batch load parallel to `_withAttractions()`,
+  backed by a `DestinationModel.getPointsOfInterestMap` junction-table batch
+  query mirroring `getAttractionsMap`.
 - Web: render a POI section on `[...path].astro`. First iteration is a **list /
-  grid** (new `DestinationPOISection.astro`, shape `name`/`type`/`icon`/`description`),
-  NOT map pins (multi-marker deferred — NG-3 / OQ-4). Decide explicitly whether
-  to build fresh or resurrect the dead `DestinationAttractionsGrid.astro`.
+  grid** (new `DestinationPOISection.astro`, shape: i18n label + `type`/`icon` +
+  optional `description`), NOT map pins (multi-marker deferred — NG-3 / OQ-4).
+  Build fresh rather than resurrect the dead `DestinationAttractionsGrid.astro`.
 
-### 6.5 Admin
+### 6.5 Admin (deferred)
 
-Minimal admin CRUD for POIs (create/edit/delete, set coordinates, assign to a
-destination), following existing admin entity patterns. Needed so the catalog is
-maintainable beyond the initial seed (OQ-6 confirms scope).
+Admin CRUD for POIs is **out of scope for Phase 1** (OQ-6). The catalog is
+populated by seed only. A future follow-up may add an admin management surface;
+the service is built read-capable + seed-writable so that follow-up is additive.
 
 ## 7. Data model / contracts
 
 - **DB migration**: carril 1, `pnpm db:generate` → `0050_*` (mirror
-  `0048_glossy_psylocke.sql`): `CREATE TABLE points_of_interest`, FK to
-  `destinations` (cascade), unique index on `slug`, index on `destinationId`.
+  `0048_glossy_psylocke.sql`): `CREATE TABLE points_of_interest` (unique index on
+  `slug`) + `CREATE TABLE r_destination_point_of_interest` (composite PK, 2 FKs
+  cascade, index both directions).
 - **Zod (`@repo/schemas`)**: `packages/schemas/src/entities/point-of-interest/`
   with the standard 6-file set (`.schema`, `.crud`, `.query`, `.http`, `.access`,
-  `.relations`) mirroring `attraction/`. `lat`/`long` as numbers with
-  latitude/longitude range validation.
+  `.relations`) mirroring `attraction/`. `slug` (i18n key), `lat`/`long` as
+  numbers with latitude/longitude range validation, `type` via
+  `PointOfInterestTypeEnum`. **No `name` field.** Add `PointOfInterestTypeEnum`
+  to the enums package alongside the other domain enums.
 - **Service (`@repo/service-core`)**: `PointOfInterestService extends
-  BaseCrudService`, with `.helpers/.normalizers/.permissions` siblings. Slug
-  auto-derivation hook like attraction. Permission checks via `PermissionEnum`.
-- **API routes**: public read (list by destination, resolve by slug), admin CRUD
-  under `/api/v1/admin/points-of-interest`, per the three-tier architecture.
+  BaseCrudService`, with `.helpers/.normalizers/.permissions` siblings.
+  Permission checks via `PermissionEnum`. Read + proximity + seed-write; no admin
+  write routes in Phase 1.
+- **API routes**: public read only in Phase 1 — list a destination's POIs,
+  resolve by slug (for proximity). No `/admin/points-of-interest` CRUD yet
+  (NG-5).
 - **Seed**: `packages/seed/src/data/pointOfInterest/*.json` (one file per POI) +
   `packages/seed/src/required/pointsOfInterest.seed.ts` (`createSeedFactory`) +
-  `manifest-required.json` entry. Direct `destinationId` FK → no join-table seed
-  step. Update `scripts/check-seed-dual-write.sh` path list to include the new
+  `manifest-required.json` entry + a **join-table relationship seed step**
+  (mirror the attraction↔destination relationship seed). Update
+  `scripts/check-seed-dual-write.sh` path list to include the new
   `pointOfInterest` glob.
-- **i18n**: if `type` is an enum, category labels come from `@repo/i18n` by slug
-  (SPEC-266 convention). POI `name` stays literal (OQ-2).
+- **i18n (`@repo/i18n`)**: add `destinations.poiNames.<slug>` display strings
+  (es/en/pt) for every seeded POI, plus `type` label strings for each enum value.
+  Slugs in the seed JSON must exactly match the i18n keys (SPEC-266 discipline).
 
 ## 8. UX / UI behavior
 
-- **Destination detail**: a POI section listing the destination's POIs
-  (name + type/icon + optional description), ordered by `displayWeight` then name,
-  featured first. Guarded like attractions (empty → section hidden).
+- **Destination detail**: a POI section listing the destination's POIs (i18n
+  display name + `type`/`icon` + optional `description`), ordered by
+  `displayWeight` then name, featured first. Guarded like attractions (empty →
+  section hidden).
 - **Search**: when a POI is resolved (via AI chat or an explicit "near POI"
   entry point), results are filtered/ranked by distance to the POI coordinates.
 - **Map**: single-marker map behavior unchanged in iteration 1. Multi-marker POI
@@ -234,21 +273,27 @@ maintainable beyond the initial seed (OQ-6 confirms scope).
 
 ## 9. Acceptance criteria
 
-- **AC-1** A `points_of_interest` table exists with a 1:N FK to `destinations`,
-  numeric `lat`/`long`, unique `slug`, and BaseModel audit columns; migration
-  `0050_*` committed; `pnpm db:generate` drift guard passes.
-- **AC-2** `@repo/schemas` exposes the POI 6-file set; `@repo/service-core`
-  exposes `PointOfInterestService` with permission-gated CRUD; ≥90% coverage on
-  new pure logic.
-- **AC-3** POIs are seeded as a `--required` group and appear on a fresh
-  `db:fresh-dev` DB; `check-seed-dual-write.sh` recognizes the new fixture path.
+- **AC-1** A `points_of_interest` table + `r_destination_point_of_interest`
+  join table exist, with numeric `lat`/`long`, unique `slug` (no `name` column),
+  `type` enum, and BaseModel audit columns; migration `0050_*` committed;
+  `pnpm db:generate` drift guard passes.
+- **AC-2** `@repo/schemas` exposes the POI 6-file set + `PointOfInterestTypeEnum`;
+  `@repo/service-core` exposes `PointOfInterestService` (read/proximity,
+  permission-gated); ≥90% coverage on new pure logic.
+- **AC-3** POIs are seeded as a `--required` group with their destination
+  relationships and appear on a fresh `db:fresh-dev` DB;
+  `check-seed-dual-write.sh` recognizes the new fixture path.
 - **AC-4** Accommodation search returns accommodations ranked/filtered by
-  proximity to a given POI, consuming `geo.ts` helpers (no new distance SQL).
-- **AC-5** The public destination detail page renders the destination's POIs.
+  proximity to a given POI (`poiId`/`poiSlug` param), consuming `geo.ts` helpers
+  (no new distance SQL).
+- **AC-5** The public destination detail page renders the destination's POIs with
+  i18n display names.
 - **AC-6** The AI search chat resolves a POI named in natural language (allowlist
   hit) and applies its coordinates to the proximity search; unmatched terms are
   ignored (no hallucinated slugs).
-- **AC-7** Admin can create/edit/delete a POI and assign it to a destination.
+- **AC-7** POI display names and `type` labels resolve via `@repo/i18n` by slug /
+  enum value in es/en/pt; there is no `name` column and no untranslated fallback
+  string baked into the table.
 
 ## 10. Risks
 
@@ -268,47 +313,62 @@ maintainable beyond the initial seed (OQ-6 confirms scope).
 - **R-5 Seed dual-write guard.** Once POI seed is live, later fixture edits need
   a data-migration; the guard's path list must include POI or a future edit
   silently skips staging/prod. Mitigation: update the guard in the seed PR.
+- **R-6 i18n/slug drift.** With no `name` column, a POI whose slug lacks an
+  i18n entry renders as a raw slug (or missing-key). Mitigation: every seeded
+  slug ships its `destinations.poiNames.<slug>` string in the same PR; add a
+  test asserting each seeded POI slug has i18n coverage in all three locales.
 
 ## 11. Open questions
 
-- **OQ-1 (relation cardinality)** — Confirm **1:N** (direct `destinationId` FK)
-  vs M2M (attraction-style join table). Recommendation: **1:N** — a POI is a
-  physical place in one destination; M2M adds complexity with no clear use case.
-- **OQ-2 (name i18n)** — POI `name` as a literal proper noun (recommended, no
-  translation) vs i18n-by-slug like amenities/features. Real landmark names
-  generally aren't translated; only `description` might warrant i18n later.
-- **OQ-3 (`type` taxonomy)** — Closed enum (beach/stadium/park/museum/plaza/…)
-  for icon + filtering (recommended) vs free-text `type` vs no `type` at all.
-  A small enum enables consistent icons and future category filters.
-- **OQ-4 (destination map pins)** — Ship iteration 1 as a list only
-  (recommended) and defer multi-marker map pins to a follow-up, or invest in
-  extending `LocationMap` now.
-- **OQ-5 (proximity search entry + default radius)** — Expose "near POI" via a
-  `poiId`/`poiSlug` param on accommodation search that the server expands to
-  lat/long/radius (recommended), and what default radius (e.g. 5km?) applies when
-  none is given.
-- **OQ-6 (authoring)** — Confirm POIs are seed + admin-CRUD editorial catalog
-  (recommended). No owner/user-submitted POIs in scope (NG-4).
+**Resolved (owner, 2026-07-10):**
+
+- **OQ-1 (relation cardinality) — RESOLVED: M2M.** Owner chose a join table
+  (`r_destination_point_of_interest`) over the recommended 1:N. A POI may belong
+  to several destinations; coordinates live on the POI row.
+- **OQ-2 (name i18n) — RESOLVED: i18n by slug.** No `name` column; display via
+  `@repo/i18n` keyed by slug (SPEC-266 pattern), es/en/pt.
+- **OQ-3 (`type` taxonomy) — RESOLVED: closed enum.** `PointOfInterestTypeEnum`
+  = `beach | stadium | park | museum | plaza | monument | viewpoint | natural |
+  other`.
+- **OQ-6 (authoring) — RESOLVED: seed-only in Phase 1.** No admin CRUD UI now
+  (NG-5); deferred follow-up.
+
+**Still open (deferred to their phase):**
+
+- **OQ-4 (destination map pins)** — Iteration 1 is list-only (recommended);
+  multi-marker map pins deferred. Revisit when/if pins are pulled in.
+- **OQ-5 (proximity search entry + default radius)** — `poiId`/`poiSlug` param on
+  accommodation search expanded server-side to lat/long/radius (recommended
+  approach). Open: the default radius (e.g. 5km?) when none is given — decide in
+  Phase 2.
 - **OQ-7 (allowlist population)** — Curate the AI allowlist statically from the
-  seed set (recommended, mirrors attractions) — accept that new seeded POIs need
-  a matching allowlist entry to be AI-resolvable.
+  seed set (recommended, mirrors attractions); new seeded POIs need a matching
+  allowlist entry to be AI-resolvable. Confirm in Phase 3.
 
 ## 12. Implementation notes
 
-- Suggested phasing (for Task Master task generation at implementation time):
-  - **Phase 1 — Data layer**: table + migration, Zod 6-file set, service +
-    permissions, seed fixtures + manifest + dual-write guard update.
+- Suggested phasing (for Task Master task generation):
+  - **Phase 1 — Data layer**: `points_of_interest` + join table + migration,
+    `PointOfInterestTypeEnum`, Zod 6-file set, service + permissions, seed
+    fixtures + relationship seed + manifest + i18n strings + dual-write guard
+    update. **No admin CRUD** (NG-5).
   - **Phase 2 — Proximity search (API)**: POI resolution + accommodation search
-    "near POI", consuming `geo.ts`.
+    "near POI" (`poiId`/`poiSlug`), consuming `geo.ts`; decide default radius
+    (OQ-5).
   - **Phase 3 — AI search**: `poi-allowlist.ts` + `poi-resolver.ts` +
-    `buildAllowlistLines` wiring + `poiSlugs` intent slot.
-  - **Phase 4 — Destination detail (web)**: API hydration + `DestinationPOISection.astro`.
-  - **(Deferred) Phase 5**: multi-marker map pins (extend `LocationMap`).
+    `buildAllowlistLines` wiring + `poiSlugs` intent slot (OQ-7).
+  - **Phase 4 — Destination detail (web)**: `_withPointsOfInterest()` hydration +
+    `DestinationPOISection.astro`.
+  - **(Deferred) Phase 5**: multi-marker map pins (extend `LocationMap`); admin
+    CRUD surface.
+- **POI = attraction's structure + amenity's naming + coordinates.** Take the
+  M2M join-table shape, `isBuiltin`/`isFeatured`/`displayWeight`, and curated
+  `--required` seed-with-relationship-step from `attraction` (copy schema → model
+  → service → seed layer by layer). But drop attraction's literal `name` column
+  and use the `amenity`/`feature` **slug-only + i18n-by-slug** naming instead (per
+  OQ-2). The additions on top: `lat`/`long` numeric columns and the `type` enum.
 - Reuse `@repo/db` `utils/geo.ts` directly. Pass POI's numeric `lat`/`long`
   columns to `buildHaversineDistanceExpr` — no JSONB extraction, no `::numeric`.
-- Mirror `attraction` for every layer (schema/service/seed) to stay consistent;
-  the only structural divergences are: 1:N instead of M2M, and real coordinate
-  columns.
 - Cross-check every AI allowlist slug against the seed JSON before shipping
   (HOS-111 T-009 lesson).
 

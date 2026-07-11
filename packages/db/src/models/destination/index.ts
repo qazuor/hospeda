@@ -2,4 +2,6 @@ export * from './attraction.model.ts';
 export * from './destination.model.ts';
 export * from './destinationFaq.model.ts';
 export * from './destinationReview.model.ts';
+export * from './point-of-interest.model.ts';
 export * from './rDestinationAttraction.model.ts';
+export * from './rDestinationPointOfInterest.model.ts';

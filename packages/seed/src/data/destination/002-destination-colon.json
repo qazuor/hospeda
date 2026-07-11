@@ -169,6 +169,10 @@
         "072-attraction-plaza_principal",
         "018-attraction-centro_historico"
     ],
+    "pointOfInterestIds": [
+        "010-point-of-interest-balneario_itape",
+        "011-point-of-interest-parque_nacional_el_palmar"
+    ],
     "faqs": [
         {
             "question": "¿Cómo llego a Colón desde Buenos Aires?",

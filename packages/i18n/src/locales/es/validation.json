@@ -2055,6 +2055,9 @@
         "permissionEffect": {
             "invalid": "El efecto del permiso no es válido"
         },
+        "pointOfInterestType": {
+            "invalid": "El point of interest type no es válido"
+        },
         "postCategory": {
             "invalid": "El post category no es válido"
         },
@@ -2997,6 +3000,67 @@
         "version": {
             "format": "El formato de la versión no es válido",
             "required": "La versión es obligatoria"
+        }
+    },
+    "pointOfInterest": {
+        "bulkAdd": {
+            "pointOfInterestIds": {
+                "max": "El point of interest ids no puede superar los {{max}} caracteres",
+                "min": "El point of interest ids debe tener al menos {{min}} caracteres"
+            }
+        },
+        "bulkRemove": {
+            "pointOfInterestIds": {
+                "max": "El point of interest ids no puede superar los {{max}} caracteres",
+                "min": "El point of interest ids debe tener al menos {{min}} caracteres"
+            }
+        },
+        "description": {
+            "max": "La descripción no puede superar los {{max}} caracteres",
+            "min": "La descripción debe tener al menos {{min}} caracteres",
+            "required": "La descripción es obligatoria"
+        },
+        "displayWeight": {
+            "int": "El peso de visualización debe ser un número entero",
+            "max": "El peso de visualización no puede superar los {{max}} caracteres",
+            "min": "El peso de visualización debe tener al menos {{min}} caracteres",
+            "required": "El peso de visualización es obligatorio"
+        },
+        "icon": {
+            "max": "El ícono no puede superar los {{max}} caracteres",
+            "min": "El ícono debe tener al menos {{min}} caracteres",
+            "required": "El ícono es obligatorio"
+        },
+        "lat": {
+            "max": "El lat no puede superar los {{max}} caracteres",
+            "min": "El lat debe tener al menos {{min}} caracteres",
+            "required": "El lat es obligatorio"
+        },
+        "listItem": {
+            "destinationCount": {
+                "int": "El destination count debe ser un número entero",
+                "min": "El destination count debe tener al menos {{min}} caracteres"
+            }
+        },
+        "long": {
+            "max": "El long no puede superar los {{max}} caracteres",
+            "min": "El long debe tener al menos {{min}} caracteres",
+            "required": "El long es obligatorio"
+        },
+        "relation": {
+            "notes": {
+                "max": "El notas no puede superar los {{max}} caracteres"
+            },
+            "order": {
+                "int": "El orden debe ser un número entero",
+                "min": "El orden debe tener al menos {{min}} caracteres"
+            }
+        },
+        "slug": {
+            "max": "El slug no puede superar los {{max}} caracteres",
+            "min": "El slug debe tener al menos {{min}} caracteres",
+            "pattern": "El formato del slug no es válido",
+            "required": "El slug es obligatorio"
         }
     },
     "positive": "El valor debe ser un número positivo",

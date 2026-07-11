@@ -1,0 +1,2262 @@
+{
+  "version": "1.0",
+  "specRef": "HOS-113",
+  "title": "Points of Interest (POI) in destinations",
+  "created": "2026-07-10T09:03:15.000Z",
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Add PointOfInterestTypeEnum to schemas package",
+      "description": "Create the closed `PointOfInterestTypeEnum` (values BEACH, STADIUM, PARK, MUSEUM, PLAZA, MONUMENT, VIEWPOINT, NATURAL, OTHER — SCREAMING_SNAKE per codebase convention, mirroring `AccommodationTypeEnum`) plus its Zod wrapper, mirroring `packages/schemas/src/enums/amenity-type.enum.ts` + `.schema.ts` exactly (OQ-3). Files: `packages/schemas/src/enums/point-of-interest-type.enum.ts`, `packages/schemas/src/enums/point-of-interest-type.schema.ts`, edit `packages/schemas/src/enums/index.ts` barrel to export both. Unit tests: `packages/schemas/test/enums/point-of-interest-type.schema.test.ts` — valid enum values parse, invalid string rejected with `zodError.enums.pointOfInterestType.invalid` message key.",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-002",
+        "T-007"
+      ],
+      "subtasks": [
+        {
+          "title": "Define PointOfInterestTypeEnum TS enum",
+          "completed": true
+        },
+        {
+          "title": "Define PointOfInterestTypeEnumSchema (z.nativeEnum)",
+          "completed": true
+        },
+        {
+          "title": "Export both from enums barrel",
+          "completed": true
+        },
+        {
+          "title": "Write enum schema unit tests",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "schemas",
+        "enum"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T10:00:00.000Z",
+        "completed": "2026-07-10T10:10:00.000Z"
+      }
+    },
+    {
+      "id": "T-002",
+      "title": "Add PointOfInterestTypePgEnum to Drizzle enums",
+      "description": "Add a `pgEnum('point_of_interest_type_enum', enumToTuple(PointOfInterestTypeEnum))` export in `packages/db/src/schemas/enums.dbschema.ts`, mirroring the `AmenitiesTypePgEnum`/`ClientTypePgEnum` one-liners already there. This is the DB-side counterpart to T-001's Zod enum, consumed by the `points_of_interest.type` column. No new file. Unit tests: extend `packages/db/test/schemas/enums.dbschema.test.ts` (or create if none exists for this file) asserting the pgEnum's value tuple matches `PointOfInterestTypeEnum`'s values exactly.",
+      "status": "completed",
+      "complexity": 1,
+      "blockedBy": [
+        "T-001"
+      ],
+      "blocks": [
+        "T-003"
+      ],
+      "subtasks": [
+        {
+          "title": "Import PointOfInterestTypeEnum from @repo/schemas",
+          "completed": true
+        },
+        {
+          "title": "Add PointOfInterestTypePgEnum = pgEnum(...) export",
+          "completed": true
+        },
+        {
+          "title": "Write/extend enum tuple parity test",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "db",
+        "enum"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T10:10:00.000Z",
+        "completed": "2026-07-10T10:20:00.000Z"
+      }
+    },
+    {
+      "id": "T-003",
+      "title": "Create points_of_interest Drizzle table schema",
+      "description": "Create `packages/db/src/schemas/destination/point-of-interest.dbschema.ts` mirroring `attraction.dbschema.ts` structurally (id uuid PK, slug text UNIQUE not null, isBuiltin/isFeatured bool, displayWeight int default 50, lifecycleState via `LifecycleStatusPgEnum`, icon/description text nullable, full BaseModel audit block with user FKs onDelete set null, adminInfo jsonb) but WITHOUT a `name` column (OQ-2), plus the two POI-specific additions: `lat` and `long` as `doublePrecision()` NOT NULL (R-3: plain numeric, no JSONB/string), and `type` using T-002's `PointOfInterestTypePgEnum` NOT NULL. Indexes: unique on `slug`, index on `isFeatured`, index on `lifecycleState`, index on `type`. Add `pointsOfInterestRelations` (relations to the join table, many). Unit tests: `packages/db/test/schemas/destination/point-of-interest.dbschema.test.ts` verifying column definitions/nullability/defaults.",
+      "status": "completed",
+      "complexity": 3,
+      "blockedBy": [
+        "T-002"
+      ],
+      "blocks": [
+        "T-004"
+      ],
+      "subtasks": [
+        {
+          "title": "Define points_of_interest table columns",
+          "completed": true
+        },
+        {
+          "title": "Add slug unique + isFeatured/lifecycleState/type indexes",
+          "completed": true
+        },
+        {
+          "title": "Add BaseModel audit columns + FKs",
+          "completed": true
+        },
+        {
+          "title": "Define pointsOfInterestRelations",
+          "completed": true
+        },
+        {
+          "title": "Write schema unit tests",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "db",
+        "schema"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T10:20:00.000Z",
+        "completed": "2026-07-10T10:35:00.000Z"
+      }
+    },
+    {
+      "id": "T-004",
+      "title": "Create r_destination_point_of_interest join table schema",
+      "description": "Create `packages/db/src/schemas/destination/r_destination_point_of_interest.dbschema.ts`, mirroring `r_destination_attraction.dbschema.ts` exactly: composite PK `(destinationId, pointOfInterestId)`, both uuid FKs `onDelete: 'cascade'`, a composite index and a reverse `pointOfInterestId` index, plus `one(destinations)`/`one(pointsOfInterest)` relations and the inverse `many(destinations)` relation labeled `destinationsWithPointOfInterest` (M2M per OQ-1). Unit tests: `packages/db/test/schemas/destination/r_destination_point_of_interest.dbschema.test.ts` verifying PK composition, cascade behavior config, and both indexes exist.",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [
+        "T-003"
+      ],
+      "blocks": [
+        "T-005"
+      ],
+      "subtasks": [
+        {
+          "title": "Define composite PK + 2 FK columns with cascade",
+          "completed": true
+        },
+        {
+          "title": "Add composite + reverse indexes",
+          "completed": true
+        },
+        {
+          "title": "Define relations (both directions)",
+          "completed": true
+        },
+        {
+          "title": "Write schema unit tests",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "db",
+        "schema"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T10:35:00.000Z",
+        "completed": "2026-07-10T10:45:00.000Z"
+      }
+    },
+    {
+      "id": "T-005",
+      "title": "Export POI Drizzle schemas from db package barrel",
+      "description": "Add `export * from './destination/point-of-interest.dbschema.js'` and the join-table equivalent to the db package's schema barrel (same file/pattern used for `attraction.dbschema.ts`'s export — locate it via the existing attraction export line). Confirm both new tables are visible to `drizzle-kit generate` by running `pnpm --filter @repo/db exec drizzle-kit check` (or the project's schema-drift check) locally. Unit tests: none new (covered by T-003/T-004); this task's own verification is the successful barrel export + a quick import smoke test asserting `pointsOfInterest` and `rDestinationPointOfInterest` tables are importable from `@repo/db`.",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [
+        "T-004"
+      ],
+      "blocks": [
+        "T-006"
+      ],
+      "subtasks": [
+        {
+          "title": "Add barrel export lines for both new schema files",
+          "completed": true
+        },
+        {
+          "title": "Verify tables importable from @repo/db package root",
+          "completed": true
+        },
+        {
+          "title": "Write barrel import smoke test",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "db"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T10:45:00.000Z",
+        "completed": "2026-07-10T10:52:00.000Z"
+      }
+    },
+    {
+      "id": "T-006",
+      "title": "Generate and commit migration 0050 for POI tables",
+      "description": "Run `pnpm db:generate` to produce the structural migration (expected `0050_*.sql`, mirroring `0048_glossy_psylocke.sql`'s shape: `CREATE TABLE points_of_interest`, `CREATE TABLE r_destination_point_of_interest`, `CREATE TYPE point_of_interest_type_enum`, FK constraints with `ON DELETE cascade`, unique index on slug, plus the other indexes from T-003/T-004). Commit the generated `.sql` file and its journal entry. Verify `pnpm env:check:registry`-style drift guard (the `db:generate` drift check referenced in AC-1) passes with no uncommitted schema diff. Apply locally via `pnpm db:migrate` against the worktree dev DB and confirm both tables exist. No new unit tests (migration SQL is generated, not hand-written) — verification is `pnpm db:migrate` succeeding + a manual `\\d points_of_interest` / `\\d r_destination_point_of_interest` check.",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [
+        "T-005"
+      ],
+      "blocks": [
+        "T-015",
+        "T-016"
+      ],
+      "subtasks": [
+        {
+          "title": "Run pnpm db:generate",
+          "completed": true
+        },
+        {
+          "title": "Review generated 0050_*.sql for correctness vs 0048 template",
+          "completed": true
+        },
+        {
+          "title": "Apply locally via pnpm db:migrate",
+          "completed": false
+        },
+        {
+          "title": "Verify drift guard passes (no pending schema diff)",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "db",
+        "migration"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T10:52:00.000Z",
+        "completed": "2026-07-10T11:05:00.000Z"
+      }
+    },
+    {
+      "id": "T-007",
+      "title": "Create point-of-interest.schema.ts base Zod schema",
+      "description": "Create `packages/schemas/src/entities/point-of-interest/point-of-interest.schema.ts` mirroring `attraction.schema.ts`'s `AttractionSchema` shape, but WITHOUT `name` (OQ-2) and WITH `lat`/`long`/`type` added: `slug` (string, regex `^[a-z0-9]+(?:[-_][a-z0-9]+)*$` per SPEC-266 underscore-allowing discipline, required — this is the i18n key), `lat` (number, min -90 max 90), `long` (number, min -180 max 180), `type` (`PointOfInterestTypeEnumSchema` from T-001, required), `icon`/`description` optional strings, `isBuiltin`/`isFeatured` bool default false, `displayWeight` int default 50, `lifecycleState`. Also add `PointOfInterestSummarySchema`/`PointOfInterestMiniSchema` via `.pick()`. Unit tests: `packages/schemas/test/entities/point-of-interest/point-of-interest.schema.test.ts` covering valid payload, lat/long out-of-range rejection, invalid slug rejection, missing `type` rejection, confirming no `name` field is accepted.",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [
+        "T-001"
+      ],
+      "blocks": [
+        "T-008",
+        "T-009",
+        "T-011",
+        "T-012"
+      ],
+      "subtasks": [
+        {
+          "title": "Define PointOfInterestSchema with lat/long/type, no name",
+          "completed": true
+        },
+        {
+          "title": "Define PointOfInterestSummarySchema/MiniSchema",
+          "completed": true
+        },
+        {
+          "title": "Write schema unit tests incl. lat/long range + slug regex edge cases",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "schemas"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T12:30:00.000Z",
+        "completed": "2026-07-10T12:40:00.000Z"
+      }
+    },
+    {
+      "id": "T-008",
+      "title": "Create point-of-interest.crud.schema.ts",
+      "description": "Create `packages/schemas/src/entities/point-of-interest/point-of-interest.crud.schema.ts` mirroring `attraction.crud.schema.ts`: Create/Update/Delete/Restore input+output schemas derived from T-007's `PointOfInterestSchema` via `.omit()`/`stripShapeDefaults(...).partial()`, plus `PointOfInterestAddToDestinationInputSchema`/`RemoveFromDestinationInputSchema`/`DestinationRelationOutputSchema` (mirroring the attraction relation-management input shapes, needed even though admin write routes are deferred — NG-5 — since the seed factory and relationship seed step both call these create/relation methods programmatically). Unit tests: `point-of-interest.crud.schema.test.ts` covering create input validation, update partial semantics, relation input shape.",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [
+        "T-007"
+      ],
+      "blocks": [
+        "T-010",
+        "T-013"
+      ],
+      "subtasks": [
+        {
+          "title": "Define Create/Update/Delete/Restore input+output schemas",
+          "completed": true
+        },
+        {
+          "title": "Define AddToDestination/RemoveFromDestination/RelationOutput schemas",
+          "completed": true
+        },
+        {
+          "title": "Write crud schema unit tests",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "schemas"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T12:40:00.000Z",
+        "completed": "2026-07-10T12:41:30.000Z"
+      }
+    },
+    {
+      "id": "T-009",
+      "title": "Create point-of-interest.query.schema.ts",
+      "description": "Create `packages/schemas/src/entities/point-of-interest/point-of-interest.query.schema.ts` mirroring `attraction.query.schema.ts`: `PointOfInterestFiltersSchema` (add a `type` filter on top of the attraction pattern), `PointOfInterestSearchSchema extends BaseSearchSchema`, list/search result item schemas, `HttpPointOfInterestSearchSchema`, and critically `DestinationIdsByPointOfInterestSlugsSchema` (`{ slugs: z.array(z.string()).min(1) }`, mirroring `DestinationIdsByAttractionSlugsSchema` exactly — this is the input contract T-020's `getDestinationIdsByPointOfInterestSlugs` service method and T-039's AI resolver both consume). Unit tests: `point-of-interest.query.schema.test.ts` covering filter/search parsing and the slugs-array min-length validation.",
+      "status": "completed",
+      "complexity": 3,
+      "blockedBy": [
+        "T-007"
+      ],
+      "blocks": [
+        "T-010",
+        "T-013"
+      ],
+      "subtasks": [
+        {
+          "title": "Define PointOfInterestFiltersSchema with type filter",
+          "completed": true
+        },
+        {
+          "title": "Define PointOfInterestSearchSchema + result item schemas",
+          "completed": true
+        },
+        {
+          "title": "Define DestinationIdsByPointOfInterestSlugsSchema",
+          "completed": true
+        },
+        {
+          "title": "Write query schema unit tests",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "schemas"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T12:41:30.000Z",
+        "completed": "2026-07-10T12:43:00.000Z"
+      }
+    },
+    {
+      "id": "T-010",
+      "title": "Create point-of-interest.http.schema.ts",
+      "description": "Create `packages/schemas/src/entities/point-of-interest/point-of-interest.http.schema.ts` mirroring `attraction.http.schema.ts`: HTTP-coerced create/update/search schemas (query-string-safe versions of T-008/T-009's schemas, using the same `HttpQueryFields`-style coercion helpers as attraction) plus `httpToDomain*` mapper functions converting coerced HTTP input into domain input shapes. Unit tests: `point-of-interest.http.schema.test.ts` covering string-to-number coercion for `lat`/`long`/`displayWeight` query params and the httpToDomain mapper round-trip.",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [
+        "T-008",
+        "T-009"
+      ],
+      "blocks": [
+        "T-013"
+      ],
+      "subtasks": [
+        {
+          "title": "Define HTTP-coerced create/update/search schemas",
+          "completed": true
+        },
+        {
+          "title": "Define httpToDomain mapper functions",
+          "completed": true
+        },
+        {
+          "title": "Write http schema unit tests",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "schemas"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T12:43:00.000Z",
+        "completed": "2026-07-10T12:46:30.000Z"
+      }
+    },
+    {
+      "id": "T-011",
+      "title": "Create point-of-interest.access.schema.ts",
+      "description": "Create `packages/schemas/src/entities/point-of-interest/point-of-interest.access.schema.ts` mirroring `attraction.access.schema.ts`: `PointOfInterestPublicSchema`/`ProtectedSchema`/`AdminSchema` tiers via `.pick()` on T-007's base schema (public tier excludes `adminInfo`/audit-by fields; all tiers include `lat`/`long`/`type` since coordinates are not sensitive). Unit tests: `point-of-interest.access.schema.test.ts` asserting each tier strips the expected fields.",
+      "status": "completed",
+      "complexity": 1,
+      "blockedBy": [
+        "T-007"
+      ],
+      "blocks": [
+        "T-013"
+      ],
+      "subtasks": [
+        {
+          "title": "Define Public/Protected/Admin access tier schemas",
+          "completed": true
+        },
+        {
+          "title": "Write access tier unit tests",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "schemas"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T12:50:00.000Z",
+        "completed": "2026-07-10T12:53:30.000Z"
+      }
+    },
+    {
+      "id": "T-012",
+      "title": "Create point-of-interest.relations.schema.ts",
+      "description": "Create `packages/schemas/src/entities/point-of-interest/point-of-interest.relations.schema.ts` mirroring `attraction.relations.schema.ts`: `DestinationPointOfInterestRelationSchema`, `PointOfInterestWithDestinationSchema`, bulk add/remove/reorder schemas, `BulkRelationOperationOutputSchema` (M2M per OQ-1, so a POI can list multiple destinationIds). Unit tests: `point-of-interest.relations.schema.test.ts` covering relation schema shape and bulk-operation output validation.",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [
+        "T-007"
+      ],
+      "blocks": [
+        "T-013",
+        "T-047"
+      ],
+      "subtasks": [
+        {
+          "title": "Define DestinationPointOfInterestRelationSchema",
+          "completed": true
+        },
+        {
+          "title": "Define PointOfInterestWithDestinationSchema + bulk schemas",
+          "completed": true
+        },
+        {
+          "title": "Write relations schema unit tests",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "schemas"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T12:53:30.000Z",
+        "completed": "2026-07-10T12:57:30.000Z"
+      }
+    },
+    {
+      "id": "T-013",
+      "title": "Create point-of-interest schemas barrel and wire package export",
+      "description": "Create `packages/schemas/src/entities/point-of-interest/index.ts` as a plain `export * from` barrel of the 6 files from T-007/T-008/T-009/T-010/T-011/T-012, mirroring `attraction/index.ts`. Wire this barrel into `packages/schemas/src/entities/index.ts` (or wherever entity barrels are aggregated) so `@repo/schemas` exposes the full POI 6-file set (AC-2). Unit tests: a barrel smoke test asserting all expected named exports (`PointOfInterestSchema`, `PointOfInterestCreateInputSchema`, etc.) are importable from `@repo/schemas`.",
+      "status": "completed",
+      "complexity": 1,
+      "blockedBy": [
+        "T-008",
+        "T-009",
+        "T-010",
+        "T-011",
+        "T-012"
+      ],
+      "blocks": [
+        "T-017",
+        "T-023"
+      ],
+      "subtasks": [
+        {
+          "title": "Create point-of-interest/index.ts barrel",
+          "completed": true
+        },
+        {
+          "title": "Wire into entities root barrel",
+          "completed": true
+        },
+        {
+          "title": "Write barrel export smoke test",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "schemas"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T12:57:30.000Z",
+        "completed": "2026-07-10T13:02:00.000Z"
+      }
+    },
+    {
+      "id": "T-014",
+      "title": "Add PointOfInterest permission enum values",
+      "description": "Add `POINT_OF_INTEREST_CREATE/UPDATE/DELETE/VIEW/RESTORE/LIFECYCLE_CHANGE/HARD_DELETE` and `DESTINATION_POINT_OF_INTEREST_MANAGE` to `packages/schemas/src/enums/permission.enum.ts` and register the `POINT_OF_INTEREST` category in `PermissionCategoryEnum`, following the documented 'Adding Missing Permissions' recipe in service-core's CLAUDE.md. DEVIATION NOTE (deliberate): unlike attraction's split-brain gate (route layer checks `ATTRACTION_*` while the service layer mostly checks `DESTINATION_*`), POI uses `POINT_OF_INTEREST_*` consistently at BOTH the service layer (T-018) and any future route layer — do not replicate attraction's inconsistency. Unit tests: extend `permission.enum.test.ts` (or equivalent) asserting the new values exist and are unique strings.",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-018"
+      ],
+      "subtasks": [
+        {
+          "title": "Add POINT_OF_INTEREST_* values to PermissionEnum",
+          "completed": true
+        },
+        {
+          "title": "Add DESTINATION_POINT_OF_INTEREST_MANAGE value",
+          "completed": true
+        },
+        {
+          "title": "Register POINT_OF_INTEREST category in PermissionCategoryEnum",
+          "completed": true
+        },
+        {
+          "title": "Write/extend permission enum tests",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "schemas",
+        "auth"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T13:03:00.000Z",
+        "completed": "2026-07-10T13:06:30.000Z"
+      }
+    },
+    {
+      "id": "T-015",
+      "title": "Create PointOfInterestModel",
+      "description": "Create `packages/db/src/models/destination/point-of-interest.model.ts` mirroring `packages/db/src/models/destination/attraction.model.ts` (extends `BaseModel`, wires the `points_of_interest` Drizzle table from T-003, standard CRUD query builders). Unit tests: `packages/db/test/models/destination/point-of-interest.model.test.ts` mirroring `attraction.model.test.ts`'s coverage (create/find/update/soft-delete happy paths using the test DB harness).",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [
+        "T-006"
+      ],
+      "blocks": [
+        "T-016",
+        "T-019"
+      ],
+      "subtasks": [
+        {
+          "title": "Create PointOfInterestModel extends BaseModel",
+          "completed": true
+        },
+        {
+          "title": "Wire points_of_interest table + standard query builders",
+          "completed": true
+        },
+        {
+          "title": "Write model unit tests",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "db",
+        "model"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T14:00:00.000Z",
+        "completed": "2026-07-10T14:15:00.000Z"
+      }
+    },
+    {
+      "id": "T-016",
+      "title": "Create RDestinationPointOfInterestModel",
+      "description": "Create `packages/db/src/models/destination/rDestinationPointOfInterest.model.ts` mirroring `rDestinationAttraction.model.ts` exactly (join-table model over T-004's schema, composite-key CRUD helpers). Unit tests: `packages/db/test/models/destination/rDestinationPointOfInterest.model.test.ts` mirroring the attraction join model's test coverage (add/remove relation, list by destination, list by POI).",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [
+        "T-006",
+        "T-015"
+      ],
+      "blocks": [
+        "T-019",
+        "T-045"
+      ],
+      "subtasks": [
+        {
+          "title": "Create RDestinationPointOfInterestModel extends BaseModel",
+          "completed": true
+        },
+        {
+          "title": "Wire composite-key CRUD helpers",
+          "completed": true
+        },
+        {
+          "title": "Write join model unit tests",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "db",
+        "model"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T14:15:00.000Z",
+        "completed": "2026-07-10T14:25:00.000Z"
+      }
+    },
+    {
+      "id": "T-017",
+      "title": "Create point-of-interest.normalizers.ts",
+      "description": "Create `packages/service-core/src/services/point-of-interest/point-of-interest.normalizers.ts` mirroring `attraction.normalizers.ts`: `normalizeCreateInput`/`normalizeUpdateInput`/`normalizeListInput`/`normalizeViewInput` plus `normalizeAdminInfo`. Simpler than attraction's version since POI has no `name`-derived slug generation (slug is always provided by seed, not auto-generated) — mostly pass-through normalization. Unit tests: `packages/service-core/test/services/point-of-interest/point-of-interest.normalizers.test.ts` covering each normalizer function's identity/pass-through behavior and the adminInfo normalization edge case.",
+      "status": "completed",
+      "complexity": 1,
+      "blockedBy": [
+        "T-013"
+      ],
+      "blocks": [
+        "T-019"
+      ],
+      "subtasks": [
+        {
+          "title": "Implement normalizeCreateInput/UpdateInput",
+          "completed": true
+        },
+        {
+          "title": "Implement normalizeListInput/ViewInput/AdminInfo",
+          "completed": true
+        },
+        {
+          "title": "Write normalizer unit tests",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "service-core"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T14:25:00.000Z",
+        "completed": "2026-07-10T14:32:00.000Z"
+      }
+    },
+    {
+      "id": "T-018",
+      "title": "Create point-of-interest.permissions.ts",
+      "description": "Create `packages/service-core/src/services/point-of-interest/point-of-interest.permissions.ts` with `checkCanCreatePointOfInterest`/`UpdatePointOfInterest`/`DeletePointOfInterest`/`ViewPointOfInterest`/`RestorePointOfInterest`/`AdminList` functions, ALL consistently checking `PermissionEnum.POINT_OF_INTEREST_*` from T-014 (per T-014's deviation note — do not split between `DESTINATION_*` and `POINT_OF_INTEREST_*` like attraction does). Public read access (view) should NOT require a permission (POIs are a public catalog, mirroring how public GET routes work today). Unit tests: `point-of-interest.permissions.test.ts` covering allow/deny per permission function with mocked actors.",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [
+        "T-014"
+      ],
+      "blocks": [
+        "T-019"
+      ],
+      "subtasks": [
+        {
+          "title": "Implement checkCanCreate/Update/Delete/RestorePointOfInterest",
+          "completed": true
+        },
+        {
+          "title": "Implement checkCanViewPointOfInterest + checkCanAdminList",
+          "completed": true
+        },
+        {
+          "title": "Write permission unit tests (allow/deny cases)",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "service-core",
+        "auth"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T14:32:00.000Z",
+        "completed": "2026-07-10T14:40:00.000Z"
+      }
+    },
+    {
+      "id": "T-019",
+      "title": "Create PointOfInterestService core CRUD",
+      "description": "Create `packages/service-core/src/services/point-of-interest/point-of-interest.service.ts`: `PointOfInterestService extends BaseCrudRelatedService<PointOfInterest, PointOfInterestModel, RDestinationPointOfInterestModel, ...>` mirroring `attraction.service.ts`'s core shape — `static ENTITY_NAME = 'pointOfInterest'`, `getDefaultListRelations()`, `getSearchableColumns()` returning `['slug', 'description']` (no `name` per OQ-2), the 12 standard `_can*` hooks wired to T-018's permission checks, `_canAdminList` override, `createDefaultRelatedModel()`, and `_executeSearch`/`_executeCount`/`searchForList` overrides. Relation/resolver methods (addPointOfInterestToDestination etc.) are T-020, NOT this task. Unit tests: `packages/service-core/test/services/point-of-interest/point-of-interest.service.test.ts` covering create/read/update/soft-delete/restore happy paths + permission-denied cases, mirroring `attraction.service.test.ts` structure.",
+      "status": "completed",
+      "complexity": 3,
+      "blockedBy": [
+        "T-015",
+        "T-016",
+        "T-017",
+        "T-018"
+      ],
+      "blocks": [
+        "T-020",
+        "T-024"
+      ],
+      "subtasks": [
+        {
+          "title": "Define PointOfInterestService class + ENTITY_NAME/getSearchableColumns",
+          "completed": true
+        },
+        {
+          "title": "Wire all _can* hooks to point-of-interest.permissions.ts",
+          "completed": true
+        },
+        {
+          "title": "Implement createDefaultRelatedModel + search/count overrides",
+          "completed": true
+        },
+        {
+          "title": "Write core CRUD service unit tests",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "service-core"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T14:40:00.000Z",
+        "completed": "2026-07-10T14:55:00.000Z"
+      }
+    },
+    {
+      "id": "T-020",
+      "title": "Add relation and slug-resolution methods to PointOfInterestService",
+      "description": "Add 5 public methods to `point-of-interest.service.ts` from T-019, mirroring attraction's equivalents: `addPointOfInterestToDestination`, `removePointOfInterestFromDestination`, `getPointsOfInterestForDestination`, `getDestinationsByPointOfInterest`, and `getDestinationIdsByPointOfInterestSlugs` (consumes T-009's `DestinationIdsByPointOfInterestSlugsSchema` — this is the AI-search and proximity-search entry point used by T-020's downstream consumers T-032 and T-039). Unit tests: extend `point-of-interest.service.test.ts` covering each relation method's happy path, the M2M case (one POI mapped to 2+ destinations), and `getDestinationIdsByPointOfInterestSlugs` with matched/unmatched slugs.",
+      "status": "completed",
+      "complexity": 3,
+      "blockedBy": [
+        "T-019"
+      ],
+      "blocks": [
+        "T-021",
+        "T-026",
+        "T-031",
+        "T-039"
+      ],
+      "subtasks": [
+        {
+          "title": "Implement addPointOfInterestToDestination/remove",
+          "completed": true
+        },
+        {
+          "title": "Implement getPointsOfInterestForDestination/getDestinationsByPointOfInterest",
+          "completed": true
+        },
+        {
+          "title": "Implement getDestinationIdsByPointOfInterestSlugs",
+          "completed": true
+        },
+        {
+          "title": "Write relation + slug-resolution unit tests incl. M2M case",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "service-core"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T14:55:00.000Z",
+        "completed": "2026-07-10T15:15:00.000Z"
+      }
+    },
+    {
+      "id": "T-021",
+      "title": "Create public POI API routes",
+      "description": "Create `apps/api/src/routes/point-of-interest/public/{getById,getBySlug,list,index}.ts` mirroring `apps/api/src/routes/attraction/public/*.ts` exactly (using `createPublicListRoute`/equivalent factories, `PointOfInterestPublicSchema` from T-011, `PointOfInterestSearchHttpSchema` from T-010). Public read only per AC-5/§7 — no admin write routes (NG-5). Unit tests: `apps/api/test/routes/point-of-interest/public/*.test.ts` mirroring the attraction public route tests (200 list/getById/getBySlug happy paths, 404 for unknown slug).",
+      "status": "completed",
+      "complexity": 3,
+      "blockedBy": [
+        "T-020"
+      ],
+      "blocks": [
+        "T-022"
+      ],
+      "subtasks": [
+        {
+          "title": "Create list.ts route",
+          "completed": true
+        },
+        {
+          "title": "Create getById.ts + getBySlug.ts routes",
+          "completed": true
+        },
+        {
+          "title": "Create index.ts route aggregator",
+          "completed": true
+        },
+        {
+          "title": "Write public route unit tests",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "api"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T15:15:00.000Z",
+        "completed": "2026-07-10T15:35:00.000Z"
+      }
+    },
+    {
+      "id": "T-022",
+      "title": "Register POI routes in API app + route registration tests",
+      "description": "Wire `pointOfInterestPublicRoutes` (T-021's `index.ts`) into the main Hono app's route registration (locate the file that mounts `attractionPublicRoutes` under `/api/v1/public/attractions` — same location, add `/api/v1/public/points-of-interest`). Update `apps/api/docs/route-architecture.md` reference table if it enumerates entities. Unit tests: an app-level integration test asserting `GET /api/v1/public/points-of-interest` returns 200 with the expected paginated shape (can be a thin smoke test alongside existing app-registration tests).",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [
+        "T-021"
+      ],
+      "blocks": [
+        "T-035"
+      ],
+      "subtasks": [
+        {
+          "title": "Mount POI public routes at /api/v1/public/points-of-interest",
+          "completed": true
+        },
+        {
+          "title": "Update route-architecture.md if entity table exists",
+          "completed": true
+        },
+        {
+          "title": "Write app-level route registration test",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "api"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T15:35:00.000Z",
+        "completed": "2026-07-10T15:40:00.000Z"
+      }
+    },
+    {
+      "id": "T-023",
+      "title": "Create seed data JSON fixtures for POIs",
+      "description": "Create `packages/seed/src/data/pointOfInterest/*.json` (one file per POI, naming `NNN-point-of-interest-<slug>.json` mirroring attraction's `NNN-attraction-<slug>.json` convention). Author a curated initial set of 10-12 real Concepción del Uruguay / Litoral landmarks (e.g. autódromo, playa Banco Pelay, plaza principal, museums) covering all 9 `type` enum values at least once. Each fixture: `{ $schema, id, slug, lat, long, type, description?, icon?, isBuiltin: true, displayWeight, lifecycleState: 'ACTIVE' }` — NO `name` field (OQ-2). No unit tests for this task (pure data authoring); validation happens in T-024's seed factory run and T-030's i18n coverage test.",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [
+        "T-013"
+      ],
+      "blocks": [
+        "T-024",
+        "T-027",
+        "T-029"
+      ],
+      "subtasks": [
+        {
+          "title": "Curate 10-12 real POIs covering all 9 type values",
+          "completed": true
+        },
+        {
+          "title": "Write JSON fixtures with lat/long/type, no name field",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "seed"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T15:40:00.000Z",
+        "completed": "2026-07-10T15:50:00.000Z"
+      }
+    },
+    {
+      "id": "T-024",
+      "title": "Create pointsOfInterest.seed.ts required-seed factory",
+      "description": "Create `packages/seed/src/required/pointsOfInterest.seed.ts` mirroring `attractions.seed.ts`'s `createSeedFactory({entityName: 'PointsOfInterest', serviceClass: PointOfInterestService, folder: 'src/data/pointOfInterest', files: requiredManifest.pointsOfInterest, normalizer, getEntityInfo})` — normalizer strips `$schema`/`id`/`lifecycleState` (keeps `slug` since it's the i18n key, unlike attraction which strips slug too... verify against T-023's fixture shape before stripping). Unit tests: `packages/seed/test/required/pointsOfInterest.seed.test.ts` mirroring the attraction seed factory test (loads fixtures, calls service.create, handles duplicate-slug idempotency).",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [
+        "T-019",
+        "T-023"
+      ],
+      "blocks": [
+        "T-025",
+        "T-030"
+      ],
+      "subtasks": [
+        {
+          "title": "Create createSeedFactory config for pointsOfInterest",
+          "completed": true
+        },
+        {
+          "title": "Implement normalizer stripping non-domain fields",
+          "completed": true
+        },
+        {
+          "title": "Write seed factory unit tests",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "seed"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T15:50:00.000Z",
+        "completed": "2026-07-10T16:00:00.000Z"
+      }
+    },
+    {
+      "id": "T-025",
+      "title": "Register pointsOfInterest in manifest-required.json and orchestrator",
+      "description": "Add a `\"pointsOfInterest\": [...]` array entry to `packages/seed/src/data/manifest-required.json` listing every T-023 fixture filename, and wire `pointsOfInterest.seed.ts` (T-024) into the required-seed orchestrator that runs `--required` seed groups (locate where `attractions.seed.ts` is invoked, e.g. a `runRequiredSeeds` aggregator, and add the sibling call — order after destinations since the relationship seed in T-026 needs both). Unit tests: an orchestrator-level test asserting `pointsOfInterest` group is included in the `--required` run list.",
+      "status": "completed",
+      "complexity": 1,
+      "blockedBy": [
+        "T-024"
+      ],
+      "blocks": [
+        "T-026"
+      ],
+      "subtasks": [
+        {
+          "title": "Add pointsOfInterest array to manifest-required.json",
+          "completed": true
+        },
+        {
+          "title": "Wire seed factory into required-seed orchestrator",
+          "completed": true
+        },
+        {
+          "title": "Write orchestrator inclusion test",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "seed"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T16:00:00.000Z",
+        "completed": "2026-07-10T16:05:00.000Z"
+      }
+    },
+    {
+      "id": "T-026",
+      "title": "Add destination-POI relationship seed step",
+      "description": "Add a `relationBuilder` on `packages/seed/src/required/destinations.seed.ts` for POIs, mirroring the existing attraction `relationBuilder` (via `createServiceRelationBuilder({serviceClass: PointOfInterestService, methodName: 'addPointOfInterestToDestination', extractIds: (d) => d.pointOfInterestIds || [], entityType: 'pointsOfInterest', relationType: 'pointsOfInterest', buildParams: (destinationId, pointOfInterestId) => ({destinationId, pointOfInterestId}), ...})`). Add a `pointOfInterestIds: string[]` array to at least 3-4 `destination/*.json` fixtures referencing T-023's seed-ids, including at least one POI mapped to 2 destinations (M2M coverage, OQ-1). Unit tests: `destinations.seed.test.ts` extension covering the relation builder wiring the join rows correctly, including the multi-destination POI case.",
+      "status": "completed",
+      "complexity": 3,
+      "blockedBy": [
+        "T-020",
+        "T-025"
+      ],
+      "blocks": [
+        "T-028"
+      ],
+      "subtasks": [
+        {
+          "title": "Add pointsOfInterest relationBuilder to destinations.seed.ts",
+          "completed": true
+        },
+        {
+          "title": "Add pointOfInterestIds to 3-4 destination fixtures incl. one M2M case",
+          "completed": true
+        },
+        {
+          "title": "Write relationship seed unit tests",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "seed"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T16:05:00.000Z",
+        "completed": "2026-07-10T16:15:00.000Z"
+      }
+    },
+    {
+      "id": "T-027",
+      "title": "Update seed dual-write guard for pointOfInterest path",
+      "description": "Add `'^packages/seed/src/data/pointOfInterest/'` to the `REQUIRED_DATA_DIR_PATTERNS` array in `scripts/check-seed-dual-write.sh` (same array that already lists `amenity`/`attraction`/`destination` etc.), so future edits to T-023's fixtures are caught by the CI dual-write guard (R-5). Also add the new path to the prose list of guarded paths in `packages/seed/CLAUDE.md`. Unit tests: run `scripts/check-seed-dual-write.sh` locally against a dummy uncommitted fixture edit to confirm it now flags a missing data-migration for the `pointOfInterest` path.",
+      "status": "completed",
+      "complexity": 1,
+      "blockedBy": [
+        "T-023"
+      ],
+      "blocks": [
+        "T-028"
+      ],
+      "subtasks": [
+        {
+          "title": "Add pointOfInterest glob to REQUIRED_DATA_DIR_PATTERNS",
+          "completed": true
+        },
+        {
+          "title": "Update packages/seed/CLAUDE.md guarded-paths list",
+          "completed": true
+        },
+        {
+          "title": "Verify guard fires on a dummy fixture edit",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "seed",
+        "ci"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T16:15:00.000Z",
+        "completed": "2026-07-10T16:20:00.000Z"
+      }
+    },
+    {
+      "id": "T-028",
+      "title": "Write seed integration test for POI required group",
+      "description": "Write an integration test (mirroring the existing attraction/destination seed integration test pattern, e.g. `packages/seed/test/integration/pointsOfInterest.seed.integration.test.ts`) that runs the `--required` seed pipeline against a test DB and asserts: (1) all T-023 POIs are present with correct `lat`/`long`/`type`/no-`name`; (2) the T-026 relationship rows exist in `r_destination_point_of_interest`, including the M2M case; (3) re-running the seed is idempotent (AC-3). This is the cross-component integration test — do NOT fold into T-024/T-026's unit tests.",
+      "status": "completed",
+      "complexity": 3,
+      "blockedBy": [
+        "T-026",
+        "T-027"
+      ],
+      "blocks": [
+        "T-036"
+      ],
+      "subtasks": [
+        {
+          "title": "Write required-seed pipeline run test",
+          "completed": true
+        },
+        {
+          "title": "Assert POI rows + relationship rows including M2M case",
+          "completed": true
+        },
+        {
+          "title": "Assert idempotent re-run behavior",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "seed",
+        "testing"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T16:20:00.000Z",
+        "completed": "2026-07-10T16:35:00.000Z"
+      }
+    },
+    {
+      "id": "T-029",
+      "title": "Add POI i18n display strings (es/en/pt)",
+      "description": "Add `destinations.poiNames.<slug>` display-name strings for every T-023 seeded POI slug, plus `destinations.poiTypeLabels.<TYPE_ENUM_VALUE>` labels for all 9 `PointOfInterestTypeEnum` values, to the `@repo/i18n` locale files across `es`/`en`/`pt` (mirror the exact `amenityNames`/nesting shape in `packages/i18n/src/locales/es/accommodations.json`, likely as a new `destinations.json` key block or appended to an existing destination-scoped locale file — verify the actual file destination-scoped strings live in before creating a new one). Unit tests: none new here — covered by T-030's coverage test.",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [
+        "T-023"
+      ],
+      "blocks": [
+        "T-030",
+        "T-050"
+      ],
+      "subtasks": [
+        {
+          "title": "Add poiNames.<slug> for every seeded POI in es/en/pt",
+          "completed": true
+        },
+        {
+          "title": "Add poiTypeLabels.<ENUM_VALUE> for all 9 types in es/en/pt",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "i18n"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T16:35:00.000Z",
+        "completed": "2026-07-10T16:45:00.000Z"
+      }
+    },
+    {
+      "id": "T-030",
+      "title": "Write i18n coverage test for POI slugs",
+      "description": "Write a test (e.g. `packages/i18n/test/point-of-interest-coverage.test.ts` or alongside the existing amenity/feature i18n-coverage test if one exists) that reads T-023/T-024's seeded POI slugs and asserts every slug has a `destinations.poiNames.<slug>` entry in ALL THREE locales (es/en/pt), and every `PointOfInterestTypeEnum` value has a `poiTypeLabels` entry in all three locales (R-6 mitigation, AC-7). This test must fail loudly if a future seed addition forgets its i18n string.",
+      "status": "completed",
+      "complexity": 2,
+      "blockedBy": [
+        "T-029",
+        "T-024"
+      ],
+      "blocks": [
+        "T-038"
+      ],
+      "subtasks": [
+        {
+          "title": "Load seeded POI slugs from fixtures",
+          "completed": true
+        },
+        {
+          "title": "Assert poiNames coverage across es/en/pt",
+          "completed": true
+        },
+        {
+          "title": "Assert poiTypeLabels coverage across es/en/pt for all 9 enum values",
+          "completed": true
+        }
+      ],
+      "tags": [
+        "spec-phase-1",
+        "i18n",
+        "testing"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": true,
+        "typecheck": true,
+        "tests": true
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": "2026-07-10T16:45:00.000Z",
+        "completed": "2026-07-10T16:55:00.000Z"
+      }
+    },
+    {
+      "id": "T-031",
+      "title": "Add poiId/poiSlug params to accommodation search schemas",
+      "description": "Add optional `poiId`/`poiSlug` fields to `AccommodationSearchSchema`/`AccommodationFiltersSchema` (`packages/schemas/src/entities/accommodation/accommodation.query.schema.ts`, alongside the existing `latitude`/`longitude`/`radius` fields at lines ~53-55/105-107) and to the HTTP-coerced search schema (same file area line ~202-204, alongside `HttpQueryFields.latitude()`). Do not remove the existing lat/long/radius fields — both entry points coexist (T-034 handles precedence). Unit tests: extend `accommodation.query.schema.test.ts` covering `poiId`/`poiSlug` optional parsing and that providing neither is still valid (both remain optional).",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-020"
+      ],
+      "blocks": [
+        "T-032"
+      ],
+      "subtasks": [
+        {
+          "title": "Add poiId/poiSlug to AccommodationSearchSchema/FiltersSchema",
+          "completed": false
+        },
+        {
+          "title": "Add poiId/poiSlug to HTTP-coerced search schema",
+          "completed": false
+        },
+        {
+          "title": "Write schema unit tests for new optional params",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-2",
+        "schemas",
+        "accommodation"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-032",
+      "title": "Implement resolvePoiToCoordinates helper",
+      "description": "Implement `resolvePoiToCoordinates({ poiId?, poiSlug?, radius? }, ctx)` in a new `packages/service-core/src/services/accommodation/accommodation.poi-proximity.helper.ts`, calling `PointOfInterestService` (read-by-id or T-020's slug lookup path) to return `{ lat, long, radiusKm }` or a typed not-found error. NOTE (OQ-5, still open per spec §11): use `radiusKm = 5` as the default when none is provided — this is a PLACEHOLDER pending explicit owner confirmation; flag it clearly in the PR description so it can be confirmed before merge, do not treat 5km as final without sign-off. Unit tests: `accommodation.poi-proximity.helper.test.ts` covering found-by-id, found-by-slug, not-found, explicit-radius, and default-radius cases.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-031"
+      ],
+      "blocks": [
+        "T-033"
+      ],
+      "subtasks": [
+        {
+          "title": "Implement resolvePoiToCoordinates using PointOfInterestService",
+          "completed": false
+        },
+        {
+          "title": "Apply OQ-5 placeholder default radius (5km) when none given",
+          "completed": false
+        },
+        {
+          "title": "Write resolution helper unit tests incl. not-found case",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-2",
+        "service-core",
+        "accommodation"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-033",
+      "title": "Wire resolved POI coordinates into accommodation search query",
+      "description": "In `AccommodationService`'s search method, when `poiId`/`poiSlug` is present, call T-032's `resolvePoiToCoordinates` and feed the result into the EXISTING `latitude`/`longitude`/`radius` code path that already calls `buildWithinRadiusClause`/`buildDistanceOrderByExpr` in `accommodation.model.ts` (lines ~121/361) — per NG-2, write ZERO new distance SQL, purely reuse the existing geo.ts-backed path by populating the same params object it already consumes. Unit tests: extend `accommodation.service.test.ts` (or `.model.test.ts`) asserting that a `poiId` search produces IDENTICAL SQL/results to an equivalent direct `latitude`/`longitude`/`radius` search (NG-2 compliance assertion).",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-032"
+      ],
+      "blocks": [
+        "T-034",
+        "T-042"
+      ],
+      "subtasks": [
+        {
+          "title": "Detect poiId/poiSlug in search params and resolve via T-032",
+          "completed": false
+        },
+        {
+          "title": "Feed resolved lat/long/radius into existing geo.ts-backed query path",
+          "completed": false
+        },
+        {
+          "title": "Write parity test: poiId search == equivalent lat/long/radius search",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-2",
+        "service-core",
+        "accommodation"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-034",
+      "title": "Add poiId/latitude precedence validation",
+      "description": "In the search-param normalization step (near T-033's integration point), define and implement precedence when BOTH a POI reference (`poiId`/`poiSlug`) AND explicit `latitude`/`longitude` are provided in the same request: the resolved POI's coordinates take precedence (documented behavior, not a validation error) since a POI reference is a more specific intent signal. Unit tests: edge-case unit test asserting POI coordinates win over conflicting explicit lat/long, and that providing both `poiId` and `poiSlug` together is a 400 validation error (ambiguous single-entry-point contract).",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [
+        "T-033"
+      ],
+      "blocks": [
+        "T-035"
+      ],
+      "subtasks": [
+        {
+          "title": "Implement POI-wins-over-explicit-latlong precedence",
+          "completed": false
+        },
+        {
+          "title": "Reject simultaneous poiId + poiSlug as 400",
+          "completed": false
+        },
+        {
+          "title": "Write precedence + ambiguous-input unit tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-2",
+        "service-core",
+        "accommodation"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-035",
+      "title": "Wire poiId/poiSlug through accommodation public search route",
+      "description": "Confirm/update `apps/api/src/routes/accommodation/public/list.ts` (or the dedicated search route if separate) passes T-031's new `poiId`/`poiSlug` query params straight through to `AccommodationService.search()` unchanged (the route is already a thin wrapper per project convention — likely no route-layer code change needed beyond the schema already covering it via `requestQuery`). Unit tests: `apps/api/test/routes/accommodation/public/list.test.ts` extension — a request with `?poiSlug=<seeded-slug>` returns 200 with proximity-filtered results.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-034",
+        "T-022"
+      ],
+      "blocks": [
+        "T-036"
+      ],
+      "subtasks": [
+        {
+          "title": "Verify route schema wiring passes poiId/poiSlug through",
+          "completed": false
+        },
+        {
+          "title": "Write route-level test with poiSlug query param",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-2",
+        "api",
+        "accommodation"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-036",
+      "title": "Write near-POI accommodation search integration test",
+      "description": "Write an end-to-end integration test seeding (or using T-028's seeded fixtures) a real POI plus 2-3 accommodations at known distances, then asserting `GET /api/v1/public/accommodations?poiSlug=<slug>` returns results correctly ranked/filtered by distance to the POI (AC-4), and that an unknown `poiSlug` returns a clean 404/400 rather than a silent empty result. This is the cross-component AC-4 acceptance test.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-035",
+        "T-028"
+      ],
+      "blocks": [
+        "T-037",
+        "T-044"
+      ],
+      "subtasks": [
+        {
+          "title": "Seed accommodations at known distances from a seeded POI",
+          "completed": false
+        },
+        {
+          "title": "Assert distance-ranked/filtered results for valid poiSlug",
+          "completed": false
+        },
+        {
+          "title": "Assert clean error for unknown poiSlug",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-2",
+        "testing",
+        "accommodation"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-037",
+      "title": "Document OQ-5 default radius resolution in spec.md",
+      "description": "Append a resolution note to `.specs/HOS-113-points-of-interest/spec.md` §11 (mirroring the existing 'Resolved (owner, 2026-07-10)' banner format used for OQ-1/2/3/6) recording the OQ-5 outcome: default radius = 5km when none given (T-032's placeholder), confirmed or amended based on actual owner sign-off obtained during Phase 2 implementation. If the owner has NOT yet confirmed by the time this task is reached, surface that explicitly instead of silently marking it resolved.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [
+        "T-036"
+      ],
+      "blocks": [],
+      "subtasks": [
+        {
+          "title": "Confirm default radius value with owner",
+          "completed": false
+        },
+        {
+          "title": "Update spec.md §11 OQ-5 resolution banner",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-2",
+        "docs"
+      ],
+      "phase": "docs",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-038",
+      "title": "Create poi-allowlist.ts with matchPoiTerms",
+      "description": "Create `apps/api/src/routes/ai/protected/poi-allowlist.ts` mirroring `attraction-allowlist.ts`: `POI_ALLOWLIST: Record<locale, Record<nlTerm, readonly string[]>>` curated statically from T-023/T-030's finalized seeded POI slugs (OQ-7 — cross-check every allowlist slug against real seed JSON per the HOS-111 T-009 lesson, R-4), plus a pure `matchPoiTerms(text, locale): readonly string[]` matcher (case-insensitive substring, dedup via Set, never invents a slug). Unit tests: `poi-allowlist.test.ts` mirroring `attraction-allowlist.test.ts` — match/no-match/dedup/case-insensitivity cases PLUS a static test asserting every allowlist slug exists in T-023's seed fixtures (R-4 defense).",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-030"
+      ],
+      "blocks": [
+        "T-039",
+        "T-040",
+        "T-041"
+      ],
+      "subtasks": [
+        {
+          "title": "Curate POI_ALLOWLIST dict from seeded slugs (es/en/pt)",
+          "completed": false
+        },
+        {
+          "title": "Implement matchPoiTerms matcher",
+          "completed": false
+        },
+        {
+          "title": "Write matcher unit tests",
+          "completed": false
+        },
+        {
+          "title": "Write allowlist-vs-seed-JSON cross-check test",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-3",
+        "api",
+        "ai-search"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-039",
+      "title": "Create poi-resolver.ts",
+      "description": "Create `apps/api/src/routes/ai/protected/poi-resolver.ts` mirroring `attraction-resolver.ts`'s `resolveAttractionConstraint`: `resolvePoiConstraint(matchedSlugs, existingLocationConstraint)` calls T-020's `PointOfInterestService.getDestinationIdsByPointOfInterestSlugs`, intersects the resulting destinationIds with any existing location constraint (same intersect-or-no-match rule as attraction), and returns a discriminated union including `{kind: 'no-match', poiSlugs}` and a resolved case exposing the matched POI's `{lat, long}` for T-042's proximity wiring. Unit tests: `poi-resolver.test.ts` mirroring `attraction-resolver.test.ts` cases (match, no-match, intersect-with-existing-constraint, empty allowlist).",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-038",
+        "T-020"
+      ],
+      "blocks": [
+        "T-042"
+      ],
+      "subtasks": [
+        {
+          "title": "Implement resolvePoiConstraint discriminated union",
+          "completed": false
+        },
+        {
+          "title": "Wire intersect-with-existing-location-constraint logic",
+          "completed": false
+        },
+        {
+          "title": "Expose resolved lat/long for downstream proximity use",
+          "completed": false
+        },
+        {
+          "title": "Write resolver unit tests mirroring attraction-resolver.test.ts",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-3",
+        "api",
+        "ai-search"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-040",
+      "title": "Add poiSlugs slot to SearchIntentEntitiesSchema",
+      "description": "Add `poiSlugs: z.array(z.string()).optional()` to `SearchIntentEntitiesSchema` in `packages/schemas/src/entities/ai/ai-search-intent.schema.ts` (line ~249, alongside the existing `attractionSlugs` field). Unit tests: extend `ai-search-intent.schema.test.ts` asserting `poiSlugs` parses as an optional string array.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [
+        "T-038"
+      ],
+      "blocks": [
+        "T-041",
+        "T-043"
+      ],
+      "subtasks": [
+        {
+          "title": "Add poiSlugs field to SearchIntentEntitiesSchema",
+          "completed": false
+        },
+        {
+          "title": "Write schema unit test for poiSlugs parsing",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-3",
+        "schemas",
+        "ai-search"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-041",
+      "title": "Wire POI allowlist into search-chat.prompt.ts",
+      "description": "In `apps/api/src/routes/ai/protected/search-chat.prompt.ts`'s `buildAllowlistLines(locale)`, add a POI instruction line following the same pattern as the amenity/feature/attraction lines: flatten T-038's `POI_ALLOWLIST[locale]` values into a deduped slug list and append `Allowed destination point-of-interest slugs for this request (...): <slugs>` (mirroring the attraction line's wording). Unit tests: extend `search-chat.prompt.test.ts` asserting the POI allowlist line is present and correctly flattened/deduped for a given locale.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-038",
+        "T-040"
+      ],
+      "blocks": [
+        "T-042"
+      ],
+      "subtasks": [
+        {
+          "title": "Add POI allowlist flattening + line to buildAllowlistLines",
+          "completed": false
+        },
+        {
+          "title": "Write prompt-building unit test for POI line",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-3",
+        "api",
+        "ai-search"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-042",
+      "title": "Wire poi-resolver into search-chat handler",
+      "description": "In `apps/api/src/routes/ai/protected/search-chat.ts`, alongside the existing `resolveAttractionConstraint` call (~line 79/539), add a parallel call to T-039's `resolvePoiConstraint` using T-040's `validatedEntities.poiSlugs ?? []`. When a POI resolves, feed its `{lat, long}` into T-033's proximity search path (same params object accommodation search already consumes) instead of/alongside any attraction-based location constraint. Unit tests: extend `search-chat.test.ts` (or add an integration test) covering: a message resolving a POI applies proximity filtering; an unmatched POI mention is silently ignored (no hallucinated slug, R-4).",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-039",
+        "T-041",
+        "T-033"
+      ],
+      "blocks": [
+        "T-044"
+      ],
+      "subtasks": [
+        {
+          "title": "Call resolvePoiConstraint alongside resolveAttractionConstraint",
+          "completed": false
+        },
+        {
+          "title": "Feed resolved POI lat/long into accommodation proximity search path",
+          "completed": false
+        },
+        {
+          "title": "Write handler unit tests: matched + unmatched POI cases",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-3",
+        "api",
+        "ai-search"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-043",
+      "title": "Add poiSlugs to ai-search-chat.schema.ts response typing",
+      "description": "Add a `poiSlugs: z.array(z.string())` property (with JSDoc mirroring the existing `attractionSlugs` doc comment at line ~82-89) to `packages/schemas/src/entities/ai/ai-search-chat.schema.ts`'s response schema, documenting the canonical POI slugs the assistant resolved for this request. Unit tests: extend `ai-search-chat.schema.test.ts` asserting the field parses correctly and defaults sensibly when empty.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [
+        "T-040"
+      ],
+      "blocks": [
+        "T-044"
+      ],
+      "subtasks": [
+        {
+          "title": "Add poiSlugs field + JSDoc to ai-search-chat.schema.ts",
+          "completed": false
+        },
+        {
+          "title": "Write schema unit test",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-3",
+        "schemas",
+        "ai-search"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-044",
+      "title": "Write AI chat POI resolution integration test",
+      "description": "Write an end-to-end integration test sending a natural-language chat message mentioning a seeded POI by name/alias (e.g. \"cerca del autódromo\") through the AI search-chat pipeline, asserting: the response's `poiSlugs` includes the correctly resolved slug (AC-6); the underlying accommodation search applied proximity filtering using the POI's coordinates (reusing T-036's near-POI assertions); an unresolvable landmark mention produces empty `poiSlugs` with no hallucinated slug and no crash.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-036",
+        "T-042",
+        "T-043"
+      ],
+      "blocks": [],
+      "subtasks": [
+        {
+          "title": "Send NL message mentioning a seeded POI, assert resolved poiSlugs",
+          "completed": false
+        },
+        {
+          "title": "Assert proximity filtering applied using POI coordinates",
+          "completed": false
+        },
+        {
+          "title": "Assert unresolvable mention yields empty poiSlugs, no hallucination",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-3",
+        "testing",
+        "ai-search"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-045",
+      "title": "Add DestinationModel.getPointsOfInterestMap",
+      "description": "Add `getPointsOfInterestMap(destIds: readonly string[], tx?: DrizzleClient): Promise<Map<string, Array<{id, slug, lat, long, type, icon, displayWeight}>>>` to `packages/db/src/models/destination/destination.model.ts`, mirroring `getAttractionsMap`'s exact shape: single query, `innerJoin(pointsOfInterest, eq(rDestinationPointOfInterest.pointOfInterestId, pointsOfInterest.id))`, `.orderBy(desc(pointsOfInterest.displayWeight))`, grouped into a `Map` keyed by `destinationId`. Unit tests: `destination.model.test.ts` extension mirroring `getAttractionsMap`'s test coverage (empty map, single destination, multiple destinations, M2M POI appearing under 2 destinationIds).",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-016"
+      ],
+      "blocks": [
+        "T-046"
+      ],
+      "subtasks": [
+        {
+          "title": "Implement getPointsOfInterestMap batch query",
+          "completed": false
+        },
+        {
+          "title": "Write unit tests incl. M2M multi-destination case",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-4",
+        "db",
+        "model"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-046",
+      "title": "Add DestinationService._withPointsOfInterest hydration",
+      "description": "Add a private `_withPointsOfInterest(destination, ctx?)` method to `packages/service-core/src/services/destination/destination.service.ts`, mirroring `_withAttractions` exactly (skip-if-already-hydrated guard, calls T-045's `getPointsOfInterestMap`, merges `pointsOfInterest` onto the destination object). Wire it into the same call sites as `_withAttractions` (`getBySlug`/`getByPath`, ~lines 1472/1498/639). Unit tests: extend `destination.service.test.ts` covering hydration on empty/populated/already-hydrated cases and that `getBySlug` returns `pointsOfInterest` in its result.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-045"
+      ],
+      "blocks": [
+        "T-047"
+      ],
+      "subtasks": [
+        {
+          "title": "Implement _withPointsOfInterest mirroring _withAttractions",
+          "completed": false
+        },
+        {
+          "title": "Wire into getBySlug/getByPath call sites",
+          "completed": false
+        },
+        {
+          "title": "Write hydration unit tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-4",
+        "service-core"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-047",
+      "title": "Add pointsOfInterest field to Destination Zod schema",
+      "description": "Add an optional `pointsOfInterest: z.array(PointOfInterestWithDestinationSchema).optional()`-style field (using T-012's relations schema) to the destination entity's relations/aggregate schema, mirroring however `attractions` is typed on `DestinationSchema` today, so T-046's hydrated shape is properly typed end-to-end for API responses and web consumption. Unit tests: schema unit test asserting a destination payload with `pointsOfInterest` populated parses correctly.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-012",
+        "T-046"
+      ],
+      "blocks": [
+        "T-048"
+      ],
+      "subtasks": [
+        {
+          "title": "Add pointsOfInterest field to destination relations schema",
+          "completed": false
+        },
+        {
+          "title": "Write schema unit test for hydrated shape",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-4",
+        "schemas"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-048",
+      "title": "Create DestinationPOISection.astro component",
+      "description": "Create `apps/web/src/components/destination/DestinationPOISection.astro` (build fresh, do NOT resurrect dead `DestinationAttractionsGrid.astro` per §6.4 — though its `displayWeight`-then-alphabetical sort + card shape is a useful reference). Renders a list/grid of a destination's POIs: i18n display name (via T-050's label helper), `type`/`icon`, optional `description`, ordered by `displayWeight` then name, featured-first (§8). Section is hidden entirely when the POI list is empty (guarded like attractions). Vanilla CSS Modules per web app conventions (NOT Tailwind). Unit tests: a component test (whatever pattern the web app uses for Astro component tests, e.g. Playwright/testing-library-astro) covering: renders N POIs sorted correctly, hidden when empty, i18n label resolution.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-047"
+      ],
+      "blocks": [
+        "T-049"
+      ],
+      "subtasks": [
+        {
+          "title": "Build DestinationPOISection.astro list/grid markup + CSS module",
+          "completed": false
+        },
+        {
+          "title": "Implement displayWeight/featured-first sort + empty-hide guard",
+          "completed": false
+        },
+        {
+          "title": "Write component tests (render, sort, empty-state)",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-4",
+        "web"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-049",
+      "title": "Wire DestinationPOISection into destination detail page",
+      "description": "In `apps/web/src/pages/[lang]/destinos/[...path].astro`, cast/consume `dest.pointsOfInterest` (mirroring how `dest.attractions` is cast at line ~101-109) and render T-048's `<DestinationPOISection pointsOfInterest={pois} />` in the page body (not the header, since attractions use the header badge slot but POIs are a full list section per §8). Unit tests: page-level test verifying the section renders when a destination has POIs and is absent when it does not.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-048"
+      ],
+      "blocks": [
+        "T-051"
+      ],
+      "subtasks": [
+        {
+          "title": "Cast/consume dest.pointsOfInterest in [...path].astro",
+          "completed": false
+        },
+        {
+          "title": "Render DestinationPOISection in page body",
+          "completed": false
+        },
+        {
+          "title": "Write page-level presence/absence test",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-4",
+        "web"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-050",
+      "title": "Create POI type-label i18n resolution helper",
+      "description": "Create a small helper (e.g. `apps/web/src/utils/poi-type-label.ts` or alongside existing similar helpers in `@repo/i18n`) that maps a `PointOfInterestTypeEnum` value to its T-029 `destinations.poiTypeLabels.<value>` i18n string for the current locale, with a safe fallback (raw enum value, not a crash) if a label is somehow missing. Used by T-048's component. Unit tests: unit test covering all 9 enum values resolve correctly per locale, plus the missing-label fallback path.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [
+        "T-029"
+      ],
+      "blocks": [
+        "T-051"
+      ],
+      "subtasks": [
+        {
+          "title": "Implement poi type -> i18n label resolution helper",
+          "completed": false
+        },
+        {
+          "title": "Write unit tests for all 9 types + fallback case",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-4",
+        "web",
+        "i18n"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-051",
+      "title": "Write destination detail POI rendering integration test",
+      "description": "Write an integration/E2E test (whatever pattern the web app's existing destination-detail tests use) loading a seeded destination known to have POIs (from T-026's fixtures) and asserting: the POI section renders with correct i18n display names and type labels in es/en/pt (AC-5, AC-7); a destination with no POIs renders no section at all. This is the cross-component acceptance test for Phase 4.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-049",
+        "T-050"
+      ],
+      "blocks": [
+        "T-052"
+      ],
+      "subtasks": [
+        {
+          "title": "Load seeded destination with POIs, assert section renders correctly",
+          "completed": false
+        },
+        {
+          "title": "Assert i18n names/labels correct across es/en/pt",
+          "completed": false
+        },
+        {
+          "title": "Assert no-POI destination renders no section",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-4",
+        "testing",
+        "web"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-052",
+      "title": "Document POI entity in CLAUDE.md Common Gotchas",
+      "description": "Add a short entry to the root `CLAUDE.md` 'Common Gotchas' section (mirroring the existing 'Amenity/feature catalog (SPEC-266)' entry's style) documenting: POI has no `name` column (i18n by slug, `destinations.poiNames.<slug>`), plain numeric `lat`/`long` columns (not JSONB/string like accommodations/destinations), M2M to destinations via `r_destination_point_of_interest`, seed-only in Phase 1 (no admin CRUD yet), and the deferred multi-marker map / admin CRUD follow-up (NG-3/NG-5). No new tests — documentation-only task closing out Phase 4.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [
+        "T-051"
+      ],
+      "blocks": [],
+      "subtasks": [
+        {
+          "title": "Add POI entry to CLAUDE.md Common Gotchas",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "spec-phase-4",
+        "docs"
+      ],
+      "phase": "docs",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-07-10T09:03:15.000Z",
+        "started": null,
+        "completed": null
+      }
+    }
+  ],
+  "summary": {
+    "total": 52,
+    "pending": 22,
+    "inProgress": 0,
+    "completed": 30,
+    "blocked": 0,
+    "averageComplexity": 2.1,
+    "notes": "Phase 1 (T-001..T-030) COMPLETE. Phase 2 (proximity search, T-031+) not started."
+  }
+}
