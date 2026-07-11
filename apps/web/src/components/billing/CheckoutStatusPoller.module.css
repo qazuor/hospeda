@@ -35,7 +35,7 @@
 
 .iconVerifying {
     color: var(--brand-primary);
-    background-color: oklch(from var(--brand-primary) l c h / 0.12);
+    background-color: var(--surface-warm);
 }
 
 .iconSuccess {
@@ -51,7 +51,7 @@
 .spinner {
     width: 44px;
     height: 44px;
-    border: 4px solid oklch(from var(--brand-primary) l c h / 0.25);
+    border: 4px solid var(--border);
     border-top-color: var(--brand-primary);
     border-radius: 50%;
     animation: checkout-poller-spin 0.8s linear infinite;
