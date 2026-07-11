@@ -16,7 +16,8 @@ areas:
 > OQ-1 → **M2M** (join table, not 1:N). OQ-2 → **i18n by slug** (no `name`
 > column, SPEC-266 pattern). OQ-3 → **closed `type` enum**. OQ-5 → **default
 > proximity-search radius = 5km**. OQ-6 → **seed-only** in Phase 1 (admin CRUD
-> deferred). OQ-4/7 remain open, deferred to their phase.
+> deferred). OQ-7 → **static allowlist curated from the seed set** (confirmed
+> in Phase 3). OQ-4 remains open, deferred to its phase.
 
 ## 1. Summary
 
@@ -353,14 +354,21 @@ the service is built read-capable + seed-writable so that follow-up is additive.
   enough to surface a meaningful result set from the current accommodation
   density without being so wide it defeats the purpose of a "near X" search.
   See HOS-113 T-031..T-037 (Phase 2).
+- **OQ-7 (allowlist population) — RESOLVED: curate the AI allowlist statically
+  from the seed set** (recommended, mirrors attractions), confirmed during
+  Phase 3 implementation. `apps/api/src/routes/ai/protected/poi-allowlist.ts`
+  is a curated `Record<locale, Record<nlTerm, slug[]>>` mapping landmark
+  names/aliases (es/en/pt) to the 12 real seeded POI slugs, cross-checked
+  against `packages/seed/src/data/pointOfInterest/*.json` by a dedicated test
+  (R-4 hallucination defence, HOS-111 T-009 lesson). Consequence: a newly
+  seeded POI is NOT automatically AI-resolvable — it needs a matching entry
+  added to `POI_ALLOWLIST` in the same change (same discipline as the
+  attraction/amenity/feature allowlists). See HOS-113 T-038..T-044 (Phase 3).
 
 **Still open (deferred to their phase):**
 
 - **OQ-4 (destination map pins)** — Iteration 1 is list-only (recommended);
   multi-marker map pins deferred. Revisit when/if pins are pulled in.
-- **OQ-7 (allowlist population)** — Curate the AI allowlist statically from the
-  seed set (recommended, mirrors attractions); new seeded POIs need a matching
-  allowlist entry to be AI-resolvable. Confirm in Phase 3.
 
 ## 12. Implementation notes
 
@@ -373,7 +381,8 @@ the service is built read-capable + seed-writable so that follow-up is additive.
     "near POI" (`poiId`/`poiSlug`), consuming `geo.ts`; default radius = 5km
     (OQ-5, RESOLVED). **DONE — T-031..T-037.**
   - **Phase 3 — AI search**: `poi-allowlist.ts` + `poi-resolver.ts` +
-    `buildAllowlistLines` wiring + `poiSlugs` intent slot (OQ-7).
+    `buildAllowlistLines` wiring + `poiSlugs` intent slot (OQ-7, RESOLVED).
+    **DONE — T-038..T-044.**
   - **Phase 4 — Destination detail (web)**: `_withPointsOfInterest()` hydration +
     `DestinationPOISection.astro`.
   - **(Deferred) Phase 5**: multi-marker map pins (extend `LocationMap`); admin

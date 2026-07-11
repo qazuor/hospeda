@@ -248,6 +248,23 @@ export const SearchIntentEntitiesSchema = z.object({
      */
     attractionSlugs: z.array(z.string()).optional(),
 
+    /**
+     * Point-of-interest slugs matched from the locale-specific
+     * `POI_ALLOWLIST` (HOS-113 §6.3 — "cerca del autódromo").
+     *
+     * Mirrors `attractionSlugs` in shape and hallucination-defence discipline
+     * (only canonical slugs from the curated allowlist, never invented ones),
+     * but resolves differently: a point of interest is a NAMED landmark, so
+     * the search-chat handler (T-042) resolves the matched slug(s) to the
+     * landmark's `{ lat, long }` via `PointOfInterestService.getBySlug` and
+     * feeds them into the existing "near POI" proximity-search path
+     * (`poiId`/`poiSlug` on the accommodation search, HOS-113 §6.2), in
+     * addition to intersecting the linked destinations with any existing
+     * location constraint the same way `attractionSlugs` does. Empty array is
+     * treated as absent (no point-of-interest constraint applied).
+     */
+    poiSlugs: z.array(z.string()).optional(),
+
     // ── Availability dates ────────────────────────────────────────────────────
     /**
      * Check-in date as an ISO date string (YYYY-MM-DD).

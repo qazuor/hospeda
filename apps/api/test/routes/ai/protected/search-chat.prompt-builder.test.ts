@@ -46,6 +46,19 @@ describe('buildConversationalSearchPrompt', () => {
         expect(prompt).toContain('Allowed feature slugs for this request');
     });
 
+    it('embeds the locale destination attraction and point-of-interest allowlist lines (HOS-113 §6.3)', () => {
+        const prompt = buildConversationalSearchPrompt({
+            history: [],
+            message: MESSAGE,
+            locale: 'es'
+        });
+        expect(prompt).toContain('Allowed destination attraction slugs for this request');
+        expect(prompt).toContain('Allowed destination point-of-interest slugs for this request');
+        // Flattened + de-duplicated: the curated allowlist slugs appear verbatim.
+        expect(prompt).toContain('autodromo_concepcion_del_uruguay');
+        expect(prompt).toContain('entities.poiSlugs');
+    });
+
     it('embeds the new user message verbatim in triple quotes', () => {
         const prompt = buildConversationalSearchPrompt({
             history: [],
@@ -332,5 +345,117 @@ describe('buildSearchReplyMessages', () => {
         expect(allContent).not.toContain('turn-3');
         // The most recent history messages must be present
         expect(allContent).toContain(`turn-${CONVERSATION_HISTORY_LIMIT + 3}`);
+    });
+});
+
+// ─── buildSearchReplyMessages — poiLocationConflict (HOS-113 review H-1/M-1) ─
+
+describe('buildSearchReplyMessages — poiLocationConflict (HOS-113 review H-1/M-1)', () => {
+    const SYSTEM = 'Reply system prompt.';
+    const USER_MSG = 'busco algo cerca del autódromo imaginario';
+    const RAW_POI_SLUG = 'autodromo_concepcion_del_uruguay';
+
+    it('scrubs the raw unresolved poiSlugs out of the assistant filters-context note', () => {
+        const filters: SearchIntentEntities = {
+            accommodationType: AccommodationTypeEnum.CABIN,
+            poiSlugs: [RAW_POI_SLUG]
+        };
+        const msgs = buildSearchReplyMessages({
+            systemPrompt: SYSTEM,
+            history: [],
+            message: USER_MSG,
+            extractedFilters: filters,
+            poiLocationConflict: { poiSlugs: [RAW_POI_SLUG] }
+        });
+
+        const assistantNote = msgs.find(
+            (m) => m.role === 'assistant' && m.content.startsWith('Extracted search filters')
+        );
+        expect(assistantNote).toBeDefined();
+        // The raw landmark slug must NOT survive into the filters context —
+        // otherwise the model could narrate a proximity search that never ran.
+        expect(assistantNote?.content).not.toContain(RAW_POI_SLUG);
+        expect(assistantNote?.content).toContain('"poiSlugs":[]');
+        // Every other extracted filter is left untouched.
+        expect(assistantNote?.content).toContain(AccommodationTypeEnum.CABIN);
+    });
+
+    it('leaves extractedFilters untouched when poiLocationConflict is absent', () => {
+        const filters: SearchIntentEntities = { poiSlugs: [RAW_POI_SLUG] };
+        const msgs = buildSearchReplyMessages({
+            systemPrompt: SYSTEM,
+            history: [],
+            message: USER_MSG,
+            extractedFilters: filters
+        });
+
+        const assistantNote = msgs.find(
+            (m) => m.role === 'assistant' && m.content.startsWith('Extracted search filters')
+        );
+        expect(assistantNote?.content).toContain(RAW_POI_SLUG);
+    });
+
+    it('injects a corrective IMPORTANT — LANDMARK NOT APPLIED system message naming the unresolved slug', () => {
+        const msgs = buildSearchReplyMessages({
+            systemPrompt: SYSTEM,
+            history: [],
+            message: USER_MSG,
+            extractedFilters: { poiSlugs: [RAW_POI_SLUG] },
+            poiLocationConflict: { poiSlugs: [RAW_POI_SLUG] }
+        });
+
+        const correctiveNote = msgs.find(
+            (m) => m.role === 'system' && m.content.includes('LANDMARK NOT APPLIED')
+        );
+        expect(correctiveNote).toBeDefined();
+        expect(correctiveNote?.content).toContain(RAW_POI_SLUG);
+        // Unlike the attraction conflict, this must NOT claim zero results —
+        // the search itself still ran, just without the proximity narrowing.
+        expect(correctiveNote?.content.toUpperCase()).not.toContain('ZERO');
+    });
+
+    it('does not inject the corrective note when poiLocationConflict is absent', () => {
+        const msgs = buildSearchReplyMessages({
+            systemPrompt: SYSTEM,
+            history: [],
+            message: USER_MSG,
+            extractedFilters: {}
+        });
+
+        const correctiveNote = msgs.find((m) => m.content.includes('LANDMARK NOT APPLIED'));
+        expect(correctiveNote).toBeUndefined();
+    });
+
+    it('includes the best-effort locationLabel in the corrective note when present', () => {
+        const msgs = buildSearchReplyMessages({
+            systemPrompt: SYSTEM,
+            history: [],
+            message: USER_MSG,
+            extractedFilters: { poiSlugs: [RAW_POI_SLUG] },
+            poiLocationConflict: { poiSlugs: [RAW_POI_SLUG], locationLabel: 'Gualeguaychú' }
+        });
+
+        const correctiveNote = msgs.find((m) => m.content.includes('LANDMARK NOT APPLIED'));
+        expect(correctiveNote?.content).toContain('Gualeguaychú');
+    });
+
+    it('places the corrective note after the attraction conflict note when both are present', () => {
+        const msgs = buildSearchReplyMessages({
+            systemPrompt: SYSTEM,
+            history: [],
+            message: USER_MSG,
+            extractedFilters: {},
+            attractionLocationConflict: { attractionSlugs: ['sede_carnaval'] },
+            poiLocationConflict: { poiSlugs: [RAW_POI_SLUG] }
+        });
+
+        const attractionIdx = msgs.findIndex((m) => m.content.includes('NO RESULTS'));
+        const poiIdx = msgs.findIndex((m) => m.content.includes('LANDMARK NOT APPLIED'));
+        const userIdx = msgs.findIndex((m) => m.role === 'user');
+
+        expect(attractionIdx).toBeGreaterThanOrEqual(0);
+        expect(poiIdx).toBeGreaterThan(attractionIdx);
+        expect(userIdx).toBe(msgs.length - 1);
+        expect(poiIdx).toBeLessThan(userIdx);
     });
 });

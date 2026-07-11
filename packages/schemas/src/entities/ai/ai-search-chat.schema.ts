@@ -110,6 +110,16 @@ export type AttractionLocationConflict = z.infer<typeof AttractionLocationConfli
  *   destinations were added to the search. `params.destinationIds` already
  *   carries the anchor + these ids for the actual accommodation search call —
  *   this field exists purely for the UI label, not for re-deriving the query.
+ * @property poiSlugs - The canonical point-of-interest slugs the assistant
+ *   resolved for this request (HOS-113 §6.3 — e.g. `['autodromo_concepcion_del_uruguay']`).
+ *   Mirrors `attractionSlugs`: only ever a curated allowlist match, never an
+ *   invented slug (R-4). Empty array when no landmark was mentioned, the
+ *   mention matched nothing in the allowlist, or the matched landmark
+ *   conflicted with an explicit location constraint (in which case the
+ *   proximity constraint is silently skipped rather than surfaced as a
+ *   conflict — unlike {@link AttractionLocationConflictSchema}). When
+ *   non-empty, `params.latitude`/`params.longitude`/`params.radius` were
+ *   overwritten to center the accommodation search on the resolved landmark.
  */
 export const AiSearchChatFiltersEventSchema = z.object({
     params: AccommodationSearchHttpSchema,
@@ -124,7 +134,9 @@ export const AiSearchChatFiltersEventSchema = z.object({
      * accommodation search and render the empty-results + explanation state —
      * see {@link AttractionLocationConflictSchema}. Absent on every normal turn.
      */
-    attractionLocationConflict: AttractionLocationConflictSchema.optional()
+    attractionLocationConflict: AttractionLocationConflictSchema.optional(),
+    /** HOS-113 §6.3 — see the property doc above. Defaults to `[]`. */
+    poiSlugs: z.array(z.string()).default([])
 });
 
 export type AiSearchChatFiltersEvent = z.infer<typeof AiSearchChatFiltersEventSchema>;

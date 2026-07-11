@@ -1630,7 +1630,7 @@
       "id": "T-038",
       "title": "Create poi-allowlist.ts with matchPoiTerms",
       "description": "Create `apps/api/src/routes/ai/protected/poi-allowlist.ts` mirroring `attraction-allowlist.ts`: `POI_ALLOWLIST: Record<locale, Record<nlTerm, readonly string[]>>` curated statically from T-023/T-030's finalized seeded POI slugs (OQ-7 — cross-check every allowlist slug against real seed JSON per the HOS-111 T-009 lesson, R-4), plus a pure `matchPoiTerms(text, locale): readonly string[]` matcher (case-insensitive substring, dedup via Set, never invents a slug). Unit tests: `poi-allowlist.test.ts` mirroring `attraction-allowlist.test.ts` — match/no-match/dedup/case-insensitivity cases PLUS a static test asserting every allowlist slug exists in T-023's seed fixtures (R-4 defense).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-030"
@@ -1643,19 +1643,19 @@
       "subtasks": [
         {
           "title": "Curate POI_ALLOWLIST dict from seeded slugs (es/en/pt)",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Implement matchPoiTerms matcher",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write matcher unit tests",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write allowlist-vs-seed-JSON cross-check test",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1665,21 +1665,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-11T00:00:00.000Z",
+        "completed": "2026-07-11T00:10:00.000Z"
       }
     },
     {
       "id": "T-039",
       "title": "Create poi-resolver.ts",
       "description": "Create `apps/api/src/routes/ai/protected/poi-resolver.ts` mirroring `attraction-resolver.ts`'s `resolveAttractionConstraint`: `resolvePoiConstraint(matchedSlugs, existingLocationConstraint)` calls T-020's `PointOfInterestService.getDestinationIdsByPointOfInterestSlugs`, intersects the resulting destinationIds with any existing location constraint (same intersect-or-no-match rule as attraction), and returns a discriminated union including `{kind: 'no-match', poiSlugs}` and a resolved case exposing the matched POI's `{lat, long}` for T-042's proximity wiring. Unit tests: `poi-resolver.test.ts` mirroring `attraction-resolver.test.ts` cases (match, no-match, intersect-with-existing-constraint, empty allowlist).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-038",
@@ -1691,19 +1691,19 @@
       "subtasks": [
         {
           "title": "Implement resolvePoiConstraint discriminated union",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Wire intersect-with-existing-location-constraint logic",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Expose resolved lat/long for downstream proximity use",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write resolver unit tests mirroring attraction-resolver.test.ts",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1713,21 +1713,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-11T00:10:00.000Z",
+        "completed": "2026-07-11T00:20:00.000Z"
       }
     },
     {
       "id": "T-040",
       "title": "Add poiSlugs slot to SearchIntentEntitiesSchema",
       "description": "Add `poiSlugs: z.array(z.string()).optional()` to `SearchIntentEntitiesSchema` in `packages/schemas/src/entities/ai/ai-search-intent.schema.ts` (line ~249, alongside the existing `attractionSlugs` field). Unit tests: extend `ai-search-intent.schema.test.ts` asserting `poiSlugs` parses as an optional string array.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 1,
       "blockedBy": [
         "T-038"
@@ -1739,11 +1739,11 @@
       "subtasks": [
         {
           "title": "Add poiSlugs field to SearchIntentEntitiesSchema",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write schema unit test for poiSlugs parsing",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1753,21 +1753,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-11T00:05:00.000Z",
+        "completed": "2026-07-11T00:08:00.000Z"
       }
     },
     {
       "id": "T-041",
       "title": "Wire POI allowlist into search-chat.prompt.ts",
       "description": "In `apps/api/src/routes/ai/protected/search-chat.prompt.ts`'s `buildAllowlistLines(locale)`, add a POI instruction line following the same pattern as the amenity/feature/attraction lines: flatten T-038's `POI_ALLOWLIST[locale]` values into a deduped slug list and append `Allowed destination point-of-interest slugs for this request (...): <slugs>` (mirroring the attraction line's wording). Unit tests: extend `search-chat.prompt.test.ts` asserting the POI allowlist line is present and correctly flattened/deduped for a given locale.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-038",
@@ -1779,11 +1779,11 @@
       "subtasks": [
         {
           "title": "Add POI allowlist flattening + line to buildAllowlistLines",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write prompt-building unit test for POI line",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1793,21 +1793,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-11T00:20:00.000Z",
+        "completed": "2026-07-11T00:24:00.000Z"
       }
     },
     {
       "id": "T-042",
       "title": "Wire poi-resolver into search-chat handler",
       "description": "In `apps/api/src/routes/ai/protected/search-chat.ts`, alongside the existing `resolveAttractionConstraint` call (~line 79/539), add a parallel call to T-039's `resolvePoiConstraint` using T-040's `validatedEntities.poiSlugs ?? []`. When a POI resolves, feed its `{lat, long}` into T-033's proximity search path (same params object accommodation search already consumes) instead of/alongside any attraction-based location constraint. Unit tests: extend `search-chat.test.ts` (or add an integration test) covering: a message resolving a POI applies proximity filtering; an unmatched POI mention is silently ignored (no hallucinated slug, R-4).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-039",
@@ -1820,15 +1820,15 @@
       "subtasks": [
         {
           "title": "Call resolvePoiConstraint alongside resolveAttractionConstraint",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Feed resolved POI lat/long into accommodation proximity search path",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write handler unit tests: matched + unmatched POI cases",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1838,21 +1838,21 @@
       ],
       "phase": "integration",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-11T00:24:00.000Z",
+        "completed": "2026-07-11T00:35:00.000Z"
       }
     },
     {
       "id": "T-043",
       "title": "Add poiSlugs to ai-search-chat.schema.ts response typing",
       "description": "Add a `poiSlugs: z.array(z.string())` property (with JSDoc mirroring the existing `attractionSlugs` doc comment at line ~82-89) to `packages/schemas/src/entities/ai/ai-search-chat.schema.ts`'s response schema, documenting the canonical POI slugs the assistant resolved for this request. Unit tests: extend `ai-search-chat.schema.test.ts` asserting the field parses correctly and defaults sensibly when empty.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 1,
       "blockedBy": [
         "T-040"
@@ -1863,11 +1863,11 @@
       "subtasks": [
         {
           "title": "Add poiSlugs field + JSDoc to ai-search-chat.schema.ts",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Write schema unit test",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1877,21 +1877,21 @@
       ],
       "phase": "core",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-11T00:22:00.000Z",
+        "completed": "2026-07-11T00:24:00.000Z"
       }
     },
     {
       "id": "T-044",
       "title": "Write AI chat POI resolution integration test",
       "description": "Write an end-to-end integration test sending a natural-language chat message mentioning a seeded POI by name/alias (e.g. \"cerca del autódromo\") through the AI search-chat pipeline, asserting: the response's `poiSlugs` includes the correctly resolved slug (AC-6); the underlying accommodation search applied proximity filtering using the POI's coordinates (reusing T-036's near-POI assertions); an unresolvable landmark mention produces empty `poiSlugs` with no hallucinated slug and no crash.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-036",
@@ -1902,15 +1902,15 @@
       "subtasks": [
         {
           "title": "Send NL message mentioning a seeded POI, assert resolved poiSlugs",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Assert proximity filtering applied using POI coordinates",
-          "completed": false
+          "completed": true
         },
         {
           "title": "Assert unresolvable mention yields empty poiSlugs, no hallucination",
-          "completed": false
+          "completed": true
         }
       ],
       "tags": [
@@ -1920,14 +1920,14 @@
       ],
       "phase": "testing",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": true,
+        "typecheck": true,
+        "tests": true
       },
       "timestamps": {
         "created": "2026-07-10T09:03:15.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-11T00:35:00.000Z",
+        "completed": "2026-07-11T00:42:00.000Z"
       }
     },
     {
@@ -2252,11 +2252,11 @@
   ],
   "summary": {
     "total": 52,
-    "pending": 15,
+    "pending": 8,
     "inProgress": 0,
-    "completed": 37,
+    "completed": 44,
     "blocked": 0,
     "averageComplexity": 2.1,
-    "notes": "Phase 1 (T-001..T-030) COMPLETE. Phase 2 (proximity search, T-031..T-037) COMPLETE -- poiId/poiSlug params, resolvePoiToCoordinates (OQ-5 default radius 5km, owner-confirmed), search wiring + precedence, route wiring, AC-4 integration test, spec.md OQ-5 resolution. Phase 3 (AI search, T-038+) not started."
+    "notes": "Phase 1 (T-001..T-030) COMPLETE. Phase 2 (proximity search, T-031..T-037) COMPLETE -- poiId/poiSlug params, resolvePoiToCoordinates (OQ-5 default radius 5km, owner-confirmed), search wiring + precedence, route wiring, AC-4 integration test, spec.md OQ-5 resolution. Phase 3 (AI search, T-038..T-044) COMPLETE -- poi-allowlist.ts + matchPoiTerms (12 seeded slugs, es/en/pt, seed-cross-check test), poi-resolver.ts (resolvePoiConstraint mirroring attraction's intersect-or-no-match + primary-POI lat/long), poiSlugs intent slot, buildAllowlistLines wiring, search-chat handler wiring (overwrites latitude/longitude/radius on match, reuses existing geo.ts path -- NG-2), poiSlugs on AiSearchChatFiltersEventSchema, AC-6 acceptance test, spec.md OQ-7 resolution. Phase 4 (destination detail web, T-045+) not started."
   }
 }

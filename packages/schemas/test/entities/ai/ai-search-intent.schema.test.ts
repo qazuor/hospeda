@@ -419,6 +419,41 @@ describe('SearchIntentEntitiesSchema', () => {
         }
     });
 
+    // ── poiSlugs (HOS-113 §6.3) ───────────────────────────────────────────────
+
+    it('accepts poiSlugs as an array of strings', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({
+            poiSlugs: ['autodromo_concepcion_del_uruguay', 'palacio_san_jose']
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.poiSlugs).toEqual([
+                'autodromo_concepcion_del_uruguay',
+                'palacio_san_jose'
+            ]);
+        }
+    });
+
+    it('accepts an empty poiSlugs array', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({ poiSlugs: [] });
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects poiSlugs containing non-string elements', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({
+            poiSlugs: ['autodromo_concepcion_del_uruguay', 42]
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('defaults poiSlugs to undefined (absent) when not provided', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({});
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.poiSlugs).toBeUndefined();
+        }
+    });
+
     // ── expandToNearby (HOS-111 T-012, G-9) ──────────────────────────────────
 
     it('accepts expandToNearby: true', () => {
