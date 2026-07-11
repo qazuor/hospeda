@@ -66,6 +66,27 @@
     },
     "navigation": "Account navigation",
     "sections": "Account sections",
+    "nav": {
+        "groupAccount": "My account",
+        "groupTourist": "Traveler",
+        "groupHost": "Host",
+        "groupCommerce": "Business",
+        "dashboard": "My account",
+        "editProfile": "Edit profile",
+        "subscription": "Subscription",
+        "preferences": "Preferences",
+        "newsletter": "Newsletter",
+        "whatsNew": "What's new",
+        "favorites": "Favorites",
+        "searchHistory": "Search history",
+        "alerts": "Price alerts",
+        "exclusiveDeals": "Exclusive deals",
+        "reviews": "My reviews",
+        "hostDashboard": "Host dashboard",
+        "properties": "My accommodations",
+        "promotions": "My promotions",
+        "tradeDirectory": "Provider directory"
+    },
     "avatar": {
         "hint": "JPEG, PNG and WebP only · Max. 5 MB",
         "actions": {

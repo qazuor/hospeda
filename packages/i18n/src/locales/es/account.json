@@ -66,6 +66,27 @@
     },
     "navigation": "Navegación de cuenta",
     "sections": "Secciones de cuenta",
+    "nav": {
+        "groupAccount": "Mi cuenta",
+        "groupTourist": "Turista",
+        "groupHost": "Anfitrión",
+        "groupCommerce": "Comercio",
+        "dashboard": "Mi cuenta",
+        "editProfile": "Editar perfil",
+        "subscription": "Suscripción",
+        "preferences": "Preferencias",
+        "newsletter": "Boletín de novedades",
+        "whatsNew": "Novedades",
+        "favorites": "Favoritos",
+        "searchHistory": "Historial de búsquedas",
+        "alerts": "Alertas de precio",
+        "exclusiveDeals": "Ofertas exclusivas",
+        "reviews": "Mis reseñas",
+        "hostDashboard": "Panel del anfitrión",
+        "properties": "Mis alojamientos",
+        "promotions": "Mis promociones",
+        "tradeDirectory": "Directorio de proveedores"
+    },
     "avatar": {
         "hint": "Solo JPEG, PNG y WebP · Máx. 5 MB",
         "actions": {
