@@ -108,9 +108,11 @@ const baseCards = items.map((item) =>
 let favoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
 if (isAuthenticated && baseCards.length > 0) {
     try {
+        const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
         const bulkResult = await userBookmarksApi.checkBulk({
             entityType: 'GASTRONOMY',
-            entityIds: baseCards.map((card) => card.id)
+            entityIds: baseCards.map((card) => card.id),
+            cookieHeader
         });
         if (bulkResult.ok) {
             favoriteChecks = bulkResult.data.checks;

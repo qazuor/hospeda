@@ -9,6 +9,8 @@ import type {
     AccommodationComparisonResponse,
     AccommodationImportAsyncStartResponse,
     AccommodationImportResponse,
+    AccommodationImportStatusQuery,
+    AccommodationImportStatusResponse,
     AccommodationReviewListItem,
     DestinationReviewListItem,
     DowngradePreview,
@@ -134,6 +136,11 @@ export const userBookmarksApi = {
     checkBulk(body: {
         readonly entityType: BookmarkEntityType;
         readonly entityIds: readonly string[];
+        /**
+         * SSR-only: raw `Cookie` header forwarded to the API so the request
+         * carries the user's session. Browser callers should omit this.
+         */
+        readonly cookieHeader?: string;
     }): Promise<
         ApiResult<{
             readonly checks: Readonly<
@@ -144,9 +151,11 @@ export const userBookmarksApi = {
             >;
         }>
     > {
+        const { cookieHeader, ...rest } = body;
         return apiClient.postProtected({
             path: `${PROTECTED}/user-bookmarks/check-bulk`,
-            body
+            body: rest,
+            cookieHeader
         });
     },
 
@@ -2706,6 +2715,42 @@ export const accommodationsImportApi = {
         return apiClient.postProtected({
             path: `${PROTECTED}/accommodations/import-from-url`,
             body
+        });
+    },
+
+    /**
+     * Poll the status of an async accommodation import run started by the
+     * `202` branch of {@link accommodationsImportApi.importFromUrl}.
+     *
+     * The pipeline is stateless server-side — the client echoes back the exact
+     * run handle (`runId`, `datasetId`, `source`, `startedAt`, `url`) it
+     * received on the `202` response on every poll (HOS-50 / SPEC-277 R3).
+     *
+     * @param query - The run handle to echo back to the status endpoint.
+     * @returns `{ settled: false }` while the run is still in flight, or
+     *   `{ settled: true, draft }` / `{ settled: true, failureCode }` once
+     *   the run reaches a terminal state, or an API error.
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationsImportApi.getStatus(runHandle);
+     * if (result.ok && result.data.settled) {
+     *   // handle result.data.draft / result.data.failureCode
+     * }
+     * ```
+     */
+    getStatus(
+        query: AccommodationImportStatusQuery
+    ): Promise<ApiResult<AccommodationImportStatusResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/import-from-url/status`,
+            params: {
+                runId: query.runId,
+                datasetId: query.datasetId,
+                source: query.source,
+                startedAt: query.startedAt,
+                url: query.url
+            }
         });
     }
 };
