@@ -66,6 +66,13 @@ export function mapSubscriptionCheckoutErrorToHttp(err: SubscriptionCheckoutErro
             // (Bad Gateway) signals an upstream-provider failure, consistent with
             // the SPEC-149 provider-error mapping family.
             return new HTTPException(502, { message: err.message });
+        case 'MISSING_PROVIDER_SUBSCRIPTION_ID':
+            // HOS-151 Bug C: MP returned a 2xx preapproval with no provider id.
+            // The just-created row was cancelled (fail-closed). Like
+            // DISCOUNT_APPLY_FAILED this is an upstream-provider failure (the
+            // provider returned an unusable response), so 502 — and it is
+            // retryable, which the checkout UI communicates to the user.
+            return new HTTPException(502, { message: err.message });
         case 'MISSING_INIT_POINT':
             return new HTTPException(500, { message: err.message });
         default: {

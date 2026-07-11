@@ -29,6 +29,15 @@ export type SubscriptionCheckoutErrorCode =
     | 'NO_MATCHING_PRICE'
     | 'CUSTOMER_NOT_FOUND'
     | 'MISSING_INIT_POINT'
+    // HOS-151 Bug C: MercadoPago returned a 2xx preapproval response with NO
+    // provider subscription id (`providerSubscriptionIds.mercadopago` empty or
+    // absent). Persisting such a row is unrecoverable — the webhook lookup
+    // (`eq(mpSubscriptionId, preapprovalId)`) never matches `''`, so the sub can
+    // never activate and its preapproval can never be located to cancel. The
+    // create fails loudly (after cleaning up the just-created local row) so the
+    // checkout surfaces a retryable error instead of a silent orphan. Maps to
+    // HTTP 502 (provider returned an unusable response).
+    | 'MISSING_PROVIDER_SUBSCRIPTION_ID'
     | 'INVALID_PROMO_CODE'
     | 'SUBSCRIPTION_NOT_FOUND'
     | 'SAME_PLAN'

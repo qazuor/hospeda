@@ -275,6 +275,7 @@ interface BillingMockOptions {
         id: string;
         providerInitPoint?: string;
         providerSandboxInitPoint?: string;
+        providerSubscriptionIds?: { mercadopago?: string };
     } | null;
     createThrows?: Error;
 }
@@ -286,7 +287,11 @@ function createBillingMock(opts: BillingMockOptions = {}) {
             ? {
                   id: LOCAL_SUB_ID,
                   providerInitPoint: 'https://mp.test/checkout/abc',
-                  providerSandboxInitPoint: 'https://sandbox.mp.test/checkout/abc'
+                  providerSandboxInitPoint: 'https://sandbox.mp.test/checkout/abc',
+                  // HOS-151 Bug C: a real paid preapproval always carries a
+                  // provider subscription id; createPaidSubscription now rejects
+                  // a response without one.
+                  providerSubscriptionIds: { mercadopago: 'mp_preapproval_abc' }
               }
             : opts.subscription;
 
@@ -380,7 +385,8 @@ describe('handleStartPaidSubscription (monthly)', () => {
         const billing = createBillingMock({
             subscription: {
                 id: LOCAL_SUB_ID,
-                providerSandboxInitPoint: 'https://sandbox.mp.test/checkout/xyz'
+                providerSandboxInitPoint: 'https://sandbox.mp.test/checkout/xyz',
+                providerSubscriptionIds: { mercadopago: 'mp_preapproval_xyz' }
             }
         });
         mockBilling(billing);

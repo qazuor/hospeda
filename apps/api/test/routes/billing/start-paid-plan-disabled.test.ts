@@ -149,7 +149,9 @@ function makeBillingMock(opts: { planActive: boolean; planSlug: string }) {
             create: vi.fn().mockResolvedValue({
                 id: 'sub_new_test',
                 providerInitPoint: 'https://mp.test/checkout',
-                providerSandboxInitPoint: null
+                providerSandboxInitPoint: null,
+                // HOS-151 Bug C: createPaidSubscription requires a non-empty provider id.
+                providerSubscriptionIds: { mercadopago: 'mp_preapproval_test' }
             })
         },
         plans: {
@@ -363,7 +365,9 @@ describe('handleStartPaidSubscription — plan-disabled guard (SPEC-148 T-006)',
                     create: vi.fn().mockResolvedValue({
                         id: 'sub_test_daily',
                         providerInitPoint: 'https://mp.test/checkout/daily',
-                        providerSandboxInitPoint: null
+                        providerSandboxInitPoint: null,
+                        // HOS-151 Bug C: createPaidSubscription requires a non-empty provider id.
+                        providerSubscriptionIds: { mercadopago: 'mp_preapproval_daily' }
                     })
                 },
                 plans: {

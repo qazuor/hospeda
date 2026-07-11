@@ -41,7 +41,10 @@ function createBillingMock(opts: BillingMockOpts = {}) {
     const subscription = opts.subscription ?? {
         id: LOCAL_SUB_ID,
         providerInitPoint: 'https://mp.test/checkout/abc',
-        providerSandboxInitPoint: 'https://sandbox.mp.test/checkout/abc'
+        providerSandboxInitPoint: 'https://sandbox.mp.test/checkout/abc',
+        // HOS-151 Bug C: a valid paid preapproval always carries a provider
+        // subscription id — the helper now rejects a response without one.
+        providerSubscriptionIds: { mercadopago: 'mp_preapproval_abc' }
     };
 
     return {
@@ -73,7 +76,8 @@ describe('createPaidSubscription', () => {
         const billing = createBillingMock({
             subscription: {
                 id: LOCAL_SUB_ID,
-                providerSandboxInitPoint: 'https://sandbox.mp.test/checkout/xyz'
+                providerSandboxInitPoint: 'https://sandbox.mp.test/checkout/xyz',
+                providerSubscriptionIds: { mercadopago: 'mp_preapproval_xyz' }
             }
         });
 
@@ -174,5 +178,112 @@ describe('createPaidSubscription', () => {
         const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(call).not.toHaveProperty('freeTrialDays');
         expect(call).not.toHaveProperty('metadata');
+    });
+
+    // ── HOS-151 Bug C: reject an id-less MP preapproval ───────────────────────
+    // MP can return a 2xx preapproval with no provider subscription id. Before
+    // the fix this persisted a live `incomplete` row with `mp_subscription_id =
+    // ''` that could never activate (webhook lookup keys on the id) and whose
+    // preapproval could never be located to cancel. The helper must now fail
+    // loudly with MISSING_PROVIDER_SUBSCRIPTION_ID after cleaning up the row.
+
+    it('throws MISSING_PROVIDER_SUBSCRIPTION_ID and cancels the row when the provider id is an empty string', async () => {
+        const billing = createBillingMock({
+            subscription: {
+                id: LOCAL_SUB_ID,
+                providerInitPoint: 'https://mp.test/checkout/abc',
+                providerSubscriptionIds: { mercadopago: '' }
+            }
+        });
+
+        await expect(
+            createPaidSubscription({
+                billing: billing as any,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                priceId: PRICE_ID,
+                paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                notificationUrl: URLS.notificationUrl
+            })
+        ).rejects.toMatchObject({
+            name: 'SubscriptionCheckoutError',
+            code: 'MISSING_PROVIDER_SUBSCRIPTION_ID'
+        });
+
+        // The just-created local row is cancelled (fail-closed) so no unlinkable
+        // `incomplete` row survives.
+        expect(billing.subscriptions.cancel).toHaveBeenCalledTimes(1);
+        expect(billing.subscriptions.cancel).toHaveBeenCalledWith(LOCAL_SUB_ID);
+    });
+
+    it('throws MISSING_PROVIDER_SUBSCRIPTION_ID when providerSubscriptionIds is entirely absent', async () => {
+        const billing = createBillingMock({
+            subscription: {
+                id: LOCAL_SUB_ID,
+                providerInitPoint: 'https://mp.test/checkout/abc'
+                // no providerSubscriptionIds at all
+            }
+        });
+
+        await expect(
+            createPaidSubscription({
+                billing: billing as any,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                priceId: PRICE_ID,
+                paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                notificationUrl: URLS.notificationUrl
+            })
+        ).rejects.toMatchObject({ code: 'MISSING_PROVIDER_SUBSCRIPTION_ID' });
+
+        expect(billing.subscriptions.cancel).toHaveBeenCalledTimes(1);
+    });
+
+    it('still throws MISSING_PROVIDER_SUBSCRIPTION_ID when the best-effort cleanup cancel itself fails', async () => {
+        const billing = createBillingMock({
+            subscription: {
+                id: LOCAL_SUB_ID,
+                providerInitPoint: 'https://mp.test/checkout/abc',
+                providerSubscriptionIds: { mercadopago: '' }
+            }
+        });
+        // The cleanup cancel fails — the abandoned-pending cron is the backstop;
+        // the original id-less error must still surface (cleanup is best-effort).
+        billing.subscriptions.cancel.mockRejectedValueOnce(new Error('MP unreachable'));
+
+        await expect(
+            createPaidSubscription({
+                billing: billing as any,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                priceId: PRICE_ID,
+                paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                notificationUrl: URLS.notificationUrl
+            })
+        ).rejects.toMatchObject({ code: 'MISSING_PROVIDER_SUBSCRIPTION_ID' });
+
+        expect(billing.subscriptions.cancel).toHaveBeenCalledTimes(1);
+    });
+
+    it('does NOT reach the provider-id guard when the checkout URL is missing (MISSING_INIT_POINT wins first)', async () => {
+        // A response missing BOTH the init point and the provider id fails at the
+        // init-point guard first, with no cleanup cancel — preserving the
+        // pre-existing MISSING_INIT_POINT contract.
+        const billing = createBillingMock({
+            subscription: { id: LOCAL_SUB_ID, providerSubscriptionIds: { mercadopago: '' } }
+        });
+
+        await expect(
+            createPaidSubscription({
+                billing: billing as any,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                priceId: PRICE_ID,
+                paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                notificationUrl: URLS.notificationUrl
+            })
+        ).rejects.toMatchObject({ code: 'MISSING_INIT_POINT' });
+
+        expect(billing.subscriptions.cancel).not.toHaveBeenCalled();
     });
 });

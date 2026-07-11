@@ -1725,4 +1725,96 @@ describe('PlanPurchaseButton', () => {
             expect(body).not.toHaveProperty('promoCode');
         });
     });
+
+    // -----------------------------------------------------------------------
+    // 14. HOS-151 Bug A — persist localSubscriptionId before the MP redirect
+    // -----------------------------------------------------------------------
+
+    describe('HOS-151 Bug A: sessionStorage pending-subscription id', () => {
+        const PENDING_KEY = 'hospeda:checkout:pendingSubscriptionId';
+
+        beforeEach(() => {
+            window.sessionStorage.clear();
+        });
+        afterEach(() => {
+            window.sessionStorage.clear();
+        });
+
+        it('stashes the localSubscriptionId for a real MP redirect (no immediate effect) before navigating', async () => {
+            mockAuthenticated();
+            const fetchMock = buildFetchMock({
+                ok: true,
+                body: {
+                    data: {
+                        checkoutUrl: 'https://mp.com/checkout/paid',
+                        localSubscriptionId: 'paid-sub-uuid',
+                        expiresAt: new Date(Date.now() + 86400000).toISOString()
+                    }
+                }
+            });
+            vi.stubGlobal('fetch', fetchMock);
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(screen.getByRole('button', { name: /Contratar/ }));
+
+            await waitFor(() => {
+                expect(window.location.href).toBe('https://mp.com/checkout/paid');
+            });
+            // The id must be persisted so the success page can poll on return.
+            expect(window.sessionStorage.getItem(PENDING_KEY)).toBe('paid-sub-uuid');
+        });
+
+        it('does NOT stash the id for a granted trial (in-app sentinel, resolves instantly)', async () => {
+            mockAuthenticated();
+            const sentinelUrl = 'https://hospeda.com.ar/es/suscriptores/checkout/success/';
+            const fetchMock = buildFetchMock({
+                ok: true,
+                body: {
+                    data: {
+                        checkoutUrl: sentinelUrl,
+                        localSubscriptionId: 'trial-sub-uuid',
+                        expiresAt: new Date(Date.now() + 86400000).toISOString(),
+                        appliedEffect: 'trial'
+                    }
+                }
+            });
+            vi.stubGlobal('fetch', fetchMock);
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(screen.getByRole('button', { name: /Contratar/ }));
+
+            await waitFor(() => {
+                expect(window.location.href).toBe(`${sentinelUrl}?effect=trial`);
+            });
+            expect(window.sessionStorage.getItem(PENDING_KEY)).toBeNull();
+        });
+
+        it('does NOT stash the id for a comp grant (in-app sentinel)', async () => {
+            mockAuthenticated();
+            const sentinelUrl = 'https://hospeda.com.ar/es/suscriptores/checkout/success/';
+            const fetchMock = buildFetchMock({
+                ok: true,
+                body: {
+                    data: {
+                        checkoutUrl: sentinelUrl,
+                        localSubscriptionId: 'comp-sub-uuid',
+                        expiresAt: new Date(Date.now() + 86400000).toISOString(),
+                        appliedEffect: 'comp'
+                    }
+                }
+            });
+            vi.stubGlobal('fetch', fetchMock);
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(screen.getByRole('button', { name: /Contratar/ }));
+
+            await waitFor(() => {
+                expect(window.location.href).toBe(`${sentinelUrl}?effect=comp`);
+            });
+            expect(window.sessionStorage.getItem(PENDING_KEY)).toBeNull();
+        });
+    });
 });

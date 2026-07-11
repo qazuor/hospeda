@@ -656,7 +656,12 @@ export async function initiatePaidMonthlySubscription(
     if (promoPlan.kind === 'discount') {
         const mpSubscriptionId = subscription.providerSubscriptionIds?.mercadopago;
         if (!mpSubscriptionId) {
-            // No live preapproval id to mutate — fail closed (cancel + throw).
+            // HOS-151 Bug C: this is now unreachable at runtime — the shared
+            // `createPaidSubscription` helper already fails closed with
+            // MISSING_PROVIDER_SUBSCRIPTION_ID on an id-less provider response
+            // above. Retained purely as a TS type-narrowing (`string | undefined`
+            // → `string` for `applySignupDiscountToMonthly` below) and as
+            // defense-in-depth. Kept fail-closed (cancel + throw) for safety.
             await cancelSubscriptionFailClosed(billing, subscription.id);
             throw new SubscriptionCheckoutError(
                 'MISSING_INIT_POINT',

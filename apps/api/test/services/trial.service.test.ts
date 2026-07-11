@@ -1712,7 +1712,8 @@ describe('TrialService', () => {
                 customerId,
                 planId: PAID_PLAN_ID,
                 status: 'incomplete',
-                providerInitPoint: 'https://mp.test/checkout/reactivate-abc'
+                providerInitPoint: 'https://mp.test/checkout/reactivate-abc',
+                providerSubscriptionIds: { mercadopago: 'mp_preapproval_reactivate' }
             } as never);
         }
 
@@ -2186,7 +2187,8 @@ describe('TrialService', () => {
                 customerId,
                 planId: PAID_PLAN_ID,
                 status: 'incomplete',
-                providerInitPoint: 'https://mp.test/checkout/reactivate-sub-abc'
+                providerInitPoint: 'https://mp.test/checkout/reactivate-sub-abc',
+                providerSubscriptionIds: { mercadopago: 'mp_preapproval_reactivate_sub' }
             } as never);
         }
 
