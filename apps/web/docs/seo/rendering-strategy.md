@@ -78,23 +78,37 @@ every content page off `prerender` onto the SSR path for exactly this reason.
 `staticHeaders: true` only forwards headers registered by Astro's *native*
 `security.csp` build feature, not the hand-built middleware header.
 
-**Do not add `export const prerender = true` to any content page** until the CSP
-is migrated to Astro's native `security.csp` — it would silently ship without a
-policy.
+**Do not add `export const prerender = true` to any content page** — it would
+silently ship without a CSP. Migrating to Astro's native `security.csp` to allow
+it is **not viable** (see below).
 
 ## Deferred follow-ups (scaling; out of HOS-117 scope)
 
-1. **Migrate hand-built CSP → Astro native `security.csp`.** Unblocks safe
-   prerendering of truly-static pages AND lets prerendered/static responses
-   carry a CSP. Prerequisite for both items below. Tracked as a separate backlog
-   issue.
-2. **Edge-cache the anonymous catalog.** Add a Cloudflare Cache Rule that caches
-   `text/html` for the catalog paths honoring `s-maxage`, and make the origin
-   send `Cache-Control: s-maxage=… , stale-while-revalidate=…` on those routes.
-   Requires care around personalization (cache only anonymous responses / `Vary`
-   on auth) to avoid the CDN cache-poisoning class of bug seen in HOS-115. Also
-   makes the pricing pages' existing (currently dead) `s-maxage` effective.
-3. **Prerender truly-static pages** (legal, `/funcionalidades`) once (1) lands.
+1. **Edge-cache the anonymous catalog — HOS-128 (viable path).** Add a Cloudflare
+   Cache Rule that caches `text/html` for the catalog paths honoring `s-maxage`,
+   and make the origin send `Cache-Control: s-maxage=… , stale-while-revalidate=…`
+   on those routes. This does **not** require any CSP change — the SSR responses
+   already carry the middleware CSP, which is cached with the HTML. Requires two
+   sign-offs: (a) personalization — cache only anonymous responses / `Vary` on
+   the auth cookie, to avoid the CDN cache-poisoning class of bug seen in HOS-115;
+   (b) the middleware's per-request CSP nonce is shared across users for the cache
+   TTL, which weakens (does not break) the nonce guarantee — acceptable for
+   short-TTL read-only catalog pages, or move those to a hash-based inline
+   strategy. Also makes the pricing pages' existing (currently dead) `s-maxage`
+   effective.
+2. **Migrate hand-built CSP → Astro native `security.csp` — NOT viable (HOS-124,
+   canceled).** Would be the prerequisite for prerendering static pages, but
+   Astro's native `security.csp` does **not** support `<ClientRouter />` / view
+   transitions, which this app uses in `BaseLayout` (every page). Astro added and
+   then **removed** that support (commit `76c5480` / #13914, June 2025 — view
+   transitions had to become async, which broke users); it "might" return with no
+   timeline. Native CSP is also hash-based (not per-request nonces), incompatible
+   with `unsafe-inline`, and drops Shiki. Migrating would first require moving the
+   whole app off `<ClientRouter />` — a large navigation-architecture change.
+   Revisit only if Astro re-adds `<ClientRouter />` + CSP, or the app migrates off
+   `<ClientRouter />` independently.
+3. **Prerender truly-static pages** (legal, `/funcionalidades`) — blocked on (2),
+   which is not viable. Low value anyway (CWV already "Good").
 
 Deferred because the CWV baseline is already "Good"; these are robustness/cost
 improvements to revisit under real traffic pressure, not fixes for a current

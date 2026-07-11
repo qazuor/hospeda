@@ -1,6 +1,6 @@
 # TODOs: SEO/AEO on-page hardening (HOS-117)
 
-Status: in-progress | Progress: 16/17 active tasks (Wave 0; T-013/T-018; T-014 FAQ i18n; T-020 tests; T-022 410 Gone; Wave 4 CWV/rendering; T-012 landings). Remaining: T-021 closeout.
+Status: COMPLETED | Progress: 17/17 active tasks (Wave 0; T-013/T-018; T-014 FAQ i18n; T-020 tests; T-022 410 Gone; Wave 4 CWV/rendering; T-012 landings; T-021 closeout). 5 cancelled (Wave 1). See closeout.md. Follow-ups: HOS-128 (edge-cache), HOS-124 (CANCELED).
 
 > **Replan 2026-07-09**: owner will delete all example/seed data from prod within
 > 2-3 days. Wave 1 (demo-content exclusion) is obsolete — deleting the data
@@ -83,7 +83,9 @@ in `apps/web/docs/seo/rendering-strategy.md`.
 
 ## Docs
 
-- [ ] T-021: Docs, closeout, off-page follow-up + data-deletion/410 decision (complexity: 2) [blocked by T-018, T-020]
+- [x] T-021: Docs, closeout, off-page follow-up + data-deletion/410 decision (complexity: 2) [blocked by T-018✓ T-020✓]
+      Done 2026-07-10: closeout.md written; rendering-strategy.md corrected (HOS-124 not viable → HOS-128);
+      off-page gap (GSC/backlinks) recorded as out-of-scope; no smoke labels needed.
 
 ## Cancelled (replan 2026-07-09 — example data being deleted)
 

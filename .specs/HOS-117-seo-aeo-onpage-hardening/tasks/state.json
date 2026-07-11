@@ -468,16 +468,16 @@
             "id": "T-021",
             "title": "Docs, closeout, and off-page follow-up",
             "description": "Finalize apps/web/docs/seo/json-ld-audit.md; document the off-page authority gap (GSC, backlinks, domain age, editorial long-tail) as an Out-of-Scope follow-up (marketing/content-ops, not code); write closeout.md; record env vars/migrations/decisions on the HOS-117 Linear issue; apply status-needs-smoke-* labels if Wave 1/4 need live verification. Ref US-8. Tests: none (docs/cleanup).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-018", "T-020"],
             "blocks": [],
             "subtasks": [
-                { "title": "Write off-page follow-up note", "completed": false },
-                { "title": "Write closeout.md", "completed": false },
+                { "title": "Write off-page follow-up note (GSC/backlinks — in closeout.md)", "completed": true },
+                { "title": "Write closeout.md", "completed": true },
                 {
-                    "title": "Record decisions/migrations on Linear issue + smoke labels",
-                    "completed": false
+                    "title": "Record decisions/migrations on Linear issue + smoke labels (none needed)",
+                    "completed": true
                 }
             ],
             "tags": ["docs", "cleanup"],
@@ -485,8 +485,8 @@
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
             "timestamps": {
                 "created": "2026-07-09T18:22:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-10T20:50:00.000Z",
+                "completed": "2026-07-10T21:00:00.000Z"
             }
         },
         {
@@ -510,9 +510,9 @@
     ],
     "summary": {
         "total": 17,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 17,
         "blocked": 0,
         "cancelled": 5,
         "averageComplexity": 2.2
