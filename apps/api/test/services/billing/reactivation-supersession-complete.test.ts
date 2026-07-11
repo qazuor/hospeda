@@ -28,7 +28,9 @@
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import * as Sentry from '@sentry/node';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getPostHogClient } from '../../../src/lib/posthog.js';
 import { completeSupersessionPairing } from '../../../src/services/billing/reactivation-supersession-complete';
+import { resolveOwnerUserId } from '../../../src/services/subscription-pause.service.js';
 
 vi.mock('@sentry/node', () => ({
     captureException: vi.fn()
@@ -41,6 +43,18 @@ vi.mock('../../../src/utils/logger.js', () => ({
         warn: vi.fn(),
         error: vi.fn()
     }
+}));
+
+// HOS-130: analytics deps. Default `getPostHogClient` → null so EVERY existing
+// test (which never opts into analytics) skips the new capture block entirely,
+// exactly as when PostHog is unconfigured in prod. The HOS-130 describe below
+// overrides this to a fake client per-test.
+vi.mock('../../../src/lib/posthog.js', () => ({
+    getPostHogClient: vi.fn(() => null)
+}));
+
+vi.mock('../../../src/services/subscription-pause.service.js', () => ({
+    resolveOwnerUserId: vi.fn()
 }));
 
 /**
@@ -56,11 +70,19 @@ function makeDbFake(
     options: {
         existingAuditRows?: unknown[];
         supersededRows?: unknown[];
+        // HOS-130: rows returned by the 3rd SELECT (new sub `billingInterval`),
+        // issued only when the trial-conversion analytics block runs.
+        newSubRows?: unknown[];
         insertShouldFail?: boolean;
     } = {}
 ) {
-    const { existingAuditRows = [], supersededRows = [], insertShouldFail = false } = options;
-    const selectResultsInOrder = [existingAuditRows, supersededRows];
+    const {
+        existingAuditRows = [],
+        supersededRows = [],
+        newSubRows = [],
+        insertShouldFail = false
+    } = options;
+    const selectResultsInOrder = [existingAuditRows, supersededRows, newSubRows];
     let callIndex = 0;
 
     const select = vi.fn().mockImplementation(() => {
@@ -396,6 +418,265 @@ describe('completeSupersessionPairing', () => {
 
             expect(outcome).toBe('error');
             expect(Sentry.captureException).toHaveBeenCalled();
+        });
+    });
+
+    // ── HOS-130: trial→paid conversion analytics event ─────────────────────
+    describe('HOS-130: trial_converted_to_paid analytics event', () => {
+        let mockCapture: ReturnType<typeof vi.fn>;
+        let mockPlansGet: ReturnType<typeof vi.fn>;
+
+        // A plan carrying BOTH an active monthly and an active annual price, so
+        // `convertedInterval` is driven by the NEW sub's billing_interval, not
+        // by the plan (which cannot disambiguate on its own).
+        const PLAN = {
+            id: 'plan-001',
+            name: 'host-pro',
+            prices: [
+                {
+                    active: true,
+                    billingInterval: 'month',
+                    intervalCount: 1,
+                    unitAmount: 500_000, // centavos → 5000 major
+                    currency: 'ARS'
+                },
+                {
+                    active: true,
+                    billingInterval: 'year',
+                    intervalCount: 1,
+                    unitAmount: 5_000_000, // centavos → 50000 major
+                    currency: 'ARS'
+                }
+            ]
+        };
+
+        beforeEach(() => {
+            mockCapture = vi.fn();
+            vi.mocked(getPostHogClient).mockReturnValue({ capture: mockCapture } as never);
+            mockPlansGet = vi.fn().mockResolvedValue(PLAN);
+            (billing as { plans?: unknown }).plans = { get: mockPlansGet };
+            vi.mocked(resolveOwnerUserId).mockResolvedValue('user-owner-001');
+            // The superseded trial sub has no preapproval → Step 4 re-verifies
+            // via local get(); return terminal so the flow reaches 'completed'.
+            mockGet.mockResolvedValue({ id: SUPERSEDED_ID, status: 'canceled' });
+        });
+
+        /** A trial superseded row carrying the given metadata. */
+        function makeTrialConversionDb(opts: {
+            supersededMetadata?: Record<string, unknown>;
+            newSubBillingInterval?: string | null;
+        }) {
+            return makeDbFake({
+                existingAuditRows: [],
+                supersededRows: [
+                    {
+                        id: SUPERSEDED_ID,
+                        status: 'trialing',
+                        mpSubscriptionId: null,
+                        metadata: opts.supersededMetadata ?? {}
+                    }
+                ],
+                newSubRows: [{ billingInterval: opts.newSubBillingInterval ?? 'year' }]
+            });
+        }
+
+        const callTrialConversion = (db: unknown) =>
+            completeSupersessionPairing({
+                billing: billing as never,
+                paymentAdapter: paymentAdapter as never,
+                db: db as never,
+                newSubscription: NEW_SUBSCRIPTION,
+                supersededId: SUPERSEDED_ID,
+                triggerSource: 'trial-reactivation',
+                providerEventId: 'evt-hos130',
+                source: 'webhook'
+            });
+
+        it('AC-1: annual trial → annual paid emits the event with both intervals annual', async () => {
+            const db = makeTrialConversionDb({
+                supersededMetadata: { intendedInterval: 'annual' },
+                newSubBillingInterval: 'year'
+            });
+
+            const outcome = await callTrialConversion(db);
+
+            expect(outcome).toBe('completed');
+            expect(mockCapture).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    distinctId: 'user-owner-001',
+                    event: 'trial_converted_to_paid',
+                    properties: expect.objectContaining({
+                        intendedInterval: 'annual',
+                        convertedInterval: 'annual',
+                        planSlug: 'host-pro',
+                        amount: 50_000, // 5_000_000 centavos in major units
+                        currency: 'ARS',
+                        supersededSubscriptionId: SUPERSEDED_ID,
+                        newSubscriptionId: NEW_SUBSCRIPTION.id,
+                        triggerSource: 'trial-reactivation',
+                        $set: { converted_from_trial: true, last_conversion_interval: 'annual' }
+                    })
+                })
+            );
+        });
+
+        it('AC-2: annual trial → monthly paid captures the interval switch (intended annual, converted monthly)', async () => {
+            const db = makeTrialConversionDb({
+                supersededMetadata: { intendedInterval: 'annual' },
+                newSubBillingInterval: 'month'
+            });
+
+            const outcome = await callTrialConversion(db);
+
+            expect(outcome).toBe('completed');
+            expect(mockCapture).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    properties: expect.objectContaining({
+                        intendedInterval: 'annual',
+                        convertedInterval: 'monthly',
+                        amount: 5_000, // monthly price in major units
+                        currency: 'ARS'
+                    })
+                })
+            );
+        });
+
+        it('AC-3: stitch keys — supersededSubscriptionId, newSubscriptionId, distinctId', async () => {
+            const db = makeTrialConversionDb({
+                supersededMetadata: { intendedInterval: 'monthly' },
+                newSubBillingInterval: 'month'
+            });
+
+            await callTrialConversion(db);
+
+            const props = mockCapture.mock.calls[0]?.[0]?.properties;
+            expect(props.supersededSubscriptionId).toBe(SUPERSEDED_ID);
+            expect(props.newSubscriptionId).toBe(NEW_SUBSCRIPTION.id);
+            expect(mockCapture.mock.calls[0]?.[0]?.distinctId).toBe('user-owner-001');
+        });
+
+        it('AC-4: an already-audited pairing (idempotent re-delivery) emits NO event', async () => {
+            // Exactly-once: a webhook redelivery / cron re-run of a pairing that
+            // was already audited returns 'already-audited' at Step 1, long
+            // before the capture block — so the event can never double-fire.
+            const db = makeDbFake({ existingAuditRows: [{ id: 'existing-evt' }] });
+
+            const outcome = await callTrialConversion(db);
+
+            expect(outcome).toBe('already-audited');
+            expect(mockCapture).not.toHaveBeenCalled();
+        });
+
+        it('falls back to the billing customer id as distinctId when the owner user cannot be resolved', async () => {
+            vi.mocked(resolveOwnerUserId).mockResolvedValue(null);
+            const db = makeTrialConversionDb({
+                supersededMetadata: { intendedInterval: 'annual' }
+            });
+
+            await callTrialConversion(db);
+
+            expect(mockCapture.mock.calls[0]?.[0]?.distinctId).toBe(NEW_SUBSCRIPTION.customerId);
+        });
+
+        it('AC-5: a lapsed-subscription reactivation (subscription-reactivation) emits NO event', async () => {
+            const db = makeDbFake({
+                existingAuditRows: [],
+                supersededRows: [
+                    { id: SUPERSEDED_ID, status: 'canceled', mpSubscriptionId: MP_SUBSCRIPTION_ID }
+                ]
+            });
+            mockRetrieve.mockResolvedValue({ status: 'canceled' });
+
+            const outcome = await completeSupersessionPairing({
+                billing: billing as never,
+                paymentAdapter: paymentAdapter as never,
+                db: db as never,
+                newSubscription: NEW_SUBSCRIPTION,
+                supersededId: SUPERSEDED_ID,
+                triggerSource: 'subscription-reactivation',
+                providerEventId: 'evt-hos130-lapsed',
+                source: 'webhook'
+            });
+
+            expect(outcome).toBe('completed');
+            expect(mockCapture).not.toHaveBeenCalled();
+        });
+
+        it('AC-7: absent intendedInterval and a failed plan lookup degrade to null props (never throw)', async () => {
+            mockPlansGet.mockRejectedValue(new Error('plan lookup down'));
+            const db = makeTrialConversionDb({
+                supersededMetadata: {}, // no intendedInterval
+                newSubBillingInterval: 'year'
+            });
+
+            const outcome = await callTrialConversion(db);
+
+            expect(outcome).toBe('completed');
+            expect(mockCapture).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    properties: expect.objectContaining({
+                        intendedInterval: null,
+                        convertedInterval: 'annual', // still known from the new sub row
+                        planSlug: null,
+                        amount: null,
+                        currency: null
+                    })
+                })
+            );
+        });
+
+        it('nulls amount/currency (never falls back to the monthly price) when the converted interval is unresolvable', async () => {
+            // New-sub SELECT returns no row → convertedInterval null → the price
+            // lookup must be skipped, not silently matched against the monthly
+            // price (which would emit a wrong amount for an annual conversion).
+            const db = makeDbFake({
+                existingAuditRows: [],
+                supersededRows: [
+                    {
+                        id: SUPERSEDED_ID,
+                        status: 'trialing',
+                        mpSubscriptionId: null,
+                        metadata: { intendedInterval: 'annual' }
+                    }
+                ],
+                newSubRows: []
+            });
+
+            const outcome = await callTrialConversion(db);
+
+            expect(outcome).toBe('completed');
+            const props = mockCapture.mock.calls[0]?.[0]?.properties;
+            expect(props.convertedInterval).toBeNull();
+            // The monthly price must NOT have leaked in despite the plan having one.
+            expect(props.amount).toBeNull();
+            expect(props.currency).toBeNull();
+            expect(props.$set.last_conversion_interval).toBeNull();
+        });
+
+        it('AC-8: a throwing PostHog capture never blocks the supersession (still "completed")', async () => {
+            mockCapture.mockImplementation(() => {
+                throw new Error('posthog transport failed');
+            });
+            const db = makeTrialConversionDb({
+                supersededMetadata: { intendedInterval: 'annual' }
+            });
+
+            const outcome = await callTrialConversion(db);
+
+            expect(outcome).toBe('completed');
+        });
+
+        it('emits nothing (and skips the plan lookup) when PostHog is unconfigured', async () => {
+            vi.mocked(getPostHogClient).mockReturnValue(null);
+            const db = makeTrialConversionDb({
+                supersededMetadata: { intendedInterval: 'annual' }
+            });
+
+            const outcome = await callTrialConversion(db);
+
+            expect(outcome).toBe('completed');
+            expect(mockCapture).not.toHaveBeenCalled();
+            expect(mockPlansGet).not.toHaveBeenCalled();
         });
     });
 });
