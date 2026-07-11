@@ -60,7 +60,9 @@ function createBillingMock() {
         subscriptions: {
             create: vi.fn().mockResolvedValue({
                 id: LOCAL_SUB_ID,
-                providerInitPoint: 'https://mp.test/checkout/daily'
+                providerInitPoint: 'https://mp.test/checkout/daily',
+                // HOS-151 Bug C: createPaidSubscription requires a non-empty provider id.
+                providerSubscriptionIds: { mercadopago: 'mp_preapproval_daily' }
             })
         },
         getStorage: vi.fn(() => ({}))
