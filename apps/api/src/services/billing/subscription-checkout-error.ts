@@ -44,9 +44,11 @@ export type SubscriptionCheckoutErrorCode =
     // meaningful onto a paid plan.
     | 'INVALID_REACTIVATION_PLAN'
     // HOS-114 T-004: the reactivation plan-resolution guard rejects a
-    // `planId` that resolves to an annual-only plan (no active monthly
-    // price) — annual reactivation is architecturally incompatible with
-    // `billing.subscriptions.create()` and is deferred to HOS-123.
+    // monthly reactivation request (`billingInterval` omitted or `'monthly'`)
+    // against a plan with no active monthly price (e.g. an annual-only
+    // plan). Annual reactivation itself IS supported (HOS-123 T-003) via
+    // `billingInterval: 'annual'` — this code covers only the mismatched
+    // monthly request against such a plan.
     | 'ANNUAL_REACTIVATION_UNSUPPORTED'
     // HOS-114 T-015b: `TrialService.reactivateSubscription` rejects a
     // reactivation attempt when the customer already has an `active` or

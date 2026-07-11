@@ -1075,6 +1075,9 @@
                 }
             },
             "reactivate": {
+                "billingInterval": {
+                    "invalid": "[PT] El intervalo de facturación no es válido"
+                },
                 "planId": {
                     "invalidType": "[PT] El ID del plan tiene un tipo de dato inválido",
                     "min": "[PT] El ID del plan debe tener al menos {{min}} caracteres"
@@ -1099,6 +1102,9 @@
                 }
             },
             "reactivateSubscription": {
+                "billingInterval": {
+                    "invalid": "[PT] El intervalo de facturación no es válido"
+                },
                 "planId": {
                     "invalidType": "[PT] El ID del plan tiene un tipo de dato inválido",
                     "min": "[PT] El ID del plan debe tener al menos {{min}} caracteres"

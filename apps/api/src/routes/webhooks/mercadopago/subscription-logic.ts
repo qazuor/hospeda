@@ -224,15 +224,26 @@ export function shouldSendAdminAlert(previousStatus: string, newStatus: string):
  * see that module's JSDoc for the idempotency guarantee, the T-015a
  * cancel-verification hardening, and the error-isolation contract.
  *
- * Only invoked by {@link processSubscriptionUpdated} when the observed
- * transition is exactly `PENDING_PROVIDER -> ACTIVE` — callers MUST NOT
- * invoke this for any other transition (pause/cancel/past-due/etc. must
- * never trigger a supersession swap).
+ * Invoked from two confirm paths — {@link processSubscriptionUpdated}
+ * (monthly preapproval-confirm) and, since HOS-123 T-013,
+ * `payment-logic.ts::confirmAnnualSubscription` (annual `payment.updated`
+ * confirm — see @remarks below) — and ONLY when the observed transition is
+ * exactly `PENDING_PROVIDER -> ACTIVE`. Callers MUST NOT invoke this for any
+ * other transition (pause/cancel/past-due/etc. must never trigger a
+ * supersession swap).
  *
  * @param input - The billing instance, DB handle, the just-activated local
  *   subscription row, and webhook context for logging/audit.
+ *
+ * @remarks
+ * Exported (HOS-123 T-012) so `payment-logic.ts::confirmAnnualSubscription`
+ * can invoke the exact same trigger on the annual `payment.updated` confirm
+ * path (`PENDING_PROVIDER -> ACTIVE` via a one-time payment, rather than a
+ * monthly preapproval webhook), without duplicating this logic (AC-7
+ * single-source discipline). Verified no circular import: neither this
+ * module nor any of its transitive imports reference `payment-logic.ts`.
  */
-async function completeReactivationSupersession({
+export async function completeReactivationSupersession({
     billing,
     paymentAdapter,
     db,

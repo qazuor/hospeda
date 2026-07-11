@@ -85,3 +85,38 @@ export function buildPaymentMethodReturnUrl(locale: ReturnUrlLocale): string {
 export function buildNotificationUrl(): string {
     return `${env.HOSPEDA_API_URL}/api/v1/webhooks/mercadopago`;
 }
+
+/**
+ * Hosted-checkout `success` redirect for an ANNUAL (one-time charge)
+ * checkout — used by both `/start-paid` (first-time annual subscription)
+ * and the annual reactivation routes (HOS-123). Points directly at the
+ * existing localized checkout success page to avoid Astro's
+ * locale-middleware rewrite that bit the monthly flow (Finding #8).
+ *
+ * The front-end persists `localSubscriptionId` from the response body in
+ * sessionStorage BEFORE redirecting to MP, so the URL carries no id; MP
+ * appends `?status=approved` / `?payment_id=...` / `?preference_id=...` at
+ * redirect time.
+ *
+ * @param locale - User's preferred return-URL locale (e.g. `'es'`, `'en'`, `'pt'`).
+ */
+export function buildAnnualSuccessUrl(locale: ReturnUrlLocale): string {
+    return `${env.HOSPEDA_SITE_URL}/${locale}/suscriptores/checkout/success/`;
+}
+
+/**
+ * Hosted-checkout `cancel` redirect for an ANNUAL (one-time charge)
+ * checkout (HOS-123). Points at the existing localized checkout failure
+ * page.
+ *
+ * NOTE: a `pending` outcome URL would point at
+ * `${HOSPEDA_SITE_URL}/${locale}/suscriptores/checkout/pending/` but the
+ * subscription-checkout service currently only accepts success + cancel;
+ * pending payments fall back to the cancel URL until the service threads a
+ * `back_urls.pending` through to MP. Tracked as a follow-up.
+ *
+ * @param locale - User's preferred return-URL locale.
+ */
+export function buildAnnualCancelUrl(locale: ReturnUrlLocale): string {
+    return `${env.HOSPEDA_SITE_URL}/${locale}/suscriptores/checkout/failure/`;
+}

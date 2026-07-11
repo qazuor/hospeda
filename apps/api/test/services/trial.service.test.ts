@@ -98,7 +98,16 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+// Mock the annual-subscription-create helper (HOS-123 T-008/T-009). It has
+// its own dedicated unit-test coverage (`test/services/billing/
+// create-annual-subscription.test.ts`) — here we only assert that
+// `TrialService` calls it with the right arguments on the annual branch.
+vi.mock('../../src/services/billing/create-annual-subscription', () => ({
+    createAnnualSubscription: vi.fn()
+}));
+
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
+import { createAnnualSubscription } from '../../src/services/billing/create-annual-subscription';
 import { buildTrialUpgradeUrl, TrialService } from '../../src/services/trial.service';
 import { env } from '../../src/utils/env';
 
@@ -1949,6 +1958,187 @@ describe('TrialService', () => {
                 code: 'MISSING_INIT_POINT'
             });
         });
+
+        // ── HOS-123 T-008: annual reactivation routes through
+        // `createAnnualSubscription` (one-time hosted checkout) instead of
+        // `createPaidSubscription` (monthly preapproval).
+        describe('annual billingInterval (HOS-123 T-008)', () => {
+            const ANNUAL_PRICE_ID = 'price_annual_pro';
+            const ANNUAL_URLS = {
+                successUrl: 'https://hospeda.test/es/suscriptores/checkout/success/',
+                cancelUrl: 'https://hospeda.test/es/suscriptores/checkout/cancel/',
+                notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
+            };
+
+            function paidPlanWithAnnual(overrides: Record<string, unknown> = {}) {
+                return {
+                    id: PAID_PLAN_ID,
+                    name: 'owner-pro',
+                    metadata: {},
+                    prices: [
+                        {
+                            id: PRICE_ID,
+                            billingInterval: 'month',
+                            intervalCount: 1,
+                            active: true,
+                            unitAmount: 3_500_000
+                        },
+                        {
+                            id: ANNUAL_PRICE_ID,
+                            billingInterval: 'year',
+                            intervalCount: 1,
+                            active: true,
+                            unitAmount: 35_000_000
+                        }
+                    ],
+                    ...overrides
+                };
+            }
+
+            beforeEach(() => {
+                vi.mocked(createAnnualSubscription).mockReset();
+            });
+
+            it('routes annual reactivation through createAnnualSubscription and returns a pending_provider result', async () => {
+                // Arrange
+                vi.mocked(clearEntitlementCache).mockClear();
+                const customerId = 'customer-annual-reactivate';
+                const existingTrialSub = {
+                    id: 'sub-trial-annual',
+                    customerId,
+                    status: 'trialing'
+                };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    existingTrialSub
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [paidPlanWithAnnual()]
+                } as never);
+                vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                    id: customerId,
+                    email: 'owner@example.com'
+                } as never);
+                vi.mocked(createAnnualSubscription).mockResolvedValue({
+                    localSubscriptionId: 'sub-annual-local',
+                    checkoutUrl: 'https://mp.test/checkout/annual-reactivate-abc',
+                    expiresAt: '2026-01-01T00:00:00.000Z'
+                });
+
+                // Act
+                const result = await trialService.reactivateFromTrial({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    billingInterval: 'annual',
+                    urls: ANNUAL_URLS
+                });
+
+                // Assert
+                expect(result).toEqual({
+                    success: true,
+                    subscriptionId: 'sub-annual-local',
+                    checkoutUrl: 'https://mp.test/checkout/annual-reactivate-abc',
+                    status: 'pending_provider',
+                    message: expect.any(String)
+                });
+
+                expect(createAnnualSubscription).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        customerId,
+                        priceId: ANNUAL_PRICE_ID,
+                        chargeAmountCentavos: 35_000_000,
+                        urls: ANNUAL_URLS,
+                        metadata: expect.objectContaining({
+                            convertedFromTrial: 'true',
+                            supersedesSubscriptionId: 'sub-trial-annual'
+                        })
+                    })
+                );
+
+                // Never falls through to the monthly preapproval path.
+                expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+                // Still deferred to the webhook — never touched synchronously.
+                expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+                expect(clearEntitlementCache).not.toHaveBeenCalled();
+            });
+
+            it('NG-3 regression: billingInterval omitted still routes through the unchanged monthly createPaidSubscription path', async () => {
+                // Arrange
+                vi.mocked(clearEntitlementCache).mockClear();
+                const customerId = 'customer-ng3-from-trial';
+                const existingTrialSub = {
+                    id: 'sub-trial-ng3',
+                    customerId,
+                    status: 'trialing'
+                };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    existingTrialSub
+                ] as never);
+                mockPaidCreateHappyPath(customerId);
+
+                // Act
+                const result = await trialService.reactivateFromTrial({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                });
+
+                // Assert — identical shape/assertions to the pre-HOS-123 happy path.
+                expect(result).toEqual({
+                    success: true,
+                    subscriptionId: 'sub-paid',
+                    checkoutUrl: 'https://mp.test/checkout/reactivate-abc',
+                    status: 'incomplete',
+                    message: expect.any(String)
+                });
+                expect(createAnnualSubscription).not.toHaveBeenCalled();
+                expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+                expect(clearEntitlementCache).not.toHaveBeenCalled();
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        customerId,
+                        planId: PAID_PLAN_ID,
+                        priceId: PRICE_ID,
+                        mode: 'paid',
+                        billingInterval: 'monthly',
+                        paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                        notificationUrl: URLS.notificationUrl,
+                        metadata: expect.objectContaining({
+                            convertedFromTrial: 'true',
+                            supersedesSubscriptionId: 'sub-trial-ng3'
+                        })
+                    })
+                );
+            });
+
+            it('propagates NO_ANNUAL_PRICE from the guard when the plan has no active annual price, and creates no subscription', async () => {
+                // Arrange — plan only has a monthly price.
+                const customerId = 'customer-no-annual-price';
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [paidMonthlyPlan()]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(
+                    [] as never
+                );
+
+                // Act & Assert
+                await expect(
+                    trialService.reactivateFromTrial({
+                        customerId,
+                        planId: PAID_PLAN_ID,
+                        billingInterval: 'annual',
+                        urls: ANNUAL_URLS
+                    })
+                ).rejects.toMatchObject({
+                    name: 'SubscriptionCheckoutError',
+                    code: 'NO_ANNUAL_PRICE'
+                });
+
+                expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+                expect(createAnnualSubscription).not.toHaveBeenCalled();
+            });
+        });
     });
 
     // ── HOS-114 T-010: `reactivateSubscription` had ZERO direct unit-test
@@ -2236,6 +2426,209 @@ describe('TrialService', () => {
             ).rejects.toMatchObject({
                 name: 'SubscriptionCheckoutError',
                 code: 'MISSING_INIT_POINT'
+            });
+        });
+
+        // ── HOS-123 T-009: annual reactivation routes through
+        // `createAnnualSubscription` (one-time hosted checkout) instead of
+        // `createPaidSubscription` (monthly preapproval). Mirrors the
+        // `reactivateFromTrial` annual sub-describe above, except this
+        // method's supersession marker is `reactivatedFromCanceled`, never
+        // `convertedFromTrial`, and `previousPlanId` must survive for both
+        // intervals.
+        describe('annual billingInterval (HOS-123 T-009)', () => {
+            const ANNUAL_PRICE_ID = 'price_annual_pro_sub';
+            const ANNUAL_URLS = {
+                successUrl: 'https://hospeda.test/es/suscriptores/checkout/success/',
+                cancelUrl: 'https://hospeda.test/es/suscriptores/checkout/cancel/',
+                notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
+            };
+
+            function paidPlanWithAnnual(overrides: Record<string, unknown> = {}) {
+                return {
+                    id: PAID_PLAN_ID,
+                    name: 'owner-pro',
+                    metadata: {},
+                    prices: [
+                        {
+                            id: PRICE_ID,
+                            billingInterval: 'month',
+                            intervalCount: 1,
+                            active: true,
+                            unitAmount: 3_500_000
+                        },
+                        {
+                            id: ANNUAL_PRICE_ID,
+                            billingInterval: 'year',
+                            intervalCount: 1,
+                            active: true,
+                            unitAmount: 35_000_000
+                        }
+                    ],
+                    ...overrides
+                };
+            }
+
+            beforeEach(() => {
+                vi.mocked(createAnnualSubscription).mockReset();
+            });
+
+            it('routes annual reactivation through createAnnualSubscription, preserves previousPlanId, and returns a pending_provider result', async () => {
+                // Arrange
+                vi.mocked(clearEntitlementCache).mockClear();
+                const customerId = 'customer-canceled-annual';
+                const canceledSub = {
+                    id: 'sub-canceled-annual',
+                    customerId,
+                    status: 'canceled',
+                    planId: 'plan-old-annual'
+                };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    canceledSub
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [paidPlanWithAnnual()]
+                } as never);
+                vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                    id: customerId,
+                    email: 'owner@example.com'
+                } as never);
+                vi.mocked(createAnnualSubscription).mockResolvedValue({
+                    localSubscriptionId: 'sub-annual-local-reactivated',
+                    checkoutUrl: 'https://mp.test/checkout/annual-reactivate-sub-abc',
+                    expiresAt: '2026-01-01T00:00:00.000Z'
+                });
+
+                // Act
+                const result = await trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    billingInterval: 'annual',
+                    urls: ANNUAL_URLS
+                });
+
+                // Assert
+                expect(result).toEqual({
+                    success: true,
+                    subscriptionId: 'sub-annual-local-reactivated',
+                    previousPlanId: 'plan-old-annual',
+                    checkoutUrl: 'https://mp.test/checkout/annual-reactivate-sub-abc',
+                    status: 'pending_provider',
+                    message: expect.any(String)
+                });
+
+                expect(createAnnualSubscription).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        customerId,
+                        priceId: ANNUAL_PRICE_ID,
+                        chargeAmountCentavos: 35_000_000,
+                        urls: ANNUAL_URLS,
+                        metadata: expect.objectContaining({
+                            reactivatedFromCanceled: 'true',
+                            previousPlanId: 'plan-old-annual',
+                            supersedesSubscriptionId: 'sub-canceled-annual'
+                        })
+                    })
+                );
+
+                // Must NOT stamp convertedFromTrial — that marker belongs only
+                // to `reactivateFromTrial`'s trigger source; this method's is
+                // `reactivatedFromCanceled` (subscription-reactivation).
+                const call = vi.mocked(createAnnualSubscription).mock.calls[0]?.[0] as {
+                    metadata?: Record<string, unknown>;
+                };
+                expect(call.metadata).not.toHaveProperty('convertedFromTrial');
+
+                expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+                expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+                expect(clearEntitlementCache).not.toHaveBeenCalled();
+            });
+
+            it('NG-3 regression: billingInterval omitted still routes through the unchanged monthly createPaidSubscription path', async () => {
+                // Arrange
+                vi.mocked(clearEntitlementCache).mockClear();
+                const customerId = 'customer-ng3-canceled';
+                const canceledSub = {
+                    id: 'sub-canceled-ng3',
+                    customerId,
+                    status: 'canceled',
+                    planId: 'plan-old'
+                };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    canceledSub
+                ] as never);
+                mockPaidCreateHappyPath(customerId);
+
+                // Act
+                const result = await trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                });
+
+                // Assert — identical shape/assertions to the pre-HOS-123 happy path.
+                expect(result).toEqual({
+                    success: true,
+                    subscriptionId: 'sub-paid-reactivated',
+                    previousPlanId: 'plan-old',
+                    checkoutUrl: 'https://mp.test/checkout/reactivate-sub-abc',
+                    status: 'incomplete',
+                    message: expect.any(String)
+                });
+                expect(createAnnualSubscription).not.toHaveBeenCalled();
+                expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+                expect(clearEntitlementCache).not.toHaveBeenCalled();
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        customerId,
+                        planId: PAID_PLAN_ID,
+                        priceId: PRICE_ID,
+                        mode: 'paid',
+                        billingInterval: 'monthly',
+                        paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                        notificationUrl: URLS.notificationUrl,
+                        metadata: expect.objectContaining({
+                            reactivatedFromCanceled: 'true',
+                            previousPlanId: 'plan-old',
+                            supersedesSubscriptionId: 'sub-canceled-ng3'
+                        })
+                    })
+                );
+            });
+
+            it('propagates NO_ANNUAL_PRICE from the guard when the plan has no active annual price, and creates no subscription', async () => {
+                // Arrange — plan only has a monthly price.
+                const customerId = 'customer-no-annual-price-sub';
+                const canceledSub = {
+                    id: 'sub-canceled-no-annual',
+                    customerId,
+                    status: 'canceled',
+                    planId: 'plan-old'
+                };
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [paidMonthlyPlan()]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    canceledSub
+                ] as never);
+
+                // Act & Assert
+                await expect(
+                    trialService.reactivateSubscription({
+                        customerId,
+                        planId: PAID_PLAN_ID,
+                        billingInterval: 'annual',
+                        urls: ANNUAL_URLS
+                    })
+                ).rejects.toMatchObject({
+                    name: 'SubscriptionCheckoutError',
+                    code: 'NO_ANNUAL_PRICE'
+                });
+
+                expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+                expect(createAnnualSubscription).not.toHaveBeenCalled();
             });
         });
     });

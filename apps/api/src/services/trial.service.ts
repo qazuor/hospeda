@@ -40,6 +40,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
+import { createAnnualSubscription } from './billing/create-annual-subscription.js';
 import { createPaidSubscription } from './billing/paid-subscription-create.js';
 import { resolveReactivationPlan } from './billing/reactivation-plan-guard.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
@@ -910,21 +911,27 @@ export class TrialService {
 
     /**
      * Reactivate from trial to a real, card-collecting paid subscription
-     * (HOS-114).
+     * (HOS-114). Supports both the monthly and annual billing intervals
+     * (HOS-123 T-006) via `input.billingInterval`.
      *
      * Unlike the pre-HOS-114 behavior, this method does NOT create a
      * locally-`active` subscription with no MercadoPago preapproval behind
      * it (the "phantom-active" bug — see HOS-114 spec §2). It instead:
      *
-     * 1. Resolves + validates `input.planId` against the live plan catalog,
-     *    fail-closed on unknown/free/annual targets ({@link resolveReactivationPlan}).
+     * 1. Resolves + validates `input.planId` (and `input.billingInterval`)
+     *    against the live plan catalog, fail-closed on an unknown plan, a
+     *    free plan, or a plan with no active price for the requested
+     *    interval ({@link resolveReactivationPlan}).
      * 2. Ensures the billing customer exists.
-     * 3. Creates a real `mode: 'paid'` MercadoPago preapproval via the
-     *    shared {@link createPaidSubscription} helper (also used by
-     *    `/start-paid`) — fail-closed if the provider returns no checkout URL.
+     * 3. For `billingInterval: 'monthly'` (the default), creates a real
+     *    `mode: 'paid'` MercadoPago preapproval via the shared
+     *    {@link createPaidSubscription} helper (also used by `/start-paid`).
+     *    For `billingInterval: 'annual'`, creates a one-time hosted-checkout
+     *    charge via `createAnnualSubscription` instead (HOS-123 T-006) — both
+     *    paths fail-closed if the provider returns no checkout URL.
      * 4. Returns a `checkoutUrl` the caller MUST redirect the user to. The
-     *    created subscription is `incomplete`, not `active`, until the
-     *    `subscription_preapproval.created` webhook confirms it.
+     *    created subscription is `incomplete`/`pending_provider`, not
+     *    `active`, until the corresponding webhook confirms it.
      *
      * The old trial subscription is deliberately NOT cancelled here — see
      * the inline comment below (spec §6.4/§6.5, HOS-114 T-007).
@@ -932,27 +939,34 @@ export class TrialService {
      * @param input - Reactivation parameters, including the resolved MP
      *   checkout return/notification URLs.
      * @returns The new (not-yet-confirmed) subscription id, its checkout URL,
-     *   and its `incomplete` status.
+     *   and its `incomplete`/`pending_provider` status.
      * @throws SubscriptionCheckoutError With code `PLAN_NOT_FOUND`,
      *   `INVALID_REACTIVATION_PLAN`, `ANNUAL_REACTIVATION_UNSUPPORTED`,
-     *   `CUSTOMER_NOT_FOUND`, or `MISSING_INIT_POINT`.
+     *   `NO_ANNUAL_PRICE`, `CUSTOMER_NOT_FOUND`, or `MISSING_INIT_POINT`.
      */
     async reactivateFromTrial(input: ReactivateFromTrialInput): Promise<ReactivateFromTrialResult> {
         if (!this.billing) {
             throw new Error('Billing not enabled');
         }
 
-        const { customerId, planId, urls } = input;
+        const { customerId, planId, urls, billingInterval = 'monthly' } = input;
 
         try {
-            apiLogger.info({ customerId, planId }, 'Reactivating customer from trial');
+            apiLogger.info(
+                { customerId, planId, billingInterval },
+                'Reactivating customer from trial'
+            );
 
             // HOS-114 §6.1/AC-6: resolve + validate the target plan FIRST,
             // fail-closed on unknown/free/annual plans before touching the
-            // customer or any existing subscription.
-            const { plan, priceId } = await resolveReactivationPlan({
+            // customer or any existing subscription. HOS-123: threads
+            // `billingInterval` so the guard resolves the annual price
+            // (and its own `NO_ANNUAL_PRICE`/`INVALID_REACTIVATION_PLAN`
+            // validation) instead of always defaulting to monthly.
+            const { plan, priceId, interval } = await resolveReactivationPlan({
                 billing: this.billing,
-                planId
+                planId,
+                billingInterval
             });
 
             // Ensure the billing customer actually exists before creating a
@@ -977,6 +991,75 @@ export class TrialService {
                 .filter((sub) => sub.status === 'trialing')
                 .map((sub) => sub.id)
                 .join(',');
+
+            if (interval === 'annual') {
+                // HOS-123: annual reactivation routes through the one-time
+                // hosted-checkout charge instead of a recurring preapproval.
+                // The guard already resolved an annual price for this plan,
+                // so `urls` MUST carry the annual (successUrl/cancelUrl) shape
+                // — the caller (the reactivate route) is responsible for
+                // resolving the correct union member from `billingInterval`.
+                if (!('successUrl' in urls)) {
+                    throw new Error(
+                        'Annual reactivation requires successUrl/cancelUrl/notificationUrl checkout URLs'
+                    );
+                }
+
+                const annualPrice = plan.prices.find((price) => price.id === priceId);
+                const chargeAmountCentavos = annualPrice?.unitAmount ?? 0;
+
+                const { localSubscriptionId, checkoutUrl } = await createAnnualSubscription({
+                    billing: this.billing,
+                    customerId,
+                    plan: { id: plan.id, name: plan.name, metadata: plan.metadata },
+                    priceId,
+                    chargeAmountCentavos,
+                    urls: {
+                        successUrl: urls.successUrl,
+                        cancelUrl: urls.cancelUrl,
+                        notificationUrl: urls.notificationUrl
+                    },
+                    metadata: {
+                        convertedFromTrial: 'true',
+                        convertedAt: new Date().toISOString(),
+                        ...(supersedesSubscriptionId ? { supersedesSubscriptionId } : {})
+                    }
+                });
+
+                // Deferred to webhook (HOS-114 T-007, mirrored for the annual
+                // `payment.updated` confirmation path): cancel superseded sub +
+                // audit + clearEntitlementCache on PENDING_PROVIDER->ACTIVE. The
+                // old trialing subscription stays live and keeps granting
+                // entitlements until the provider confirms this new checkout.
+                apiLogger.info(
+                    {
+                        customerId,
+                        newSubscriptionId: localSubscriptionId,
+                        planId: plan.id,
+                        checkoutUrl
+                    },
+                    'Initiated annual paid reactivation from trial — awaiting MercadoPago confirmation'
+                );
+
+                return {
+                    success: true,
+                    subscriptionId: localSubscriptionId,
+                    checkoutUrl,
+                    status: 'pending_provider',
+                    message: 'Redirect to MercadoPago to complete reactivation'
+                };
+            }
+
+            // HOS-123: `urls` is now a discriminated union (monthly preapproval
+            // shape vs annual hosted-checkout shape). `interval === 'monthly'`
+            // here (the guard's default and the only other possible value), so
+            // `urls` MUST carry the monthly shape — narrow explicitly so this
+            // stays type-safe.
+            if (!('paymentMethodReturnUrl' in urls)) {
+                throw new Error(
+                    'Monthly reactivation requires paymentMethodReturnUrl/notificationUrl checkout URLs'
+                );
+            }
 
             // Real MP preapproval via the shared `mode: 'paid'` helper (also
             // used by `/start-paid`) — fail-closed (`MISSING_INIT_POINT`) if
@@ -1040,7 +1123,8 @@ export class TrialService {
 
     /**
      * Reactivate a canceled subscription by creating a real, card-collecting
-     * paid subscription (HOS-114).
+     * paid subscription (HOS-114). Supports both the monthly and annual
+     * billing intervals (HOS-123 T-006) via `input.billingInterval`.
      *
      * Rejects if:
      * - Any subscription is active or trialing (use plan-change instead)
@@ -1048,21 +1132,24 @@ export class TrialService {
      *
      * Like {@link reactivateFromTrial}, this method no longer creates a
      * locally-`active` subscription with no MercadoPago preapproval behind
-     * it. It resolves + validates the target plan, creates a real
-     * `mode: 'paid'` preapproval via {@link createPaidSubscription}, and
-     * returns a `checkoutUrl` the caller MUST redirect the user to. See the
-     * inline comment near the end of this method for why the old canceled
-     * subscription is not touched synchronously here (spec §6.4, HOS-114 T-007).
+     * it. It resolves + validates the target plan and interval, creates a
+     * real `mode: 'paid'` preapproval (monthly) or a one-time
+     * hosted-checkout charge (annual, HOS-123 T-006) via the shared
+     * helpers, and returns a `checkoutUrl` the caller MUST redirect the
+     * user to. See the inline comment near the end of this method for why
+     * the old canceled subscription is not touched synchronously here
+     * (spec §6.4, HOS-114 T-007).
      *
      * @param input - Reactivation parameters, including the resolved MP
      *   checkout return/notification URLs.
      * @returns The new (not-yet-confirmed) subscription id, the previous
-     *   plan id, the checkout URL, and the `incomplete` status.
+     *   plan id, the checkout URL, and the `incomplete`/`pending_provider`
+     *   status.
      * @throws SubscriptionCheckoutError With code `PLAN_NOT_FOUND`,
      *   `INVALID_REACTIVATION_PLAN`, `ANNUAL_REACTIVATION_UNSUPPORTED`,
-     *   `CUSTOMER_NOT_FOUND`, `ACTIVE_SUBSCRIPTION_EXISTS` (HOS-114 T-015b —
-     *   HTTP 409), `NO_CANCELED_SUBSCRIPTION` (HOS-114 T-015b — HTTP 404),
-     *   or `MISSING_INIT_POINT`.
+     *   `NO_ANNUAL_PRICE`, `CUSTOMER_NOT_FOUND`, `ACTIVE_SUBSCRIPTION_EXISTS`
+     *   (HOS-114 T-015b — HTTP 409), `NO_CANCELED_SUBSCRIPTION` (HOS-114
+     *   T-015b — HTTP 404), or `MISSING_INIT_POINT`.
      */
     async reactivateSubscription(
         input: ReactivateSubscriptionInput
@@ -1071,17 +1158,24 @@ export class TrialService {
             throw new Error('Billing not enabled');
         }
 
-        const { customerId, planId, urls } = input;
+        const { customerId, planId, urls, billingInterval = 'monthly' } = input;
 
         try {
-            apiLogger.info({ customerId, planId }, 'Reactivating canceled subscription');
+            apiLogger.info(
+                { customerId, planId, billingInterval },
+                'Reactivating canceled subscription'
+            );
 
             // HOS-114 §6.1/AC-6: resolve + validate the target plan FIRST,
             // fail-closed on unknown/free/annual plans before touching the
-            // customer or any existing subscription.
-            const { plan, priceId } = await resolveReactivationPlan({
+            // customer or any existing subscription. HOS-123: threads
+            // `billingInterval` so the guard resolves the annual price
+            // (and its own `NO_ANNUAL_PRICE`/`INVALID_REACTIVATION_PLAN`
+            // validation) instead of always defaulting to monthly.
+            const { plan, priceId, interval } = await resolveReactivationPlan({
                 billing: this.billing,
-                planId
+                planId,
+                billingInterval
             });
 
             const subscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
@@ -1134,6 +1228,78 @@ export class TrialService {
                 throw new SubscriptionCheckoutError(
                     'CUSTOMER_NOT_FOUND',
                     `Customer '${customerId}' not found`
+                );
+            }
+
+            if (interval === 'annual') {
+                // HOS-123: annual reactivation routes through the one-time
+                // hosted-checkout charge instead of a recurring preapproval.
+                // The guard already resolved an annual price for this plan,
+                // so `urls` MUST carry the annual (successUrl/cancelUrl) shape
+                // — the caller (the reactivate route) is responsible for
+                // resolving the correct union member from `billingInterval`.
+                if (!('successUrl' in urls)) {
+                    throw new Error(
+                        'Annual reactivation requires successUrl/cancelUrl/notificationUrl checkout URLs'
+                    );
+                }
+
+                const annualPrice = plan.prices.find((price) => price.id === priceId);
+                const chargeAmountCentavos = annualPrice?.unitAmount ?? 0;
+
+                const { localSubscriptionId, checkoutUrl } = await createAnnualSubscription({
+                    billing: this.billing,
+                    customerId,
+                    plan: { id: plan.id, name: plan.name, metadata: plan.metadata },
+                    priceId,
+                    chargeAmountCentavos,
+                    urls: {
+                        successUrl: urls.successUrl,
+                        cancelUrl: urls.cancelUrl,
+                        notificationUrl: urls.notificationUrl
+                    },
+                    metadata: {
+                        reactivatedFromCanceled: 'true',
+                        reactivatedAt: new Date().toISOString(),
+                        ...(previousPlanId ? { previousPlanId } : {}),
+                        supersedesSubscriptionId: canceledSub.id
+                    }
+                });
+
+                // Deferred to webhook (HOS-114 T-007, mirrored for the annual
+                // `payment.updated` confirmation path): `canceledSub` is already
+                // terminal (grants no entitlements), but the swap/audit stays
+                // deferred to the webhook confirmation so there is exactly ONE
+                // place (spec §6.4) that finalizes a reactivation.
+                apiLogger.info(
+                    {
+                        customerId,
+                        newSubscriptionId: localSubscriptionId,
+                        planId: plan.id,
+                        previousPlanId,
+                        checkoutUrl
+                    },
+                    'Initiated annual paid reactivation of canceled subscription — awaiting MercadoPago confirmation'
+                );
+
+                return {
+                    success: true,
+                    subscriptionId: localSubscriptionId,
+                    previousPlanId,
+                    checkoutUrl,
+                    status: 'pending_provider',
+                    message: 'Redirect to MercadoPago to complete reactivation'
+                };
+            }
+
+            // HOS-123: `urls` is now a discriminated union (monthly preapproval
+            // shape vs annual hosted-checkout shape). `interval === 'monthly'`
+            // here (the guard's default and the only other possible value), so
+            // `urls` MUST carry the monthly shape — narrow explicitly so this
+            // stays type-safe.
+            if (!('paymentMethodReturnUrl' in urls)) {
+                throw new Error(
+                    'Monthly reactivation requires paymentMethodReturnUrl/notificationUrl checkout URLs'
                 );
             }
 

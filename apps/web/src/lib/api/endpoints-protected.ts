@@ -614,30 +614,43 @@ export const billingApi = {
      *
      * As of HOS-114, reactivation routes through a real card-collecting
      * MercadoPago checkout — the response is not a synchronous success but a
-     * `checkoutUrl` the caller MUST redirect the user to; the subscription
-     * stays `status: 'incomplete'` until the `subscription_preapproval.created`
-     * webhook confirms it. Note: this wrapper currently has no callers in the
-     * web app (dead code as of HOS-114 investigation notes).
+     * `checkoutUrl` the caller MUST redirect the user to. For a MONTHLY plan the
+     * subscription stays `status: 'incomplete'` until the
+     * `subscription_preapproval.created` webhook confirms it; for an ANNUAL plan
+     * (HOS-123) it is a one-time charge and the subscription stays
+     * `status: 'pending_provider'` until the `payment.updated` webhook confirms
+     * it. Note: this wrapper currently has no callers in the web app (dead code
+     * as of HOS-114 investigation notes).
      *
-     * @param params - Plan ID to reactivate with
-     * @returns The checkout redirect payload for the new (incomplete) subscription
+     * @param params - Plan ID to reactivate with, and the optional billing
+     *   interval (`'monthly'` by default; `'annual'` selects the one-time
+     *   annual price and the hosted-checkout return shape).
+     * @returns The checkout redirect payload for the new (not-yet-confirmed) subscription
      *
      * @example
      * ```ts
+     * // Monthly (default)
      * const result = await billingApi.reactivateSubscription({ planId: 'plan-uuid' });
-     * if (result.success && result.data.checkoutUrl) {
-     *     window.location.href = result.data.checkoutUrl;
+     * // Annual one-time charge
+     * const annual = await billingApi.reactivateSubscription({
+     *     planId: 'plan-uuid',
+     *     billingInterval: 'annual'
+     * });
+     * if (annual.success && annual.data.checkoutUrl) {
+     *     window.location.href = annual.data.checkoutUrl;
      * }
      * ```
      */
     reactivateSubscription({
-        planId
+        planId,
+        billingInterval
     }: {
         readonly planId: string;
+        readonly billingInterval?: 'monthly' | 'annual';
     }): Promise<ApiResult<ReactivateSubscriptionResponse>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/trial/reactivate-subscription`,
-            body: { planId }
+            body: billingInterval ? { planId, billingInterval } : { planId }
         });
     },
 

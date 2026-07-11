@@ -28,7 +28,18 @@ export const ReactivateTrialRequestSchema = z.object({
         .string({
             message: 'zodError.billing.trial.reactivate.planId.invalidType'
         })
-        .min(1, { message: 'zodError.billing.trial.reactivate.planId.min' })
+        .min(1, { message: 'zodError.billing.trial.reactivate.planId.min' }),
+    /**
+     * Billing interval for the reactivated subscription (HOS-123).
+     * Defaults to `'monthly'` (the pre-existing qzpay preapproval flow);
+     * `'annual'` routes through the direct Drizzle-insert annual flow.
+     */
+    billingInterval: z
+        .enum(['monthly', 'annual'], {
+            message: 'zodError.billing.trial.reactivate.billingInterval.invalid'
+        })
+        .optional()
+        .default('monthly')
 });
 
 /** TypeScript type inferred from ReactivateTrialRequestSchema */
@@ -36,14 +47,26 @@ export type ReactivateTrialRequest = z.infer<typeof ReactivateTrialRequestSchema
 
 /**
  * Response body for `POST /api/v1/protected/billing/trial/reactivate`
- * (HOS-114).
+ * (HOS-114, widened HOS-123).
  *
- * Reactivation to a paid plan now routes through a real card-collecting
- * MercadoPago checkout, mirroring `/start-paid` — the caller MUST redirect
- * the user to `checkoutUrl`. The created subscription is `status: 'incomplete'`
- * (qzpay's raw provider status, NOT the normalized `SubscriptionStatusEnum`
- * used for locally-stored rows) until the `subscription_preapproval.created`
- * webhook confirms it.
+ * For `billingInterval: 'monthly'` (default), reactivation to a paid plan
+ * routes through a real card-collecting MercadoPago checkout, mirroring
+ * `/start-paid` — the caller MUST redirect the user to `checkoutUrl`. The
+ * created subscription is `status: 'incomplete'` (qzpay's raw provider
+ * status, NOT the normalized `SubscriptionStatusEnum` used for
+ * locally-stored rows) until the `subscription_preapproval.created` webhook
+ * confirms it.
+ *
+ * For `billingInterval: 'annual'`, there is no MercadoPago preapproval —
+ * the subscription row is inserted directly via Drizzle for a one-time
+ * charge instead. The response STILL carries a non-null `checkoutUrl` (the
+ * real MercadoPago hosted-checkout URL) that the caller MUST redirect the
+ * user to, exactly like the monthly path — annual reactivation never
+ * returns `checkoutUrl: null`; a missing init point is treated as an error
+ * (`MISSING_INIT_POINT`), not a valid null response. The only differences
+ * from monthly are `status: 'pending_provider'` (the normalized
+ * `SubscriptionStatusEnum` value) and the underlying charge mechanism
+ * (one-time payment vs. preapproval).
  */
 export const ReactivateTrialResponseSchema = z.object({
     success: z.boolean({
@@ -62,11 +85,13 @@ export const ReactivateTrialResponseSchema = z.object({
         .url({ message: 'zodError.billing.trial.reactivate.response.checkoutUrl.invalid' })
         .nullable(),
     /**
-     * qzpay's raw preapproval status at creation time. Always `'incomplete'`
-     * for a successful call — the subscription is not yet confirmed by
-     * MercadoPago.
+     * Result status at creation time (HOS-123). `'incomplete'` is qzpay's raw
+     * preapproval status for the monthly flow — the subscription is not yet
+     * confirmed by MercadoPago. `'pending_provider'` is the normalized
+     * `SubscriptionStatusEnum` value for the annual flow, which inserts the
+     * subscription directly via Drizzle without a qzpay preapproval.
      */
-    status: z.enum(['incomplete'], {
+    status: z.enum(['incomplete', 'pending_provider'], {
         message: 'zodError.billing.trial.reactivate.response.status.invalid'
     }),
     message: z.string({
@@ -89,7 +114,18 @@ export const ReactivateSubscriptionRequestSchema = z.object({
         .string({
             message: 'zodError.billing.trial.reactivateSubscription.planId.invalidType'
         })
-        .min(1, { message: 'zodError.billing.trial.reactivateSubscription.planId.min' })
+        .min(1, { message: 'zodError.billing.trial.reactivateSubscription.planId.min' }),
+    /**
+     * Billing interval for the reactivated subscription (HOS-123).
+     * Defaults to `'monthly'` (the pre-existing qzpay preapproval flow);
+     * `'annual'` routes through the direct Drizzle-insert annual flow.
+     */
+    billingInterval: z
+        .enum(['monthly', 'annual'], {
+            message: 'zodError.billing.trial.reactivateSubscription.billingInterval.invalid'
+        })
+        .optional()
+        .default('monthly')
 });
 
 /** TypeScript type inferred from ReactivateSubscriptionRequestSchema */
@@ -97,7 +133,10 @@ export type ReactivateSubscriptionRequest = z.infer<typeof ReactivateSubscriptio
 
 /**
  * Response body for `POST /api/v1/protected/billing/trial/reactivate-subscription`
- * (HOS-114). Mirrors {@link ReactivateTrialResponseSchema}, plus the previous
+ * (HOS-114, widened HOS-123). Mirrors {@link ReactivateTrialResponseSchema}
+ * (including the `'annual'` billing-interval / `'pending_provider'` status
+ * path — annual reactivation ALWAYS returns a non-null `checkoutUrl`, the
+ * real MercadoPago hosted-checkout URL, same as monthly), plus the previous
  * plan id carried over from the canceled subscription being reactivated.
  */
 export const ReactivateSubscriptionResponseSchema = z.object({
@@ -129,11 +168,13 @@ export const ReactivateSubscriptionResponseSchema = z.object({
         })
         .nullable(),
     /**
-     * qzpay's raw preapproval status at creation time. Always `'incomplete'`
-     * for a successful call — the subscription is not yet confirmed by
-     * MercadoPago.
+     * Result status at creation time (HOS-123). `'incomplete'` is qzpay's raw
+     * preapproval status for the monthly flow — the subscription is not yet
+     * confirmed by MercadoPago. `'pending_provider'` is the normalized
+     * `SubscriptionStatusEnum` value for the annual flow, which inserts the
+     * subscription directly via Drizzle without a qzpay preapproval.
      */
-    status: z.enum(['incomplete'], {
+    status: z.enum(['incomplete', 'pending_provider'], {
         message: 'zodError.billing.trial.reactivateSubscription.response.status.invalid'
     }),
     message: z.string({

@@ -67,6 +67,8 @@ const annualDbState: {
         mpSubscriptionId?: string | null;
         promoCodeId?: string | null;
         promoEffectRemainingCycles?: number | null;
+        /** HOS-123 T-013: drives completeReactivationSupersession's no-op guard. */
+        metadata?: Record<string, unknown> | null;
     }>;
     paymentDedupeRows: Array<{ id: string }>;
     updateCalls: Array<{ table: unknown; values: unknown; whereCond: unknown }>;
@@ -199,7 +201,26 @@ vi.mock('../../../src/services/addon.service', () => {
 });
 
 vi.mock('@repo/billing', () => ({
-    getAddonBySlug: vi.fn().mockReturnValue({ name: 'Test Addon', slug: 'test-addon' })
+    getAddonBySlug: vi.fn().mockReturnValue({ name: 'Test Addon', slug: 'test-addon' }),
+    // HOS-123 T-013: confirmAnnualSubscription constructs a fresh MP adapter
+    // (mirroring reactivation-supersession-reconcile.job.ts / webhook-retry.job.ts's
+    // own createMercadoPagoAdapter() pattern) so it can pass a concrete
+    // QZPayMercadoPagoAdapter to completeReactivationSupersession. The returned
+    // stub is never dereferenced in these tests — completeSupersessionPairing
+    // (the leaf that would actually call it) is mocked separately below.
+    createMercadoPagoAdapter: vi.fn().mockReturnValue({})
+}));
+
+// HOS-123 T-013: `completeReactivationSupersession` (from `./subscription-logic`)
+// is deliberately left UNMOCKED in this file — it's real, cheap, pure metadata
+// logic (see its JSDoc) and mirroring the existing HOS-114 T-007 test pattern in
+// `test/webhooks/subscription-logic.test.ts` (which also lets it run for real).
+// Only the leaf it delegates to, `completeSupersessionPairing` (the function
+// that actually calls MP + writes the audit row), is mocked here — that's the
+// single shared implementation used by both the monthly webhook path and this
+// annual one-time-payment path (see reactivation-supersession-complete.ts).
+vi.mock('../../../src/services/billing/reactivation-supersession-complete', () => ({
+    completeSupersessionPairing: vi.fn().mockResolvedValue('completed')
 }));
 
 // Allow checkSubscriptionStatusTransition through from the real module, but
@@ -269,6 +290,7 @@ import {
     extractPlanChangeUpgradeMetadata
 } from '../../../src/routes/webhooks/mercadopago/utils';
 import { AddonService } from '../../../src/services/addon.service';
+import { completeSupersessionPairing } from '../../../src/services/billing/reactivation-supersession-complete';
 import { applyUpgradeRestorationsOrWarn } from '../../../src/services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../src/services/refund-lifecycle.service';
 import { resolveOwnerUserId } from '../../../src/services/subscription-pause.service';
@@ -317,6 +339,8 @@ describe('processPaymentUpdated', () => {
             restored: { accommodations: [], promotions: [], photosByAccommodation: {} },
             stillRestricted: { accommodations: [], promotions: [] }
         });
+        // HOS-123 T-013: restore default after clearAllMocks wipes it.
+        vi.mocked(completeSupersessionPairing).mockResolvedValue('completed');
     });
 
     it('should send success notification for approved payment', async () => {
@@ -1004,8 +1028,115 @@ describe('processPaymentUpdated', () => {
         });
 
         // ---------------------------------------------------------------------
-        // SPEC-309 T-023: featuredByEntitlement sync on annual activation
+        // HOS-123 T-013: reactivation supersession trigger on the annual
+        // one-time-payment path (mirrors HOS-114 T-007 on the monthly
+        // preapproval webhook path). `completeReactivationSupersession` is
+        // deliberately left unmocked — only its leaf, `completeSupersessionPairing`
+        // (mocked at the top of this file), is asserted against.
         // ---------------------------------------------------------------------
+
+        describe('HOS-123 T-013: reactivation supersession trigger', () => {
+            it('triggers cancel + audit of the superseded subscription when the local row carries supersedesSubscriptionId', async () => {
+                approvedAnnualPayment();
+                annualDbState.subRows = [
+                    {
+                        id: ANNUAL_SUB_ID,
+                        customerId: 'cust-1',
+                        status: 'pending_provider',
+                        planId: 'plan-pro-annual',
+                        metadata: {
+                            supersedesSubscriptionId: 'old-sub-001',
+                            convertedFromTrial: 'true'
+                        }
+                    }
+                ];
+
+                const result = await processPaymentUpdated({
+                    data: {
+                        id: MP_PAYMENT_ID,
+                        metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                    },
+                    billing: mockBilling,
+                    source: 'webhook'
+                });
+
+                expect(result.annualSubscriptionConfirmed).toBe(true);
+                expect(completeSupersessionPairing).toHaveBeenCalledOnce();
+                const callArg = vi.mocked(completeSupersessionPairing).mock.calls[0]?.[0];
+                expect(callArg).toMatchObject({
+                    billing: mockBilling,
+                    newSubscription: {
+                        id: ANNUAL_SUB_ID,
+                        customerId: 'cust-1',
+                        planId: 'plan-pro-annual'
+                    },
+                    supersededId: 'old-sub-001',
+                    // Inferred from metadata.convertedFromTrial by
+                    // completeReactivationSupersession itself.
+                    triggerSource: 'trial-reactivation',
+                    providerEventId: MP_PAYMENT_ID,
+                    source: 'webhook'
+                });
+            });
+
+            it('regression (SPEC-141 D1 unchanged): a normal annual confirmation with no supersedesSubscriptionId never cancels/audits any subscription', async () => {
+                approvedAnnualPayment();
+                annualDbState.subRows = [
+                    {
+                        id: ANNUAL_SUB_ID,
+                        customerId: 'cust-1',
+                        status: 'pending_provider',
+                        planId: 'plan-pro-annual',
+                        metadata: {} // plain /start-paid — no reactivation intent
+                    }
+                ];
+
+                const result = await processPaymentUpdated({
+                    data: {
+                        id: MP_PAYMENT_ID,
+                        metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                    },
+                    billing: mockBilling,
+                    source: 'webhook'
+                });
+
+                expect(result.annualSubscriptionConfirmed).toBe(true);
+                // completeReactivationSupersession runs for real here (see the
+                // module-level comment above) and no-ops immediately on a
+                // missing supersedesSubscriptionId — it never reaches
+                // completeSupersessionPairing, so no cancel/audit ever fires.
+                expect(completeSupersessionPairing).not.toHaveBeenCalled();
+            });
+
+            it('idempotent re-delivery (already active) short-circuits at the existing early-return before ever reaching the trigger', async () => {
+                approvedAnnualPayment();
+                annualDbState.subRows = [
+                    {
+                        id: ANNUAL_SUB_ID,
+                        customerId: 'cust-1',
+                        status: 'active', // already activated by a prior delivery
+                        planId: 'plan-pro-annual',
+                        metadata: { supersedesSubscriptionId: 'old-sub-001' }
+                    }
+                ];
+
+                const result = await processPaymentUpdated({
+                    data: {
+                        id: MP_PAYMENT_ID,
+                        metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                    },
+                    billing: mockBilling,
+                    source: 'webhook'
+                });
+
+                // The `sub.status === ACTIVE` idempotency guard returns before
+                // the status flip / clearEntitlementCache / trigger code is
+                // ever reached — even though this row's metadata DOES carry a
+                // supersedesSubscriptionId.
+                expect(result.annualSubscriptionConfirmed).toBe(false);
+                expect(completeSupersessionPairing).not.toHaveBeenCalled();
+            });
+        });
 
         describe('SPEC-309 T-023: featuredByEntitlement sync', () => {
             it('grants featuredByEntitlement when the annual plan grants featured', async () => {

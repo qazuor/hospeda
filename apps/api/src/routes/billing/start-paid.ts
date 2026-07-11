@@ -58,44 +58,18 @@ import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
 import {
+    buildAnnualCancelUrl,
+    buildAnnualSuccessUrl,
     buildNotificationUrl,
     buildPaymentMethodReturnUrl,
     DEFAULT_RETURN_URL_LOCALE,
-    type ReturnUrlLocale,
     resolveReturnUrlLocale,
     SUPPORTED_RETURN_URL_LOCALES
 } from './checkout-return-urls';
 
-/**
- * MP Checkout return URLs for the annual one-time flow.
- *
- * Checkout preferences accept three back_urls (success / failure / pending)
- * and MP redirects to the matching one based on payment outcome. The pages
- * already exist at:
- *
- *   - `[lang]/suscriptores/checkout/success.astro`
- *   - `[lang]/suscriptores/checkout/failure.astro`
- *   - `[lang]/suscriptores/checkout/pending.astro`
- *
- * Pointing the URLs there directly avoids the locale-middleware rewrite
- * that bit the monthly flow (Finding #8).
- *
- * @param locale - User's preferred return-URL locale.
- *
- * The front-end receives `localSubscriptionId` in the response body and
- * persists it in sessionStorage BEFORE redirecting to MP, so the URLs do
- * not need to carry the id. MP appends `?status=approved` /
- * `?payment_id=...` / `?preference_id=...` on its own at redirect time.
- */
-function buildAnnualSuccessUrl(locale: ReturnUrlLocale): string {
-    return `${env.HOSPEDA_SITE_URL}/${locale}/suscriptores/checkout/success/`;
-}
-
-function buildAnnualCancelUrl(locale: ReturnUrlLocale): string {
-    return `${env.HOSPEDA_SITE_URL}/${locale}/suscriptores/checkout/failure/`;
-}
-
-// NOTE: a `pending` outcome URL would point at
+// NOTE: annual success/cancel URL builders moved to the shared
+// `checkout-return-urls.ts` (HOS-123 T-005) so the reactivation routes reuse
+// the exact same locale-prefixed URLs. A `pending` outcome URL would point at
 // `${HOSPEDA_SITE_URL}/${RETURN_URL_LOCALE}/suscriptores/checkout/pending/`
 // but the current subscription-checkout service only accepts success +
 // cancel. Pending payments today fall back to the cancel URL until the

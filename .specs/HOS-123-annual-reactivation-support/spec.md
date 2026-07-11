@@ -140,35 +140,42 @@ backstop cron `apps/api/src/cron/jobs/reactivation-supersession-reconcile.job.ts
 
 ## 6. Design decisions & open questions
 
+> **T-01 RESOLVED 2026-07-10** (owner sign-off). All five OQs below are decided;
+> the proposals stand. Summary of the two that carried a real fork: OQ-1 →
+> explicit `billingInterval`, default monthly; OQ-2 → extract the shared
+> `createAnnualSubscription` helper. OQ-3/4/5 were technically forced.
+
 - **OQ-1 — How does the user pick monthly vs annual?** The reactivate `planId`
   (UUID) carries no interval, and a plan can have both a monthly and an annual
-  price. Options: (a) add an explicit `billingInterval: 'monthly' | 'annual'` to
-  the request body (default `'monthly'` for back-compat); (b) infer from the plan
-  when it has a single recurring price, error when ambiguous. **Proposed**: (a)
-  explicit, defaulting to monthly. Confirm.
+  price. **RESOLVED (a)**: add an explicit `billingInterval: 'monthly' | 'annual'`
+  to the request body, defaulting to `'monthly'` for back-compat. (Rejected (b)
+  infer-from-plan: a plan with both prices would silently pick wrong — R-3.)
 - **OQ-2 — Reuse `initiatePaidAnnualSubscription` or extract a helper?** The guard
   cannot import `subscription-checkout.service.ts` (ESM cycle, §3.2), and
-  `initiatePaidAnnualSubscription` is slug-keyed and carries promo/trial. **Proposed**:
-  extract a low-level `createAnnualSubscription` (parallel to `createPaidSubscription`,
-  in `services/billing/`) that does upfront-charge + Drizzle insert + accepts a
-  resolved plan/price + `supersedesSubscriptionId`, with no promo/trial; have BOTH
-  `initiatePaidAnnualSubscription` and the reactivation path consume it. (This
-  mirrors the AC-7 shared-helper extraction pattern.) Confirm.
+  `initiatePaidAnnualSubscription` is slug-keyed and carries promo/trial.
+  **RESOLVED (extract)**: extract a low-level `createAnnualSubscription` (parallel
+  to `createPaidSubscription`, in `services/billing/`) that does upfront-charge +
+  Drizzle insert + accepts a resolved plan/price + `supersedesSubscriptionId`, with
+  no promo/trial; have BOTH `initiatePaidAnnualSubscription` and the reactivation
+  path consume it. (Mirrors the AC-7 shared-helper extraction pattern.)
 - **OQ-3 — URL shape.** Extend the reactivate inputs' `urls` to a discriminated
   union keyed on interval (`paymentMethodReturnUrl` for monthly vs
-  `successUrl`/`cancelUrl` for annual), resolved by the route. **Proposed**: route
-  resolves the correct URL shape per interval. Confirm.
+  `successUrl`/`cancelUrl` for annual). **RESOLVED**: the route resolves the correct
+  URL shape per interval. (Consequence of OQ-1.)
 - **OQ-4 — Supersession on `payment.updated`.** The annual Drizzle insert must
   carry `metadata.supersedesSubscriptionId`, the `payment.updated` handler
   (`payment-handler.ts`) must call `reactivation-supersession-complete.ts` on
   confirm (exactly as `subscription-logic.ts` does for preapproval), and the
-  reconcile cron's query must include annual subs. **Proposed**: all three. Verify
-  the reconcile cron doesn't currently filter to preapproval-only subs. Confirm.
+  reconcile cron's query must include annual subs. **RESOLVED (all three)** —
+  mandatory for correctness (otherwise the new annual sub confirms but the old sub
+  is never cancelled). Must verify the reconcile cron doesn't currently filter to
+  preapproval-only subs.
 - **OQ-5 — Double-cancel safety.** With supersession now reachable from two
-  webhook paths (preapproval + payment), confirm the completion helper's
-  idempotency (HOS-114's one-audit-per-pairing partial unique index, extras/029)
-  still guarantees exactly one cancellation per (old, new) pairing. **Proposed**:
-  reuse the same idempotency key; no schema change. Confirm.
+  webhook paths (preapproval + payment), the completion helper's idempotency
+  (HOS-114's one-audit-per-pairing partial unique index, extras/029) must still
+  guarantee exactly one cancellation per (old, new) pairing. **RESOLVED**: reuse the
+  same idempotency key; no schema change. Verify the extras/029 index covers the
+  payment-path completion too.
 
 ## 7. Implementation outline
 
