@@ -13,6 +13,15 @@ const logger = createLogger('email');
 const DEFAULT_FROM_EMAIL = 'noreply@hospeda.com.ar';
 const DEFAULT_FROM_NAME = 'Hospeda';
 
+/**
+ * Hard timeout for the outbound Brevo `fetch` call, in milliseconds. Kept as a
+ * module constant (no env var) so callers never hold a DB transaction or
+ * advisory lock open indefinitely while waiting on the provider — see
+ * `apps/api/src/cron/jobs/conversation-notification.job.ts` for the caller
+ * that motivated this (HOS-112).
+ */
+const SEND_TIMEOUT_MS = 10_000;
+
 /** Provider response shape on success: `{ messageId }`. */
 interface BrevoSendResponse {
     readonly messageId?: string;
@@ -91,6 +100,12 @@ export interface SendEmailResult {
  * result. Callers are expected to log/branch on the result rather than wrap
  * the call in try/catch.
  *
+ * The outbound HTTP call is bounded by a {@link SEND_TIMEOUT_MS} (10s)
+ * `AbortSignal.timeout`. A provider that never responds surfaces as a normal
+ * failure result (`success: false`) instead of hanging the caller — important
+ * for callers that must not hold external I/O open indefinitely (e.g. a cron
+ * job dispatching outside a DB transaction/advisory lock).
+ *
  * @param input - Email configuration (to, subject, react component, etc.)
  * @returns Result object with success status and message ID or error
  *
@@ -141,7 +156,8 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
                 'content-type': 'application/json',
                 accept: 'application/json'
             },
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),
+            signal: AbortSignal.timeout(SEND_TIMEOUT_MS)
         });
 
         if (!response.ok) {
@@ -163,7 +179,13 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         const data = (await response.json()) as BrevoSendResponse;
         return { success: true, ...(data.messageId ? { messageId: data.messageId } : {}) };
     } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error';
+        const isTimeout =
+            err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError');
+        const message = isTimeout
+            ? `Email send timed out after ${SEND_TIMEOUT_MS}ms`
+            : err instanceof Error
+              ? err.message
+              : 'Unknown error';
         logger.error('Failed to send:', message);
         return { success: false, error: message };
     }

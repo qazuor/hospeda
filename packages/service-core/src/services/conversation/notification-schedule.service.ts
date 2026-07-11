@@ -368,6 +368,43 @@ export class NotificationScheduleService extends BaseService {
                     );
                 }
 
+                // Terminal double-advance guard (AC-10, HOS-112 review): if the
+                // schedule was already cancelled (a previous or concurrent run
+                // already persisted the streak-3 terminal transition), never
+                // re-run it. This must be checked BEFORE the streakCount
+                // comparison below: at streak 3 `streakCount` never changes when
+                // the schedule is cancelled (only `cancelledAt` flips), so a
+                // streakCount-only comparison would miss this case and re-issue
+                // the (harmless but wasteful, and log-noisy) cancel update.
+                if (schedule.cancelledAt) {
+                    this.logger.debug(
+                        { scheduleId: validated.scheduleId },
+                        'Schedule already cancelled — skipping double-advance'
+                    );
+                    return null;
+                }
+
+                // Double-advance guard (AC-10 / OQ-3): if a concurrent or previous run
+                // already advanced this schedule's streak past the value the caller
+                // observed when it dispatched the email, do NOT advance again. This can
+                // happen when two overlapping cron runs both resolve and send for the
+                // same schedule before either persists — each claims a DIFFERENT schedule
+                // via the Redis idempotency key in the normal case, but this guard closes
+                // the residual race window at the DB layer regardless. The terminal
+                // (cancelled) case is handled above, so a mismatch here is always the
+                // non-terminal already-advanced case — return the current row as-is.
+                if (schedule.streakCount !== validated.currentStreakCount) {
+                    this.logger.debug(
+                        {
+                            scheduleId: validated.scheduleId,
+                            expectedStreakCount: validated.currentStreakCount,
+                            actualStreakCount: schedule.streakCount
+                        },
+                        'Streak already advanced — skipping double-advance'
+                    );
+                    return schedule;
+                }
+
                 const now = new Date();
 
                 if (validated.currentStreakCount >= MAX_STREAK) {
