@@ -1,0 +1,115 @@
+---
+/**
+ * @file publicar-experiencia/index.astro
+ * @description Public "Publicá tu experiencia" lead form page (HOS-134).
+ *
+ * A prospective experience operator submits their interest via a lead form
+ * that posts to the public commerce-lead endpoint with `domain: 'experience'`.
+ * The platform team reviews leads and provisions owners from the admin — there
+ * is NO plan selection or checkout on this public page. Mirrors
+ * `/publicar-restaurante`, parametrized by the `domain` prop on `CommerceLead`.
+ *
+ * @route     /[lang]/publicar-experiencia/
+ * @rendering SSR (on-demand, no prerender)
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { destinationsApi } from '@/lib/api/endpoints';
+import {
+    CommerceLead,
+    type DestinationOption
+} from '@/components/gastronomy/CommerceLead.client';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const title = t('commerce.lead.experience.title');
+const subtitle = t('commerce.lead.experience.subtitle');
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+const destinationsResult = await destinationsApi.list({
+    destinationType: 'CITY',
+    pageSize: 100
+});
+const destinations: ReadonlyArray<DestinationOption> = destinationsResult.ok
+    ? destinationsResult.data.items.map((item) => ({ id: item.id, name: item.name }))
+    : [];
+---
+
+<BaseLayout locale={locale} title={title} description={subtitle}>
+    <SEOHead
+        slot="head"
+        title={title}
+        description={subtitle}
+        locale={locale}
+        canonical={canonicalUrl}
+        noindex={false}
+    />
+
+    <Breadcrumbs locale={locale} items={[{ label: title }]} />
+
+    <section class="pub-exp__hero section">
+        <div class="pub-exp__container section__container">
+            <div class="pub-exp__header" data-reveal="up">
+                <h1 class="pub-exp__title">{title}</h1>
+                <p class="pub-exp__subtitle">{subtitle}</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="pub-exp__form section section--warm">
+        <div class="pub-exp__form-container section__container">
+            <CommerceLead
+                client:load
+                locale={locale}
+                destinations={destinations}
+                domain="experience"
+            />
+        </div>
+    </section>
+</BaseLayout>
+
+<style>
+    .pub-exp__hero {
+        padding-block: var(--space-section, 120px);
+        background-color: var(--core-background);
+    }
+    .pub-exp__container {
+        max-width: var(--container-max, 1350px);
+        margin-inline: auto;
+        padding-inline: var(--space-5, 1.25rem);
+    }
+    .pub-exp__header {
+        text-align: center;
+        max-width: 700px;
+        margin-inline: auto;
+    }
+    .pub-exp__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.875rem, 5vw, 3rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-4, 1rem);
+        line-height: 1.15;
+    }
+    .pub-exp__subtitle {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-lg, 1.0625rem);
+        color: var(--core-muted-foreground);
+        margin: 0;
+        line-height: 1.6;
+    }
+    .pub-exp__form {
+        padding-block: var(--space-section, 120px);
+    }
+    .pub-exp__form-container {
+        max-width: 720px;
+        margin-inline: auto;
+        padding-inline: var(--space-5, 1.25rem);
+    }
+</style>
