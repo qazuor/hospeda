@@ -92,6 +92,7 @@ import { attachComposedMediaList } from '../accommodation/accommodation.media-re
 import { applyAccommodationLocationPrivacyList } from '../accommodation/accommodation.projections';
 import { SearchHistoryService } from '../userSearchHistory/userSearchHistory.service';
 import { buildRecommendationProfile } from './recommendation.profile';
+import { attributeRecommendationReason } from './recommendation.reason';
 import type { DestinationPathLookup } from './recommendation.scorer';
 import { scoreAndRankCandidates } from './recommendation.scorer';
 
@@ -339,15 +340,24 @@ export class RecommendationService extends BaseService {
                     tx
                 );
 
-                // 6. Score + rank (T-004) and slice to the feed size ----------------------
+                // 6. Score + rank (T-004), slice to the feed size, attribute reason ------
                 const scored = scoreAndRankCandidates({
                     candidates: poolCandidates,
                     profile,
                     destinationPaths: destinationPaths satisfies DestinationPathLookup
                 });
 
+                // Attribute the dominant grouping reason per item (BETA-152) from the
+                // score breakdown the scorer already produced — a cold profile yields
+                // destination/type = 0 for every item, which naturally attributes
+                // 'OTHER', so cold-start needs no special-casing here.
+                const items = scored.slice(0, FEED_LIMIT).map((item) => ({
+                    ...item,
+                    reason: attributeRecommendationReason({ score: item.score })
+                }));
+
                 return RecommendationFeedResponseSchema.parse({
-                    items: scored.slice(0, FEED_LIMIT),
+                    items,
                     isColdStart: profile.isCold,
                     generatedAt: new Date()
                 });

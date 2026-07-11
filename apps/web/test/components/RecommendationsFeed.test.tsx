@@ -36,7 +36,7 @@ vi.mock('../../src/components/account/RecommendationsFeed.module.css', () => ({
 const API_URL = 'http://localhost:3001';
 const LOCALE = 'es' as const;
 
-function makeScored(overrides: Partial<Record<string, unknown>> = {}) {
+function makeScored(overrides: Partial<Record<string, unknown>> = {}, reason = 'OTHER') {
     return {
         accommodation: {
             id: 'accommodation-uuid-001',
@@ -56,16 +56,20 @@ function makeScored(overrides: Partial<Record<string, unknown>> = {}) {
             ...overrides
         },
         score: { destination: 40, type: 20, price: 14, amenities: 9, quality: 5 },
-        totalScore: 88
+        totalScore: 88,
+        reason
     };
 }
 
-const SCORED_1 = makeScored();
-const SCORED_2 = makeScored({
-    id: 'accommodation-uuid-002',
-    name: 'Departamento Céntrico',
-    slug: 'departamento-centrico'
-});
+const SCORED_1 = makeScored({}, 'DESTINATION');
+const SCORED_2 = makeScored(
+    {
+        id: 'accommodation-uuid-002',
+        name: 'Departamento Céntrico',
+        slug: 'departamento-centrico'
+    },
+    'TYPE'
+);
 
 /** Successful, populated, non-cold-start feed response. */
 function makeGridResponse(items: unknown[] = [SCORED_1, SCORED_2], isColdStart = false) {
@@ -146,16 +150,6 @@ describe('RecommendationsFeed', () => {
             });
         });
 
-        it('renders the grid list label from i18n', async () => {
-            vi.mocked(global.fetch).mockResolvedValueOnce(makeGridResponse());
-            renderComponent();
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('list', { name: 'Recomendaciones para vos' })
-                ).toBeInTheDocument();
-            });
-        });
-
         it('renders each card title and the CTA text from i18n', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce(makeGridResponse());
             renderComponent();
@@ -175,6 +169,63 @@ describe('RecommendationsFeed', () => {
             expect(
                 screen.queryByText('Todavía estamos conociendo tus gustos')
             ).not.toBeInTheDocument();
+        });
+    });
+
+    // ── 2b. Reason grouping (BETA-152) ────────────────────────────────────────
+
+    describe('Reason grouping', () => {
+        it('renders one section per distinct reason, each with its heading', async () => {
+            // SCORED_1 = DESTINATION, SCORED_2 = TYPE → two groups, two headings.
+            vi.mocked(global.fetch).mockResolvedValueOnce(makeGridResponse());
+            renderComponent();
+            await waitFor(() => {
+                expect(screen.getByText('Por los destinos que te gustan')).toBeInTheDocument();
+            });
+            expect(screen.getByText('Del tipo que preferís')).toBeInTheDocument();
+            // Each group heading labels a region (section aria-labelledby → group).
+            expect(screen.getAllByRole('region')).toHaveLength(2);
+        });
+
+        it('places each card under its own reason group', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce(makeGridResponse());
+            const { container } = renderComponent();
+            await waitFor(() => {
+                expect(screen.getByText('Por los destinos que te gustan')).toBeInTheDocument();
+            });
+            const sections = container.querySelectorAll('section.group');
+            expect(sections).toHaveLength(2);
+            // Every group renders exactly one card in this fixture.
+            for (const section of sections) {
+                expect(section.querySelectorAll('li').length).toBe(1);
+            }
+        });
+
+        it('groups multiple items sharing a reason under a single heading', async () => {
+            const a = makeScored({ id: 'a', name: 'Alpha', slug: 'alpha' }, 'DESTINATION');
+            const b = makeScored({ id: 'b', name: 'Bravo', slug: 'bravo' }, 'DESTINATION');
+            const c = makeScored({ id: 'c', name: 'Charlie', slug: 'charlie' }, 'OTHER');
+            vi.mocked(global.fetch).mockResolvedValueOnce(makeGridResponse([a, b, c]));
+            renderComponent();
+            await waitFor(() => {
+                expect(screen.getByText('Por los destinos que te gustan')).toBeInTheDocument();
+            });
+            // DESTINATION heading appears once even though it has two items; OTHER too.
+            expect(screen.getAllByText('Por los destinos que te gustan')).toHaveLength(1);
+            expect(screen.getByText('Otras sugerencias para vos')).toBeInTheDocument();
+            expect(screen.queryByText('Del tipo que preferís')).not.toBeInTheDocument();
+            expect(screen.getAllByRole('listitem')).toHaveLength(3);
+        });
+
+        it('defaults an item with no reason to the OTHER group', async () => {
+            const noReason = makeScored({ id: 'nr', name: 'NoReason', slug: 'no-reason' });
+            // Strip the reason field entirely to simulate a legacy/edge payload.
+            const { reason: _drop, ...withoutReason } = noReason;
+            vi.mocked(global.fetch).mockResolvedValueOnce(makeGridResponse([withoutReason]));
+            renderComponent();
+            await waitFor(() => {
+                expect(screen.getByText('Otras sugerencias para vos')).toBeInTheDocument();
+            });
         });
     });
 
