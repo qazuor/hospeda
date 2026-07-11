@@ -25,6 +25,15 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
     latitude: z.coerce.number().min(-90).max(90).optional(),
     longitude: z.coerce.number().min(-180).max(180).optional(),
     radius: z.coerce.number().positive().optional(),
+    /**
+     * HOS-113 §6.2 — "near POI" proximity search. Resolved server-side to
+     * `{ lat, long }`, which feeds the existing `latitude`/`longitude`/`radius`
+     * geo path. Mutually exclusive with `poiSlug`; when resolved, takes
+     * precedence over any explicit `latitude`/`longitude` in the same request.
+     */
+    poiId: z.string().uuid().optional(),
+    /** HOS-113 §6.2 — slug form of `poiId`. */
+    poiSlug: z.string().min(1).max(100).optional(),
     // SPEC-097 — Viewport bbox for listing maps
     bboxNorth: z.coerce.number().min(-90).max(90).optional(),
     bboxSouth: z.coerce.number().min(-90).max(90).optional(),
@@ -430,6 +439,8 @@ export const httpToDomainAccommodationSearch = (
     latitude: httpParams.latitude,
     longitude: httpParams.longitude,
     radius: httpParams.radius,
+    poiId: httpParams.poiId,
+    poiSlug: httpParams.poiSlug,
     bboxNorth: httpParams.bboxNorth,
     bboxSouth: httpParams.bboxSouth,
     bboxEast: httpParams.bboxEast,

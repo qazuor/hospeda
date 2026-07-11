@@ -53,6 +53,17 @@ export const AccommodationFiltersSchema = z.object({
     latitude: z.number().min(-90).max(90).optional(),
     longitude: z.number().min(-180).max(180).optional(),
     radius: z.number().positive().optional(), // in kilometers
+    /**
+     * HOS-113 §6.2 — "near POI" proximity search. Resolved server-side to
+     * the point of interest's `{ lat, long }`, which then feeds the existing
+     * `latitude`/`longitude`/`radius` geo path (NG-2 — no new distance SQL).
+     * Mutually exclusive with `poiSlug` (400 if both are provided — HOS-113
+     * T-034). When resolved, the POI's coordinates take precedence over any
+     * explicit `latitude`/`longitude` also present in the same request.
+     */
+    poiId: z.string().uuid().optional(),
+    /** HOS-113 §6.2 — slug form of `poiId`. See `poiId` for precedence rules. */
+    poiSlug: z.string().min(1).max(100).optional(),
 
     // Capacity filters
     minGuests: z.number().int().min(1).optional(),
@@ -105,6 +116,13 @@ export const AccommodationSearchSchema = BaseSearchSchema.extend({
     latitude: z.number().min(-90).max(90).optional(),
     longitude: z.number().min(-180).max(180).optional(),
     radius: z.number().positive().optional(),
+    /**
+     * HOS-113 §6.2 — "near POI" proximity search. See `AccommodationFiltersSchema.poiId`
+     * for the full precedence/mutual-exclusion contract.
+     */
+    poiId: z.string().uuid().optional(),
+    /** HOS-113 §6.2 — slug form of `poiId`. */
+    poiSlug: z.string().min(1).max(100).optional(),
     // SPEC-097 — Viewport bbox filter for listing maps. Backend applies on
     // EXACT coords server-side so the count is precise; the response payload
     // still only exposes `approximateLocation` for public visitors.
