@@ -97,6 +97,11 @@ export function CommerceLead({
 }: CommerceLeadProps) {
     const { t } = createTranslations(locale);
 
+    // Domain-aware accessible name so the form's accessible name matches the
+    // page's visible heading (the experience page renders `commerce.lead.experience.title`).
+    const formTitleKey =
+        domain === 'experience' ? 'commerce.lead.experience.title' : 'commerce.lead.title';
+
     const [fields, setFields] = useState<LeadFields>(INITIAL_FIELDS);
     const [errors, setErrors] = useState<FieldErrors>({});
     const [formError, setFormError] = useState<string | null>(null);
@@ -216,7 +221,7 @@ export function CommerceLead({
             className={styles.form}
             onSubmit={(e) => void handleSubmit(e)}
             noValidate
-            aria-label={t('commerce.lead.title', 'Sumá tu negocio')}
+            aria-label={t(formTitleKey, 'Sumá tu negocio')}
         >
             {/* Honeypot — hidden from users, visible to bots */}
             <div

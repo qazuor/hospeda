@@ -7,6 +7,8 @@
  * success state, 429 rate-limit message, and generic API errors.
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommerceLead } from '../../../src/components/gastronomy/CommerceLead.client';
@@ -279,6 +281,18 @@ describe('CommerceLead', () => {
                 >;
                 expect(body.domain).toBe('experience');
             });
+        });
+
+        it('derives a domain-aware accessible-name key for the form so it matches the visible heading (HOS-134)', () => {
+            // The unit-test i18n returns the fallback string (no locale loaded),
+            // so assert the domain→key mapping at the source level instead.
+            const src = readFileSync(
+                resolve(__dirname, '../../../src/components/gastronomy/CommerceLead.client.tsx'),
+                'utf8'
+            );
+            expect(src).toContain("domain === 'experience' ? 'commerce.lead.experience.title'");
+            expect(src).toContain("'commerce.lead.title'");
+            expect(src).toContain('aria-label={t(formTitleKey,');
         });
 
         it('replaces form with success message on 200', async () => {

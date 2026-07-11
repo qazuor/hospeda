@@ -39,10 +39,16 @@ describe('DiscoveryDoorHub.astro — wiring', () => {
         expect(source).toContain('option.manageHref ?? door.href');
     });
 
-    it('renders the absolute admin-panel URL for a managesInAdminPanel acquired option, falling back to the relative href when adminUrl is unset (HOS-134)', () => {
+    it('resolves the manage href to the absolute adminUrl for a managesInAdminPanel acquired option, and hides the Gestionar button entirely when adminUrl is unset (HOS-134)', () => {
         expect(source).toContain('readonly adminUrl?: string;');
-        expect(source).toContain('option.managesInAdminPanel && adminUrl');
+        // manageHref is computed once per acquired option: absolute adminUrl for
+        // managesInAdminPanel, else the relative built href.
+        expect(source).toContain('option.managesInAdminPanel');
+        expect(source).toContain('? adminUrl');
         expect(source).toContain('buildUrl({ locale, path: option.manageHref ?? door.href })');
+        // The button only renders when a href resolved — no self-referential
+        // link when adminUrl is undefined.
+        expect(source).toContain('manageHref && (');
     });
 
     it('shows a "Próximamente" badge for comingSoon options', () => {
