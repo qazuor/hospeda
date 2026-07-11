@@ -5,8 +5,12 @@
  * system prompt into a `GenerateTextRequest` or `StreamTextRequest` using the
  * **caller-wins** policy:
  *
- * - If the caller already supplied a message with `role: 'system'`, the request
- *   is returned UNCHANGED — the caller knows what they are doing.
+ * - If the caller already supplied a `system` string, OR a message with
+ *   `role: 'system'`, the request is returned UNCHANGED — the caller knows
+ *   what they are doing. Prefer the `system` field for new call sites (the
+ *   Vercel AI SDK's native system-instructions channel); the `role: 'system'`
+ *   message check is preserved for callers that still build their own
+ *   `messages` array.
  * - Otherwise, the resolved system prompt is injected automatically:
  *   - **prompt-path** (`prompt` field) — converted to
  *     `messages: [{ role: 'system', content }, { role: 'user', content: prompt }]`.
@@ -46,6 +50,7 @@ import type { AiMessage } from '@repo/schemas';
 type PromptOrMessagesRequest = {
     readonly prompt?: string;
     readonly messages?: readonly AiMessage[];
+    readonly system?: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -53,14 +58,23 @@ type PromptOrMessagesRequest = {
 // ---------------------------------------------------------------------------
 
 /**
- * Returns `true` when the request already contains a `system` role message.
+ * Returns `true` when the caller already supplied their own system
+ * instructions — either via the `system` field or a `role: 'system'`
+ * message in `messages`.
  *
- * Checks the `messages` array only — the `prompt` path has no system concept.
+ * Checking `req.system` first lets callers use the SDK's native system
+ * channel without ever populating `messages` with a system-role entry. The
+ * `messages` check is preserved for callers that still build their own
+ * system-role message; the `prompt` path has no system concept of its own.
  *
  * @param req - The request to inspect.
- * @returns `true` if at least one message has `role === 'system'`.
+ * @returns `true` if `system` is set, or at least one message has
+ *   `role === 'system'`.
  */
 function hasCallerSystemMessage(req: PromptOrMessagesRequest): boolean {
+    if (req.system !== undefined) {
+        return true;
+    }
     if (req.messages === undefined) {
         return false;
     }
@@ -91,15 +105,19 @@ export interface InjectSystemPromptInput<T extends PromptOrMessagesRequest> {
  *
  * ## Caller-wins policy
  *
- * If the request already contains a message with `role: 'system'`, the
- * original request is returned UNCHANGED.  Callers who craft their own system
- * prompt (e.g. capability helpers that build bespoke system context) are
- * trusted to know what they are doing; the engine never overwrites their intent.
+ * If the request already contains a `system` string, OR a message with
+ * `role: 'system'`, the original request is returned UNCHANGED.  Callers who
+ * craft their own system content (e.g. capability helpers that build bespoke
+ * system context) are trusted to know what they are doing; the engine never
+ * overwrites their intent.
  *
  * ## Injection paths
  *
- * When no caller system message exists, injection proceeds based on which
- * path the request uses:
+ * When no caller system content exists, injection proceeds based on which
+ * path the request uses. The auto-injected admin/default prompt still uses
+ * the `messages`-based `role: 'system'` form below — only caller-supplied
+ * system content is expected to use the `system` field (see `search-chat.ts`
+ * / `chat.ts` for examples):
  *
  * | Path | Before | After |
  * |------|--------|-------|

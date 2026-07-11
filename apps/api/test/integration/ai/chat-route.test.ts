@@ -46,6 +46,7 @@ const {
 } = vi.hoisted(() => ({
     streamTextCalls: [] as Array<{
         feature: string;
+        system?: string;
         messages: Array<{ role: string; content: string }>;
         locale: string;
         params?: { maxTokens?: number };
@@ -228,12 +229,14 @@ vi.mock('../../../src/services/ai-service.factory', () => ({
         streamText: vi.fn(
             async (args: {
                 feature: string;
+                system?: string;
                 messages: Array<{ role: string; content: string }>;
                 locale: string;
                 params?: { maxTokens?: number };
             }) => {
                 streamTextCalls.push({
                     feature: args.feature,
+                    system: args.system,
                     messages: args.messages,
                     locale: args.locale,
                     params: args.params
@@ -667,7 +670,7 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
         expect(streamTextCalls[0]?.params?.maxTokens).toBe(256);
     });
 
-    it('prepends the system message and defaults locale to es when omitted', async () => {
+    it('passes the system message via `system` (not a role:"system" message) and defaults locale to es when omitted', async () => {
         await app.request(STREAM_PATH, {
             method: 'POST',
             headers: makeMockActorHeaders(),
@@ -681,8 +684,9 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
         const call = streamTextCalls[0];
         expect(call?.feature).toBe('chat');
         expect(call?.locale).toBe('es');
-        expect(call?.messages[0]).toEqual({ role: 'system', content: 'SYSTEM MESSAGE' });
-        expect(call?.messages[1]).toEqual({ role: 'user', content: '¿Tiene wifi?' });
+        expect(call?.system).toBe('SYSTEM MESSAGE');
+        expect(call?.messages).toEqual([{ role: 'user', content: '¿Tiene wifi?' }]);
+        expect(call?.messages.some((m) => m.role === 'system')).toBe(false);
     });
 
     it('forwards multi-turn history and persists the last user turn with the existing conversationId', async () => {
@@ -710,10 +714,9 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
 
         expect(streamTextCalls).toHaveLength(1);
         const call = streamTextCalls[0];
-        expect(call?.messages).toEqual([
-            { role: 'system', content: 'SYSTEM MESSAGE' },
-            ...messages
-        ]);
+        expect(call?.system).toBe('SYSTEM MESSAGE');
+        expect(call?.messages).toEqual(messages);
+        expect(call?.messages.some((m) => m.role === 'system')).toBe(false);
         expect(call?.locale).toBe('pt');
 
         expect(vi.mocked(persistChatTurn)).toHaveBeenCalledWith(

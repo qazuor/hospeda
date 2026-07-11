@@ -254,6 +254,10 @@ export class OpenAiAdapter implements AiProvider {
 
         const baseParams = {
             model: languageModel,
+            // Forwarded to the SDK's native system-instructions channel instead
+            // of a `role: 'system'` message — avoids the SDK's mid-array system
+            // message security warning. `undefined` means "no system content".
+            system: input.system,
             temperature: input.params?.temperature,
             maxOutputTokens: input.params?.maxTokens,
             topP: input.params?.topP,
@@ -306,6 +310,8 @@ export class OpenAiAdapter implements AiProvider {
 
         const baseParams = {
             model: languageModel,
+            // See generateText's `system` comment — same native-channel rationale.
+            system: input.system,
             temperature: input.params?.temperature,
             maxOutputTokens: input.params?.maxTokens,
             topP: input.params?.topP,

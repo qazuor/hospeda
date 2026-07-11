@@ -168,7 +168,21 @@ export const GenerateTextRequestSchema = AiCapabilityRequestBaseSchema.extend({
      * Mutually exclusive with `prompt`. Provide exactly one.
      * Must contain at least one message.
      */
-    messages: z.array(AiMessageSchema).min(1).optional()
+    messages: z.array(AiMessageSchema).min(1).optional(),
+    /**
+     * Optional system-prompt content for this call.
+     *
+     * Forwarded by the provider adapter to the Vercel AI SDK's dedicated
+     * `system` option, rather than being folded into `messages` as a
+     * `role: 'system'` entry — the AI SDK emits a security-risk warning when
+     * a system message is embedded mid-array instead of passed via `system`.
+     * Participates in the engine's caller-wins policy (`injectSystemPrompt`
+     * in `@repo/ai-core`): when set, the resolved admin/default system
+     * prompt is NOT auto-injected, exactly like supplying a `role: 'system'`
+     * message today. Independent of `prompt` / `messages` — may be combined
+     * with either.
+     */
+    system: z.string().min(1).optional()
 })
     .strict()
     .superRefine((val, ctx) => {
@@ -251,7 +265,16 @@ export const StreamTextRequestSchema = AiCapabilityRequestBaseSchema.extend({
      * Mutually exclusive with `prompt`. Provide exactly one.
      * Must contain at least one message.
      */
-    messages: z.array(AiMessageSchema).min(1).optional()
+    messages: z.array(AiMessageSchema).min(1).optional(),
+    /**
+     * Optional system-prompt content for this call.
+     *
+     * Same contract as {@link GenerateTextRequestSchema}'s `system` field —
+     * forwarded to the provider adapter's native `system` option instead of
+     * a `role: 'system'` entry in `messages`, and participates in the
+     * engine's caller-wins injection policy.
+     */
+    system: z.string().min(1).optional()
 })
     .strict()
     .superRefine((val, ctx) => {

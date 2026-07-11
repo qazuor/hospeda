@@ -143,6 +143,7 @@ const {
     /** Calls recorded by the mocked streamText. */
     streamTextCalls: [] as Array<{
         feature: string;
+        system?: string;
         messages: Array<{ role: string; content: string }>;
         locale: string;
     }>,
@@ -320,11 +321,13 @@ vi.mock('../../../src/services/ai-service.factory', () => ({
         streamText: vi.fn(
             async (args: {
                 feature: string;
+                system?: string;
                 messages: Array<{ role: string; content: string }>;
                 locale: string;
             }) => {
                 streamTextCalls.push({
                     feature: args.feature,
+                    system: args.system,
                     messages: args.messages,
                     locale: args.locale
                 });
@@ -1309,7 +1312,7 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(streamTextCalls[0]?.locale).toBe('en');
         });
 
-        it('streamText messages include a system message (reply prompt) as first element', async () => {
+        it('streamText is called with the reply prompt as `system` and no role:"system" message (HOS security-warning regression)', async () => {
             const res = await app.request(ENDPOINT, {
                 method: 'POST',
                 headers: makeMockActorHeaders(),
@@ -1320,14 +1323,14 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             await readSseFrames(res);
 
             expect(streamTextCalls).toHaveLength(1);
-            const messages = streamTextCalls[0]?.messages ?? [];
-            expect(messages.length).toBeGreaterThanOrEqual(1);
+            const call = streamTextCalls[0];
 
-            // First message must be the system prompt (caller-wins override)
-            const first = messages[0];
-            expect(first?.role).toBe('system');
-            expect(typeof first?.content).toBe('string');
-            expect((first?.content ?? '').length).toBeGreaterThan(0);
+            // The reply system prompt is passed via `system` (caller-wins override),
+            // never as a `role: 'system'` message — that pattern triggers the
+            // Vercel AI SDK's mid-array system-message security warning.
+            expect(typeof call?.system).toBe('string');
+            expect((call?.system ?? '').length).toBeGreaterThan(0);
+            expect((call?.messages ?? []).some((m) => m.role === 'system')).toBe(false);
         });
 
         it('provider failure mid-reply emits error frame and no done frame', async () => {
@@ -2747,7 +2750,8 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(res.status).toBe(200);
             await readSseFrames(res);
             expect(streamTextCalls).toHaveLength(1);
-            const messages = streamTextCalls[0]?.messages ?? [];
+            const call = streamTextCalls[0];
+            const messages = call?.messages ?? [];
 
             // The raw unresolved landmark slug must NOT reach the assistant's
             // filters-context note — otherwise the model could claim the
@@ -2758,15 +2762,13 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(assistantNote).toBeDefined();
             expect(assistantNote?.content).not.toContain(AUTODROMO_POI_SLUG);
 
-            // A corrective system note must instruct the model not to narrate
-            // an unapplied proximity search.
-            const correctiveNote = messages.find(
-                (m) => m.role === 'system' && m.content.includes('LANDMARK NOT APPLIED')
-            );
-            expect(correctiveNote).toBeDefined();
-            expect(correctiveNote?.content).toContain(AUTODROMO_POI_SLUG);
+            // A corrective note (in `system`, never a `role: 'system'` message)
+            // must instruct the model not to narrate an unapplied proximity search.
+            expect(messages.some((m) => m.role === 'system')).toBe(false);
+            expect(call?.system).toContain('LANDMARK NOT APPLIED');
+            expect(call?.system).toContain(AUTODROMO_POI_SLUG);
             // Unlike the attraction conflict, this must not claim zero results.
-            expect(correctiveNote?.content.toUpperCase()).not.toContain('ZERO');
+            expect((call?.system ?? '').toUpperCase()).not.toContain('ZERO');
         });
 
         it('H-1/M-1: a non-fatal POI-resolution failure (with a raw mention) also scrubs poiSlugs and injects the corrective note', async () => {
@@ -2806,17 +2808,16 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(res.status).toBe(200);
             await readSseFrames(res);
             expect(streamTextCalls).toHaveLength(1);
-            const messages = streamTextCalls[0]?.messages ?? [];
+            const call = streamTextCalls[0];
+            const messages = call?.messages ?? [];
 
             const assistantNote = messages.find(
                 (m) => m.role === 'assistant' && m.content.startsWith('Extracted search filters')
             );
             expect(assistantNote?.content).not.toContain(AUTODROMO_POI_SLUG);
 
-            const correctiveNote = messages.find(
-                (m) => m.role === 'system' && m.content.includes('LANDMARK NOT APPLIED')
-            );
-            expect(correctiveNote).toBeDefined();
+            expect(messages.some((m) => m.role === 'system')).toBe(false);
+            expect(call?.system).toContain('LANDMARK NOT APPLIED');
         });
 
         it('H-1/M-1: a successfully resolved POI does NOT scrub poiSlugs or inject the corrective note', async () => {
@@ -2857,7 +2858,8 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(res.status).toBe(200);
             await readSseFrames(res);
             expect(streamTextCalls).toHaveLength(1);
-            const messages = streamTextCalls[0]?.messages ?? [];
+            const call = streamTextCalls[0];
+            const messages = call?.messages ?? [];
 
             const assistantNote = messages.find(
                 (m) => m.role === 'assistant' && m.content.startsWith('Extracted search filters')
@@ -2865,8 +2867,7 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             // A resolved landmark IS expected to appear in the reply context.
             expect(assistantNote?.content).toContain(AUTODROMO_POI_SLUG);
 
-            const correctiveNote = messages.find((m) => m.content.includes('LANDMARK NOT APPLIED'));
-            expect(correctiveNote).toBeUndefined();
+            expect(call?.system).not.toContain('LANDMARK NOT APPLIED');
         });
     });
 
@@ -2984,10 +2985,7 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             // The reply-narrative correction (H-1/M-1) must NOT fire — the
             // POI resolved successfully, so the model may cite it.
             expect(streamTextCalls).toHaveLength(1);
-            const correctiveNote = (streamTextCalls[0]?.messages ?? []).find((m) =>
-                m.content.includes('LANDMARK NOT APPLIED')
-            );
-            expect(correctiveNote).toBeUndefined();
+            expect(streamTextCalls[0]?.system).not.toContain('LANDMARK NOT APPLIED');
         });
     });
 

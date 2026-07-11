@@ -15,7 +15,8 @@
  * - Reply system prompt mentions the locale's language.
  * - Reply system prompt forbids citing exact result counts.
  * - Reply system prompt instructs short, friendly reply.
- * - buildSearchReplyMessages: first message is system.
+ * - buildSearchReplyMessages: returned `system` string starts with the reply prompt.
+ * - buildSearchReplyMessages: `messages` never contains a `role: 'system'` entry.
  * - buildSearchReplyMessages: user message is last.
  * - buildSearchReplyMessages: extracted filters appear as an assistant context note.
  * - buildSearchReplyMessages: history bounded to CONVERSATION_HISTORY_LIMIT.
@@ -253,25 +254,36 @@ describe('buildSearchReplyMessages', () => {
     const SYSTEM = 'Reply system prompt.';
     const USER_MSG = 'Quiero una cabaña con pileta.';
 
-    it('first message is the system prompt', () => {
-        const msgs = buildSearchReplyMessages({
+    it('returns the reply system prompt as the `system` string', () => {
+        const result = buildSearchReplyMessages({
             systemPrompt: SYSTEM,
             history: [],
             message: USER_MSG,
             extractedFilters: {}
         });
-        expect(msgs[0]?.role).toBe('system');
-        expect(msgs[0]?.content).toBe(SYSTEM);
+        expect(result.system).toBe(SYSTEM);
+    });
+
+    it('never includes a role: "system" entry in `messages` (the security-warning regression)', () => {
+        const result = buildSearchReplyMessages({
+            systemPrompt: SYSTEM,
+            history: [],
+            message: USER_MSG,
+            extractedFilters: {},
+            attractionLocationConflict: { attractionSlugs: ['sede_carnaval'] },
+            poiLocationConflict: { poiSlugs: ['autodromo_concepcion_del_uruguay'] }
+        });
+        expect(result.messages.some((m) => m.role === 'system')).toBe(false);
     });
 
     it('last message is the user turn', () => {
-        const msgs = buildSearchReplyMessages({
+        const result = buildSearchReplyMessages({
             systemPrompt: SYSTEM,
             history: [],
             message: USER_MSG,
             extractedFilters: {}
         });
-        const last = msgs[msgs.length - 1];
+        const last = result.messages[result.messages.length - 1];
         expect(last?.role).toBe('user');
         expect(last?.content).toBe(USER_MSG);
     });
@@ -281,42 +293,42 @@ describe('buildSearchReplyMessages', () => {
             accommodationType: AccommodationTypeEnum.CABIN,
             hasPool: true
         };
-        const msgs = buildSearchReplyMessages({
+        const result = buildSearchReplyMessages({
             systemPrompt: SYSTEM,
             history: [],
             message: USER_MSG,
             extractedFilters: filters
         });
-        const assistantNote = msgs.find((m) => m.role === 'assistant');
+        const assistantNote = result.messages.find((m) => m.role === 'assistant');
         expect(assistantNote).toBeDefined();
         expect(assistantNote?.content).toContain(JSON.stringify(filters));
     });
 
     it('includes an assistant note saying no filters when extractedFilters is empty', () => {
-        const msgs = buildSearchReplyMessages({
+        const result = buildSearchReplyMessages({
             systemPrompt: SYSTEM,
             history: [],
             message: USER_MSG,
             extractedFilters: {}
         });
-        const assistantNote = msgs.find((m) => m.role === 'assistant');
+        const assistantNote = result.messages.find((m) => m.role === 'assistant');
         expect(assistantNote).toBeDefined();
         expect(assistantNote?.content?.toLowerCase()).toContain('no specific search filters');
     });
 
-    it('includes prior history messages between system and assistant-context', () => {
+    it('includes prior history messages before the assistant-context note', () => {
         const history: AiChatMessage[] = [
             { role: 'user', content: 'primera consulta' },
             { role: 'assistant', content: 'primera respuesta' }
         ];
-        const msgs = buildSearchReplyMessages({
+        const result = buildSearchReplyMessages({
             systemPrompt: SYSTEM,
             history,
             message: USER_MSG,
             extractedFilters: {}
         });
-        const userTurns = msgs.filter((m) => m.role === 'user');
-        const assistantTurns = msgs.filter((m) => m.role === 'assistant');
+        const userTurns = result.messages.filter((m) => m.role === 'user');
+        const assistantTurns = result.messages.filter((m) => m.role === 'assistant');
 
         // Two user turns: one from history, one new
         expect(userTurns.length).toBeGreaterThanOrEqual(2);
@@ -332,13 +344,13 @@ describe('buildSearchReplyMessages', () => {
                 content: `turn-${i}`
             })
         );
-        const msgs = buildSearchReplyMessages({
+        const result = buildSearchReplyMessages({
             systemPrompt: SYSTEM,
             history,
             message: USER_MSG,
             extractedFilters: {}
         });
-        const allContent = msgs.map((m) => m.content).join('\n');
+        const allContent = result.messages.map((m) => m.content).join('\n');
 
         // The 4 oldest messages must be dropped
         expect(allContent).not.toContain('turn-0');
@@ -360,7 +372,7 @@ describe('buildSearchReplyMessages — poiLocationConflict (HOS-113 review H-1/M
             accommodationType: AccommodationTypeEnum.CABIN,
             poiSlugs: [RAW_POI_SLUG]
         };
-        const msgs = buildSearchReplyMessages({
+        const result = buildSearchReplyMessages({
             systemPrompt: SYSTEM,
             history: [],
             message: USER_MSG,
@@ -368,7 +380,7 @@ describe('buildSearchReplyMessages — poiLocationConflict (HOS-113 review H-1/M
             poiLocationConflict: { poiSlugs: [RAW_POI_SLUG] }
         });
 
-        const assistantNote = msgs.find(
+        const assistantNote = result.messages.find(
             (m) => m.role === 'assistant' && m.content.startsWith('Extracted search filters')
         );
         expect(assistantNote).toBeDefined();
@@ -382,21 +394,21 @@ describe('buildSearchReplyMessages — poiLocationConflict (HOS-113 review H-1/M
 
     it('leaves extractedFilters untouched when poiLocationConflict is absent', () => {
         const filters: SearchIntentEntities = { poiSlugs: [RAW_POI_SLUG] };
-        const msgs = buildSearchReplyMessages({
+        const result = buildSearchReplyMessages({
             systemPrompt: SYSTEM,
             history: [],
             message: USER_MSG,
             extractedFilters: filters
         });
 
-        const assistantNote = msgs.find(
+        const assistantNote = result.messages.find(
             (m) => m.role === 'assistant' && m.content.startsWith('Extracted search filters')
         );
         expect(assistantNote?.content).toContain(RAW_POI_SLUG);
     });
 
-    it('injects a corrective IMPORTANT — LANDMARK NOT APPLIED system message naming the unresolved slug', () => {
-        const msgs = buildSearchReplyMessages({
+    it('appends a corrective IMPORTANT — LANDMARK NOT APPLIED note to `system` naming the unresolved slug', () => {
+        const result = buildSearchReplyMessages({
             systemPrompt: SYSTEM,
             history: [],
             message: USER_MSG,
@@ -404,30 +416,28 @@ describe('buildSearchReplyMessages — poiLocationConflict (HOS-113 review H-1/M
             poiLocationConflict: { poiSlugs: [RAW_POI_SLUG] }
         });
 
-        const correctiveNote = msgs.find(
-            (m) => m.role === 'system' && m.content.includes('LANDMARK NOT APPLIED')
-        );
-        expect(correctiveNote).toBeDefined();
-        expect(correctiveNote?.content).toContain(RAW_POI_SLUG);
+        expect(result.system).toContain('LANDMARK NOT APPLIED');
+        expect(result.system).toContain(RAW_POI_SLUG);
         // Unlike the attraction conflict, this must NOT claim zero results —
         // the search itself still ran, just without the proximity narrowing.
-        expect(correctiveNote?.content.toUpperCase()).not.toContain('ZERO');
+        expect(result.system.toUpperCase()).not.toContain('ZERO');
+        // The corrective note must never leak into `messages` (no role: 'system').
+        expect(result.messages.some((m) => m.role === 'system')).toBe(false);
     });
 
-    it('does not inject the corrective note when poiLocationConflict is absent', () => {
-        const msgs = buildSearchReplyMessages({
+    it('does not append the corrective note when poiLocationConflict is absent', () => {
+        const result = buildSearchReplyMessages({
             systemPrompt: SYSTEM,
             history: [],
             message: USER_MSG,
             extractedFilters: {}
         });
 
-        const correctiveNote = msgs.find((m) => m.content.includes('LANDMARK NOT APPLIED'));
-        expect(correctiveNote).toBeUndefined();
+        expect(result.system).not.toContain('LANDMARK NOT APPLIED');
     });
 
     it('includes the best-effort locationLabel in the corrective note when present', () => {
-        const msgs = buildSearchReplyMessages({
+        const result = buildSearchReplyMessages({
             systemPrompt: SYSTEM,
             history: [],
             message: USER_MSG,
@@ -435,12 +445,11 @@ describe('buildSearchReplyMessages — poiLocationConflict (HOS-113 review H-1/M
             poiLocationConflict: { poiSlugs: [RAW_POI_SLUG], locationLabel: 'Gualeguaychú' }
         });
 
-        const correctiveNote = msgs.find((m) => m.content.includes('LANDMARK NOT APPLIED'));
-        expect(correctiveNote?.content).toContain('Gualeguaychú');
+        expect(result.system).toContain('Gualeguaychú');
     });
 
-    it('places the corrective note after the attraction conflict note when both are present', () => {
-        const msgs = buildSearchReplyMessages({
+    it('places the corrective note after the attraction conflict note (and the base prompt) in `system` when both are present', () => {
+        const result = buildSearchReplyMessages({
             systemPrompt: SYSTEM,
             history: [],
             message: USER_MSG,
@@ -449,13 +458,16 @@ describe('buildSearchReplyMessages — poiLocationConflict (HOS-113 review H-1/M
             poiLocationConflict: { poiSlugs: [RAW_POI_SLUG] }
         });
 
-        const attractionIdx = msgs.findIndex((m) => m.content.includes('NO RESULTS'));
-        const poiIdx = msgs.findIndex((m) => m.content.includes('LANDMARK NOT APPLIED'));
-        const userIdx = msgs.findIndex((m) => m.role === 'user');
+        const systemPromptIdx = result.system.indexOf(SYSTEM);
+        const attractionIdx = result.system.indexOf('NO RESULTS');
+        const poiIdx = result.system.indexOf('LANDMARK NOT APPLIED');
+        const userIdx = result.messages.findIndex((m) => m.role === 'user');
 
-        expect(attractionIdx).toBeGreaterThanOrEqual(0);
+        expect(systemPromptIdx).toBe(0);
+        expect(attractionIdx).toBeGreaterThan(systemPromptIdx);
         expect(poiIdx).toBeGreaterThan(attractionIdx);
-        expect(userIdx).toBe(msgs.length - 1);
-        expect(poiIdx).toBeLessThan(userIdx);
+        // The user turn is still the last entry in `messages` (unaffected by
+        // the conflict notes now living in `system`).
+        expect(userIdx).toBe(result.messages.length - 1);
     });
 });
