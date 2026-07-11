@@ -161,15 +161,24 @@ cobertura. Tres zonas:
 Lo que NO va (vive solo en el sidebar): historial, alertas, ofertas, recomendaciones,
 reseñas, consultas, promociones, boletín, directorio.
 
-### 6.5 Mobile hamburguesa — única superficie, acordeón
+### 6.5 Mobile hamburguesa — nav del sitio + cuenta curada (D-5)
 
-En mobile no hay separación avatar-vs-sidebar; todo colapsa en el hamburguesa,
-jerarquizado por **acordeón** (secciones colapsadas por default). Orden:
+**Decisión D-5 (OQ-5 resuelta por el owner).** En mobile la cuenta se reparte igual
+que en desktop, no se fusiona todo en una superficie. El hamburguesa global lleva la
+nav del sitio + un **bloque de cuenta CURADO** — el MISMO set que el avatar (Mi cuenta,
+Favoritos, atajo de negocio priorizado, Suscripción + sesión). La **cuenta completa**
+(todos los grupos: Cuenta / Área turista / Área anfitrión / Área comercio / Aliados +
+puertas) NO se duplica en el hamburguesa: se navega con el toggle "Menú de cuenta" del
+sidebar dentro de `/mi-cuenta` (el mismo `AccountLayout`, responsive). Es simétrico con
+desktop (avatar curado + sidebar completo) y evita mantener la navegación de cuenta en
+dos superficies.
+
+Orden del hamburguesa:
 
 1. **Navegación del sitio** (arriba) — Destinos, Alojamientos, Gastronomía,
    Experiencias, etc.
-2. **Bloque de cuenta** (acordeones colapsados) — Cuenta / Turista / Anfitrión /
-   Aliados + las dos puertas.
+2. **Bloque de cuenta curado** — Mi cuenta · Favoritos · [atajo de negocio priorizado] ·
+   Suscripción.
 3. **Sesión** (abajo) — idioma, tema, cerrar sesión, panel admin (solo staff).
 
 Sin sesión: navegación del sitio + Iniciá sesión / Registrate + idioma/tema.
@@ -177,8 +186,10 @@ Sin sesión: navegación del sitio + Iniciá sesión / Registrate + idioma/tema.
 ### 6.6 Fuente única + gating (G-3, G-4)
 
 Las tres definiciones colapsan en **una** config tipada e i18n'd. Cada superficie
-renderiza un subconjunto: el avatar cura, el hamburguesa muestra completo con acordeón,
-el sidebar desktop muestra completo plano. **Una fuente, tres vistas.**
+renderiza un subconjunto: el avatar cura, el hamburguesa mobile muestra el **mismo set
+curado** que el avatar (D-5), y el sidebar (`AccountLayout`, responsive) muestra el
+set completo — plano en desktop, con toggle colapsable en mobile. **Una fuente,
+tres vistas.**
 
 **Decisión D-4 (gating — modelo de declaración única, evaluación asimétrica).**
 Cada ítem/grupo de la config declara su `requiredPermission` (`PermissionEnum`) —
@@ -271,16 +282,18 @@ editor), nunca por una lista hardcodeada de roles.
 - **OQ-1** — Ruta y layout exactos de las páginas-hub internas ("Publicá en Hospeda" /
   "Sumate como aliado"): ¿`/mi-cuenta/publica`, `/mi-cuenta/aliados/sumate`? ¿Reusan un
   layout de hub genérico?
-- **OQ-2** — Ubicación canónica de la config de navegación tipada
-  (`apps/web/src/config/` vs `src/lib/navigation/`) y su forma exacta.
+- **OQ-2** — ✅ RESUELTA: la config vive en `apps/web/src/config/navigation.ts` (junto
+  a `tours.ts`, misma convención); el gating en `src/lib/nav-gating.ts` y la curación
+  del avatar/mobile en `src/lib/nav-avatar.ts`.
 - **OQ-3** — Señal por-usuario para el estado de las puertas: ¿de permisos, de
   entitlements de billing, o de una consulta de "verticales activos"? Definir sin
-  penalizar el render.
-- **OQ-4** — ¿El atajo del avatar al "panel del rol activo" maneja el caso multi-rol
-  (host + comercio) mostrando ambos, o prioriza uno?
-- **OQ-5** — ¿Se conserva el toggle contextual del sidebar dentro de `/mi-cuenta` en
-  mobile, o el hamburguesa es la única puerta? Si se conserva, debe leer la misma
-  config (no una cuarta lista).
+  penalizar el render. **(Sigue abierta — bloquea las puertas, T-006/T-011.)**
+- **OQ-4** — ✅ RESUELTA (owner): el avatar muestra **un solo** atajo de negocio,
+  elegido por prioridad `[hostDashboard, commerce]` (el primero que el usuario tenga).
+  Implementado en `pickBusinessShortcut` (`src/lib/nav-avatar.ts`).
+- **OQ-5** — ✅ RESUELTA (owner) → ver D-5 (§6.5): el hamburguesa mobile lleva el set
+  **curado** (igual que el avatar); la cuenta completa se navega con el toggle del
+  sidebar dentro de `/mi-cuenta`. Ambas superficies leen la misma config.
 
 ## 12. Implementation notes
 
