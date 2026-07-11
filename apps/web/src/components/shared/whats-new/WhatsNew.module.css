@@ -48,3 +48,18 @@
     font-weight: 600;
     line-height: 1.2;
 }
+
+/* Inline count pill (no sparkle button) — used in the account sidebar nav item. */
+.inlineCountPill {
+    display: inline-flex;
+    min-width: 1.25rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    border-radius: 9999px;
+    background: var(--brand-accent);
+    color: var(--accent-foreground);
+    font-size: 0.625rem;
+    font-weight: 600;
+    line-height: 1.4;
+}

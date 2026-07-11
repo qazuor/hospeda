@@ -16,6 +16,8 @@
             "legalRequired": "You must confirm the legal notice.",
             "submit": "We couldn't import the accommodation. Please try again.",
             "network": "We couldn't reach the server.",
+            "forbidden": "You don't have permission to import from a URL. Check that your plan includes it.",
+            "rateLimit": "You've made too many imports in a row. Please wait a moment and try again.",
             "failure": {
                 "invalidUrl": "Check that the URL is valid and points to an accommodation.",
                 "sourceBlocked": "The source is temporarily unavailable. Wait a few minutes and try again, or enter the details manually.",
@@ -210,12 +212,18 @@
                 "confirmNo": "Cancel",
                 "delete": "Delete",
                 "deleteConfirm": "Delete this property? It will be removed from your listings and the site.",
-                "deleteYes": "Yes, delete"
+                "deleteYes": "Yes, delete",
+                "publishConfirmTitle": "14 free days when you publish",
+                "publishConfirmNote": "Publishing starts your free 14-day trial. No credit card, no commitment.",
+                "publishYes": "Yes, publish"
             },
             "pricePerNight": "[TODO]",
             "unpublishSuccess": "Property unpublished",
             "unpublishError": "Could not unpublish. Please try again.",
             "deleteError": "Could not delete. Please try again.",
+            "publishError": "Could not publish. Please try again.",
+            "publishSubscriptionRequiredMessage": "You already used your free 14-day trial. Subscribe to a plan to publish this property.",
+            "publishSubscriptionRequiredCta": "View plans",
             "priceOnRequest": "Price on request"
         },
         "editor": {
@@ -229,7 +237,11 @@
                 "socialNetworks": "Social networks",
                 "photos": "Photos",
                 "photosDescription": "Upload photos of your property to attract more guests",
+                "externalReputation": "External reputation",
                 "featuredToggle": "[EN] Destacado"
+            },
+            "sectionNav": {
+                "ariaLabel": "Form section navigation"
             },
             "field": {
                 "name": "Name",
@@ -246,9 +258,15 @@
                 "bathrooms": "Bathrooms",
                 "price": "Price per night",
                 "currency": "Currency",
+                "currencyFixedArs": "ARS — Argentine peso",
                 "amenities": "Amenities",
                 "features": "Features",
                 "phone": "Phone",
+                "phoneCountry": "Country",
+                "phoneCountrySearchPlaceholder": "Search country...",
+                "phoneCountryNoResults": "No countries found",
+                "phoneNumber": "Number",
+                "whatsapp": "WhatsApp",
                 "email": "Email",
                 "website": "Website",
                 "facebook": "Facebook",

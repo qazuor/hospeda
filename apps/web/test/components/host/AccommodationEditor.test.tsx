@@ -10,7 +10,7 @@
  * - Submit handler: builds PATCH payload from changed fields only
  */
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccommodationEditorProps } from '@/components/host/AccommodationEditor.client';
@@ -87,6 +87,7 @@ const MOCK_INITIAL_DATA = {
     amenityIds: ['am-1'],
     featureIds: ['ft-1'],
     phone: '+54 9 343 1234567',
+    whatsapp: '',
     email: 'contacto@hotel.com',
     website: 'https://hotel.com',
     facebookUrl: 'https://facebook.com/hotel',
@@ -147,15 +148,41 @@ describe('AccommodationEditor', () => {
     });
 
     it('should render all section headings', () => {
+        // BETA-138: each heading now also appears as a link label in the
+        // sticky section nav, so these assertions scope to the <legend> to
+        // disambiguate from the nav's <a> with the same text.
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
-        expect(screen.getByText('Información básica')).toBeInTheDocument();
-        expect(screen.getByText('Capacidad')).toBeInTheDocument();
-        expect(screen.getByText('Precio')).toBeInTheDocument();
-        expect(screen.getByText('Ubicación')).toBeInTheDocument();
-        expect(screen.getByText('Contacto')).toBeInTheDocument();
-        expect(screen.getByText('Redes sociales')).toBeInTheDocument();
-        expect(screen.getByText('Servicios y comodidades')).toBeInTheDocument();
+        expect(screen.getByText('Información básica', { selector: 'legend' })).toBeInTheDocument();
+        expect(screen.getByText('Capacidad', { selector: 'legend' })).toBeInTheDocument();
+        expect(screen.getByText('Precio', { selector: 'legend' })).toBeInTheDocument();
+        expect(screen.getByText('Ubicación', { selector: 'legend' })).toBeInTheDocument();
+        expect(screen.getByText('Contacto', { selector: 'legend' })).toBeInTheDocument();
+        expect(screen.getByText('Redes sociales', { selector: 'legend' })).toBeInTheDocument();
+        expect(
+            screen.getByText('Servicios y comodidades', { selector: 'legend' })
+        ).toBeInTheDocument();
+    });
+
+    it('should render the sticky section nav with a link per card section', () => {
+        render(<AccommodationEditor {...DEFAULT_PROPS} />);
+
+        expect(screen.getByRole('navigation')).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'Información básica' })).toHaveAttribute(
+            'href',
+            '#editor-basicInfo'
+        );
+        expect(screen.getByRole('link', { name: 'Reputación externa' })).toHaveAttribute(
+            'href',
+            '#editor-externalReputation'
+        );
+    });
+
+    it('should NOT render a featured-toggle section (self-service disabled, BETA-144)', () => {
+        render(<AccommodationEditor {...DEFAULT_PROPS} />);
+
+        expect(screen.queryByRole('link', { name: 'Destacado' })).not.toBeInTheDocument();
+        expect(document.getElementById('editor-featuredToggle')).not.toBeInTheDocument();
     });
 
     it('should render form fields with initial data values', () => {
@@ -167,9 +194,16 @@ describe('AccommodationEditor', () => {
         const summaryInput = screen.getByLabelText(/resumen/i) as HTMLTextAreaElement;
         expect(summaryInput.value).toBe('Un hermoso hotel en el centro');
 
-        // Phase B: contact info fields
-        const phoneInput = screen.getByLabelText(/teléfono/i) as HTMLInputElement;
-        expect(phoneInput.value).toBe('+54 9 343 1234567');
+        // Phase B: contact info fields (BETA-139: phone split into country + number;
+        // BETA-144: country field is a CountryCodeCombobox trigger button, not an input).
+        // BETA-151 added a parallel WhatsApp field sharing the "País"/"Número"
+        // sub-labels, so scope to the phone <fieldset> (legend "Teléfono").
+        const phoneFieldset = within(screen.getByRole('group', { name: /^teléfono$/i }));
+        const phoneCountryTrigger = phoneFieldset.getByLabelText(/país/i) as HTMLButtonElement;
+        expect(phoneCountryTrigger).toHaveTextContent('Argentina (+54)');
+
+        const phoneNumberInput = phoneFieldset.getByLabelText(/número/i) as HTMLInputElement;
+        expect(phoneNumberInput.value).toBe('9 343 1234567');
 
         const emailInput = screen.getByLabelText(/^email$/i) as HTMLInputElement;
         expect(emailInput.value).toBe('contacto@hotel.com');
@@ -177,12 +211,12 @@ describe('AccommodationEditor', () => {
         const websiteInput = screen.getByLabelText(/sitio web/i) as HTMLInputElement;
         expect(websiteInput.value).toBe('https://hotel.com');
 
-        // Phase B: social networks fields
+        // Phase B: social networks fields (BETA-139: only the handle is shown)
         const facebookInput = screen.getByLabelText(/facebook/i) as HTMLInputElement;
-        expect(facebookInput.value).toBe('https://facebook.com/hotel');
+        expect(facebookInput.value).toBe('hotel');
 
         const instagramInput = screen.getByLabelText(/instagram/i) as HTMLInputElement;
-        expect(instagramInput.value).toBe('https://instagram.com/hotel');
+        expect(instagramInput.value).toBe('hotel');
 
         // Phase B: location fields
         const latInput = screen.getByLabelText(/latitud/i) as HTMLInputElement;
@@ -284,16 +318,44 @@ describe('AccommodationEditor', () => {
         const user = userEvent.setup();
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
-        const phoneInput = screen.getByLabelText(/teléfono/i) as HTMLInputElement;
-        await user.clear(phoneInput);
-        await user.type(phoneInput, '+54 9 343 9999999');
-        fireEvent.submit(phoneInput.closest('form')!);
+        // Two fields carry a "Número" sub-label (phone + WhatsApp); scope to the
+        // phone <fieldset> (legend "Teléfono") to target the phone number input.
+        const phoneNumberInput = within(
+            screen.getByRole('group', { name: /^teléfono$/i })
+        ).getByLabelText(/número/i) as HTMLInputElement;
+        await user.clear(phoneNumberInput);
+        await user.type(phoneNumberInput, '9 343 9999999');
+        fireEvent.submit(phoneNumberInput.closest('form')!);
 
         await vi.waitFor(() => {
             expect(mockUpdate).toHaveBeenCalledOnce();
         });
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.data.phone).toBe('+54 9 343 9999999');
+    });
+
+    it('should include whatsapp in PATCH payload when changed', async () => {
+        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
+        vi.doMock('@/lib/api/endpoints-protected', () => ({
+            accommodationEditApi: { update: mockUpdate }
+        }));
+
+        const user = userEvent.setup();
+        render(<AccommodationEditor {...DEFAULT_PROPS} />);
+
+        // Scope to the WhatsApp <fieldset> (legend "WhatsApp") to target its number input.
+        const whatsappNumberInput = within(
+            screen.getByRole('group', { name: /^whatsapp$/i })
+        ).getByLabelText(/número/i) as HTMLInputElement;
+        await user.clear(whatsappNumberInput);
+        await user.type(whatsappNumberInput, '9 343 8888888');
+        fireEvent.submit(whatsappNumberInput.closest('form')!);
+
+        await vi.waitFor(() => {
+            expect(mockUpdate).toHaveBeenCalledOnce();
+        });
+        const callArg = mockUpdate.mock.calls[0][0];
+        expect(callArg.data.whatsapp).toBe('+54 9 343 8888888');
     });
 
     it('should include social network fields in PATCH payload when changed', async () => {
@@ -306,7 +368,7 @@ describe('AccommodationEditor', () => {
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
         const twitterInput = screen.getByLabelText(/twitter/i) as HTMLInputElement;
-        await user.type(twitterInput, 'https://x.com/mi-hotel');
+        await user.type(twitterInput, 'mi-hotel');
         fireEvent.submit(twitterInput.closest('form')!);
 
         await vi.waitFor(() => {

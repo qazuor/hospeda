@@ -22,6 +22,7 @@ export enum PermissionCategoryEnum {
     PAYMENT = 'PAYMENT',
     PAYMENT_METHOD = 'PAYMENT_METHOD',
     PERMISSION = 'PERMISSION',
+    POINT_OF_INTEREST = 'POINT_OF_INTEREST',
     POST = 'POST',
     POST_COMMENT = 'POST_COMMENT',
     POST_SPONSOR = 'POST_SPONSOR',
@@ -192,6 +193,7 @@ export enum PermissionEnum {
     DESTINATION_VIEW_DRAFT = 'destination.view.draft', // Allows viewing draft destinations.
     DESTINATION_VIEW_ALL = 'destination.viewAll', // Allows viewing all destinations.
     DESTINATION_ATTRACTION_MANAGE = 'destination.attraction.manage', // Allows managing destination attractions.
+    DESTINATION_POINT_OF_INTEREST_MANAGE = 'destination.pointOfInterest.manage', // Allows managing destination points of interest (HOS-113).
 
     // EVENT: Permissions related to events (festivals, shows, etc.)
     EVENT_CREATE = 'event.create', // Allows creating a new event.
@@ -508,6 +510,18 @@ export enum PermissionEnum {
     ATTRACTION_RESTORE = 'attraction.restore', // Allows restoring a deleted attraction.
     ATTRACTION_LIFECYCLE_CHANGE = 'attraction.lifecycle.change', // Allows changing attraction lifecycle state.
     ATTRACTION_HARD_DELETE = 'attraction.hardDelete', // Allows permanently deleting an attraction.
+
+    // POINT_OF_INTEREST: Permissions related to point-of-interest catalog management (HOS-113).
+    // Deliberately uses a single consistent `point-of-interest.*` prefix at both the
+    // service and route layers, unlike attraction's split ATTRACTION_*/DESTINATION_*
+    // gate inconsistency (HOS-113 T-014 deviation note) — do not replicate that split.
+    POINT_OF_INTEREST_CREATE = 'pointOfInterest.create', // Allows creating a new point of interest.
+    POINT_OF_INTEREST_UPDATE = 'pointOfInterest.update', // Allows updating a point of interest.
+    POINT_OF_INTEREST_DELETE = 'pointOfInterest.delete', // Allows deleting a point of interest (soft delete).
+    POINT_OF_INTEREST_VIEW = 'pointOfInterest.view', // Allows viewing point-of-interest information.
+    POINT_OF_INTEREST_RESTORE = 'pointOfInterest.restore', // Allows restoring a deleted point of interest.
+    POINT_OF_INTEREST_LIFECYCLE_CHANGE = 'pointOfInterest.lifecycle.change', // Allows changing point-of-interest lifecycle state.
+    POINT_OF_INTEREST_HARD_DELETE = 'pointOfInterest.hardDelete', // Allows permanently deleting a point of interest.
 
     // CLIENT_ACCESS_RIGHT: Permissions related to client access rights management
     CLIENT_ACCESS_RIGHT_CREATE = 'clientAccessRight.create', // Allows creating a new client access right.

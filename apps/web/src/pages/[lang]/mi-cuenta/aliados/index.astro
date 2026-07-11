@@ -1,0 +1,44 @@
+---
+/**
+ * @file mi-cuenta/aliados/index.astro
+ * @description "Sumate como aliado" discovery-door hub page (HOS-131 §6.2).
+ * Lists the B2B alliance roles (sponsor, service provider) — both are
+ * not-yet-implemented verticals (NG-2), so every option renders as
+ * "Próximamente" with a "Contactanos" CTA until those roles exist.
+ *
+ * @route     /[lang]/mi-cuenta/aliados/
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+import { ACCOUNT_DISCOVERY_DOORS } from '@/config/navigation';
+import DiscoveryDoorHub from '@/components/account/DiscoveryDoorHub.astro';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+
+// Auth guard: middleware protects /mi-cuenta/* automatically, safety net.
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+const door = ACCOUNT_DISCOVERY_DOORS.find((candidate) => candidate.id === 'partner');
+if (!door) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+}
+
+const { t } = createTranslations(locale);
+const title = t(door.i18nKey);
+const description = t(door.subtitleI18nKey);
+---
+
+<AccountLayout locale={locale} title={title} description={description} activeSection="aliados">
+    <AccountPageHeader title={title} />
+    <DiscoveryDoorHub locale={locale} door={door} role={user.role} />
+</AccountLayout>

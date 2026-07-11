@@ -8,10 +8,13 @@
  * - Ownership check (entity not owned by actor) → 403
  * - Missing required fields → 400
  * - Invalid role rejected (avatar not allowed) → 400
+ * - Cloudinary upload failure (a single-attempt timeout, NO retry) always
+ *   surfaces as a typed JSON error, never an uncaught exception (BETA-134)
  *
  * @module test/routes/media/protected-upload-entity
  */
 import { PermissionEnum } from '@repo/schemas';
+import { AccommodationService } from '@repo/service-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAuthenticatedRequest, createMockUserActor } from '../../helpers/auth';
 
@@ -154,6 +157,84 @@ describe('Protected media upload-entity endpoint', () => {
 
             const res = await app.request(req);
             expect(res.headers.get('cache-control')).toBe('no-store');
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // BETA-134: Cloudinary timeout/failure must always surface as a typed JSON
+    // error, never an uncaught exception (which is what let a reverse-proxy
+    // timeout page — non-JSON — reach the client instead).
+    // -------------------------------------------------------------------------
+    describe('Cloudinary upload failure resiliency (BETA-134)', () => {
+        /**
+         * Minimal 1x1 red PNG with a real IHDR chunk (dimensions parseable by
+         * `image-size`) — `VALID_PNG_FILE` above only has magic bytes and
+         * fails the dimension check, which would mask these tests behind an
+         * unrelated 422 UNPROCESSABLE_ENTITY before ever reaching the
+         * provider.
+         */
+        const REAL_PNG_FILE = new File(
+            [
+                Buffer.from(
+                    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
+                    'base64'
+                ) as unknown as BlobPart
+            ],
+            'test.png',
+            { type: 'image/png' }
+        );
+
+        /**
+         * Builds a vi mock function resolving to a minimal entity stub owned
+         * by `OWNER_ID` with an empty gallery. Wrapped in `vi.fn()` (matching
+         * the pattern used by `gallery-cap-enforcement.test.ts`) so it can be
+         * passed to `mockImplementationOnce` without a type-unsafe cast — the
+         * route only reads `data.ownerId` and `data.media.gallery` from the
+         * resolved value, so this partial stub is functionally complete.
+         */
+        const buildOwnedEntityStub = () =>
+            vi.fn().mockResolvedValue({
+                data: {
+                    id: ENTITY_ID,
+                    ownerId: OWNER_ID,
+                    media: { gallery: [] }
+                },
+                error: undefined
+            });
+
+        it('returns a typed 502 UPSTREAM_ERROR JSON body when Cloudinary persistently times out', async () => {
+            // Arrange
+            vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
+                buildOwnedEntityStub()
+            );
+            mockUpload.mockRejectedValue(new Error('ETIMEDOUT'));
+
+            const { initApp } = await import('../../../src/app');
+            const app = await initApp();
+            const req = new Request(UPLOAD_URL, {
+                method: 'POST',
+                body: buildMultipartBody({ file: REAL_PNG_FILE }),
+                headers: buildAuthHeaders(ownerActor)
+            });
+
+            // Act
+            const res = await app.request(req);
+            const body = (await res.json()) as {
+                success: boolean;
+                error?: { code: string; message: string };
+            };
+
+            // Assert: a clean, parseable JSON error — this is the exact
+            // contract the client's `JSON.parse(xhr.responseText)` relies on.
+            expect(res.status).toBe(502);
+            expect(body.success).toBe(false);
+            expect(body.error?.code).toBe('UPSTREAM_ERROR');
+            expect(typeof body.error?.message).toBe('string');
+
+            // Single attempt only — no retry (uploads are not provably
+            // idempotent, so an automatic retry could leak an orphaned
+            // Cloudinary asset version).
+            expect(mockUpload).toHaveBeenCalledOnce();
         });
     });
 });

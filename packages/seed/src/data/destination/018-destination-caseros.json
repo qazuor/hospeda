@@ -156,6 +156,7 @@
         "045-attraction-iglesia_colonial",
         "013-attraction-centro_agropecuario"
     ],
+    "pointOfInterestIds": ["003-point-of-interest-palacio_san_jose"],
     "faqs": [
         {
             "question": "¿Cómo llego a Caseros y al Palacio San José?",

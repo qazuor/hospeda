@@ -43,7 +43,7 @@ import PromotionBanner from '@/components/accommodation/PromotionBanner.astro';
 import { accommodationsApi, ownerPromotionsApi, postsApi, eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import type { OwnerPromotionPublicItem } from '@/lib/api/endpoints';
 import { billingApi, priceAlertsApi, userBookmarksApi } from '@/lib/api/endpoints-protected';
-import { toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
+import { faqSetInLanguage, toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
@@ -135,7 +135,10 @@ if (hasCtxDates || hasCtxGuests) {
 
 // --- Primary fetch ---
 const result = await accommodationsApi.getBySlug({ slug });
-if (!result.ok || !result.data) return new Response(null, { status: 404 });
+// Propagate 410 Gone for soft-deleted entities so crawlers/LLM fetchers deindex
+// the URL fast (HOS-117 T-022); any other failure (never existed) stays 404.
+if (!result.ok) return new Response(null, { status: result.error.status === 410 ? 410 : 404 });
+if (!result.data) return new Response(null, { status: 404 });
 
 const rawAccommodation = result.data as Record<string, unknown>;
 const accommodation = toAccommodationDetailPageProps({ item: rawAccommodation, locale });
@@ -496,7 +499,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
     />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
     {faqSections.length > 0 && (
-        <FAQPageJsonLd slot="head-extra" sections={faqSections} />
+        <FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={faqSetInLanguage(accommodation.faqs, locale)} />
     )}
 
     <Breadcrumbs

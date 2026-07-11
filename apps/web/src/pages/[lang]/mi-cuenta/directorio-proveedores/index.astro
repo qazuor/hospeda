@@ -31,6 +31,8 @@ import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import accountSectionStyles from '@/components/account/AccountSection.module.css';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { TradesDirectory } from '@/components/host/host-trades/TradesDirectory.client';
 import { BuildingIcon, LockIcon } from '@repo/icons';
@@ -149,17 +151,13 @@ const accessDeniedCta = t('host-trades.accessDenied.cta', 'Ver planes de suscrip
     description={subtitle}
     activeSection="directorio-proveedores"
 >
-    <!-- Page header -->
-    <div class="trades-page__header">
-        <div class="trades-page__heading">
-            <h2 class="trades-page__title">{title}</h2>
-            <p class="trades-page__subtitle">{subtitle}</p>
-        </div>
-    </div>
+    <AccountPageHeader title={title} description={subtitle} />
 
     {accessDenied ? (
-        /* Access-denied state (AC-5.3): tourist or non-host user */
-        <div class="trades-page__access-denied" role="alert">
+        /* Access-denied state (AC-5.3): tourist or non-host user — already a
+             standalone full-page card (bg/border/radius below), branded on
+             its own since it is no longer nested in AccountSectionCard. */
+        <div class:list={['trades-page__access-denied', accountSectionStyles.branded]} role="alert">
             <span class="trades-page__access-denied-icon" aria-hidden="true">
                 <LockIcon size={40} weight="duotone" />
             </span>
@@ -170,8 +168,8 @@ const accessDeniedCta = t('host-trades.accessDenied.cta', 'Ver planes de suscrip
             </a>
         </div>
     ) : fetchError ? (
-        /* Generic error state */
-        <div class="trades-page__error" role="alert">
+        /* Generic error state — same standalone-card treatment as above. */
+        <div class:list={['trades-page__error', accountSectionStyles.branded]} role="alert">
             <p class="trades-page__error-title">
                 {t('host.properties.empty.fetchError', 'No se pudo cargar la lista. Intentá recargar la página.')}
             </p>
@@ -180,7 +178,8 @@ const accessDeniedCta = t('host-trades.accessDenied.cta', 'Ver planes de suscrip
             </a>
         </div>
     ) : !isEmpty ? (
-        /* Trades island — hydrates when browser is idle (content is below the fold) */
+        /* Trades island — hydrates when browser is idle (content is below the fold).
+             Each TradeCard carries its own branded accent bar (no outer wrapper). */
         <TradesDirectory
             client:idle
             trades={trades as HostTradePublic[]}
@@ -200,43 +199,6 @@ const accessDeniedCta = t('host-trades.accessDenied.cta', 'Ver planes de suscrip
 </AccountLayout>
 
 <style>
-    /* ── Page header ── */
-    .trades-page__header {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-4, 1rem);
-        margin-bottom: var(--space-8, 2rem);
-    }
-
-    @media (min-width: 640px) {
-        .trades-page__header {
-            flex-direction: row;
-            align-items: flex-start;
-            justify-content: space-between;
-        }
-    }
-
-    .trades-page__heading {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .trades-page__title {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: clamp(1.5rem, 3vw, 2rem);
-        color: var(--core-foreground);
-        margin: 0;
-    }
-
-    .trades-page__subtitle {
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm, 0.9375rem);
-        color: var(--core-muted-foreground);
-        margin: 0;
-    }
-
     /* ── Access-denied state ── */
     .trades-page__access-denied {
         display: flex;

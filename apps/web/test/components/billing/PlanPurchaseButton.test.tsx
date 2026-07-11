@@ -1630,9 +1630,70 @@ describe('PlanPurchaseButton', () => {
 
             await user.click(screen.getByRole('button', { name: /Contratar/ }));
 
-            // Assert — navigates to the sentinel URL (same as MP flow, just different target)
+            // Assert — navigates to the sentinel URL with `?effect=comp` appended
+            // (HOS-110 F1: flags the granted effect so the success page renders
+            // the correct copy instead of defaulting to "verifying payment").
             await waitFor(() => {
-                expect(window.location.href).toBe(sentinelUrl);
+                expect(window.location.href).toBe(`${sentinelUrl}?effect=comp`);
+            });
+        });
+
+        it('navigates to trial sentinel URL with ?effect=trial&promoIgnored=1 when a trial is granted and a discount code was ignored', async () => {
+            // Arrange — server grants a no-card trial and discards the discount
+            // code the user typed in (HOS-110 W1: trial takes priority over a
+            // discount promo on a not-yet-charged subscription).
+            mockAuthenticated();
+            const sentinelUrl = 'https://hospeda.com.ar/es/suscriptores/trial-success';
+
+            let callCount = 0;
+            const fetchMock = vi.fn().mockImplementation(() => {
+                callCount++;
+                const body =
+                    callCount === 1
+                        ? {
+                              data: {
+                                  valid: true,
+                                  effectPreview: {
+                                      effectKind: 'discount',
+                                      valueKind: 'percentage',
+                                      value: 50,
+                                      durationCycles: 1,
+                                      extraDays: null,
+                                      finalAmount: 60000
+                                  }
+                              }
+                          }
+                        : {
+                              data: {
+                                  checkoutUrl: sentinelUrl,
+                                  localSubscriptionId: 'trial-sub-uuid',
+                                  expiresAt: new Date(Date.now() + 86400000).toISOString(),
+                                  appliedEffect: 'trial',
+                                  promoCodeIgnored: true
+                              }
+                          };
+                return Promise.resolve({
+                    ok: true,
+                    status: 200,
+                    json: () => Promise.resolve(body)
+                });
+            });
+            vi.stubGlobal('fetch', fetchMock);
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'SUMMER50');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+            await waitFor(() => screen.getByRole('status'));
+
+            await user.click(screen.getByRole('button', { name: /Contratar/ }));
+
+            // Assert — both query params are present (order: effect, then promoIgnored)
+            await waitFor(() => {
+                expect(window.location.href).toBe(`${sentinelUrl}?effect=trial&promoIgnored=1`);
             });
         });
 

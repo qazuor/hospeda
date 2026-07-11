@@ -11,11 +11,17 @@
 import type { QZPayBilling, QZPayWebhookEvent } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 import { extractMPSubscriptionEventData } from '@qazuor/qzpay-mercadopago';
-import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
+import {
+    billingSubscriptionEvents,
+    billingSubscriptions,
+    getDb,
+    type QZPayBillingSubscription
+} from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
     checkSubscriptionStatusTransition,
+    normalizeStoredSubscriptionStatus,
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner,
     withServiceTransaction
@@ -25,6 +31,7 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../../services/addon-lifecycle.service.js';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service.js';
+import { completeSupersessionPairing } from '../../../services/billing/reactivation-supersession-complete.js';
 import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -81,6 +88,12 @@ import {
  * QZPay uses "canceled" (1 L) while Hospeda uses "cancelled" (2 L's).
  * The mapStatus() in @qazuor/qzpay-mercadopago passes through unknown statuses,
  * so "finished" arrives as-is.
+ *
+ * NOT the same map as `normalizeStoredSubscriptionStatus` (@repo/service-core):
+ * this one maps the INCOMING status returned by `retrieve()` (has `finished`,
+ * `pending` → null; never `incomplete`), whereas the normalizer maps the STORED
+ * DB `from` status (has `incomplete`, `unpaid`, `incomplete_expired`). They
+ * serve different inputs — do NOT merge them.
  */
 export const QZPAY_TO_HOSPEDA_STATUS: Record<string, SubscriptionStatusEnum | null> = {
     active: SubscriptionStatusEnum.ACTIVE,
@@ -192,6 +205,101 @@ export function shouldSendAdminAlert(previousStatus: string, newStatus: string):
         previousStatus !== SubscriptionStatusEnum.CANCELLED &&
         previousStatus !== SubscriptionStatusEnum.EXPIRED
     );
+}
+
+/**
+ * Completes the deferred old-subscription supersession for a paid
+ * reactivation (HOS-114 T-007).
+ *
+ * `TrialService.reactivateFromTrial` / `reactivateSubscription` (T-005/T-006)
+ * create the new paid subscription with `mode:'paid'` and stamp
+ * `supersedesSubscriptionId` in its metadata (a single id, or a comma-joined
+ * list for the defensive multi-sub case), but deliberately do NOT cancel the
+ * old subscription synchronously — see spec §6.4/§6.5. This function
+ * completes that swap once the new subscription's webhook-confirmed
+ * `PENDING_PROVIDER -> ACTIVE` transition has already been committed by the
+ * caller: for each superseded id it delegates the actual cancel + audit work
+ * to the shared {@link completeSupersessionPairing} (HOS-114 T-015/T-016),
+ * which is also the implementation the T-016 reconcile-backstop cron calls —
+ * see that module's JSDoc for the idempotency guarantee, the T-015a
+ * cancel-verification hardening, and the error-isolation contract.
+ *
+ * Invoked from two confirm paths — {@link processSubscriptionUpdated}
+ * (monthly preapproval-confirm) and, since HOS-123 T-013,
+ * `payment-logic.ts::confirmAnnualSubscription` (annual `payment.updated`
+ * confirm — see @remarks below) — and ONLY when the observed transition is
+ * exactly `PENDING_PROVIDER -> ACTIVE`. Callers MUST NOT invoke this for any
+ * other transition (pause/cancel/past-due/etc. must never trigger a
+ * supersession swap).
+ *
+ * @param input - The billing instance, DB handle, the just-activated local
+ *   subscription row, and webhook context for logging/audit.
+ *
+ * @remarks
+ * Exported (HOS-123 T-012) so `payment-logic.ts::confirmAnnualSubscription`
+ * can invoke the exact same trigger on the annual `payment.updated` confirm
+ * path (`PENDING_PROVIDER -> ACTIVE` via a one-time payment, rather than a
+ * monthly preapproval webhook), without duplicating this logic (AC-7
+ * single-source discipline). Verified no circular import: neither this
+ * module nor any of its transitive imports reference `payment-logic.ts`.
+ */
+export async function completeReactivationSupersession({
+    billing,
+    paymentAdapter,
+    db,
+    localSubscription,
+    providerEventId,
+    source
+}: {
+    billing: QZPayBilling;
+    paymentAdapter: QZPayMercadoPagoAdapter;
+    db: ReturnType<typeof getDb>;
+    localSubscription: QZPayBillingSubscription;
+    providerEventId: string;
+    source: string;
+}): Promise<void> {
+    const metadata = (localSubscription.metadata ?? {}) as Record<string, unknown>;
+    const supersedesRaw = metadata.supersedesSubscriptionId;
+
+    if (typeof supersedesRaw !== 'string' || supersedesRaw.trim() === '') {
+        // Normal /start-paid activation (no reactivation intent) — no-op.
+        return;
+    }
+
+    const supersededIds = supersedesRaw
+        .split(',')
+        .map((id) => id.trim())
+        .filter((id) => id.length > 0);
+
+    if (supersededIds.length === 0) {
+        return;
+    }
+
+    // Infer which reactivation flavor this was from the markers T-005/T-006
+    // stamp on the NEW subscription's metadata, so the audit row preserves
+    // the same triggerSource the pre-T-005/T-006 inline code used to write.
+    const isTrialReactivation = metadata.convertedFromTrial === 'true';
+    const triggerSource = isTrialReactivation ? 'trial-reactivation' : 'subscription-reactivation';
+
+    for (const supersededId of supersededIds) {
+        // completeSupersessionPairing never throws — it swallows and reports
+        // its own outcome, so a failure on one pairing can never undo the
+        // activation this function is called after, or block the others.
+        await completeSupersessionPairing({
+            billing,
+            paymentAdapter,
+            db,
+            newSubscription: {
+                id: localSubscription.id,
+                customerId: localSubscription.customerId,
+                planId: localSubscription.planId
+            },
+            supersededId,
+            triggerSource,
+            providerEventId,
+            source
+        });
+    }
 }
 
 /**
@@ -395,7 +503,36 @@ export async function processSubscriptionUpdated({
     }
 
     // Step 6: Compare statuses
-    const previousStatus = localSubscription.status;
+    //
+    // HOS-108: the stored status may be in qzpay's creation-time vocabulary
+    // (recurring subs created via `mode: 'paid'` land on the literal string
+    // `incomplete`, NOT Hospeda's `pending_provider`). The transition state
+    // machine is expressed exclusively in Hospeda vocabulary, so we MUST
+    // normalize the stored `from` before comparing it or feeding it to the
+    // guard — otherwise `incomplete` is rejected as an "unknown source status"
+    // and the activation write (plus every side effect) is silently skipped.
+    const rawPreviousStatus = localSubscription.status;
+    const previousStatus = normalizeStoredSubscriptionStatus(rawPreviousStatus);
+
+    if (previousStatus === null) {
+        // A stored status we cannot map to Hospeda vocabulary is a data-integrity
+        // bug. Skip is safe (row stays authoritative; MP won't retry a 200'd event)
+        // and actionable — surface it for manual inspection.
+        apiLogger.error(
+            {
+                subscriptionId: localSubscription.id,
+                customerId: localSubscription.customerId,
+                rawStatus: rawPreviousStatus,
+                mpPreapprovalId: maskId(mpPreapprovalId),
+                providerEventId,
+                source
+            },
+            'Subscription webhook: stored status not recognized — skipping status write and side effects',
+            { capture: true }
+        );
+        return { success: true, statusChanged: false };
+    }
+
     if (previousStatus === mappedStatus) {
         // If no status change but planId changed, persist the new planId
         if (fetchedPlanId != null && localPlanId != null && fetchedPlanId !== localPlanId) {
@@ -502,13 +639,32 @@ export async function processSubscriptionUpdated({
             .where(eq(billingSubscriptions.id, localSubscription.id))
             .for('update');
 
-        const freshStatus = freshRow?.status;
-
-        if (!freshStatus) {
+        if (!freshRow) {
             // Row disappeared between Step 5 and here — nothing to update.
             apiLogger.warn(
                 { subscriptionId: localSubscription.id, source },
                 'Subscription webhook tx: row not found under FOR UPDATE lock — skipping write'
+            );
+            txStatusChanged = false;
+            return;
+        }
+
+        // HOS-108: normalize the fresh (locked) status too — it is read straight
+        // off the row and can still be in qzpay vocabulary (`incomplete`).
+        const rawFreshStatus = freshRow.status;
+        const freshStatus = normalizeStoredSubscriptionStatus(rawFreshStatus);
+
+        if (freshStatus === null) {
+            apiLogger.error(
+                {
+                    subscriptionId: localSubscription.id,
+                    rawStatus: rawFreshStatus,
+                    mpPreapprovalId: maskId(mpPreapprovalId),
+                    providerEventId,
+                    source
+                },
+                'Subscription webhook tx: fresh stored status not recognized — committing nothing',
+                { capture: true }
             );
             txStatusChanged = false;
             return;
@@ -617,6 +773,13 @@ export async function processSubscriptionUpdated({
                 metadata: {
                     qzpayStatus,
                     mpPreapprovalId,
+                    // HOS-108 forensics: preserve the raw stored status when it
+                    // differed from the normalized value (i.e. the row was still
+                    // on qzpay vocabulary like `incomplete`). This keeps the exact
+                    // bug signature greppable in the audit trail; omitted when the
+                    // stored value was already Hospeda vocabulary (no divergence).
+                    ...(rawPreviousStatus === previousStatus ? {} : { rawPreviousStatus }),
+                    ...(rawFreshStatus === freshStatus ? {} : { rawFreshStatus }),
                     ...(cancellationReason === undefined ? {} : { cancellationReason })
                 }
             });
@@ -637,6 +800,32 @@ export async function processSubscriptionUpdated({
 
     // Clear entitlement cache to reflect status change immediately
     clearEntitlementCache(localSubscription.customerId);
+
+    // HOS-114 T-007: complete the deferred reactivation supersession, but
+    // STRICTLY on the activation transition (PENDING_PROVIDER -> ACTIVE).
+    // This function handles every status transition (pause/cancel/past-due/
+    // resume) — gating tightly here prevents the swap from ever firing on an
+    // unrelated transition. No-ops immediately if the just-activated
+    // subscription carries no `supersedesSubscriptionId` (a plain
+    // /start-paid activation, not a reactivation). Runs AFTER
+    // clearEntitlementCache above — the entitlement cache for
+    // `localSubscription.customerId` is already cleared exactly once by that
+    // call; the superseded subscription belongs to the SAME customer for
+    // both reactivation flows, so no second clear is needed here (see
+    // completeReactivationSupersession JSDoc / spec AC-4).
+    if (
+        previousStatus === SubscriptionStatusEnum.PENDING_PROVIDER &&
+        mappedStatus === SubscriptionStatusEnum.ACTIVE
+    ) {
+        await completeReactivationSupersession({
+            billing,
+            paymentAdapter,
+            db,
+            localSubscription,
+            providerEventId,
+            source
+        });
+    }
 
     // SPEC-239 T-050: reconcile any commerce listing linked to this subscription.
     // No-op for accommodation subs (no commerce_listing_subscriptions row).

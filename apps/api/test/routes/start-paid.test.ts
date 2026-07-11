@@ -133,6 +133,39 @@ vi.mock('../../src/services/subscription-checkout-promo.service', () => ({
     )
 }));
 
+// HOS-122: `initiatePaidMonthlySubscription` / `initiatePaidAnnualSubscription`
+// are wrapped in spies that call through to the REAL implementation by
+// default, so every existing test in this file keeps driving through actual
+// production branch logic unchanged. The new `checkout_completed` analytics
+// tests override ONE call with `mockResolvedValueOnce` for the `comp` and
+// signup-`discount` outcomes only: fully exercising those two branches would
+// require mocking several extra `@repo/db` query shapes this file does not
+// carry (`select().from(billingPlans)...`, `withTransaction`, a live MP
+// preapproval mutation, `resolveFullPlanPriceCentavos`) that are already
+// covered by dedicated service-level tests
+// (`test/services/subscription-checkout-promo-branches.test.ts`). Since the
+// route's `checkout_completed` capture only depends on the SHAPE of
+// `result` (`appliedEffect` / `promoCodeIgnored` / `localSubscriptionId`),
+// overriding the service call at this boundary is the minimal-risk way to
+// unit test it without re-verifying the decision engine itself.
+const { mockInitiatePaidAnnualSubscription, mockInitiatePaidMonthlySubscription } = vi.hoisted(
+    () => ({
+        mockInitiatePaidAnnualSubscription: vi.fn(),
+        mockInitiatePaidMonthlySubscription: vi.fn()
+    })
+);
+vi.mock('../../src/services/subscription-checkout.service', async (importOriginal) => {
+    const actual =
+        await importOriginal<typeof import('../../src/services/subscription-checkout.service')>();
+    mockInitiatePaidAnnualSubscription.mockImplementation(actual.initiatePaidAnnualSubscription);
+    mockInitiatePaidMonthlySubscription.mockImplementation(actual.initiatePaidMonthlySubscription);
+    return {
+        ...actual,
+        initiatePaidAnnualSubscription: mockInitiatePaidAnnualSubscription,
+        initiatePaidMonthlySubscription: mockInitiatePaidMonthlySubscription
+    };
+});
+
 // `@repo/db` is mocked at module level so `initiatePaidAnnualSubscription`'s
 // direct Drizzle insert into billing_subscriptions does not require a live
 // Postgres. The default behaviour is a no-op insert; individual tests can
@@ -167,11 +200,14 @@ vi.mock('@repo/db', () => {
 // ---------------------------------------------------------------------------
 
 import { QZPayProviderSyncError } from '@qazuor/qzpay-core';
-import { ServiceErrorCode } from '@repo/schemas';
+import { PromoEffectKindEnum, ServiceErrorCode, ValueKindEnum } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { captureBillingError } from '../../src/lib/sentry';
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import { _internals, handleStartPaidSubscription } from '../../src/routes/billing/start-paid';
+// Mocked in the vi.mock block above -- imported here so HOS-122 tests can
+// override its return value per-test with `vi.mocked(...).mockResolvedValueOnce(...)`.
+import { resolveCheckoutPromoPlan } from '../../src/services/subscription-checkout-promo.service';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -583,7 +619,15 @@ describe('handleStartPaidSubscription — checkout_started analytics', () => {
             billingInterval: 'monthly'
         });
 
-        expect(mockPostHogCapture).toHaveBeenCalledTimes(1);
+        // HOS-122: `checkout_completed` is now ALSO captured after `result`
+        // resolves, so the client's total call count is 2 (checkout_started +
+        // checkout_completed) for any successful checkout, not 1. Filter to
+        // `checkout_started` specifically to keep this assertion about the
+        // event this describe block actually covers.
+        const checkoutStartedCalls = mockPostHogCapture.mock.calls.filter(
+            ([arg]) => (arg as { event?: string }).event === 'checkout_started'
+        );
+        expect(checkoutStartedCalls).toHaveLength(1);
         expect(mockPostHogCapture).toHaveBeenCalledWith({
             distinctId: 'user-1',
             event: 'checkout_started',
@@ -1311,5 +1355,482 @@ describe('handleStartPaidSubscription — no server-side retry (SPEC-149 descope
         }).catch(() => undefined);
 
         expect(billing.checkout.create).toHaveBeenCalledTimes(1);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-115 T-012 — checkout_started analytics for the annual trial branch
+// (AC-10 / OQ-2: "reuse the existing event" — no new event/property).
+// ---------------------------------------------------------------------------
+
+describe('handleStartPaidSubscription — checkout_started analytics on the ANNUAL trial branch (HOS-115 T-012)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    /**
+     * A trial-declaring annual plan + a fully-wired billing mock so the
+     * request drives ALL THE WAY through `initiatePaidAnnualSubscription`'s
+     * TRIAL branch (COMP check -> plan-level hasTrial/trialDays -> zero-prior
+     * -subs eligibility -> `TrialService.startTrial()`), exactly like the
+     * route-level e2e coverage in
+     * `test/e2e/flows/billing/annual-trial-checkout.test.ts`, but here fully
+     * mocked so we can inspect the `checkout_started` PostHog capture in
+     * isolation.
+     */
+    function createAnnualTrialBillingMock() {
+        const trialPlan = {
+            id: PLAN_ID,
+            name: 'owner-premium',
+            prices: [{ ...ANNUAL_PRICE, unitAmount: 5_000_000, currency: 'ARS' }],
+            // resolvePlanTrialConfig() reads these two fields off plan.metadata.
+            metadata: { hasTrial: true, trialDays: 14 }
+        } as unknown as ReturnType<typeof createPlan>;
+
+        const trialSubscription = {
+            id: 'trial-sub-annual-1',
+            status: 'trialing',
+            trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+        };
+
+        return {
+            plans: { list: vi.fn().mockResolvedValue({ data: [trialPlan] }) },
+            customers: { get: vi.fn().mockResolvedValue(ANNUAL_CUSTOMER_FIXTURE) },
+            checkout: { create: vi.fn() }, // must NOT be called on the trial branch
+            subscriptions: {
+                // No prior subscriptions -> trial-eligible.
+                getByCustomerId: vi.fn().mockResolvedValue([]),
+                create: vi.fn().mockResolvedValue(trialSubscription),
+                get: vi.fn().mockResolvedValue(trialSubscription)
+            }
+        };
+    }
+
+    it('AC-10: a trial-eligible ANNUAL checkout resolves appliedEffect="trial", but checkout_started (captured BEFORE the trial/paid decision) does NOT currently carry appliedEffect', async () => {
+        // ARRANGE — a trial-eligible customer on a trial-declaring plan,
+        // selecting the ANNUAL toggle. This must resolve to the TRIAL branch
+        // (verified independently below), matching AC-1/AC-10's premise.
+        const billing = createAnnualTrialBillingMock();
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+
+        // ACT
+        const result = await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'annual'
+        });
+
+        // SANITY — the checkout really did resolve to the trial branch (no MP
+        // checkout object created), establishing the premise AC-10 is about.
+        expect(result.appliedEffect).toBe('trial');
+        expect(billing.checkout.create).not.toHaveBeenCalled();
+
+        // ASSERT — checkout_started WAS captured, with billingInterval='annual'
+        // (the part of AC-10 the current implementation satisfies).
+        // HOS-122: `checkout_completed` is now ALSO captured after `result`
+        // resolves (this trial checkout resolves successfully), so the total
+        // call count is 2. Filter to `checkout_started` specifically — this
+        // describe block only pins that event's (unchanged) shape.
+        const checkoutStartedCalls = mockPostHogCapture.mock.calls.filter(
+            ([arg]) => (arg as { event?: string }).event === 'checkout_started'
+        );
+        expect(checkoutStartedCalls).toHaveLength(1);
+        const call = mockPostHogCapture.mock.calls.find(
+            ([arg]) => (arg as { event?: string }).event === 'checkout_started'
+        );
+        expect(call).toBeDefined();
+        const properties = (call?.[0] as { properties: Record<string, unknown> }).properties;
+        expect(properties.billingInterval).toBe('annual');
+
+        // FINDING (HOS-115 gap vs spec.md AC-10 / OQ-2): `checkout_started` is
+        // captured in start-paid.ts BEFORE `initiatePaidAnnualSubscription` is
+        // invoked (the capture block runs first, then `result = await
+        // initiatePaidAnnualSubscription(...)` — see start-paid.ts ~L361-424).
+        // At capture time the trial-vs-paid decision has not been made yet, so
+        // `appliedEffect` is NEVER included in the event payload for EITHER
+        // interval, not just annual. AC-10 requires
+        // `billingInterval='annual' AND appliedEffect='trial'` on the SAME
+        // captured event -- that is not what the current code does.
+        //
+        // This assertion pins the ACTUAL (gap) behavior rather than the
+        // spec'd one, per this task's test-only scope (no source changes):
+        // `appliedEffect` is absent from the captured properties even though
+        // the checkout itself resolved to a trial.
+        expect(properties).not.toHaveProperty('appliedEffect');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-122 — checkout_completed outcome analytics (AC-1..AC-7, D-10)
+// ---------------------------------------------------------------------------
+
+describe('handleStartPaidSubscription — checkout_completed outcome analytics (HOS-122)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    /**
+     * Finds a specific PostHog capture call by event name among ALL calls
+     * made during a test (both `checkout_started` and `checkout_completed`
+     * are captured on every successful checkout since HOS-122).
+     */
+    function findCapturedEvent(eventName: string) {
+        const call = mockPostHogCapture.mock.calls.find(
+            ([arg]) => (arg as { event?: string }).event === eventName
+        );
+        return call?.[0] as
+            | { distinctId: string; event: string; properties: Record<string, unknown> }
+            | undefined;
+    }
+
+    // Mirrors T-012's `createAnnualTrialBillingMock` (that helper is local to
+    // its own describe block, so it is not reachable from here) — same shape,
+    // reused for AC-1 / AC-4 / D-10 / AC-6's trial-flavoured cases.
+    function createAnnualTrialBillingMock() {
+        const trialPlan = {
+            id: PLAN_ID,
+            name: 'owner-premium',
+            prices: [{ ...ANNUAL_PRICE, unitAmount: 5_000_000, currency: 'ARS' }],
+            metadata: { hasTrial: true, trialDays: 14 }
+        } as unknown as ReturnType<typeof createPlan>;
+
+        const trialSubscription = {
+            id: 'trial-sub-annual-hos122-1',
+            status: 'trialing',
+            trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+        };
+
+        return {
+            plans: { list: vi.fn().mockResolvedValue({ data: [trialPlan] }) },
+            customers: { get: vi.fn().mockResolvedValue(ANNUAL_CUSTOMER_FIXTURE) },
+            checkout: { create: vi.fn() }, // must NOT be called on the trial branch
+            subscriptions: {
+                getByCustomerId: vi.fn().mockResolvedValue([]),
+                create: vi.fn().mockResolvedValue(trialSubscription),
+                get: vi.fn().mockResolvedValue(trialSubscription)
+            }
+        };
+    }
+
+    // Monthly mirror of the helper above (AC-3). The monthly trial branch
+    // never touches `billing.checkout`, so that stub is omitted.
+    function createMonthlyTrialBillingMock() {
+        const trialPlan = {
+            id: PLAN_ID,
+            name: 'owner-premium',
+            prices: [{ ...MONTHLY_PRICE, unitAmount: 500_000, currency: 'ARS' }],
+            metadata: { hasTrial: true, trialDays: 14 }
+        } as unknown as ReturnType<typeof createPlan>;
+
+        const trialSubscription = {
+            id: 'trial-sub-monthly-hos122-1',
+            status: 'trialing',
+            trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+        };
+
+        return {
+            plans: { list: vi.fn().mockResolvedValue({ data: [trialPlan] }) },
+            customers: { get: vi.fn().mockResolvedValue(ANNUAL_CUSTOMER_FIXTURE) },
+            subscriptions: {
+                getByCustomerId: vi.fn().mockResolvedValue([]),
+                create: vi.fn().mockResolvedValue(trialSubscription),
+                get: vi.fn().mockResolvedValue(trialSubscription)
+            }
+        };
+    }
+
+    it('AC-1: a trial-eligible ANNUAL checkout emits checkout_completed with billingInterval="annual" and outcome="trial"', async () => {
+        // ARRANGE
+        const billing = createAnnualTrialBillingMock();
+        mockBilling(billing);
+
+        // ACT
+        const ctx = createMockContext();
+        const result = await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'annual'
+        });
+
+        // ASSERT
+        expect(result.appliedEffect).toBe('trial');
+        const completed = findCapturedEvent('checkout_completed');
+        expect(completed).toBeDefined();
+        expect(completed?.properties.billingInterval).toBe('annual');
+        expect(completed?.properties.outcome).toBe('trial');
+    });
+
+    it('AC-2: a plain paid ANNUAL checkout (not trial-eligible, no promo) emits checkout_completed with outcome="paid", never absent', async () => {
+        // ARRANGE — default annual mock: no trial metadata on the plan, no
+        // promo code -> falls straight through to the paid branch.
+        const billing = createAnnualBillingMock();
+        mockBilling(billing);
+
+        // ACT
+        const ctx = createMockContext();
+        const result = await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'annual'
+        });
+
+        // ASSERT
+        expect(result.appliedEffect).toBeUndefined();
+        const completed = findCapturedEvent('checkout_completed');
+        expect(completed).toBeDefined();
+        expect(completed?.properties.billingInterval).toBe('annual');
+        expect(completed?.properties).toHaveProperty('outcome');
+        expect(completed?.properties.outcome).toBe('paid');
+    });
+
+    it('AC-3: a plain paid MONTHLY checkout emits checkout_completed with billingInterval="monthly" and outcome="paid" (mirrors AC-2)', async () => {
+        // ARRANGE
+        const billing = createBillingMock();
+        mockBilling(billing);
+
+        // ACT
+        const ctx = createMockContext();
+        const result = await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'monthly'
+        });
+
+        // ASSERT
+        expect(result.appliedEffect).toBeUndefined();
+        const completed = findCapturedEvent('checkout_completed');
+        expect(completed).toBeDefined();
+        expect(completed?.properties.billingInterval).toBe('monthly');
+        expect(completed?.properties.outcome).toBe('paid');
+    });
+
+    it('AC-3: a trial-eligible MONTHLY checkout emits checkout_completed with billingInterval="monthly" and outcome="trial" (mirrors AC-1)', async () => {
+        // ARRANGE
+        const billing = createMonthlyTrialBillingMock();
+        mockBilling(billing);
+
+        // ACT
+        const ctx = createMockContext();
+        const result = await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'monthly'
+        });
+
+        // ASSERT
+        expect(result.appliedEffect).toBe('trial');
+        const completed = findCapturedEvent('checkout_completed');
+        expect(completed).toBeDefined();
+        expect(completed?.properties.billingInterval).toBe('monthly');
+        expect(completed?.properties.outcome).toBe('trial');
+    });
+
+    it('AC-4: a comp promo checkout emits checkout_completed with outcome="comp"', async () => {
+        // ARRANGE — the comp branch requires DB query shapes
+        // (`select().from(billingPlans)`, `withTransaction`) this file's
+        // `@repo/db` mock does not carry, so the SERVICE call itself is
+        // overridden for this one call (see the vi.mock comment above); the
+        // billing mock still backs the route's OWN pre-checks (plan lookup,
+        // existing-subscriptions guard) that run before the service call.
+        const billing = createAnnualBillingMock();
+        mockBilling(billing);
+        mockInitiatePaidAnnualSubscription.mockResolvedValueOnce({
+            checkoutUrl: 'https://hospeda.test/es/suscriptores/checkout/success/',
+            localSubscriptionId: 'comp-sub-hos122-1',
+            expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+            appliedEffect: 'comp'
+        });
+
+        // ACT
+        const ctx = createMockContext();
+        const result = await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'annual',
+            promoCode: 'FREEFOREVER'
+        });
+
+        // ASSERT
+        expect(result.appliedEffect).toBe('comp');
+        const completed = findCapturedEvent('checkout_completed');
+        expect(completed).toBeDefined();
+        expect(completed?.properties.outcome).toBe('comp');
+        expect(completed?.properties.localSubscriptionId).toBe('comp-sub-hos122-1');
+    });
+
+    it('AC-4: a signup-discount checkout emits checkout_completed with outcome="discount"', async () => {
+        // ARRANGE — same rationale as the comp case above: the discount
+        // branch mutates a live MP preapproval and reads the full plan price
+        // from the DB, both outside this file's mock surface, so the service
+        // call is overridden for this one call.
+        const billing = createBillingMock();
+        mockBilling(billing);
+        mockInitiatePaidMonthlySubscription.mockResolvedValueOnce({
+            checkoutUrl: 'https://mp.test/checkout/discounted',
+            localSubscriptionId: 'discount-sub-hos122-1',
+            expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+            appliedEffect: 'discount'
+        });
+
+        // ACT
+        const ctx = createMockContext();
+        const result = await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'monthly',
+            promoCode: 'SAVE10'
+        });
+
+        // ASSERT
+        expect(result.appliedEffect).toBe('discount');
+        const completed = findCapturedEvent('checkout_completed');
+        expect(completed).toBeDefined();
+        expect(completed?.properties.outcome).toBe('discount');
+    });
+
+    it('AC-4: a trial checkout that discards a discount promo emits outcome="trial" with promoCodeIgnored=true', async () => {
+        // ARRANGE — full integration through the REAL trial branch: a
+        // trial-eligible annual checkout that ALSO supplies a `discount`
+        // promo code. Per the production trial branch (the trial wins over a
+        // discount on a not-yet-charged subscription — see
+        // subscription-checkout.service.ts's TRIAL branch comment), the code
+        // is discarded and `promoCodeIgnored: true` is returned.
+        const billing = createAnnualTrialBillingMock();
+        mockBilling(billing);
+        vi.mocked(resolveCheckoutPromoPlan).mockResolvedValueOnce({
+            kind: 'discount',
+            promoCodeId: 'promo-hos122-1',
+            code: 'SAVE10',
+            effect: {
+                kind: PromoEffectKindEnum.DISCOUNT,
+                valueKind: ValueKindEnum.PERCENTAGE,
+                value: 10,
+                durationCycles: null
+            }
+        });
+
+        // ACT
+        const ctx = createMockContext();
+        const result = await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'annual',
+            promoCode: 'SAVE10'
+        });
+
+        // ASSERT
+        expect(result.appliedEffect).toBe('trial');
+        expect(result.promoCodeIgnored).toBe(true);
+        const completed = findCapturedEvent('checkout_completed');
+        expect(completed).toBeDefined();
+        expect(completed?.properties.outcome).toBe('trial');
+        expect(completed?.properties.promoCodeIgnored).toBe(true);
+    });
+
+    it('AC-5: checkout_started stays without appliedEffect/outcome once checkout_completed also fires', async () => {
+        // ARRANGE — regression guard, complementing the pinned T-012 test:
+        // makes the AC-5 invariant explicit inside the HOS-122 describe block
+        // itself (adding checkout_completed must never leak appliedEffect /
+        // outcome onto checkout_started).
+        const billing = createAnnualBillingMock();
+        mockBilling(billing);
+
+        // ACT
+        const ctx = createMockContext();
+        await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'annual'
+        });
+
+        // ASSERT
+        const started = findCapturedEvent('checkout_started');
+        expect(started).toBeDefined();
+        expect(started?.properties).not.toHaveProperty('appliedEffect');
+        expect(started?.properties).not.toHaveProperty('outcome');
+    });
+
+    it('AC-6: checkout_completed and checkout_started share distinctId + billingInterval and are joinable via localSubscriptionId', async () => {
+        // ARRANGE
+        const billing = createAnnualBillingMock();
+        mockBilling(billing);
+
+        // ACT
+        const ctx = createMockContext();
+        const result = await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'annual'
+        });
+
+        // ASSERT
+        const started = findCapturedEvent('checkout_started');
+        const completed = findCapturedEvent('checkout_completed');
+        expect(started).toBeDefined();
+        expect(completed).toBeDefined();
+        expect(started?.distinctId).toBe('user-1');
+        expect(completed?.distinctId).toBe('user-1');
+        expect(started?.properties.billingInterval).toBe('annual');
+        expect(completed?.properties.billingInterval).toBe('annual');
+        expect(completed?.properties.localSubscriptionId).toBe(result.localSubscriptionId);
+    });
+
+    it('AC-7: checkout still succeeds and no error propagates when the checkout_completed PostHog capture throws', async () => {
+        // ARRANGE — let checkout_started succeed normally, throw only on the
+        // SECOND capture call (checkout_completed).
+        const billing = createAnnualBillingMock();
+        mockBilling(billing);
+        mockPostHogCapture.mockImplementationOnce(() => undefined); // checkout_started
+        mockPostHogCapture.mockImplementationOnce(() => {
+            throw new Error('posthog down (checkout_completed)');
+        });
+
+        // ACT
+        const ctx = createMockContext();
+        const result = await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'annual'
+        });
+
+        // ASSERT — checkout still completed successfully; the thrown analytics
+        // error never propagated out of the handler.
+        expect(result.checkoutUrl).toBe('https://mp.test/annual-abc');
+        expect(typeof result.localSubscriptionId).toBe('string');
+    });
+
+    it('AC-7: no checkout_completed is emitted when initiatePaidMonthlySubscription throws before `result` resolves', async () => {
+        // ARRANGE — unknown plan slug -> PLAN_NOT_FOUND is thrown INSIDE
+        // initiatePaidMonthlySubscription, after checkout_started already
+        // fired at the route level.
+        mockBilling(createBillingMock({ plans: [] }));
+
+        // ACT
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'does-not-exist',
+                billingInterval: 'monthly'
+            })
+        ).rejects.toMatchObject({ status: 404 });
+
+        // ASSERT — checkout_started still fires (attempt signal survives the
+        // error)...
+        const started = findCapturedEvent('checkout_started');
+        expect(started).toBeDefined();
+        // ...but checkout_completed must NOT be captured: `result` never
+        // resolved, so the route never reaches the post-decision try block.
+        const completed = findCapturedEvent('checkout_completed');
+        expect(completed).toBeUndefined();
+    });
+
+    it('D-10: $set persists last_checkout_outcome equal to the resolved outcome', async () => {
+        // ARRANGE — trial outcome, so this also cross-checks D-10 against a
+        // non-"paid" value (not just the default fallback).
+        const billing = createAnnualTrialBillingMock();
+        mockBilling(billing);
+
+        // ACT
+        const ctx = createMockContext();
+        await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'annual'
+        });
+
+        // ASSERT
+        const completed = findCapturedEvent('checkout_completed');
+        expect(completed).toBeDefined();
+        expect(completed?.properties.$set).toEqual({ last_checkout_outcome: 'trial' });
     });
 });

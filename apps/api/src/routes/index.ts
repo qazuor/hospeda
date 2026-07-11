@@ -135,6 +135,8 @@ import {
 } from './partners';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
 import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
+// Points of interest: seed-only editorial catalog, public read tier only (HOS-113 NG-5/OQ-6)
+import { publicPointOfInterestRoutes } from './point-of-interest';
 import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
 // ─── Entities with admin-only or specialized tiers ──────────────────────────
 import { adminPostSponsorRoutes } from './postSponsor';
@@ -142,6 +144,7 @@ import { protectedPriceAlertRoutes } from './price-alert';
 import { protectedProfileRoutes } from './profile';
 import { protectedRecommendationsRoutes } from './recommendations';
 import { revalidationRouter } from './revalidation';
+import { robotsRoute } from './robots';
 import { publicSearchRoutes } from './search/public';
 import { protectedSearchHistoryRoutes } from './search-history';
 import {
@@ -221,6 +224,9 @@ const rootRoute = createSimpleRoute({
 export const setupRoutes = (app: AppOpenAPI) => {
     app.route('/', rootRoute);
 
+    // robots.txt — Disallow-all for the API domain (HOS-109 T-011).
+    app.route('/', robotsRoute);
+
     // ─── System routes ────────────────────────────────────────────────────────
     app.route('/health', healthRoutes);
     app.route('/health', dbHealthRoutes);
@@ -275,6 +281,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/amenities', publicAmenityRoutes);
         app.route('/api/v1/public/features', publicFeatureRoutes);
         app.route('/api/v1/public/attractions', publicAttractionRoutes);
+        // Points of interest: seed-only catalog, public read tier only (HOS-113 NG-5)
+        app.route('/api/v1/public/points-of-interest', publicPointOfInterestRoutes);
         app.route('/api/v1/public/event-locations', publicEventLocationRoutes);
         app.route('/api/v1/public/event-organizers', publicEventOrganizerRoutes);
 

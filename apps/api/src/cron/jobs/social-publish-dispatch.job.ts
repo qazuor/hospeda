@@ -43,6 +43,48 @@ import type { CronJobDefinition } from '../types.js';
 const ADVISORY_LOCK_KEY = 43032;
 
 /**
+ * Tracks which optional-credential "not configured yet" conditions have already
+ * been logged this process.
+ *
+ * The dispatch cron runs every ~5 minutes, so an unconfigured social vault (the
+ * expected pre-launch state, since social publishing is not live yet) otherwise
+ * repeats the same benign line on every run and floods the logs (HOS-109 T-009).
+ * The entry is cleared once the credential reappears, so a later removal is
+ * surfaced again.
+ */
+const loggedUnconfiguredCredentials = new Set<string>();
+
+/**
+ * Log an optional-credential "not configured yet" condition at most once per
+ * process (until the credential reappears). Emitted at `info`, not `warn`: a
+ * social vault that has not been provisioned yet is an expected operational
+ * state, not a misconfiguration to alert on (HOS-109 T-009).
+ *
+ * @param logger - The cron run logger.
+ * @param key - The credential key whose absence is being reported.
+ * @param message - The message to log the first time.
+ */
+function logUnconfiguredCredentialOnce(
+    logger: { readonly info: (message: string) => void },
+    key: string,
+    message: string
+): void {
+    if (loggedUnconfiguredCredentials.has(key)) {
+        return;
+    }
+    loggedUnconfiguredCredentials.add(key);
+    logger.info(message);
+}
+
+/**
+ * Reset the one-time unconfigured-credential log dedupe. Test-only — not part of
+ * the job's runtime contract.
+ */
+export function __resetUnconfiguredCredentialLogState(): void {
+    loggedUnconfiguredCredentials.clear();
+}
+
+/**
  * Discriminated union returned by the withTransaction callback so the outer
  * handler can distinguish lock-skip from real execution results.
  */
@@ -105,8 +147,10 @@ export const socialPublishDispatchJob: CronJobDefinition = {
         // log a warning and exit cleanly so other cron jobs are not disrupted.
         const makeApiKeyResult = await getDecryptedSocialCredential({ key: 'make_api_key' });
         if (!makeApiKeyResult.data) {
-            logger.warn(
-                'social-publish-dispatch: no active make_api_key credential in the vault — skipping dispatch'
+            logUnconfiguredCredentialOnce(
+                logger,
+                'make_api_key',
+                'social-publish-dispatch: no active make_api_key credential in the vault — skipping dispatch (logged once until configured)'
             );
             return {
                 success: true,
@@ -117,6 +161,7 @@ export const socialPublishDispatchJob: CronJobDefinition = {
                 details: { skipped: true, reason: 'missing_make_api_key' }
             };
         }
+        loggedUnconfiguredCredentials.delete('make_api_key');
 
         // Snapshot the decrypted value we will pass into service methods.
         // Service-core must NEVER access the vault directly (testability constraint).
@@ -128,8 +173,10 @@ export const socialPublishDispatchJob: CronJobDefinition = {
         // make_api_key guard above).
         const webhookUrlResult = await getDecryptedSocialCredential({ key: 'make_webhook_url' });
         if (!webhookUrlResult.data) {
-            logger.warn(
-                'social-publish-dispatch: no active make_webhook_url credential in the vault — skipping dispatch'
+            logUnconfiguredCredentialOnce(
+                logger,
+                'make_webhook_url',
+                'social-publish-dispatch: no active make_webhook_url credential in the vault — skipping dispatch (logged once until configured)'
             );
             return {
                 success: true,
@@ -140,6 +187,7 @@ export const socialPublishDispatchJob: CronJobDefinition = {
                 details: { skipped: true, reason: 'missing_make_webhook_url' }
             };
         }
+        loggedUnconfiguredCredentials.delete('make_webhook_url');
         const webhookUrl = webhookUrlResult.data.plaintext;
 
         try {

@@ -25,8 +25,7 @@ export const SITEMAP_EXCLUDED_PATHS = [
     '/auth/',
     '/mi-cuenta/',
     '/busqueda/',
-    '/feedback/',
-    '/beta/'
+    '/feedback/'
 ] as const;
 
 /** Inferred union type of all excluded path prefixes. */

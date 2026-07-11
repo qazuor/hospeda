@@ -7,6 +7,8 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -61,97 +63,99 @@ function getInitials(name: string): string {
     description={t('conversations.empty.guestInbox')}
     activeSection="messages"
 >
-    <div class="messages-inbox">
-        <h1 class="messages-inbox__title">{t('conversations.inbox.guestInboxTitle')}</h1>
+    <AccountPageHeader title={t('conversations.inbox.guestInboxTitle')} />
 
-        {conversations.length === 0 ? (
-            <AccountEmptyState
-                title={t('conversations.empty.guestInboxTitle', 'Todavía no tenés consultas')}
-                description={t('conversations.empty.guestInbox')}
-                ctaHref={buildUrl({ locale, path: 'alojamientos' })}
-                ctaLabel={t('conversations.empty.guestInboxCta', 'Explorar alojamientos')}
-            >
-                <ChatIcon slot="icon" size={28} aria-hidden={true} />
-            </AccountEmptyState>
-        ) : (
-            <ul class="messages-inbox__list" role="list">
-                {conversations.map((conv) => {
-                    const threadUrl = buildUrl({ locale, path: `mi-cuenta/consultas/${conv.id}` });
-                    const excerpt = conv.lastMessageExcerpt
-                        ? conv.lastMessageExcerpt.slice(0, 200)
-                        : '';
-                    const isUnread = conv.unreadCount > 0;
-                    return (
-                        <li class="messages-inbox__item">
-                            <a
-                                href={threadUrl}
-                                class:list={[
-                                    'messages-inbox__link',
-                                    { 'messages-inbox__link--unread': isUnread }
-                                ]}
-                            >
-                                <span class="messages-inbox__avatar" aria-hidden="true">
-                                    {getInitials(conv.accommodationName)}
-                                </span>
-                                <div class="messages-inbox__content">
-                                    <span class="messages-inbox__accommodation">
-                                        {conv.accommodationName}
+    <AccountSectionCard>
+        <div class="messages-inbox">
+            {conversations.length === 0 ? (
+                <AccountEmptyState
+                    title={t('conversations.empty.guestInboxTitle', 'Todavía no tenés consultas')}
+                    description={t('conversations.empty.guestInbox')}
+                    ctaHref={buildUrl({ locale, path: 'alojamientos' })}
+                    ctaLabel={t('conversations.empty.guestInboxCta', 'Explorar alojamientos')}
+                >
+                    <ChatIcon slot="icon" size={28} aria-hidden={true} />
+                </AccountEmptyState>
+            ) : (
+                <ul class="messages-inbox__list" role="list">
+                    {conversations.map((conv) => {
+                        const threadUrl = buildUrl({ locale, path: `mi-cuenta/consultas/${conv.id}` });
+                        const excerpt = conv.lastMessageExcerpt
+                            ? conv.lastMessageExcerpt.slice(0, 200)
+                            : '';
+                        const isUnread = conv.unreadCount > 0;
+                        return (
+                            <li class="messages-inbox__item">
+                                <a
+                                    href={threadUrl}
+                                    class:list={[
+                                        'messages-inbox__link',
+                                        { 'messages-inbox__link--unread': isUnread }
+                                    ]}
+                                >
+                                    <span class="messages-inbox__avatar" aria-hidden="true">
+                                        {getInitials(conv.accommodationName)}
                                     </span>
-                                    {excerpt && (
-                                        <p class="messages-inbox__excerpt">{excerpt}</p>
-                                    )}
-                                </div>
-                                <div class="messages-inbox__meta">
-                                    <time
-                                        datetime={conv.lastActivityAt}
-                                        class="messages-inbox__time"
-                                    >
-                                        {formatDate(conv.lastActivityAt)}
-                                    </time>
-                                    {isUnread && (
-                                        <span
-                                            class="messages-inbox__badge"
-                                            aria-label={t(
-                                                'conversations.inbox.unreadCount',
-                                                undefined,
-                                                { count: conv.unreadCount }
-                                            )}
-                                        >
-                                            {conv.unreadCount}
+                                    <div class="messages-inbox__content">
+                                        <span class="messages-inbox__accommodation">
+                                            {conv.accommodationName}
                                         </span>
-                                    )}
-                                </div>
-                            </a>
-                        </li>
-                    );
-                })}
-            </ul>
-        )}
+                                        {excerpt && (
+                                            <p class="messages-inbox__excerpt">{excerpt}</p>
+                                        )}
+                                    </div>
+                                    <div class="messages-inbox__meta">
+                                        <time
+                                            datetime={conv.lastActivityAt}
+                                            class="messages-inbox__time"
+                                        >
+                                            {formatDate(conv.lastActivityAt)}
+                                        </time>
+                                        {isUnread && (
+                                            <span
+                                                class="messages-inbox__badge"
+                                                aria-label={t(
+                                                    'conversations.inbox.unreadCount',
+                                                    undefined,
+                                                    { count: conv.unreadCount }
+                                                )}
+                                            >
+                                                {conv.unreadCount}
+                                            </span>
+                                        )}
+                                    </div>
+                                </a>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
 
-        {pagination && pagination.totalPages > 1 && (
-            <nav class="messages-inbox__pagination" aria-label="Pagination">
-                {page > 1 && (
-                    <a
-                        href={buildUrl({ locale, path: 'mi-cuenta/consultas' }) + `?page=${page - 1}`}
-                        class="messages-inbox__page-link"
-                    >
-                        &larr;
-                    </a>
-                )}
-                <span class="messages-inbox__page-info">
-                    {page} / {pagination.totalPages}
-                </span>
-                {page < pagination.totalPages && (
-                    <a
-                        href={buildUrl({ locale, path: 'mi-cuenta/consultas' }) + `?page=${page + 1}`}
-                        class="messages-inbox__page-link"
-                    >
-                        &rarr;
-                    </a>
-                )}
-            </nav>
-        )}
-    </div>
+            {pagination && pagination.totalPages > 1 && (
+                <nav class="messages-inbox__pagination" aria-label="Pagination">
+                    {page > 1 && (
+                        <a
+                            href={buildUrl({ locale, path: 'mi-cuenta/consultas' }) + `?page=${page - 1}`}
+                            class="messages-inbox__page-link"
+                        >
+                            &larr;
+                        </a>
+                    )}
+                    <span class="messages-inbox__page-info">
+                        {page} / {pagination.totalPages}
+                    </span>
+                    {page < pagination.totalPages && (
+                        <a
+                            href={buildUrl({ locale, path: 'mi-cuenta/consultas' }) + `?page=${page + 1}`}
+                            class="messages-inbox__page-link"
+                        >
+                            &rarr;
+                        </a>
+                    )}
+                </nav>
+            )}
+        </div>
+    </AccountSectionCard>
 </AccountLayout>
 
 <style>
@@ -159,14 +163,6 @@ function getInitials(name: string): string {
         display: flex;
         flex-direction: column;
         gap: var(--space-4, 16px);
-    }
-
-    .messages-inbox__title {
-        font-family: var(--font-heading);
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--core-foreground);
-        margin: 0;
     }
 
     .messages-inbox__empty {

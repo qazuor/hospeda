@@ -54,6 +54,18 @@ const DETAIL_PAGES: ReadonlyArray<{
         file: 'publicaciones/[slug].astro',
         typedComponent: 'ArticleJsonLd',
         extras: ['BreadcrumbJsonLd']
+    },
+    {
+        name: 'gastronomy detail',
+        file: 'gastronomia/[slug].astro',
+        typedComponent: 'RestaurantJsonLd',
+        extras: ['BreadcrumbJsonLd']
+    },
+    {
+        name: 'experience detail',
+        file: 'experiencias/[slug].astro',
+        typedComponent: 'TouristAttractionJsonLd',
+        extras: ['BreadcrumbJsonLd']
     }
 ];
 
@@ -191,6 +203,22 @@ describe('JSON-LD coverage across pages (SPEC-096 REQ-096-37)', () => {
         it('PlaceJsonLd component references schema.org context', () => {
             const componentSrc = readFileSync(
                 resolve(__dirname, '../../src/components/seo/PlaceJsonLd.astro'),
+                'utf8'
+            );
+            expect(componentSrc).toContain("'@context': 'https://schema.org'");
+        });
+
+        it('RestaurantJsonLd component references schema.org context', () => {
+            const componentSrc = readFileSync(
+                resolve(__dirname, '../../src/components/seo/RestaurantJsonLd.astro'),
+                'utf8'
+            );
+            expect(componentSrc).toContain("'@context': 'https://schema.org'");
+        });
+
+        it('TouristAttractionJsonLd component references schema.org context', () => {
+            const componentSrc = readFileSync(
+                resolve(__dirname, '../../src/components/seo/TouristAttractionJsonLd.astro'),
                 'utf8'
             );
             expect(componentSrc).toContain("'@context': 'https://schema.org'");

@@ -60,9 +60,11 @@
         "UNAUTHORIZED": "Voce precisa entrar para fazer isso.",
         "FORBIDDEN": "Voce não tem permissão para fazer isso.",
         "NOT_FOUND": "Não encontramos o que voce procurava.",
+        "GONE": "Este conteúdo já não está disponível.",
         "ALREADY_EXISTS": "Esse recurso já existe.",
         "INTERNAL_ERROR": "Algo deu errado do nosso lado. Tente novamente em instantes.",
         "NETWORK_ERROR": "Não conseguimos conectar ao servidor. Tente novamente.",
+        "TIMEOUT": "A solicitação demorou demais. Tente novamente.",
         "LIMIT_REACHED": "Voce atingiu o limite do seu plano. Atualize para continuar.",
         "BAD_REQUEST": "A solicitação não é válida.",
         "CONFLICT": "O recurso entra em conflito com o estado atual.",
@@ -81,6 +83,10 @@
         "PLAN_DISABLED": "O plano selecionado não está mais disponível. Escolha outro plano para continuar."
     },
     "filters": "Filtros",
+    "filterChips": {
+        "clearLabel": "Limpar ({{count}})",
+        "clearAriaLabel": "Limpar {{count}} filtros"
+    },
     "goHome": "Voltar ao início",
     "in": "em",
     "loadMore": "Carregar mais",

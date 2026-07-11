@@ -1,0 +1,340 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-131",
+    "title": "Reorganize the /mi-cuenta account navigation (web)",
+    "created": "2026-07-11T00:50:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Define the typed navigation config model",
+            "description": "Create the TypeScript types for the single account-navigation config: NavItem (id, i18nKey, href, icon, requiredPermission?, surfaces[], tourTarget?), NavGroup (id, i18nKey label, items[], visibility rule), NavSurface enum (sidebar | avatar | mobile), and DiscoveryDoor (id, i18nKey, kind: 'listing'|'partner', href, options[]). Tests: unit test in apps/web/test that the types compile and a sample config object is assignable; no runtime logic yet.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                {
+                    "title": "NavItem / NavGroup / NavSurface / DiscoveryDoor types",
+                    "completed": false
+                },
+                { "title": "Sample config object typechecks", "completed": false }
+            ],
+            "tags": ["types", "web"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-11T00:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Scaffold the nav config module + per-surface selector",
+            "description": "Create the config module (location per OQ-2 — follow existing apps/web config conventions, e.g. src/config/ or src/lib/navigation/) exporting an empty typed config plus a pure selector getNavForSurface({ surface, permissions }) returning the subset for that surface. Tests: unit tests for the selector shape (empty config → empty result) in apps/web/test.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [
+                { "title": "Config module skeleton at agreed location (OQ-2)", "completed": false },
+                { "title": "getNavForSurface selector (pure)", "completed": false },
+                { "title": "Selector unit tests", "completed": false }
+            ],
+            "tags": ["web", "navigation"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-11T00:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Populate the config with current groups, items and permissions",
+            "description": "Model the full baseline inventory into the new IA: Mi cuenta + Turista (always); Anfitrión (dense, absorbs 'Mis alojamientos' moved out of the old activity group); Aliados cabinet (light B2B, header suppressed when single item). Each item carries its requiredPermission. Reference AccountLayout.astro navGroups + account-roles.ts for the source list. Tests: unit tests asserting group membership (Mis alojamientos ∈ Anfitrión, not Turista) and that every item has a permission or is public.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-004", "T-005"],
+            "subtasks": [
+                { "title": "Cuenta + Turista groups", "completed": false },
+                { "title": "Anfitrión group with Mis alojamientos moved in", "completed": false },
+                {
+                    "title": "Aliados cabinet group (single-item header suppression)",
+                    "completed": false
+                },
+                { "title": "Per-item requiredPermission mapping", "completed": false },
+                { "title": "Membership unit tests", "completed": false }
+            ],
+            "tags": ["web", "navigation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-11T00:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add i18n keys and migrate hardcoded labels",
+            "description": "Add es/en/pt keys for the new groups (Turista, Anfitrión, Aliados/Partners/Parceiros) and doors (Publicá en Hospeda / List on Hospeda / Publique no Hospeda; Sumate como aliado / Become a partner / Seja parceiro; plus the stateful 'Sumá otra alianza'). Migrate the hardcoded TEXTS/AUTH_TEXTS in UserMenu.client.tsx and MobileMenu.client.tsx to t(). Tests: pnpm check-locales passes with no missing keys.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-007", "T-008", "T-009"],
+            "subtasks": [
+                { "title": "Group + door keys in es/en/pt", "completed": false },
+                { "title": "Stateful partner-door variant key", "completed": false },
+                { "title": "Migrate UserMenu hardcoded labels to t()", "completed": false },
+                { "title": "Migrate MobileMenu hardcoded labels to t()", "completed": false },
+                { "title": "check-locales green", "completed": false }
+            ],
+            "tags": ["web", "i18n"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-11T00:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Implement unified permission-based gating",
+            "description": "Add a helper that resolves item/group visibility from PermissionEnum (never role checks). Replace isHostRole/isCommerceOwnerRole usage for menu gating; admin-panel entry gated by access.panelAdmin (covers admin/super_admin/editor). Tests: unit tests — a user with accommodation permission sees Anfitrión; without it does not; access.panelAdmin toggles the admin link.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-006", "T-007", "T-008", "T-009"],
+            "subtasks": [
+                { "title": "Permission-based visibility helper", "completed": false },
+                { "title": "Replace role-based gating for menu", "completed": false },
+                { "title": "admin-panel via access.panelAdmin", "completed": false },
+                { "title": "Gating unit tests", "completed": false }
+            ],
+            "tags": ["web", "auth", "navigation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-11T00:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Implement door-state logic (acquired vs missing verticals)",
+            "description": "⚠ Depends on OQ-3 (per-user signal source — permissions vs entitlements vs active-verticals query). Resolve OQ-3 with owner before starting. Implement a resolver that, given the user, returns which listing verticals and which partner roles are acquired vs available, driving door visibility (door lives while ≥1 option missing) and the stateful partner-door label. Tests: unit tests for door visibility transitions and label switch (0 → 'Sumate como aliado', ≥1 → 'Sumá otra alianza', all → hidden).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                { "title": "Resolve OQ-3 signal source (owner)", "completed": false },
+                { "title": "Acquired-vs-available resolver", "completed": false },
+                { "title": "Door visibility + stateful label rule", "completed": false },
+                { "title": "Door-state unit tests", "completed": false }
+            ],
+            "tags": ["web", "navigation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-11T00:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Refactor the sidebar to consume the config",
+            "description": "Rewrite AccountLayout.astro navGroups to render from the single config via getNavForSurface('sidebar'), applying the new role IA (Anfitrión group with Mis alojamientos, Aliados cabinet, no phantom groups). Preserve active-state matching and data-tour targets. Tests: existing AccountLayout/sidebar tests updated + assertions that host sees Anfitrión, tourist does not.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-005"],
+            "blocks": ["T-011", "T-012"],
+            "subtasks": [
+                { "title": "Render sidebar from config selector", "completed": false },
+                { "title": "New role IA groups", "completed": false },
+                { "title": "Preserve active-state + data-tour", "completed": false },
+                { "title": "Update sidebar tests", "completed": false }
+            ],
+            "tags": ["web", "navigation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-11T00:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Refactor UserMenu to curated quick-access",
+            "description": "Rewrite UserMenu.client.tsx to render the curated subset via getNavForSurface('avatar'): identity + 'Mi cuenta', quick shortcuts (Favoritos + active-role-panel shortcut + Suscripción), session (lang/theme/signout/admin-panel). Remove hardcoded TEXTS. Tests: component tests that non-curated items are absent and the active-role shortcut appears only with the role.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-005"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                { "title": "Render avatar subset from config", "completed": false },
+                { "title": "Active-role-panel shortcut", "completed": false },
+                { "title": "Drop hardcoded TEXTS", "completed": false },
+                { "title": "Component tests", "completed": false }
+            ],
+            "tags": ["web", "navigation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-11T00:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Refactor MobileMenu to single accordion surface",
+            "description": "Rewrite MobileMenu.client.tsx to render the full account taxonomy from getNavForSurface('mobile') as collapsed accordions in the agreed order (site nav → account block → session), replacing the hardcoded 4-link list. Logged-out variant: site nav + auth + lang/theme. Tests: component tests for accordion structure and logged-out variant.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-005"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                { "title": "Render mobile subset as accordions", "completed": false },
+                { "title": "Section order + collapsed default", "completed": false },
+                { "title": "Logged-out variant", "completed": false },
+                { "title": "Component tests", "completed": false }
+            ],
+            "tags": ["web", "navigation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-11T00:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Build the generic discovery hub page component",
+            "description": "Create a reusable internal hub component under /mi-cuenta that lists a door's options, each with a mini-explanation and a button; acquired options render with a check + 'Gestionar' (links to the managing group) instead of the acquire CTA, driven by the T-006 resolver. Tests: component tests for acquired vs available rendering.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                { "title": "Hub layout (explanation + button per option)", "completed": false },
+                { "title": "Acquired → check + Gestionar", "completed": false },
+                { "title": "Component tests", "completed": false }
+            ],
+            "tags": ["web", "navigation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-11T00:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Wire the two doors, routes and stateful text",
+            "description": "⚠ Touches OQ-1 (hub routes/layout — confirm with owner). Instantiate the two hubs ('Publicá en Hospeda' listings, 'Sumate como aliado' partners) on internal /mi-cuenta routes, wire the door entries in sidebar + mobile to them, and apply the stateful partner-door label ('Sumate como aliado' → 'Sumá otra alianza'). Tests: integration test that a door hides once all its options are acquired.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-007"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "Confirm hub routes (OQ-1)", "completed": false },
+                { "title": "Two hub route instances", "completed": false },
+                { "title": "Door entries wired in surfaces", "completed": false },
+                { "title": "Stateful partner-door label", "completed": false },
+                { "title": "Door-hide integration test", "completed": false }
+            ],
+            "tags": ["web", "navigation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-11T00:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Unit tests — config selectors and permission gating",
+            "description": "Cross-cutting unit coverage: getNavForSurface returns correct subset per surface; permission gating shows/hides groups (tourist vs host vs commerce vs staff); no phantom groups. Files: apps/web/test/navigation/*. Run the modified files' existing tests too, not only new ones.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-008", "T-009"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Selector-per-surface tests", "completed": false },
+                { "title": "Permission gating matrix tests", "completed": false },
+                { "title": "Run existing sidebar/menu tests", "completed": false }
+            ],
+            "tags": ["web", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-11T00:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Tests — door state and i18n completeness",
+            "description": "Test door visibility transitions, the stateful partner-door label switch, and hub acquired/available rendering; run pnpm check-locales for full es/en/pt coverage of the new keys. Files: apps/web/test/navigation/doors.test.ts.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Door visibility + label tests", "completed": false },
+                { "title": "Hub acquired/available tests", "completed": false },
+                { "title": "check-locales completeness", "completed": false }
+            ],
+            "tags": ["web", "testing", "i18n"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-11T00:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Close-out — AC verification and notes",
+            "description": "Verify AC-1..AC-10 from the spec against the implementation, run pnpm typecheck + lint + test green, and fill closeout.md. No new code.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-012", "T-013"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Walk AC-1..AC-10", "completed": false },
+                { "title": "Green gate (typecheck/lint/test)", "completed": false },
+                { "title": "Write closeout.md", "completed": false }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-11T00:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 14,
+        "pending": 14,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.6
+    }
+}

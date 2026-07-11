@@ -15,6 +15,7 @@ import type {
     KeepSelections,
     PlanChangeResponse,
     PriceAlertResponse,
+    ReactivateSubscriptionResponse,
     UserBookmark,
     UserCancelSubscriptionResponse,
     UserProtected,
@@ -609,24 +610,47 @@ export const billingApi = {
     },
 
     /**
-     * Reactivate a cancelled or expired subscription.
+     * Reactivate a cancelled or expired subscription onto a paid plan.
      *
-     * @param params - Plan ID to reactivate with
-     * @returns Whether the reactivation succeeded
+     * As of HOS-114, reactivation routes through a real card-collecting
+     * MercadoPago checkout — the response is not a synchronous success but a
+     * `checkoutUrl` the caller MUST redirect the user to. For a MONTHLY plan the
+     * subscription stays `status: 'incomplete'` until the
+     * `subscription_preapproval.created` webhook confirms it; for an ANNUAL plan
+     * (HOS-123) it is a one-time charge and the subscription stays
+     * `status: 'pending_provider'` until the `payment.updated` webhook confirms
+     * it. Note: this wrapper currently has no callers in the web app (dead code
+     * as of HOS-114 investigation notes).
+     *
+     * @param params - Plan ID to reactivate with, and the optional billing
+     *   interval (`'monthly'` by default; `'annual'` selects the one-time
+     *   annual price and the hosted-checkout return shape).
+     * @returns The checkout redirect payload for the new (not-yet-confirmed) subscription
      *
      * @example
      * ```ts
+     * // Monthly (default)
      * const result = await billingApi.reactivateSubscription({ planId: 'plan-uuid' });
+     * // Annual one-time charge
+     * const annual = await billingApi.reactivateSubscription({
+     *     planId: 'plan-uuid',
+     *     billingInterval: 'annual'
+     * });
+     * if (annual.success && annual.data.checkoutUrl) {
+     *     window.location.href = annual.data.checkoutUrl;
+     * }
      * ```
      */
     reactivateSubscription({
-        planId
+        planId,
+        billingInterval
     }: {
         readonly planId: string;
-    }): Promise<ApiResult<{ readonly success: boolean }>> {
+        readonly billingInterval?: 'monthly' | 'annual';
+    }): Promise<ApiResult<ReactivateSubscriptionResponse>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/trial/reactivate-subscription`,
-            body: { planId }
+            body: billingInterval ? { planId, billingInterval } : { planId }
         });
     },
 
@@ -665,7 +689,19 @@ export const billingApi = {
     }): Promise<
         ApiResult<{
             readonly checkoutUrl: string;
-            readonly appliedEffect?: 'comp' | 'discount';
+            // 'trial' (HOS-110): the plan's no-card trial was granted instead of a
+            // paid checkout — no MercadoPago redirect, same as 'comp'. Type-only
+            // widening; PlanPurchaseButton's unconditional redirect already handles
+            // this shape (see subscription-checkout.service.ts CheckoutAppliedEffect).
+            readonly appliedEffect?: 'comp' | 'discount' | 'trial';
+            /**
+             * HOS-110 W1: `true` when a `discount` promo code was supplied
+             * alongside a trial-eligible checkout and was DISCARDED because the
+             * free trial takes priority. Only ever present together with
+             * `appliedEffect: 'trial'` — PlanPurchaseButton uses it to flag the
+             * dropped code to the user via the success-page query param.
+             */
+            readonly promoCodeIgnored?: true;
         }>
     > {
         const body: Record<string, unknown> = { planSlug, billingInterval };
@@ -794,6 +830,14 @@ export const billingApi = {
      * `planSlug` for users whose trial expired and subscription was cancelled.
      * Returns `isOnTrial: true` with `daysRemaining` for active trial users.
      *
+     * `intendedInterval` (HOS-115 §5, nudge delivery path 2) is the billing
+     * interval the customer selected when they started their most recent
+     * trial — `null` when there is no trial, or the trial recorded no
+     * interval. The pricing page uses this to pre-select the monthly/annual
+     * toggle for a logged-in user who navigates there directly (no
+     * `?interval=` query param).
+     *
+     * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
      * @returns Trial status information for the current user.
      *
      * @example
@@ -802,7 +846,7 @@ export const billingApi = {
      * if (result.ok && result.data.isExpired) { ... }
      * ```
      */
-    getTrialStatus(): Promise<
+    getTrialStatus(params?: { readonly cookieHeader?: string }): Promise<
         ApiResult<{
             readonly isOnTrial: boolean;
             readonly isExpired: boolean;
@@ -810,10 +854,12 @@ export const billingApi = {
             readonly startedAt: string | null;
             readonly expiresAt: string | null;
             readonly planSlug: string | null;
+            readonly intendedInterval: 'monthly' | 'annual' | null;
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/billing/trial/status`
+            path: `${PROTECTED}/billing/trial/status`,
+            cookieHeader: params?.cookieHeader
         });
     },
 
@@ -1977,6 +2023,32 @@ export const accommodationEditApi = {
     unpublish({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/accommodations/${id}/unpublish`
+        });
+    },
+
+    /**
+     * Publish an accommodation (DRAFT → ACTIVE), starting the no-card 14-day
+     * trial for first-time publishers.
+     *
+     * Calls the dedicated `/publish` endpoint (HOS-110) instead of the
+     * generic `update()` PATCH — the general update schema strips
+     * `lifecycleState`, so sending it via `update()` is a silent no-op.
+     * Only the owner or a user with ACCOMMODATION_UPDATE_ANY can call this.
+     *
+     * @param params - Accommodation ID to publish
+     * @returns The updated accommodation record, or an `ApiError` with
+     *   `status: 403` and `message: 'subscription_required'` when the owner
+     *   already consumed their one-per-life trial and has no active plan.
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationEditApi.publish({ id: 'acc-uuid' });
+     * if (result.ok) console.log('Accommodation is now live');
+     * ```
+     */
+    publish({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/accommodations/${id}/publish`
         });
     },
 

@@ -205,6 +205,7 @@
         "075-attraction-puerto_deportivo",
         "077-attraction-reserva_natural"
     ],
+    "pointOfInterestIds": ["012-point-of-interest-termas_de_federacion"],
     "faqs": [
         {
             "question": "¿Cómo se llega a Federación desde Buenos Aires y Paraná?",

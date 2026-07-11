@@ -16,8 +16,6 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { OWNER_TRIAL_DAYS } from '@repo/billing';
-import type { DrizzleClient } from '@repo/db';
 import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import { NotificationType, type TrialEventPayload } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
@@ -25,9 +23,13 @@ import {
     BILLING_EVENT_TYPES,
     calculateTrialDaysRemaining,
     checkSubscriptionStatusTransition,
+    DEFAULT_TRIAL_PLAN_SLUG,
     type ReactivateFromTrialInput,
+    type ReactivateFromTrialResult,
     type ReactivateSubscriptionInput,
     type ReactivateSubscriptionResult,
+    resolveIntendedInterval,
+    resolvePlanTrialConfig,
     type StartTrialInput,
     type TrialEndingSubscription,
     type TrialStatus,
@@ -38,9 +40,14 @@ import { and, eq, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
+import { createAnnualSubscription } from './billing/create-annual-subscription.js';
+import { createPaidSubscription } from './billing/paid-subscription-create.js';
+import { resolveReactivationPlan } from './billing/reactivation-plan-guard.js';
+import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
 
 export type {
     ReactivateFromTrialInput,
+    ReactivateFromTrialResult,
     ReactivateSubscriptionInput,
     ReactivateSubscriptionResult,
     StartTrialInput,
@@ -75,6 +82,62 @@ const BLOCK_EXPIRED_TRIALS_LOCK_KEY = 1004;
 const BLOCK_EXPIRED_TRIALS_BATCH_SIZE = 200;
 
 /**
+ * Web path (with locale) to the owner pricing page that renders
+ * `PricingCardsGrid.astro` — the ONLY page with the monthly/annual billing
+ * toggle (HOS-115 §5). `/mi-cuenta/suscripcion` (the account subscription
+ * page previously used here) renders `SubscriptionDashboard` instead, which
+ * has no toggle — a `?interval=` query param appended to that URL would be
+ * silently ignored. Every trial-eligible plan today is an owner plan (see
+ * {@link DEFAULT_TRIAL_PLAN_SLUG}), so the owner pricing page is the correct,
+ * single nudge target for every trial regardless of which plan it started on.
+ */
+const TRIAL_UPGRADE_PATH = '/es/suscriptores/planes/';
+
+/**
+ * Builds the trial→paid conversion nudge URL sent on both trial-lifecycle
+ * notifications that link to the pricing page — `TRIAL_EXPIRED` (HOS-115 §5,
+ * nudge delivery path 1) and `TRIAL_ENDING_REMINDER` (the pre-expiry
+ * reminder, same nudge design). Appends `?interval=<intendedInterval>` when
+ * the trial recorded a valid intent, so the pricing page can pre-select the
+ * same toggle the customer started from instead of defaulting to monthly.
+ * Degrades gracefully — the query param is simply omitted — when
+ * `intendedInterval` is missing or not one of the two known values (e.g. a
+ * trial started via the accommodation-publish auto-start flow, which records
+ * no interval choice at all).
+ *
+ * Single source of truth for this URL for the two ACTIVE notification call
+ * sites: `blockExpiredTrials` below (`TRIAL_EXPIRED`) and
+ * `notification-schedule.job.ts`'s `TRIAL_ENDING_REMINDER` sends. Both call
+ * this same function rather than building the link inline, so the nudge
+ * target/shape never drifts between the two.
+ *
+ * A third sender once existed — `trial-pre-end-notif.job.ts` (SPEC-126 D5)
+ * also sent `TRIAL_ENDING_REMINDER`, duplicating `notification-schedule`'s
+ * send and building its own divergent `/cuenta/planes` link inline instead
+ * of calling this function. It was disabled under HOS-115 as a duplicate-cron
+ * fix and then DELETED under HOS-121, once its two robustness advantages
+ * (skip-tolerant D-3 window + durable `billing_subscription_events` dedup)
+ * were ported into `notification-schedule.job.ts`. Its divergent link is gone;
+ * this function is again literally the only trial-nudge URL pattern in play.
+ *
+ * @param input.siteUrl - `HOSPEDA_SITE_URL` (no trailing slash expected).
+ * @param input.intendedInterval - Raw value read off the trial
+ *   subscription's `metadata.intendedInterval` (unknown/untyped at the
+ *   source — the QZPay SDK does not narrow subscription metadata).
+ * @returns The absolute upgrade URL, with `?interval=` appended only when a
+ *   valid interval was recorded.
+ */
+export function buildTrialUpgradeUrl(input: {
+    readonly siteUrl: string;
+    readonly intendedInterval?: unknown;
+}): string {
+    const { siteUrl, intendedInterval } = input;
+    const base = `${siteUrl}${TRIAL_UPGRADE_PATH}`;
+    const resolved = resolveIntendedInterval(intendedInterval);
+    return resolved ? `${base}?interval=${resolved}` : base;
+}
+
+/**
  * Result of a reconciliation run for a single customer.
  */
 export interface ReconcileResult {
@@ -96,11 +159,40 @@ export class TrialService {
     ) {}
 
     /**
-     * Start a trial for a new user
-     * Creates a trial subscription with appropriate plan (Basico)
+     * Start a trial for a user (HOS-110).
+     *
+     * Creates a trial subscription on the plan identified by
+     * `input.planSlug` (defaults to {@link DEFAULT_TRIAL_PLAN_SLUG},
+     * `'owner-basico'`, when omitted — preserving the original
+     * accommodation-publish behavior, where the accommodation type is an
+     * attribute of the accommodation entity, not the trial plan).
+     *
+     * The trial length is read from the RESOLVED plan's own declared trial
+     * config (`billing_plans.metadata.trialDays` / `.hasTrial`), not a
+     * hardcoded constant — different plans can declare different trial
+     * lengths (e.g. `owner-test-daily`: 1 day vs `owner-basico`: 14 days).
+     * If the resolved plan does not declare a trial (`hasTrial !== true` or
+     * `trialDays <= 0`), this is a no-op that returns `null` — starting a
+     * 0-day "trial" on a no-trial plan would be a bug, not a feature.
+     *
+     * `input.extraTrialDays` (HOS-110 W1) adds on top of the resolved base
+     * length (plan `trialDays`, or `HOSPEDA_TRIAL_DAYS_OVERRIDE` when set) —
+     * sourced from a `trial_extension` promo code applied by a trial-eligible
+     * customer at checkout. The base-length guard above is evaluated BEFORE
+     * the extension is added, so the ops kill-switch
+     * (`HOSPEDA_TRIAL_DAYS_OVERRIDE=0`) still disables every trial regardless
+     * of any extension promo supplied.
+     *
+     * `input.intendedInterval` (HOS-115) is stamped as-is into the created
+     * subscription's `metadata.intendedInterval` — the trial object itself
+     * carries no price/interval, so this is the sole record of which
+     * checkout toggle (monthly/annual) the customer started from, read back
+     * later to nudge the pricing page at conversion.
      *
      * @param input - Trial start parameters
-     * @returns Trial subscription ID or null if billing disabled
+     * @returns Trial subscription ID, or `null` if billing is disabled, the
+     *   resolved plan has no trial, or the customer already has a
+     *   subscription (one trial per customer, for life).
      */
     async startTrial(input: StartTrialInput): Promise<string | null> {
         if (!this.billing) {
@@ -108,32 +200,11 @@ export class TrialService {
             return null;
         }
 
-        const { customerId, accommodationId } = input;
+        const { customerId, accommodationId, extraTrialDays, intendedInterval } = input;
+        const planSlug = input.planSlug ?? DEFAULT_TRIAL_PLAN_SLUG;
 
         try {
-            // All users start on the same base plan with the same trial duration.
-            // The accommodation type (simple cabin vs hotel/complex) is an attribute
-            // of the accommodation entity, not the user or subscription.
-            const planSlug = 'owner-basico';
-            // Testing-only override (HOSPEDA_TRIAL_DAYS_OVERRIDE): when set to a
-            // positive integer, shorten the trial so QA can exercise trial expiry
-            // without waiting the full OWNER_TRIAL_DAYS. Deliberately NOT gated by
-            // environment: NODE_ENV is 'production' on BOTH the prod and staging
-            // deployments, so it cannot distinguish them, and testing must be
-            // possible against production (the MP sandbox on staging is unreliable).
-            // This is an explicit ops knob — it affects EVERY trial started while it
-            // is set, so the operator sets it, runs the test, then UNSETS it. Unset
-            // by default in every environment.
-            const trialDays = env.HOSPEDA_TRIAL_DAYS_OVERRIDE ?? OWNER_TRIAL_DAYS;
-
-            apiLogger.info(
-                {
-                    customerId,
-                    planSlug,
-                    trialDays
-                },
-                'Starting trial for user'
-            );
+            apiLogger.info({ customerId, planSlug }, 'Starting trial for user');
 
             // Get plan by slug
             const plansResult = await this.billing.plans.list();
@@ -149,6 +220,39 @@ export class TrialService {
             if (!plan) {
                 apiLogger.error({ planSlug }, 'Trial plan not found');
                 throw new Error(`Trial plan not found: ${planSlug}`);
+            }
+
+            // Trial config lives on the plan's metadata JSONB (seeded from
+            // `PlanDefinition.hasTrial` / `.trialDays`).
+            const { hasTrial: planHasTrial, trialDays: planTrialDays } = resolvePlanTrialConfig(
+                plan.metadata
+            );
+
+            // Testing-only override (HOSPEDA_TRIAL_DAYS_OVERRIDE): when set to a
+            // positive integer, shorten the trial so QA can exercise trial expiry
+            // without waiting the plan's full trial length. Deliberately NOT gated
+            // by environment: NODE_ENV is 'production' on BOTH the prod and staging
+            // deployments, so it cannot distinguish them, and testing must be
+            // possible against production (the MP sandbox on staging is unreliable).
+            // This is an explicit ops knob — it affects EVERY trial started while it
+            // is set, so the operator sets it, runs the test, then UNSETS it. Unset
+            // by default in every environment. The override only shortens/lengthens
+            // an ALREADY-trial-eligible plan — it never forces a trial onto a plan
+            // that does not declare one (the `planHasTrial` guard below still applies).
+            // HOS-110 W1: a `trial_extension` promo code (SPEC-262) supplied by a
+            // trial-eligible customer at checkout adds its `extraDays` on top of
+            // the (possibly overridden) base length — e.g. base 14 + code's 7 = 21.
+            // Applied AFTER the override so a QA override still shortens the base
+            // length; the extension is additive on top of whatever base applies.
+            const baseTrialDays = env.HOSPEDA_TRIAL_DAYS_OVERRIDE ?? planTrialDays;
+            const trialDays = baseTrialDays + (extraTrialDays ?? 0);
+
+            if (!planHasTrial || baseTrialDays <= 0) {
+                apiLogger.warn(
+                    { customerId, planSlug, planHasTrial, trialDays },
+                    'Plan does not declare a trial — skipping trial creation'
+                );
+                return null;
             }
 
             // Check if user already has a subscription
@@ -189,16 +293,33 @@ export class TrialService {
                     autoStarted: 'true',
                     createdBy: 'trial-service',
                     environment: environmentMarker,
-                    ...(accommodationId ? { triggeredByAccommodationId: accommodationId } : {})
+                    ...(accommodationId ? { triggeredByAccommodationId: accommodationId } : {}),
+                    // HOS-110 W1: audit trail for a trial_extension promo code that
+                    // lengthened this trial beyond the plan's base trialDays.
+                    ...(extraTrialDays ? { extraTrialDaysFromPromo: String(extraTrialDays) } : {}),
+                    // HOS-115 §5: the checkout entry interval the customer originally
+                    // chose (monthly/annual), stamped as-is so the post-trial
+                    // conversion nudge can pre-select the same toggle. Omitted for
+                    // trial-start paths with no interval choice (e.g. the
+                    // accommodation-publish auto-start flow).
+                    ...(intendedInterval ? { intendedInterval } : {})
                 }
             });
+
+            // Clear entitlement cache to reflect the new trial subscription
+            // immediately (HOS-110). Previously only the accommodation-publish
+            // wrapper cleared this cache itself; other callers of `startTrial`
+            // (e.g. the paid-checkout trial branch) would otherwise leak a
+            // stale "no entitlements" cache entry until the TTL expired.
+            clearEntitlementCache(customerId);
 
             apiLogger.info(
                 {
                     customerId,
                     subscriptionId: subscription.id,
                     planSlug,
-                    trialEnd: trialEnd.toISOString()
+                    trialEnd: trialEnd.toISOString(),
+                    ...(extraTrialDays ? { extraTrialDays } : {})
                 },
                 'Trial subscription created successfully'
             );
@@ -234,7 +355,8 @@ export class TrialService {
                 startedAt: null,
                 expiresAt: null,
                 daysRemaining: 0,
-                planSlug: null
+                planSlug: null,
+                intendedInterval: null
             };
         }
 
@@ -251,7 +373,8 @@ export class TrialService {
                     startedAt: null,
                     expiresAt: null,
                     daysRemaining: 0,
-                    planSlug: null
+                    planSlug: null,
+                    intendedInterval: null
                 };
             }
 
@@ -283,12 +406,21 @@ export class TrialService {
                         startedAt: null,
                         expiresAt: null,
                         daysRemaining: 0,
-                        planSlug: null
+                        planSlug: null,
+                        intendedInterval: null
                     };
                 }
 
                 // Historical canceled/ended sub with a trial — fetch plan for its slug.
                 const historicalPlan = await this.billing.plans.get(historicalTrialSub.planId);
+                // HOS-115 §5 nudge delivery path 2: read back the interval this
+                // (most-recent, per the sort above) trial recorded so a user who
+                // navigates directly to the pricing page — no `?interval=` query
+                // param — still gets the toggle pre-selected to their original intent.
+                const historicalIntendedInterval = resolveIntendedInterval(
+                    (historicalTrialSub.metadata as Record<string, unknown> | undefined)
+                        ?.intendedInterval
+                );
                 return {
                     isOnTrial: false,
                     isExpired: true,
@@ -299,7 +431,8 @@ export class TrialService {
                         ? new Date(historicalTrialSub.trialEnd).toISOString()
                         : null,
                     daysRemaining: 0,
-                    planSlug: historicalPlan?.name || null
+                    planSlug: historicalPlan?.name || null,
+                    intendedInterval: historicalIntendedInterval
                 };
             }
 
@@ -317,6 +450,15 @@ export class TrialService {
             const daysRemaining =
                 trialEnd && !isExpired ? calculateTrialDaysRemaining({ trialEnd, now }) : 0;
 
+            // HOS-115 §5 nudge delivery path 2 (see comment above the historical
+            // branch). Read regardless of status — harmless when the sub already
+            // converted to `active`, since the value simply mirrors the trial the
+            // customer started from.
+            const intendedInterval = resolveIntendedInterval(
+                (activeSubscription.metadata as Record<string, unknown> | undefined)
+                    ?.intendedInterval
+            );
+
             return {
                 isOnTrial,
                 isExpired,
@@ -325,7 +467,8 @@ export class TrialService {
                     : null,
                 expiresAt: trialEnd ? trialEnd.toISOString() : null,
                 daysRemaining,
-                planSlug: plan?.name || null
+                planSlug: plan?.name || null,
+                intendedInterval
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -345,7 +488,8 @@ export class TrialService {
                 startedAt: null,
                 expiresAt: null,
                 daysRemaining: 0,
-                planSlug: null
+                planSlug: null,
+                intendedInterval: null
             };
         }
     }
@@ -621,6 +765,13 @@ export class TrialService {
 
                     // Send TRIAL_EXPIRED notification (fire-and-forget)
                     if (this.sendNotification && customer && plan) {
+                        // HOS-115 §5: nudge delivery path 1 — read back the interval the
+                        // customer originally chose (stamped by `startTrial` at grant
+                        // time) and append it to the upgrade link so the pricing page
+                        // can pre-select the same toggle instead of defaulting to monthly.
+                        const intendedInterval = (
+                            subscription.metadata as Record<string, string> | undefined
+                        )?.intendedInterval;
                         this.sendNotification({
                             type: NotificationType.TRIAL_EXPIRED,
                             recipientEmail: customer.email,
@@ -629,7 +780,10 @@ export class TrialService {
                             customerId: customer.id,
                             planName: plan.name,
                             trialEndDate: trialEnd.toISOString(),
-                            upgradeUrl: `${env.HOSPEDA_SITE_URL}/mi-cuenta/suscripcion`
+                            upgradeUrl: buildTrialUpgradeUrl({
+                                siteUrl: env.HOSPEDA_SITE_URL,
+                                intendedInterval
+                            })
                         });
 
                         apiLogger.debug(
@@ -756,162 +910,201 @@ export class TrialService {
     }
 
     /**
-     * Reactivate from trial to paid subscription
-     * Converts an expired or active trial to a paid plan
+     * Reactivate from trial to a real, card-collecting paid subscription
+     * (HOS-114). Supports both the monthly and annual billing intervals
+     * (HOS-123 T-006) via `input.billingInterval`.
      *
-     * @param input - Reactivation parameters
-     * @param tx - Optional transaction client; falls back to getDb() if not provided
-     * @returns New subscription ID
+     * Unlike the pre-HOS-114 behavior, this method does NOT create a
+     * locally-`active` subscription with no MercadoPago preapproval behind
+     * it (the "phantom-active" bug — see HOS-114 spec §2). It instead:
+     *
+     * 1. Resolves + validates `input.planId` (and `input.billingInterval`)
+     *    against the live plan catalog, fail-closed on an unknown plan, a
+     *    free plan, or a plan with no active price for the requested
+     *    interval ({@link resolveReactivationPlan}).
+     * 2. Ensures the billing customer exists.
+     * 3. For `billingInterval: 'monthly'` (the default), creates a real
+     *    `mode: 'paid'` MercadoPago preapproval via the shared
+     *    {@link createPaidSubscription} helper (also used by `/start-paid`).
+     *    For `billingInterval: 'annual'`, creates a one-time hosted-checkout
+     *    charge via `createAnnualSubscription` instead (HOS-123 T-006) — both
+     *    paths fail-closed if the provider returns no checkout URL.
+     * 4. Returns a `checkoutUrl` the caller MUST redirect the user to. The
+     *    created subscription is `incomplete`/`pending_provider`, not
+     *    `active`, until the corresponding webhook confirms it.
+     *
+     * The old trial subscription is deliberately NOT cancelled here — see
+     * the inline comment below (spec §6.4/§6.5, HOS-114 T-007).
+     *
+     * @param input - Reactivation parameters, including the resolved MP
+     *   checkout return/notification URLs.
+     * @returns The new (not-yet-confirmed) subscription id, its checkout URL,
+     *   and its `incomplete`/`pending_provider` status.
+     * @throws SubscriptionCheckoutError With code `PLAN_NOT_FOUND`,
+     *   `INVALID_REACTIVATION_PLAN`, `ANNUAL_REACTIVATION_UNSUPPORTED`,
+     *   `NO_ANNUAL_PRICE`, `CUSTOMER_NOT_FOUND`, or `MISSING_INIT_POINT`.
      */
-    async reactivateFromTrial(
-        input: ReactivateFromTrialInput,
-        tx?: DrizzleClient
-    ): Promise<string> {
+    async reactivateFromTrial(input: ReactivateFromTrialInput): Promise<ReactivateFromTrialResult> {
         if (!this.billing) {
             throw new Error('Billing not enabled');
         }
 
-        const { customerId, planId } = input;
+        const { customerId, planId, urls, billingInterval = 'monthly' } = input;
 
         try {
             apiLogger.info(
-                {
-                    customerId,
-                    planId
-                },
+                { customerId, planId, billingInterval },
                 'Reactivating customer from trial'
             );
 
-            // Get existing subscriptions
+            // HOS-114 §6.1/AC-6: resolve + validate the target plan FIRST,
+            // fail-closed on unknown/free/annual plans before touching the
+            // customer or any existing subscription. HOS-123: threads
+            // `billingInterval` so the guard resolves the annual price
+            // (and its own `NO_ANNUAL_PRICE`/`INVALID_REACTIVATION_PLAN`
+            // validation) instead of always defaulting to monthly.
+            const { plan, priceId, interval } = await resolveReactivationPlan({
+                billing: this.billing,
+                planId,
+                billingInterval
+            });
+
+            // Ensure the billing customer actually exists before creating a
+            // paid preapproval against it (mirrors the identical guard in
+            // `initiatePaidMonthlySubscription`'s trial/comp branches).
+            const customer = await this.billing.customers.get(customerId);
+            if (!customer) {
+                throw new SubscriptionCheckoutError(
+                    'CUSTOMER_NOT_FOUND',
+                    `Customer '${customerId}' not found`
+                );
+            }
+
+            // Identify the trialing subscription(s) this reactivation
+            // supersedes so the webhook can complete the swap once the new
+            // preapproval is confirmed (spec §6.4). A single trialing sub is
+            // the expected case; a comma-joined list defensively covers the
+            // (unexpected) multi-sub case without losing any id.
             const existingSubscriptions =
                 await this.billing.subscriptions.getByCustomerId(customerId);
+            const supersedesSubscriptionId = (existingSubscriptions ?? [])
+                .filter((sub) => sub.status === 'trialing')
+                .map((sub) => sub.id)
+                .join(',');
 
-            // Create new paid subscription FIRST to avoid leaving user without a subscription
-            // if cancellation succeeds but creation fails
-            const now = new Date();
+            if (interval === 'annual') {
+                // HOS-123: annual reactivation routes through the one-time
+                // hosted-checkout charge instead of a recurring preapproval.
+                // The guard already resolved an annual price for this plan,
+                // so `urls` MUST carry the annual (successUrl/cancelUrl) shape
+                // — the caller (the reactivate route) is responsible for
+                // resolving the correct union member from `billingInterval`.
+                if (!('successUrl' in urls)) {
+                    throw new Error(
+                        'Annual reactivation requires successUrl/cancelUrl/notificationUrl checkout URLs'
+                    );
+                }
 
-            const newSubscription = await this.billing.subscriptions.create({
+                const annualPrice = plan.prices.find((price) => price.id === priceId);
+                const chargeAmountCentavos = annualPrice?.unitAmount ?? 0;
+
+                const { localSubscriptionId, checkoutUrl } = await createAnnualSubscription({
+                    billing: this.billing,
+                    customerId,
+                    plan: { id: plan.id, name: plan.name, metadata: plan.metadata },
+                    priceId,
+                    chargeAmountCentavos,
+                    urls: {
+                        successUrl: urls.successUrl,
+                        cancelUrl: urls.cancelUrl,
+                        notificationUrl: urls.notificationUrl
+                    },
+                    metadata: {
+                        convertedFromTrial: 'true',
+                        convertedAt: new Date().toISOString(),
+                        ...(supersedesSubscriptionId ? { supersedesSubscriptionId } : {})
+                    }
+                });
+
+                // Deferred to webhook (HOS-114 T-007, mirrored for the annual
+                // `payment.updated` confirmation path): cancel superseded sub +
+                // audit + clearEntitlementCache on PENDING_PROVIDER->ACTIVE. The
+                // old trialing subscription stays live and keeps granting
+                // entitlements until the provider confirms this new checkout.
+                apiLogger.info(
+                    {
+                        customerId,
+                        newSubscriptionId: localSubscriptionId,
+                        planId: plan.id,
+                        checkoutUrl
+                    },
+                    'Initiated annual paid reactivation from trial — awaiting MercadoPago confirmation'
+                );
+
+                return {
+                    success: true,
+                    subscriptionId: localSubscriptionId,
+                    checkoutUrl,
+                    status: 'pending_provider',
+                    message: 'Redirect to MercadoPago to complete reactivation'
+                };
+            }
+
+            // HOS-123: `urls` is now a discriminated union (monthly preapproval
+            // shape vs annual hosted-checkout shape). `interval === 'monthly'`
+            // here (the guard's default and the only other possible value), so
+            // `urls` MUST carry the monthly shape — narrow explicitly so this
+            // stays type-safe.
+            if (!('paymentMethodReturnUrl' in urls)) {
+                throw new Error(
+                    'Monthly reactivation requires paymentMethodReturnUrl/notificationUrl checkout URLs'
+                );
+            }
+
+            // Real MP preapproval via the shared `mode: 'paid'` helper (also
+            // used by `/start-paid`) — fail-closed (`MISSING_INIT_POINT`) if
+            // the provider returns no checkout URL.
+            const { subscription: newSubscription, checkoutUrl } = await createPaidSubscription({
+                billing: this.billing,
                 customerId,
-                planId,
+                planId: plan.id,
+                priceId,
+                paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
+                notificationUrl: urls.notificationUrl,
                 metadata: {
                     convertedFromTrial: 'true',
-                    convertedAt: now.toISOString()
+                    convertedAt: new Date().toISOString(),
+                    ...(supersedesSubscriptionId ? { supersedesSubscriptionId } : {})
                 }
             });
 
-            // Record reactivation event in audit log (best-effort)
-            try {
-                const db = tx ?? getDb();
-                await db.insert(billingSubscriptionEvents).values({
-                    subscriptionId: newSubscription.id,
-                    previousStatus: SubscriptionStatusEnum.TRIALING,
-                    newStatus: SubscriptionStatusEnum.ACTIVE,
-                    triggerSource: 'trial-reactivation',
-                    metadata: {
-                        convertedFromTrial: true,
-                        customerId,
-                        planId
-                    }
-                });
-            } catch (auditError) {
-                // T-048: capture audit failure to Sentry and insert a compensating event
-                // so reconciliation jobs can detect and recover from the missing audit row.
-                Sentry.captureException(auditError, {
-                    tags: { module: 'trial-service', operation: 'reactivateFromTrial' },
-                    extra: { subscriptionId: newSubscription.id, customerId, planId }
-                });
-
-                apiLogger.error(
-                    { error: auditError, subscriptionId: newSubscription.id },
-                    'Failed to insert reactivation event (non-blocking)'
-                );
-
-                try {
-                    const fallbackDb = tx ?? getDb();
-                    await fallbackDb.insert(billingSubscriptionEvents).values({
-                        subscriptionId: newSubscription.id,
-                        eventType: BILLING_EVENT_TYPES.REACTIVATION_AUDIT_FAILED,
-                        triggerSource: 'trial-reactivation-audit-fallback',
-                        metadata: {
-                            error:
-                                auditError instanceof Error
-                                    ? auditError.message
-                                    : String(auditError),
-                            customerId,
-                            planId,
-                            timestamp: new Date().toISOString()
-                        }
-                    });
-                } catch {
-                    // Truly non-blocking: Sentry already captured the original failure.
-                }
-            }
-
-            // Cancel existing trial subscriptions only after new subscription is created
-            let cancelFailed = false;
-            if (existingSubscriptions && existingSubscriptions.length > 0) {
-                for (const sub of existingSubscriptions) {
-                    if (sub.status === 'trialing') {
-                        try {
-                            await this.billing.subscriptions.cancel(sub.id);
-                            apiLogger.debug(
-                                {
-                                    subscriptionId: sub.id
-                                },
-                                'Cancelled trial subscription'
-                            );
-                        } catch (cancelError) {
-                            // Log but do not throw: the new subscription is already active.
-                            // Set a flag so reconciliation runs below to clean up the duplicate.
-                            cancelFailed = true;
-                            const cancelMsg =
-                                cancelError instanceof Error
-                                    ? cancelError.message
-                                    : String(cancelError);
-                            apiLogger.warn(
-                                { subscriptionId: sub.id, error: cancelMsg },
-                                'Failed to cancel old trial subscription after reactivation'
-                            );
-                        }
-                    }
-                }
-            }
-
-            // If any cancel call failed, attempt reconciliation immediately to avoid leaving
-            // the customer with two active subscriptions in QZPay.
-            if (cancelFailed) {
-                const reconcileResult = await this.reconcileDuplicateSubscriptions({ customerId });
-
-                if (reconcileResult.cancelledCount > 0) {
-                    apiLogger.info(
-                        {
-                            customerId,
-                            cancelledIds: reconcileResult.cancelledIds,
-                            keptId: reconcileResult.keptId
-                        },
-                        'Reconciliation resolved duplicate subscriptions after failed cancel'
-                    );
-                } else {
-                    apiLogger.warn(
-                        { customerId },
-                        'Reconciliation found no duplicates to cancel — manual review may be needed'
-                    );
-                }
-            }
-
-            // Clear entitlement cache to reflect new subscription immediately
-            clearEntitlementCache(customerId);
+            // Deferred to webhook (HOS-114 T-007): cancel superseded sub +
+            // audit + clearEntitlementCache on PENDING_PROVIDER->ACTIVE.
+            // The old trialing subscription (captured above as
+            // `supersedesSubscriptionId`) stays live and keeps granting
+            // entitlements until the `subscription_preapproval.created`
+            // webhook confirms THIS new preapproval `active` (spec §6.4/§6.5)
+            // — cancelling it synchronously here would strip the customer's
+            // entitlements during the MP checkout window, or leave them with
+            // no subscription at all if they abandon checkout.
 
             apiLogger.info(
                 {
                     customerId,
                     newSubscriptionId: newSubscription.id,
-                    planId
+                    planId: plan.id,
+                    checkoutUrl
                 },
-                'Successfully reactivated customer from trial'
+                'Initiated paid reactivation from trial — awaiting MercadoPago confirmation'
             );
 
-            return newSubscription.id;
+            return {
+                success: true,
+                subscriptionId: newSubscription.id,
+                checkoutUrl,
+                status: 'incomplete',
+                message: 'Redirect to MercadoPago to complete reactivation'
+            };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -929,33 +1122,72 @@ export class TrialService {
     }
 
     /**
-     * Reactivate a canceled subscription by creating a new paid subscription.
+     * Reactivate a canceled subscription by creating a real, card-collecting
+     * paid subscription (HOS-114). Supports both the monthly and annual
+     * billing intervals (HOS-123 T-006) via `input.billingInterval`.
      *
      * Rejects if:
      * - Any subscription is active or trialing (use plan-change instead)
      * - No canceled subscription exists (nothing to reactivate)
      *
-     * @param input - Reactivation parameters
-     * @param tx - Optional transaction client; falls back to getDb() if not provided
-     * @returns New subscription ID and previous plan ID
+     * Like {@link reactivateFromTrial}, this method no longer creates a
+     * locally-`active` subscription with no MercadoPago preapproval behind
+     * it. It resolves + validates the target plan and interval, creates a
+     * real `mode: 'paid'` preapproval (monthly) or a one-time
+     * hosted-checkout charge (annual, HOS-123 T-006) via the shared
+     * helpers, and returns a `checkoutUrl` the caller MUST redirect the
+     * user to. See the inline comment near the end of this method for why
+     * the old canceled subscription is not touched synchronously here
+     * (spec §6.4, HOS-114 T-007).
+     *
+     * @param input - Reactivation parameters, including the resolved MP
+     *   checkout return/notification URLs.
+     * @returns The new (not-yet-confirmed) subscription id, the previous
+     *   plan id, the checkout URL, and the `incomplete`/`pending_provider`
+     *   status.
+     * @throws SubscriptionCheckoutError With code `PLAN_NOT_FOUND`,
+     *   `INVALID_REACTIVATION_PLAN`, `ANNUAL_REACTIVATION_UNSUPPORTED`,
+     *   `NO_ANNUAL_PRICE`, `CUSTOMER_NOT_FOUND`, `ACTIVE_SUBSCRIPTION_EXISTS`
+     *   (HOS-114 T-015b — HTTP 409), `NO_CANCELED_SUBSCRIPTION` (HOS-114
+     *   T-015b — HTTP 404), or `MISSING_INIT_POINT`.
      */
     async reactivateSubscription(
-        input: ReactivateSubscriptionInput,
-        tx?: DrizzleClient
+        input: ReactivateSubscriptionInput
     ): Promise<ReactivateSubscriptionResult> {
         if (!this.billing) {
             throw new Error('Billing not enabled');
         }
 
-        const { customerId, planId } = input;
+        const { customerId, planId, urls, billingInterval = 'monthly' } = input;
 
         try {
-            apiLogger.info({ customerId, planId }, 'Reactivating canceled subscription');
+            apiLogger.info(
+                { customerId, planId, billingInterval },
+                'Reactivating canceled subscription'
+            );
+
+            // HOS-114 §6.1/AC-6: resolve + validate the target plan FIRST,
+            // fail-closed on unknown/free/annual plans before touching the
+            // customer or any existing subscription. HOS-123: threads
+            // `billingInterval` so the guard resolves the annual price
+            // (and its own `NO_ANNUAL_PRICE`/`INVALID_REACTIVATION_PLAN`
+            // validation) instead of always defaulting to monthly.
+            const { plan, priceId, interval } = await resolveReactivationPlan({
+                billing: this.billing,
+                planId,
+                billingInterval
+            });
 
             const subscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
 
             if (!subscriptions || subscriptions.length === 0) {
-                throw new Error('No canceled subscription found to reactivate');
+                // HOS-114 T-015b: was a plain `Error` (HTTP 500) — now a
+                // typed business error mapped to HTTP 404 by
+                // `mapSubscriptionCheckoutErrorToHttp`.
+                throw new SubscriptionCheckoutError(
+                    'NO_CANCELED_SUBSCRIPTION',
+                    'No canceled subscription found to reactivate'
+                );
             }
 
             // Reject if any subscription is active or trialing
@@ -965,7 +1197,11 @@ export class TrialService {
 
             if (activeOrTrialing) {
                 const statusLabel = activeOrTrialing.status === 'active' ? 'active' : 'trialing';
-                throw new Error(
+                // HOS-114 T-015b: was a plain `Error` (HTTP 500) — now a
+                // typed business error mapped to HTTP 409 by
+                // `mapSubscriptionCheckoutErrorToHttp`.
+                throw new SubscriptionCheckoutError(
+                    'ACTIVE_SUBSCRIPTION_EXISTS',
                     `Cannot reactivate: ${statusLabel} subscription exists. Use plan-change instead.`
                 );
             }
@@ -974,106 +1210,143 @@ export class TrialService {
             const canceledSub = subscriptions.find((sub) => sub.status === 'canceled');
 
             if (!canceledSub) {
-                throw new Error('No canceled subscription found to reactivate');
+                // HOS-114 T-015b: was a plain `Error` (HTTP 500) — now a
+                // typed business error mapped to HTTP 404 by
+                // `mapSubscriptionCheckoutErrorToHttp`.
+                throw new SubscriptionCheckoutError(
+                    'NO_CANCELED_SUBSCRIPTION',
+                    'No canceled subscription found to reactivate'
+                );
             }
 
             const previousPlanId = canceledSub.planId ?? null;
 
-            // Create new paid subscription FIRST to avoid leaving user without a subscription
-            // if cancellation succeeds but creation fails
-            const newSubscription = await this.billing.subscriptions.create({
+            // Ensure the billing customer actually exists before creating a
+            // paid preapproval against it (mirrors reactivateFromTrial).
+            const customer = await this.billing.customers.get(customerId);
+            if (!customer) {
+                throw new SubscriptionCheckoutError(
+                    'CUSTOMER_NOT_FOUND',
+                    `Customer '${customerId}' not found`
+                );
+            }
+
+            if (interval === 'annual') {
+                // HOS-123: annual reactivation routes through the one-time
+                // hosted-checkout charge instead of a recurring preapproval.
+                // The guard already resolved an annual price for this plan,
+                // so `urls` MUST carry the annual (successUrl/cancelUrl) shape
+                // — the caller (the reactivate route) is responsible for
+                // resolving the correct union member from `billingInterval`.
+                if (!('successUrl' in urls)) {
+                    throw new Error(
+                        'Annual reactivation requires successUrl/cancelUrl/notificationUrl checkout URLs'
+                    );
+                }
+
+                const annualPrice = plan.prices.find((price) => price.id === priceId);
+                const chargeAmountCentavos = annualPrice?.unitAmount ?? 0;
+
+                const { localSubscriptionId, checkoutUrl } = await createAnnualSubscription({
+                    billing: this.billing,
+                    customerId,
+                    plan: { id: plan.id, name: plan.name, metadata: plan.metadata },
+                    priceId,
+                    chargeAmountCentavos,
+                    urls: {
+                        successUrl: urls.successUrl,
+                        cancelUrl: urls.cancelUrl,
+                        notificationUrl: urls.notificationUrl
+                    },
+                    metadata: {
+                        reactivatedFromCanceled: 'true',
+                        reactivatedAt: new Date().toISOString(),
+                        ...(previousPlanId ? { previousPlanId } : {}),
+                        supersedesSubscriptionId: canceledSub.id
+                    }
+                });
+
+                // Deferred to webhook (HOS-114 T-007, mirrored for the annual
+                // `payment.updated` confirmation path): `canceledSub` is already
+                // terminal (grants no entitlements), but the swap/audit stays
+                // deferred to the webhook confirmation so there is exactly ONE
+                // place (spec §6.4) that finalizes a reactivation.
+                apiLogger.info(
+                    {
+                        customerId,
+                        newSubscriptionId: localSubscriptionId,
+                        planId: plan.id,
+                        previousPlanId,
+                        checkoutUrl
+                    },
+                    'Initiated annual paid reactivation of canceled subscription — awaiting MercadoPago confirmation'
+                );
+
+                return {
+                    success: true,
+                    subscriptionId: localSubscriptionId,
+                    previousPlanId,
+                    checkoutUrl,
+                    status: 'pending_provider',
+                    message: 'Redirect to MercadoPago to complete reactivation'
+                };
+            }
+
+            // HOS-123: `urls` is now a discriminated union (monthly preapproval
+            // shape vs annual hosted-checkout shape). `interval === 'monthly'`
+            // here (the guard's default and the only other possible value), so
+            // `urls` MUST carry the monthly shape — narrow explicitly so this
+            // stays type-safe.
+            if (!('paymentMethodReturnUrl' in urls)) {
+                throw new Error(
+                    'Monthly reactivation requires paymentMethodReturnUrl/notificationUrl checkout URLs'
+                );
+            }
+
+            // Real MP preapproval via the shared `mode: 'paid'` helper (also
+            // used by `/start-paid`) — fail-closed (`MISSING_INIT_POINT`) if
+            // the provider returns no checkout URL.
+            const { subscription: newSubscription, checkoutUrl } = await createPaidSubscription({
+                billing: this.billing,
                 customerId,
-                planId,
+                planId: plan.id,
+                priceId,
+                paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
+                notificationUrl: urls.notificationUrl,
                 metadata: {
                     reactivatedFromCanceled: 'true',
                     reactivatedAt: new Date().toISOString(),
-                    previousPlanId: previousPlanId ?? undefined
+                    ...(previousPlanId ? { previousPlanId } : {}),
+                    supersedesSubscriptionId: canceledSub.id
                 }
             });
 
-            // Record reactivation event in audit log (best-effort)
-            try {
-                const db = tx ?? getDb();
-                await db.insert(billingSubscriptionEvents).values({
-                    subscriptionId: newSubscription.id,
-                    previousStatus: SubscriptionStatusEnum.CANCELLED,
-                    newStatus: SubscriptionStatusEnum.ACTIVE,
-                    triggerSource: 'subscription-reactivation',
-                    metadata: {
-                        reactivatedFromCanceled: true,
-                        customerId,
-                        planId,
-                        previousPlanId
-                    }
-                });
-            } catch (auditError) {
-                // T-048: capture audit failure to Sentry and insert a compensating event
-                // so reconciliation jobs can detect and recover from the missing audit row.
-                Sentry.captureException(auditError, {
-                    tags: { module: 'trial-service', operation: 'reactivateSubscription' },
-                    extra: {
-                        subscriptionId: newSubscription.id,
-                        customerId,
-                        planId,
-                        previousPlanId
-                    }
-                });
-
-                apiLogger.error(
-                    { error: auditError, subscriptionId: newSubscription.id },
-                    'Failed to insert reactivation event (non-blocking)'
-                );
-
-                try {
-                    const fallbackDb = tx ?? getDb();
-                    await fallbackDb.insert(billingSubscriptionEvents).values({
-                        subscriptionId: newSubscription.id,
-                        eventType: BILLING_EVENT_TYPES.REACTIVATION_AUDIT_FAILED,
-                        triggerSource: 'subscription-reactivation-audit-fallback',
-                        metadata: {
-                            error:
-                                auditError instanceof Error
-                                    ? auditError.message
-                                    : String(auditError),
-                            customerId,
-                            planId,
-                            previousPlanId,
-                            timestamp: new Date().toISOString()
-                        }
-                    });
-                } catch {
-                    // Truly non-blocking: Sentry already captured the original failure.
-                }
-            }
-
-            // Cancel all existing canceled subscriptions (idempotent cleanup)
-            // Done after creation so user always has an active subscription
-            for (const sub of subscriptions) {
-                if (sub.status === 'canceled') {
-                    try {
-                        await this.billing.subscriptions.cancel(sub.id);
-                    } catch {
-                        // Already canceled, ignore
-                    }
-                }
-            }
-
-            // Clear entitlement cache to reflect new subscription immediately
-            clearEntitlementCache(customerId);
+            // Deferred to webhook (HOS-114 T-007): cancel superseded sub +
+            // audit + clearEntitlementCache on PENDING_PROVIDER->ACTIVE.
+            // `canceledSub` is already terminal (grants no entitlements), but
+            // the swap/audit stays deferred to the webhook confirmation so
+            // there is exactly ONE place (spec §6.4) that finalizes a
+            // reactivation — mirrors `reactivateFromTrial` exactly instead of
+            // special-casing "already-canceled, so it's safe to touch now".
 
             apiLogger.info(
                 {
                     customerId,
                     newSubscriptionId: newSubscription.id,
-                    planId,
-                    previousPlanId
+                    planId: plan.id,
+                    previousPlanId,
+                    checkoutUrl
                 },
-                'Successfully reactivated canceled subscription'
+                'Initiated paid reactivation of canceled subscription — awaiting MercadoPago confirmation'
             );
 
             return {
+                success: true,
                 subscriptionId: newSubscription.id,
-                previousPlanId
+                previousPlanId,
+                checkoutUrl,
+                status: 'incomplete',
+                message: 'Redirect to MercadoPago to complete reactivation'
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -1163,6 +1436,16 @@ export class TrialService {
                             continue;
                         }
 
+                        // HOS-115 §5: read back the interval the customer originally
+                        // chose (stamped by `startTrial` at grant time) so the
+                        // pre-expiry reminder nudge can carry the same
+                        // `?interval=` hint as the TRIAL_EXPIRED notification.
+                        // See `buildTrialUpgradeUrl` for how this degrades
+                        // gracefully when the trial recorded no interval choice.
+                        const intendedInterval = (
+                            subscription.metadata as Record<string, string> | undefined
+                        )?.intendedInterval;
+
                         endingSoon.push({
                             id: subscription.id,
                             customerId: customer.id,
@@ -1171,7 +1454,8 @@ export class TrialService {
                             userId: String(customer.metadata?.userId || ''),
                             planSlug: plan.name,
                             trialEnd,
-                            daysRemaining
+                            daysRemaining,
+                            ...(intendedInterval ? { intendedInterval } : {})
                         });
 
                         apiLogger.debug(

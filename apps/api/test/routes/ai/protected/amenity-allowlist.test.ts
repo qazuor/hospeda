@@ -44,9 +44,9 @@ describe('matchAmenityTerms', () => {
             expect(result).toContain('bbq');
         });
 
-        it('should match "mascotas" → pets-allowed', () => {
+        it('should match "mascotas" → pet_friendly', () => {
             const result = matchAmenityTerms('mascotas', 'es');
-            expect(result).toContain('pets-allowed');
+            expect(result).toContain('pet_friendly');
         });
 
         it('should match "desayuno" → breakfast', () => {
@@ -54,9 +54,12 @@ describe('matchAmenityTerms', () => {
             expect(result).toContain('breakfast');
         });
 
-        it('should match "aire acondicionado" → air-conditioning', () => {
+        it('should match "aire acondicionado" → air_conditioning (HOS-111 T-009: fixed slug)', () => {
+            // Real DB slug is `air_conditioning` (underscore) — see
+            // packages/seed/src/data/amenity/002-*.json. The previous
+            // `air-conditioning` (hyphen) mapping never resolved to a real row.
             const result = matchAmenityTerms('aire acondicionado', 'es');
-            expect(result).toContain('air-conditioning');
+            expect(result).toContain('air_conditioning');
         });
 
         it('should match "cochera" → parking', () => {
@@ -91,14 +94,14 @@ describe('matchAmenityTerms', () => {
             expect(result).toContain('parking');
         });
 
-        it('should match "pet friendly" → pets-allowed', () => {
+        it('should match "pet friendly" → pet_friendly', () => {
             const result = matchAmenityTerms('pet friendly', 'en');
-            expect(result).toContain('pets-allowed');
+            expect(result).toContain('pet_friendly');
         });
 
-        it('should match "pet-friendly" → pets-allowed', () => {
+        it('should match "pet-friendly" → pet_friendly', () => {
             const result = matchAmenityTerms('pet-friendly', 'en');
-            expect(result).toContain('pets-allowed');
+            expect(result).toContain('pet_friendly');
         });
 
         it('should match "breakfast included" → breakfast', () => {
@@ -106,9 +109,9 @@ describe('matchAmenityTerms', () => {
             expect(result).toContain('breakfast');
         });
 
-        it('should match "air conditioning" → air-conditioning', () => {
+        it('should match "air conditioning" → air_conditioning (HOS-111 T-009: fixed slug)', () => {
             const result = matchAmenityTerms('air conditioning', 'en');
-            expect(result).toContain('air-conditioning');
+            expect(result).toContain('air_conditioning');
         });
     });
 
@@ -128,14 +131,14 @@ describe('matchAmenityTerms', () => {
             expect(result).toContain('parking');
         });
 
-        it('should match "animais" → pets-allowed', () => {
+        it('should match "animais" → pet_friendly', () => {
             const result = matchAmenityTerms('animais', 'pt');
-            expect(result).toContain('pets-allowed');
+            expect(result).toContain('pet_friendly');
         });
 
-        it('should match "ar condicionado" → air-conditioning', () => {
+        it('should match "ar condicionado" → air_conditioning (HOS-111 T-009: fixed slug)', () => {
             const result = matchAmenityTerms('ar condicionado', 'pt');
-            expect(result).toContain('air-conditioning');
+            expect(result).toContain('air_conditioning');
         });
     });
 
@@ -480,7 +483,7 @@ describe('matchFeatureTerms', () => {
 
     describe('anti-overlap negatives — physical services MUST NOT appear in FEATURE_ALLOWLIST', () => {
         it('matchFeatureTerms("pet friendly", "en") → empty array', () => {
-            // "pet friendly" maps to "pets-allowed" in AMENITY_ALLOWLIST; it MUST
+            // "pet friendly" maps to "pet_friendly" in AMENITY_ALLOWLIST; it MUST
             // NOT appear in FEATURE_ALLOWLIST — would cause double-mapping.
             const result = matchFeatureTerms('pet friendly', 'en');
             expect(result).toHaveLength(0);
@@ -511,7 +514,7 @@ describe('matchFeatureTerms', () => {
         });
 
         it('matchFeatureTerms("mascotas", "es") → empty array', () => {
-            // "mascotas" maps to "pets-allowed" in AMENITY_ALLOWLIST; not in FEATURE_ALLOWLIST.
+            // "mascotas" maps to "pet_friendly" in AMENITY_ALLOWLIST; not in FEATURE_ALLOWLIST.
             const result = matchFeatureTerms('mascotas', 'es');
             expect(result).toHaveLength(0);
         });
@@ -602,10 +605,13 @@ describe('FEATURE_ALLOWLIST structure', () => {
             'pool',
             'wifi',
             'parking',
-            'pets-allowed',
+            'pet_friendly',
             'breakfast',
-            'air-conditioning',
-            'bbq'
+            'air_conditioning',
+            'bbq',
+            // HOS-111 T-009: smoke_free is a physical-service AMENITY (property-wide
+            // no-smoking policy) — its inverse, smoking_area, is a legitimate FEATURE.
+            'smoke_free'
         ];
         for (const locale of ['es', 'en', 'pt'] as const) {
             const slugs = Object.values(FEATURE_ALLOWLIST[locale] ?? {});
@@ -613,5 +619,117 @@ describe('FEATURE_ALLOWLIST structure', () => {
                 expect(slugs).not.toContain(forbidden);
             }
         }
+    });
+});
+
+// ─── HOS-111 T-009: pets / smoking / A/C / river-beach-front NL coverage ─────
+
+describe('HOS-111 T-009 — pets / smoking / A/C / river-beach-front NL coverage', () => {
+    describe('pets — amenity + feature slugs', () => {
+        it('matchAmenityTerms("mascotas", "es") → pet_friendly (generic amenity)', () => {
+            const result = matchAmenityTerms('mascotas', 'es');
+            expect(result).toContain('pet_friendly');
+        });
+
+        it('matchFeatureTerms("área para mascotas", "es") → pet_friendly_area', () => {
+            const result = matchFeatureTerms('área para mascotas', 'es');
+            expect(result).toContain('pet_friendly_area');
+        });
+
+        it('matchFeatureTerms("apto para mascotas", "es") → pet_suitable', () => {
+            const result = matchFeatureTerms('apto para mascotas', 'es');
+            expect(result).toContain('pet_suitable');
+        });
+
+        it('matchFeatureTerms("pet area", "en") → pet_friendly_area', () => {
+            const result = matchFeatureTerms('pet area', 'en');
+            expect(result).toContain('pet_friendly_area');
+        });
+
+        it('matchFeatureTerms("pet suitable", "en") → pet_suitable', () => {
+            const result = matchFeatureTerms('pet suitable', 'en');
+            expect(result).toContain('pet_suitable');
+        });
+    });
+
+    describe('smoking — INVERSE framing (no literal "smoking" slug)', () => {
+        it('matchAmenityTerms("libre de humo", "es") → smoke_free', () => {
+            const result = matchAmenityTerms('libre de humo', 'es');
+            expect(result).toContain('smoke_free');
+        });
+
+        it('matchFeatureTerms("se puede fumar", "es") → smoking_area', () => {
+            const result = matchFeatureTerms('se puede fumar', 'es');
+            expect(result).toContain('smoking_area');
+        });
+
+        it('matchAmenityTerms("smoke free", "en") → smoke_free', () => {
+            const result = matchAmenityTerms('smoke free', 'en');
+            expect(result).toContain('smoke_free');
+        });
+
+        it('matchFeatureTerms("smoking allowed", "en") → smoking_area', () => {
+            const result = matchFeatureTerms('smoking allowed', 'en');
+            expect(result).toContain('smoking_area');
+        });
+
+        it('matchAmenityTerms("livre de fumaça", "pt") → smoke_free', () => {
+            const result = matchAmenityTerms('livre de fumaça', 'pt');
+            expect(result).toContain('smoke_free');
+        });
+
+        it('matchFeatureTerms("permite fumar", "pt") → smoking_area', () => {
+            const result = matchFeatureTerms('permite fumar', 'pt');
+            expect(result).toContain('smoking_area');
+        });
+
+        it('the two framings never cross-match: "libre de humo" does not yield smoking_area', () => {
+            const result = matchFeatureTerms('libre de humo', 'es');
+            expect(result).not.toContain('smoking_area');
+        });
+
+        it('the two framings never cross-match: "se puede fumar" does not yield smoke_free', () => {
+            const result = matchAmenityTerms('se puede fumar', 'es');
+            expect(result).not.toContain('smoke_free');
+        });
+    });
+
+    describe('air conditioning — real DB slug is air_conditioning (underscore)', () => {
+        it('matchAmenityTerms("aire", "es") → air_conditioning', () => {
+            const result = matchAmenityTerms('aire', 'es');
+            expect(result).toContain('air_conditioning');
+        });
+
+        it('matchAmenityTerms("ac", "en") → air_conditioning', () => {
+            const result = matchAmenityTerms('ac', 'en');
+            expect(result).toContain('air_conditioning');
+        });
+
+        it('never resolves to the stale "air-conditioning" (hyphen) slug', () => {
+            const result = matchAmenityTerms('aire acondicionado', 'es');
+            expect(result).not.toContain('air-conditioning');
+        });
+    });
+
+    describe('river/beach-front — existing features, no POI needed', () => {
+        it('matchFeatureTerms("frente al río", "es") → river_front', () => {
+            const result = matchFeatureTerms('frente al río', 'es');
+            expect(result).toContain('river_front');
+        });
+
+        it('matchFeatureTerms("frente al balneario", "es") → spa_front', () => {
+            const result = matchFeatureTerms('frente al balneario', 'es');
+            expect(result).toContain('spa_front');
+        });
+
+        it('matchFeatureTerms("spa front", "en") → spa_front', () => {
+            const result = matchFeatureTerms('spa front', 'en');
+            expect(result).toContain('spa_front');
+        });
+
+        it('matchFeatureTerms("frente ao balneário", "pt") → spa_front', () => {
+            const result = matchFeatureTerms('frente ao balneário', 'pt');
+            expect(result).toContain('spa_front');
+        });
     });
 });

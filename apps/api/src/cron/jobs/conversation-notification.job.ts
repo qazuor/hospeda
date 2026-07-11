@@ -15,41 +15,89 @@
  * - Authenticated recipient (userId present): `ConversationNewMessage`
  * - Anonymous guest (recipientSide GUEST, no userId): `ConversationNewMessageAnon`
  *
- * Features:
- * - PostgreSQL advisory lock (lock ID 43020) prevents overlapping runs.
- * - Per-schedule Redis idempotency key (`conv:notif:{scheduleId}`, TTL 10 min)
- *   prevents duplicate dispatch when the cron restarts quickly.
- * - Streak >= 3 at dispatch: `advanceSchedule` cancels the schedule.
- * - Email send failure does NOT advance the streak (retry next run).
+ * ## Why email dispatch never shares a transaction with the DB write (HOS-112)
+ *
+ * `sendEmail` makes an HTTP call to Brevo per due schedule. An earlier
+ * implementation ran that call INSIDE a `pg_try_advisory_xact_lock(43020)`
+ * transaction that also persisted every schedule's streak advance in one
+ * batch at the end — so a slow/unresponsive provider held a DB connection
+ * for the whole batch (the same `idle_in_transaction_session_timeout` risk
+ * documented on `destination-weather-fetch.job.ts`), AND, worse, if the
+ * batched persist transaction's `try`-lock lost to a concurrent run, the
+ * ENTIRE batch of streak advances was silently dropped even though every one
+ * of those emails had already been sent — the schedules stayed "due" and
+ * were re-sent (duplicated) once their Redis claim TTL lapsed. This job now
+ * runs two logical phases with the persist step folded into the dispatch
+ * loop, per-schedule:
+ *
+ *  1. **Resolve** (`findDue` + per-schedule reads) — no transaction, no lock.
+ *     Builds an in-memory list of everything needed to send each email.
+ *  2. **Dispatch + persist** — for each due schedule, sequentially:
+ *     - Claim it atomically in Redis: `SET conv:notif:{scheduleId} 1 NX EX
+ *       600`. This is what actually prevents a double-send across
+ *       overlapping runs/ticks — NOT a Postgres advisory lock. A schedule
+ *       already claimed by another run is skipped silently.
+ *     - `await sendEmail(...)` — no transaction open, no lock held.
+ *     - On failure: release the claim (`DEL`) so the schedule retries next
+ *       tick instead of waiting out the full TTL. No advance is persisted.
+ *     - On success: IMMEDIATELY persist that one schedule's streak advance
+ *       in its OWN short `withTransaction` call, right here in the loop —
+ *       before moving on to the next schedule. This is the fix: the advance
+ *       for a sent email can never be dropped as part of a larger batch,
+ *       because there is no larger batch — each send/advance pair is
+ *       atomic-in-effect at the granularity that matters (one schedule).
+ *
+ * ## There is no advisory lock in this job anymore
+ *
+ * Lock `43020` (see `packages/db/docs/advisory-locks.md`) has been REMOVED
+ * from this job — it is reserved but no longer acquired anywhere in this
+ * file. Two things make it redundant here:
+ *
+ * - The atomic Redis claim (`SET NX EX`) already serializes per-schedule
+ *   ownership across overlapping runs — only one run/tick ever claims a
+ *   given schedule, so at most one run ever sends and advances it.
+ * - `advanceSchedule`'s double-advance guard (AC-10, in
+ *   `packages/service-core/.../notification-schedule.service.ts`) is the
+ *   DB-level safety net for the case Redis fails open (outage) and two runs
+ *   somehow race on the same schedule anyway — it re-reads the row and
+ *   refuses to advance (or re-cancel) a schedule that already moved past the
+ *   caller-observed state.
+ *
+ * With those two guards already covering correctness, an advisory lock would
+ * only add serialization overhead without closing any remaining gap — which
+ * is exactly why the spec calls it "largely redundant" (HOS-112 OQ-2).
+ *
+ * ## Residual risk (accepted, no retry queue — NG-2)
+ *
+ * A hard process crash between a successful `sendEmail` and that SAME
+ * schedule's advance-transaction commit orphans exactly that ONE schedule:
+ * its Redis claim is set (so it won't re-send until the ~10-minute TTL
+ * expires) but its `pendingNotificationAt` never moved, so once the claim
+ * expires it becomes "due" again and gets re-sent — one duplicate email.
+ * This is accepted (owner decision, 2026-07-10): a rare duplicate here is
+ * preferable to building a retry queue for a non-critical notification
+ * email. There is no catch-up mechanism for this case — it is a narrow,
+ * logged (`warn`), single-schedule blast radius, not a batch-wide one.
  *
  * @module cron/jobs/conversation-notification
  */
 
-import {
-    AccommodationModel,
-    conversations,
-    getDb,
-    messages,
-    sql,
-    UserModel,
-    withTransaction
-} from '@repo/db';
+import { AccommodationModel, getDb, UserModel, withTransaction } from '@repo/db';
 import { createEmailClient, sendEmail } from '@repo/email';
-import { ConversationNewMessage, ConversationNewMessageAnon } from '@repo/notifications';
-import { NotificationRecipientSideEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { NotificationScheduleService } from '@repo/service-core';
-import { and, desc, eq, isNull } from 'drizzle-orm';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 import { getRedisClient } from '../../utils/redis.js';
 import type { CronJobDefinition } from '../types.js';
+import {
+    type ResolvedNotification,
+    resolveNotification
+} from './conversation-notification.resolve.js';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-
-/** PostgreSQL advisory lock ID reserved for this job. */
-const ADVISORY_LOCK_ID = 43020;
 
 /** Redis key prefix for per-schedule idempotency. */
 const REDIS_IDEMPOTENCY_PREFIX = 'conv:notif:';
@@ -59,9 +107,6 @@ const REDIS_IDEMPOTENCY_TTL_S = 10 * 60;
 
 /** Maximum number of due schedules processed per run. */
 const MAX_BATCH_SIZE = 100;
-
-/** Maximum number of recent message excerpts included in the email body. */
-const MAX_MESSAGE_EXCERPTS = 3;
 
 // ---------------------------------------------------------------------------
 // System actor
@@ -87,60 +132,62 @@ const SYSTEM_ACTOR = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// Idempotency helpers
+// Redis idempotency — atomic claim / release
 // ---------------------------------------------------------------------------
 
 /**
- * Returns true when a Redis key for this scheduleId already exists,
- * meaning the schedule was dispatched within the last 10 minutes.
+ * Atomically claims dispatch ownership of a schedule via `SET key 1 NX EX
+ * ttl`. Returns `true` when the claim was acquired (caller should proceed to
+ * send) or `false` when another run/tick already holds it (caller should
+ * skip silently — not an error).
+ *
+ * Fails OPEN (returns `true`) when Redis is unconfigured or errors, since
+ * idempotency-under-Redis-outage is an accepted degradation (spec §6) rather
+ * than a reason to stop dispatching notifications — but a `warn` log makes
+ * the degraded mode visible in ops instead of silently proceeding.
  */
-async function isAlreadyDispatched(scheduleId: string): Promise<boolean> {
+async function claimDispatch(scheduleId: string): Promise<boolean> {
     try {
         const redis = await getRedisClient();
-        if (redis) {
-            const exists = await redis.exists(`${REDIS_IDEMPOTENCY_PREFIX}${scheduleId}`);
-            return exists === 1;
-        }
-    } catch {
-        // Redis unavailable — fall through, allow dispatch
-    }
-    return false;
-}
-
-/**
- * Marks a schedule as dispatched in Redis with a 10-minute TTL.
- */
-async function markDispatched(scheduleId: string): Promise<void> {
-    try {
-        const redis = await getRedisClient();
-        if (redis) {
-            await redis.set(
-                `${REDIS_IDEMPOTENCY_PREFIX}${scheduleId}`,
-                '1',
-                'EX',
-                REDIS_IDEMPOTENCY_TTL_S
+        if (!redis) {
+            apiLogger.warn(
+                { scheduleId },
+                'Redis unavailable — claiming notification dispatch without idempotency protection'
             );
+            return true;
         }
-    } catch {
-        // Non-critical
+        const result = await redis.set(
+            `${REDIS_IDEMPOTENCY_PREFIX}${scheduleId}`,
+            '1',
+            'EX',
+            REDIS_IDEMPOTENCY_TTL_S,
+            'NX'
+        );
+        return result === 'OK';
+    } catch (error) {
+        apiLogger.warn(
+            { scheduleId, error: error instanceof Error ? error.message : String(error) },
+            'Redis error while claiming notification dispatch — proceeding without idempotency protection'
+        );
+        return true;
     }
 }
 
-// ---------------------------------------------------------------------------
-// Discriminated union for withTransaction return
-// ---------------------------------------------------------------------------
-
-type CronTransactionResult =
-    | { readonly skipped: true }
-    | {
-          readonly skipped: false;
-          readonly success: boolean;
-          readonly message: string;
-          readonly processed: number;
-          readonly errors: number;
-          readonly durationMs: number;
-          readonly details?: Record<string, unknown>;
-      };
+/**
+ * Releases a previously-acquired dispatch claim (best-effort, never throws).
+ * Called when an email send fails so the schedule remains eligible for the
+ * next cron tick instead of being locked out until the TTL expires.
+ */
+async function releaseClaim(scheduleId: string): Promise<void> {
+    try {
+        const redis = await getRedisClient();
+        if (redis) {
+            await redis.del(`${REDIS_IDEMPOTENCY_PREFIX}${scheduleId}`);
+        }
+    } catch {
+        // Best-effort — a stale claim just delays retry until TTL expiry.
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Job definition
@@ -150,7 +197,8 @@ type CronTransactionResult =
  * Conversation notification cron job.
  *
  * Schedule: every 5 minutes
- * Advisory lock: 43020
+ * Advisory lock: none (removed HOS-112 — see module doc-comment; the atomic
+ * Redis claim + `advanceSchedule`'s double-advance guard cover correctness).
  */
 export const conversationNotificationJob: CronJobDefinition = {
     name: 'conversation-notification',
@@ -166,253 +214,165 @@ export const conversationNotificationJob: CronJobDefinition = {
         let errors = 0;
 
         try {
-            const cronResult = await withTransaction<CronTransactionResult>(async (_tx) => {
-                // Acquire advisory lock to prevent overlapping runs
-                const lockResult = await _tx.execute(
-                    sql`SELECT pg_try_advisory_xact_lock(${ADVISORY_LOCK_ID}) AS acquired`
+            logger.info('Starting conversation-notification cron', {
+                dryRun,
+                startedAt: startedAt.toISOString()
+            });
+
+            const schedSvc = new NotificationScheduleService({ logger: apiLogger });
+
+            // ---------------------------------------------------------------
+            // Phase 0 — find due schedules. No transaction, no advisory lock.
+            // ---------------------------------------------------------------
+            const dueResult = await schedSvc.findDue(SYSTEM_ACTOR, {
+                now: new Date(),
+                limit: MAX_BATCH_SIZE
+            });
+
+            if (dueResult.error) {
+                logger.error('Failed to query due notification schedules', {
+                    error: dueResult.error.message
+                });
+                return {
+                    success: false,
+                    message: `Failed to query schedules: ${dueResult.error.message}`,
+                    processed: 0,
+                    errors: 1,
+                    durationMs: Date.now() - startedAt.getTime()
+                };
+            }
+
+            // The batch cap is enforced in SQL (ORDER BY pending_notification_at
+            // ASC LIMIT MAX_BATCH_SIZE) inside findDue, so no JS slice is needed
+            // here — overflow rows drain deterministically on the next run (HOS-133).
+            const dueSchedules = dueResult.data ?? [];
+
+            logger.info('Due notification schedules found', { total: dueSchedules.length });
+
+            if (dryRun) {
+                logger.info('Dry run — skipping email dispatch', {
+                    wouldProcess: dueSchedules.length
+                });
+                return {
+                    success: true,
+                    message: `Dry run: would dispatch ${dueSchedules.length} notification(s)`,
+                    processed: 0,
+                    errors: 0,
+                    durationMs: Date.now() - startedAt.getTime(),
+                    details: { dryRun: true, dueCount: dueSchedules.length }
+                };
+            }
+
+            // Email client — bail early if not configured
+            const resendApiKey = env.HOSPEDA_EMAIL_API_KEY;
+            if (!resendApiKey) {
+                logger.warn(
+                    'HOSPEDA_EMAIL_API_KEY not configured — skipping notification dispatch'
                 );
-                if (!lockResult.rows[0]?.acquired) {
-                    return { skipped: true };
-                }
+                return {
+                    success: true,
+                    message: 'Skipped — email not configured',
+                    processed: 0,
+                    errors: 0,
+                    durationMs: Date.now() - startedAt.getTime()
+                };
+            }
 
-                logger.info('Starting conversation-notification cron', {
-                    dryRun,
-                    startedAt: startedAt.toISOString()
-                });
+            const emailClient = createEmailClient({ apiKey: resendApiKey });
+            const db = getDb();
+            const accommodationModel = new AccommodationModel();
+            const userModel = new UserModel();
 
-                const schedSvc = new NotificationScheduleService({ logger: apiLogger });
+            // ---------------------------------------------------------------
+            // Phase 1 (continued) — resolve each due schedule. No transaction,
+            // no advisory lock — only the read-only queries the original loop
+            // already made.
+            // ---------------------------------------------------------------
+            const resolved: ResolvedNotification[] = [];
 
-                // Find all due notification schedules
-                const dueResult = await schedSvc.findDue(SYSTEM_ACTOR, { now: new Date() });
-
-                if (dueResult.error) {
-                    logger.error('Failed to query due notification schedules', {
-                        error: dueResult.error.message
+            for (const schedule of dueSchedules) {
+                try {
+                    const item = await resolveNotification({
+                        schedule,
+                        db,
+                        accommodationModel,
+                        userModel,
+                        logger
                     });
-                    return {
-                        skipped: false,
-                        success: false,
-                        message: `Failed to query schedules: ${dueResult.error.message}`,
-                        processed: 0,
-                        errors: 1,
-                        durationMs: Date.now() - startedAt.getTime()
-                    };
-                }
-
-                const dueSchedules = (dueResult.data ?? []).slice(0, MAX_BATCH_SIZE);
-
-                logger.info('Due notification schedules found', {
-                    total: dueSchedules.length
-                });
-
-                if (dryRun) {
-                    logger.info('Dry run — skipping email dispatch', {
-                        wouldProcess: dueSchedules.length
+                    if (item) {
+                        resolved.push(item);
+                    } else {
+                        errors++;
+                    }
+                } catch (itemError) {
+                    errors++;
+                    logger.error('Unexpected error resolving schedule', {
+                        scheduleId: schedule.id,
+                        error: itemError instanceof Error ? itemError.message : String(itemError)
                     });
-                    return {
-                        skipped: false,
-                        success: true,
-                        message: `Dry run: would dispatch ${dueSchedules.length} notification(s)`,
-                        processed: 0,
-                        errors: 0,
-                        durationMs: Date.now() - startedAt.getTime(),
-                        details: { dryRun: true, dueCount: dueSchedules.length }
-                    };
                 }
+            }
 
-                // Email client — bail early if not configured
-                const resendApiKey = env.HOSPEDA_EMAIL_API_KEY;
-                if (!resendApiKey) {
-                    logger.warn(
-                        'HOSPEDA_EMAIL_API_KEY not configured — skipping notification dispatch'
-                    );
-                    return {
-                        skipped: false,
-                        success: true,
-                        message: 'Skipped — email not configured',
-                        processed: 0,
-                        errors: 0,
-                        durationMs: Date.now() - startedAt.getTime()
-                    };
-                }
-
-                const emailClient = createEmailClient({ apiKey: resendApiKey });
-                const db = getDb();
-                const accommodationModel = new AccommodationModel();
-                const userModel = new UserModel();
-
-                for (const schedule of dueSchedules) {
-                    const scheduleId = schedule.id;
-
-                    try {
-                        // Redis idempotency guard
-                        if (await isAlreadyDispatched(scheduleId)) {
-                            logger.debug('Schedule already dispatched recently — skipping', {
-                                scheduleId
-                            });
-                            continue;
-                        }
-
-                        // Fetch conversation (skip if soft-deleted)
-                        const convRows = await db
-                            .select()
-                            .from(conversations)
-                            .where(
-                                and(
-                                    eq(conversations.id, schedule.conversationId),
-                                    isNull(conversations.deletedAt)
-                                )
-                            )
-                            .limit(1);
-
-                        const conversation = convRows[0];
-                        if (!conversation) {
-                            logger.warn('Conversation not found or deleted — skipping schedule', {
-                                scheduleId,
-                                conversationId: schedule.conversationId
-                            });
-                            errors++;
-                            continue;
-                        }
-
-                        // Fetch accommodation
-                        const accommodation = await accommodationModel.findById(
-                            conversation.accommodationId
-                        );
-                        if (!accommodation) {
-                            logger.warn('Accommodation not found for conversation', {
-                                scheduleId,
-                                accommodationId: conversation.accommodationId
-                            });
-                            errors++;
-                            continue;
-                        }
-
-                        const accommodationName = accommodation.name ?? accommodation.slug;
-
-                        // Fetch recent message excerpts
-                        const recentMessages = await db
-                            .select({ body: messages.body, createdAt: messages.createdAt })
-                            .from(messages)
-                            .where(eq(messages.conversationId, schedule.conversationId))
-                            .orderBy(desc(messages.createdAt))
-                            .limit(MAX_MESSAGE_EXCERPTS);
-
-                        const messageExcerpts = recentMessages.reverse().map((m) => ({
-                            excerpt: m.body,
-                            timestamp: m.createdAt.toLocaleString('es-AR', {
-                                dateStyle: 'short',
-                                timeStyle: 'short'
-                            })
-                        }));
-
-                        // Determine recipient email and CTA URL
-                        const isGuestRecipient =
-                            schedule.recipientSide === NotificationRecipientSideEnum.GUEST;
-
-                        let recipientEmail: string | null = null;
-                        let guestIdentity: string;
-                        let ctaUrl: string;
-                        let isAnonymous = false;
-
-                        if (isGuestRecipient) {
-                            if (conversation.userId) {
-                                // Authenticated guest
-                                const user = await userModel.findById(conversation.userId);
-                                recipientEmail = user?.email ?? null;
-                                guestIdentity = user?.displayName ?? user?.email ?? 'Invitado';
-                                ctaUrl = `${env.HOSPEDA_SITE_URL}/es/mensajes/${schedule.conversationId}`;
-                            } else if (conversation.anonymousEmail) {
-                                // Anonymous guest
-                                isAnonymous = true;
-                                recipientEmail = conversation.anonymousEmail;
-                                guestIdentity =
-                                    conversation.anonymousName ?? conversation.anonymousEmail;
-                                ctaUrl = `${env.HOSPEDA_SITE_URL}/guest/messages/${schedule.conversationId}`;
-                            } else {
-                                logger.warn('Anonymous guest has no email — skipping schedule', {
-                                    scheduleId
-                                });
-                                errors++;
-                                continue;
-                            }
-                        } else {
-                            // Owner recipient — use accommodation owner
-                            const ownerId = accommodation.ownerId;
-                            if (!ownerId) {
-                                logger.warn('Accommodation has no ownerId — skipping schedule', {
-                                    scheduleId,
-                                    accommodationId: conversation.accommodationId
-                                });
-                                errors++;
-                                continue;
-                            }
-                            const owner = await userModel.findById(ownerId);
-                            recipientEmail = owner?.email ?? null;
-                            guestIdentity =
-                                conversation.anonymousName ??
-                                conversation.anonymousEmail ??
-                                'Huésped';
-                            ctaUrl = `${env.HOSPEDA_SITE_URL}/es/mensajes/${schedule.conversationId}`;
-                        }
-
-                        if (!recipientEmail) {
-                            logger.warn('No recipient email resolved — skipping schedule', {
-                                scheduleId,
-                                conversationId: schedule.conversationId,
-                                recipientSide: schedule.recipientSide
-                            });
-                            errors++;
-                            continue;
-                        }
-
-                        // Build email template
-                        const locale =
-                            (conversation.locale as 'es' | 'en' | 'pt' | undefined) ?? 'es';
-                        const emailTemplate = isAnonymous
-                            ? ConversationNewMessageAnon({
-                                  accommodationName,
-                                  guestIdentity,
-                                  messages: messageExcerpts,
-                                  ctaUrl,
-                                  locale
-                              })
-                            : ConversationNewMessage({
-                                  accommodationName,
-                                  guestIdentity,
-                                  messages: messageExcerpts,
-                                  ctaUrl,
-                                  locale
-                              });
-
-                        // Dispatch email
-                        const emailResult = await sendEmail({
-                            client: emailClient,
-                            to: recipientEmail,
-                            subject: `Nuevo mensaje sobre ${accommodationName}`,
-                            react: emailTemplate
+            // ---------------------------------------------------------------
+            // Phase 2 — dispatch emails and persist each successful send's
+            // streak advance immediately. No batched write phase, no
+            // advisory lock — see module doc-comment for the HOS-112
+            // rationale (the batched phase-3 transaction this replaced could
+            // drop an entire batch of advances on lock contention, causing
+            // duplicate sends after the Redis TTL).
+            // ---------------------------------------------------------------
+            for (const item of resolved) {
+                const { scheduleId } = item;
+                try {
+                    const claimed = await claimDispatch(scheduleId);
+                    if (!claimed) {
+                        logger.debug('Schedule already claimed by another run — skipping', {
+                            scheduleId
                         });
+                        continue;
+                    }
 
-                        if (!emailResult.success) {
-                            logger.error('Failed to send notification email', {
-                                scheduleId,
-                                error: emailResult.error
-                            });
-                            errors++;
-                            // Do NOT advance streak on failure — retry next run
-                            continue;
-                        }
+                    const emailResult = await sendEmail({
+                        client: emailClient,
+                        to: item.recipientEmail,
+                        subject: item.subject,
+                        react: item.emailTemplate
+                    });
 
-                        // Mark dispatched in Redis before advancing streak
-                        await markDispatched(scheduleId);
-
-                        // Advance streak (or cancel schedule if streak >= 3)
-                        const advanceResult = await schedSvc.advanceSchedule(SYSTEM_ACTOR, {
+                    if (!emailResult.success) {
+                        logger.error('Failed to send notification email', {
                             scheduleId,
-                            currentStreakCount: schedule.streakCount
+                            error: emailResult.error
                         });
+                        errors++;
+                        // Do NOT advance streak on failure — release the claim so
+                        // the schedule is retried next tick instead of waiting out
+                        // the full Redis TTL.
+                        await releaseClaim(scheduleId);
+                        continue;
+                    }
 
+                    logger.debug('Notification email dispatched', {
+                        scheduleId,
+                        recipientSide: item.recipientSide,
+                        streak: item.streakCount,
+                        messageId: emailResult.messageId
+                    });
+
+                    // Persist THIS schedule's streak advance right now, in its
+                    // own short transaction — the core HOS-112 fix. No batching
+                    // across schedules, so a crash window here can orphan at
+                    // most this one schedule (see module doc-comment).
+                    try {
+                        const advanceResult = await withTransaction((tx) =>
+                            schedSvc.advanceSchedule(
+                                SYSTEM_ACTOR,
+                                { scheduleId, currentStreakCount: item.streakCount },
+                                { tx }
+                            )
+                        );
                         if (advanceResult.error) {
+                            errors++;
                             logger.warn('Failed to advance notification schedule streak', {
                                 scheduleId,
                                 error: advanceResult.error.message
@@ -420,64 +380,43 @@ export const conversationNotificationJob: CronJobDefinition = {
                         } else if (advanceResult.data === null) {
                             logger.debug('Schedule cancelled after streak 3', { scheduleId });
                         }
-
-                        processed++;
-
-                        logger.debug('Notification email dispatched', {
-                            scheduleId,
-                            recipientSide: schedule.recipientSide,
-                            streak: schedule.streakCount,
-                            messageId: emailResult.messageId
-                        });
-                    } catch (itemError) {
+                    } catch (advErr) {
+                        // Advance failed AFTER the email was sent — the schedule stays due and
+                        // will be re-sent (a duplicate) once the Redis claim TTL lapses. Rare
+                        // (needs a DB failure mid-persist); logged so it is visible. No retry queue.
                         errors++;
-                        logger.error('Unexpected error processing schedule', {
+                        logger.warn('Failed to persist streak advance after send', {
                             scheduleId,
-                            error:
-                                itemError instanceof Error ? itemError.message : String(itemError)
+                            error: advErr instanceof Error ? advErr.message : String(advErr)
                         });
                     }
+
+                    processed++;
+                } catch (itemError) {
+                    errors++;
+                    logger.error('Unexpected error dispatching schedule', {
+                        scheduleId,
+                        error: itemError instanceof Error ? itemError.message : String(itemError)
+                    });
+                    await releaseClaim(scheduleId);
                 }
-
-                const durationMs = Date.now() - startedAt.getTime();
-
-                logger.info('conversation-notification cron completed', {
-                    processed,
-                    errors,
-                    durationMs
-                });
-
-                return {
-                    skipped: false,
-                    success: true,
-                    message: `Dispatched ${processed} notification(s), ${errors} error(s)`,
-                    processed,
-                    errors,
-                    durationMs,
-                    details: { dueCount: dueSchedules.length }
-                };
-            });
-
-            if (cronResult.skipped) {
-                logger.warn(
-                    'conversation-notification cron: skipping — previous run holds advisory lock'
-                );
-                return {
-                    success: true,
-                    message: 'Skipped — another instance is already running',
-                    processed: 0,
-                    errors: 0,
-                    durationMs: Date.now() - startedAt.getTime()
-                };
             }
 
+            const durationMs = Date.now() - startedAt.getTime();
+
+            logger.info('conversation-notification cron completed', {
+                processed,
+                errors,
+                durationMs
+            });
+
             return {
-                success: cronResult.success,
-                message: cronResult.message,
-                processed: cronResult.processed,
-                errors: cronResult.errors,
-                durationMs: cronResult.durationMs,
-                ...(cronResult.details ? { details: cronResult.details } : {})
+                success: true,
+                message: `Dispatched ${processed} notification(s), ${errors} error(s)`,
+                processed,
+                errors,
+                durationMs,
+                details: { dueCount: dueSchedules.length }
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);

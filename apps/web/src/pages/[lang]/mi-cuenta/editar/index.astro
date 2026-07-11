@@ -24,6 +24,7 @@
 
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { ProfileEditForm } from '@/components/account/ProfileEditForm.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -172,7 +173,7 @@ try {
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="editar">
-	<h2 class="account-section__title">{title}</h2>
+	<AccountPageHeader title={title} />
 
 	<ProfileEditForm
 		client:load
@@ -181,13 +182,3 @@ try {
 		apiUrl={apiUrl}
 	/>
 </AccountLayout>
-
-<style>
-	.account-section__title {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: clamp(1.5rem, 3vw, 2rem);
-		color: var(--core-foreground);
-		margin: 0 0 var(--space-6);
-	}
-</style>

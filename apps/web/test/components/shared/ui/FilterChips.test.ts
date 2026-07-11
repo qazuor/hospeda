@@ -247,6 +247,61 @@ describe('FilterChips.astro', () => {
         });
     });
 
+    describe('HOS-96 — active state uses aria-current, NEVER aria-pressed on the chip <a> (a11y sweep fix)', () => {
+        // `aria-pressed` is only valid ARIA on elements with `role="button"` —
+        // an `<a href>` does not have that implicit role, so `aria-pressed`
+        // there is an `aria-allowed-attr` violation. HOS-96 T-009 originally
+        // added an `ariaPressed` prop for this; the CI a11y sweep caught the
+        // resulting violation on `/alojamientos/`, `/eventos/`, and
+        // `/publicaciones/`, and the owner decided to drop it in favor of
+        // `aria-current` (already valid on `<a>`, already implemented,
+        // already covers the same "this chip is the active one" semantics —
+        // see the `chip rendering` describe block above for its own
+        // dedicated coverage).
+        //
+        // NOTE: assertions below are scoped to the actual field
+        // declaration/destructure/attribute (not a blanket "does not contain
+        // the string anywhere"), since this very comment block legitimately
+        // mentions `ariaPressed`/`aria-pressed` in prose to document the fix.
+        it('does not define an ariaPressed field on ChipItem (removed — do not reintroduce it)', () => {
+            expect(src).not.toContain('readonly ariaPressed?: boolean');
+        });
+
+        it('does not destructure ariaPressed when mapping chips', () => {
+            expect(src).not.toMatch(/chips\.map\(\(\{[^}]*ariaPressed[^}]*\}\)/);
+        });
+
+        it('never renders an aria-pressed attribute on the chip anchor', () => {
+            expect(src).not.toMatch(/aria-pressed=\{/);
+        });
+
+        it('the chip <a> renders aria-current driven by active — true when active, attribute omitted (undefined) when inactive', () => {
+            expect(src).toContain("aria-current={active ? 'true' : undefined}");
+        });
+
+        it('keeps the filter-chips__chip--active class alongside aria-current (both driven by the same active flag)', () => {
+            expect(src).toContain('filter-chips__chip--active');
+        });
+    });
+
+    describe('HOS-96 T-010 — per-chip ariaLabel override (Clear (N) accessible name)', () => {
+        it('defines an optional readonly ariaLabel on ChipItem', () => {
+            expect(src).toContain('readonly ariaLabel?: string');
+        });
+
+        it('destructures ariaLabel from each chip when mapping', () => {
+            expect(src).toMatch(/chips\.map\(\(\{[^}]*ariaLabel[^}]*\}\)/);
+        });
+
+        it('renders aria-label on the anchor driven by the per-chip ariaLabel (undefined by default → attribute omitted, chip text stays the accessible name)', () => {
+            // Scoped to the <a ...> opening tag specifically, since the
+            // component-level `ariaLabel` prop already renders an identical
+            // `aria-label={ariaLabel}` expression on the <nav> above — a
+            // plain `toContain` here would be a false positive predating T-010.
+            expect(src).toMatch(/<a\s[\s\S]*?aria-label=\{ariaLabel\}[\s\S]*?>/);
+        });
+    });
+
     describe('HOS-97 — href-agnostic canonical component', () => {
         it('does not hardcode any query-param toggle or route-nav logic (caller-resolved hrefs)', () => {
             expect(src).not.toContain('URLSearchParams');

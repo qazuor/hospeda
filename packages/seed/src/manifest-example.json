@@ -273,6 +273,14 @@
         "020-postSponsorship-termas-bienestar.json",
         "021-postSponsorship-destinos-imperdibles.json"
     ],
+    "partners": [
+        "001-partner-autoservice-litoral.json",
+        "002-partner-supermercado-don-jose.json",
+        "003-partner-panaderia-la-espiga.json",
+        "004-partner-fundacion-entre-rios-sustentable.json",
+        "005-partner-ong-amigos-del-rio-uruguay.json",
+        "006-partner-universidad-tecnologica-del-litoral.json"
+    ],
     "postSponsors": [
         "012-postSponsor-postSponsor-aventura-parana.json",
         "013-postSponsor-postSponsor-cultura-entrerriana.json",

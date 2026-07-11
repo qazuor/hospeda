@@ -67,9 +67,16 @@ vi.mock('../../src/middlewares/billing', () => ({
     getQZPayBilling: vi.fn()
 }));
 
-// Mock TrialService
+// Mock TrialService. buildTrialUpgradeUrl must be exported too (HOS-115 §5) —
+// the job calls it unconditionally when building TRIAL_ENDING_REMINDER links.
 vi.mock('../../src/services/trial.service', () => ({
-    TrialService: vi.fn()
+    TrialService: vi.fn(),
+    buildTrialUpgradeUrl: vi.fn((input: { siteUrl: string; intendedInterval?: unknown }) => {
+        const base = `${input.siteUrl}/es/suscriptores/planes/`;
+        return input.intendedInterval === 'monthly' || input.intendedInterval === 'annual'
+            ? `${base}?interval=${input.intendedInterval}`
+            : base;
+    })
 }));
 
 // Mock notification helper
@@ -974,7 +981,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             // Assert
             expect(result.details).toMatchObject({
                 renewalsSent: 2,
-                trialsEnding3Days: 0,
+                trialsEndingPrimary: 0,
                 trialsEnding1Day: 0
             });
         });

@@ -123,6 +123,27 @@ export interface BaseLoggerConfig {
      * Whether to stringify objects
      */
     STRINGIFY_OBJECTS: boolean;
+
+    /**
+     * Optional provider for per-log contextual fields (e.g. `requestId`,
+     * `userId`, `sessionId`, `visitorId` from an AsyncLocalStorage-based
+     * request context). Called synchronously on every log entry and merged
+     * into the entry's top level.
+     *
+     * This is the seam that lets an app (e.g. `apps/api`) inject request
+     * context into `@repo/logger` output WITHOUT the logger package importing
+     * anything app-specific — the app supplies the callback, the logger just
+     * invokes it.
+     *
+     * Contract for implementors:
+     * - MUST be cheap (called on every single log call).
+     * - MUST NEVER throw — the logger wraps the call in a try/catch as a
+     *   safety net, but a throwing provider still means every log entry pays
+     *   for handling it. Return `undefined` when there is nothing to add.
+     * - Returned fields are merged into the log entry but can NEVER override
+     *   the core fields (`ts`, `level`, `message`) — those always win.
+     */
+    getContext?: () => Record<string, unknown> | undefined;
 }
 
 /**

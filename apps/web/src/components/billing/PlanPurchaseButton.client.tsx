@@ -132,6 +132,22 @@ function centsToDisplay(cents: number): string {
     return (cents / 100).toLocaleString('es-AR');
 }
 
+/**
+ * Append (or overwrite) a query param on an absolute URL (HOS-110 W1).
+ * Used to flag `promoIgnored=1` on the in-app checkout-success sentinel URL
+ * so that page can surface a "your discount code was not applied" note.
+ *
+ * @param url - Absolute URL string
+ * @param key - Query param name
+ * @param value - Query param value
+ * @returns The URL with the param set, as a string
+ */
+function appendQueryParam(url: string, key: string, value: string): string {
+    const parsed = new URL(url);
+    parsed.searchParams.set(key, value);
+    return parsed.toString();
+}
+
 // ---------------------------------------------------------------------------
 // Promo state types
 // ---------------------------------------------------------------------------
@@ -575,7 +591,10 @@ export function PlanPurchaseButton({
 
         const billingClass = billingInterval === 'annual' ? 'annual' : 'monthly';
         const amountEl = card.querySelector<HTMLElement>(`.pricing-card__amount--${billingClass}`);
-        const trialEl = card.querySelector<HTMLElement>('.pricing-card__trial--monthly');
+        // HOS-115: the trial line is now interval-neutral (`.pricing-card__trial`,
+        // visible under both toggles) — the old `--monthly`-only selector would
+        // silently stop matching anything once the class was renamed.
+        const trialEl = card.querySelector<HTMLElement>('.pricing-card__trial');
 
         const injected: Element[] = [];
         let trialOriginal: string | null = null;
@@ -687,10 +706,30 @@ export function PlanPurchaseButton({
                 return;
             }
 
-            // For comp promo codes, checkoutUrl is an in-app success sentinel URL
-            // (not a MercadoPago redirect). window.location.href handles both cases
-            // correctly — the sentinel page manages the success flow.
-            window.location.href = result.data.checkoutUrl;
+            // For comp/trial promo codes, checkoutUrl is an in-app success sentinel
+            // URL (not a MercadoPago redirect). window.location.href handles all
+            // cases correctly — the sentinel page manages the success flow.
+            //
+            // HOS-110 F1: the sentinel URL has no `collection_status` (that only
+            // ever comes from a real MP redirect), so without a signal the success
+            // page defaults to its "verifying payment" variant — wrong for a
+            // no-card trial (there is no payment to verify) and wrong for a comp
+            // grant. Flag the granted effect on the URL so the page can render the
+            // correct copy instead. checkoutUrl is always our own absolute site
+            // URL for these two effects (never an external MP redirect), so
+            // appending a query param here is always safe.
+            //
+            // HOS-110 W1: when the server discarded a discount code in favor of a
+            // granted trial (`promoCodeIgnored`), flag that too so the page can
+            // tell the user their code was not applied. Both params can coexist.
+            let target = result.data.checkoutUrl;
+            if (result.data.appliedEffect === 'trial' || result.data.appliedEffect === 'comp') {
+                target = appendQueryParam(target, 'effect', result.data.appliedEffect);
+            }
+            if (result.data.promoCodeIgnored) {
+                target = appendQueryParam(target, 'promoIgnored', '1');
+            }
+            window.location.href = target;
         } catch {
             setError(errorText);
         } finally {

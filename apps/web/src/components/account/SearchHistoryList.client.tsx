@@ -18,12 +18,15 @@
  * Hydration: caller MUST use `client:load`.
  */
 
+import { SearchIcon } from '@repo/icons';
 import type { SearchHistoryFilters, UserSearchHistoryListItem } from '@repo/schemas';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AccountEmptyState } from '@/components/account/AccountEmptyState';
+import { translateApiError } from '@/lib/api-errors';
 import { formatRelativeTime } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildUrlWithParams } from '@/lib/urls';
+import { buildUrl, buildUrlWithParams } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './SearchHistoryList.module.css';
 
@@ -46,7 +49,12 @@ interface HistoryListResponse {
     readonly data?: {
         readonly items?: SearchHistoryApiItem[];
     };
-    readonly error?: { readonly message?: string };
+    /**
+     * `code` carries the `ServiceErrorCode` (e.g. `ENTITLEMENT_REQUIRED`) so
+     * `fetchEntries` can special-case the free-tier plan gate (BETA-148)
+     * instead of surfacing a generic error for every non-2xx response.
+     */
+    readonly error?: { readonly code?: string | null; readonly message?: string };
 }
 
 /** Generic mutation response envelope */
@@ -216,13 +224,25 @@ export function SearchHistoryList({
     userId: _userId,
     initialHistoryEnabled
 }: SearchHistoryListProps) {
-    const { t, tPlural } = createTranslations(locale);
+    // Memoized so `t` keeps a stable reference across renders — otherwise it
+    // recreates on every render, which cascades into the useCallback deps
+    // below (fetchEntries, etc.) and re-triggers the mount effect in an
+    // infinite loop (fetch -> setState -> render -> new `t` -> fetch -> ...).
+    // Same fix as ExternalReputationSection.client.tsx.
+    const { t, tPlural } = useMemo(() => createTranslations(locale), [locale]);
     const base = apiUrl.replace(/\/$/, '');
 
     // ── State ─────────────────────────────────────────────────────────────────
     const [entries, setEntries] = useState<SearchHistoryApiItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    /**
+     * True when the last fetch was blocked by the `CAN_VIEW_SEARCH_HISTORY`
+     * entitlement gate (403 `ENTITLEMENT_REQUIRED`) — i.e. a free-tier user.
+     * Renders the existing upsell/empty-state copy plus an upgrade CTA
+     * instead of the generic error message (BETA-148).
+     */
+    const [entitlementRequired, setEntitlementRequired] = useState(false);
     const [isHistoryEnabled, setIsHistoryEnabled] = useState(initialHistoryEnabled);
     const [isTogglingPreference, setIsTogglingPreference] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -260,16 +280,43 @@ export function SearchHistoryList({
         if (!isMountedRef.current) return;
         setLoading(true);
         setError(null);
+        setEntitlementRequired(false);
         try {
             const res = await fetch(`${base}/api/v1/protected/search-history`, {
                 credentials: 'include'
             });
-            if (!res.ok) {
-                throw new Error(fetchErrorMsg);
+
+            // Parse the JSON body BEFORE branching on `res.ok` (BETA-148): the
+            // `gateSearchHistory` entitlement gate
+            // (apps/api/src/middlewares/tourist-entitlements.ts) returns a 403
+            // with `code: 'ENTITLEMENT_REQUIRED'` and a friendly upgrade
+            // message for free-tier users. That case must render the
+            // existing upsell/empty-state UI instead of the generic error
+            // below, so the body has to be read regardless of status.
+            let body: HistoryListResponse | null = null;
+            try {
+                body = (await res.json()) as HistoryListResponse;
+            } catch {
+                // Non-JSON body — `body` stays null, generic message is used.
             }
-            const body = (await res.json()) as HistoryListResponse;
-            if (!body.success) {
-                throw new Error(body.error?.message ?? fetchErrorMsg);
+
+            if (!res.ok) {
+                if (res.status === 403 && body?.error?.code === 'ENTITLEMENT_REQUIRED') {
+                    if (isMountedRef.current) {
+                        setEntries([]);
+                        setEntitlementRequired(true);
+                    }
+                    return;
+                }
+                throw new Error(
+                    translateApiError({ error: body?.error, t, fallback: fetchErrorMsg })
+                );
+            }
+
+            if (!body?.success) {
+                throw new Error(
+                    translateApiError({ error: body?.error, t, fallback: fetchErrorMsg })
+                );
             }
             if (isMountedRef.current) {
                 setEntries(body.data?.items ?? []);
@@ -283,7 +330,7 @@ export function SearchHistoryList({
                 setLoading(false);
             }
         }
-    }, [base, fetchErrorMsg]);
+    }, [base, fetchErrorMsg, t]);
 
     useEffect(() => {
         void fetchEntries();
@@ -306,7 +353,9 @@ export function SearchHistoryList({
                 });
                 const body = (await res.json()) as MutationResponse;
                 if (!res.ok || !body.success) {
-                    throw new Error(body.error?.message ?? deleteErrorMsg);
+                    throw new Error(
+                        translateApiError({ error: body.error, t, fallback: deleteErrorMsg })
+                    );
                 }
                 if (isMountedRef.current) {
                     setEntries((prev) => prev.filter((e) => e.id !== id));
@@ -323,7 +372,7 @@ export function SearchHistoryList({
                 }
             }
         },
-        [base, deleteErrorMsg, deleteSuccessMsg]
+        [base, deleteErrorMsg, deleteSuccessMsg, t]
     );
 
     // ── Clear all ─────────────────────────────────────────────────────────────
@@ -342,7 +391,9 @@ export function SearchHistoryList({
             });
             const body = (await res.json()) as MutationResponse;
             if (!res.ok || !body.success) {
-                throw new Error(body.error?.message ?? clearErrorMsg);
+                throw new Error(
+                    translateApiError({ error: body.error, t, fallback: clearErrorMsg })
+                );
             }
             if (isMountedRef.current) {
                 setEntries([]);
@@ -358,7 +409,7 @@ export function SearchHistoryList({
                 setIsClearing(false);
             }
         }
-    }, [base, clearErrorMsg, clearSuccessMsg]);
+    }, [base, clearErrorMsg, clearSuccessMsg, t]);
 
     // ── Toggle opt-out ────────────────────────────────────────────────────────
 
@@ -379,7 +430,9 @@ export function SearchHistoryList({
             });
             const body = (await res.json()) as MutationResponse;
             if (!res.ok || !body.success) {
-                throw new Error(body.error?.message ?? optOutErrorMsg);
+                throw new Error(
+                    translateApiError({ error: body.error, t, fallback: optOutErrorMsg })
+                );
             }
         } catch (err) {
             // Revert on failure
@@ -395,7 +448,7 @@ export function SearchHistoryList({
                 setIsTogglingPreference(false);
             }
         }
-    }, [base, isHistoryEnabled, optOutErrorMsg]);
+    }, [base, isHistoryEnabled, optOutErrorMsg, t]);
 
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -407,6 +460,12 @@ export function SearchHistoryList({
         if (count === 0) return t('account.searchHistory.noResults', 'Sin resultados');
         return t('account.searchHistory.results', '{{count}} resultados', { count });
     }
+
+    // Locale-aware upgrade CTA target for the entitlement-gated empty state
+    // (BETA-148). Built locally rather than trusting the API gate's raw
+    // `details.upgradeUrl` (`/billing/plans`, not a real web route) — same
+    // convention as `AlertsList.client.tsx` and `PriceAlertButton.tsx`.
+    const upgradeUrl = buildUrl({ locale, path: 'suscriptores/planes' });
 
     // ── Loading state ─────────────────────────────────────────────────────────
 
@@ -545,19 +604,21 @@ export function SearchHistoryList({
 
             {/* ── List ──────────────────────────────────────────────────── */}
             {isEmpty ? (
-                <div
-                    className={styles['search-history__empty']}
-                    aria-live="polite"
-                >
-                    <p className={styles['search-history__empty-title']}>
-                        {t('account.searchHistory.empty.title', 'Sin búsquedas guardadas')}
-                    </p>
-                    <p className={styles['search-history__empty-body']}>
-                        {t(
+                <div aria-live="polite">
+                    <AccountEmptyState
+                        title={t('account.searchHistory.empty.title', 'Sin búsquedas guardadas')}
+                        description={t(
                             'account.searchHistory.empty.body',
                             'Tus búsquedas aparecerán acá cuando tengas un plan Plus o VIP activo.'
                         )}
-                    </p>
+                        icon={<SearchIcon size={28} />}
+                        ctaHref={entitlementRequired ? upgradeUrl : undefined}
+                        ctaLabel={
+                            entitlementRequired
+                                ? t('account.alerts.upgrade.cta', 'Ver planes')
+                                : undefined
+                        }
+                    />
                 </div>
             ) : (
                 <ul

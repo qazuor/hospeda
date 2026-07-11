@@ -131,6 +131,19 @@ import FilterSidebar from '@/components/accommodation/FilterSidebar.client';
 | `client:media` | Responsive-only components (mobile menu) |
 | `client:only="react"` | Cannot be server-rendered (map libraries) |
 
+#### SSR-first principle for islands (HOS-117 US-2)
+
+**An island's SSR output must already contain the final critical data it displays. Hydration only animates or adds interactivity — it must never be the first place a value appears.** Crawlers and LLM fetchers (Googlebot's initial fetch, GPTBot, ClaudeBot, PerplexityBot) read the raw SSR HTML without running JS or scrolling; whatever a value's "loading"/initial state renders is what they index.
+
+Concretely:
+
+- Seed React state from the SSR prop, not a placeholder literal. `useState(value)`, **never** `useState(0)` / `useState(null)` / `useState('loading')` when the real value is already available as a prop. (This was the "0+" counter bug: `AnimatedCounter` seeded `useState(0)` and only reached the real number after hydration → crawlers indexed "0+". Fixed in `AnimatedCounter.client.tsx`.)
+- If an island genuinely needs a client-side fetch for live data (e.g. `DestinationWeatherIsland`), pass a **server-rendered fallback** so the SSR/loading state still shows real text (e.g. the seasonal average), then replace it after hydration. Never emit an empty skeleton as the only content of an indexable page.
+- `client:only="react"` islands emit **no** SSR HTML at all — only use them on `noindex` pages, or when the indexable content lives in sibling Astro markup, never as the sole source of critical text.
+- A stat that is legitimately `0`/`NaN`/absent must be **hidden** (see `home-guards.ts` `isMeaningfulStat` / `shouldShowSocialProof`), never rendered as a misleading "0+".
+
+The CI guard `test/integration/json-ld-coverage.test.ts` and per-island regression tests assert on the **raw SSR HTML string** (no hydration) — add one when you touch an island that shows prices, counts, ratings, availability, or badges.
+
 ### API Integration
 
 All API calls go through `src/lib/api/`. Three files, three tiers:
@@ -177,7 +190,7 @@ API Response (raw)  →  transforms.ts  →  Component Props (clean)
 
 ### Pricing Exception
 
-The pricing page (`/suscriptores/precios/*`) is the **only page with hardcoded fallback data**. If the billing API fails, it renders `pricing-fallbacks.ts` instead of showing an error. This is intentional.. a pricing page must never be empty as it's critical for conversion.
+The pricing page (`/suscriptores/planes/*`) is the **only page with hardcoded fallback data**. If the billing API fails, it renders `pricing-fallbacks.ts` instead of showing an error. This is intentional.. a pricing page must never be empty as it's critical for conversion.
 
 All other pages depend entirely on the API. If the API fails, they show an error or redirect to 404.
 
@@ -833,6 +846,70 @@ locked-compact. Tuning lives in two places:
 The 8 consumers (6 entity `*DetailHeader`/`ExperienceHero`, `ListingPageHeader.astro`,
 `mapa.astro`) opt into the shared compact contract via `wh-compact-row/title/badge/hide/demote`
 utility classes; `wh-compact-hide`'s `max-height:0` collapse is defined once in `WaveHeader.astro`.
+
+### Multi-select quick-filter facets (HOS-96)
+
+The quick-filter chip rows on the listing pages (`/alojamientos/`, `/eventos/`,
+`/publicaciones/`) are **multi-select**: clicking a chip accumulates its value in a
+CSV array query param instead of navigating away or replacing a single value.
+
+**Per-facet config model** — the single source of truth is
+`src/lib/filters/facet-config.ts` (`FACET_CONFIG_BY_ID`). Each facet declares its own
+`paramKey` (plural array param), `singularParamKey` (legacy scalar kept for
+back-compat), `operator`, `enum`, and `dedicatedLandingPattern`. Accommodation `types`
+is the blueprint (its multi-value backend + sidebar already existed); events and blog
+`categories` replicate it. **To add a new multi-select facet (e.g. HOS-97
+gastronomía/experiencias), add an entry here — no chip/sidebar/SEO branch changes.**
+
+| Facet | `paramKey` | `singularParamKey` | operator | dedicated landing |
+|---|---|---|---|---|
+| Accommodation type | `types` | `type` | OR | `/alojamientos/tipo/{slug}/` |
+| Event category | `categories` | `category` | OR | `/eventos/categoria/{slug}/` |
+| Blog/post category | `categories` | `category` | OR | `/publicaciones/categoria/{slug}/` |
+| Destination attraction | `attractions` | — | **AND** | client-side only, `outOfBackendScope` |
+
+Destinos stays **AND**-combined and entirely client-side (`cardMatchesFilter()` +
+`startViewTransition`) — it must NOT import any of the OR-facet helpers below.
+
+**The URL query param is the ONLY shared state** between the chip row and the
+`FilterSidebar` island — there is no in-memory store. Both derive their active/checked
+state from the same param, so a crafted URL alone reproduces the full selection, and
+browser back/forward (popstate) restores state for free. The sidebar seeds its initial
+state from a `sidebarInitialParams` prop the PAGE builds — when renaming a
+`FilterGroup` id you MUST update that page-side seed key too, or the sidebar silently
+desyncs (there is no `window.location.search` fallback).
+
+Helpers (`src/lib/filters/`): `read-facet-active-values.ts` (`readFacetActiveValues`,
+the shared CSV/repeated-key/whitespace-tolerant, de-duplicating param reader),
+`toggle-multi-query-param.ts` (`buildMultiToggleParamHref`, add/remove a value,
+preserve other params, drop `page`), `build-clear-facet-chip.ts` (`buildClearFacetChip`,
+the "Clear (N)" bulk-reset chip, returns `undefined` below 2 active values). Chips are
+`FilterChips.astro` `<a>` elements carrying `aria-current` for the active state — NOT
+`aria-pressed` (only valid ARIA on `role="button"`; using it on an `<a href>` is an
+`aria-allowed-attr` violation, caught by the CI a11y sweep and removed). The component
+stays href-agnostic (the page supplies `href`/`active`).
+
+**Chip href alone is not enough**: each page must also read its array param and forward
+it to the API list call (`endpoints.ts` `eventsApi/postsApi.list` accept `categories`,
+passed as a CSV string). This closed the shipped latent bug where the sidebar already
+serialized `?category=A,B` but the backend silently dropped the unknown key — now the
+sidebar/chips write `?categories=A,B`, which the `categories` array param (schema →
+model `inArray` branch → service) accepts. The singular `category`/`type` params stay
+accepted for old links; the array wins when both are present.
+
+**2+-value SEO rule** — the single shared predicate
+`resolveFacetSeoDecision` (`src/lib/seo/promoted-facet-canonical.ts`) decides
+`noindex`/canonical for every listing: 0 values → indexable + base canonical; exactly 1
+value → indexable + the facet's dedicated-landing canonical (via
+`dedicatedLandingPattern`); 2+ values → `noindex,follow` + canonical to the base listing
+(no combinatorial duplicate URLs indexed). Add a new facet's SEO behavior by declaring
+`dedicatedLandingPattern` in the config, not by writing new head logic. The guard test
+`test/components/seo/facet-noindex.test.ts` asserts the three listings wire
+`noindex={facetSeoDecision.noindex}` conditionally and never a hardcoded literal.
+
+> Gotcha: `AccommodationSearchHttpSchema.types` has NO enum `.pipe()` validation
+> (unlike events/posts `categories`), so `?types=HOTEL,BOGUS` returns 200 (the bogus
+> value just matches nothing), not a 400. This is pre-existing and out of HOS-96 scope.
 
 ## Common Gotchas
 

@@ -40,7 +40,8 @@ import { useToast } from '@/hooks/use-toast';
 import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
 import {
     applyProviderToAllFeatures,
-    buildProviderOptions
+    buildProviderOptions,
+    filterRenderableModels
 } from './-components/ai-settings-provider.utils';
 
 export const Route = createFileRoute('/_authed/ai/settings')({
@@ -492,7 +493,9 @@ function AiSettingsPage() {
                                     }}
                                 >
                                     {({ provider }) => {
-                                        const models = providerModels[provider] ?? [];
+                                        const models = filterRenderableModels(
+                                            providerModels[provider] ?? []
+                                        );
 
                                         if (models.length === 0) {
                                             return (

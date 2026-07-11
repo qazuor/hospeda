@@ -284,4 +284,85 @@ describe('required seed determinism + hierarchy computation (HOS-25 T-025)', () 
             expect(typeof new DestinationFaqModel().create).toBe('function');
         });
     });
+
+    describe('destination-POI relationship fixtures (HOS-113 T-026)', () => {
+        interface DestinationFixtureWithPoi extends DestinationFixture {
+            pointOfInterestIds?: string[];
+        }
+
+        /** Reads the real manifest-listed POI seed ids (T-023/T-025). */
+        function readPointOfInterestSeedIds(): Set<string> {
+            const manifestPath = join(SEED_SRC_DIR, 'manifest-required.json');
+            const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as Record<
+                string,
+                string[]
+            >;
+            const files = manifest.pointsOfInterest ?? [];
+            const ids = files.map((file) => {
+                const fixture = loadFixture<{ id: string }>(file, 'pointOfInterest');
+                return fixture.id;
+            });
+            return new Set(ids);
+        }
+
+        it('should have pointOfInterestIds on at least 3 destination fixtures', () => {
+            const files = readDestinationManifestFiles();
+            const withPoi = files
+                .map((file) => loadFixture<DestinationFixtureWithPoi>(file, 'destination'))
+                .filter((fixture) => (fixture.pointOfInterestIds?.length ?? 0) > 0);
+
+            expect(withPoi.length).toBeGreaterThanOrEqual(3);
+        });
+
+        it('should reference only POI seed ids that actually exist in the pointsOfInterest manifest (no silent slug mismatch)', () => {
+            const poiSeedIds = readPointOfInterestSeedIds();
+            const files = readDestinationManifestFiles();
+            const destinationsWithPoi = files
+                .map((file) => loadFixture<DestinationFixtureWithPoi>(file, 'destination'))
+                .filter((fixture) => (fixture.pointOfInterestIds?.length ?? 0) > 0);
+
+            for (const destination of destinationsWithPoi) {
+                for (const poiSeedId of destination.pointOfInterestIds ?? []) {
+                    expect(poiSeedIds.has(poiSeedId)).toBe(true);
+                }
+            }
+        });
+
+        it('should map at least one POI to 2+ destinations (M2M coverage, OQ-1)', () => {
+            const files = readDestinationManifestFiles();
+            const destinationsWithPoi = files
+                .map((file) => loadFixture<DestinationFixtureWithPoi>(file, 'destination'))
+                .filter((fixture) => (fixture.pointOfInterestIds?.length ?? 0) > 0);
+
+            const destinationCountByPoi = new Map<string, number>();
+            for (const destination of destinationsWithPoi) {
+                for (const poiSeedId of destination.pointOfInterestIds ?? []) {
+                    destinationCountByPoi.set(
+                        poiSeedId,
+                        (destinationCountByPoi.get(poiSeedId) ?? 0) + 1
+                    );
+                }
+            }
+
+            const multiDestinationPois = [...destinationCountByPoi.entries()].filter(
+                ([, count]) => count >= 2
+            );
+            expect(multiDestinationPois.length).toBeGreaterThanOrEqual(1);
+        });
+
+        it('should map "playa_banco_pelay" to both concepcion-del-uruguay and liebig specifically', () => {
+            const cdu = loadFixture<DestinationFixtureWithPoi>(
+                '011-destination-concepcion-del-uruguay.json',
+                'destination'
+            );
+            const liebig = loadFixture<DestinationFixtureWithPoi>(
+                '007-destination-liebig.json',
+                'destination'
+            );
+
+            const bancoPelaySeedId = '002-point-of-interest-playa_banco_pelay';
+            expect(cdu.pointOfInterestIds).toContain(bancoPelaySeedId);
+            expect(liebig.pointOfInterestIds).toContain(bancoPelaySeedId);
+        });
+    });
 });

@@ -1,0 +1,114 @@
+import type { PointOfInterest } from '@repo/schemas';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { BaseModelImpl } from '../../base/base.model.ts';
+import { destinations } from '../../schemas/destination/destination.dbschema.ts';
+import { pointsOfInterest } from '../../schemas/destination/point-of-interest.dbschema.ts';
+import { rDestinationPointOfInterest } from '../../schemas/destination/r_destination_point_of_interest.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
+import { DbError } from '../../utils/error.ts';
+import { logError, logQuery } from '../../utils/logger.ts';
+
+/**
+ * Model for the `points_of_interest` table (HOS-113). Coordinate-bearing
+ * landmarks associated with one or more destinations via
+ * `r_destination_point_of_interest` (M2M, OQ-1). Unlike `AttractionModel`,
+ * POIs carry no `name` column (OQ-2) — display names resolve via
+ * `@repo/i18n` keyed by `slug`.
+ */
+export class PointOfInterestModel extends BaseModelImpl<PointOfInterest> {
+    protected table = pointsOfInterest;
+    public entityName = 'pointsOfInterest';
+
+    protected getTableName(): string {
+        return 'pointsOfInterest';
+    }
+
+    /**
+     * Resolves POI slugs to the destinations that have them, via
+     * `r_destination_point_of_interest` (HOS-113 §6.2/§6.3 — accommodation
+     * proximity search and AI search resolution entry point). Mirrors
+     * `AttractionModel.findDestinationIdsBySlugs` exactly.
+     *
+     * Two-step query:
+     *
+     *   1. `points_of_interest.slug IN (slugs)`, filtered to non-deleted +
+     *      ACTIVE rows only.
+     *   2. `r_destination_point_of_interest.pointOfInterestId IN (matched
+     *      POI ids)`, inner-joined to `destinations` and filtered to
+     *      public + active + non-deleted destinations only (never resolves
+     *      to a hidden/draft/deleted destination).
+     *
+     * Returns an empty array (never throws) when `slugs` is empty, when no
+     * POI matches, or when no destination carries a matched POI — the
+     * caller treats this as "constraint could not be resolved, skip it"
+     * rather than an error.
+     *
+     * @param slugs - POI slug identifiers (e.g. from the curated NL
+     *   allowlist, or an explicit `poiSlug` proximity-search param). Empty
+     *   array short-circuits without a DB round-trip.
+     * @param tx - Optional transaction client.
+     * @returns Promise resolving to a de-duplicated array of destination UUIDs.
+     */
+    async findDestinationIdsBySlugs(
+        slugs: readonly string[],
+        tx?: DrizzleClient
+    ): Promise<string[]> {
+        if (slugs.length === 0) {
+            return [];
+        }
+
+        try {
+            const db = this.getClient(tx);
+
+            const poiRows = await db
+                .select({ id: pointsOfInterest.id })
+                .from(pointsOfInterest)
+                .where(
+                    and(
+                        inArray(pointsOfInterest.slug, [...slugs]),
+                        isNull(pointsOfInterest.deletedAt),
+                        eq(pointsOfInterest.lifecycleState, 'ACTIVE')
+                    )
+                );
+
+            const poiIds = poiRows.map((row: { id: string }) => row.id);
+            if (poiIds.length === 0) {
+                logQuery(this.entityName, 'findDestinationIdsBySlugs', { slugs }, []);
+                return [];
+            }
+
+            const relationRows = await db
+                .select({ destinationId: rDestinationPointOfInterest.destinationId })
+                .from(rDestinationPointOfInterest)
+                .innerJoin(
+                    destinations,
+                    eq(destinations.id, rDestinationPointOfInterest.destinationId)
+                )
+                .where(
+                    and(
+                        inArray(rDestinationPointOfInterest.pointOfInterestId, poiIds),
+                        isNull(destinations.deletedAt),
+                        eq(destinations.visibility, 'PUBLIC'),
+                        eq(destinations.lifecycleState, 'ACTIVE')
+                    )
+                );
+
+            const destinationIds = Array.from(
+                new Set(relationRows.map((row: { destinationId: string }) => row.destinationId))
+            );
+            logQuery(this.entityName, 'findDestinationIdsBySlugs', { slugs }, destinationIds);
+            return destinationIds;
+        } catch (error) {
+            logError(this.entityName, 'findDestinationIdsBySlugs', { slugs }, error as Error);
+            throw new DbError(
+                this.entityName,
+                'findDestinationIdsBySlugs',
+                { slugs },
+                (error as Error).message
+            );
+        }
+    }
+}
+
+/** Singleton instance of PointOfInterestModel for use across the application. */
+export const pointOfInterestModel = new PointOfInterestModel();

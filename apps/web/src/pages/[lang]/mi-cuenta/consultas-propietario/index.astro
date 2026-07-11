@@ -7,6 +7,8 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -55,91 +57,93 @@ function formatDate(dateStr: string): string {
     description={t('conversations.inbox.ownerInboxTitle')}
     activeSection="owner-messages"
 >
-    <div class="owner-inbox">
-        <h1 class="owner-inbox__title">{t('conversations.inbox.ownerInboxTitle')}</h1>
+    <AccountPageHeader title={t('conversations.inbox.ownerInboxTitle')} />
 
-        {fetchError ? (
-            <div class="owner-inbox__error" role="alert">
-                <p>{t('conversations.errors.loadFailed', 'No se pudieron cargar las conversaciones. Intentá recargar la página.')}</p>
-                <a href={Astro.url.pathname} class="owner-inbox__retry">{t('conversations.errors.retry', 'Reintentar')}</a>
-            </div>
-        ) : conversations.length === 0 ? (
-            <AccountEmptyState
-                title={t('conversations.empty.ownerInboxTitle', 'Todavía no tenés mensajes')}
-                description={t('conversations.empty.ownerInbox')}
-            >
-                <ChatIcon slot="icon" size={28} aria-hidden={true} />
-            </AccountEmptyState>
-        ) : (
-            <ul class="owner-inbox__list" role="list">
-                {conversations.map((conv) => {
-                    const threadUrl = buildUrl({ locale, path: `mi-cuenta/consultas-propietario/${conv.id}` });
-                    const excerpt = conv.lastMessageExcerpt
-                        ? conv.lastMessageExcerpt.slice(0, 200)
-                        : '';
-                    return (
-                        <li class="owner-inbox__item">
-                            <a href={threadUrl} class="owner-inbox__link">
-                                <div class="owner-inbox__row">
-                                    <span class="owner-inbox__accommodation">
-                                        {conv.accommodationName}
-                                    </span>
-                                    <span class="owner-inbox__guest">
-                                        {conv.guestName ?? t('conversations.senderLabels.guest')}
-                                    </span>
-                                    {conv.unreadCount > 0 && (
-                                        <span
-                                            class="owner-inbox__badge"
-                                            aria-label={t(
-                                                'conversations.inbox.unreadCount',
-                                                undefined,
-                                                { count: conv.unreadCount }
-                                            )}
-                                        >
-                                            {conv.unreadCount}
+    <AccountSectionCard>
+        <div class="owner-inbox">
+            {fetchError ? (
+                <div class="owner-inbox__error" role="alert">
+                    <p>{t('conversations.errors.loadFailed', 'No se pudieron cargar las conversaciones. Intentá recargar la página.')}</p>
+                    <a href={Astro.url.pathname} class="owner-inbox__retry">{t('conversations.errors.retry', 'Reintentar')}</a>
+                </div>
+            ) : conversations.length === 0 ? (
+                <AccountEmptyState
+                    title={t('conversations.empty.ownerInboxTitle', 'Todavía no tenés mensajes')}
+                    description={t('conversations.empty.ownerInbox')}
+                >
+                    <ChatIcon slot="icon" size={28} aria-hidden={true} />
+                </AccountEmptyState>
+            ) : (
+                <ul class="owner-inbox__list" role="list">
+                    {conversations.map((conv) => {
+                        const threadUrl = buildUrl({ locale, path: `mi-cuenta/consultas-propietario/${conv.id}` });
+                        const excerpt = conv.lastMessageExcerpt
+                            ? conv.lastMessageExcerpt.slice(0, 200)
+                            : '';
+                        return (
+                            <li class="owner-inbox__item">
+                                <a href={threadUrl} class="owner-inbox__link">
+                                    <div class="owner-inbox__row">
+                                        <span class="owner-inbox__accommodation">
+                                            {conv.accommodationName}
                                         </span>
+                                        <span class="owner-inbox__guest">
+                                            {conv.guestName ?? t('conversations.senderLabels.guest')}
+                                        </span>
+                                        {conv.unreadCount > 0 && (
+                                            <span
+                                                class="owner-inbox__badge"
+                                                aria-label={t(
+                                                    'conversations.inbox.unreadCount',
+                                                    undefined,
+                                                    { count: conv.unreadCount }
+                                                )}
+                                            >
+                                                {conv.unreadCount}
+                                            </span>
+                                        )}
+                                        <time
+                                            datetime={conv.lastActivityAt}
+                                            class="owner-inbox__time"
+                                        >
+                                            {formatDate(conv.lastActivityAt)}
+                                        </time>
+                                    </div>
+                                    {excerpt && (
+                                        <p class="owner-inbox__excerpt">{excerpt}</p>
                                     )}
-                                    <time
-                                        datetime={conv.lastActivityAt}
-                                        class="owner-inbox__time"
-                                    >
-                                        {formatDate(conv.lastActivityAt)}
-                                    </time>
-                                </div>
-                                {excerpt && (
-                                    <p class="owner-inbox__excerpt">{excerpt}</p>
-                                )}
-                            </a>
-                        </li>
-                    );
-                })}
-            </ul>
-        )}
+                                </a>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
 
-        {pagination && pagination.totalPages > 1 && (
-            <nav class="owner-inbox__pagination" aria-label="Pagination">
-                {page > 1 && (
-                    <a
-                        href={buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' }) + `?page=${page - 1}`}
-                        class="owner-inbox__page-link"
-                    >
-                        &larr;
-                    </a>
-                )}
-                <span class="owner-inbox__page-info">
-                    {page} / {pagination.totalPages}
-                </span>
-                {page < pagination.totalPages && (
-                    <a
-                        href={buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' }) + `?page=${page + 1}`}
-                        class="owner-inbox__page-link"
-                    >
-                        &rarr;
-                    </a>
-                )}
-            </nav>
-        )}
-    </div>
+            {pagination && pagination.totalPages > 1 && (
+                <nav class="owner-inbox__pagination" aria-label="Pagination">
+                    {page > 1 && (
+                        <a
+                            href={buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' }) + `?page=${page - 1}`}
+                            class="owner-inbox__page-link"
+                        >
+                            &larr;
+                        </a>
+                    )}
+                    <span class="owner-inbox__page-info">
+                        {page} / {pagination.totalPages}
+                    </span>
+                    {page < pagination.totalPages && (
+                        <a
+                            href={buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' }) + `?page=${page + 1}`}
+                            class="owner-inbox__page-link"
+                        >
+                            &rarr;
+                        </a>
+                    )}
+                </nav>
+            )}
+        </div>
+    </AccountSectionCard>
 </AccountLayout>
 
 <style>
@@ -147,14 +151,6 @@ function formatDate(dateStr: string): string {
         display: flex;
         flex-direction: column;
         gap: var(--space-4, 16px);
-    }
-
-    .owner-inbox__title {
-        font-family: var(--font-heading);
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--core-foreground);
-        margin: 0;
     }
 
     .owner-inbox__empty {

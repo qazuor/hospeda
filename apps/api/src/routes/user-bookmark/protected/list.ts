@@ -3,7 +3,7 @@
  * Returns paginated bookmarks for the authenticated user, optionally filtered by entity type.
  * @route GET /api/v1/protected/user-bookmarks
  */
-import { type EntityTypeEnum, UserBookmarkSchema } from '@repo/schemas';
+import { EntityTypeEnum, UserBookmarkSchema } from '@repo/schemas';
 import { ServiceError, UserBookmarkService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -22,9 +22,7 @@ export const listUserBookmarksRoute = createProtectedRoute({
         'Returns paginated bookmarks for the authenticated user. Optionally filter by entity type.',
     tags: ['User Bookmarks'],
     requestQuery: {
-        entityType: z
-            .enum(['ACCOMMODATION', 'DESTINATION', 'ATTRACTION', 'EVENT', 'POST'])
-            .optional(),
+        entityType: z.nativeEnum(EntityTypeEnum).optional(),
         page: z.coerce.number().int().min(1).default(1),
         pageSize: z.coerce.number().int().min(1).max(100).default(10)
     },

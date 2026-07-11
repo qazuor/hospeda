@@ -77,6 +77,29 @@
     color: oklch(1 0 0);
 }
 
+/* Mobile: the 7 tabs no longer wrap into messy rows with ~32px tap
+ * targets. Instead they scroll horizontally as a single row with
+ * comfortable ~44px tap height (WCAG target size). */
+@media (max-width: 640px) {
+    .tabsRow {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x proximity;
+        padding-bottom: var(--space-2, 8px);
+        scrollbar-width: none;
+    }
+
+    .tabsRow::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tab {
+        padding: var(--space-3, 12px) var(--space-4, 16px);
+        scroll-snap-align: start;
+    }
+}
+
 /* ── Coming soon placeholder ───────────────────────────────────────────── */
 
 .comingSoon {
@@ -233,56 +256,11 @@
 }
 
 .moveBtn {
-    padding: var(--space-1, 4px) var(--space-3, 12px);
-    background-color: transparent;
-    color: var(--brand-primary);
-    border: 1px solid var(--brand-primary);
-    border-radius: var(--radius-button, 8px);
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition:
-        background-color var(--duration-normal, 0.4s) ease,
-        opacity var(--duration-normal, 0.4s) ease;
-}
-
-.moveBtn:hover:not(:disabled) {
-    background-color: var(--brand-primary-a08);
-}
-
-.moveBtn:focus-visible {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 2px;
-}
-
-.moveBtn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    composes: secondaryCompact from "./AccountButton.module.css";
 }
 
 .removeBtn {
-    padding: var(--space-1, 4px) var(--space-3, 12px);
-    background-color: transparent;
-    color: var(--destructive, oklch(0.6 0.2 25));
-    border: 1px solid var(--destructive, oklch(0.6 0.2 25));
-    border-radius: var(--radius-button, 8px);
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition:
-        background-color var(--duration-normal, 0.4s) ease,
-        opacity var(--duration-normal, 0.4s) ease;
-}
-
-.removeBtn:hover:not(:disabled) {
-    background-color: var(--destructive-a10);
-}
-
-.removeBtn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    composes: dangerCompact from "./AccountButton.module.css";
 }
 
 /* ── Section headings (Sin colección / Mis colecciones) ────────────────── */
@@ -459,27 +437,7 @@
 }
 
 .pageBtn {
-    padding: var(--space-2, 8px) var(--space-4, 16px);
-    background-color: var(--core-card);
-    color: var(--core-foreground);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-button, 8px);
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition:
-        background-color var(--duration-normal, 0.4s) ease,
-        border-color var(--duration-normal, 0.4s) ease;
-}
-
-.pageBtn:hover:not(:disabled) {
-    background-color: var(--surface-warm);
-    border-color: var(--brand-primary);
-}
-
-.pageBtn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+    composes: pagination from "./AccountButton.module.css";
 }
 
 .pageInfo {

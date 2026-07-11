@@ -1,4 +1,6 @@
+import { SparkleIcon } from '@repo/icons';
 import { useEffect, useMemo } from 'react';
+import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import type { WhatsNewItem } from '@/hooks/use-whats-new';
 import { useWhatsNew } from '@/hooks/use-whats-new';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -26,9 +28,14 @@ export function WhatsNewPageList({ locale }: WhatsNewPageListProps) {
 
     if (items.length === 0) {
         return (
-            <p className="whats-new-page__empty">
-                {t('account.whatsNewPanel.empty', 'No hay novedades aun')}
-            </p>
+            <AccountEmptyState
+                title={t('account.whatsNewPanel.empty', 'No hay novedades aún')}
+                description={t(
+                    'account.whatsNewPanel.emptyDesc',
+                    'Cuando publiquemos mejoras o nuevas funciones de la plataforma, vas a verlas acá.'
+                )}
+                icon={<SparkleIcon size={28} />}
+            />
         );
     }
 

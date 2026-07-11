@@ -20,9 +20,9 @@ describe('TEST_DAILY_PLAN (billing-interval-override)', () => {
         expect(TEST_DAILY_PLAN.slug).toBe('owner-test-daily');
     });
 
-    it('has no trial (a test plan is subscribed to directly for testing)', () => {
-        expect(TEST_DAILY_PLAN.hasTrial).toBe(false);
-        expect(TEST_DAILY_PLAN.trialDays).toBe(0);
+    it('has a 1-day no-card trial (HOS-110: exercises trial->expiry on a fast cadence)', () => {
+        expect(TEST_DAILY_PLAN.hasTrial).toBe(true);
+        expect(TEST_DAILY_PLAN.trialDays).toBe(1);
     });
 
     it('copies entitlements and limits verbatim from OWNER_PREMIUM_PLAN', () => {
@@ -33,6 +33,15 @@ describe('TEST_DAILY_PLAN (billing-interval-override)', () => {
     it('carries the documented minimum-ARS placeholder price and no annual price', () => {
         expect(TEST_DAILY_PLAN.monthlyPriceArs).toBe(TEST_DAILY_PLAN_UNIT_AMOUNT_CENTAVOS);
         expect(TEST_DAILY_PLAN.annualPriceArs).toBeNull();
+    });
+
+    it("is priced at exactly MercadoPago's $15.00 ARS preapproval minimum (1500 centavos)", () => {
+        // Pinned to the real MP-confirmed floor, not an assumed "small" value.
+        // A production checkout against this plan failed with
+        // "Cannot pay an amount lower than $ 15.00" when this constant was
+        // 100 (ARS $1.00) — regression guard against ever lowering it again
+        // without re-confirming MP's minimum has changed.
+        expect(TEST_DAILY_PLAN_UNIT_AMOUNT_CENTAVOS).toBe(1500);
     });
 
     it('is INACTIVE so the active-filtered public plans endpoint never lists it', () => {

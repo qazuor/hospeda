@@ -17,6 +17,7 @@ import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
 import RestaurantJsonLd from '@/components/seo/RestaurantJsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import GastronomyDetailHeader from '@/components/gastronomy/GastronomyDetailHeader.astro';
 import GastronomyDescription from '@/components/gastronomy/GastronomyDescription.astro';
 import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
@@ -47,7 +48,9 @@ if (!slug) return new Response(null, { status: 404 });
 const result = await gastronomyApi.getBySlug({ slug });
 
 if (!result.ok) {
-    return new Response(null, { status: 404 });
+    // Propagate 410 Gone for soft-deleted entities so crawlers/LLM fetchers
+    // deindex the URL fast (HOS-117 T-022); any other failure stays 404.
+    return new Response(null, { status: result.error.status === 410 ? 410 : 404 });
 }
 
 const raw = result.data as unknown as Record<string, unknown>;
@@ -177,6 +180,17 @@ const seoDescription =
     gastronomy.seo?.description?.trim() ||
     gastronomy.summary ||
     t('gastronomy.listing.subtitle', 'Gastronomía en el Litoral Entrerriano');
+
+// --- Breadcrumb JSON-LD (HOS-117 T-007) ---
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const breadcrumbItems = [
+    { name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
+    {
+        name: t('gastronomy.listing.title', 'Gastronomía'),
+        url: `${siteOrigin}/${locale}/gastronomia/`
+    },
+    { name: gastronomy.name, url: `${siteOrigin}${Astro.url.pathname}` }
+];
 ---
 
 <DetailLayout
@@ -203,6 +217,7 @@ const seoDescription =
             reviewCount: gastronomy.reviewsCount,
         } : undefined}
     />
+    <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
     <Breadcrumbs
         slot="breadcrumbs"
         locale={locale}

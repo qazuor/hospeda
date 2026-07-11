@@ -16,6 +16,8 @@
             "legalRequired": "Debés confirmar el aviso legal.",
             "submit": "No pudimos importar el alojamiento. Intentá de nuevo.",
             "network": "No pudimos conectar con el servidor.",
+            "forbidden": "No tenés permiso para importar desde una URL. Verificá que tu plan lo incluya.",
+            "rateLimit": "Hiciste demasiadas importaciones seguidas. Esperá un momento y probá de nuevo.",
             "failure": {
                 "invalidUrl": "Revisá que la URL sea válida y corresponda a un alojamiento.",
                 "sourceBlocked": "La fuente está temporalmente no disponible. Esperá unos minutos y probá de nuevo, o cargá los datos manualmente.",
@@ -210,12 +212,18 @@
                 "confirmNo": "Cancelar",
                 "delete": "Eliminar",
                 "deleteConfirm": "¿Eliminar esta propiedad? Se quitará de tu listado y del sitio.",
-                "deleteYes": "Sí, eliminar"
+                "deleteYes": "Sí, eliminar",
+                "publishConfirmTitle": "14 días gratis al publicar",
+                "publishConfirmNote": "Al publicar arranca tu prueba gratis de 14 días. Sin tarjeta, sin compromiso.",
+                "publishYes": "Sí, publicar"
             },
             "pricePerNight": "por noche",
             "unpublishSuccess": "Propiedad despublicada",
             "unpublishError": "No se pudo despublicar. Intentá de nuevo.",
             "deleteError": "No se pudo eliminar. Intentá de nuevo.",
+            "publishError": "No se pudo publicar. Intentá de nuevo.",
+            "publishSubscriptionRequiredMessage": "Ya usaste tu prueba gratis de 14 días. Suscribite a un plan para publicar esta propiedad.",
+            "publishSubscriptionRequiredCta": "Ver planes",
             "priceOnRequest": "Precio a consultar"
         },
         "editor": {
@@ -229,7 +237,11 @@
                 "socialNetworks": "Redes sociales",
                 "photos": "Fotos",
                 "photosDescription": "Subí fotos de tu propiedad para atraer más huéspedes",
+                "externalReputation": "Reputación externa",
                 "featuredToggle": "Destacado"
+            },
+            "sectionNav": {
+                "ariaLabel": "Navegación de secciones del formulario"
             },
             "field": {
                 "name": "Nombre",
@@ -246,9 +258,15 @@
                 "bathrooms": "Baños",
                 "price": "Precio por noche",
                 "currency": "Moneda",
+                "currencyFixedArs": "ARS — Peso argentino",
                 "amenities": "Comodidades",
                 "features": "Características",
                 "phone": "Teléfono",
+                "phoneCountry": "País",
+                "phoneCountrySearchPlaceholder": "Buscar país...",
+                "phoneCountryNoResults": "No se encontraron países",
+                "phoneNumber": "Número",
+                "whatsapp": "WhatsApp",
                 "email": "Email",
                 "website": "Sitio web",
                 "facebook": "Facebook",

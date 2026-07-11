@@ -679,7 +679,12 @@ export const ApiEnvBaseSchema = z.object({
     /**
      * AES-256-GCM master key for the social credentials vault (HOS-64 G-4).
      * Separate blast radius from HOSPEDA_AI_VAULT_MASTER_KEY — do not reuse.
-     * Optional until the vault data migration (T-025/T-033) runs.
+     * `.optional()` at the base-schema level so non-production envs (local/test)
+     * can run without it. In PRODUCTION the key is REQUIRED — enforced by the
+     * cross-field `.superRefine` in env.ts (NODE_ENV === 'production' + missing →
+     * validation error), mirroring HOSPEDA_AI_VAULT_MASTER_KEY. Without it the
+     * vault crypto throws at runtime and every social credential save/rotate
+     * fails with a generic 500 (the bug this guard prevents).
      */
     HOSPEDA_SOCIAL_VAULT_MASTER_KEY: z
         .string()

@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useAccommodationChat } from '@/hooks/useAccommodationChat';
+import { renderChatMarkdown } from '@/lib/ai-search/render-chat-markdown';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { AiChatFab } from './AiChatFab';
@@ -168,21 +169,39 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                         aria-live="polite"
                         aria-atomic="false"
                     >
-                        {chat.state.messages.map((m, i) => (
-                            <div
-                                // biome-ignore lint/suspicious/noArrayIndexKey: messages are append-only (never reordered/removed except a full reset), and ChatMessage has no stable id
-                                key={`${m.role}-${i}`}
-                                className={`${styles.bubble} ${m.role === 'user' ? styles.userBubble : styles.assistantBubble}`}
-                            >
-                                {m.content}
-                            </div>
-                        ))}
+                        {chat.state.messages.map((m, i) =>
+                            m.role === 'assistant' ? (
+                                <div
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: messages are append-only (never reordered/removed except a full reset), and ChatMessage has no stable id
+                                    key={`${m.role}-${i}`}
+                                    className={`${styles.bubble} ${styles.assistantBubble}`}
+                                    // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
+                                    dangerouslySetInnerHTML={{
+                                        // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+                                        __html: renderChatMarkdown({ raw: m.content })
+                                    }}
+                                />
+                            ) : (
+                                <div
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: messages are append-only (never reordered/removed except a full reset), and ChatMessage has no stable id
+                                    key={`${m.role}-${i}`}
+                                    className={`${styles.bubble} ${styles.userBubble}`}
+                                >
+                                    {m.content}
+                                </div>
+                            )
+                        )}
                         {chat.state.currentAssistantContent && (
                             <div
                                 className={`${styles.bubble} ${styles.assistantBubble} ${styles.streaming}`}
-                            >
-                                {chat.state.currentAssistantContent}
-                            </div>
+                                // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
+                                dangerouslySetInnerHTML={{
+                                    // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+                                    __html: renderChatMarkdown({
+                                        raw: chat.state.currentAssistantContent
+                                    })
+                                }}
+                            />
                         )}
                         {showThinking && (
                             <output

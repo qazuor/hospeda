@@ -48,3 +48,34 @@ export function shouldShowSocialProof({
     if (averageRating <= 0) return false;
     return true;
 }
+
+/**
+ * Input shape for {@link isMeaningfulStat}.
+ */
+export type IsMeaningfulStatInput = {
+    /** The stat counter's numeric value. */
+    readonly value: number;
+};
+
+/**
+ * Decide whether a homepage stat counter should render.
+ *
+ * A stat is meaningful only when its value is a finite, strictly positive
+ * number. Zero, negative, `NaN`, `Infinity` or non-number values hide the
+ * counter so we never emit a misleading "0+" into the SSR HTML — the same
+ * signal a crawler or LLM fetcher would otherwise index as fact.
+ *
+ * @param input - {@link IsMeaningfulStatInput}
+ * @returns `true` when the value is a finite number strictly greater than 0.
+ *
+ * @example
+ * isMeaningfulStat({ value: 104 });      // true
+ * isMeaningfulStat({ value: 0 });        // false
+ * isMeaningfulStat({ value: Number.NaN }); // false
+ */
+export function isMeaningfulStat({ value }: IsMeaningfulStatInput): boolean {
+    if (typeof value !== 'number') return false;
+    if (!Number.isFinite(value)) return false;
+    if (value <= 0) return false;
+    return true;
+}

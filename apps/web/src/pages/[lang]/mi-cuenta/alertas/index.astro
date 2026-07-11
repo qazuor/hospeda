@@ -20,6 +20,8 @@ import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { AlertsList } from '@/components/account/AlertsList.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -40,22 +42,14 @@ const apiUrl = getApiUrl();
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="alertas">
-    <h2 class="account-section__title">{title}</h2>
+    <AccountPageHeader title={title} />
 
-    <AlertsList
-        client:load
-        locale={locale}
-        apiUrl={apiUrl}
-        userId={user.id}
-    />
+    <AccountSectionCard>
+        <AlertsList
+            client:load
+            locale={locale}
+            apiUrl={apiUrl}
+            userId={user.id}
+        />
+    </AccountSectionCard>
 </AccountLayout>
-
-<style>
-    .account-section__title {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: clamp(1.5rem, 3vw, 2rem);
-        color: var(--core-foreground);
-        margin: 0 0 var(--space-6);
-    }
-</style>

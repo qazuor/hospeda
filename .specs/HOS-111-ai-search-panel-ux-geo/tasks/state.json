@@ -1,0 +1,669 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-111",
+    "title": "AI search chat — panel UX, geo \"nearby destinations\", attractions & conversational intent",
+    "created": "2026-07-09T10:19:25.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Unify the two panel headers into a single header (G-3)",
+            "description": "Merge the dialog title \"Búsqueda inteligente\" and the region heading \"Búsqueda conversacional\" into one header row in SearchChatPanel.client.tsx / AiSearchEntry.client.tsx, preserving a11y labels (aria-label on dialog, heading for the region). Files: apps/web/src/components/ai-search/SearchChatPanel.client.tsx, AiSearchEntry.client.tsx, SearchChatPanel.module.css. Tests: component test asserting a single heading element and that the accessible name is preserved.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Collapse dialog title + region heading into one header row",
+                    "completed": false
+                },
+                {
+                    "title": "Preserve aria-label / accessible name",
+                    "completed": false
+                },
+                {
+                    "title": "Component test for single header + a11y name",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ui", "a11y"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T11:20:49.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Compact ResultCard with overlaid star + type badges (G-1)",
+            "description": "Redesign the result card to a compact layout: photo with overlaid badges (single star rating + accommodation type), reduced vertical height. Web is vanilla CSS/CSS Modules. Files: apps/web/src/components/ai-search/ (ResultCard within SearchChatPanel), SearchChatPanel.module.css. Tests: component test asserting star + type render as badges over the photo and reduced card height class applied.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Overlay star + type badges on the photo",
+                    "completed": false
+                },
+                {
+                    "title": "Reduce card vertical footprint",
+                    "completed": false
+                },
+                {
+                    "title": "Component test for badges + compact layout",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T11:20:49.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Results area subtle background to separate it from the chat thread (G-2)",
+            "description": "Give the results container a subtle themed background using existing surface/overlay design tokens so it reads as distinct from the conversation thread. Also ensures the empty-state and the results grid look visually distinct (supports G-8). Files: apps/web/src/components/ai-search/SearchChatPanel.module.css. Tests: visual/snapshot or class-presence assertion.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Apply surface token background to results container",
+                    "completed": false
+                },
+                {
+                    "title": "Ensure empty-state visually distinct from grid",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T11:20:49.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Make the found-results count prominent (G-4)",
+            "description": "Render the results count with a prominent treatment near the results area header. Use inline t(key, fallback) i18n pattern (aiSearch.* namespace has no entries). Files: apps/web/src/components/ai-search/SearchChatPanel.client.tsx, SearchChatPanel.module.css. Tests: component test asserting the count is rendered and updates with resultsCount.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Prominent count treatment",
+                    "completed": false
+                },
+                {
+                    "title": "Component test for count render/update",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T11:20:49.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Maximize toggle: widen drawer to ~60% viewport, reversible (G-5, OQ-1)",
+            "description": "Add a maximize control that widens the chat drawer to ~60% of the viewport (NOT full-screen modal), keeping the page visible behind it, reversible. Enough room for 2-3 card columns. Files: apps/web/src/components/ai-search/AiSearchEntry.client.tsx (drawer wrapper), SearchChatPanel.module.css. Tests: component test toggling maximize state and asserting the width class flips both ways.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Maximize/restore toggle control",
+                    "completed": false
+                },
+                {
+                    "title": "~60% viewport width class, page visible behind",
+                    "completed": false
+                },
+                {
+                    "title": "Component test for reversible toggle",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T11:20:49.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Compact filter chips reflecting APPLIED params, not raw intent (G-6, AC-6)",
+            "description": "Restyle filter chips to a compact form (consider a \"N filtros\" collapse when many) AND switch the chip source from the raw LLM intent to the applied params, so a filter that isn't actually sent (e.g. a maxGuests chip) never renders. Files: apps/web/src/components/ai-search/SearchChatPanel.client.tsx, useSearchChat.ts, SearchChatPanel.module.css. Tests: component test asserting chips derive from applied params and that a dropped intent field produces no chip.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Compact chip styling + optional N-filtros collapse",
+                    "completed": false
+                },
+                {
+                    "title": "Derive chips from applied params, not raw intent",
+                    "completed": false
+                },
+                {
+                    "title": "Test: dropped intent field renders no chip",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T11:20:49.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "State-aware input placeholder (G-7, OQ-5)",
+            "description": "Make the input placeholder change across states with the agreed Rioplatense copy: initial=\"Contame qué buscás, por ejemplo: cabaña para 4 con pileta cerca del río\"; has-results=\"Afiná tu búsqueda: sumá precio, características, o pedí destinos cercanos\"; no-results=\"No encontré nada con esos filtros. Probá quitando alguno o buscá en destinos cercanos.\" Keep inline t(key, fallback). Files: apps/web/src/components/ai-search/SearchChatPanel.client.tsx, useSearchChat.ts. Tests: component test asserting placeholder text per state (initial/has-results/no-results).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Derive placeholder from search state",
+                    "completed": false
+                },
+                {
+                    "title": "Wire the three copy variants",
+                    "completed": false
+                },
+                {
+                    "title": "Test placeholder across the three states",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T11:20:49.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Reproduce & resolve \"cards drop from 2 columns to 1 on re-search\" (G-8, AC-8)",
+            "description": "Reproduce Bug #8. Preliminary diagnosis: NOT a CSS regression (.resultsGrid byte-identical) — likely the empty-state (.resultsEmpty, full-width <p>) appearing when a refinement returns 0 results, reading as \"1 full-width column\". Confirm with resultsCount in repro. If count > 1 and still 1 column, the cause is an ancestor layout container. Either fix or document as empty-state behavior with the agreed UX (pairs with T-003). Files: apps/web/src/components/ai-search/SearchChatPanel.module.css / .client.tsx. Tests: regression test for a 0-result refinement not collapsing the grid and >1 result rendering multi-column.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Reproduce with resultsCount instrumentation",
+                    "completed": false
+                },
+                {
+                    "title": "Fix or document empty-state vs grid distinction",
+                    "completed": false
+                },
+                {
+                    "title": "Regression test multi-column with >1 result",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "bug"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T11:20:49.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Verify & extend NL amenities/features resolution (G-10, AC-10)",
+            "description": "Confirm the intent allowlist + extraction prompt map natural language to the REAL slugs and add any missing mappings: pets (pet_friendly amenity / pet_friendly_area, pet_suitable features), smoking INVERSE (\"se pueda fumar\"→smoking_area feature; \"libre de humo\"→smoke_free amenity), A/C (air_conditioning amenity), river/beach-front via existing features (Frente al río / Frente al balneario). Files: apps/api search-chat intent prompt/allowlist + packages/schemas ai-search-intent schema if needed. Tests: unit tests asserting each NL phrase resolves to the expected slug(s).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Audit allowlist + prompt vs real slugs",
+                    "completed": false
+                },
+                {
+                    "title": "Add smoking inverse + river/beach feature mappings",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests per NL phrase → slug",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "intent", "schemas"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T19:01:20.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Extract shared Haversine helper from accommodation.model.ts (G-9 foundation)",
+            "description": "Extract buildHaversineDistanceExpr({latCol, longCol, lat, long}) and a withinRadius variant from the private buildGeoRadiusClause / buildDistanceOrderExpr in accommodation.model.ts into a reusable place in packages/db, so destination↔destination and destination↔accommodation distance share one formula (Earth radius 6371 km). Guard coordinates IS NOT NULL and cast the string {lat, long} (key is long, not lng) to numeric. This helper is also the HOS-113/POI dependency. Files: packages/db (new helper module) + accommodation.model.ts refactor to use it. Tests: unit tests for the distance expr / withinRadius against known coordinate pairs.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Extract shared distance + withinRadius helper",
+                    "completed": false
+                },
+                {
+                    "title": "Refactor accommodation.model.ts to use it (no dup formula)",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests against known coordinate pairs",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "geo"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T19:01:20.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Nearby-destination resolution: ~50km radius + fallback to N nearest (G-9, OQ-2)",
+            "description": "Add a resolver that, given an anchor destinationId, finds destinations with coordinates within a fixed radius (~50 km, tunable via a constant, no UI), guarded by coordinates IS NOT NULL, with a FALLBACK to the N nearest destinations when the radius is empty so a follow-up never comes back empty. Uses the T-010 helper. Files: packages/db destination model + packages/service-core destination service. Tests: unit tests for radius hit, empty-radius fallback, and null-coordinate exclusion.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Radius query using shared helper + NOT NULL guard",
+                    "completed": false
+                },
+                {
+                    "title": "Fallback to N nearest when radius empty",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests: hit / fallback / null-coord exclusion",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "service", "geo"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T19:01:20.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Intent slot + prompt for nearby expansion (G-9)",
+            "description": "Add an optional intent slot (e.g. expandToNearby: boolean or nearbyOfDestinationId) to the ai-search-intent schema and reinforce the extraction prompt so conversational follow-ups (\"y en destinos cercanos\", \"también cerca\") produce that signal, leveraging the message history the endpoint already sends. Files: packages/schemas ai-search-intent.schema.ts + apps/api search-chat prompt. Tests: unit tests asserting follow-up phrases set the nearby signal and that unrelated messages don't.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Add optional nearby slot to intent schema",
+                    "completed": false
+                },
+                {
+                    "title": "Reinforce prompt to detect nearby follow-ups from history",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests: follow-up sets signal, unrelated doesn't",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "intent", "schemas"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T19:01:20.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Wire nearby expansion into search-chat handler + emit resolved destinations in SSE (G-9, AC-9)",
+            "description": "In the search-chat handler, when the nearby signal is present, resolve the anchor destination's neighbors (T-011) and turn it into a multi-destination / geo-radius accommodation search; emit the resolved destination set in the filters SSE frame so the UI can show which destinations were included. Files: apps/api search-chat.ts handler. Tests: integration test for \"cabaña en Colón, y también en destinos cercanos\" returning Colón + ~50km neighbors and the filters frame listing them.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-012"],
+            "blocks": ["T-014", "T-018"],
+            "subtasks": [
+                {
+                    "title": "Resolve neighbors on nearby signal and expand search",
+                    "completed": false
+                },
+                {
+                    "title": "Emit resolved destinations in filters SSE frame",
+                    "completed": false
+                },
+                {
+                    "title": "Integration test for Colón + nearby",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "geo"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T19:01:20.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "UI: show which nearby destinations were included (G-9, AC-9)",
+            "description": "Render the resolved nearby-destination set from the filters SSE frame in the panel (chips or a line like \"incluyendo Pueblo Liebig, San José, C. del Uruguay\") so it's clear which destinations were searched. Files: apps/web/src/components/ai-search/SearchChatPanel.client.tsx, useSearchChat.ts. Tests: component test asserting the included destinations render when the frame carries them.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Read resolved destinations from filters frame",
+                    "completed": false
+                },
+                {
+                    "title": "Render included-destinations indicator",
+                    "completed": false
+                },
+                {
+                    "title": "Component test for included destinations",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ui"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T19:01:20.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "attractionSlugs intent slot + curated attraction allowlist in prompt (G-11)",
+            "description": "Add an optional attractionSlugs slot to the ai-search-intent schema (mirroring amenitySlugs/featureSlugs) and inject a curated attraction allowlist into the extraction prompt so the model emits canonical attraction slugs (e.g. \"carnavales\"). Files: packages/schemas ai-search-intent.schema.ts + apps/api search-chat prompt. Tests: unit tests asserting NL attraction mentions resolve to canonical slugs and off-allowlist terms don't hallucinate.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Add attractionSlugs slot to intent schema",
+                    "completed": false
+                },
+                {
+                    "title": "Inject curated attraction allowlist into prompt",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests: NL → canonical slug, no hallucination",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "intent", "schemas"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T20:43:35.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Attraction → destinations → constrain accommodation search (G-11, AC-11)",
+            "description": "Resolve emitted attraction slug(s) to attraction rows, find destinations that have them via r_destination_attraction, and constrain the accommodation search to those destinations (no accommodation↔attraction join for the MVP). Files: apps/api search-chat handler + packages/service-core / packages/db attraction+destination resolution. Tests: integration test for \"una ciudad con carnavales\" constraining results to destinations with that attraction.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-015", "T-017"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                {
+                    "title": "Resolve attraction slug → destinations via r_destination_attraction",
+                    "completed": false
+                },
+                {
+                    "title": "Constrain accommodation search to those destinations",
+                    "completed": false
+                },
+                {
+                    "title": "Integration test for carnavales query",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "db", "service"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T20:43:35.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Support multi-destinationId filter in accommodation query schema (G-11)",
+            "description": "If the accommodation query schema does not already accept multiple destinationIds, add a multi-destinationId filter (used by attraction resolution T-016, and optionally by nearby expansion T-013). Files: packages/schemas accommodation.query.schema.ts + packages/db accommodation.model.ts query builder. Tests: unit tests asserting the query returns accommodations across multiple destinationIds.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Add multi-destinationId filter to query schema",
+                    "completed": false
+                },
+                {
+                    "title": "Implement in query builder",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test multi-destination results",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "db"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T20:43:35.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Cross-cutting integration/E2E tests for geo + attraction flows (AC-12)",
+            "description": "Add end-to-end/integration coverage for the conversational geo-nearby flow and the attraction-constrained flow through the search-chat endpoint, plus regression guards. Files: apps/api search-chat test suite. Tests: E2E asserting AC-9 (Colón + nearby) and AC-11 (carnavales) behave end-to-end; typecheck/lint/tests green.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-013", "T-016"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "E2E for geo-nearby flow (AC-9)",
+                    "completed": false
+                },
+                {
+                    "title": "E2E for attraction-constrained flow (AC-11)",
+                    "completed": false
+                },
+                {
+                    "title": "Regression guards + green gate",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T20:43:35.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Close-out notes + doc touch-ups",
+            "description": "Fill .specs/HOS-111-ai-search-panel-ux-geo/closeout.md with what shipped per phase, PRs, tests, and any follow-ups (e.g. HOS-113 dependency on the extracted Haversine helper). Update any web/ai-search component doc if present. Files: .specs/HOS-111-ai-search-panel-ux-geo/closeout.md.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write closeout.md per phase",
+                    "completed": false
+                },
+                {
+                    "title": "Note HOS-113 helper dependency",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-09T10:19:25.000Z",
+                "started": null,
+                "completed": "2026-07-09T20:43:35.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 19,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 19,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}

@@ -70,6 +70,19 @@ const PLATFORM_FALLBACK: Readonly<Record<ExternalPlatform, string>> = {
     OTHER: 'Otra plataforma'
 };
 
+/**
+ * Fallback hint text (per platform) explaining where to find the public
+ * listing URL to paste in the "Add listing" form. Used when the i18n key
+ * is not yet loaded (BETA-136).
+ */
+const URL_HINT_FALLBACK: Readonly<Record<ExternalPlatform, string>> = {
+    GOOGLE: 'Buscá tu negocio en Google Maps, abrí su ficha y copiá la URL desde el botón Compartir.',
+    BOOKING:
+        'Entrá al extranet de Booking, abrí tu propiedad y copiá el enlace público de la página del alojamiento.',
+    AIRBNB: "En tu panel de anfitrión de Airbnb, abrí el anuncio y copiá la URL desde 'Vista previa del anuncio'.",
+    OTHER: 'Pegá el enlace público directo a tu anuncio en esa plataforma.'
+};
+
 const PROTECTED = '/api/v1/protected';
 
 // ---------------------------------------------------------------------------
@@ -357,6 +370,20 @@ export function ExternalReputationSection({
         [t]
     );
 
+    /**
+     * Instructions for where to find the public listing URL, dynamic on the
+     * currently-selected `addPlatform` (BETA-136). Recomputed whenever the
+     * platform selection changes.
+     */
+    const urlHint = useMemo(
+        () =>
+            t(
+                `external-reputation.ownerConfig.urlHint.${addPlatform.toLowerCase()}`,
+                URL_HINT_FALLBACK[addPlatform]
+            ),
+        [addPlatform, t]
+    );
+
     /** Entries for PlatformStatusChips, built from the status polling data. */
     const platformStatusEntries = useMemo<readonly PlatformStatusEntry[]>(() => {
         return Object.entries(statusPlatforms).flatMap(([platform, status]) => {
@@ -548,6 +575,13 @@ export function ExternalReputationSection({
                         ))}
                     </select>
                 </div>
+
+                <p
+                    className={styles.fieldHint}
+                    data-testid="ext-rep-url-hint"
+                >
+                    {urlHint}
+                </p>
 
                 <div className={styles.addFormRow}>
                     <label

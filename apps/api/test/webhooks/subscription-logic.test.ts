@@ -786,6 +786,84 @@ describe('processSubscriptionUpdated', () => {
         );
     });
 
+    // HOS-108: recurring subs created via qzpay `mode: 'paid'` land on the
+    // literal stored status `incomplete` (qzpay vocab), NOT `pending_provider`.
+    // The activation webhook must normalize that `from` before the transition
+    // guard, otherwise `incomplete` is rejected as an unknown source status and
+    // the sub is stuck forever. This is the exact production regression.
+    it('should activate a subscription stored as qzpay `incomplete` (HOS-108)', async () => {
+        // Arrange: local row still carries qzpay's creation-time `incomplete`.
+        const mpPreapprovalId = 'preapproval-mp-001';
+        mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+        mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+        const localSub = makeLocalSubscription({ status: 'incomplete' });
+        // makeDbMock defaults the FOR UPDATE fresh row to the same status, so this
+        // also exercises the in-transaction normalization of `freshStatus`.
+        const dbMock = makeDbMock([localSub]);
+        vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+        const event = makeWebhookEvent();
+
+        // Act
+        const result = await processSubscriptionUpdated({
+            event: event as never,
+            billing: mockBilling as never,
+            paymentAdapter: mockPaymentAdapter as never,
+            providerEventId: 'evt-hos108-a'
+        });
+
+        // Assert: the write happened and the sub is now active.
+        expect(result).toEqual({
+            success: true,
+            statusChanged: true,
+            newStatus: SubscriptionStatusEnum.ACTIVE
+        });
+
+        const txUpdateChain = dbMock.tx.update({});
+        expect(txUpdateChain.set).toHaveBeenCalledWith(
+            expect.objectContaining({ status: SubscriptionStatusEnum.ACTIVE })
+        );
+
+        // Audit trail records the NORMALIZED previous status (Hospeda vocab),
+        // not the raw qzpay `incomplete`.
+        const txInsertChain = dbMock.tx.insert({});
+        expect(txInsertChain.values).toHaveBeenCalledWith(
+            expect.objectContaining({
+                previousStatus: SubscriptionStatusEnum.PENDING_PROVIDER,
+                newStatus: SubscriptionStatusEnum.ACTIVE
+            })
+        );
+    });
+
+    // HOS-108: a genuinely unrecognized stored status (neither qzpay nor Hospeda
+    // vocab) is a data-integrity signal — skip the write entirely, do not open a
+    // transaction, and surface it (no silent coercion).
+    it('should skip the write when the stored status is unrecognized (HOS-108)', async () => {
+        // Arrange
+        const mpPreapprovalId = 'preapproval-mp-001';
+        mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+        mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+        const localSub = makeLocalSubscription({ status: 'bogus_status' });
+        const dbMock = makeDbMock([localSub]);
+        vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+        const event = makeWebhookEvent();
+
+        // Act
+        const result = await processSubscriptionUpdated({
+            event: event as never,
+            billing: mockBilling as never,
+            paymentAdapter: mockPaymentAdapter as never,
+            providerEventId: 'evt-hos108-b'
+        });
+
+        // Assert: no status change, and the transaction was never opened.
+        expect(result).toEqual({ success: true, statusChanged: false });
+        expect(dbMock.transaction).not.toHaveBeenCalled();
+    });
+
     // TC-10: CANCELLED transition does NOT overwrite existing canceledAt
     it('should NOT overwrite canceledAt when it is already set during CANCELLED transition', async () => {
         // Arrange
@@ -2094,6 +2172,557 @@ describe('processSubscriptionUpdated', () => {
                 }),
                 expect.stringContaining('syncFeaturedByEntitlementForOwner failed (non-blocking')
             );
+        });
+    });
+
+    // ---------------------------------------------------------------------------
+    // HOS-114 T-007: deferred reactivation supersession on PENDING_PROVIDER -> ACTIVE
+    // ---------------------------------------------------------------------------
+    describe('reactivation supersession (HOS-114 T-007)', () => {
+        /**
+         * Builds a db mock whose outer `select(...).from(...).where(...).limit(1)`
+         * chain resolves sequentially in exactly the order
+         * `processSubscriptionUpdated` + `completeReactivationSupersession` issue
+         * SELECTs:
+         *   1. The just-activated local subscription (Step 5 lookup) — always
+         *      `[localSub]`.
+         *   2+. One entry per subsequent `.limit()` call inside
+         *      `completeReactivationSupersession` (the existing-audit-row check,
+         *      then — only if no existing row was found — the superseded
+         *      subscription lookup), in call order, via `subsequentSelectResults`.
+         */
+        function makeSupersessionDbMock({
+            localSub,
+            subsequentSelectResults = []
+        }: {
+            localSub: Record<string, unknown>;
+            subsequentSelectResults?: Array<Record<string, unknown>[]>;
+        }) {
+            const txInsertValuesChain = { values: vi.fn().mockResolvedValue(undefined) };
+            const txUpdateSetChain = {
+                set: vi.fn().mockReturnThis(),
+                where: vi.fn().mockResolvedValue(undefined)
+            };
+            const txSelectForChain = { for: vi.fn().mockResolvedValue([localSub]) };
+            const txSelectWhereChain = { where: vi.fn().mockReturnValue(txSelectForChain) };
+            const txSelectFromChain = { from: vi.fn().mockReturnValue(txSelectWhereChain) };
+            const tx = {
+                insert: vi.fn().mockReturnValue(txInsertValuesChain),
+                update: vi.fn().mockReturnValue(txUpdateSetChain),
+                select: vi.fn().mockReturnValue(txSelectFromChain)
+            };
+
+            const limitMock = vi.fn();
+            limitMock.mockResolvedValueOnce([localSub]);
+            for (const rows of subsequentSelectResults) {
+                limitMock.mockResolvedValueOnce(rows);
+            }
+
+            const selectChain = {
+                from: vi.fn().mockReturnThis(),
+                where: vi.fn().mockReturnThis(),
+                limit: limitMock
+            };
+
+            // Post-commit audit insert in completeReactivationSupersession runs
+            // directly on `db` (not `tx`), mirroring other post-commit writes in
+            // this file (e.g. the paymentFailureCount update).
+            const topLevelInsertValues = vi.fn().mockResolvedValue(undefined);
+            const topLevelInsert = vi.fn().mockReturnValue({ values: topLevelInsertValues });
+
+            return {
+                select: vi.fn().mockReturnValue(selectChain),
+                insert: topLevelInsert,
+                update: vi.fn().mockReturnValue(txUpdateSetChain),
+                transaction: vi.fn(async (cb: (txArg: typeof tx) => Promise<void>) => {
+                    await cb(tx);
+                }),
+                tx,
+                topLevelInsertValues
+            };
+        }
+
+        let mockCancel: ReturnType<typeof vi.fn>;
+        /**
+         * T-015a: `completeSupersessionPairing` re-fetches the superseded
+         * subscription's status via `billing.subscriptions.get()` after the
+         * cancel attempt. Defaults to `'canceled'` (the normal, successful
+         * outcome) so existing tests that expect a completed swap keep
+         * passing without each having to configure this explicitly.
+         * Individual tests override it to simulate the T-015a hardening path.
+         */
+        let mockGet: ReturnType<typeof vi.fn>;
+
+        beforeEach(() => {
+            mockCancel = vi.fn().mockResolvedValue(undefined);
+            mockGet = vi.fn().mockResolvedValue({ status: 'canceled' });
+        });
+
+        it('cancels the superseded subscription and writes the reactivation audit row on confirm (trial reactivation)', async () => {
+            // Arrange: new subscription confirms PENDING_PROVIDER -> ACTIVE and
+            // carries supersedesSubscriptionId + convertedFromTrial metadata,
+            // exactly as written by TrialService.reactivateFromTrial (T-005).
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSub = makeLocalSubscription({
+                status: 'incomplete',
+                metadata: {
+                    convertedFromTrial: 'true',
+                    convertedAt: new Date().toISOString(),
+                    supersedesSubscriptionId: 'sub-old-trial-001'
+                }
+            });
+            const dbMock = makeSupersessionDbMock({
+                localSub,
+                subsequentSelectResults: [
+                    [], // existing-audit-row check: none found
+                    [{ id: 'sub-old-trial-001', status: SubscriptionStatusEnum.TRIALING }] // superseded row lookup
+                ]
+            });
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: {
+                    ...mockBilling,
+                    subscriptions: { cancel: mockCancel, get: mockGet }
+                } as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t007-confirm'
+            });
+
+            // Assert: activation succeeded, superseded sub cancelled exactly once,
+            // and the reactivation audit row was written exactly once.
+            expect(result).toEqual({
+                success: true,
+                statusChanged: true,
+                newStatus: SubscriptionStatusEnum.ACTIVE
+            });
+            expect(mockCancel).toHaveBeenCalledTimes(1);
+            expect(mockCancel).toHaveBeenCalledWith('sub-old-trial-001');
+            // T-015a: the cancel outcome is re-verified via the billing
+            // client's own read before the audit row is written.
+            expect(mockGet).toHaveBeenCalledWith('sub-old-trial-001');
+            expect(dbMock.topLevelInsertValues).toHaveBeenCalledTimes(1);
+            expect(dbMock.topLevelInsertValues).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    subscriptionId: localSub.id,
+                    previousStatus: SubscriptionStatusEnum.TRIALING,
+                    newStatus: SubscriptionStatusEnum.ACTIVE,
+                    triggerSource: 'trial-reactivation',
+                    providerEventId: 'evt-t007-confirm',
+                    metadata: expect.objectContaining({
+                        supersededSubscriptionId: 'sub-old-trial-001',
+                        convertedFromTrial: 'true'
+                    })
+                })
+            );
+        });
+
+        it('cancels the superseded subscription and writes the reactivation audit row on confirm (lapsed reactivation)', async () => {
+            // Arrange: mirrors TrialService.reactivateSubscription (T-006)
+            // markers. The superseded subscription is ALREADY `cancelled` by
+            // definition (it is the canceled sub the user is reactivating
+            // FROM) — this is the case that proves the idempotency guard must
+            // be keyed off audit-row existence, NOT off the superseded
+            // subscription's status, or this flow's audit row would never fire.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSub = makeLocalSubscription({
+                status: 'incomplete',
+                metadata: {
+                    reactivatedFromCanceled: 'true',
+                    reactivatedAt: new Date().toISOString(),
+                    previousPlanId: 'plan-old-001',
+                    supersedesSubscriptionId: 'sub-old-cancelled-001'
+                }
+            });
+            const dbMock = makeSupersessionDbMock({
+                localSub,
+                subsequentSelectResults: [
+                    [], // existing-audit-row check: none found
+                    [{ id: 'sub-old-cancelled-001', status: SubscriptionStatusEnum.CANCELLED }] // superseded row lookup
+                ]
+            });
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: {
+                    ...mockBilling,
+                    subscriptions: { cancel: mockCancel, get: mockGet }
+                } as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t007-confirm-lapsed'
+            });
+
+            // Assert: the provider cancel is still attempted (and can safely
+            // no-op/error on an already-cancelled provider subscription — that
+            // error is swallowed), and the audit row IS written despite the
+            // superseded subscription already being `cancelled`.
+            expect(result.success).toBe(true);
+            expect(mockCancel).toHaveBeenCalledTimes(1);
+            expect(mockCancel).toHaveBeenCalledWith('sub-old-cancelled-001');
+            expect(dbMock.topLevelInsertValues).toHaveBeenCalledTimes(1);
+            expect(dbMock.topLevelInsertValues).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    subscriptionId: localSub.id,
+                    previousStatus: SubscriptionStatusEnum.CANCELLED,
+                    triggerSource: 'subscription-reactivation',
+                    newStatus: SubscriptionStatusEnum.ACTIVE,
+                    metadata: expect.objectContaining({
+                        supersededSubscriptionId: 'sub-old-cancelled-001',
+                        reactivatedFromCanceled: 'true'
+                    })
+                })
+            );
+        });
+
+        it('T-015a: does NOT write the audit row when a transient cancel failure leaves the superseded subscription still active', async () => {
+            // Arrange: the provider cancel throws (simulating a transient MP
+            // 5xx/timeout), and the re-fetch confirms the superseded
+            // subscription is STILL 'active' — the cancel genuinely did not
+            // take effect. The pre-hardening code would have swallowed the
+            // cancel error and written the audit row anyway, permanently
+            // masking a subscription that can keep charging the customer.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSub = makeLocalSubscription({
+                status: 'incomplete',
+                metadata: {
+                    convertedFromTrial: 'true',
+                    supersedesSubscriptionId: 'sub-old-trial-001'
+                }
+            });
+            const dbMock = makeSupersessionDbMock({
+                localSub,
+                subsequentSelectResults: [
+                    [], // existing-audit-row check: none found
+                    [{ id: 'sub-old-trial-001', status: SubscriptionStatusEnum.TRIALING }] // superseded row lookup
+                ]
+            });
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            mockCancel.mockRejectedValueOnce(new Error('MercadoPago 503'));
+            mockGet.mockResolvedValueOnce({ status: 'active' });
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: {
+                    ...mockBilling,
+                    subscriptions: { cancel: mockCancel, get: mockGet }
+                } as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t015a-transient-fail'
+            });
+
+            // Assert: the NEW subscription's own activation still succeeds
+            // (never undone by a supersession failure), but the audit row is
+            // NOT written and the failure is surfaced loudly.
+            expect(result).toEqual({
+                success: true,
+                statusChanged: true,
+                newStatus: SubscriptionStatusEnum.ACTIVE
+            });
+            expect(mockCancel).toHaveBeenCalledWith('sub-old-trial-001');
+            expect(mockGet).toHaveBeenCalledWith('sub-old-trial-001');
+            expect(dbMock.topLevelInsertValues).not.toHaveBeenCalled();
+            expect(Sentry.captureException).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    message: expect.stringContaining('did not take effect')
+                }),
+                expect.objectContaining({
+                    extra: expect.objectContaining({
+                        subscriptionId: localSub.id,
+                        supersededId: 'sub-old-trial-001'
+                    })
+                })
+            );
+        });
+
+        it('T-015a: does NOT write the audit row when the re-fetch shows the superseded subscription is still trialing', async () => {
+            // Arrange: cancel() itself resolves without throwing (e.g. the
+            // provider accepted the request but the status flip has not
+            // propagated yet), but the re-fetch still shows 'trialing' —
+            // must be treated identically to a thrown cancel error.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSub = makeLocalSubscription({
+                status: 'incomplete',
+                metadata: {
+                    convertedFromTrial: 'true',
+                    supersedesSubscriptionId: 'sub-old-trial-001'
+                }
+            });
+            const dbMock = makeSupersessionDbMock({
+                localSub,
+                subsequentSelectResults: [
+                    [],
+                    [{ id: 'sub-old-trial-001', status: SubscriptionStatusEnum.TRIALING }]
+                ]
+            });
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            mockGet.mockResolvedValueOnce({ status: 'trialing' });
+
+            const event = makeWebhookEvent();
+
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: {
+                    ...mockBilling,
+                    subscriptions: { cancel: mockCancel, get: mockGet }
+                } as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t015a-still-trialing'
+            });
+
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.ACTIVE);
+            expect(dbMock.topLevelInsertValues).not.toHaveBeenCalled();
+            expect(Sentry.captureException).toHaveBeenCalledOnce();
+        });
+
+        it('does NOT cancel or audit when the confirmed subscription carries no supersedesSubscriptionId (plain /start-paid activation)', async () => {
+            // Arrange: a normal first-time paid checkout activation — no
+            // reactivation metadata at all.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSub = makeLocalSubscription({ status: 'incomplete', metadata: {} });
+            const dbMock = makeSupersessionDbMock({ localSub });
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: {
+                    ...mockBilling,
+                    subscriptions: { cancel: mockCancel, get: mockGet }
+                } as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t007-no-supersede'
+            });
+
+            // Assert: activation succeeds normally, no supersession side effects.
+            expect(result).toEqual({
+                success: true,
+                statusChanged: true,
+                newStatus: SubscriptionStatusEnum.ACTIVE
+            });
+            expect(mockCancel).not.toHaveBeenCalled();
+            expect(dbMock.topLevelInsertValues).not.toHaveBeenCalled();
+        });
+
+        it('does NOT fire the swap on a non-activation transition even when metadata carries supersedesSubscriptionId', async () => {
+            // Arrange: ACTIVE -> PAUSED transition on a subscription that
+            // (unrealistically, but defensively tested) still carries a stale
+            // supersedesSubscriptionId marker from its original creation.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('paused'));
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.ACTIVE,
+                metadata: {
+                    convertedFromTrial: 'true',
+                    supersedesSubscriptionId: 'sub-old-trial-001'
+                }
+            });
+            const dbMock = makeSupersessionDbMock({ localSub });
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: {
+                    ...mockBilling,
+                    subscriptions: { cancel: mockCancel, get: mockGet }
+                } as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t007-wrong-transition'
+            });
+
+            // Assert: PAUSED transition proceeds, but the gate holds — no swap.
+            expect(result).toEqual({
+                success: true,
+                statusChanged: true,
+                newStatus: SubscriptionStatusEnum.PAUSED
+            });
+            expect(mockCancel).not.toHaveBeenCalled();
+            expect(dbMock.topLevelInsertValues).not.toHaveBeenCalled();
+        });
+
+        it('does not fire the swap while the new subscription remains incomplete (abandoned checkout)', async () => {
+            // Arrange: MP still reports 'pending' (no activation yet) — the
+            // function returns early at the pending-status branch, well before
+            // ever reaching the supersession gate or opening a DB transaction.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('pending'));
+
+            const dbMock = makeSupersessionDbMock({
+                localSub: makeLocalSubscription({ status: 'incomplete' })
+            });
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: {
+                    ...mockBilling,
+                    subscriptions: { cancel: mockCancel, get: mockGet }
+                } as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t007-abandoned'
+            });
+
+            // Assert
+            expect(result).toEqual({ success: true, statusChanged: false });
+            expect(dbMock.select).not.toHaveBeenCalled();
+            expect(mockCancel).not.toHaveBeenCalled();
+            expect(dbMock.topLevelInsertValues).not.toHaveBeenCalled();
+        });
+
+        it('is idempotent: skips the provider cancel call and the audit insert when this pairing is already audited', async () => {
+            // Arrange: simulates a webhook/dead-letter redelivery reaching the
+            // supersession step a second time for the exact same
+            // (localSubscription.id, supersededId) pairing — the
+            // existing-audit-row check finds a prior row, proving the internal
+            // guard in completeReactivationSupersession short-circuits BEFORE
+            // even looking up the superseded subscription's status.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSub = makeLocalSubscription({
+                status: 'incomplete',
+                metadata: {
+                    convertedFromTrial: 'true',
+                    supersedesSubscriptionId: 'sub-old-trial-001'
+                }
+            });
+            const dbMock = makeSupersessionDbMock({
+                localSub,
+                subsequentSelectResults: [
+                    [{ id: 'existing-audit-evt-001' }] // existing-audit-row check: FOUND
+                ]
+            });
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: {
+                    ...mockBilling,
+                    subscriptions: { cancel: mockCancel, get: mockGet }
+                } as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t007-idempotent'
+            });
+
+            // Assert: activation still succeeds, but the swap is a no-op since
+            // this pairing was already audited by a prior run.
+            expect(result).toEqual({
+                success: true,
+                statusChanged: true,
+                newStatus: SubscriptionStatusEnum.ACTIVE
+            });
+            expect(mockCancel).not.toHaveBeenCalled();
+            expect(dbMock.topLevelInsertValues).not.toHaveBeenCalled();
+        });
+
+        it('firing the confirm webhook twice end-to-end cancels the superseded subscription and writes the audit row exactly once', async () => {
+            // Arrange first delivery: PENDING_PROVIDER -> ACTIVE, supersession fires.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSubIncomplete = makeLocalSubscription({
+                status: 'incomplete',
+                metadata: {
+                    convertedFromTrial: 'true',
+                    supersedesSubscriptionId: 'sub-old-trial-001'
+                }
+            });
+            const dbMockFirstDelivery = makeSupersessionDbMock({
+                localSub: localSubIncomplete,
+                subsequentSelectResults: [
+                    [], // existing-audit-row check: none found
+                    [{ id: 'sub-old-trial-001', status: 'trialing' }] // superseded row lookup
+                ]
+            });
+            vi.mocked(getDb).mockReturnValue(dbMockFirstDelivery as never);
+
+            const firstResult = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: {
+                    ...mockBilling,
+                    subscriptions: { cancel: mockCancel, get: mockGet }
+                } as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t007-redelivery-1'
+            });
+
+            expect(firstResult.newStatus).toBe(SubscriptionStatusEnum.ACTIVE);
+            expect(mockCancel).toHaveBeenCalledTimes(1);
+            expect(dbMockFirstDelivery.topLevelInsertValues).toHaveBeenCalledTimes(1);
+
+            // Arrange second delivery: MP redelivers the SAME event. The local
+            // subscription is now ACTIVE (the first delivery already committed
+            // it), so Step 6's same-status short-circuit fires before the
+            // transaction ever opens — the supersession step is never reached.
+            const localSubActive = makeLocalSubscription({
+                status: SubscriptionStatusEnum.ACTIVE,
+                metadata: {
+                    convertedFromTrial: 'true',
+                    supersedesSubscriptionId: 'sub-old-trial-001'
+                }
+            });
+            const dbMockSecondDelivery = makeSupersessionDbMock({ localSub: localSubActive });
+            vi.mocked(getDb).mockReturnValue(dbMockSecondDelivery as never);
+
+            const secondResult = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: {
+                    ...mockBilling,
+                    subscriptions: { cancel: mockCancel, get: mockGet }
+                } as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t007-redelivery-2'
+            });
+
+            // Assert: second delivery is a no-op (already up to date); cancel and
+            // audit insert counts are UNCHANGED from after the first delivery.
+            expect(secondResult).toEqual({ success: true, statusChanged: false });
+            expect(mockCancel).toHaveBeenCalledTimes(1);
+            expect(dbMockFirstDelivery.topLevelInsertValues).toHaveBeenCalledTimes(1);
+            expect(dbMockSecondDelivery.topLevelInsertValues).not.toHaveBeenCalled();
         });
     });
 });

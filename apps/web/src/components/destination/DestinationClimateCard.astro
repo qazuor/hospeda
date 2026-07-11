@@ -60,6 +60,30 @@ const bestMonthsLabel =
     climate?.bestMonths?.from && climate?.bestMonths?.to
         ? `${t(`destinations.climate.months.${climate.bestMonths.from}`, climate.bestMonths.from)} – ${t(`destinations.climate.months.${climate.bestMonths.to}`, climate.bestMonths.to)}`
         : null;
+
+// Current season (southern hemisphere / Argentina) so the live weather island can
+// render a meaningful seasonal-average fallback in its SSR/loading state instead of
+// an empty skeleton — crawlers and LLM fetchers then see real climate text for this
+// destination even before the client-side live fetch resolves (HOS-117 T-005).
+const monthIndex = new Date().getMonth();
+const currentSeason: SeasonKey =
+    monthIndex === 11 || monthIndex <= 1
+        ? 'summer'
+        : monthIndex <= 4
+          ? 'autumn'
+          : monthIndex <= 7
+            ? 'winter'
+            : 'spring';
+const currentSeasonData = climate?.seasons?.[currentSeason];
+const seasonalFallback =
+    currentSeasonData &&
+    (currentSeasonData.avgTempMinC !== undefined || currentSeasonData.avgTempMaxC !== undefined)
+        ? {
+              seasonKey: currentSeason,
+              avgTempMinC: currentSeasonData.avgTempMinC,
+              avgTempMaxC: currentSeasonData.avgTempMaxC
+          }
+        : null;
 ---
 
 <section
@@ -143,12 +167,15 @@ const bestMonthsLabel =
         </div>
     )}
 
-    <!-- Live weather island: fetches current + 16-day forecast client-side -->
+    <!-- Live weather island: fetches current + 16-day forecast client-side.
+         `seasonalFallback` gives its SSR/loading state real climate text instead
+         of an empty skeleton (HOS-117 T-005). -->
     <DestinationWeatherIsland
         client:idle
         locale={locale}
         destinationId={destinationId}
         apiUrl={apiUrl}
+        seasonalFallback={seasonalFallback}
     />
 </section>
 

@@ -52,7 +52,9 @@ describe('WeatherFetcher.fetchAndStoreAll', () => {
         expect(summary.updated).toBe(2);
         expect(summary.errors).toHaveLength(0);
         expect(update).toHaveBeenCalledTimes(2);
-        expect(update).toHaveBeenCalledWith({ id: 'a' }, { weatherCurrent: WEATHER });
+        // Third arg is the optional `tx` passthrough — undefined here since
+        // fetchAndStoreAll() (unlike persist() called directly) never opens one.
+        expect(update).toHaveBeenCalledWith({ id: 'a' }, { weatherCurrent: WEATHER }, undefined);
     });
 
     it('does not persist in dry-run mode', async () => {
@@ -78,6 +80,32 @@ describe('WeatherFetcher.fetchAndStoreAll', () => {
         expect(fetchForecast).toHaveBeenCalledTimes(1);
     });
 
+    it('completes ALL remote fetches before performing any DB write (two-phase, no interleaving)', async () => {
+        // Arrange: record the order of operations. If fetch and persist were
+        // still interleaved (one destination at a time, as before the fix),
+        // this would record fetch/update/fetch/update instead of
+        // fetch/fetch/update/update — the pattern that allowed a transaction
+        // wrapped around the whole call to sit idle across each remote fetch.
+        const callOrder: string[] = [];
+        const { model, update } = makeModel([
+            destination('a', '-32.4', '-58.2'),
+            destination('b', '-31.0', '-60.0')
+        ]);
+        update.mockImplementation(async () => {
+            callOrder.push('update');
+        });
+        const fetchForecast = vi.fn().mockImplementation(async () => {
+            callOrder.push('fetch');
+            return { weather: WEATHER, fetchedAt: new Date() };
+        });
+        const client = { fetchForecast } as unknown as OpenMeteoClient;
+        const fetcher = new WeatherFetcher({ openMeteoClient: client, destinationModel: model });
+
+        await fetcher.fetchAndStoreAll({ dryRun: false });
+
+        expect(callOrder).toEqual(['fetch', 'fetch', 'update', 'update']);
+    });
+
     it('tolerates a per-destination fetch failure and continues', async () => {
         const { model, update } = makeModel([
             destination('a', '-32.4', '-58.2'),
@@ -96,5 +124,79 @@ describe('WeatherFetcher.fetchAndStoreAll', () => {
         expect(summary.updated).toBe(1);
         expect(summary.errors).toEqual([{ destinationId: 'a', error: 'timeout' }]);
         expect(update).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('WeatherFetcher.fetchAll / persist (two-phase public API)', () => {
+    beforeEach(() => vi.restoreAllMocks());
+
+    it('fetchAll() performs no DB writes — only the read used to list destinations', async () => {
+        const { model, update } = makeModel([destination('a', '-32.4', '-58.2')]);
+        const { client } = makeClient(WEATHER);
+        const fetcher = new WeatherFetcher({ openMeteoClient: client, destinationModel: model });
+
+        const results = await fetcher.fetchAll();
+
+        expect(results).toEqual([
+            { destination: destination('a', '-32.4', '-58.2'), weather: WEATHER }
+        ]);
+        expect(update).not.toHaveBeenCalled();
+    });
+
+    it('persist() forwards the given tx to every DestinationModel.update call', async () => {
+        const { model, update } = makeModel([
+            destination('a', '-32.4', '-58.2'),
+            destination('b', '-31.0', '-60.0')
+        ]);
+        const { client } = makeClient(WEATHER);
+        const fetcher = new WeatherFetcher({ openMeteoClient: client, destinationModel: model });
+        const fakeTx = { __isTx: true } as unknown as Parameters<typeof fetcher.persist>[1]['tx'];
+
+        const results = await fetcher.fetchAll();
+        const summary = await fetcher.persist(results, { dryRun: false, tx: fakeTx });
+
+        expect(summary.updated).toBe(2);
+        expect(update).toHaveBeenCalledWith({ id: 'a' }, { weatherCurrent: WEATHER }, fakeTx);
+        expect(update).toHaveBeenCalledWith({ id: 'b' }, { weatherCurrent: WEATHER }, fakeTx);
+    });
+
+    it('persist() with dryRun never calls DestinationModel.update, even with a tx provided', async () => {
+        const { model, update } = makeModel([destination('a', '-32.4', '-58.2')]);
+        const { client } = makeClient(WEATHER);
+        const fetcher = new WeatherFetcher({ openMeteoClient: client, destinationModel: model });
+        const fakeTx = { __isTx: true } as unknown as Parameters<typeof fetcher.persist>[1]['tx'];
+
+        const results = await fetcher.fetchAll();
+        const summary = await fetcher.persist(results, { dryRun: true, tx: fakeTx });
+
+        expect(summary.updated).toBe(1);
+        expect(update).not.toHaveBeenCalled();
+    });
+
+    it('fetchAll() completes fully before persist() is ever invoked (caller-controlled phase separation)', async () => {
+        // This is the invariant the cron job relies on: it calls fetchAll()
+        // with no transaction open, THEN opens a short transaction and calls
+        // persist() inside it. Demonstrated here by awaiting fetchAll() to
+        // completion (recording every fetch call) before persist() runs at all.
+        const callOrder: string[] = [];
+        const { model, update } = makeModel([
+            destination('a', '-32.4', '-58.2'),
+            destination('b', '-31.0', '-60.0')
+        ]);
+        update.mockImplementation(async () => {
+            callOrder.push('update');
+        });
+        const fetchForecast = vi.fn().mockImplementation(async () => {
+            callOrder.push('fetch');
+            return { weather: WEATHER, fetchedAt: new Date() };
+        });
+        const client = { fetchForecast } as unknown as OpenMeteoClient;
+        const fetcher = new WeatherFetcher({ openMeteoClient: client, destinationModel: model });
+
+        const results = await fetcher.fetchAll();
+        expect(callOrder).toEqual(['fetch', 'fetch']);
+
+        await fetcher.persist(results, { dryRun: false });
+        expect(callOrder).toEqual(['fetch', 'fetch', 'update', 'update']);
     });
 });

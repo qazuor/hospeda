@@ -187,12 +187,15 @@
         "success": {
             "title": "Your subscription is active!",
             "subtitle": "Your payment was approved successfully",
+            "trialTitle": "Your free trial has started!",
+            "trialSubtitle": "You can start using your plan right now. There's no charge: your free trial is active and no card was charged.",
             "planDetails": "Plan: {{planName}}",
             "amountDetails": "Amount: {{amount}}",
             "verifyingStatus": "Verifying payment status...",
             "verifyingSubtitle": "We are confirming your payment. This may take a moment.",
             "cta": "Go to my account",
-            "pageTitle": "Payment approved — Hospeda"
+            "pageTitle": "Payment approved — Hospeda",
+            "promoIgnoredNote": "Your discount code was not applied because you started your free trial instead."
         },
         "pending": {
             "title": "Your payment is being processed",

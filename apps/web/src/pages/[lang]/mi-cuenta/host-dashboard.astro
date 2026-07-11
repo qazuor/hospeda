@@ -17,7 +17,9 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { isHostRole } from '@/lib/account-roles';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { HostDashboard } from '@/components/host/HostDashboard.client';
 
 export const prerender = false;
@@ -33,34 +35,16 @@ const user = Astro.locals.user;
 if (!user) {
     return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
 }
+
+// Role gate: only host-level roles may reach the host dashboard. A plain
+// tourist reaching this URL directly is redirected back to the account home.
+if (!isHostRole(user.role)) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+}
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="host-dashboard">
-    <div class="hd-page__header">
-        <h1 class="hd-page__title">{title}</h1>
-        <p class="hd-page__subtitle">{description}</p>
-    </div>
+    <AccountPageHeader title={title} description={description} />
 
     <HostDashboard client:load locale={locale} />
 </AccountLayout>
-
-<style>
-    .hd-page__header {
-        margin-bottom: var(--space-6);
-    }
-
-    .hd-page__title {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: clamp(1.5rem, 3vw, 2rem);
-        color: var(--core-foreground);
-        margin: 0 0 0.25rem;
-    }
-
-    .hd-page__subtitle {
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm, 0.9375rem);
-        color: var(--core-muted-foreground);
-        margin: 0;
-    }
-</style>

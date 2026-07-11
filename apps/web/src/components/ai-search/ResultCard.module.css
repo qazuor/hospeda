@@ -1,0 +1,153 @@
+/**
+ * @file ResultCard.module.css
+ * @description Styles for the ResultCard sub-component of the AI search panel
+ * (SPEC-212 T-010, extracted to its own file HOS-111 follow-up so
+ * SearchChatPanel.client.tsx stays under the 500-line repo limit).
+ *
+ * Web app convention: vanilla CSS / CSS Modules — NO Tailwind utility classes.
+ * Uses CSS custom properties from global.css; no hardcoded colour values.
+ */
+
+/* ─── Result card ─────────────────────────────────────────────────────────────
+   HOS-111 T-002: compact card — type + star rating are overlaid as badges on
+   the photo itself (not a separate meta row), and the image/body are
+   shortened to reduce the card's overall vertical footprint. Mirrors
+   MapCardsSidebar card visuals, sized for the narrower panel context.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.resultCard {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border, var(--core-foreground-a15, #e5e7eb));
+    border-radius: var(--radius-card, 1rem);
+    overflow: hidden;
+    background-color: var(--core-card, #ffffff);
+    text-decoration: none;
+    color: inherit;
+    transition:
+        box-shadow 0.15s ease,
+        transform 0.15s ease;
+}
+
+/* Marker class for the reduced-height layout (HOS-111 T-002) — all result
+   cards use it today, kept as its own class (rather than folded into
+   `.resultCard`) so it's a stable, testable hook for "this is the compact
+   card variant" independent of the base card's border/shadow rules. */
+.resultCardCompact {
+    max-height: 220px;
+}
+
+.resultCard:hover {
+    box-shadow: 0 4px 16px -4px oklch(0 0 0 / 0.15);
+    transform: translateY(-2px);
+}
+
+.resultCard:focus-visible {
+    outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 2px;
+}
+
+/* Positioning context for the overlaid type/rating badges. */
+.resultCardImageWrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.resultCardImage {
+    display: block;
+    width: 100%;
+    /* Reduced from 130px (T-002) — the type/rating meta row that used to sit
+       below the photo now overlays it instead, so the photo itself can be
+       shorter without losing any information. */
+    height: 96px;
+    object-fit: cover;
+}
+
+.resultCardImagePlaceholder {
+    width: 100%;
+    height: 96px;
+    background-color: var(--surface-warm, #f5f0eb);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground, #9ca3af);
+}
+
+/* Type badge — top-left, overlaid on the photo. */
+.resultCardTypeBadge {
+    position: absolute;
+    top: 0.375rem;
+    left: 0.375rem;
+    padding: 0.125rem 0.4rem;
+    border-radius: var(--radius-sm, 0.25rem);
+    background-color: oklch(0 0 0 / 0.55);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* Single star + numeric rating badge — top-right, overlaid on the photo. */
+.resultCardRatingBadge {
+    position: absolute;
+    top: 0.375rem;
+    right: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.1875rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: oklch(0 0 0 / 0.55);
+    color: #ffffff;
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.6875rem;
+    font-weight: 600;
+}
+
+.resultCardBody {
+    padding: 0.5rem 0.75rem 0.625rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    flex: 1;
+}
+
+.resultCardName {
+    margin: 0;
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--core-foreground, #111827);
+    line-height: 1.3;
+    /* Clamp to a single line (T-002 — shortened body) */
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.resultCardCity {
+    margin: 0;
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground, #6b7280);
+}
+
+.resultCardPrice {
+    margin-top: auto;
+    padding-top: 0.25rem;
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--core-foreground, #111827);
+}
+
+.resultCardPriceSub {
+    font-size: 0.6875rem;
+    font-weight: 400;
+    color: var(--core-muted-foreground, #6b7280);
+    margin-left: 0.125rem;
+}

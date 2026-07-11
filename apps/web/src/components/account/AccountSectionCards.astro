@@ -9,6 +9,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { ComponentType } from 'react';
 import type { IconProps } from '@repo/icons';
+import styles from './AccountSection.module.css';
 
 interface NavItem {
     readonly label: string;
@@ -32,7 +33,7 @@ const sectionsLabel = t('account.pages.dashboard.sectionsLabel', 'Secciones');
     <h2 class="account__section-subtitle">{sectionsLabel}</h2>
     <div class="account__sections-grid">
         {navItems.map(({ label, href, description: desc, Icon }) => (
-            <a href={href} class="account__section-card">
+            <a href={href} class:list={['account__section-card', styles.branded]}>
                 <div class="account__section-card-header">
                     <div class="account__section-icon-wrapper">
                         <Icon size={20} weight="regular" aria-hidden="true" />

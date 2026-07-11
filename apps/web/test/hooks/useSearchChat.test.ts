@@ -112,6 +112,53 @@ describe('useSearchChat', () => {
         expect(result.current.isStreaming).toBe(false);
         expect(result.current.conversationId).toBeNull();
         expect(result.current.error).toBeNull();
+        expect(result.current.hasSearched).toBe(false);
+    });
+
+    // ── hasSearched flag (empty-results UX) ──────────────────────────────────
+
+    it('sets hasSearched to true as soon as the first accommodations GET fires', async () => {
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent());
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        expect(result.current.hasSearched).toBe(false);
+
+        await act(async () => {
+            result.current.send('cabaña con pileta');
+        });
+
+        expect(result.current.hasSearched).toBe(true);
+    });
+
+    it('keeps hasSearched true when a search resolves with zero results', async () => {
+        mockAccommodationsList.mockReset();
+        mockAccommodationsList.mockResolvedValue({
+            ok: true,
+            data: { items: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 } }
+        });
+
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent());
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('algo muy específico que no existe');
+        });
+
+        expect(result.current.results).toEqual([]);
+        expect(result.current.resultsLoading).toBe(false);
+        expect(result.current.hasSearched).toBe(true);
     });
 
     // ── filters event fires accommodations GET ───────────────────────────────
@@ -139,6 +186,200 @@ describe('useSearchChat', () => {
         const calledWith = mockAccommodationsList.mock.calls[0][0] as Record<string, unknown>;
         expect(calledWith.minGuests).toBe(4);
         expect(calledWith.hasPool).toBe(true);
+    });
+
+    // ── nearbyDestinations from the filters event (HOS-111 T-014, G-9) ──────
+
+    it('stores nearbyDestinations from a filters event that carries an expansion', async () => {
+        const filtersEvent: Extract<SearchChatSseEvent, { type: 'filters' }> = {
+            type: 'filters',
+            filters: {
+                params: makeSearchParams() as unknown as Extract<
+                    SearchChatSseEvent,
+                    { type: 'filters' }
+                >['filters']['params'],
+                intent: makeIntent(),
+                nearbyDestinations: [
+                    { id: 'dest-1', name: 'Pueblo Liebig', slug: 'pueblo-liebig' },
+                    { id: 'dest-2', name: 'San José', slug: 'san-jose' }
+                ]
+            }
+        };
+
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(filtersEvent);
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('cabaña en Colón, y también en destinos cercanos');
+        });
+
+        expect(result.current.nearbyDestinations).toEqual([
+            { id: 'dest-1', name: 'Pueblo Liebig', slug: 'pueblo-liebig' },
+            { id: 'dest-2', name: 'San José', slug: 'san-jose' }
+        ]);
+    });
+
+    it('resets nearbyDestinations to [] on a later filters event that carries none (does not linger)', async () => {
+        const expansionEvent: Extract<SearchChatSseEvent, { type: 'filters' }> = {
+            type: 'filters',
+            filters: {
+                params: makeSearchParams() as unknown as Extract<
+                    SearchChatSseEvent,
+                    { type: 'filters' }
+                >['filters']['params'],
+                intent: makeIntent(),
+                nearbyDestinations: [{ id: 'dest-1', name: 'Pueblo Liebig', slug: 'pueblo-liebig' }]
+            }
+        };
+
+        mockStreamSearchChat.mockImplementationOnce(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(expansionEvent);
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('y también en destinos cercanos');
+        });
+        expect(result.current.nearbyDestinations).toHaveLength(1);
+
+        // Next (unrelated, non-expansion) turn: filters event with no nearbyDestinations.
+        mockStreamSearchChat.mockImplementationOnce(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent());
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
+
+        await act(async () => {
+            result.current.send('más barata');
+        });
+
+        expect(result.current.nearbyDestinations).toEqual([]);
+    });
+
+    // ── attractionLocationConflict (HOS-111 T-016) ─────────────────────────
+
+    it('does NOT run the accommodation search and yields ZERO results on an attractionLocationConflict (never the full catalog)', async () => {
+        // This is the proof for the empty-overlap / no-match case: a conflict
+        // means no destination matches both constraints. The emitted params
+        // cannot force zero results (an empty destinationIds array is treated as
+        // "no filter" → full catalog by the accommodation query builder), so the
+        // hook MUST skip the fetch entirely to guarantee 0 results.
+        const conflictEvent: Extract<SearchChatSseEvent, { type: 'filters' }> = {
+            type: 'filters',
+            filters: {
+                // NOTE: params carry NO usable location filter (as the API emits
+                // on a no-match). If the hook wrongly fetched, this would return
+                // the FULL catalog — the assertion below guards exactly that.
+                params: {} as unknown as Extract<
+                    SearchChatSseEvent,
+                    { type: 'filters' }
+                >['filters']['params'],
+                intent: { attractionSlugs: ['sede_carnaval'] } as unknown as Extract<
+                    SearchChatSseEvent,
+                    { type: 'filters' }
+                >['filters']['intent'],
+                attractionLocationConflict: {
+                    attractionSlugs: ['sede_carnaval'],
+                    locationLabel: 'Colón'
+                }
+            }
+        };
+
+        // If the hook were to (wrongly) call the search, the mock would resolve
+        // with a NON-empty catalog — so a passing test proves the fetch is skipped.
+        mockAccommodationsList.mockResolvedValue({
+            ok: true,
+            data: {
+                items: [{ id: 'acc-full-catalog', name: 'Should NOT appear' }],
+                pagination: { page: 1, pageSize: 20, total: 1, totalPages: 1 }
+            }
+        });
+
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(conflictEvent);
+            p.onEvent({
+                type: 'token',
+                delta: 'No encontré destinos que combinen Colón con carnaval.'
+            });
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('una cabaña en Colón con carnavales');
+        });
+
+        // The accommodation search is DELIBERATELY skipped — proves 0 results,
+        // NOT the full catalog.
+        expect(mockAccommodationsList).not.toHaveBeenCalled();
+        expect(result.current.results).toEqual([]);
+        expect(result.current.hasSearched).toBe(true);
+        expect(result.current.resultsLoading).toBe(false);
+        expect(result.current.attractionLocationConflict).toEqual({
+            attractionSlugs: ['sede_carnaval'],
+            locationLabel: 'Colón'
+        });
+    });
+
+    it('clears a prior attractionLocationConflict on a later non-conflicting filters event', async () => {
+        const conflictEvent: Extract<SearchChatSseEvent, { type: 'filters' }> = {
+            type: 'filters',
+            filters: {
+                params: {} as unknown as Extract<
+                    SearchChatSseEvent,
+                    { type: 'filters' }
+                >['filters']['params'],
+                intent: { attractionSlugs: ['sede_carnaval'] } as unknown as Extract<
+                    SearchChatSseEvent,
+                    { type: 'filters' }
+                >['filters']['intent'],
+                attractionLocationConflict: { attractionSlugs: ['sede_carnaval'] }
+            }
+        };
+
+        mockStreamSearchChat.mockImplementationOnce(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(conflictEvent);
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('una cabaña en Federación con carnavales');
+        });
+        expect(result.current.attractionLocationConflict).not.toBeNull();
+
+        // Next (normal) turn: a filters event with no conflict clears it and
+        // DOES run the search.
+        mockStreamSearchChat.mockImplementationOnce(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent());
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
+
+        await act(async () => {
+            result.current.send('mejor mostrame cualquier cabaña');
+        });
+
+        expect(result.current.attractionLocationConflict).toBeNull();
+        expect(mockAccommodationsList).toHaveBeenCalled();
     });
 
     // ── tokens accumulate into currentReply; done finalizes ─────────────────
@@ -392,6 +633,7 @@ describe('useSearchChat', () => {
 
         expect(result.current.messages).toHaveLength(2);
         expect(result.current.conversationId).toBe(CONV_ID);
+        expect(result.current.hasSearched).toBe(true);
 
         act(() => {
             result.current.reset();
@@ -405,6 +647,7 @@ describe('useSearchChat', () => {
         expect(result.current.isStreaming).toBe(false);
         expect(result.current.conversationId).toBeNull();
         expect(result.current.error).toBeNull();
+        expect(result.current.hasSearched).toBe(false);
     });
 
     // ── results stored from accommodations GET ───────────────────────────────
@@ -492,6 +735,101 @@ describe('useSearchChat', () => {
         expect(result.current.currentFilters?.hasPool).toBeUndefined();
         // hasWifi should still be present.
         expect(result.current.currentFilters?.hasWifi).toBe(true);
+    });
+
+    // ── removeFilter('destinationId') clears nearby expansion (HOS-111 T-014) ──
+
+    it("removeFilter('destinationId') clears BOTH destinationIds and nearbyDestinations after a nearby expansion", async () => {
+        const anchorId = '44444444-4444-4444-8444-444444444444';
+        const neighborId = '55555555-5555-4555-8555-555555555555';
+
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent({
+                type: 'filters',
+                filters: {
+                    // A nearby expansion resolves the multi-destination filter.
+                    params: {
+                        destinationId: anchorId,
+                        destinationIds: [anchorId, neighborId]
+                    } as unknown as Extract<
+                        SearchChatSseEvent,
+                        { type: 'filters' }
+                    >['filters']['params'],
+                    intent: { destinationId: anchorId, expandToNearby: true },
+                    nearbyDestinations: [
+                        { id: neighborId, name: 'Concepción del Uruguay', slug: 'concepcion' }
+                    ]
+                }
+            } as SearchChatSseEvent);
+            p.onEvent({ type: 'done', conversationId: null });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('cabaña en Colón, y también en destinos cercanos');
+        });
+
+        expect(result.current.nearbyDestinations).toHaveLength(1);
+        expect(result.current.lastSearchParams?.destinationIds).toEqual([anchorId, neighborId]);
+
+        await act(async () => {
+            result.current.removeFilter('destinationId');
+        });
+
+        // BOTH the multi-destination filter AND the indicator are cleared.
+        const params = result.current.lastSearchParams as Record<string, unknown> | null;
+        expect(params?.destinationId).toBeUndefined();
+        expect(params?.destinationIds).toBeUndefined();
+        expect(result.current.nearbyDestinations).toEqual([]);
+    });
+
+    it('removing an UNRELATED chip after a nearby expansion leaves nearbyDestinations intact', async () => {
+        const anchorId = '44444444-4444-4444-8444-444444444444';
+        const neighborId = '55555555-5555-4555-8555-555555555555';
+
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent({
+                type: 'filters',
+                filters: {
+                    params: {
+                        destinationId: anchorId,
+                        destinationIds: [anchorId, neighborId],
+                        hasPool: true
+                    } as unknown as Extract<
+                        SearchChatSseEvent,
+                        { type: 'filters' }
+                    >['filters']['params'],
+                    intent: { destinationId: anchorId, hasPool: true, expandToNearby: true },
+                    nearbyDestinations: [
+                        { id: neighborId, name: 'Concepción del Uruguay', slug: 'concepcion' }
+                    ]
+                }
+            } as SearchChatSseEvent);
+            p.onEvent({ type: 'done', conversationId: null });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('cabaña con pileta en Colón y cerca');
+        });
+        expect(result.current.nearbyDestinations).toHaveLength(1);
+
+        // Remove an unrelated chip (hasPool) — the nearby expansion is still
+        // active, so the indicator (and the multi-destination filter) must stay.
+        await act(async () => {
+            result.current.removeFilter('hasPool');
+        });
+
+        const params = result.current.lastSearchParams as Record<string, unknown> | null;
+        expect(result.current.nearbyDestinations).toHaveLength(1);
+        expect(params?.destinationIds).toEqual([anchorId, neighborId]);
+        expect(params?.hasPool).toBeUndefined();
     });
 
     // ── confidence forwarded from the filters event (SPEC-265 A1) ─────────────

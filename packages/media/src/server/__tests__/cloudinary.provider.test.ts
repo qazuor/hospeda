@@ -735,6 +735,47 @@ describe('CloudinaryProvider', () => {
             expect(result.durationSeconds).toBeUndefined();
         });
 
+        // BETA-134: timeoutMs must thread through to the SDK's own `timeout`
+        // upload option so a bounded call can win the race against an
+        // upstream reverse-proxy timeout.
+        it('should forward timeoutMs to the Cloudinary upload options as timeout when provided', async () => {
+            // Arrange
+            setupUploadStream(null, MOCK_UPLOAD_RESPONSE);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            await provider.upload({
+                file: Buffer.from('fake-image'),
+                folder: 'hospeda/prod/accommodations/abc-123',
+                timeoutMs: 25_000
+            });
+
+            // Assert
+            const callOptions = mockUploadStream.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(callOptions).toBeDefined();
+            expect(callOptions.timeout).toBe(25_000);
+        });
+
+        // BETA-134: omitting timeoutMs must preserve the historical
+        // no-explicit-timeout behavior for every existing (non-interactive)
+        // caller — the SDK's own default applies.
+        it('should NOT include a timeout key in the upload options when timeoutMs is omitted', async () => {
+            // Arrange
+            setupUploadStream(null, MOCK_UPLOAD_RESPONSE);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            await provider.upload({
+                file: Buffer.from('fake-image'),
+                folder: 'hospeda/prod/accommodations/abc-123'
+            });
+
+            // Assert
+            const callOptions = mockUploadStream.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(callOptions).toBeDefined();
+            expect(callOptions.timeout).toBeUndefined();
+        });
+
         // GAP-078-219: empty tags array must not be forwarded to the SDK and
         // must not throw. The provider explicitly skips the `tags` option when
         // the array is empty, since Cloudinary rejects `tags: ''` in some SDK

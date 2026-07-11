@@ -4,7 +4,9 @@
         "heading": "Página no encontrada",
         "description": "Lo sentimos, la página que buscas no existe o fue movida.",
         "message": "Lo sentimos, la página que buscas no existe o fue movida.",
-        "goHome": "Volver al inicio"
+        "goHome": "Volver al inicio",
+        "search": "Buscar",
+        "reportBrokenLink": "Reportar enlace roto"
     },
     "500": {
         "title": "Error del servidor",
@@ -12,7 +14,8 @@
         "description": "Lo sentimos, algo salió mal en nuestros servidores. Por favor intenta de nuevo más tarde.",
         "message": "Lo sentimos, algo salió mal. Por favor intenta de nuevo más tarde.",
         "retry": "Reintentar",
-        "goHome": "Volver al inicio"
+        "goHome": "Volver al inicio",
+        "reportProblem": "Reportar problema"
     },
     "form": {
         "validation-failed": "La validación del formulario falló. Por favor, corrige los errores e intenta nuevamente.",

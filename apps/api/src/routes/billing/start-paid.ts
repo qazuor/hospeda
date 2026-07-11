@@ -47,6 +47,7 @@ import { captureBillingError } from '../../lib/sentry';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
+import { mapSubscriptionCheckoutErrorToHttp } from '../../services/billing/subscription-checkout-error-http';
 import {
     initiatePaidAnnualSubscription,
     initiatePaidMonthlySubscription,
@@ -56,150 +57,24 @@ import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
+import {
+    buildAnnualCancelUrl,
+    buildAnnualSuccessUrl,
+    buildNotificationUrl,
+    buildPaymentMethodReturnUrl,
+    DEFAULT_RETURN_URL_LOCALE,
+    resolveReturnUrlLocale,
+    SUPPORTED_RETURN_URL_LOCALES
+} from './checkout-return-urls';
 
-/**
- * Supported locale values for the user-facing return URLs.
- *
- * Must stay in sync with `apps/web/src/lib/i18n.ts` SUPPORTED_LOCALES.
- * The checkout pages (`[lang]/suscriptores/checkout/{success,failure,pending}`)
- * exist for all three locales via Astro's `[lang]` routing.
- */
-const SUPPORTED_RETURN_URL_LOCALES = ['es', 'en', 'pt'] as const;
-type ReturnUrlLocale = (typeof SUPPORTED_RETURN_URL_LOCALES)[number];
-
-/** Fallback locale when the user has no preference or the preference is unknown. */
-const DEFAULT_RETURN_URL_LOCALE: ReturnUrlLocale = 'es';
-
-/**
- * Resolves the locale to embed in MP return URLs from the authenticated user's
- * web language preference (`user.settings.languageWeb`).
- *
- * Falls back to `'es'` when:
- * - There is no authenticated user on the context.
- * - The user has no `settings.languageWeb` value.
- * - The stored value is not one of the three supported locales.
- *
- * @param c - Hono context carrying the Better Auth session user.
- * @returns A supported locale string for use in URL path prefixes.
- */
-function resolveReturnUrlLocale(c: Context): ReturnUrlLocale {
-    const user = c.get('user') as { settings?: Record<string, unknown> } | null | undefined;
-    const rawLocale = user?.settings?.languageWeb;
-
-    if (
-        typeof rawLocale === 'string' &&
-        (SUPPORTED_RETURN_URL_LOCALES as readonly string[]).includes(rawLocale)
-    ) {
-        return rawLocale as ReturnUrlLocale;
-    }
-
-    return DEFAULT_RETURN_URL_LOCALE;
-}
-
-/**
- * MercadoPago `back_url` for the preapproval (monthly subscriptions).
- *
- * MP requires a non-empty `back_url` at preapproval-create time and
- * redirects the user there after they authorise the recurring charge.
- * The URL MUST land on an existing route — Astro's locale middleware
- * rewrites unknown segments (e.g. `/billing/return`) into a 404 surface,
- * so we point directly at the checkout success page which already exists
- * at `apps/web/src/pages/[lang]/suscriptores/checkout/success.astro` and
- * is set up to read `?status=` / `?preapproval_id=` query parameters MP
- * appends post-authorise.
- *
- * History: until 2026-05-21 this returned
- * `${HOSPEDA_SITE_URL}/billing/return`, which Astro's middleware rewrote
- * to `/es/return/` (404). Surfaced during staging smoke as Finding #8.
- *
- * @param locale - User's preferred return-URL locale (e.g. `'es'`, `'en'`, `'pt'`).
- */
-function buildPaymentMethodReturnUrl(locale: ReturnUrlLocale): string {
-    return `${env.HOSPEDA_SITE_URL}/${locale}/suscriptores/checkout/success/`;
-}
-
-/**
- * Webhook destination for the MP preapproval. We pass the application-wide
- * URL explicitly so MercadoPago always reaches this API, even when a
- * legacy app-wide URL exists in the MP dashboard.
- */
-function buildNotificationUrl(): string {
-    return `${env.HOSPEDA_API_URL}/api/v1/webhooks/mercadopago`;
-}
-
-/**
- * MP Checkout return URLs for the annual one-time flow.
- *
- * Checkout preferences accept three back_urls (success / failure / pending)
- * and MP redirects to the matching one based on payment outcome. The pages
- * already exist at:
- *
- *   - `[lang]/suscriptores/checkout/success.astro`
- *   - `[lang]/suscriptores/checkout/failure.astro`
- *   - `[lang]/suscriptores/checkout/pending.astro`
- *
- * Pointing the URLs there directly avoids the locale-middleware rewrite
- * that bit the monthly flow (Finding #8).
- *
- * @param locale - User's preferred return-URL locale.
- *
- * The front-end receives `localSubscriptionId` in the response body and
- * persists it in sessionStorage BEFORE redirecting to MP, so the URLs do
- * not need to carry the id. MP appends `?status=approved` /
- * `?payment_id=...` / `?preference_id=...` on its own at redirect time.
- */
-function buildAnnualSuccessUrl(locale: ReturnUrlLocale): string {
-    return `${env.HOSPEDA_SITE_URL}/${locale}/suscriptores/checkout/success/`;
-}
-
-function buildAnnualCancelUrl(locale: ReturnUrlLocale): string {
-    return `${env.HOSPEDA_SITE_URL}/${locale}/suscriptores/checkout/failure/`;
-}
-
-// NOTE: a `pending` outcome URL would point at
+// NOTE: annual success/cancel URL builders moved to the shared
+// `checkout-return-urls.ts` (HOS-123 T-005) so the reactivation routes reuse
+// the exact same locale-prefixed URLs. A `pending` outcome URL would point at
 // `${HOSPEDA_SITE_URL}/${RETURN_URL_LOCALE}/suscriptores/checkout/pending/`
 // but the current subscription-checkout service only accepts success +
 // cancel. Pending payments today fall back to the cancel URL until the
 // service is extended to thread the pending URL through to MP's
 // `back_urls.pending`. Tracked as a follow-up.
-
-/**
- * Map a `SubscriptionCheckoutError` from the service layer to an HTTP
- * exception. Keeping this mapping at the route boundary keeps the
- * service framework-agnostic.
- */
-function mapServiceErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
-    switch (err.code) {
-        case 'PLAN_NOT_FOUND':
-        case 'NO_MONTHLY_PRICE':
-        case 'NO_ANNUAL_PRICE':
-        case 'NO_MATCHING_PRICE':
-        case 'CUSTOMER_NOT_FOUND':
-        case 'SUBSCRIPTION_NOT_FOUND':
-            return new HTTPException(404, { message: err.message });
-        case 'INVALID_PROMO_CODE':
-        case 'SAME_PLAN':
-        case 'NOT_AN_UPGRADE':
-            return new HTTPException(422, { message: err.message });
-        case 'DISCOUNT_APPLY_FAILED':
-            // SPEC-262 T-012 P2: MP rejected our fail-closed discount mutation and
-            // the just-created subscription was cancelled. The code itself is valid
-            // (so NOT 422) — the payment provider refused the amount change. 502
-            // (Bad Gateway) signals an upstream-provider failure, consistent with
-            // the SPEC-149 provider-error mapping family.
-            return new HTTPException(502, { message: err.message });
-        case 'MISSING_INIT_POINT':
-            return new HTTPException(500, { message: err.message });
-        default: {
-            // Defensive: the union should be exhaustive, but TS doesn't
-            // enforce that downstream consumers add new codes here. Fall
-            // back to a generic 500 with the original message.
-            const exhaustive: never = err.code;
-            void exhaustive;
-            return new HTTPException(500, { message: err.message });
-        }
-    }
-}
 
 /**
  * Handler for the start-paid endpoint.
@@ -348,30 +223,31 @@ export const handleStartPaidSubscription = async (
             );
         }
 
+        // Resolve the interval price ONCE, shared by both the pre-decision
+        // `checkout_started` event and the post-decision `checkout_completed`
+        // event (HOS-122). Best-effort: the daily test plan has only a 'day'
+        // price, so `priceForInterval` resolves to `undefined` (no 'month'/'year'
+        // match) and `amountMajor`/`currency` fall back to `null` via optional
+        // chaining. This lookup is a pure array find and cannot throw.
+        const priceForInterval = targetPlan?.prices.find((p) =>
+            body.billingInterval === 'annual'
+                ? p.billingInterval === 'year'
+                : p.billingInterval === 'month'
+        );
+        // `unitAmount` is stored in centavos, but the payment_failed /
+        // subscription_payment_succeeded events capture MP's transaction_amount
+        // in MAJOR units (ARS pesos). Normalize to major units here so `amount`
+        // has ONE unit across the whole checkout→payment funnel.
+        const amountMajor =
+            typeof priceForInterval?.unitAmount === 'number'
+                ? priceForInterval.unitAmount / 100
+                : null;
+
         // Fire-and-forget product analytics for checkout initiation. Wrapped in
         // try/catch so a misbehaving PostHog client can NEVER break the checkout
         // — this handler must proceed to initiate the subscription regardless of
-        // analytics outcome. Mirrors the pattern in payment-logic.ts. The amount
-        // is resolved best-effort from the plan price matching the interval.
-        // Verified safe for the daily test plan too: it has only a 'day' price,
-        // so `priceForInterval` resolves to `undefined` here (no 'month'/'year'
-        // match) — `amountMajor`/`currency` fall back to `null` via optional
-        // chaining, and the whole block is already wrapped in try/catch, so
-        // this can never throw regardless of which prices a plan carries.
+        // analytics outcome. Mirrors the pattern in payment-logic.ts.
         try {
-            const priceForInterval = targetPlan?.prices.find((p) =>
-                body.billingInterval === 'annual'
-                    ? p.billingInterval === 'year'
-                    : p.billingInterval === 'month'
-            );
-            // `unitAmount` is stored in centavos, but the payment_failed /
-            // subscription_payment_succeeded events capture MP's transaction_amount
-            // in MAJOR units (ARS pesos). Normalize to major units here so `amount`
-            // has ONE unit across the whole checkout→payment funnel.
-            const amountMajor =
-                typeof priceForInterval?.unitAmount === 'number'
-                    ? priceForInterval.unitAmount / 100
-                    : null;
             getPostHogClient()?.capture({
                 distinctId: actor.id,
                 event: 'checkout_started',
@@ -433,6 +309,48 @@ export const handleStartPaidSubscription = async (
             'Paid subscription initiated, awaiting provider authorization'
         );
 
+        // HOS-122: outcome-side product analytics. Captured AFTER `result`
+        // resolves, so it carries the normalized checkout `outcome` that
+        // `checkout_started` structurally cannot (the trial/comp/discount/paid
+        // decision is only known here). `appliedEffect` is absent for a plain
+        // paid checkout, so normalize `undefined` → 'paid' — analytics must
+        // never encode "property missing means paid". Stitchable to
+        // `checkout_started` via `localSubscriptionId`. Same non-blocking
+        // try/catch contract: analytics can never break checkout, and no event
+        // is emitted when `initiatePaid*Subscription` throws (the outer catch
+        // handles that path).
+        try {
+            const outcome = result.appliedEffect ?? 'paid';
+            getPostHogClient()?.capture({
+                distinctId: actor.id,
+                event: 'checkout_completed',
+                properties: {
+                    planSlug: body.planSlug,
+                    billingInterval: body.billingInterval,
+                    outcome,
+                    promoCode: body.promoCode ?? null,
+                    promoCodeIgnored: result.promoCodeIgnored ?? false,
+                    localSubscriptionId: result.localSubscriptionId,
+                    amount: amountMajor,
+                    currency: priceForInterval?.currency ?? null,
+                    // Persist the last checkout outcome on the person for
+                    // cohorting (HOS-122 D-10), mirroring how
+                    // subscription_payment_succeeded $sets plan_status.
+                    $set: { last_checkout_outcome: outcome }
+                }
+            });
+        } catch (phErr) {
+            apiLogger.warn(
+                {
+                    userId: actor.id,
+                    planSlug: body.planSlug,
+                    localSubscriptionId: result.localSubscriptionId,
+                    error: phErr instanceof Error ? phErr.message : String(phErr)
+                },
+                'PostHog capture failed for checkout_completed (non-blocking)'
+            );
+        }
+
         return result;
     } catch (error) {
         if (error instanceof SubscriptionCheckoutError) {
@@ -445,7 +363,7 @@ export const handleStartPaidSubscription = async (
                     'Paid subscription created without providerInitPoint -- payment adapter misconfigured'
                 );
             }
-            throw mapServiceErrorToHttp(error);
+            throw mapSubscriptionCheckoutErrorToHttp(error);
         }
 
         if (error instanceof HTTPException) {

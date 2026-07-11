@@ -150,6 +150,92 @@ describe('AiSearchChatFiltersEventSchema', () => {
             expect(result.error.issues.some((i) => i.path.includes('intent'))).toBe(true);
         }
     });
+
+    // ── attractionLocationConflict (HOS-111 T-016) ───────────────────────────
+
+    it('accepts an attractionLocationConflict with slugs + locationLabel', () => {
+        const result = AiSearchChatFiltersEventSchema.safeParse({
+            params: {},
+            intent: { attractionSlugs: ['sede_carnaval'] },
+            attractionLocationConflict: {
+                attractionSlugs: ['sede_carnaval'],
+                locationLabel: 'Colón'
+            }
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.attractionLocationConflict?.attractionSlugs).toEqual([
+                'sede_carnaval'
+            ]);
+            expect(result.data.attractionLocationConflict?.locationLabel).toBe('Colón');
+        }
+    });
+
+    it('accepts an attractionLocationConflict without locationLabel (optional)', () => {
+        const result = AiSearchChatFiltersEventSchema.safeParse({
+            params: {},
+            intent: {},
+            attractionLocationConflict: { attractionSlugs: ['sede_carnaval'] }
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('accepts a payload without attractionLocationConflict (backward-compatible)', () => {
+        const result = AiSearchChatFiltersEventSchema.safeParse({
+            params: { minGuests: 4 },
+            intent: { minGuests: 4 }
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.attractionLocationConflict).toBeUndefined();
+        }
+    });
+
+    // ── poiSlugs (HOS-113 §6.3) ───────────────────────────────────────────────
+
+    it('accepts a resolved poiSlugs array', () => {
+        const result = AiSearchChatFiltersEventSchema.safeParse({
+            params: { latitude: -32.423, longitude: -58.2591, radius: 5 },
+            intent: { poiSlugs: ['autodromo_concepcion_del_uruguay'] },
+            poiSlugs: ['autodromo_concepcion_del_uruguay']
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.poiSlugs).toEqual(['autodromo_concepcion_del_uruguay']);
+        }
+    });
+
+    it('defaults poiSlugs to an empty array when absent (defaults sensibly when empty)', () => {
+        const result = AiSearchChatFiltersEventSchema.safeParse({
+            params: { minGuests: 4 },
+            intent: { minGuests: 4 }
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.poiSlugs).toEqual([]);
+        }
+    });
+
+    it('accepts an explicit empty poiSlugs array', () => {
+        const result = AiSearchChatFiltersEventSchema.safeParse({
+            params: {},
+            intent: {},
+            poiSlugs: []
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.poiSlugs).toEqual([]);
+        }
+    });
+
+    it('rejects poiSlugs containing non-string elements', () => {
+        const result = AiSearchChatFiltersEventSchema.safeParse({
+            params: {},
+            intent: {},
+            poiSlugs: ['autodromo_concepcion_del_uruguay', 42]
+        });
+        expect(result.success).toBe(false);
+    });
 });
 
 describe('AiSearchChatTokenEventSchema', () => {

@@ -1,13 +1,18 @@
 /**
  * @file ContactInfoSection.client.tsx
  * @description Form section for accommodation contact info: phone, email,
- * website. Uses native HTML form elements.
+ * website. Uses native HTML form elements. The phone field is split into a
+ * searchable country-code selector plus a local-number input (BETA-139); both
+ * recompose into the single `data.phone` string the backend stores.
  */
 
+import { useState } from 'react';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { composePhoneValue, type PhoneCountry, parsePhoneValue } from '@/lib/phone-countries';
 import styles from './ContactInfoSection.module.css';
+import { CountryCodeCombobox } from './CountryCodeCombobox.client';
 
 /** Props for ContactInfoSection. */
 export interface ContactInfoSectionProps {
@@ -15,6 +20,7 @@ export interface ContactInfoSectionProps {
     readonly data: AccommodationEditData;
     readonly errors: Readonly<{
         phone?: string;
+        whatsapp?: string;
         email?: string;
         website?: string;
     }>;
@@ -23,7 +29,8 @@ export interface ContactInfoSectionProps {
 
 /**
  * Contact information form section.
- * Renders phone, email, and website inputs.
+ * Renders a searchable phone country-code + number pair, plus email and
+ * website inputs.
  */
 export function ContactInfoSection({
     locale,
@@ -33,6 +40,47 @@ export function ContactInfoSection({
 }: ContactInfoSectionProps) {
     const { t } = createTranslations(locale);
 
+    // Local derived state for the phone split: `data.phone` is a single
+    // string the backend stores, so the country + number pair is parsed once
+    // on mount and recomposed into that single string on every change (see
+    // `@/lib/phone-countries`). Lazy initializers keep this robust to an
+    // empty/undefined initial `data.phone`.
+    const [phoneCountry, setPhoneCountry] = useState<PhoneCountry>(
+        () => parsePhoneValue(data.phone).country
+    );
+    const [phoneNumber, setPhoneNumber] = useState<string>(
+        () => parsePhoneValue(data.phone).number
+    );
+
+    const handleCountryChange = (country: PhoneCountry) => {
+        setPhoneCountry(country);
+        onFieldChange('phone', composePhoneValue({ country, number: phoneNumber }));
+    };
+
+    const handleNumberChange = (value: string) => {
+        setPhoneNumber(value);
+        onFieldChange('phone', composePhoneValue({ country: phoneCountry, number: value }));
+    };
+
+    // WhatsApp mirrors the phone split (BETA-151): `data.whatsapp` is a single
+    // string parsed into a country + number pair and recomposed on every change.
+    const [whatsappCountry, setWhatsappCountry] = useState<PhoneCountry>(
+        () => parsePhoneValue(data.whatsapp).country
+    );
+    const [whatsappNumber, setWhatsappNumber] = useState<string>(
+        () => parsePhoneValue(data.whatsapp).number
+    );
+
+    const handleWhatsappCountryChange = (country: PhoneCountry) => {
+        setWhatsappCountry(country);
+        onFieldChange('whatsapp', composePhoneValue({ country, number: whatsappNumber }));
+    };
+
+    const handleWhatsappNumberChange = (value: string) => {
+        setWhatsappNumber(value);
+        onFieldChange('whatsapp', composePhoneValue({ country: whatsappCountry, number: value }));
+    };
+
     return (
         <fieldset className={styles.section}>
             <legend className={styles.sectionTitle}>
@@ -40,22 +88,46 @@ export function ContactInfoSection({
             </legend>
 
             <div className={styles.field}>
-                <label
-                    htmlFor="acc-phone"
-                    className={styles.fieldLabel}
-                >
-                    {t('host.properties.editor.field.phone', 'Teléfono')}
-                </label>
-                <input
-                    id="acc-phone"
-                    type="tel"
-                    className={styles.fieldInput}
-                    value={data.phone}
-                    onChange={(e) => onFieldChange('phone', e.target.value)}
-                    placeholder="+54 9 343 123 4567"
-                    aria-invalid={Boolean(errors.phone)}
-                    aria-describedby={errors.phone ? 'acc-phone-error' : undefined}
-                />
+                <fieldset className={styles.phoneFieldset}>
+                    <legend className={styles.fieldLabel}>
+                        {t('host.properties.editor.field.phone', 'Teléfono')}
+                    </legend>
+                    <div className={styles.phoneRow}>
+                        <div className={styles.phoneCountryField}>
+                            <label
+                                htmlFor="acc-phone-country"
+                                className={styles.fieldSubLabel}
+                            >
+                                {t('host.properties.editor.field.phoneCountry', 'País')}
+                            </label>
+                            <CountryCodeCombobox
+                                locale={locale}
+                                id="acc-phone-country"
+                                value={phoneCountry}
+                                onChange={handleCountryChange}
+                            />
+                        </div>
+                        <div className={styles.phoneNumberField}>
+                            <label
+                                htmlFor="acc-phone-number"
+                                className={styles.fieldSubLabel}
+                            >
+                                {t('host.properties.editor.field.phoneNumber', 'Número')}
+                            </label>
+                            <input
+                                id="acc-phone-number"
+                                type="tel"
+                                inputMode="tel"
+                                className={`${styles.fieldInput} ${styles.phoneNumberInput}`}
+                                value={phoneNumber}
+                                onChange={(e) => handleNumberChange(e.target.value)}
+                                placeholder="9 343 1234567"
+                                aria-invalid={Boolean(errors.phone)}
+                                aria-describedby={errors.phone ? 'acc-phone-error' : undefined}
+                            />
+                        </div>
+                    </div>
+                </fieldset>
                 {errors.phone && (
                     <span
                         id="acc-phone-error"
@@ -63,6 +135,60 @@ export function ContactInfoSection({
                         role="alert"
                     >
                         {errors.phone}
+                    </span>
+                )}
+            </div>
+
+            <div className={styles.field}>
+                <fieldset className={styles.phoneFieldset}>
+                    <legend className={styles.fieldLabel}>
+                        {t('host.properties.editor.field.whatsapp', 'WhatsApp')}
+                    </legend>
+                    <div className={styles.phoneRow}>
+                        <div className={styles.phoneCountryField}>
+                            <label
+                                htmlFor="acc-whatsapp-country"
+                                className={styles.fieldSubLabel}
+                            >
+                                {t('host.properties.editor.field.phoneCountry', 'País')}
+                            </label>
+                            <CountryCodeCombobox
+                                locale={locale}
+                                id="acc-whatsapp-country"
+                                value={whatsappCountry}
+                                onChange={handleWhatsappCountryChange}
+                            />
+                        </div>
+                        <div className={styles.phoneNumberField}>
+                            <label
+                                htmlFor="acc-whatsapp-number"
+                                className={styles.fieldSubLabel}
+                            >
+                                {t('host.properties.editor.field.phoneNumber', 'Número')}
+                            </label>
+                            <input
+                                id="acc-whatsapp-number"
+                                type="tel"
+                                inputMode="tel"
+                                className={`${styles.fieldInput} ${styles.phoneNumberInput}`}
+                                value={whatsappNumber}
+                                onChange={(e) => handleWhatsappNumberChange(e.target.value)}
+                                placeholder="9 343 1234567"
+                                aria-invalid={Boolean(errors.whatsapp)}
+                                aria-describedby={
+                                    errors.whatsapp ? 'acc-whatsapp-error' : undefined
+                                }
+                            />
+                        </div>
+                    </div>
+                </fieldset>
+                {errors.whatsapp && (
+                    <span
+                        id="acc-whatsapp-error"
+                        className={styles.fieldError}
+                        role="alert"
+                    >
+                        {errors.whatsapp}
                     </span>
                 )}
             </div>

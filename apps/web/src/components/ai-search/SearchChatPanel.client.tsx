@@ -26,15 +26,17 @@
  * @module SearchChatPanel
  */
 
-import type { AccommodationPublic } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { buildLoginRedirect } from '@/lib/auth-redirect';
-import { formatPrice } from '@/lib/format-utils';
+import { renderChatMarkdown } from '@/lib/ai-search/render-chat-markdown';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import { ActiveFilterChips } from './ActiveFilterChips';
+import { LoginCta } from './LoginCta';
+import { NearbyDestinationsIndicator } from './NearbyDestinationsIndicator';
+import { OnboardingExamples } from './OnboardingExamples';
+import { ResultsSection } from './ResultsSection';
 import styles from './SearchChatPanel.module.css';
+import { LOW_CONFIDENCE_THRESHOLD, MAX_CONTENT_LENGTH } from './search-chat-panel.constants';
 import { useSearchChat } from './useSearchChat';
 
 // ─── Public types ──────────────────────────────────────────────────────────────
@@ -68,165 +70,11 @@ export interface SearchChatPanelProps {
     readonly pageType?: string;
 }
 
-// ─── Skeleton constants ─────────────────────────────────────────────────────
-
-/** Number of skeleton cards to show while results are loading. */
-const SKELETON_COUNT = 3;
-
-/**
- * Confidence threshold below which the low-confidence notice is shown
- * (SPEC-265 A2). When the model's self-assessed confidence is below this
- * value, the UI displays `aiSearch.lowConfidenceMessage` suggesting the
- * user reformulate their query. No numeric badge is shown.
- *
- * NOTE — intentionally distinct from the backend `fallbackToKeyword` cutoff
- * (`confidence < 0.5`, Q5 decision, see `ai-search-intent.schema.ts`). That
- * 0.5 cutoff drives keyword-search fallback (unused by this conversational
- * panel, which runs its own accommodations search); this 0.4 cutoff only
- * decides whether to render the reformulation hint. They answer different
- * questions, so they are not unified — keep them separate on purpose.
- */
-const LOW_CONFIDENCE_THRESHOLD = 0.4;
-
-/**
- * Maximum content length for chat messages (SPEC-265 C2).
- * Matches the `.max(500)` on `AiChatMessageSchema.content` — the textarea
- * `maxLength` and the char counter both reference this constant.
- */
-const MAX_CONTENT_LENGTH = 500;
-
-/**
- * i18n keys for the static example query pool (SPEC-265 B1a).
- * Shown as clickable chips in the empty state — clicking sends the query
- * immediately. Each key resolves to a localized natural-language query
- * that the AI search pipeline can handle.
- */
-const EXAMPLE_QUERY_KEYS = [
-    'aiSearch.examples.query1',
-    'aiSearch.examples.query2',
-    'aiSearch.examples.query3',
-    'aiSearch.examples.query4'
-] as const;
-
-/**
- * Maps accommodation type enum values to type-specific example query i18n keys
- * (SPEC-265 B1b — context-aware onboarding). When the page has an active
- * type context, the matching example is prepended to the pool, tailoring
- * the suggestions to what the user is browsing.
- */
-const TYPE_EXAMPLE_KEY: Record<string, string> = {
-    APARTMENT: 'aiSearch.examples.typeApartment',
-    HOUSE: 'aiSearch.examples.typeHouse',
-    COUNTRY_HOUSE: 'aiSearch.examples.typeCountryHouse',
-    CABIN: 'aiSearch.examples.typeCabin',
-    HOTEL: 'aiSearch.examples.typeHotel',
-    HOSTEL: 'aiSearch.examples.typeHostel',
-    CAMPING: 'aiSearch.examples.typeCamping',
-    ROOM: 'aiSearch.examples.typeRoom',
-    MOTEL: 'aiSearch.examples.typeMotel',
-    RESORT: 'aiSearch.examples.typeResort'
-};
-
-/** Stable keys for the decorative loading skeletons (avoids array-index keys). */
-const SKELETON_KEYS: readonly string[] = Array.from(
-    { length: SKELETON_COUNT },
-    (_unused, index) => `skeleton-${index}`
-);
-
-// ─── ResultCard sub-component ───────────────────────────────────────────────
-
-/**
- * Compact accommodation card for the in-panel results grid.
- *
- * Displays image, type badge, city, star rating, and price with a link to
- * the detail page. Intentionally lighter than AccommodationCard.astro —
- * the panel is a quick-glance surface, not a full listing.
- */
-interface ResultCardProps {
-    readonly item: AccommodationPublic;
-    readonly locale: SupportedLocale;
-    readonly t: ReturnType<typeof createTranslations>['t'];
-}
-
-function ResultCard({ item, locale, t }: ResultCardProps) {
-    const detailHref = buildUrl({ locale, path: `/alojamientos/${item.slug}/` });
-    const thumbnail = item.media?.featuredImage?.url ?? null;
-    const cityName = item.cityDestination?.name ?? null;
-
-    const priceValue = item.price?.price;
-    const formattedPrice =
-        priceValue == null
-            ? null
-            : formatPrice({
-                  amount: priceValue,
-                  currency: item.price?.currency ?? 'ARS',
-                  locale
-              });
-
-    const rating = item.averageRating;
-    const hasRating = typeof rating === 'number' && rating > 0;
-
-    return (
-        <a
-            href={detailHref}
-            className={styles.resultCard}
-            aria-label={item.name}
-        >
-            {thumbnail ? (
-                <img
-                    src={thumbnail}
-                    alt={item.name}
-                    className={styles.resultCardImage}
-                    loading="lazy"
-                />
-            ) : (
-                <div
-                    className={styles.resultCardImagePlaceholder}
-                    aria-hidden="true"
-                >
-                    {t('aiSearch.chat.noImage', 'Sin imagen')}
-                </div>
-            )}
-
-            <div className={styles.resultCardBody}>
-                <h3 className={styles.resultCardName}>{item.name}</h3>
-
-                <div className={styles.resultCardMeta}>
-                    {item.type && <span className={styles.resultCardType}>{item.type}</span>}
-                    {cityName && <span className={styles.resultCardCity}>{cityName}</span>}
-                </div>
-
-                {hasRating && (
-                    <div
-                        className={styles.resultCardRating}
-                        role="img"
-                        aria-label={`${rating?.toFixed(1)} stars`}
-                    >
-                        {'★'.repeat(Math.floor(rating ?? 0))}
-                        <span>{rating?.toFixed(1)}</span>
-                        {item.reviewsCount ? <span>({item.reviewsCount})</span> : null}
-                    </div>
-                )}
-
-                {formattedPrice ? (
-                    <p className={styles.resultCardPrice}>
-                        <span className={styles.resultCardPriceSub}>
-                            {t('aiSearch.chat.priceFrom', 'Desde')}
-                        </span>{' '}
-                        {formattedPrice}
-                        <span className={styles.resultCardPriceSub}>
-                            {t('aiSearch.chat.pricePerNight', '/ noche')}
-                        </span>
-                    </p>
-                ) : (
-                    <p className={styles.resultCardPrice}>
-                        {t('aiSearch.chat.priceConsult', 'Consultar precio')}
-                    </p>
-                )}
-            </div>
-        </a>
-    );
-}
+// Shared constants (LOW_CONFIDENCE_THRESHOLD, MAX_CONTENT_LENGTH,
+// EXAMPLE_QUERY_KEYS, TYPE_EXAMPLE_KEY) live in ./search-chat-panel.constants —
+// extracted alongside ResultCard/ResultsSection (HOS-111 follow-up) to keep
+// this file under the repo's 500-line limit. Skeleton constants moved into
+// ResultsSection, the only place that used them.
 
 // ─── Main component ─────────────────────────────────────────────────────────
 
@@ -313,19 +161,43 @@ export function SearchChatPanel({
         [chat]
     );
 
-    // Context-aware example keys (SPEC-265 B1b): when pageType is set and has
-    // a matching type-specific example, prepend it to the generic pool.
-    const exampleKeys: readonly string[] = (() => {
-        const typeKey = pageType ? TYPE_EXAMPLE_KEY[pageType] : undefined;
-        if (typeKey) {
-            return [typeKey, ...EXAMPLE_QUERY_KEYS];
-        }
-        return EXAMPLE_QUERY_KEYS;
-    })();
-
     const hasMessages = chat.messages.length > 0;
     const showThinking = chat.isStreaming && !chat.currentReply;
-    const showResults = chat.results.length > 0 || chat.resultsLoading;
+    // BUG FIX: previously only `results.length > 0 || resultsLoading`, which
+    // means a completed search with ZERO results (resultsLoading false,
+    // results empty) never rendered the results section at all — the
+    // `resultsEmpty` copy below was unreachable dead code. `hasSearched`
+    // (true once the first accommodations GET has ever fired) keeps the
+    // section — and its empty-state message — visible after a 0-result turn,
+    // so the user sees "no matches" instead of an empty drawer that looks
+    // like the search never ran.
+    const showResults = chat.results.length > 0 || chat.resultsLoading || chat.hasSearched;
+
+    // State-aware composer placeholder (HOS-111 T-007 / OQ-5): the copy
+    // changes across three states so the hint always matches what the user
+    // can usefully do next.
+    // - has-results: at least one match — suggest refining further.
+    // - no-results: a search completed with zero matches (not loading) —
+    //   suggest loosening criteria or searching nearby.
+    // - initial: no search has completed yet — the original onboarding copy.
+    const composerPlaceholder = (() => {
+        if (chat.results.length > 0) {
+            return t(
+                'aiSearch.chat.placeholderHasResults',
+                'Afiná tu búsqueda: sumá precio, características, o pedí destinos cercanos'
+            );
+        }
+        if (chat.hasSearched && !chat.resultsLoading) {
+            return t(
+                'aiSearch.chat.placeholderNoResults',
+                'No encontré nada con esos filtros. Probá quitando alguno o buscá en destinos cercanos.'
+            );
+        }
+        return t(
+            'aiSearch.chat.placeholder',
+            'Contame qué buscás, por ejemplo: cabaña para 4 con pileta cerca del río'
+        );
+    })();
 
     // Low-confidence notice (SPEC-265 A2): show once a turn has completed
     // (not during streaming) when EITHER the confidence is below threshold OR
@@ -356,46 +228,15 @@ export function SearchChatPanel({
         return chat.error;
     })();
 
-    // Build redirect URLs for the login CTA shown to anonymous visitors (W14).
-    const loginHref = buildLoginRedirect({ locale, currentUrl });
-    const registerHref = `/${locale}/auth/signup/`;
-
     // Anonymous visitors: replace the full chat UI with a login CTA (W14).
+    // See LoginCta.tsx (HOS-111 follow-up extraction).
     if (!isAuthenticated) {
         return (
-            <section
-                aria-label={t(
-                    'aiSearch.chat.panelLabel',
-                    'Panel de búsqueda conversacional con IA'
-                )}
-                className={styles.panel}
-            >
-                <div className={styles.loginCtaBlock}>
-                    <h3 className={styles.loginCtaTitle}>
-                        {t('aiSearch.loginPromptTitle', 'Iniciá sesión para buscar con IA')}
-                    </h3>
-                    <p className={styles.loginCtaMessage}>
-                        {t(
-                            'aiSearch.loginPromptMessage',
-                            'La búsqueda inteligente está disponible para usuarios registrados.'
-                        )}
-                    </p>
-                    <div className={styles.loginCtaActions}>
-                        <a
-                            href={loginHref}
-                            className={styles.loginCtaSignIn}
-                        >
-                            {t('aiSearch.loginPromptCta', 'Iniciar sesión')}
-                        </a>
-                        <a
-                            href={registerHref}
-                            className={styles.loginCtaRegister}
-                        >
-                            {t('aiSearch.loginPromptRegisterCta', 'Crear cuenta')}
-                        </a>
-                    </div>
-                </div>
-            </section>
+            <LoginCta
+                locale={locale}
+                currentUrl={currentUrl}
+                t={t}
+            />
         );
     }
 
@@ -404,13 +245,15 @@ export function SearchChatPanel({
             aria-label={t('aiSearch.chat.panelLabel', 'Panel de búsqueda conversacional con IA')}
             className={styles.panel}
         >
-            {/* ── Header ──────────────────────────────────────────────── */}
-            <div className={styles.header}>
-                <h2 className={styles.title}>
-                    {t('aiSearch.chat.title', 'Búsqueda conversacional')}
-                </h2>
-                <div className={styles.headerActions}>
-                    {hasMessages && (
+            {/* ── Header ──────────────────────────────────────────────────
+                 HOS-111 T-001: the panel no longer renders its own title —
+                 the drawer wrapper (AiSearchEntry) owns the single visible
+                 heading ("Búsqueda inteligente") plus the maximize/close
+                 controls. This strip only carries the reset action, and is
+                 omitted entirely when there is nothing to show. ─────────── */}
+            {hasMessages && (
+                <div className={styles.header}>
+                    <div className={styles.headerActions}>
                         <button
                             type="button"
                             className={styles.iconButton}
@@ -420,9 +263,9 @@ export function SearchChatPanel({
                         >
                             ↺
                         </button>
-                    )}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* ── Body: thread + chips + results ──────────────────────── */}
             <div className={styles.body}>
@@ -439,56 +282,51 @@ export function SearchChatPanel({
                 >
                     {/* Empty state — before first turn, with example query chips (SPEC-265 B1a) */}
                     {!hasMessages && !chat.isStreaming && (
-                        <div className={styles.emptyState}>
-                            <p className={styles.emptyStateText}>
-                                {t(
-                                    'aiSearch.chat.emptyState',
-                                    'Hacé tu primera pregunta y te ayudo a encontrar el alojamiento ideal.'
-                                )}
-                            </p>
-                            <div
-                                className={styles.exampleChips}
-                                data-testid="ai-search-examples"
-                            >
-                                <span className={styles.exampleLabel}>
-                                    {t('aiSearch.examples.label', 'Probá con estos ejemplos:')}
-                                </span>
-                                {exampleKeys.map((key) => (
-                                    <button
-                                        key={key}
-                                        type="button"
-                                        className={styles.exampleChip}
-                                        onClick={() => handleExampleClick(t(key, key))}
-                                    >
-                                        {t(key, key)}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                        <OnboardingExamples
+                            pageType={pageType}
+                            t={t}
+                            onExampleClick={handleExampleClick}
+                        />
                     )}
 
-                    {/* Completed message history */}
-                    {chat.messages.map((msg, idx) => (
-                        <div
-                            // biome-ignore lint/suspicious/noArrayIndexKey: message list grows monotonically; index is stable for already-committed messages
-                            key={idx}
-                            className={`${styles.bubble} ${
-                                msg.role === 'user' ? styles.userBubble : styles.assistantBubble
-                            }`}
-                            data-testid={msg.role === 'assistant' ? 'ai-search-reply' : undefined}
-                        >
-                            {msg.content}
-                        </div>
-                    ))}
+                    {/* Completed message history. Assistant replies are rendered as
+                        sanitized markdown (bold/lists/links); user messages stay
+                        plain text — no reason to interpret markdown the user typed. */}
+                    {chat.messages.map((msg, idx) =>
+                        msg.role === 'assistant' ? (
+                            <div
+                                // biome-ignore lint/suspicious/noArrayIndexKey: message list grows monotonically; index is stable for already-committed messages
+                                key={idx}
+                                className={`${styles.bubble} ${styles.assistantBubble}`}
+                                data-testid="ai-search-reply"
+                                // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
+                                dangerouslySetInnerHTML={{
+                                    // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+                                    __html: renderChatMarkdown({ raw: msg.content })
+                                }}
+                            />
+                        ) : (
+                            <div
+                                // biome-ignore lint/suspicious/noArrayIndexKey: message list grows monotonically; index is stable for already-committed messages
+                                key={idx}
+                                className={`${styles.bubble} ${styles.userBubble}`}
+                            >
+                                {msg.content}
+                            </div>
+                        )
+                    )}
 
                     {/* Live-streamed reply — shown while isStreaming and tokens are arriving */}
                     {chat.isStreaming && chat.currentReply && (
                         <div
                             className={`${styles.bubble} ${styles.assistantBubble} ${styles.streaming}`}
                             aria-live="polite"
-                        >
-                            {chat.currentReply}
-                        </div>
+                            // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
+                            dangerouslySetInnerHTML={{
+                                // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+                                __html: renderChatMarkdown({ raw: chat.currentReply })
+                            }}
+                        />
                     )}
 
                     {/* Thinking indicator — shown while streaming but before first token */}
@@ -528,7 +366,11 @@ export function SearchChatPanel({
                     </div>
                 )}
 
-                {/* T-011: active-filter chips */}
+                {/* T-011: active-filter chips.
+                     HOS-111 T-006: `appliedParams` is the last server-resolved
+                     search params (what was ACTUALLY sent), so a chip never
+                     renders for a slot the LLM extracted but the mapper
+                     dropped (e.g. `maxGuests` — see ActiveFilterChips JSDoc). */}
                 <div
                     className={styles.chipsMount}
                     data-slot="filter-chips"
@@ -538,8 +380,15 @@ export function SearchChatPanel({
                         onRemove={chat.removeFilter}
                         locale={locale}
                         destinations={destinations}
+                        appliedParams={chat.lastSearchParams}
                     />
                 </div>
+
+                {/* HOS-111 T-014: which nearby destinations were included (G-9) */}
+                <NearbyDestinationsIndicator
+                    nearbyDestinations={chat.nearbyDestinations}
+                    t={t}
+                />
 
                 {/* Low-confidence notice (SPEC-265 A2) */}
                 {isLowConfidence && (
@@ -555,67 +404,14 @@ export function SearchChatPanel({
                     </output>
                 )}
 
-                {/* Results section */}
+                {/* Results section — see ResultsSection.tsx (HOS-111 T-003/T-004/T-008). */}
                 {showResults && (
-                    <div
-                        className={styles.results}
-                        data-testid="ai-search-results"
-                    >
-                        <div className={styles.resultsHeader}>
-                            <span className={styles.resultsLabel}>
-                                {t('aiSearch.chat.resultsLabel', 'Resultados')}
-                            </span>
-                            {!chat.resultsLoading && (
-                                <span className={styles.resultsCount}>{chat.results.length}</span>
-                            )}
-                        </div>
-
-                        {chat.resultsLoading ? (
-                            /* Skeleton grid while the accommodations GET is in flight.
-                               D-9: resultsLoading and isStreaming can both be true at once
-                               (filters event arrives before the reply finishes). */
-                            <output
-                                className={styles.skeletonGrid}
-                                aria-label={t(
-                                    'aiSearch.chat.resultsLoading',
-                                    'Buscando alojamientos…'
-                                )}
-                            >
-                                {SKELETON_KEYS.map((key) => (
-                                    <div
-                                        key={key}
-                                        className={styles.skeletonCard}
-                                        aria-hidden="true"
-                                    />
-                                ))}
-                            </output>
-                        ) : chat.results.length > 0 ? (
-                            <ul
-                                className={styles.resultsGrid}
-                                aria-label={t(
-                                    'aiSearch.chat.resultsLabel',
-                                    'Resultados encontrados'
-                                )}
-                            >
-                                {chat.results.map((item) => (
-                                    <li key={item.id}>
-                                        <ResultCard
-                                            item={item}
-                                            locale={locale}
-                                            t={t}
-                                        />
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p className={styles.resultsEmpty}>
-                                {t(
-                                    'aiSearch.chat.resultsEmpty',
-                                    'No encontramos alojamientos con esos filtros.'
-                                )}
-                            </p>
-                        )}
-                    </div>
+                    <ResultsSection
+                        resultsLoading={chat.resultsLoading}
+                        results={chat.results}
+                        locale={locale}
+                        t={t}
+                    />
                 )}
             </div>
 
@@ -638,10 +434,7 @@ export function SearchChatPanel({
                     ref={textareaRef}
                     id="search-chat-input"
                     className={styles.textarea}
-                    placeholder={t(
-                        'aiSearch.chat.placeholder',
-                        'Contame qué buscás, por ejemplo: cabaña para 4 con pileta cerca del río'
-                    )}
+                    placeholder={composerPlaceholder}
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={handleKeyDown}

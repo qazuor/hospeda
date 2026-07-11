@@ -304,3 +304,88 @@ describe('filterReducer — CLEAR_GROUP with extraToggleKeys', () => {
         expect(next.selections.type).toEqual([]);
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-96 T-014/T-015 — categories checkbox group multi-select round-trip
+// ---------------------------------------------------------------------------
+
+/**
+ * Mirrors the RENAMED `categories` checkbox group (events'
+ * `buildEventsFilterGroups` and blog's inline `filterGroups`, both id
+ * `'categories'` after T-014/T-015) — proves the generic
+ * `initStateFromParams` → `TOGGLE_CHECKBOX` → `buildParamsFromState` pipeline
+ * serializes multi-select as `?categories=A,B`, never the old `?category=`.
+ */
+const categoriesGroup: FilterGroup = {
+    id: 'categories',
+    label: 'Categoría',
+    type: 'checkbox',
+    options: [
+        { value: 'MUSIC', label: 'Música' },
+        { value: 'CULTURE', label: 'Cultura' },
+        { value: 'GASTRONOMY', label: 'Gastronomía' }
+    ]
+};
+
+describe('categories checkbox group — multi-select round-trip (HOS-96 T-014/T-015)', () => {
+    it('a single checked box writes a working ?categories= param', () => {
+        const withOne = filterReducer(makeState(), {
+            type: 'TOGGLE_CHECKBOX',
+            groupId: 'categories',
+            value: 'MUSIC'
+        });
+
+        const params = buildParamsFromState({ state: withOne, filters: [categoriesGroup] });
+        expect(params.get('categories')).toBe('MUSIC');
+        expect(params.has('category')).toBe(false);
+    });
+
+    it('checking a second box ACCUMULATES (?categories=A,B), never the old singular ?category=', () => {
+        const withOne = filterReducer(makeState(), {
+            type: 'TOGGLE_CHECKBOX',
+            groupId: 'categories',
+            value: 'MUSIC'
+        });
+        const withTwo = filterReducer(withOne, {
+            type: 'TOGGLE_CHECKBOX',
+            groupId: 'categories',
+            value: 'CULTURE'
+        });
+
+        const params = buildParamsFromState({ state: withTwo, filters: [categoriesGroup] });
+        expect(params.get('categories')).toBe('MUSIC,CULTURE');
+        expect(params.has('category')).toBe(false);
+    });
+
+    it('unchecking one of two active boxes leaves only the remaining value', () => {
+        const twoActive = makeState({ selections: { categories: ['MUSIC', 'CULTURE'] } });
+        const oneLeft = filterReducer(twoActive, {
+            type: 'TOGGLE_CHECKBOX',
+            groupId: 'categories',
+            value: 'MUSIC'
+        });
+
+        const params = buildParamsFromState({ state: oneLeft, filters: [categoriesGroup] });
+        expect(params.get('categories')).toBe('CULTURE');
+    });
+
+    it('URL-init round-trip: initStateFromParams reads an existing ?categories=A,B into selections under the renamed id', () => {
+        const state = initStateFromParams({
+            filters: [categoriesGroup],
+            defaultSort: '',
+            params: { categories: 'MUSIC,CULTURE' }
+        });
+
+        expect(state.selections.categories).toEqual(['MUSIC', 'CULTURE']);
+    });
+
+    it('URL-init round-trip: the OLD singular ?category= key does NOT seed the renamed categories group (id mismatch is intentional — category is read separately by the page for backend back-compat, not by the sidebar)', () => {
+        const state = initStateFromParams({
+            filters: [categoriesGroup],
+            defaultSort: '',
+            params: { category: 'MUSIC' }
+        });
+
+        expect(state.selections.categories).toBeUndefined();
+    });
+});

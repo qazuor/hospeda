@@ -16,6 +16,7 @@
     "whatsNewPanel": {
         "title": "Novidades",
         "empty": "Nenhuma novidade ainda",
+        "emptyDesc": "Quando publicarmos melhorias ou novos recursos da plataforma, você vai vê-los aqui.",
         "markAllRead": "Marcar tudo como lido",
         "seeEntry": "Ver"
     },
@@ -65,6 +66,67 @@
     },
     "navigation": "Navegação da conta",
     "sections": "Seções da conta",
+    "nav": {
+        "groupAccount": "Minha conta",
+        "groupTourist": "Área do turista",
+        "groupHost": "Área do anfitrião",
+        "groupCommerce": "Área comercial",
+        "dashboard": "Minha conta",
+        "editProfile": "Editar perfil",
+        "subscription": "Assinatura",
+        "preferences": "Preferências",
+        "newsletter": "Newsletter",
+        "whatsNew": "O que há de novo",
+        "favorites": "Favoritos",
+        "searchHistory": "Histórico de buscas",
+        "alerts": "Alertas de preço",
+        "exclusiveDeals": "Ofertas exclusivas",
+        "reviews": "Minhas avaliações",
+        "hostDashboard": "Painel do anfitrião",
+        "properties": "Meus alojamentos",
+        "promotions": "Minhas promoções",
+        "tradeDirectory": "Diretório de fornecedores"
+    },
+    "doors": {
+        "sectionLabel": "Descubra mais",
+        "publish": {
+            "title": "Publique no Hospeda",
+            "subtitle": "Escolha qual vertical você quer somar ao Hospeda e siga os passos para publicar.",
+            "options": {
+                "accommodation": {
+                    "title": "Alojamento",
+                    "description": "Publique seu alojamento no Hospeda e alcance milhares de viajantes que buscam se hospedar na região.",
+                    "cta": "Publique seu alojamento"
+                },
+                "commerce": {
+                    "title": "Gastronomia e comércio",
+                    "description": "Conte-nos sobre o seu negócio e entraremos em contato para somá-lo ao Hospeda.",
+                    "cta": "Conte-nos e entraremos em contato"
+                }
+            }
+        },
+        "partner": {
+            "title": "Seja parceiro",
+            "titleStateful": "Some outra parceria",
+            "subtitle": "Seja parceiro do Hospeda: destaque sua marca ou seus serviços para milhares de viajantes e anfitriões.",
+            "options": {
+                "sponsor": {
+                    "title": "Patrocinador",
+                    "description": "Destaque sua marca no Hospeda com conteúdo patrocinado e presença em eventos e publicações."
+                },
+                "serviceProvider": {
+                    "title": "Prestador de serviços",
+                    "description": "Some-se ao diretório de fornecedores locais que os anfitriões recomendam aos seus hóspedes."
+                }
+            }
+        },
+        "common": {
+            "manageCta": "Gerenciar",
+            "acquiredLabel": "Você já tem",
+            "comingSoonBadge": "Em breve",
+            "contactCta": "Fale conosco"
+        }
+    },
     "avatar": {
         "hint": "Apenas JPEG, PNG e WebP · Máx. 5 MB",
         "actions": {
@@ -414,7 +476,7 @@
                 "hostDashboard": "Painel do anfitrião",
                 "hostDashboardDesc": "Resumo da sua atividade como anfitrião",
                 "promotions": "Minhas promoções",
-                "recommendations": "Recomendações",
+                "recommendations": "Sugestões",
                 "recommendationsDesc": "Acomodações escolhidas para você"
             },
             "stats": {
@@ -588,7 +650,7 @@
             "description": "Descubra ofertas e descontos exclusivos para o seu plano no Hospeda"
         },
         "recommendations": {
-            "title": "Para você",
+            "title": "Sugestões para você",
             "description": "Acomodações escolhidas especialmente para você, com base nos seus favoritos, buscas e atividade recente no Hospeda"
         }
     },
@@ -822,7 +884,12 @@
     "recommendations": {
         "loading": "Carregando recomendações...",
         "errorFetch": "Não conseguimos carregar suas recomendações",
-        "listLabel": "Recomendações para você",
+        "listLabel": "Sugestões para você",
+        "groups": {
+            "destination": "Pelos destinos que você curte",
+            "type": "Do tipo que você prefere",
+            "other": "Outras sugestões para você"
+        },
         "viewDetails": "Ver acomodação",
         "coldStart": {
             "title": "Ainda estamos conhecendo o seu gosto",

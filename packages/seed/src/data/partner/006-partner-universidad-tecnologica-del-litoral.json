@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/partner.schema.json",
+    "id": "006-partner-universidad-tecnologica-del-litoral",
+    "slug": "universidad-tecnologica-del-litoral",
+    "name": "Universidad Tecnológica del Litoral",
+    "type": "institution",
+    "tier": "silver",
+    "logoUrl": "https://images.pexels.com/photos/207692/pexels-photo-207692.jpeg",
+    "websiteUrl": "https://www.utlitoral.edu.ar",
+    "description": "Casa de altos estudios con sede en Concepción del Uruguay, referente en carreras de turismo, gastronomía y gestión hotelera. Convenios de pasantías con alojamientos y agencias de la región.",
+    "subscriptionStatus": "active",
+    "lifecycleState": "ACTIVE",
+    "startsAt": "2025-03-25T00:00:00.000Z"
+}

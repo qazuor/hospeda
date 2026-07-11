@@ -39,7 +39,17 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
                 '/api/v1/public/health',
                 '/api/v1/public/webhooks'
             ];
-            const isPublicPath = publicPaths.some((publicPath) => path.startsWith(publicPath));
+            // robots.txt and the legacy RSS-path redirect (HOS-109 T-011) are plain
+            // crawler-facing endpoints, not JSON-API routes — they must never be
+            // rejected by the JSON Accept-header negotiation below. Matched EXACTLY
+            // (not by prefix) so a lookalike post slug such as `rss.xmlFoo` cannot
+            // accidentally skip validation on the real getBySlug handler.
+            // `routeOptions.skipValidation` is set inside the route handler, which
+            // runs after this global middleware, so it cannot help here.
+            const exactPublicPaths = ['/robots.txt', '/api/v1/public/posts/slug/rss.xml'];
+            const isPublicPath =
+                publicPaths.some((publicPath) => path.startsWith(publicPath)) ||
+                exactPublicPaths.includes(path);
 
             // Allow routes to opt-out of validation via route options.
             // Route factories attach routeOptions directly on the context object

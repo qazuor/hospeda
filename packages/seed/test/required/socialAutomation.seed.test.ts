@@ -12,7 +12,16 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { PLATFORM_FORMATS, PLATFORMS, SETTINGS } from '../../src/required/socialAutomation.seed.js';
+import {
+    CAMPAIGNS,
+    CONTENT_BATCHES,
+    FOOTERS,
+    HASHTAG_SETS,
+    HASHTAGS,
+    PLATFORM_FORMATS,
+    PLATFORMS,
+    SETTINGS
+} from '../../src/required/socialAutomation.seed.js';
 
 describe('social automation settings seed (HOS-64 T-003)', () => {
     it('should include all 5 new operational settings with correct types and defaults', () => {
@@ -113,5 +122,71 @@ describe('social platform-format catalog seed (HOS-65 T-010)', () => {
     it('should have exactly 2 LinkedIn rows and 1 TikTok row', () => {
         expect(PLATFORM_FORMATS.filter((r) => r.platform === 'LINKEDIN')).toHaveLength(2);
         expect(PLATFORM_FORMATS.filter((r) => r.platform === 'TIKTOK')).toHaveLength(1);
+    });
+});
+
+/**
+ * Invariants for the social catalog expansion (HOS-25 dual-write PR).
+ *
+ * `CAMPAIGNS`, `CONTENT_BATCHES`, and `FOOTERS` were refactored from a
+ * singular const + singular seeder into an array + loop seeder, matching the
+ * pre-existing `HASHTAG_SETS`/`HASHTAGS` pattern. These tests guard the two
+ * classes of bug that refactor (and any future edit to these arrays) could
+ * silently reintroduce:
+ *   - a duplicate unique key (slug / normalizedHashtag), which would break
+ *     seeding on a fresh DB via the UNIQUE constraint;
+ *   - a malformed `normalizedHashtag` (the exact shape of the
+ *     `#serviciostristicos` typo bug fixed in this same PR).
+ *
+ * `social_audiences` is intentionally NOT covered here: its row data stays an
+ * inline array local to `seedSocialAudiences` (not a module-level export),
+ * matching the pre-existing convention for that one entity — exporting it
+ * just for this test would fight that convention rather than follow it.
+ */
+describe('social catalog expansion invariants (HOS-25)', () => {
+    it('should have exactly 16 campaigns, 8 content batches, 6 footers, 18 hashtag sets, and 89 hashtags', () => {
+        expect(CAMPAIGNS).toHaveLength(16);
+        expect(CONTENT_BATCHES).toHaveLength(8);
+        expect(FOOTERS).toHaveLength(6);
+        expect(HASHTAG_SETS).toHaveLength(18);
+        expect(HASHTAGS).toHaveLength(89);
+    });
+
+    it('should keep every campaign slug unique', () => {
+        const slugs = CAMPAIGNS.map((row) => row.slug);
+        expect(new Set(slugs).size).toBe(slugs.length);
+    });
+
+    it('should keep every content batch slug unique', () => {
+        const slugs = CONTENT_BATCHES.map((row) => row.slug);
+        expect(new Set(slugs).size).toBe(slugs.length);
+    });
+
+    it('should keep every footer slug unique', () => {
+        const slugs = FOOTERS.map((row) => row.slug);
+        expect(new Set(slugs).size).toBe(slugs.length);
+    });
+
+    it('should keep every hashtag set slug unique', () => {
+        const slugs = HASHTAG_SETS.map((row) => row.slug);
+        expect(new Set(slugs).size).toBe(slugs.length);
+    });
+
+    it('should keep every hashtag normalizedHashtag unique (matches the DB UNIQUE constraint)', () => {
+        const normalized = HASHTAGS.map((row) => row.normalizedHashtag);
+        expect(new Set(normalized).size).toBe(normalized.length);
+    });
+
+    it('should have every hashtag normalizedHashtag lowercase, #-prefixed, and free of accents/ñ', () => {
+        const invalid = HASHTAGS.filter((row) => !/^#[a-z0-9]+$/.test(row.normalizedHashtag));
+        expect(
+            invalid,
+            `expected every normalizedHashtag to match /^#[a-z0-9]+$/, found invalid: ${JSON.stringify(invalid)}`
+        ).toEqual([]);
+    });
+
+    it('should have exactly one default footer', () => {
+        const defaults = FOOTERS.filter((row) => row.isDefault === true);
+        expect(defaults).toHaveLength(1);
     });
 });

@@ -113,9 +113,18 @@ const {
     currentBillingLoadFailedForTest,
     nextAmenityDbRows,
     nextFeatureDbRows,
+    nextDestinationDbRows,
     nextPersistPromise,
     mockApiLogger,
-    nextSearchCallCount
+    nextSearchCallCount,
+    nextNearbyResult,
+    nearbyGetCalls,
+    nextAttractionResolveResult,
+    attractionResolveCalls,
+    nextPoiGetBySlugResult,
+    nextPoiDestinationIdsResult,
+    poiGetBySlugCalls,
+    poiDestinationIdsCalls
 } = vi.hoisted(() => ({
     generateObjectCalls: [] as Array<{ feature: string; prompt: string; locale: string }>,
     nextGenerateObjectResult: {
@@ -149,6 +158,14 @@ const {
     /** Rows returned by the mocked feature DB query. */
     nextFeatureDbRows: { current: [] as Array<{ id: string }> },
     /**
+     * Rows returned by the mocked destination DB query
+     * (`resolveDestinationIdFromCity` — city → destinationId resolution, fix #4).
+     * Both the exact-match and fuzzy-match queries read this same array, so
+     * setting it to a single row simulates "the city resolved to a destination"
+     * regardless of which of the two queries would have matched in production.
+     */
+    nextDestinationDbRows: { current: [] as Array<{ id: string }> },
+    /**
      * T-007: controls what `persistSearchChatTurn` returns per-test.
      * Default: resolves with a fixed conversation id (happy path).
      */
@@ -169,7 +186,56 @@ const {
      * for the search feature. Set per-test to simulate under-quota / at-quota states.
      * Reset to 0 in `beforeEach` so tests are isolated.
      */
-    nextSearchCallCount: { current: 0 }
+    nextSearchCallCount: { current: 0 },
+    /**
+     * HOS-111 T-013: controls what the mocked `DestinationService.getNearby`
+     * returns per-test. Default (empty nearby array) means "no expansion" so
+     * pre-existing tests that never set `expandToNearby: true` are unaffected.
+     */
+    nextNearbyResult: {
+        current: { data: { nearby: [] } } as
+            | { data: { nearby: Array<{ id: string; name: string; slug: string }> }; error?: never }
+            | { data?: never; error: { code: string; message: string } }
+    },
+    /** HOS-111 T-013: records every `getNearby` call for call-count/arg assertions. */
+    nearbyGetCalls: [] as Array<{ destinationId: string }>,
+    /**
+     * HOS-111 T-016: controls what the mocked
+     * `AttractionService.getDestinationIdsByAttractionSlugs` returns per-test.
+     * Default (empty destinationIds) means "no constraint" so pre-existing
+     * tests that never set `attractionSlugs` are unaffected.
+     */
+    nextAttractionResolveResult: {
+        current: { data: { destinationIds: [] } } as
+            | { data: { destinationIds: string[] }; error?: never }
+            | { data?: never; error: { code: string; message: string } }
+    },
+    /** HOS-111 T-016: records every attraction-resolve call for assertions. */
+    attractionResolveCalls: [] as Array<{ slugs: string[] }>,
+    /**
+     * HOS-113 §6.3: controls what the mocked `PointOfInterestService.getBySlug`
+     * returns per-test. Default (NOT_FOUND) means "no landmark resolvable" so
+     * pre-existing tests that never set `poiSlugs` are unaffected.
+     */
+    nextPoiGetBySlugResult: {
+        current: { error: { code: 'NOT_FOUND', message: 'not found' } } as
+            | { data: { id: string; slug: string; lat: number; long: number }; error?: never }
+            | { data?: never; error: { code: string; message: string } }
+    },
+    /**
+     * HOS-113 §6.3: controls what the mocked
+     * `PointOfInterestService.getDestinationIdsByPointOfInterestSlugs` returns
+     * per-test. Default (empty destinationIds) means "no constraint".
+     */
+    nextPoiDestinationIdsResult: {
+        current: { data: { destinationIds: [] } } as
+            | { data: { destinationIds: string[] }; error?: never }
+            | { data?: never; error: { code: string; message: string } }
+    },
+    /** HOS-113 §6.3: records every `getBySlug` call for assertions. */
+    poiGetBySlugCalls: [] as Array<{ slug: string }>,
+    /** HOS-113 §6.3: records every `getDestinationIdsByPointOfInterestSlugs` call for assertions. */
+    poiDestinationIdsCalls: [] as Array<{ slugs: string[] }>
 }));
 
 // ---------------------------------------------------------------------------
@@ -327,8 +393,10 @@ vi.mock('../../../src/middlewares/entitlement', async (importOriginal) => {
 
 // ---------------------------------------------------------------------------
 // Mock: @repo/db
-// Stubs `getDb()` so amenity/feature slug-to-UUID queries return per-test rows
-// without needing a real seeded database. Mirrors search-intent.test.ts exactly.
+// Stubs `getDb()` so amenity/feature slug-to-UUID and city → destinationId
+// queries return per-test rows without needing a real seeded database.
+// Mirrors search-intent.test.ts exactly, extended with a `destinations` branch
+// for `resolveDestinationIdFromCity` (fix #4).
 // ---------------------------------------------------------------------------
 
 vi.mock('@repo/db', async (importOriginal) => {
@@ -343,6 +411,8 @@ vi.mock('@repo/db', async (importOriginal) => {
                         let rows: Array<{ id: string }>;
                         if (table === actual.amenities) {
                             rows = nextAmenityDbRows.current;
+                        } else if (table === actual.destinations) {
+                            rows = nextDestinationDbRows.current;
                         } else {
                             rows = nextFeatureDbRows.current;
                         }
@@ -355,7 +425,51 @@ vi.mock('@repo/db', async (importOriginal) => {
         })),
         amenities: actual.amenities,
         features: actual.features,
+        destinations: actual.destinations,
         inArray: actual.inArray
+    };
+});
+
+// ---------------------------------------------------------------------------
+// Mock: @repo/service-core — DestinationService.getNearby (HOS-111 T-013)
+// Preserves every real export (Actor/ServiceError/RoleEnum/etc are used by
+// middlewares mounted on the same app) and overrides only DestinationService
+// so `getNearby` is controllable per-test without a real database.
+// ---------------------------------------------------------------------------
+
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        DestinationService: class {
+            async getNearby(_actor: unknown, params: { destinationId: string }) {
+                nearbyGetCalls.push({ destinationId: params.destinationId });
+                return nextNearbyResult.current;
+            }
+        },
+        // HOS-111 T-016: mirrors the DestinationService.getNearby mock above —
+        // controllable per-test without a real database or DB-mock join chain.
+        AttractionService: class {
+            async getDestinationIdsByAttractionSlugs(_actor: unknown, params: { slugs: string[] }) {
+                attractionResolveCalls.push({ slugs: params.slugs });
+                return nextAttractionResolveResult.current;
+            }
+        },
+        // HOS-113 §6.3: mirrors the AttractionService mock above — controllable
+        // per-test without a real database.
+        PointOfInterestService: class {
+            async getBySlug(_actor: unknown, slug: string) {
+                poiGetBySlugCalls.push({ slug });
+                return nextPoiGetBySlugResult.current;
+            }
+            async getDestinationIdsByPointOfInterestSlugs(
+                _actor: unknown,
+                params: { slugs: string[] }
+            ) {
+                poiDestinationIdsCalls.push({ slugs: params.slugs });
+                return nextPoiDestinationIdsResult.current;
+            }
+        }
     };
 });
 
@@ -404,6 +518,31 @@ const POOL_AMENITY_UUID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 
 /** Fixed UUID returned by the mock DB for feature slug lookups. */
 const RIVER_FRONT_FEATURE_UUID = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+
+/** Fixed UUID returned by the mock DB for city → destination resolution (fix #4). */
+const COLON_DESTINATION_UUID = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+
+/** HOS-111 T-013: fixed UUIDs for the "nearby destinations" AC-9 fixtures (Colón's neighbors). */
+const PUEBLO_LIEBIG_UUID = '11111111-1111-4111-8111-111111111111';
+const SAN_JOSE_UUID = '22222222-2222-4222-8222-222222222222';
+const CONCEPCION_DEL_URUGUAY_UUID = '33333333-3333-4333-8333-333333333333';
+
+/** HOS-111 T-016: fixed UUIDs for the "attraction-matched destinations" AC-11 fixtures. */
+const GUALEGUAYCHU_UUID = '44444444-4444-4444-8444-444444444444';
+const GUALEGUAY_UUID = '55555555-5555-4555-8555-555555555555';
+
+/** HOS-113 §6.3: fixed lat/long + slug for the AC-6 "autódromo" fixture. */
+const AUTODROMO_POI_SLUG = 'autodromo_concepcion_del_uruguay';
+const AUTODROMO_LAT = -32.423;
+const AUTODROMO_LONG = -58.2591;
+
+/**
+ * HOS-113 review M-2: fixed UUID for the cross-allowlist ambiguity
+ * regression fixture (Concordia — the destination shared by BOTH the
+ * attraction allowlist's bare "termas" entry and the POI allowlist's
+ * "termas de concordia" entry).
+ */
+const CONCORDIA_UUID = '66666666-6666-4666-8666-666666666666';
 
 // ---------------------------------------------------------------------------
 // Test app
@@ -558,6 +697,18 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
         nextSearchCallCount.current = 0;
         nextAmenityDbRows.current = [];
         nextFeatureDbRows.current = [];
+        nextDestinationDbRows.current = [];
+        // HOS-111 T-013: reset nearby-expansion stub state ("no expansion" default).
+        nextNearbyResult.current = { data: { nearby: [] } };
+        nearbyGetCalls.length = 0;
+        // HOS-111 T-016: reset attraction-resolution stub state ("no constraint" default).
+        nextAttractionResolveResult.current = { data: { destinationIds: [] } };
+        attractionResolveCalls.length = 0;
+        // HOS-113 §6.3: reset POI-resolution stub state ("no landmark resolvable" default).
+        nextPoiGetBySlugResult.current = { error: { code: 'NOT_FOUND', message: 'not found' } };
+        nextPoiDestinationIdsResult.current = { data: { destinationIds: [] } };
+        poiGetBySlugCalls.length = 0;
+        poiDestinationIdsCalls.length = 0;
         // T-007: default happy-path persistence — resolves with a fixed conversation id.
         nextPersistPromise.current = Promise.resolve({
             conversationId: 'ffffffff-ffff-4fff-8fff-ffffffffffff'
@@ -1452,6 +1603,1516 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             });
 
             expect(res.status).toBe(200);
+        });
+    });
+
+    // =========================================================================
+    // Gate 8 — intent-extraction pipeline fixes:
+    //   fix #1: guests/bedrooms/bathrooms min===max collapses to min-only.
+    //   fix #2: boolean-shortcut amenity slugs (hasPool/hasParking/hasWifi/
+    //           allowsPets) are deduped out of amenitySlugs before resolution.
+    //   fix #4: entities.city resolves server-side to destinationId.
+    // =========================================================================
+
+    describe('Gate 8 — intent-extraction pipeline fixes', () => {
+        it('fix #1: minGuests === maxGuests collapses to minGuests only in the emitted params', async () => {
+            // Arrange: the model extracted an exact headcount ("para 4 personas"),
+            // not an explicit range.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { minGuests: 4, maxGuests: 4 }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cabaña para 4 personas' }]
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            expect(payload.params.minGuests).toBe('4');
+            expect(payload.params.maxGuests).toBeUndefined();
+        });
+
+        it('fix #2: hasPool=true + amenitySlugs=["pool"] resolves only via the boolean shortcut, not amenities', async () => {
+            // Arrange: the model extracted BOTH the boolean shortcut AND the
+            // duplicated amenity slug for the same physical amenity (pool).
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { hasPool: true, amenitySlugs: ['pool'] }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // If the (buggy) route resolved 'pool' anyway, the mock would return
+            // this UUID — asserting it is ABSENT proves the dedup ran.
+            nextAmenityDbRows.current = [{ id: POOL_AMENITY_UUID }];
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'quiero pileta' }]
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            // The boolean shortcut still applies (OR-based, correct behavior).
+            expect(payload.params.hasPool).toBe('true');
+            // The exact-amenity AND filter must NOT also be applied — 'pool' was
+            // deduped out of amenitySlugs before resolution, so `amenities` is
+            // omitted (an empty resolvedAmenityIds array means the mapper never
+            // sets the key at all).
+            expect(payload.params.amenities).toBeUndefined();
+        });
+
+        it('fix #2: an amenity slug NOT covered by a boolean shortcut is still resolved normally', async () => {
+            // Arrange: hasPool is true (pool deduped), but 'bbq' has no boolean
+            // shortcut counterpart and must still resolve.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { hasPool: true, amenitySlugs: ['pool', 'bbq'] }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            const BBQ_AMENITY_UUID = 'f0000000-0000-4000-8000-0000000000bb';
+            // The mock's `from()` branch returns nextAmenityDbRows.current for ANY
+            // amenities-table query — set it to only the BBQ UUID; the handler's
+            // dedup ensures 'pool' is never included in the resolved query slugs,
+            // so this simulates the DB matching only the surviving 'bbq' slug.
+            nextAmenityDbRows.current = [{ id: BBQ_AMENITY_UUID }];
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'quiero pileta y parrilla' }]
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            expect(payload.params.hasPool).toBe('true');
+            expect(payload.params.amenities).toEqual(expect.arrayContaining([BBQ_AMENITY_UUID]));
+        });
+
+        it('fix #4: city resolved to a known destination emits destinationId, not q', async () => {
+            // Arrange: the model extracted a bare city name.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.85,
+                    entities: { city: 'Colón' }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // The mocked destinations-table query matches "Colón" to a real destination.
+            nextDestinationDbRows.current = [{ id: COLON_DESTINATION_UUID }];
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'algo en Colón' }]
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            expect(payload.params.destinationId).toBe(COLON_DESTINATION_UUID);
+            expect(payload.params.q).toBeUndefined();
+        });
+
+        it('fix #4: city NOT resolved to any destination falls back to q (existing behavior preserved)', async () => {
+            // Arrange: the model extracted a city name with no destinations-table match.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.8,
+                    entities: { city: 'Nowhereland' }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // No destination rows match — resolveDestinationIdFromCity returns undefined.
+            nextDestinationDbRows.current = [];
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'algo en Nowhereland' }]
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            expect(payload.params.q).toBe('Nowhereland');
+            expect(payload.params.destinationId).toBeUndefined();
+        });
+
+        it('fix #4: city resolution is skipped entirely when entities.destinationId is already present', async () => {
+            // Arrange: the model already extracted a destinationId directly —
+            // the handler must not waste a DB round-trip resolving city too.
+            const explicitDestinationId = 'a1111111-1111-4111-8111-111111111111';
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.95,
+                    entities: { destinationId: explicitDestinationId, city: 'Colón' }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // If city resolution ran anyway, this row would leak through — it must not.
+            nextDestinationDbRows.current = [{ id: COLON_DESTINATION_UUID }];
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody()
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            // The model's own destinationId wins (city resolution was skipped).
+            expect(payload.params.destinationId).toBe(explicitDestinationId);
+        });
+    });
+
+    // =========================================================================
+    // Gate 9 — HOS-111 T-013: nearby-destination expansion (AC-9)
+    //
+    // "cabaña en Colón, y también en destinos cercanos" → Colón + ~50km
+    // neighbors (Pueblo Liebig, San José, Concepción del Uruguay), with the
+    // filters frame listing the included destinations.
+    // =========================================================================
+
+    describe('Gate 9 — HOS-111 T-013: nearby-destination expansion (AC-9)', () => {
+        it('AC-9: expandToNearby=true + resolved destinationId expands the search and lists the neighbors', async () => {
+            // Arrange: turn 2 of a conversation — Colón is already the anchor
+            // in the CURRENT FILTER SET, and the new message asks to expand.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { destinationId: COLON_DESTINATION_UUID, expandToNearby: true }
+                },
+                usage: { promptTokens: 15, completionTokens: 8, totalTokens: 23 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextNearbyResult.current = {
+                data: {
+                    nearby: [
+                        { id: PUEBLO_LIEBIG_UUID, name: 'Pueblo Liebig', slug: 'pueblo-liebig' },
+                        { id: SAN_JOSE_UUID, name: 'San José', slug: 'san-jose' },
+                        {
+                            id: CONCEPCION_DEL_URUGUAY_UUID,
+                            name: 'Concepción del Uruguay',
+                            slug: 'concepcion-del-uruguay'
+                        }
+                    ]
+                }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [
+                        { role: 'user', content: 'cabaña en Colón' },
+                        { role: 'assistant', content: 'Encontré cabañas en Colón.' },
+                        { role: 'user', content: 'y también en destinos cercanos' }
+                    ],
+                    currentFilters: { destinationId: COLON_DESTINATION_UUID },
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            expect(filtersFrame).toBeDefined();
+
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                intent: Record<string, unknown>;
+                nearbyDestinations?: Array<{ id: string; name: string; slug: string }>;
+            };
+
+            // getNearby was called with the resolved Colón anchor.
+            expect(nearbyGetCalls).toEqual([{ destinationId: COLON_DESTINATION_UUID }]);
+
+            // The search widens to a multi-destination query: anchor + neighbors.
+            expect(payload.params.destinationIds).toEqual(
+                expect.arrayContaining([
+                    COLON_DESTINATION_UUID,
+                    PUEBLO_LIEBIG_UUID,
+                    SAN_JOSE_UUID,
+                    CONCEPCION_DEL_URUGUAY_UUID
+                ])
+            );
+
+            // The filters frame lists which destinations were included (T-014 reads this).
+            expect(payload.nearbyDestinations).toEqual([
+                { id: PUEBLO_LIEBIG_UUID, name: 'Pueblo Liebig', slug: 'pueblo-liebig' },
+                { id: SAN_JOSE_UUID, name: 'San José', slug: 'san-jose' },
+                {
+                    id: CONCEPCION_DEL_URUGUAY_UUID,
+                    name: 'Concepción del Uruguay',
+                    slug: 'concepcion-del-uruguay'
+                }
+            ]);
+        });
+
+        it('does not call getNearby and omits nearbyDestinations when expandToNearby is absent', async () => {
+            // Arrange: a normal (non-expansion) turn with a resolved destination.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { destinationId: COLON_DESTINATION_UUID }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cabaña en Colón' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                nearbyDestinations?: unknown;
+            };
+
+            expect(nearbyGetCalls).toHaveLength(0);
+            expect(payload.nearbyDestinations).toBeUndefined();
+            expect(payload.params.destinationIds).toBeUndefined();
+            expect(payload.params.destinationId).toBe(COLON_DESTINATION_UUID);
+        });
+
+        it('does not call getNearby when expandToNearby=true but no destinationId was resolved (nothing to expand from)', async () => {
+            // Arrange: expandToNearby is set but there is no anchor destination
+            // this turn (e.g. a context-free message the model mis-flagged, or
+            // a query/geo/no-location turn) — the deterministic guard must skip.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.6,
+                    entities: { expandToNearby: true, minGuests: 4 }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'también cerca' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                nearbyDestinations?: unknown;
+            };
+
+            expect(nearbyGetCalls).toHaveLength(0);
+            expect(payload.nearbyDestinations).toBeUndefined();
+        });
+
+        it('non-fatal: a getNearby failure is logged and the turn still completes without expansion', async () => {
+            // Arrange
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { destinationId: COLON_DESTINATION_UUID, expandToNearby: true }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextNearbyResult.current = {
+                error: { code: 'INTERNAL_ERROR', message: 'DB unavailable' }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'y también cerca' }],
+                    currentFilters: { destinationId: COLON_DESTINATION_UUID },
+                    locale: 'es'
+                })
+            });
+
+            // Assert: the turn still succeeds end-to-end (non-fatal contract).
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                nearbyDestinations?: unknown;
+            };
+            expect(payload.nearbyDestinations).toBeUndefined();
+            expect(payload.params.destinationIds).toBeUndefined();
+            expect(payload.params.destinationId).toBe(COLON_DESTINATION_UUID);
+            expect(mockApiLogger.warn).toHaveBeenCalled();
+        });
+
+        it('empty-radius fallback still surfaces via nearbyDestinations when the model returns fallback neighbors', async () => {
+            // Arrange: the model-layer radius/fallback logic itself is unit-tested
+            // at packages/db/test/models/destination-nearby.test.ts. Here we only
+            // verify the route surfaces whatever DestinationService.getNearby
+            // returns (radius hit OR fallback) identically in the filters frame.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { destinationId: COLON_DESTINATION_UUID, expandToNearby: true }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // Only one destination came back (simulating the N-nearest fallback
+            // path when the fixed radius yielded nothing) — still surfaced.
+            nextNearbyResult.current = {
+                data: {
+                    nearby: [
+                        {
+                            id: CONCEPCION_DEL_URUGUAY_UUID,
+                            name: 'Concepción del Uruguay',
+                            slug: 'concepcion-del-uruguay'
+                        }
+                    ]
+                }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'y en destinos cercanos' }],
+                    currentFilters: { destinationId: COLON_DESTINATION_UUID },
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                nearbyDestinations?: Array<{ id: string; name: string; slug: string }>;
+            };
+
+            // A "nearby" result (radius hit or fallback) is never empty at this
+            // layer — the search-chat route never returns 0 results back empty.
+            expect(payload.nearbyDestinations).toHaveLength(1);
+            expect(payload.params.destinationIds).toEqual(
+                expect.arrayContaining([COLON_DESTINATION_UUID, CONCEPCION_DEL_URUGUAY_UUID])
+            );
+        });
+    });
+
+    // =========================================================================
+    // Gate 10 — HOS-111 T-016: attraction-constrained destination search (AC-11)
+    //
+    // "una ciudad con carnavales" → constrains results to the destinations
+    // that have that attraction (Gualeguaychú, Gualeguay).
+    // =========================================================================
+
+    describe('Gate 10 — HOS-111 T-016: attraction-constrained destination search (AC-11)', () => {
+        it('AC-11: attractionSlugs resolves and constrains params.destinationIds when there is no other location constraint', async () => {
+            // Arrange
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { attractionSlugs: ['sede_carnaval', 'corsodromo'] }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextAttractionResolveResult.current = {
+                data: { destinationIds: [GUALEGUAYCHU_UUID, GUALEGUAY_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'una ciudad con carnavales' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            expect(filtersFrame).toBeDefined();
+
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+
+            expect(attractionResolveCalls).toEqual([{ slugs: ['sede_carnaval', 'corsodromo'] }]);
+            expect(payload.params.destinationIds).toEqual([GUALEGUAYCHU_UUID, GUALEGUAY_UUID]);
+            expect(
+                (payload as { attractionLocationConflict?: unknown }).attractionLocationConflict
+            ).toBeUndefined();
+        });
+
+        it('intersects with an already-resolved destinationId when the city HAS the attraction', async () => {
+            // Arrange: the model resolved a city (Colón) AND Colón is one of the
+            // attraction-matched destinations → the intersection is non-empty, so
+            // the search narrows to exactly Colón.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: {
+                        destinationId: COLON_DESTINATION_UUID,
+                        attractionSlugs: ['sede_carnaval']
+                    }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextAttractionResolveResult.current = {
+                data: { destinationIds: [COLON_DESTINATION_UUID, GUALEGUAYCHU_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'una cabaña en Colón con carnavales' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                attractionLocationConflict?: unknown;
+            };
+
+            // Non-empty intersection (Colón ∈ {Colón, Gualeguaychú}) → narrows to Colón.
+            expect(payload.params.destinationIds).toEqual([COLON_DESTINATION_UUID]);
+            expect(payload.attractionLocationConflict).toBeUndefined();
+        });
+
+        it('AC-11 no-match: an incompatible city+attraction emits attractionLocationConflict and does NOT widen to the attraction set', async () => {
+            // Arrange: the model resolved a city (Colón) but Colón is NOT one of
+            // the attraction-matched destinations → empty intersection. Owner
+            // decision: no-match (zero results + explanation), NOT a silent
+            // substitution of the attraction destinations.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: {
+                        destinationId: COLON_DESTINATION_UUID,
+                        city: 'Colón',
+                        attractionSlugs: ['sede_carnaval']
+                    }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextAttractionResolveResult.current = {
+                data: { destinationIds: [GUALEGUAYCHU_UUID, GUALEGUAY_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'una cabaña en Colón con carnavales' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                attractionLocationConflict?: { attractionSlugs: string[]; locationLabel?: string };
+            };
+
+            // The conflict is signalled so the web client skips the search.
+            expect(payload.attractionLocationConflict).toBeDefined();
+            expect(payload.attractionLocationConflict?.attractionSlugs).toEqual(['sede_carnaval']);
+            expect(payload.attractionLocationConflict?.locationLabel).toBe('Colón');
+            // CRITICAL: params are NOT widened to the attraction destinations —
+            // the search must NOT silently substitute them.
+            expect(payload.params.destinationIds).not.toEqual([GUALEGUAYCHU_UUID, GUALEGUAY_UUID]);
+            expect(payload.params.destinationId).toBe(COLON_DESTINATION_UUID);
+        });
+
+        it('does not call the attraction resolver when attractionSlugs is absent', async () => {
+            // Arrange
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.9, entities: { destinationId: COLON_DESTINATION_UUID } },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cabaña en Colón' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            expect(attractionResolveCalls).toHaveLength(0);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            expect(payload.params.destinationIds).toBeUndefined();
+            expect(payload.params.destinationId).toBe(COLON_DESTINATION_UUID);
+        });
+
+        it('non-fatal: an attraction-resolution failure is logged and the turn still completes without constraining', async () => {
+            // Arrange
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.9, entities: { attractionSlugs: ['sede_carnaval'] } },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextAttractionResolveResult.current = {
+                error: { code: 'INTERNAL_ERROR', message: 'DB unavailable' }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'una ciudad con carnavales' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert: the turn still succeeds end-to-end (non-fatal contract).
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            expect(payload.params.destinationIds).toBeUndefined();
+            expect(
+                (payload as { attractionLocationConflict?: unknown }).attractionLocationConflict
+            ).toBeUndefined();
+            expect(mockApiLogger.warn).toHaveBeenCalled();
+        });
+
+        it('no-match: an attraction that matched NO destination emits attractionLocationConflict (owner decision)', async () => {
+            // Arrange: the user asked for an attraction that no destination carries.
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.7, entities: { attractionSlugs: ['sede_carnaval'] } },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextAttractionResolveResult.current = { data: { destinationIds: [] } };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'una ciudad con carnavales' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                attractionLocationConflict?: { attractionSlugs: string[] };
+            };
+            // No-match: conflict signalled, and params carry NO location filter
+            // (never an empty destinationIds array — that would be the full catalog).
+            expect(payload.attractionLocationConflict).toBeDefined();
+            expect(payload.attractionLocationConflict?.attractionSlugs).toEqual(['sede_carnaval']);
+            expect(payload.params.destinationIds).toBeUndefined();
+        });
+    });
+
+    // =========================================================================
+    // Gate 11 — HOS-113 T-042: POI-constrained + proximity-centered search
+    //
+    // "cerca del autódromo" → resolves the matched landmark's coordinates and
+    // centers the accommodation search on them (proximity), plus (when an
+    // existing location constraint is present) narrows params.destinationIds
+    // the same intersect-or-no-match way attractions do.
+    // =========================================================================
+
+    describe('Gate 11 — HOS-113 T-042: POI-constrained + proximity-centered search', () => {
+        it('matched: poiSlugs resolves and centers the search on the landmark coordinates (no other location constraint)', async () => {
+            // Arrange
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { poiSlugs: [AUTODROMO_POI_SLUG] }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'busco algo cerca del autódromo' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            expect(filtersFrame).toBeDefined();
+
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+
+            expect(poiGetBySlugCalls).toEqual([{ slug: AUTODROMO_POI_SLUG }]);
+            expect(poiDestinationIdsCalls).toEqual([{ slugs: [AUTODROMO_POI_SLUG] }]);
+            // Reuses the EXISTING geo path (NG-2) — same params fields as an
+            // explicit latitude/longitude/radius search.
+            expect(payload.params.latitude).toBe(AUTODROMO_LAT);
+            expect(payload.params.longitude).toBe(AUTODROMO_LONG);
+            expect(payload.params.radius).toBe(5);
+            expect(payload.params.destinationIds).toEqual([CONCEPCION_DEL_URUGUAY_UUID]);
+            expect(payload.poiSlugs).toEqual([AUTODROMO_POI_SLUG]);
+        });
+
+        it('intersects with an already-resolved destinationId when it HAS the matched POI', async () => {
+            // Arrange
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: {
+                        destinationId: CONCEPCION_DEL_URUGUAY_UUID,
+                        poiSlugs: [AUTODROMO_POI_SLUG]
+                    }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID, GUALEGUAYCHU_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [
+                        { role: 'user', content: 'en Concepción del Uruguay, cerca del autódromo' }
+                    ],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+
+            expect(payload.params.destinationIds).toEqual([CONCEPCION_DEL_URUGUAY_UUID]);
+            expect(payload.params.latitude).toBe(AUTODROMO_LAT);
+            expect(payload.params.longitude).toBe(AUTODROMO_LONG);
+            expect(payload.poiSlugs).toEqual([AUTODROMO_POI_SLUG]);
+        });
+
+        it('honors a model-extracted radius (clamped) instead of the default 5km', async () => {
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { poiSlugs: [AUTODROMO_POI_SLUG], radius: 12 }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID] }
+            };
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'a 12km del autódromo' }],
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            expect(payload.params.radius).toBe(12);
+        });
+
+        it('does not call the POI resolver when poiSlugs is absent, and poiSlugs defaults to []', async () => {
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { destinationId: CONCEPCION_DEL_URUGUAY_UUID }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cabaña en Concepción del Uruguay' }],
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            expect(poiGetBySlugCalls).toHaveLength(0);
+            expect(poiDestinationIdsCalls).toHaveLength(0);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+            expect(payload.params.latitude).toBeUndefined();
+            expect(payload.poiSlugs).toEqual([]);
+        });
+
+        it('AC-6: an unresolvable/hallucinated landmark mention yields empty poiSlugs, no proximity, and no crash', async () => {
+            // Arrange: the model emitted a slug the DB does not recognise (the
+            // allowlist matcher never invents slugs, but this exercises the
+            // defensive path if it ever did, or if the seed data drifted —
+            // R-4 hallucination defence at the resolver layer too).
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.6, entities: { poiSlugs: ['faro_imaginario'] } },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // Default stub state already returns NOT_FOUND for getBySlug.
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cerca del faro imaginario' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert: the turn still succeeds end-to-end (non-fatal contract).
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+            expect(payload.poiSlugs).toEqual([]);
+            expect(payload.params.latitude).toBeUndefined();
+            expect(payload.params.longitude).toBeUndefined();
+            // getDestinationIdsByPointOfInterestSlugs is never reached — the
+            // primary landmark's coordinates could not be resolved first.
+            expect(poiDestinationIdsCalls).toHaveLength(0);
+        });
+
+        it('no-match: an incompatible destination + POI silently skips proximity (not surfaced as a conflict)', async () => {
+            // Arrange: the resolved destination does not carry the matched POI.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: {
+                        destinationId: GUALEGUAYCHU_UUID,
+                        poiSlugs: [AUTODROMO_POI_SLUG]
+                    }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'en Gualeguaychú, cerca del autódromo' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+            // The proximity constraint is skipped (no destination shares the
+            // landmark) but the existing location constraint is left intact —
+            // deliberately no dedicated "conflict" frame for POIs (out of
+            // scope for T-038..T-044).
+            expect(payload.params.destinationId).toBe(GUALEGUAYCHU_UUID);
+            expect(payload.params.latitude).toBeUndefined();
+            expect(payload.poiSlugs).toEqual([]);
+        });
+
+        it('non-fatal: a POI-resolution failure is logged and the turn still completes without proximity', async () => {
+            // Arrange
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.9, entities: { poiSlugs: [AUTODROMO_POI_SLUG] } },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                error: { code: 'INTERNAL_ERROR', message: 'DB unavailable' }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cerca del autódromo' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert: the turn still succeeds end-to-end (non-fatal contract).
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+            expect(payload.poiSlugs).toEqual([]);
+            expect(payload.params.latitude).toBeUndefined();
+            expect(mockApiLogger.warn).toHaveBeenCalled();
+        });
+
+        // ---------------------------------------------------------------------
+        // HOS-113 review H-1/M-1: the reply narrative must not misrepresent an
+        // unresolved POI mention. Reuses the "no-match" and "non-fatal" setups
+        // above, but asserts the `streamText` messages instead of `params` —
+        // these are new checkpoints, not replacements for the existing ones.
+        // ---------------------------------------------------------------------
+
+        it('H-1/M-1: no-match scrubs poiSlugs from the reply filters context and injects a corrective note', async () => {
+            // Arrange: same incompatible destination + POI setup as the
+            // "no-match: ... silently skips proximity" test above.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: {
+                        destinationId: GUALEGUAYCHU_UUID,
+                        poiSlugs: [AUTODROMO_POI_SLUG]
+                    }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'en Gualeguaychú, cerca del autódromo' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+            expect(streamTextCalls).toHaveLength(1);
+            const messages = streamTextCalls[0]?.messages ?? [];
+
+            // The raw unresolved landmark slug must NOT reach the assistant's
+            // filters-context note — otherwise the model could claim the
+            // search was centered near it when it wasn't (H-1's original bug).
+            const assistantNote = messages.find(
+                (m) => m.role === 'assistant' && m.content.startsWith('Extracted search filters')
+            );
+            expect(assistantNote).toBeDefined();
+            expect(assistantNote?.content).not.toContain(AUTODROMO_POI_SLUG);
+
+            // A corrective system note must instruct the model not to narrate
+            // an unapplied proximity search.
+            const correctiveNote = messages.find(
+                (m) => m.role === 'system' && m.content.includes('LANDMARK NOT APPLIED')
+            );
+            expect(correctiveNote).toBeDefined();
+            expect(correctiveNote?.content).toContain(AUTODROMO_POI_SLUG);
+            // Unlike the attraction conflict, this must not claim zero results.
+            expect(correctiveNote?.content.toUpperCase()).not.toContain('ZERO');
+        });
+
+        it('H-1/M-1: a non-fatal POI-resolution failure (with a raw mention) also scrubs poiSlugs and injects the corrective note', async () => {
+            // Arrange: same non-fatal failure setup as the "non-fatal: a
+            // POI-resolution failure ..." test above (poiResolution kind
+            // degrades to `none`, but a raw poiSlugs mention was extracted).
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.9, entities: { poiSlugs: [AUTODROMO_POI_SLUG] } },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                error: { code: 'INTERNAL_ERROR', message: 'DB unavailable' }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cerca del autódromo' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+            expect(streamTextCalls).toHaveLength(1);
+            const messages = streamTextCalls[0]?.messages ?? [];
+
+            const assistantNote = messages.find(
+                (m) => m.role === 'assistant' && m.content.startsWith('Extracted search filters')
+            );
+            expect(assistantNote?.content).not.toContain(AUTODROMO_POI_SLUG);
+
+            const correctiveNote = messages.find(
+                (m) => m.role === 'system' && m.content.includes('LANDMARK NOT APPLIED')
+            );
+            expect(correctiveNote).toBeDefined();
+        });
+
+        it('H-1/M-1: a successfully resolved POI does NOT scrub poiSlugs or inject the corrective note', async () => {
+            // Arrange: happy-path resolution (matched: poiSlugs resolves ...).
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { poiSlugs: [AUTODROMO_POI_SLUG] }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'busco algo cerca del autódromo' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+            expect(streamTextCalls).toHaveLength(1);
+            const messages = streamTextCalls[0]?.messages ?? [];
+
+            const assistantNote = messages.find(
+                (m) => m.role === 'assistant' && m.content.startsWith('Extracted search filters')
+            );
+            // A resolved landmark IS expected to appear in the reply context.
+            expect(assistantNote?.content).toContain(AUTODROMO_POI_SLUG);
+
+            const correctiveNote = messages.find((m) => m.content.includes('LANDMARK NOT APPLIED'));
+            expect(correctiveNote).toBeUndefined();
+        });
+    });
+
+    // =========================================================================
+    // HOS-113 review M-2 — cross-allowlist ambiguity regression
+    //
+    // `ATTRACTION_ALLOWLIST.es.termas` (a bare word) substring-matches THREE
+    // `POI_ALLOWLIST` terms ("termas de concordia", "complejo termal
+    // concordia", "termas de federación"). A message that trips BOTH
+    // dictionaries only resolves correctly today because Concordia and
+    // Federación both happen to be within the attraction "termas"
+    // 7-destination seed set — a SUPERSET ASSUMPTION that is not enforced
+    // anywhere else. This guards it: if a future seed/migration change ever
+    // drops one of those destinations from the "termas" attraction set, the
+    // intersection computed in Step 7.7 goes empty and this test fails
+    // loudly instead of the POI proximity narrowing silently vanishing.
+    // =========================================================================
+
+    describe('HOS-113 review M-2 — cross-allowlist ambiguity ("termas" bare-word vs POI-specific terms)', () => {
+        it('a message matching BOTH the attraction "termas" bare-word AND the POI-specific "termas de concordia" term resolves coherently (POI proximity applies, not silently dropped)', async () => {
+            // Arrange: mirrors what matchAttractionTerms('cerca de las termas
+            // de concordia', 'es') and matchPoiTerms(..., 'es') would each
+            // independently flag — see attraction-allowlist.ts's bare
+            // "termas" entry and poi-allowlist.ts's "termas de concordia" /
+            // "complejo termal concordia" entries.
+            const TERMAS_ATTRACTION_SLUGS = [
+                'aqua_parque_termal',
+                'centro_spa_termal',
+                'complejo_termal_principal',
+                'piscinas_termales',
+                'termas_familiares'
+            ];
+            const CONCORDIA_TERMAL_POI_SLUG = 'complejo_termal_concordia';
+            const CONCORDIA_LAT = -31.393;
+            const CONCORDIA_LONG = -58.021;
+
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.85,
+                    entities: {
+                        attractionSlugs: TERMAS_ATTRACTION_SLUGS,
+                        poiSlugs: [CONCORDIA_TERMAL_POI_SLUG]
+                    }
+                },
+                usage: { promptTokens: 14, completionTokens: 7, totalTokens: 21 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // The "termas" attraction's real 7-destination seed set. Concordia
+            // is deliberately included — this is the superset assumption
+            // documented above.
+            nextAttractionResolveResult.current = {
+                data: {
+                    destinationIds: [
+                        CONCORDIA_UUID,
+                        GUALEGUAYCHU_UUID,
+                        GUALEGUAY_UUID,
+                        COLON_DESTINATION_UUID,
+                        CONCEPCION_DEL_URUGUAY_UUID,
+                        PUEBLO_LIEBIG_UUID,
+                        SAN_JOSE_UUID
+                    ]
+                }
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-concordia-termas',
+                    slug: CONCORDIA_TERMAL_POI_SLUG,
+                    lat: CONCORDIA_LAT,
+                    long: CONCORDIA_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCORDIA_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cerca de las termas de concordia' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+                attractionLocationConflict?: unknown;
+            };
+
+            // Step 7.6 (attraction): no prior location constraint → constrains
+            // to the full termas-destination set (7 destinations).
+            // Step 7.7 (POI): intersects that set with the POI's single
+            // destination (Concordia) — a NON-EMPTY intersection → narrows
+            // further to Concordia AND centers the search on the POI's own
+            // coordinates. If the superset assumption ever broke (Concordia
+            // dropped from the termas set), this intersection would go empty,
+            // `resolvePoiConstraint` would return `no-match`, and
+            // `params.destinationIds` would stay at the full 7-destination
+            // attraction set with NO latitude/longitude — these assertions
+            // would fail.
+            expect(payload.params.destinationIds).toEqual([CONCORDIA_UUID]);
+            expect(payload.params.latitude).toBe(CONCORDIA_LAT);
+            expect(payload.params.longitude).toBe(CONCORDIA_LONG);
+            expect(payload.poiSlugs).toEqual([CONCORDIA_TERMAL_POI_SLUG]);
+            expect(payload.attractionLocationConflict).toBeUndefined();
+
+            // The reply-narrative correction (H-1/M-1) must NOT fire — the
+            // POI resolved successfully, so the model may cite it.
+            expect(streamTextCalls).toHaveLength(1);
+            const correctiveNote = (streamTextCalls[0]?.messages ?? []).find((m) =>
+                m.content.includes('LANDMARK NOT APPLIED')
+            );
+            expect(correctiveNote).toBeUndefined();
+        });
+    });
+
+    // =========================================================================
+    // AC-6 (HOS-113 T-044) — AI chat POI resolution acceptance test
+    //
+    // Consolidated end-to-end checkpoint (as opposed to Gate 11's fine-grained,
+    // one-concern-per-test breakdown): a single scenario per outcome, each
+    // asserting every AC-6 bullet point together — resolved poiSlugs,
+    // proximity filtering applied via the landmark's real seeded coordinates
+    // (`autodromo_concepcion_del_uruguay`, cross-checked against
+    // `packages/seed/src/data/pointOfInterest/001-*.json`), and the
+    // no-hallucination / no-crash guarantee for an unresolvable mention.
+    // =========================================================================
+
+    describe('AC-6 (HOS-113 T-044) — AI chat POI resolution acceptance test', () => {
+        it('a NL mention of a seeded landmark resolves poiSlugs AND applies proximity ranking via the landmark coordinates', async () => {
+            // Arrange: "cerca del autódromo" is a real allowlisted alias
+            // (poi-allowlist.ts) for the real seeded slug
+            // autodromo_concepcion_del_uruguay (lat -32.423, long -58.2591).
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.92,
+                    entities: { poiSlugs: [AUTODROMO_POI_SLUG] }
+                },
+                usage: { promptTokens: 14, completionTokens: 7, totalTokens: 21 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [
+                        { role: 'user', content: 'quiero un alojamiento cerca del autódromo' }
+                    ],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            expect(filtersFrame).toBeDefined();
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+
+            // AC-6 bullet 1: the response's poiSlugs includes the resolved slug.
+            expect(payload.poiSlugs).toEqual([AUTODROMO_POI_SLUG]);
+
+            // AC-6 bullet 2: proximity filtering was applied using the POI's
+            // real seeded coordinates — the same latitude/longitude/radius
+            // params `AccommodationService.search` already consumes to build
+            // the Haversine `WITHIN RADIUS` clause (T-033, NG-2). This mirrors
+            // T-036's real-DB assertion at the boundary shared with this route.
+            expect(payload.params.latitude).toBe(AUTODROMO_LAT);
+            expect(payload.params.longitude).toBe(AUTODROMO_LONG);
+            expect(payload.params.radius).toBe(5);
+
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+        });
+
+        it('an unresolvable/hallucinated landmark mention yields empty poiSlugs with no invented slug and no crash', async () => {
+            // Arrange: no allowlist term matches this text, so
+            // entities.poiSlugs would normally stay absent — but even if a
+            // future provider drifts and emits an unrecognised slug directly,
+            // the resolver must degrade gracefully rather than invent
+            // destinations/coordinates for it (R-4).
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.4,
+                    entities: { poiSlugs: ['castillo_inventado'] }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // Default stub state: getBySlug → NOT_FOUND.
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cerca del castillo inventado' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert: the turn completes normally — no 5xx, no unhandled rejection.
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+
+            // AC-6 bullet 3: no hallucinated slug, no proximity applied, no crash.
+            expect(payload.poiSlugs).toEqual([]);
+            expect(payload.params.latitude).toBeUndefined();
+            expect(payload.params.longitude).toBeUndefined();
+            expect(payload.params.destinationIds).toBeUndefined();
+
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
         });
     });
 });

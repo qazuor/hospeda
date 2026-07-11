@@ -16,10 +16,23 @@
  *   per flag from `aiSearch.chips.*`.
  * - Arrays (`amenitySlugs`, `featureSlugs`): single chip showing item count
  *   or short join, removing the whole array.
- * - Location (`city`, `destinationId`): show the value directly or a generic
- *   label. `locationType`, `latitude`, `longitude`, `radius` → "Ubicación".
+ * - `city` / `destinationId`: ONE merged chip — see {@link resolveCityDestinationChip}.
+ * - `locationType`, `latitude`, `longitude`, `radius` → a separate generic
+ *   "Ubicación" chip group (deduplicated the same way, but kept apart from
+ *   city/destinationId since it has no specific value to show).
  * - Dates (`checkIn`, `checkOut`): formatted date string.
  * - `currency`: helper chip if set (rarely shown alone, no remove button).
+ *
+ * Applied-params filtering (HOS-111 T-006 / AC-6): `filters` is the raw LLM
+ * intent, which may include slots the search mapper never forwards (e.g. a
+ * model-extracted `maxGuests` — the mapper folds "for N guests" into a
+ * min-only `capacity >= N` filter and drops `maxGuests` entirely). Rendering
+ * a chip straight from `filters` would show a filter that was never actually
+ * applied. When the optional `appliedParams` prop is provided, a chip only
+ * renders when its underlying search param key is present in that object —
+ * see {@link isKeyApplied}. Omit the prop to keep the legacy "show every
+ * intent-derived chip" behavior (used by tests that don't care about this
+ * distinction).
  *
  * @module ActiveFilterChips
  */
@@ -28,6 +41,7 @@ import type { SearchIntentEntities } from '@repo/schemas';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './ActiveFilterChips.module.css';
+import { INTENT_TO_PARAM_KEY } from './useSearchChat';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -42,12 +56,22 @@ import styles from './ActiveFilterChips.module.css';
  * @property destinations - Optional catalog of `{ [uuid]: name }` for
  *   resolving `destinationId` chips (SPEC-265 A3). When provided, the
  *   destination chip shows the real city name instead of "Destino filtrado".
+ * @property appliedParams - The last server-resolved accommodation search
+ *   params (HOS-111 T-006 / AC-6), i.e. what was ACTUALLY sent to the search,
+ *   as opposed to the raw LLM `filters` intent. Deliberately typed as a loose
+ *   `Record<string, unknown>` rather than `AccommodationSearchHttp` — this
+ *   component only ever probes a handful of known keys (see
+ *   {@link isKeyApplied}), so it does not need the full precise search-params
+ *   shape. When provided, a chip only renders when its corresponding param
+ *   key is present here. Omit to render every intent-derived chip (legacy
+ *   behavior).
  */
 export interface ActiveFilterChipsProps {
     readonly filters: SearchIntentEntities | null;
     readonly onRemove: (key: keyof SearchIntentEntities) => void;
     readonly locale: SupportedLocale;
     readonly destinations?: Readonly<Record<string, string>>;
+    readonly appliedParams?: Readonly<Record<string, unknown>> | null;
 }
 
 // ─── Internal helpers ──────────────────────────────────────────────────────────
@@ -62,6 +86,20 @@ const LOCATION_KEYS = new Set<keyof SearchIntentEntities>([
     'longitude',
     'radius'
 ]);
+
+/**
+ * `city` and `destinationId` are mutually exclusive location SIGNALS from the
+ * model's perspective (HOS-111 follow-up fix) — the search mapper
+ * (`mapIntentToSearchParams`, apps/api) picks AT MOST ONE location strategy
+ * per turn, with priority `resolved-destination-from-city > entities.destinationId
+ * > geo > city-as-keyword`. The model can still emit BOTH slots at once (e.g.
+ * a real `city` that resolves server-side, plus a hallucinated unrelated
+ * `destinationId`) — rendering both as independent chips showed the unused
+ * hallucinated UUID as a second, phantom location chip. They are handled as
+ * ONE group by {@link resolveCityDestinationChip} instead of the generic
+ * per-key path.
+ */
+const CITY_DESTINATION_KEYS = new Set<keyof SearchIntentEntities>(['city', 'destinationId']);
 
 /**
  * Map from boolean field name to its i18n chip key.
@@ -247,6 +285,107 @@ function resolveChipLabel(
     return { label: `${key}: ${String(value)}`, visible: true };
 }
 
+/**
+ * Whether an intent key's underlying filter was ACTUALLY forwarded to the
+ * accommodations search (HOS-111 T-006 / AC-6).
+ *
+ * When `appliedParams` is `null`/`undefined` (caller didn't provide a
+ * snapshot), every key is considered applied — this preserves the legacy
+ * "render from raw intent" behavior for callers/tests that don't pass it.
+ *
+ * NOTE: `city` and `destinationId` are NOT checked here — they're handled as
+ * one merged group by {@link resolveCityDestinationChip}, intercepted before
+ * this function is ever called for those two keys (see the render loop).
+ *
+ * @param key - The `SearchIntentEntities` key being considered for a chip.
+ * @param appliedParams - The last resolved accommodation search params, or
+ *   `null`/`undefined` when unavailable.
+ * @returns `true` when the chip should be rendered.
+ */
+function isKeyApplied(
+    key: keyof SearchIntentEntities,
+    appliedParams: Readonly<Record<string, unknown>> | null | undefined
+): boolean {
+    if (!appliedParams) return true;
+
+    const params = appliedParams;
+
+    // Location group: a single chip covers locationType/latitude/longitude/radius.
+    // `locationType` is a mapper-internal hint and is NEVER forwarded as a query
+    // param (see SearchIntentEntitiesSchema JSDoc) — check the coordinate/radius
+    // params it actually controls instead.
+    if (LOCATION_KEYS.has(key)) {
+        return (
+            params.latitude !== undefined ||
+            params.longitude !== undefined ||
+            params.radius !== undefined
+        );
+    }
+
+    const paramKey = INTENT_TO_PARAM_KEY[key] ?? key;
+    return params[paramKey as string] !== undefined;
+}
+
+/**
+ * Resolves the single "location" chip shared by `city` and `destinationId`
+ * (HOS-111 follow-up fix — see {@link CITY_DESTINATION_KEYS}).
+ *
+ * When `appliedParams` is available, the winning signal is read FROM THE
+ * APPLIED PARAMS, never from the raw intent — this is the actual correctness
+ * fix: the model can emit a `destinationId` that was never used (because
+ * `city` independently resolved to a different destination server-side, or
+ * vice versa), so trusting `filters.destinationId` directly can render a
+ * chip for a UUID that had zero effect on the search. Priority mirrors the
+ * mapper (`mapIntentToSearchParams`, apps/api): `destinationId` > `q` (city
+ * keyword fallback).
+ *
+ * Without `appliedParams` (legacy callers/tests), falls back to the raw
+ * intent with the same `destinationId` > `city` priority.
+ *
+ * @returns The chip's removal key + label, or `null` when neither slot is
+ *   present, or (with `appliedParams`) neither actually applied.
+ */
+function resolveCityDestinationChip(
+    filters: SearchIntentEntities,
+    appliedParams: Readonly<Record<string, unknown>> | null | undefined,
+    t: ReturnType<typeof createTranslations>['t'],
+    destinations?: Readonly<Record<string, string>>
+): { readonly key: keyof SearchIntentEntities; readonly label: string } | null {
+    if (filters.destinationId === undefined && filters.city === undefined) return null;
+
+    if (appliedParams) {
+        if (typeof appliedParams.destinationId === 'string') {
+            const descriptor = resolveChipLabel(
+                'destinationId',
+                appliedParams.destinationId,
+                t,
+                destinations
+            );
+            return descriptor.visible ? { key: 'destinationId', label: descriptor.label } : null;
+        }
+        if (typeof appliedParams.q === 'string') {
+            const descriptor = resolveChipLabel('city', appliedParams.q, t, destinations);
+            return descriptor.visible ? { key: 'city', label: descriptor.label } : null;
+        }
+        // Extracted but never applied (e.g. dropped in favor of geo, or the
+        // turn used a different location strategy entirely).
+        return null;
+    }
+
+    // Legacy mode (no applied-params snapshot) — best-effort from raw intent.
+    if (filters.destinationId !== undefined) {
+        const descriptor = resolveChipLabel(
+            'destinationId',
+            filters.destinationId,
+            t,
+            destinations
+        );
+        return descriptor.visible ? { key: 'destinationId', label: descriptor.label } : null;
+    }
+    const descriptor = resolveChipLabel('city', filters.city, t, destinations);
+    return descriptor.visible ? { key: 'city', label: descriptor.label } : null;
+}
+
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 /**
@@ -272,7 +411,8 @@ export function ActiveFilterChips({
     filters,
     onRemove,
     locale,
-    destinations
+    destinations,
+    appliedParams
 }: ActiveFilterChipsProps) {
     const { t } = createTranslations(locale);
 
@@ -284,10 +424,23 @@ export function ActiveFilterChips({
     // latitude, longitude, and radius combined. Track whether we already
     // showed one.
     let locationChipRendered = false;
+    // Deduplicate city/destinationId into a single chip (HOS-111 follow-up
+    // fix) — see resolveCityDestinationChip.
+    let cityDestinationChipRendered = false;
 
     const chips: Array<{ key: keyof SearchIntentEntities; label: string }> = [];
 
     for (const [key, value] of entries) {
+        if (CITY_DESTINATION_KEYS.has(key)) {
+            if (cityDestinationChipRendered) continue;
+            cityDestinationChipRendered = true;
+            const resolved = resolveCityDestinationChip(filters, appliedParams, t, destinations);
+            if (resolved) chips.push(resolved);
+            continue;
+        }
+
+        if (!isKeyApplied(key, appliedParams)) continue;
+
         if (LOCATION_KEYS.has(key)) {
             if (locationChipRendered) continue;
             // Only render if at least one location key has a non-null value.

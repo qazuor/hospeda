@@ -1020,7 +1020,7 @@ await sendMetrics(metrics);
   "errors": 0,
   "durationMs": 890,
   "details": {
-    "trialsEnding3Days": 15,
+    "trialsEndingPrimary": 15,
     "trialsEnding1Day": 10,
     "retries": {
       "processed": 10,

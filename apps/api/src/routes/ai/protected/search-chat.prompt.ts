@@ -6,11 +6,12 @@
  * Follows the same approach SPEC-199's single-shot search-intent prompt builder
  * used (now retired in T-013) — it produces the dynamic
  * `prompt` string passed to `aiService.generateObject({ feature: 'search' })`,
- * embedding the locale-specific amenity/feature allowlists. On top of that it
- * injects the **conversational state** so the model can refine an accumulated
- * filter set across turns:
+ * embedding the locale-specific amenity/feature/attraction allowlists. On top
+ * of that it injects the **conversational state** so the model can refine an
+ * accumulated filter set across turns:
  *
- *   1. the locale-specific amenity + feature slug allowlists (same as SPEC-199),
+ *   1. the locale-specific amenity + feature + attraction slug allowlists
+ *      (amenity/feature same as SPEC-199; attraction added HOS-111 T-015),
  *   2. the CURRENT FILTER SET (the accumulated entities from prior turns), when present,
  *   3. the bounded recent conversation history, and
  *   4. the new user message.
@@ -34,8 +35,15 @@
  * @module apps/api/routes/ai/protected/search-chat.prompt
  */
 
-import type { AiChatMessage, AiMessage, SearchIntentEntities } from '@repo/schemas';
+import type {
+    AiChatMessage,
+    AiMessage,
+    AttractionLocationConflict,
+    SearchIntentEntities
+} from '@repo/schemas';
 import { AMENITY_ALLOWLIST, FEATURE_ALLOWLIST } from './amenity-allowlist.js';
+import { ATTRACTION_ALLOWLIST } from './attraction-allowlist.js';
+import { POI_ALLOWLIST } from './poi-allowlist.js';
 
 /**
  * Maximum number of trailing conversation messages embedded in the prompt.
@@ -66,9 +74,26 @@ const buildAllowlistLines = (locale: 'es' | 'en' | 'pt'): readonly string[] => {
     >;
     const featureSlugs = [...new Set(Object.values(featureDict))].join(', ');
 
+    // HOS-111 T-015: attraction allowlist values are arrays of slugs (one NL
+    // concept, e.g. "carnaval", can span several distinct attraction rows) —
+    // flatten before de-duplicating, unlike the single-slug amenity/feature dicts.
+    const attractionDict = (ATTRACTION_ALLOWLIST[locale] ?? ATTRACTION_ALLOWLIST.es) as Readonly<
+        Record<string, readonly string[]>
+    >;
+    const attractionSlugs = [...new Set(Object.values(attractionDict).flat())].join(', ');
+
+    // HOS-113 §6.3: POI allowlist values are also arrays of slugs (mirroring
+    // the attraction shape) — flatten before de-duplicating.
+    const poiDict = (POI_ALLOWLIST[locale] ?? POI_ALLOWLIST.es) as Readonly<
+        Record<string, readonly string[]>
+    >;
+    const poiSlugs = [...new Set(Object.values(poiDict).flat())].join(', ');
+
     return [
         `Allowed amenity slugs for this request (match user mentions to these; ignore any amenity not in this list): ${amenitySlugs}`,
-        `Allowed feature slugs for this request (environment/atmosphere/aptitude/style only; match user mentions to these; ignore any feature not in this list): ${featureSlugs}`
+        `Allowed feature slugs for this request (environment/atmosphere/aptitude/style only; match user mentions to these; ignore any feature not in this list): ${featureSlugs}`,
+        `Allowed destination attraction slugs for this request (match user mentions of a destination attraction, e.g. "a city with carnival", to these canonical slugs in entities.attractionSlugs; ignore any attraction not in this list — never invent a slug): ${attractionSlugs}`,
+        `Allowed destination point-of-interest slugs for this request (match user mentions of a specific named landmark, e.g. "near the autódromo", to these canonical slugs in entities.poiSlugs; ignore any landmark not in this list — never invent a slug): ${poiSlugs}`
     ];
 };
 
@@ -110,6 +135,15 @@ export function buildConversationalSearchPrompt({
         lines.push(
             'CURRENT FILTER SET (the accumulated state of this search conversation — return the COMPLETE updated set, applying the new message as a delta):',
             JSON.stringify(currentFilters),
+            '',
+            // HOS-111 T-012: reinforce nearby-expansion detection from the
+            // conversation history. Only meaningful when a prior filter set
+            // (and therefore a destination to expand from) already exists.
+            'NEARBY EXPANSION: if the new user message asks to widen the search to nearby/surrounding destinations ' +
+                '(e.g. "y en destinos cercanos", "también cerca", "and nearby destinations too", "cerca de ahí también"), ' +
+                'set entities.expandToNearby = true in your output, IN ADDITION TO returning the rest of the CURRENT FILTER SET fields unchanged. ' +
+                'Only set expandToNearby = true when the CURRENT FILTER SET already carries a destination to expand from — ' +
+                'never infer it from a message with no prior search context.',
             ''
         );
     }
@@ -129,6 +163,30 @@ export function buildConversationalSearchPrompt({
 }
 
 // ─── Reply prompt (T-006) ─────────────────────────────────────────────────────
+
+/**
+ * POI ↔ narrative conflict signal (HOS-113 review H-1/M-1).
+ *
+ * Unlike {@link AttractionLocationConflict}, this is NOT part of the
+ * `filters` SSE contract — a POI `no-match` does not force zero
+ * accommodations, it only skips the proximity narrowing, so the search
+ * still runs (see `search-chat.ts` Step 7.7 and the `poi-resolver.ts`
+ * module doc). This type exists purely to correct the REPLY narrative: when
+ * the model extracted a `poiSlugs` mention that could not be resolved
+ * (`no-match` — incompatible with the location constraint, or the mention
+ * matched no destination at all — or a non-fatal resolution failure that
+ * still carried a raw mention), the reply must not claim a proximity
+ * search was applied around that landmark.
+ *
+ * @property poiSlugs - The raw (unresolved) point-of-interest slugs the
+ *   model extracted this turn.
+ * @property locationLabel - Best-effort human location label (mirrors
+ *   {@link AttractionLocationConflict}'s field), when available.
+ */
+export type PoiLocationConflict = {
+    readonly poiSlugs: readonly string[];
+    readonly locationLabel?: string;
+};
 
 /**
  * Locale-specific greeting lines used by {@link buildSearchReplySystemPrompt}.
@@ -193,24 +251,55 @@ export function buildSearchReplySystemPrompt({
  * @param params.message - The new user message for this turn.
  * @param params.extractedFilters - The validated entities from `generateObject`.
  *   Serialised as a context note so the reply can cite what was found.
+ * @param params.attractionLocationConflict - HOS-111 T-016: present only when
+ *   the turn asked for both a location and an attraction that share no
+ *   destination (or the attraction matched nothing). When present, a note is
+ *   injected instructing the model to explain there are ZERO results because
+ *   no destination combines the two, and to suggest loosening a filter — so the
+ *   reply names the conflict instead of a generic empty-state acknowledgment.
+ * @param params.poiLocationConflict - HOS-113 review H-1/M-1: present only
+ *   when the turn's `poiSlugs` mention could not be resolved this turn (a
+ *   `no-match`, or a non-fatal resolution failure that still carried a raw
+ *   mention — see {@link PoiLocationConflict}). Unlike
+ *   `attractionLocationConflict` this does NOT mean zero results — the
+ *   accommodation search still ran, just without the proximity narrowing —
+ *   so this ONLY (a) scrubs the unresolved `poiSlugs` out of the serialized
+ *   `extractedFilters` context and (b) injects a corrective note so the
+ *   reply never claims a proximity search happened around that landmark.
  * @returns An ordered `AiMessage[]` ready for `aiService.streamText({ messages })`.
  */
 export function buildSearchReplyMessages({
     systemPrompt,
     history,
     message,
-    extractedFilters
+    extractedFilters,
+    attractionLocationConflict,
+    poiLocationConflict
 }: {
     readonly systemPrompt: string;
     readonly history: readonly AiChatMessage[];
     readonly message: string;
     readonly extractedFilters: SearchIntentEntities;
+    readonly attractionLocationConflict?: AttractionLocationConflict;
+    readonly poiLocationConflict?: PoiLocationConflict;
 }): AiMessage[] {
     const recentHistory = history.slice(-CONVERSATION_HISTORY_LIMIT);
 
-    const hasFilters = Object.keys(extractedFilters).length > 0;
+    // HOS-113 review H-1/M-1: when the POI mention could not be honored this
+    // turn, scrub the raw unresolved `poiSlugs` out of the filters context
+    // BEFORE it reaches the reply prompt. Left unscrubbed, the model sees the
+    // raw landmark slug in "Extracted search filters" and can narrate a
+    // proximity search that never actually ran (the resolved outcome is
+    // always an empty set whenever `poiLocationConflict` is present — see
+    // the Step 7.7 caller in search-chat.ts).
+    const effectiveFilters: SearchIntentEntities =
+        poiLocationConflict === undefined
+            ? extractedFilters
+            : { ...extractedFilters, poiSlugs: [] };
+
+    const hasFilters = Object.keys(effectiveFilters).length > 0;
     const filtersContext = hasFilters
-        ? `Extracted search filters: ${JSON.stringify(extractedFilters)}`
+        ? `Extracted search filters: ${JSON.stringify(effectiveFilters)}`
         : 'No specific search filters were extracted (broad or unclear query).';
 
     const messages: AiMessage[] = [
@@ -218,9 +307,53 @@ export function buildSearchReplyMessages({
         ...recentHistory.map((m) => ({ role: m.role, content: m.content })),
         // Inject filters as an assistant context note so the model can cite what
         // was searched without the user having to repeat it.
-        { role: 'assistant', content: filtersContext },
-        { role: 'user', content: message }
+        { role: 'assistant', content: filtersContext }
     ];
+
+    // HOS-111 T-016: on an attraction/location conflict, tell the model the
+    // search returned ZERO results and why, so it explains the conflict rather
+    // than acknowledging a search that did not actually run.
+    if (attractionLocationConflict !== undefined) {
+        const locationPhrase =
+            attractionLocationConflict.locationLabel === undefined
+                ? 'the requested location'
+                : `the requested location (${attractionLocationConflict.locationLabel})`;
+        const attractionPhrase = attractionLocationConflict.attractionSlugs.join(', ');
+        messages.push({
+            role: 'system',
+            content:
+                `IMPORTANT — NO RESULTS: there is NO destination that combines ${locationPhrase} ` +
+                `with the requested attraction (${attractionPhrase}). The search returned ZERO ` +
+                'accommodations. Briefly and warmly explain that no destination matches both, name ' +
+                'the conflict, and suggest loosening one filter (e.g. dropping the location or the ' +
+                'attraction). Do NOT invent results or destinations.'
+        });
+    }
+
+    // HOS-113 review H-1/M-1: on a POI mention that could not be honored
+    // this turn, tell the model explicitly so it doesn't claim a proximity
+    // search happened. Unlike the attraction conflict above, this is NOT a
+    // zero-results signal — the accommodation search still ran (see
+    // `poi-resolver.ts`'s module doc) — so the note only corrects the
+    // narrative, it never announces zero results.
+    if (poiLocationConflict !== undefined) {
+        const poiPhrase = poiLocationConflict.poiSlugs.join(', ');
+        const locationPhrase =
+            poiLocationConflict.locationLabel === undefined
+                ? ''
+                : ` near the requested location (${poiLocationConflict.locationLabel})`;
+        messages.push({
+            role: 'system',
+            content:
+                `IMPORTANT — LANDMARK NOT APPLIED: the user mentioned a specific point of interest ` +
+                `(${poiPhrase}) but it could NOT be resolved${locationPhrase} — the search proceeded ` +
+                'WITHOUT centering or narrowing on that landmark. Do NOT say the search is near, ' +
+                'centered on, or narrowed around that landmark, and do NOT invent a reason why. If ' +
+                'relevant, you may briefly note that the specific landmark could not be found.'
+        });
+    }
+
+    messages.push({ role: 'user', content: message });
 
     return messages;
 }

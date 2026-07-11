@@ -41,7 +41,8 @@ const CancelAllInputSchema = z.object({
 });
 
 const FindDueInputSchema = z.object({
-    now: z.date()
+    now: z.date(),
+    limit: z.number().int().positive().optional()
 });
 
 const AdvanceScheduleInputSchema = z.object({
@@ -290,10 +291,15 @@ export class NotificationScheduleService extends BaseService {
      *
      * Used by the notification cron job (runs every 5 minutes).
      *
+     * Rows are returned oldest-due first (`pending_notification_at ASC`); pass
+     * `limit` to cap the batch in SQL so overflow rows are drained fairly on
+     * subsequent runs instead of being non-deterministically starved (HOS-133).
+     *
      * @param actor - Actor performing the query (must hold CONVERSATION_VIEW_ANY).
-     * @param input - `{ now }` — reference timestamp (typically `new Date()`).
+     * @param input - `{ now, limit? }` — reference timestamp (typically
+     *   `new Date()`) and an optional maximum batch size.
      * @param ctx - Optional service context.
-     * @returns ServiceOutput wrapping an array of due schedule rows.
+     * @returns ServiceOutput wrapping an array of due schedule rows, oldest-due first.
      *
      * @example
      * ```ts
@@ -305,7 +311,7 @@ export class NotificationScheduleService extends BaseService {
      */
     public async findDue(
         actor: Actor,
-        input: { now: Date },
+        input: { now: Date; limit?: number },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<SelectConversationNotificationSchedule[]>> {
         return this.runWithLoggingAndValidation({
@@ -315,7 +321,7 @@ export class NotificationScheduleService extends BaseService {
             ctx,
             execute: async (validated, validatedActor, execCtx) => {
                 this._requireAdminAccess(validatedActor);
-                return this.model.findDue(validated.now, execCtx?.tx);
+                return this.model.findDue(validated.now, validated.limit, execCtx?.tx);
             }
         });
     }
@@ -366,6 +372,43 @@ export class NotificationScheduleService extends BaseService {
                         ServiceErrorCode.NOT_FOUND,
                         `Notification schedule not found: ${validated.scheduleId}`
                     );
+                }
+
+                // Terminal double-advance guard (AC-10, HOS-112 review): if the
+                // schedule was already cancelled (a previous or concurrent run
+                // already persisted the streak-3 terminal transition), never
+                // re-run it. This must be checked BEFORE the streakCount
+                // comparison below: at streak 3 `streakCount` never changes when
+                // the schedule is cancelled (only `cancelledAt` flips), so a
+                // streakCount-only comparison would miss this case and re-issue
+                // the (harmless but wasteful, and log-noisy) cancel update.
+                if (schedule.cancelledAt) {
+                    this.logger.debug(
+                        { scheduleId: validated.scheduleId },
+                        'Schedule already cancelled — skipping double-advance'
+                    );
+                    return null;
+                }
+
+                // Double-advance guard (AC-10 / OQ-3): if a concurrent or previous run
+                // already advanced this schedule's streak past the value the caller
+                // observed when it dispatched the email, do NOT advance again. This can
+                // happen when two overlapping cron runs both resolve and send for the
+                // same schedule before either persists — each claims a DIFFERENT schedule
+                // via the Redis idempotency key in the normal case, but this guard closes
+                // the residual race window at the DB layer regardless. The terminal
+                // (cancelled) case is handled above, so a mismatch here is always the
+                // non-terminal already-advanced case — return the current row as-is.
+                if (schedule.streakCount !== validated.currentStreakCount) {
+                    this.logger.debug(
+                        {
+                            scheduleId: validated.scheduleId,
+                            expectedStreakCount: validated.currentStreakCount,
+                            actualStreakCount: schedule.streakCount
+                        },
+                        'Streak already advanced — skipping double-advance'
+                    );
+                    return schedule;
                 }
 
                 const now = new Date();

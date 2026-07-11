@@ -9,8 +9,10 @@
 import { describe, expect, it } from 'vitest';
 import {
     AccommodationCreateHttpSchema,
+    AccommodationSearchHttpSchema,
     AccommodationUpdateHttpSchema,
     httpToDomainAccommodationCreate,
+    httpToDomainAccommodationSearch,
     httpToDomainAccommodationUpdate
 } from '../../../src/entities/accommodation/accommodation.http.schema.js';
 import { AccommodationTypeEnum, PriceCurrencyEnum } from '../../../src/enums/index.js';
@@ -279,6 +281,18 @@ describe('httpToDomainAccommodationCreate — contactInfo', () => {
         expect(result.contactInfo?.mobilePhone).toBe('+5493435551234');
         expect(result.contactInfo?.personalEmail).toBe('host@test.com');
     });
+
+    it('should map whatsapp to contactInfo.whatsapp (BETA-151)', () => {
+        const httpData = {
+            ...baseCreatePayload,
+            phone: '+5493435551234',
+            whatsapp: '+5493435559999'
+        };
+
+        const result = httpToDomainAccommodationCreate(httpData);
+
+        expect(result.contactInfo?.whatsapp).toBe('+5493435559999');
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -326,6 +340,19 @@ describe('httpToDomainAccommodationUpdate — contactInfo', () => {
             personalEmail: 'contact@test.com',
             website: 'https://test.com'
         });
+    });
+
+    it('should map whatsapp to contactInfo.whatsapp on update (BETA-151)', () => {
+        const result = httpToDomainAccommodationUpdate({ whatsapp: '+5493435559999' });
+
+        expect(result.contactInfo).toEqual({ whatsapp: '+5493435559999' });
+    });
+
+    it('should not inject whatsapp when only phone changes (SPEC-229 merge safety)', () => {
+        const result = httpToDomainAccommodationUpdate({ phone: '+5493435551234' });
+
+        expect(result.contactInfo).toEqual({ mobilePhone: '+5493435551234' });
+        expect(result.contactInfo).not.toHaveProperty('whatsapp');
     });
 
     it('should not include contactInfo when no contact fields provided', () => {
@@ -667,5 +694,54 @@ describe('httpToDomainAccommodationUpdate — partial socialNetworks (SPEC-229)'
             instagram: 'https://instagram.com/test'
         });
         expect(result.socialNetworks).toEqual({ instagram: 'https://instagram.com/test' });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-113: poiId / poiSlug — HTTP schema parsing + search wiring
+// ---------------------------------------------------------------------------
+
+describe('AccommodationSearchHttpSchema — poiId/poiSlug (HOS-113)', () => {
+    it('should accept a poiId query param', () => {
+        const result = AccommodationSearchHttpSchema.safeParse({
+            poiId: 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('should accept a poiSlug query param', () => {
+        const result = AccommodationSearchHttpSchema.safeParse({ poiSlug: 'autodromo-cdu' });
+        expect(result.success).toBe(true);
+    });
+});
+
+describe('httpToDomainAccommodationSearch — poiId/poiSlug (HOS-113)', () => {
+    it('should map poiId through to the domain search object', () => {
+        const httpParams = AccommodationSearchHttpSchema.parse({
+            poiId: 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1'
+        });
+
+        const result = httpToDomainAccommodationSearch(httpParams);
+
+        expect(result.poiId).toBe('a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1');
+        expect(result.poiSlug).toBeUndefined();
+    });
+
+    it('should map poiSlug through to the domain search object', () => {
+        const httpParams = AccommodationSearchHttpSchema.parse({ poiSlug: 'autodromo-cdu' });
+
+        const result = httpToDomainAccommodationSearch(httpParams);
+
+        expect(result.poiSlug).toBe('autodromo-cdu');
+        expect(result.poiId).toBeUndefined();
+    });
+
+    it('should leave poiId and poiSlug undefined when neither is sent', () => {
+        const httpParams = AccommodationSearchHttpSchema.parse({});
+
+        const result = httpToDomainAccommodationSearch(httpParams);
+
+        expect(result.poiId).toBeUndefined();
+        expect(result.poiSlug).toBeUndefined();
     });
 });

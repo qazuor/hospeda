@@ -39,7 +39,13 @@
         "rateLimitHit": "You can refresh again in {{minutes}} minutes",
         "googleOnlyExplainer": "Review text is only available for Google. Other platforms display the score and a link.",
         "verifiedHint": "The link has been verified and corresponds to this accommodation",
-        "loading": "Loading listings…"
+        "loading": "Loading listings…",
+        "urlHint": {
+            "google": "Search for your business on Google Maps, open its listing and copy the URL from the Share button.",
+            "booking": "Log in to the Booking extranet, open your property and copy the public link of the accommodation page.",
+            "airbnb": "In your Airbnb host dashboard, open the listing and copy the URL from 'Preview listing'.",
+            "other": "Paste the direct public link to your listing on that platform."
+        }
     },
     "errors": {
         "fetchFailed": "Could not load external reviews. Please try again later.",

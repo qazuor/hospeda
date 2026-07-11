@@ -26,6 +26,11 @@ const removeBtnSrc = readFileSync(
     'utf8'
 );
 
+const removeBtnCssSrc = readFileSync(
+    resolve(__dirname, '../../src/components/account/CollectionBookmarkRemoveBtn.module.css'),
+    'utf8'
+);
+
 describe('collection detail page — T-051b (SPEC-098)', () => {
     // ── Auth guard ───────────────────────────────────────────────────────────
 
@@ -282,9 +287,15 @@ describe('CollectionBookmarkRemoveBtn — source structure', () => {
         expect(removeBtnSrc).toContain('disabled={removing}');
     });
 
-    it('uses CSS custom properties for styling (no hardcoded colors)', () => {
-        expect(removeBtnSrc).toContain('var(--radius-button');
-        expect(removeBtnSrc).toContain('var(--font-sans)');
+    it('styles the button via a CSS module (no inline style, no hardcoded colors)', () => {
+        expect(removeBtnSrc).not.toContain('style={{');
+        expect(removeBtnSrc).toContain(
+            "import styles from './CollectionBookmarkRemoveBtn.module.css'"
+        );
+        expect(removeBtnSrc).toContain('className={styles.removeBtn}');
+        expect(removeBtnCssSrc).toContain(
+            'composes: dangerCompact from "./AccountButton.module.css"'
+        );
     });
 
     it('uses createTranslations for i18n', () => {

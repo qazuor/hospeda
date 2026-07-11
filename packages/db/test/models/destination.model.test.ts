@@ -457,3 +457,222 @@ describe('DestinationModel.findAllByAttractionId', () => {
         );
     });
 });
+
+// ============================================================================
+// HOS-113 Phase 4 (T-045): DestinationModel.getPointsOfInterestMap
+// ============================================================================
+describe('DestinationModel.getPointsOfInterestMap', () => {
+    let model: DestinationModel;
+    let getDbMock: ReturnType<typeof vi.fn>;
+    let logErrorMock: ReturnType<typeof vi.fn>;
+
+    /** Builds a chainable mock for db.select().from().innerJoin().where().orderBy() */
+    function buildSelectChain(finalResolved: unknown[], shouldReject = false) {
+        const orderByMock = vi
+            .fn()
+            .mockImplementation(() =>
+                shouldReject
+                    ? Promise.reject(new Error('DB failure'))
+                    : Promise.resolve(finalResolved)
+            );
+        const whereMock = vi.fn().mockReturnValue({ orderBy: orderByMock });
+        const innerJoinMock = vi.fn().mockReturnValue({ where: whereMock });
+        const fromMock = vi.fn().mockReturnValue({ innerJoin: innerJoinMock });
+        const selectMock = vi.fn().mockReturnValue({ from: fromMock });
+        return { selectMock, fromMock, innerJoinMock, whereMock, orderByMock };
+    }
+
+    beforeEach(() => {
+        model = new DestinationModel();
+        vi.clearAllMocks();
+        getDbMock = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
+        logErrorMock = logger.logError as ReturnType<typeof vi.fn>;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('returns an empty map without querying the DB when destIds is empty', async () => {
+        // Act
+        const result = await model.getPointsOfInterestMap([]);
+
+        // Assert
+        expect(result).toEqual(new Map());
+        expect(getDbMock).not.toHaveBeenCalled();
+    });
+
+    it('groups a single POI under its destination id, preserving the full row shape (HOS-113 review fix)', async () => {
+        // Arrange — includes description/isFeatured/isBuiltin, the three fields
+        // dropped by the original projection bug (HOS-113 review Fix 1).
+        const rows = [
+            {
+                destinationId: 'dest-1',
+                id: 'poi-1',
+                slug: 'autodromo',
+                lat: -32.48,
+                long: -58.24,
+                type: 'STADIUM',
+                description: 'The regional racing circuit, home to national events.',
+                icon: 'flag-checkered',
+                isFeatured: true,
+                isBuiltin: false,
+                displayWeight: 80
+            }
+        ];
+        const { selectMock } = buildSelectChain(rows);
+        getDbMock.mockReturnValue({ select: selectMock });
+
+        // Act
+        const result = await model.getPointsOfInterestMap(['dest-1']);
+
+        // Assert — full row shape, not a partial projection: a regression here
+        // must fail this assertion, not silently pass on a subset of fields.
+        expect(result.get('dest-1')).toEqual([
+            {
+                id: 'poi-1',
+                slug: 'autodromo',
+                lat: -32.48,
+                long: -58.24,
+                type: 'STADIUM',
+                description: 'The regional racing circuit, home to national events.',
+                icon: 'flag-checkered',
+                isFeatured: true,
+                isBuiltin: false,
+                displayWeight: 80
+            }
+        ]);
+    });
+
+    it('projects description/isFeatured/isBuiltin into the select() call itself (HOS-113 review fix)', async () => {
+        // Arrange — asserts the query projection, not just the mapped output,
+        // so a regression that drops these columns from `.select({...})` is
+        // caught even if the (mocked) row happens to carry them anyway.
+        const { selectMock } = buildSelectChain([]);
+        getDbMock.mockReturnValue({ select: selectMock });
+
+        // Act
+        await model.getPointsOfInterestMap(['dest-1']);
+
+        // Assert
+        expect(selectMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                description: expect.anything(),
+                isFeatured: expect.anything(),
+                isBuiltin: expect.anything()
+            })
+        );
+    });
+
+    it('groups multiple POIs across multiple destinations', async () => {
+        // Arrange
+        const rows = [
+            {
+                destinationId: 'dest-1',
+                id: 'poi-1',
+                slug: 'autodromo',
+                lat: -32.48,
+                long: -58.24,
+                type: 'STADIUM',
+                icon: null,
+                displayWeight: 80
+            },
+            {
+                destinationId: 'dest-2',
+                id: 'poi-2',
+                slug: 'playa-banco-pelay',
+                lat: -32.47,
+                long: -58.23,
+                type: 'BEACH',
+                icon: null,
+                displayWeight: 60
+            }
+        ];
+        const { selectMock } = buildSelectChain(rows);
+        getDbMock.mockReturnValue({ select: selectMock });
+
+        // Act
+        const result = await model.getPointsOfInterestMap(['dest-1', 'dest-2']);
+
+        // Assert
+        expect(result.size).toBe(2);
+        expect(result.get('dest-1')?.[0]?.slug).toBe('autodromo');
+        expect(result.get('dest-2')?.[0]?.slug).toBe('playa-banco-pelay');
+    });
+
+    it('surfaces the same POI (M2M) under every destination it belongs to', async () => {
+        // Arrange — one POI row appears twice, once per destinationId (join fan-out)
+        const rows = [
+            {
+                destinationId: 'dest-1',
+                id: 'poi-shared',
+                slug: 'plaza-regional',
+                lat: -32.0,
+                long: -58.0,
+                type: 'PLAZA',
+                icon: null,
+                displayWeight: 50
+            },
+            {
+                destinationId: 'dest-2',
+                id: 'poi-shared',
+                slug: 'plaza-regional',
+                lat: -32.0,
+                long: -58.0,
+                type: 'PLAZA',
+                icon: null,
+                displayWeight: 50
+            }
+        ];
+        const { selectMock } = buildSelectChain(rows);
+        getDbMock.mockReturnValue({ select: selectMock });
+
+        // Act
+        const result = await model.getPointsOfInterestMap(['dest-1', 'dest-2']);
+
+        // Assert
+        expect(result.get('dest-1')?.[0]?.id).toBe('poi-shared');
+        expect(result.get('dest-2')?.[0]?.id).toBe('poi-shared');
+    });
+
+    it('throws DbError and logs when the database query fails', async () => {
+        // Arrange
+        const { selectMock } = buildSelectChain([], true);
+        getDbMock.mockReturnValue({ select: selectMock });
+
+        // Act & Assert
+        await expect(model.getPointsOfInterestMap(['dest-1'])).rejects.toThrow('DB failure');
+        expect(logErrorMock).toHaveBeenCalledWith(
+            'destinations',
+            'getPointsOfInterestMap',
+            { destIds: ['dest-1'] },
+            expect.any(Error)
+        );
+    });
+
+    it('uses tx when provided', async () => {
+        // Arrange
+        const mockTx = {
+            select: vi.fn().mockReturnValue({
+                from: vi.fn().mockReturnValue({
+                    innerJoin: vi.fn().mockReturnValue({
+                        where: vi.fn().mockReturnValue({
+                            orderBy: vi.fn().mockResolvedValue([])
+                        })
+                    })
+                })
+            })
+        } as any;
+        const spy = vi.spyOn(model as any, 'getClient');
+        spy.mockReturnValue(mockTx);
+
+        // Act
+        await model.getPointsOfInterestMap(['dest-1'], mockTx);
+
+        // Assert
+        expect(spy).toHaveBeenCalledWith(mockTx);
+        expect(getDbMock).not.toHaveBeenCalled();
+
+        spy.mockRestore();
+    });
+});

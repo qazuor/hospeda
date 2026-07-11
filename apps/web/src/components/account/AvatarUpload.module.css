@@ -35,14 +35,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: var(--primary, oklch(0.5 0.18 260));
+    background-color: var(--brand-primary, oklch(0.5 0.18 260));
 }
 
 .initials {
     font-family: var(--font-heading);
     font-size: 1.75rem;
     font-weight: 700;
-    color: white;
+    color: var(--primary-foreground);
     line-height: 1;
     user-select: none;
 }
@@ -87,32 +87,7 @@
 /* ── Change button ─────────────────────────────────────────────────────── */
 
 .changeButton {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2, 8px);
-    padding: var(--space-2, 8px) var(--space-4, 16px);
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--primary, oklch(0.5 0.18 260));
-    background-color: transparent;
-    border: 1px solid var(--primary, oklch(0.5 0.18 260));
-    border-radius: var(--radius-button, 8px);
-    cursor: pointer;
-    transition:
-        background-color var(--duration-normal, 0.4s) ease,
-        color var(--duration-normal, 0.4s) ease;
-    min-height: 40px;
-}
-
-.changeButton:hover:not(:disabled) {
-    background-color: var(--primary, oklch(0.5 0.18 260));
-    color: white;
-}
-
-.changeButton:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+    composes: secondary from "./AccountButton.module.css";
 }
 
 /* ── Hint text ─────────────────────────────────────────────────────────── */

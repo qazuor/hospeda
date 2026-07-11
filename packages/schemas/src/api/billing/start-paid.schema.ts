@@ -90,10 +90,27 @@ export const StartPaidSubscriptionResponseSchema = z.object({
      * - `'discount'` — a discount was applied (the monthly preapproval amount was
      *   lowered, or the annual line-item was reduced). A normal MP redirect to
      *   `checkoutUrl` still follows; the marker is informational.
+     * - `'trial'` (HOS-110) — the plan's no-card trial was granted instead of a
+     *   paid checkout. There is NO MercadoPago preapproval: like `'comp'`,
+     *   `checkoutUrl` is an in-app success sentinel URL and the front-end should
+     *   go straight to success rather than redirecting to a payment provider.
      */
     appliedEffect: z
-        .enum(['comp', 'discount'], {
+        .enum(['comp', 'discount', 'trial'], {
             message: 'zodError.billing.startPaid.appliedEffect.invalid'
+        })
+        .optional(),
+    /**
+     * HOS-110 W1: `true` when a `discount` promo code was supplied alongside a
+     * trial-eligible checkout and was DISCARDED (never persisted) because the
+     * free trial (`appliedEffect: 'trial'`) takes priority over a discount on
+     * a not-yet-charged subscription. Only ever present together with
+     * `appliedEffect: 'trial'`. Absent (not `false`) in every other case —
+     * the front-end should treat "absent" and "false" identically.
+     */
+    promoCodeIgnored: z
+        .literal(true, {
+            message: 'zodError.billing.startPaid.promoCodeIgnored.invalid'
         })
         .optional()
 });

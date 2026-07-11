@@ -1,9 +1,58 @@
-/* AccommodationEditor.module.css — SPEC-208 */
+/* AccommodationEditor.module.css — SPEC-208, BETA-138 (cards + section nav) */
 
 .editor {
+    width: 100%;
+    padding: var(--space-5, 2rem) 0;
+}
+
+/* ── Two-column layout (section nav + cards) ─────────────────────────────
+   Single column (stacked cards, no nav) below the breakpoint — the explicit
+   BETA-138 decision is no nav at all on tablet/mobile, just natural scroll. */
+
+.layout {
+    display: block;
+}
+
+.navSlot {
+    display: none;
+}
+
+.cardsColumn {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 24px);
     max-width: 720px;
     margin: 0 auto;
-    padding: var(--space-5, 2rem) 0;
+}
+
+@media (min-width: 1100px) {
+    .layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: var(--space-8, 32px);
+        align-items: start;
+    }
+
+    .navSlot {
+        display: block;
+        position: sticky;
+        top: 110px;
+    }
+
+    .cardsColumn {
+        max-width: none;
+        margin: 0;
+    }
+}
+
+/* ── Section card ─────────────────────────────────────────────────────────
+   Same visual convention as the canonical AccountSectionCard recipe (BETA-143
+   rollout) — tokenized surface, uniform radius, subtle elevation, and a
+   brand-gradient accent bar. The inner section component keeps its own bare
+   `<fieldset>` (border:none; padding:0) — it renders fine nested here. */
+
+.card {
+    composes: card from "../account/AccountSection.module.css";
 }
 
 .actions {

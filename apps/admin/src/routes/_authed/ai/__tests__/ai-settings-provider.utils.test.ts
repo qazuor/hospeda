@@ -11,10 +11,11 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import type { AiFeatureId, AiProvidersMap } from '@/features/ai-settings';
+import type { AiFeatureId, AiProviderId, AiProvidersMap } from '@/features/ai-settings';
 import {
     applyProviderToAllFeatures,
-    buildProviderOptions
+    buildProviderOptions,
+    filterRenderableModels
 } from '../-components/ai-settings-provider.utils';
 
 describe('buildProviderOptions', () => {
@@ -101,6 +102,52 @@ describe('buildProviderOptions', () => {
 
         const openaiOption = options.find((o) => o.value === 'openai');
         expect(openaiOption?.label).toContain('OpenAI');
+    });
+
+    it('drops an empty-string current value so Radix Select.Item never receives ""', () => {
+        // Regression: a transient empty `primaryProvider` (form reset / saved
+        // blank blob) produced a `<Select.Item value="" />`, which Radix throws
+        // on because it reserves "" to clear the selection.
+        const options = buildProviderOptions({
+            knownProviders: ['openai'],
+            currentValue: '' as AiProviderId,
+            providers: { openai: { enabled: true } }
+        });
+
+        expect(options.map((o) => o.value)).not.toContain('');
+        expect(options.map((o) => o.value)).toEqual(['openai', 'stub']);
+    });
+
+    it('drops an empty-string known provider id', () => {
+        const options = buildProviderOptions({
+            knownProviders: ['' as AiProviderId, 'openai'],
+            currentValue: 'stub',
+            providers: { openai: { enabled: true } }
+        });
+
+        expect(options.map((o) => o.value)).not.toContain('');
+    });
+});
+
+describe('filterRenderableModels', () => {
+    it('drops empty and whitespace-only model ids', () => {
+        // Regression: a blank model slot produced a `<Select.Item value="" />`,
+        // which Radix throws on (reserves "" to clear the selection).
+        expect(filterRenderableModels(['gpt-4o-mini', '', '  ', 'gpt-4o'])).toEqual([
+            'gpt-4o-mini',
+            'gpt-4o'
+        ]);
+    });
+
+    it('keeps every model when none are blank', () => {
+        expect(filterRenderableModels(['gpt-4o-mini', 'gpt-4o'])).toEqual([
+            'gpt-4o-mini',
+            'gpt-4o'
+        ]);
+    });
+
+    it('returns an empty array when all models are blank', () => {
+        expect(filterRenderableModels(['', '   '])).toEqual([]);
     });
 });
 

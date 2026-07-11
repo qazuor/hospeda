@@ -221,7 +221,17 @@ export const actorMiddleware = (): MiddlewareHandler => {
         // can still be attributed to the actor. Guest actors have no meaningful
         // identity, so we only set when a real user id is present.
         if (actor.id && actor.role && actor.role !== 'GUEST') {
-            setRequestContextActor({ userId: actor.id, role: actor.role });
+            // Better Auth's session object exposes `id` directly (see
+            // `c.set('session', sessionData.session)` in middlewares/auth.ts),
+            // not nested under a `.session` key. Guest/unauthenticated requests
+            // never reach this branch, so `session` is only read once we
+            // already know a real user is attached.
+            const session = c.get('session');
+            setRequestContextActor({
+                userId: actor.id,
+                role: actor.role,
+                ...(session?.id === undefined ? {} : { sessionId: session.id })
+            });
         }
 
         await next();

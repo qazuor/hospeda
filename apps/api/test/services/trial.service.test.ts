@@ -98,7 +98,17 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
-import { TrialService } from '../../src/services/trial.service';
+// Mock the annual-subscription-create helper (HOS-123 T-008/T-009). It has
+// its own dedicated unit-test coverage (`test/services/billing/
+// create-annual-subscription.test.ts`) — here we only assert that
+// `TrialService` calls it with the right arguments on the annual branch.
+vi.mock('../../src/services/billing/create-annual-subscription', () => ({
+    createAnnualSubscription: vi.fn()
+}));
+
+import { clearEntitlementCache } from '../../src/middlewares/entitlement';
+import { createAnnualSubscription } from '../../src/services/billing/create-annual-subscription';
+import { buildTrialUpgradeUrl, TrialService } from '../../src/services/trial.service';
 import { env } from '../../src/utils/env';
 
 // Mock QZPay billing
@@ -138,7 +148,9 @@ describe('TrialService', () => {
             const mockPlan = {
                 id: 'plan-owner-basico',
                 name: 'owner-basico', // QZPay uses name as identifier
-                monthlyPriceArs: 1500000
+                monthlyPriceArs: 1500000,
+                // HOS-110: trial config now lives on the plan's metadata JSONB.
+                metadata: { hasTrial: true, trialDays: 14 }
             };
             const mockSubscription = {
                 id: 'sub-123',
@@ -175,6 +187,154 @@ describe('TrialService', () => {
             );
         });
 
+        // HOS-110 W1: a trial_extension promo code's extra days must add on top
+        // of the plan's own base trial length, not replace it.
+        describe('extraTrialDays (HOS-110 W1)', () => {
+            const arrangePlan = () => {
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [
+                        {
+                            id: 'plan-owner-basico',
+                            name: 'owner-basico',
+                            metadata: { hasTrial: true, trialDays: 14 }
+                        }
+                    ]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(
+                    [] as never
+                );
+                vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                    id: 'sub-extended'
+                } as never);
+            };
+
+            it('adds extraTrialDays on top of the plan base length', async () => {
+                // Arrange
+                arrangePlan();
+
+                // Act — base 14 + extension 7 = 21
+                await trialService.startTrial({
+                    customerId: 'customer-extended',
+                    extraTrialDays: 7
+                });
+
+                // Assert
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({ trialDays: 21 })
+                );
+            });
+
+            it('leaves the base trial length unchanged when extraTrialDays is omitted', async () => {
+                // Arrange
+                arrangePlan();
+
+                // Act
+                await trialService.startTrial({ customerId: 'customer-no-extension' });
+
+                // Assert
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({ trialDays: 14 })
+                );
+            });
+
+            it('stamps extraTrialDaysFromPromo in the MP creation metadata when extended', async () => {
+                // Arrange
+                arrangePlan();
+
+                // Act
+                await trialService.startTrial({
+                    customerId: 'customer-extended-meta',
+                    extraTrialDays: 7
+                });
+
+                // Assert
+                const createArg = (mockBilling.subscriptions.create as unknown as Mock).mock
+                    .calls[0]?.[0] as { metadata: Record<string, string> };
+                expect(createArg.metadata.extraTrialDaysFromPromo).toBe('7');
+            });
+
+            it('combines with HOSPEDA_TRIAL_DAYS_OVERRIDE (override is the base, extension adds on top)', async () => {
+                // Arrange
+                const originalOverride = env.HOSPEDA_TRIAL_DAYS_OVERRIDE;
+                env.HOSPEDA_TRIAL_DAYS_OVERRIDE = 1;
+                arrangePlan();
+
+                try {
+                    // Act — override base 1 + extension 7 = 8
+                    await trialService.startTrial({
+                        customerId: 'customer-override-plus-extension',
+                        extraTrialDays: 7
+                    });
+
+                    // Assert
+                    expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                        expect.objectContaining({ trialDays: 8 })
+                    );
+                } finally {
+                    env.HOSPEDA_TRIAL_DAYS_OVERRIDE = originalOverride;
+                }
+            });
+        });
+
+        // HOS-115 §5: `intendedInterval` is stamped as-is into the MP creation
+        // metadata so the post-trial conversion nudge can pre-select the same
+        // toggle the customer started from.
+        describe('intendedInterval (HOS-115)', () => {
+            const arrangePlan = () => {
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [
+                        {
+                            id: 'plan-owner-basico',
+                            name: 'owner-basico',
+                            metadata: { hasTrial: true, trialDays: 14 }
+                        }
+                    ]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(
+                    [] as never
+                );
+                vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                    id: 'sub-intended-interval'
+                } as never);
+            };
+
+            it('stamps intendedInterval="annual" in the MP creation metadata when supplied', async () => {
+                arrangePlan();
+
+                await trialService.startTrial({
+                    customerId: 'customer-annual-intent',
+                    intendedInterval: 'annual'
+                });
+
+                const createArg = (mockBilling.subscriptions.create as unknown as Mock).mock
+                    .calls[0]?.[0] as { metadata: Record<string, string> };
+                expect(createArg.metadata.intendedInterval).toBe('annual');
+            });
+
+            it('stamps intendedInterval="monthly" in the MP creation metadata when supplied', async () => {
+                arrangePlan();
+
+                await trialService.startTrial({
+                    customerId: 'customer-monthly-intent',
+                    intendedInterval: 'monthly'
+                });
+
+                const createArg = (mockBilling.subscriptions.create as unknown as Mock).mock
+                    .calls[0]?.[0] as { metadata: Record<string, string> };
+                expect(createArg.metadata.intendedInterval).toBe('monthly');
+            });
+
+            it('omits intendedInterval from metadata when not supplied (e.g. accommodation-publish auto-start)', async () => {
+                arrangePlan();
+
+                await trialService.startTrial({ customerId: 'customer-no-intent' });
+
+                const createArg = (mockBilling.subscriptions.create as unknown as Mock).mock
+                    .calls[0]?.[0] as { metadata: Record<string, string> };
+                expect(createArg.metadata.intendedInterval).toBeUndefined();
+            });
+        });
+
         // HOSPEDA_TRIAL_DAYS_OVERRIDE (testing-only): when set to a positive integer
         // it replaces OWNER_TRIAL_DAYS (14) so QA can exercise trial expiry after
         // e.g. 1 day. It is intentionally NOT gated by environment (NODE_ENV is
@@ -196,7 +356,11 @@ describe('TrialService', () => {
             });
 
             const arrangeHappyPath = () => {
-                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+                const mockPlan = {
+                    id: 'plan-owner-basico',
+                    name: 'owner-basico',
+                    metadata: { hasTrial: true, trialDays: 14 }
+                };
                 vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
                     data: [mockPlan]
                 } as never);
@@ -244,7 +408,11 @@ describe('TrialService', () => {
         it('enriches the MP creation metadata with env marker + triggering accommodationId', async () => {
             // Arrange
             const customerId = 'customer-222';
-            const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+            const mockPlan = {
+                id: 'plan-owner-basico',
+                name: 'owner-basico',
+                metadata: { hasTrial: true, trialDays: 14 }
+            };
             vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
                 data: [mockPlan]
             } as never);
@@ -275,7 +443,11 @@ describe('TrialService', () => {
         it('omits the accommodation marker when no triggering accommodation is provided', async () => {
             // Arrange
             const customerId = 'customer-223';
-            const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+            const mockPlan = {
+                id: 'plan-owner-basico',
+                name: 'owner-basico',
+                metadata: { hasTrial: true, trialDays: 14 }
+            };
             vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
                 data: [mockPlan]
             } as never);
@@ -303,8 +475,17 @@ describe('TrialService', () => {
                 status: 'active'
             };
 
+            // Plan DOES declare a trial — this test must exercise the idempotency
+            // guard specifically (one trial per customer, for life), not the
+            // unrelated hasTrial guard which also returns null.
             vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [{ id: 'plan-1', name: 'owner-basico' }]
+                data: [
+                    {
+                        id: 'plan-1',
+                        name: 'owner-basico',
+                        metadata: { hasTrial: true, trialDays: 14 }
+                    }
+                ]
             } as never);
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
                 existingSubscription
@@ -331,6 +512,168 @@ describe('TrialService', () => {
 
             // Assert
             expect(result).toBeNull();
+        });
+
+        // HOS-110: startTrial() generalization — trialDays is read from the
+        // RESOLVED plan's own metadata (not a hardcoded constant), a `planSlug`
+        // can be passed to start a trial on any plan that declares one, and the
+        // entitlement cache is cleared after a successful create.
+        describe('plan-driven trial config (HOS-110 generalization)', () => {
+            it('defaults to DEFAULT_TRIAL_PLAN_SLUG (owner-basico) when planSlug is omitted', async () => {
+                // Arrange
+                const customerId = 'customer-default-slug';
+                const mockPlan = {
+                    id: 'plan-owner-basico',
+                    name: 'owner-basico',
+                    metadata: { hasTrial: true, trialDays: 14 }
+                };
+                const plansListSpy = vi
+                    .spyOn(mockBilling.plans, 'list')
+                    .mockResolvedValue({ data: [mockPlan] } as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(
+                    [] as never
+                );
+                vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                    id: 'sub-default-slug'
+                } as never);
+
+                // Act — no planSlug passed
+                const result = await trialService.startTrial({ customerId });
+
+                // Assert — resolved against 'owner-basico' (the default) and succeeded
+                expect(plansListSpy).toHaveBeenCalled();
+                expect(result).toBe('sub-default-slug');
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({ planId: mockPlan.id, trialDays: 14 })
+                );
+            });
+
+            it('uses a custom planSlug and reads trialDays from THAT plan (not owner-basico)', async () => {
+                // Arrange — mirrors owner-test-daily: hasTrial:true, trialDays:1 (HOS-110 decision #2)
+                const customerId = 'customer-custom-slug';
+                const testDailyPlan = {
+                    id: 'plan-owner-test-daily',
+                    name: 'owner-test-daily',
+                    metadata: { hasTrial: true, trialDays: 1 }
+                };
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [testDailyPlan]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(
+                    [] as never
+                );
+                vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                    id: 'sub-custom-slug'
+                } as never);
+
+                // Act
+                const result = await trialService.startTrial({
+                    customerId,
+                    planSlug: 'owner-test-daily'
+                });
+
+                // Assert — 1-day trial (from the plan), not the owner-basico 14-day default
+                expect(result).toBe('sub-custom-slug');
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({ planId: testDailyPlan.id, trialDays: 1 })
+                );
+            });
+
+            it('returns null and does not create a subscription when the resolved plan has hasTrial:false', async () => {
+                // Arrange — a plan that declares no trial at all.
+                const customerId = 'customer-no-trial-plan';
+                const noTrialPlan = {
+                    id: 'plan-no-trial',
+                    name: 'tourist-free',
+                    metadata: { hasTrial: false, trialDays: 0 }
+                };
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [noTrialPlan]
+                } as never);
+                const getByCustomerIdSpy = vi.spyOn(mockBilling.subscriptions, 'getByCustomerId');
+
+                // Act
+                const result = await trialService.startTrial({
+                    customerId,
+                    planSlug: 'tourist-free'
+                });
+
+                // Assert — no-op: no create call, and the guard short-circuits
+                // before even checking for an existing subscription.
+                expect(result).toBeNull();
+                expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+                expect(getByCustomerIdSpy).not.toHaveBeenCalled();
+            });
+
+            it('returns null and does not create a subscription when trialDays is 0 even if hasTrial is true', async () => {
+                // Arrange — malformed/inconsistent plan config: hasTrial true but
+                // a non-positive trialDays. Starting a 0-day "trial" would be a bug.
+                const customerId = 'customer-zero-days';
+                const zeroDaysPlan = {
+                    id: 'plan-zero-days',
+                    name: 'owner-basico',
+                    metadata: { hasTrial: true, trialDays: 0 }
+                };
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [zeroDaysPlan]
+                } as never);
+
+                // Act
+                const result = await trialService.startTrial({ customerId });
+
+                // Assert
+                expect(result).toBeNull();
+                expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+            });
+
+            it('clears the entitlement cache after successfully creating a trial subscription', async () => {
+                // Arrange
+                const customerId = 'customer-cache-clear';
+                const mockPlan = {
+                    id: 'plan-owner-basico',
+                    name: 'owner-basico',
+                    metadata: { hasTrial: true, trialDays: 14 }
+                };
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [mockPlan]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(
+                    [] as never
+                );
+                vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                    id: 'sub-cache-clear'
+                } as never);
+
+                // Act
+                const result = await trialService.startTrial({ customerId });
+
+                // Assert
+                expect(result).toBe('sub-cache-clear');
+                expect(clearEntitlementCache).toHaveBeenCalledWith(customerId);
+            });
+
+            it('does NOT clear the entitlement cache when the plan has no trial (no-op path)', async () => {
+                // Arrange — clear prior call history first: `clearEntitlementCache` is a
+                // single module-level mock shared across every test in this file (no
+                // global mock-reset is configured), so earlier successful-trial tests
+                // above would otherwise leave a stale recorded call.
+                vi.mocked(clearEntitlementCache).mockClear();
+                const customerId = 'customer-no-cache-clear';
+                const noTrialPlan = {
+                    id: 'plan-no-trial',
+                    name: 'tourist-free',
+                    metadata: { hasTrial: false, trialDays: 0 }
+                };
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [noTrialPlan]
+                } as never);
+
+                // Act
+                await trialService.startTrial({ customerId, planSlug: 'tourist-free' });
+
+                // Assert
+                expect(clearEntitlementCache).not.toHaveBeenCalled();
+            });
         });
     });
 
@@ -538,6 +881,190 @@ describe('TrialService', () => {
             expect(result.isOnTrial).toBe(false);
             expect(result.isExpired).toBe(false);
             expect(result.planSlug).toBe('owner-pro');
+        });
+
+        describe('intendedInterval (HOS-115 §5 T-008 — nudge delivery path 2)', () => {
+            it('returns the annual interval stamped on an active trial subscription', async () => {
+                // Arrange
+                const customerId = 'customer-interval-annual';
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() + 7);
+
+                const mockSubscription = {
+                    id: 'sub-annual-trial',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'trialing',
+                    trialStart: now.toISOString(),
+                    trialEnd: trialEnd.toISOString(),
+                    metadata: { intendedInterval: 'annual' }
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    mockSubscription
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.intendedInterval).toBe('annual');
+            });
+
+            it('returns the monthly interval stamped on an active trial subscription', async () => {
+                // Arrange
+                const customerId = 'customer-interval-monthly';
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() + 7);
+
+                const mockSubscription = {
+                    id: 'sub-monthly-trial',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'trialing',
+                    trialStart: now.toISOString(),
+                    trialEnd: trialEnd.toISOString(),
+                    metadata: { intendedInterval: 'monthly' }
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    mockSubscription
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.intendedInterval).toBe('monthly');
+            });
+
+            it('returns null when the active trial subscription has no metadata at all', async () => {
+                // Arrange — e.g. a trial started via the accommodation-publish
+                // auto-start flow, which never records an interval.
+                const customerId = 'customer-interval-none';
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() + 7);
+
+                const mockSubscription = {
+                    id: 'sub-no-interval-trial',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'trialing',
+                    trialStart: now.toISOString(),
+                    trialEnd: trialEnd.toISOString()
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    mockSubscription
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.intendedInterval).toBeNull();
+            });
+
+            it('returns null for malformed metadata (defensive against a garbage value)', async () => {
+                // Arrange
+                const customerId = 'customer-interval-garbage';
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() + 7);
+
+                const mockSubscription = {
+                    id: 'sub-garbage-interval-trial',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'trialing',
+                    trialStart: now.toISOString(),
+                    trialEnd: trialEnd.toISOString(),
+                    metadata: { intendedInterval: 'weekly' }
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    mockSubscription
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.intendedInterval).toBeNull();
+            });
+
+            it('returns the interval stamped on the most-recent historical (expired, canceled) trial', async () => {
+                // Arrange — mirrors the "canceled without converting" fixture above,
+                // but with metadata.intendedInterval set, exercising the direct-navigation
+                // nudge for a user whose trial already expired.
+                const customerId = 'customer-interval-historical';
+                const now = new Date();
+                const trialStart = new Date(now);
+                trialStart.setDate(trialStart.getDate() - 20);
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() - 6);
+
+                const canceledTrialSub = {
+                    id: 'sub-canceled-trial-annual',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'canceled' as const,
+                    trialStart: trialStart.toISOString(),
+                    trialEnd: trialEnd.toISOString(),
+                    metadata: { intendedInterval: 'annual' }
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    canceledTrialSub
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.isExpired).toBe(true);
+                expect(result.intendedInterval).toBe('annual');
+            });
+
+            it('returns null when there is no subscription at all (never had a trial)', async () => {
+                // Arrange
+                const customerId = 'customer-interval-never';
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(
+                    [] as never
+                );
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.intendedInterval).toBeNull();
+            });
+
+            it('returns null when billing is disabled', async () => {
+                // Arrange
+                const trialServiceNoBilling = new TrialService(null);
+
+                // Act
+                const result = await trialServiceNoBilling.getTrialStatus({
+                    customerId: 'customer-interval-no-billing'
+                });
+
+                // Assert
+                expect(result.intendedInterval).toBeNull();
+            });
         });
     });
 
@@ -987,13 +1514,214 @@ describe('TrialService', () => {
                 'sub-already-cancelled'
             );
         });
+
+        // ── HOS-115 T-004: TRIAL_EXPIRED notification upgradeUrl nudge ──────────
+        //
+        // The TRIAL_EXPIRED notification's upgradeUrl must carry `?interval=` back
+        // from the expiring trial's `metadata.intendedInterval` (stamped by
+        // startTrial at grant time — CORE phase), so the pricing page can
+        // pre-select the same toggle the customer originally chose. It must
+        // degrade gracefully (omit the param) when the metadata has no valid
+        // interval — e.g. a trial started via the accommodation-publish
+        // auto-start flow, which never records one.
+        describe('TRIAL_EXPIRED notification upgradeUrl nudge (HOS-115 T-004)', () => {
+            const buildExpiredSub = (input: {
+                id: string;
+                customerId: string;
+                metadata: unknown;
+            }) => {
+                const now = new Date();
+                const expiredEnd = new Date(now);
+                expiredEnd.setDate(expiredEnd.getDate() - 1);
+                return {
+                    id: input.id,
+                    customerId: input.customerId,
+                    status: 'trialing',
+                    trialEnd: expiredEnd.toISOString(),
+                    metadata: input.metadata
+                };
+            };
+
+            it('appends ?interval=annual when the expiring trial recorded an annual intent', async () => {
+                const sendNotification = vi.fn();
+                const localTrialService = new TrialService(mockBilling, sendNotification);
+
+                vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                    data: [
+                        buildExpiredSub({
+                            id: 'sub-annual-intent',
+                            customerId: 'customer-annual-intent',
+                            metadata: { intendedInterval: 'annual' }
+                        })
+                    ]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+                vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                    id: 'customer-annual-intent',
+                    email: 'annual@example.com',
+                    metadata: { name: 'Annual User', userId: 'u-annual' }
+                } as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: 'plan-1',
+                    name: 'owner-basico'
+                } as never);
+
+                await localTrialService.blockExpiredTrials();
+
+                expect(sendNotification).toHaveBeenCalledOnce();
+                const payload = sendNotification.mock.calls[0]?.[0] as { upgradeUrl: string };
+                expect(payload.upgradeUrl).toContain('?interval=annual');
+                expect(payload.upgradeUrl).toContain('/suscriptores/planes/');
+            });
+
+            it('appends ?interval=monthly when the expiring trial recorded a monthly intent', async () => {
+                const sendNotification = vi.fn();
+                const localTrialService = new TrialService(mockBilling, sendNotification);
+
+                vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                    data: [
+                        buildExpiredSub({
+                            id: 'sub-monthly-intent',
+                            customerId: 'customer-monthly-intent',
+                            metadata: { intendedInterval: 'monthly' }
+                        })
+                    ]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+                vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                    id: 'customer-monthly-intent',
+                    email: 'monthly@example.com',
+                    metadata: { name: 'Monthly User', userId: 'u-monthly' }
+                } as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: 'plan-1',
+                    name: 'owner-basico'
+                } as never);
+
+                await localTrialService.blockExpiredTrials();
+
+                const payload = sendNotification.mock.calls[0]?.[0] as { upgradeUrl: string };
+                expect(payload.upgradeUrl).toContain('?interval=monthly');
+            });
+
+            it('omits the interval param when metadata has no intendedInterval (e.g. accommodation-publish auto-start)', async () => {
+                const sendNotification = vi.fn();
+                const localTrialService = new TrialService(mockBilling, sendNotification);
+
+                vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                    data: [
+                        buildExpiredSub({
+                            id: 'sub-no-intent',
+                            customerId: 'customer-no-intent',
+                            metadata: {}
+                        })
+                    ]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+                vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                    id: 'customer-no-intent',
+                    email: 'none@example.com',
+                    metadata: { name: 'No Intent User', userId: 'u-none' }
+                } as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: 'plan-1',
+                    name: 'owner-basico'
+                } as never);
+
+                await localTrialService.blockExpiredTrials();
+
+                const payload = sendNotification.mock.calls[0]?.[0] as { upgradeUrl: string };
+                expect(payload.upgradeUrl).not.toContain('interval=');
+            });
+        });
     });
 
-    describe('reactivateFromTrial', () => {
-        it('should cancel trial and create paid subscription', async () => {
-            // Arrange
+    describe('buildTrialUpgradeUrl (HOS-115 T-004, pure function)', () => {
+        it('appends ?interval=annual for a valid annual intent', () => {
+            const url = buildTrialUpgradeUrl({
+                siteUrl: 'https://example.test',
+                intendedInterval: 'annual'
+            });
+            expect(url).toBe('https://example.test/es/suscriptores/planes/?interval=annual');
+        });
+
+        it('appends ?interval=monthly for a valid monthly intent', () => {
+            const url = buildTrialUpgradeUrl({
+                siteUrl: 'https://example.test',
+                intendedInterval: 'monthly'
+            });
+            expect(url).toBe('https://example.test/es/suscriptores/planes/?interval=monthly');
+        });
+
+        it('omits the query param when intendedInterval is undefined', () => {
+            const url = buildTrialUpgradeUrl({ siteUrl: 'https://example.test' });
+            expect(url).toBe('https://example.test/es/suscriptores/planes/');
+        });
+
+        it('omits the query param for an unrecognized value (defensive against malformed metadata)', () => {
+            const url = buildTrialUpgradeUrl({
+                siteUrl: 'https://example.test',
+                intendedInterval: 'weekly'
+            });
+            expect(url).toBe('https://example.test/es/suscriptores/planes/');
+        });
+
+        it('points at the owner pricing page, not /mi-cuenta/suscripcion (which has no toggle)', () => {
+            const url = buildTrialUpgradeUrl({ siteUrl: 'https://example.test' });
+            expect(url).not.toContain('/mi-cuenta/suscripcion');
+            expect(url).toContain('/suscriptores/planes/');
+        });
+    });
+
+    describe('reactivateFromTrial (HOS-114)', () => {
+        const PAID_PLAN_ID = 'plan-owner-pro';
+        const PRICE_ID = 'price_monthly_pro';
+
+        const URLS = {
+            paymentMethodReturnUrl: 'https://hospeda.test/es/suscriptores/checkout/success/',
+            notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
+        };
+
+        function paidMonthlyPlan(overrides: Record<string, unknown> = {}) {
+            return {
+                id: PAID_PLAN_ID,
+                name: 'owner-pro',
+                prices: [
+                    {
+                        id: PRICE_ID,
+                        billingInterval: 'month',
+                        intervalCount: 1,
+                        active: true,
+                        unitAmount: 3_500_000
+                    }
+                ],
+                ...overrides
+            };
+        }
+
+        function mockPaidCreateHappyPath(customerId: string) {
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [paidMonthlyPlan()]
+            } as never);
+            vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                id: customerId,
+                email: 'owner@example.com'
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                id: 'sub-paid',
+                customerId,
+                planId: PAID_PLAN_ID,
+                status: 'incomplete',
+                providerInitPoint: 'https://mp.test/checkout/reactivate-abc'
+            } as never);
+        }
+
+        it('should create a real paid preapproval and return a checkoutUrl instead of cancelling the trial synchronously', async () => {
+            // Arrange — `clearEntitlementCache` is a single module-level mock shared
+            // across every test in this file (no global mock-reset configured); clear
+            // any stale call history from earlier tests before asserting on it below.
+            vi.mocked(clearEntitlementCache).mockClear();
             const customerId = 'customer-123';
-            const newPlanId = 'plan-owner-pro';
 
             const existingTrialSub = {
                 id: 'sub-trial',
@@ -1001,67 +1729,77 @@ describe('TrialService', () => {
                 status: 'trialing'
             };
 
-            const newSubscription = {
-                id: 'sub-paid',
-                customerId,
-                planId: newPlanId,
-                status: 'active'
-            };
-
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
                 existingTrialSub
             ] as never);
-            vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
-            vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue(
-                newSubscription as never
-            );
+            mockPaidCreateHappyPath(customerId);
 
             // Act
             const result = await trialService.reactivateFromTrial({
                 customerId,
-                planId: newPlanId
+                planId: PAID_PLAN_ID,
+                urls: URLS
             });
 
-            // Assert
-            expect(result).toBe('sub-paid');
-            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledWith('sub-trial');
+            // Assert — new contract: full result object, checkoutUrl + incomplete status
+            expect(result).toEqual({
+                success: true,
+                subscriptionId: 'sub-paid',
+                checkoutUrl: 'https://mp.test/checkout/reactivate-abc',
+                status: 'incomplete',
+                message: expect.any(String)
+            });
+
+            // The old trialing sub must NOT be cancelled synchronously (deferred to
+            // the webhook, HOS-114 T-007) — see spec §6.4/§6.5.
+            expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+
+            // The entitlement cache must NOT be cleared here either — deferred to the
+            // webhook so the old trial keeps granting entitlements during checkout.
+            expect(clearEntitlementCache).not.toHaveBeenCalled();
+
+            // The create call must use the real mode:'paid' contract, and carry the
+            // superseded trial's id so the webhook can complete the swap.
             expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
                 expect.objectContaining({
                     customerId,
-                    planId: newPlanId,
+                    planId: PAID_PLAN_ID,
+                    priceId: PRICE_ID,
+                    mode: 'paid',
+                    billingInterval: 'monthly',
+                    paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                    notificationUrl: URLS.notificationUrl,
                     metadata: expect.objectContaining({
-                        convertedFromTrial: 'true'
+                        convertedFromTrial: 'true',
+                        supersedesSubscriptionId: 'sub-trial'
                     })
                 })
             );
         });
 
-        it('should create subscription even if no existing trial', async () => {
+        it('should create the paid preapproval even if no existing trial exists (no supersedesSubscriptionId)', async () => {
             // Arrange
             const customerId = 'customer-456';
-            const newPlanId = 'plan-owner-pro';
-
-            const newSubscription = {
-                id: 'sub-paid',
-                customerId,
-                planId: newPlanId,
-                status: 'active'
-            };
 
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([] as never);
-            vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue(
-                newSubscription as never
-            );
+            mockPaidCreateHappyPath(customerId);
 
             // Act
             const result = await trialService.reactivateFromTrial({
                 customerId,
-                planId: newPlanId
+                planId: PAID_PLAN_ID,
+                urls: URLS
             });
 
             // Assert
-            expect(result).toBe('sub-paid');
+            expect(result.subscriptionId).toBe('sub-paid');
+            expect(result.checkoutUrl).toBe('https://mp.test/checkout/reactivate-abc');
             expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+
+            const createCall = vi.mocked(mockBilling.subscriptions.create).mock.calls[0]?.[0] as {
+                metadata?: Record<string, unknown>;
+            };
+            expect(createCall.metadata).not.toHaveProperty('supersedesSubscriptionId');
         });
 
         it('should throw error if billing disabled', async () => {
@@ -1072,9 +1810,826 @@ describe('TrialService', () => {
             await expect(
                 trialServiceNoBilling.reactivateFromTrial({
                     customerId: 'customer-123',
-                    planId: 'plan-123'
+                    planId: 'plan-123',
+                    urls: URLS
                 })
             ).rejects.toThrow('Billing not enabled');
+        });
+
+        it('should propagate the plan guard rejection (unknown planId) and create no subscription', async () => {
+            // Arrange
+            const customerId = 'customer-789';
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({ data: [] } as never);
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([] as never);
+
+            // Act & Assert
+            await expect(
+                trialService.reactivateFromTrial({
+                    customerId,
+                    planId: 'unknown-plan-id',
+                    urls: URLS
+                })
+            ).rejects.toMatchObject({ name: 'SubscriptionCheckoutError', code: 'PLAN_NOT_FOUND' });
+
+            expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+        });
+
+        it('should propagate the plan guard rejection (free plan) and create no subscription', async () => {
+            // Arrange
+            const customerId = 'customer-free';
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [
+                    paidMonthlyPlan({
+                        id: 'plan-free',
+                        prices: [
+                            {
+                                id: 'price-free',
+                                billingInterval: 'month',
+                                intervalCount: 1,
+                                active: true,
+                                unitAmount: 0
+                            }
+                        ]
+                    })
+                ]
+            } as never);
+
+            // Act & Assert
+            await expect(
+                trialService.reactivateFromTrial({
+                    customerId,
+                    planId: 'plan-free',
+                    urls: URLS
+                })
+            ).rejects.toMatchObject({
+                name: 'SubscriptionCheckoutError',
+                code: 'INVALID_REACTIVATION_PLAN'
+            });
+
+            expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+        });
+
+        it('should propagate the plan guard rejection (annual-only plan) and create no subscription', async () => {
+            // Arrange
+            const customerId = 'customer-annual';
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [
+                    paidMonthlyPlan({
+                        id: 'plan-annual-only',
+                        prices: [
+                            {
+                                id: 'price-annual',
+                                billingInterval: 'year',
+                                intervalCount: 1,
+                                active: true,
+                                unitAmount: 35_000_000
+                            }
+                        ]
+                    })
+                ]
+            } as never);
+
+            // Act & Assert
+            await expect(
+                trialService.reactivateFromTrial({
+                    customerId,
+                    planId: 'plan-annual-only',
+                    urls: URLS
+                })
+            ).rejects.toMatchObject({
+                name: 'SubscriptionCheckoutError',
+                code: 'ANNUAL_REACTIVATION_UNSUPPORTED'
+            });
+
+            expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+        });
+
+        it('should throw CUSTOMER_NOT_FOUND and create no subscription when the billing customer is missing', async () => {
+            // Arrange
+            const customerId = 'customer-missing';
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [paidMonthlyPlan()]
+            } as never);
+            vi.spyOn(mockBilling.customers, 'get').mockResolvedValue(null as never);
+
+            // Act & Assert
+            await expect(
+                trialService.reactivateFromTrial({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                })
+            ).rejects.toMatchObject({
+                name: 'SubscriptionCheckoutError',
+                code: 'CUSTOMER_NOT_FOUND'
+            });
+
+            expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+        });
+
+        it('should propagate MISSING_INIT_POINT and never return a checkoutUrl-less success', async () => {
+            // Arrange
+            const customerId = 'customer-no-init-point';
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [paidMonthlyPlan()]
+            } as never);
+            vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                id: customerId,
+                email: 'owner@example.com'
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([] as never);
+            vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                id: 'sub-no-init',
+                customerId,
+                planId: PAID_PLAN_ID,
+                status: 'incomplete'
+                // No providerInitPoint / providerSandboxInitPoint.
+            } as never);
+
+            // Act & Assert
+            await expect(
+                trialService.reactivateFromTrial({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                })
+            ).rejects.toMatchObject({
+                name: 'SubscriptionCheckoutError',
+                code: 'MISSING_INIT_POINT'
+            });
+        });
+
+        // ── HOS-123 T-008: annual reactivation routes through
+        // `createAnnualSubscription` (one-time hosted checkout) instead of
+        // `createPaidSubscription` (monthly preapproval).
+        describe('annual billingInterval (HOS-123 T-008)', () => {
+            const ANNUAL_PRICE_ID = 'price_annual_pro';
+            const ANNUAL_URLS = {
+                successUrl: 'https://hospeda.test/es/suscriptores/checkout/success/',
+                cancelUrl: 'https://hospeda.test/es/suscriptores/checkout/cancel/',
+                notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
+            };
+
+            function paidPlanWithAnnual(overrides: Record<string, unknown> = {}) {
+                return {
+                    id: PAID_PLAN_ID,
+                    name: 'owner-pro',
+                    metadata: {},
+                    prices: [
+                        {
+                            id: PRICE_ID,
+                            billingInterval: 'month',
+                            intervalCount: 1,
+                            active: true,
+                            unitAmount: 3_500_000
+                        },
+                        {
+                            id: ANNUAL_PRICE_ID,
+                            billingInterval: 'year',
+                            intervalCount: 1,
+                            active: true,
+                            unitAmount: 35_000_000
+                        }
+                    ],
+                    ...overrides
+                };
+            }
+
+            beforeEach(() => {
+                vi.mocked(createAnnualSubscription).mockReset();
+            });
+
+            it('routes annual reactivation through createAnnualSubscription and returns a pending_provider result', async () => {
+                // Arrange
+                vi.mocked(clearEntitlementCache).mockClear();
+                const customerId = 'customer-annual-reactivate';
+                const existingTrialSub = {
+                    id: 'sub-trial-annual',
+                    customerId,
+                    status: 'trialing'
+                };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    existingTrialSub
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [paidPlanWithAnnual()]
+                } as never);
+                vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                    id: customerId,
+                    email: 'owner@example.com'
+                } as never);
+                vi.mocked(createAnnualSubscription).mockResolvedValue({
+                    localSubscriptionId: 'sub-annual-local',
+                    checkoutUrl: 'https://mp.test/checkout/annual-reactivate-abc',
+                    expiresAt: '2026-01-01T00:00:00.000Z'
+                });
+
+                // Act
+                const result = await trialService.reactivateFromTrial({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    billingInterval: 'annual',
+                    urls: ANNUAL_URLS
+                });
+
+                // Assert
+                expect(result).toEqual({
+                    success: true,
+                    subscriptionId: 'sub-annual-local',
+                    checkoutUrl: 'https://mp.test/checkout/annual-reactivate-abc',
+                    status: 'pending_provider',
+                    message: expect.any(String)
+                });
+
+                expect(createAnnualSubscription).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        customerId,
+                        priceId: ANNUAL_PRICE_ID,
+                        chargeAmountCentavos: 35_000_000,
+                        urls: ANNUAL_URLS,
+                        metadata: expect.objectContaining({
+                            convertedFromTrial: 'true',
+                            supersedesSubscriptionId: 'sub-trial-annual'
+                        })
+                    })
+                );
+
+                // Never falls through to the monthly preapproval path.
+                expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+                // Still deferred to the webhook — never touched synchronously.
+                expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+                expect(clearEntitlementCache).not.toHaveBeenCalled();
+            });
+
+            it('NG-3 regression: billingInterval omitted still routes through the unchanged monthly createPaidSubscription path', async () => {
+                // Arrange
+                vi.mocked(clearEntitlementCache).mockClear();
+                const customerId = 'customer-ng3-from-trial';
+                const existingTrialSub = {
+                    id: 'sub-trial-ng3',
+                    customerId,
+                    status: 'trialing'
+                };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    existingTrialSub
+                ] as never);
+                mockPaidCreateHappyPath(customerId);
+
+                // Act
+                const result = await trialService.reactivateFromTrial({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                });
+
+                // Assert — identical shape/assertions to the pre-HOS-123 happy path.
+                expect(result).toEqual({
+                    success: true,
+                    subscriptionId: 'sub-paid',
+                    checkoutUrl: 'https://mp.test/checkout/reactivate-abc',
+                    status: 'incomplete',
+                    message: expect.any(String)
+                });
+                expect(createAnnualSubscription).not.toHaveBeenCalled();
+                expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+                expect(clearEntitlementCache).not.toHaveBeenCalled();
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        customerId,
+                        planId: PAID_PLAN_ID,
+                        priceId: PRICE_ID,
+                        mode: 'paid',
+                        billingInterval: 'monthly',
+                        paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                        notificationUrl: URLS.notificationUrl,
+                        metadata: expect.objectContaining({
+                            convertedFromTrial: 'true',
+                            supersedesSubscriptionId: 'sub-trial-ng3'
+                        })
+                    })
+                );
+            });
+
+            it('propagates NO_ANNUAL_PRICE from the guard when the plan has no active annual price, and creates no subscription', async () => {
+                // Arrange — plan only has a monthly price.
+                const customerId = 'customer-no-annual-price';
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [paidMonthlyPlan()]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(
+                    [] as never
+                );
+
+                // Act & Assert
+                await expect(
+                    trialService.reactivateFromTrial({
+                        customerId,
+                        planId: PAID_PLAN_ID,
+                        billingInterval: 'annual',
+                        urls: ANNUAL_URLS
+                    })
+                ).rejects.toMatchObject({
+                    name: 'SubscriptionCheckoutError',
+                    code: 'NO_ANNUAL_PRICE'
+                });
+
+                expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+                expect(createAnnualSubscription).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    // ── HOS-114 T-010: `reactivateSubscription` had ZERO direct unit-test
+    // coverage prior to this block — the route test (`test/routes/
+    // reactivate-subscription.test.ts`) mocks the service entirely, and the
+    // webhook test (`test/webhooks/subscription-logic.test.ts`) simulates
+    // metadata directly without ever invoking this method. This closes that
+    // gap, mirroring `reactivateFromTrial (HOS-114)` above.
+    describe('reactivateSubscription (HOS-114)', () => {
+        const PAID_PLAN_ID = 'plan-owner-pro';
+        const PRICE_ID = 'price_monthly_pro';
+
+        const URLS = {
+            paymentMethodReturnUrl: 'https://hospeda.test/es/suscriptores/checkout/success/',
+            notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
+        };
+
+        function paidMonthlyPlan(overrides: Record<string, unknown> = {}) {
+            return {
+                id: PAID_PLAN_ID,
+                name: 'owner-pro',
+                prices: [
+                    {
+                        id: PRICE_ID,
+                        billingInterval: 'month',
+                        intervalCount: 1,
+                        active: true,
+                        unitAmount: 3_500_000
+                    }
+                ],
+                ...overrides
+            };
+        }
+
+        function mockPaidCreateHappyPath(customerId: string) {
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [paidMonthlyPlan()]
+            } as never);
+            vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                id: customerId,
+                email: 'owner@example.com'
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                id: 'sub-paid-reactivated',
+                customerId,
+                planId: PAID_PLAN_ID,
+                status: 'incomplete',
+                providerInitPoint: 'https://mp.test/checkout/reactivate-sub-abc'
+            } as never);
+        }
+
+        it('HOS-114 regression: reactivate never produces a phantom-active sub — result is always incomplete + checkoutUrl, old canceled sub not touched synchronously', async () => {
+            // Arrange
+            vi.mocked(clearEntitlementCache).mockClear();
+            const customerId = 'customer-canceled-1';
+            const canceledSub = {
+                id: 'sub-canceled',
+                customerId,
+                status: 'canceled',
+                planId: 'plan-old'
+            };
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                canceledSub
+            ] as never);
+            mockPaidCreateHappyPath(customerId);
+
+            // Act
+            const result = await trialService.reactivateSubscription({
+                customerId,
+                planId: PAID_PLAN_ID,
+                urls: URLS
+            });
+
+            // Assert — full result shape: never locally-active, always incomplete + checkoutUrl.
+            expect(result).toEqual({
+                success: true,
+                subscriptionId: 'sub-paid-reactivated',
+                previousPlanId: 'plan-old',
+                checkoutUrl: 'https://mp.test/checkout/reactivate-sub-abc',
+                status: 'incomplete',
+                message: expect.any(String)
+            });
+            // Explicit pin of the pre-fix bug shape being gone (AC-5): the
+            // pre-HOS-114 bug returned an implicitly-`active` subscription
+            // with no checkoutUrl at all. Never 'active', always a checkoutUrl.
+            expect(result.status).not.toBe('active');
+            expect(result.checkoutUrl).toBeTruthy();
+
+            // The old canceled sub must NOT be touched synchronously (deferred
+            // to the webhook, HOS-114 T-007) — see spec §6.4/§6.5.
+            expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+
+            // The entitlement cache must NOT be cleared here either.
+            expect(clearEntitlementCache).not.toHaveBeenCalled();
+
+            // The create call must use the real mode:'paid' contract, and carry
+            // the superseded canceled sub's id so the webhook can complete the swap.
+            expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    priceId: PRICE_ID,
+                    mode: 'paid',
+                    billingInterval: 'monthly',
+                    paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                    notificationUrl: URLS.notificationUrl,
+                    metadata: expect.objectContaining({
+                        reactivatedFromCanceled: 'true',
+                        previousPlanId: 'plan-old',
+                        supersedesSubscriptionId: 'sub-canceled'
+                    })
+                })
+            );
+        });
+
+        it('should reject when an active subscription already exists, and create no subscription', async () => {
+            // Arrange
+            const customerId = 'customer-has-active';
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [paidMonthlyPlan()]
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                { id: 'sub-active', customerId, status: 'active', planId: PAID_PLAN_ID }
+            ] as never);
+
+            // Act & Assert
+            await expect(
+                trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                })
+            ).rejects.toThrow(/active subscription exists/i);
+
+            expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+        });
+
+        it('HOS-114 T-015b regression: rejects with SubscriptionCheckoutError(ACTIVE_SUBSCRIPTION_EXISTS), not a plain Error (HTTP 500)', async () => {
+            // Arrange
+            const customerId = 'customer-has-active-typed';
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [paidMonthlyPlan()]
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                { id: 'sub-active', customerId, status: 'active', planId: PAID_PLAN_ID }
+            ] as never);
+
+            // Act & Assert
+            await expect(
+                trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                })
+            ).rejects.toMatchObject({
+                name: 'SubscriptionCheckoutError',
+                code: 'ACTIVE_SUBSCRIPTION_EXISTS'
+            });
+        });
+
+        it('should reject when no canceled subscription exists, and create no subscription', async () => {
+            // Arrange
+            const customerId = 'customer-no-canceled';
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [paidMonthlyPlan()]
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([] as never);
+
+            // Act & Assert
+            await expect(
+                trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                })
+            ).rejects.toThrow(/No canceled subscription found/i);
+
+            expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+        });
+
+        it('HOS-114 T-015b regression: rejects with SubscriptionCheckoutError(NO_CANCELED_SUBSCRIPTION), not a plain Error (HTTP 500)', async () => {
+            // Arrange
+            const customerId = 'customer-no-canceled-typed';
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [paidMonthlyPlan()]
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([] as never);
+
+            // Act & Assert
+            await expect(
+                trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                })
+            ).rejects.toMatchObject({
+                name: 'SubscriptionCheckoutError',
+                code: 'NO_CANCELED_SUBSCRIPTION'
+            });
+        });
+
+        it('HOS-114 T-015b regression: rejects with SubscriptionCheckoutError(NO_CANCELED_SUBSCRIPTION) when only a trialing subscription exists (no canceled sub to reactivate from)', async () => {
+            // Arrange: covers the second `NO_CANCELED_SUBSCRIPTION` throw site
+            // (after the active/trialing guard passes but no `canceled` sub is
+            // found) — distinct from the `subscriptions.length === 0` guard
+            // above.
+            const customerId = 'customer-only-expired-no-canceled';
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [paidMonthlyPlan()]
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                { id: 'sub-expired', customerId, status: 'expired', planId: 'plan-old' }
+            ] as never);
+
+            // Act & Assert
+            await expect(
+                trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                })
+            ).rejects.toMatchObject({
+                name: 'SubscriptionCheckoutError',
+                code: 'NO_CANCELED_SUBSCRIPTION'
+            });
+
+            expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+        });
+
+        it('should throw CUSTOMER_NOT_FOUND and create no subscription when the billing customer is missing', async () => {
+            // Arrange
+            const customerId = 'customer-missing-sub';
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [paidMonthlyPlan()]
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                { id: 'sub-canceled-2', customerId, status: 'canceled', planId: 'plan-old' }
+            ] as never);
+            vi.spyOn(mockBilling.customers, 'get').mockResolvedValue(null as never);
+
+            // Act & Assert
+            await expect(
+                trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                })
+            ).rejects.toMatchObject({
+                name: 'SubscriptionCheckoutError',
+                code: 'CUSTOMER_NOT_FOUND'
+            });
+
+            expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+        });
+
+        it('should propagate MISSING_INIT_POINT and never return a checkoutUrl-less success', async () => {
+            // Arrange
+            const customerId = 'customer-no-init-point-sub';
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [paidMonthlyPlan()]
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                { id: 'sub-canceled-3', customerId, status: 'canceled', planId: 'plan-old' }
+            ] as never);
+            vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                id: customerId,
+                email: 'owner@example.com'
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                id: 'sub-no-init-2',
+                customerId,
+                planId: PAID_PLAN_ID,
+                status: 'incomplete'
+                // No providerInitPoint / providerSandboxInitPoint.
+            } as never);
+
+            // Act & Assert
+            await expect(
+                trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                })
+            ).rejects.toMatchObject({
+                name: 'SubscriptionCheckoutError',
+                code: 'MISSING_INIT_POINT'
+            });
+        });
+
+        // ── HOS-123 T-009: annual reactivation routes through
+        // `createAnnualSubscription` (one-time hosted checkout) instead of
+        // `createPaidSubscription` (monthly preapproval). Mirrors the
+        // `reactivateFromTrial` annual sub-describe above, except this
+        // method's supersession marker is `reactivatedFromCanceled`, never
+        // `convertedFromTrial`, and `previousPlanId` must survive for both
+        // intervals.
+        describe('annual billingInterval (HOS-123 T-009)', () => {
+            const ANNUAL_PRICE_ID = 'price_annual_pro_sub';
+            const ANNUAL_URLS = {
+                successUrl: 'https://hospeda.test/es/suscriptores/checkout/success/',
+                cancelUrl: 'https://hospeda.test/es/suscriptores/checkout/cancel/',
+                notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
+            };
+
+            function paidPlanWithAnnual(overrides: Record<string, unknown> = {}) {
+                return {
+                    id: PAID_PLAN_ID,
+                    name: 'owner-pro',
+                    metadata: {},
+                    prices: [
+                        {
+                            id: PRICE_ID,
+                            billingInterval: 'month',
+                            intervalCount: 1,
+                            active: true,
+                            unitAmount: 3_500_000
+                        },
+                        {
+                            id: ANNUAL_PRICE_ID,
+                            billingInterval: 'year',
+                            intervalCount: 1,
+                            active: true,
+                            unitAmount: 35_000_000
+                        }
+                    ],
+                    ...overrides
+                };
+            }
+
+            beforeEach(() => {
+                vi.mocked(createAnnualSubscription).mockReset();
+            });
+
+            it('routes annual reactivation through createAnnualSubscription, preserves previousPlanId, and returns a pending_provider result', async () => {
+                // Arrange
+                vi.mocked(clearEntitlementCache).mockClear();
+                const customerId = 'customer-canceled-annual';
+                const canceledSub = {
+                    id: 'sub-canceled-annual',
+                    customerId,
+                    status: 'canceled',
+                    planId: 'plan-old-annual'
+                };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    canceledSub
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [paidPlanWithAnnual()]
+                } as never);
+                vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                    id: customerId,
+                    email: 'owner@example.com'
+                } as never);
+                vi.mocked(createAnnualSubscription).mockResolvedValue({
+                    localSubscriptionId: 'sub-annual-local-reactivated',
+                    checkoutUrl: 'https://mp.test/checkout/annual-reactivate-sub-abc',
+                    expiresAt: '2026-01-01T00:00:00.000Z'
+                });
+
+                // Act
+                const result = await trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    billingInterval: 'annual',
+                    urls: ANNUAL_URLS
+                });
+
+                // Assert
+                expect(result).toEqual({
+                    success: true,
+                    subscriptionId: 'sub-annual-local-reactivated',
+                    previousPlanId: 'plan-old-annual',
+                    checkoutUrl: 'https://mp.test/checkout/annual-reactivate-sub-abc',
+                    status: 'pending_provider',
+                    message: expect.any(String)
+                });
+
+                expect(createAnnualSubscription).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        customerId,
+                        priceId: ANNUAL_PRICE_ID,
+                        chargeAmountCentavos: 35_000_000,
+                        urls: ANNUAL_URLS,
+                        metadata: expect.objectContaining({
+                            reactivatedFromCanceled: 'true',
+                            previousPlanId: 'plan-old-annual',
+                            supersedesSubscriptionId: 'sub-canceled-annual'
+                        })
+                    })
+                );
+
+                // Must NOT stamp convertedFromTrial — that marker belongs only
+                // to `reactivateFromTrial`'s trigger source; this method's is
+                // `reactivatedFromCanceled` (subscription-reactivation).
+                const call = vi.mocked(createAnnualSubscription).mock.calls[0]?.[0] as {
+                    metadata?: Record<string, unknown>;
+                };
+                expect(call.metadata).not.toHaveProperty('convertedFromTrial');
+
+                expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+                expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+                expect(clearEntitlementCache).not.toHaveBeenCalled();
+            });
+
+            it('NG-3 regression: billingInterval omitted still routes through the unchanged monthly createPaidSubscription path', async () => {
+                // Arrange
+                vi.mocked(clearEntitlementCache).mockClear();
+                const customerId = 'customer-ng3-canceled';
+                const canceledSub = {
+                    id: 'sub-canceled-ng3',
+                    customerId,
+                    status: 'canceled',
+                    planId: 'plan-old'
+                };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    canceledSub
+                ] as never);
+                mockPaidCreateHappyPath(customerId);
+
+                // Act
+                const result = await trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                });
+
+                // Assert — identical shape/assertions to the pre-HOS-123 happy path.
+                expect(result).toEqual({
+                    success: true,
+                    subscriptionId: 'sub-paid-reactivated',
+                    previousPlanId: 'plan-old',
+                    checkoutUrl: 'https://mp.test/checkout/reactivate-sub-abc',
+                    status: 'incomplete',
+                    message: expect.any(String)
+                });
+                expect(createAnnualSubscription).not.toHaveBeenCalled();
+                expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+                expect(clearEntitlementCache).not.toHaveBeenCalled();
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        customerId,
+                        planId: PAID_PLAN_ID,
+                        priceId: PRICE_ID,
+                        mode: 'paid',
+                        billingInterval: 'monthly',
+                        paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                        notificationUrl: URLS.notificationUrl,
+                        metadata: expect.objectContaining({
+                            reactivatedFromCanceled: 'true',
+                            previousPlanId: 'plan-old',
+                            supersedesSubscriptionId: 'sub-canceled-ng3'
+                        })
+                    })
+                );
+            });
+
+            it('propagates NO_ANNUAL_PRICE from the guard when the plan has no active annual price, and creates no subscription', async () => {
+                // Arrange — plan only has a monthly price.
+                const customerId = 'customer-no-annual-price-sub';
+                const canceledSub = {
+                    id: 'sub-canceled-no-annual',
+                    customerId,
+                    status: 'canceled',
+                    planId: 'plan-old'
+                };
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [paidMonthlyPlan()]
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    canceledSub
+                ] as never);
+
+                // Act & Assert
+                await expect(
+                    trialService.reactivateSubscription({
+                        customerId,
+                        planId: PAID_PLAN_ID,
+                        billingInterval: 'annual',
+                        urls: ANNUAL_URLS
+                    })
+                ).rejects.toMatchObject({
+                    name: 'SubscriptionCheckoutError',
+                    code: 'NO_ANNUAL_PRICE'
+                });
+
+                expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+                expect(createAnnualSubscription).not.toHaveBeenCalled();
+            });
         });
     });
 
@@ -1280,52 +2835,13 @@ describe('TrialService', () => {
             expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
         });
 
-        it('should trigger reconciliation inside reactivateFromTrial when trial cancel fails', async () => {
-            // Arrange — this is the exact GAP-012 scenario end-to-end
-            const customerId = 'customer-gap012';
-            const newPlanId = 'plan-owner-pro';
-
-            const existingTrialSub = {
-                id: 'sub-trial-gap012',
-                customerId,
-                status: 'trialing',
-                createdAt: '2026-01-10T10:00:00.000Z'
-            };
-            const newActiveSub = {
-                id: 'sub-active-gap012',
-                customerId,
-                planId: newPlanId,
-                status: 'active',
-                createdAt: '2026-01-10T10:05:00.000Z'
-            };
-
-            // getByCustomerId is called twice: once in reactivateFromTrial (before create),
-            // once inside reconcileDuplicateSubscriptions (called after cancel fails)
-            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId')
-                .mockResolvedValueOnce([existingTrialSub] as never)
-                .mockResolvedValueOnce([existingTrialSub, newActiveSub] as never);
-
-            vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue(newActiveSub as never);
-
-            // First cancel call (in reactivateFromTrial loop) fails
-            // Second cancel call (in reconcileDuplicateSubscriptions) succeeds
-            vi.spyOn(mockBilling.subscriptions, 'cancel')
-                .mockRejectedValueOnce(new Error('QZPay timeout'))
-                .mockResolvedValueOnce({} as never);
-
-            // Act
-            const resultId = await trialService.reactivateFromTrial({
-                customerId,
-                planId: newPlanId
-            });
-
-            // Assert — new subscription is returned AND reconciliation cancelled the duplicate
-            expect(resultId).toBe('sub-active-gap012');
-            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledTimes(2);
-            // First attempt (failed) in reactivateFromTrial loop
-            expect(mockBilling.subscriptions.cancel).toHaveBeenNthCalledWith(1, 'sub-trial-gap012');
-            // Second attempt (success) in reconcileDuplicateSubscriptions
-            expect(mockBilling.subscriptions.cancel).toHaveBeenNthCalledWith(2, 'sub-trial-gap012');
-        });
+        // NOTE (HOS-114): the former "should trigger reconciliation inside
+        // reactivateFromTrial when trial cancel fails" test (the GAP-012
+        // end-to-end scenario) was removed here. `reactivateFromTrial` no
+        // longer cancels the old trial subscription synchronously at all —
+        // that responsibility moved to the webhook confirmation path
+        // (HOS-114 T-007, spec §6.4/§6.5) — so `reconcileDuplicateSubscriptions`
+        // is never triggered from inside `reactivateFromTrial` anymore. The
+        // method itself is still fully covered by the tests above.
     });
 });

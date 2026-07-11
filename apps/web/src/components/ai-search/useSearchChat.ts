@@ -23,6 +23,8 @@
 import type {
     AccommodationPublic,
     AiSearchChatFiltersEvent,
+    AttractionLocationConflict,
+    NearbyDestinationSummary,
     SearchIntentEntities
 } from '@repo/schemas';
 import { useCallback, useRef, useState } from 'react';
@@ -61,14 +63,30 @@ export interface UseSearchChatParams {
  * @property messages - Full conversation history (user + assistant turns).
  * @property currentFilters - Accumulated SearchIntentEntities from the last `filters` event.
  *   Rendered as chips by T-011. Echoed back as `currentFilters` on the next turn.
+ * @property lastSearchParams - The last server-resolved, URL-ready accommodation
+ *   search params (HOS-111 T-006). This is what was ACTUALLY sent to the
+ *   accommodations search, as opposed to `currentFilters` which is the raw LLM
+ *   intent (may include slots the mapper never forwards, e.g. `maxGuests`).
+ *   `ActiveFilterChips` uses this to suppress chips for filters that were
+ *   extracted but never applied.
  * @property results - Accommodation results from the last successful search.
  * @property resultsLoading - True while the accommodations GET is in flight.
+ * @property hasSearched - True once the FIRST accommodations GET has ever
+ *   fired (set the moment a `filters` event triggers `fetchAccommodations`,
+ *   before the response arrives). Distinguishes "no search has run yet" from
+ *   "a search ran and matched zero results" — the panel uses this to decide
+ *   whether to show the empty-results copy instead of just hiding the whole
+ *   results section. Reset to `false` by `reset()`.
  * @property currentReply - Streamed reply text accumulator (shown live while streaming).
  * @property isStreaming - True from `send()` until `done` / `error` arrives.
  * @property conversationId - Server conversation id from the last `done` event (nullable).
  * @property confidence - Model's self-assessed extraction confidence from the last `filters` event (SPEC-265 A1).
  *   `null` when no turn has completed yet. Used internally to trigger the low-confidence
  *   message — no numeric badge is shown to the user.
+ * @property nearbyDestinations - Resolved neighbor destinations included in the search
+ *   when the last turn expanded to "destinos cercanos" (HOS-111 T-014, G-9). Empty array
+ *   when the last turn did not expand (the normal case) — the panel renders the
+ *   "incluyendo <name>, <name>, ..." indicator only when this is non-empty.
  * @property error - Surface-level error message from `error` or `stream_error` events.
  * @property send - Send a user message and start a new streaming turn.
  * @property removeFilter - Drop a key from accumulated filters and re-run the accommodations search without a new LLM turn.
@@ -77,12 +95,25 @@ export interface UseSearchChatParams {
 export interface UseSearchChatReturn {
     readonly messages: ReadonlyArray<SearchChatHistoryMessage>;
     readonly currentFilters: SearchIntentEntities | null;
+    readonly lastSearchParams: AiSearchChatFiltersEvent['params'] | null;
     readonly results: ReadonlyArray<AccommodationPublic>;
     readonly resultsLoading: boolean;
+    readonly hasSearched: boolean;
     readonly currentReply: string;
     readonly isStreaming: boolean;
     readonly conversationId: string | null;
     readonly confidence: number | null;
+    readonly nearbyDestinations: ReadonlyArray<NearbyDestinationSummary>;
+    /**
+     * HOS-111 T-016: set when the LAST turn asked for both a location and an
+     * attraction that share no destination (or the attraction matched nothing).
+     * When present the accommodation search is DELIBERATELY skipped (results
+     * stay `[]`, `hasSearched` is true) — the panel renders the empty-results
+     * state and the streamed reply explains the conflict. `null` on every
+     * normal turn. Reset to `null` on each new `filters` event that has no
+     * conflict, and by `reset()`.
+     */
+    readonly attractionLocationConflict: AttractionLocationConflict | null;
     /**
      * Whether the LAST model turn extracted any usable slot (SPEC-265 A2).
      * Snapshotted from the `filters` event — NOT recomputed from
@@ -127,10 +158,13 @@ interface SearchChatState {
     readonly lastSearchParams: AiSearchChatFiltersEvent['params'] | null;
     readonly results: ReadonlyArray<AccommodationPublic>;
     readonly resultsLoading: boolean;
+    readonly hasSearched: boolean;
     readonly currentReply: string;
     readonly isStreaming: boolean;
     readonly conversationId: string | null;
     readonly confidence: number | null;
+    readonly nearbyDestinations: ReadonlyArray<NearbyDestinationSummary>;
+    readonly attractionLocationConflict: AttractionLocationConflict | null;
     readonly lastTurnHadEntities: boolean;
     readonly error: string | null;
     readonly errorStatus: number | null;
@@ -142,10 +176,13 @@ const INITIAL_STATE: SearchChatState = {
     lastSearchParams: null,
     results: [],
     resultsLoading: false,
+    hasSearched: false,
     currentReply: '',
     isStreaming: false,
     conversationId: null,
     confidence: null,
+    nearbyDestinations: [],
+    attractionLocationConflict: null,
     lastTurnHadEntities: false,
     error: null,
     errorStatus: null
@@ -170,11 +207,23 @@ function hasAnyEntity(entities: SearchIntentEntities | null): boolean {
  * `SearchIntentEntities` (human-readable, used by the chips) and
  * `AccommodationSearchHttp` (the resolved search params). Keys not listed are
  * identical in both shapes.
+ *
+ * Exported (HOS-111 T-006) so `ActiveFilterChips` can check whether an
+ * intent-derived chip's underlying filter was actually forwarded to the
+ * accommodations search, instead of duplicating this map.
+ *
+ * `city` → `q`: the mapper forwards a city name as the generic keyword
+ * param (`mapIntentToSearchParams` in apps/api, priority-3 fallback when the
+ * city didn't resolve to a known destination). Without this entry,
+ * `removeFilter('city')` would try to delete a non-existent `params.city`
+ * key and leave the real `q` filter stuck applied after the chip disappears
+ * (HOS-111 follow-up fix).
  */
-const INTENT_TO_PARAM_KEY: Partial<Record<keyof SearchIntentEntities, string>> = {
+export const INTENT_TO_PARAM_KEY: Partial<Record<keyof SearchIntentEntities, string>> = {
     accommodationType: 'type',
     amenitySlugs: 'amenities',
-    featureSlugs: 'features'
+    featureSlugs: 'features',
+    city: 'q'
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -252,7 +301,7 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
      */
     const fetchAccommodations = useCallback(
         async (searchParams: AiSearchChatFiltersEvent['params']): Promise<void> => {
-            setState((prev) => ({ ...prev, resultsLoading: true, error: null }));
+            setState((prev) => ({ ...prev, resultsLoading: true, hasSearched: true, error: null }));
             const apiParams = filtersParamsToApiParams(searchParams);
             const result = await accommodationsApi.list(
                 apiParams as Parameters<typeof accommodationsApi.list>[0]
@@ -330,11 +379,46 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
                         // Store confidence (SPEC-265 A1) for the low-confidence UI.
                         const newFilters = event.filters.intent;
                         const newConfidence = event.filters.confidence ?? null;
+                        // HOS-111 T-016: attraction/location conflict — the API
+                        // resolved that no destination matches BOTH the requested
+                        // location and attraction (or the attraction matched
+                        // nothing). We must render ZERO results and let the reply
+                        // explain it. CRITICAL: we do NOT call fetchAccommodations
+                        // here — the emitted params cannot force zero results (an
+                        // empty destinationIds array is treated as "no filter" and
+                        // returns the FULL catalog), so running the search would
+                        // show everything. Skipping the fetch guarantees 0 results.
+                        const conflict = event.filters.attractionLocationConflict ?? null;
+                        if (conflict !== null) {
+                            setState((prev) => ({
+                                ...prev,
+                                currentFilters: newFilters,
+                                lastSearchParams: event.filters.params,
+                                confidence: newConfidence,
+                                nearbyDestinations: event.filters.nearbyDestinations ?? [],
+                                attractionLocationConflict: conflict,
+                                lastTurnHadEntities: hasAnyEntity(newFilters),
+                                // Deliberately empty — the conflict means no
+                                // destination satisfies both constraints.
+                                results: [],
+                                resultsLoading: false,
+                                hasSearched: true,
+                                error: null
+                            }));
+                            return;
+                        }
                         setState((prev) => ({
                             ...prev,
                             currentFilters: newFilters,
                             lastSearchParams: event.filters.params,
                             confidence: newConfidence,
+                            // HOS-111 T-014: reset to [] (not carried over) when this
+                            // turn did not expand — a prior turn's nearby indicator
+                            // must not linger once the user refines away from it.
+                            nearbyDestinations: event.filters.nearbyDestinations ?? [],
+                            // HOS-111 T-016: clear any prior conflict once a normal
+                            // (non-conflicting) turn arrives.
+                            attractionLocationConflict: null,
                             lastTurnHadEntities: hasAnyEntity(newFilters)
                         }));
                         void fetchAccommodations(event.filters.params);
@@ -427,12 +511,28 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
                 unknown
             >;
             delete updatedParams[paramKey];
+
+            // HOS-111 T-014 fix: removing the location chip (`destinationId`)
+            // must ALSO drop `destinationIds` — a nearby expansion sets
+            // `params.destinationIds = [anchor, ...neighbors]` (search-chat.ts)
+            // and the accommodation query builder prioritises `destinationIds`
+            // OVER `destinationId`. Without this, the multi-destination filter
+            // stays silently active after the chip is gone. In the same branch
+            // we clear `nearbyDestinations` so the "Incluyendo …" indicator does
+            // not linger against a search that no longer matches. Removing any
+            // OTHER chip leaves `nearbyDestinations` intact — the nearby
+            // expansion is still in effect, so the indicator must stay.
+            const isLocationRemoval = key === 'destinationId';
+            if (isLocationRemoval) {
+                delete updatedParams.destinationIds;
+            }
             const nextParams = updatedParams as AiSearchChatFiltersEvent['params'];
 
             setState((prev) => ({
                 ...prev,
                 currentFilters: updatedFilters,
-                lastSearchParams: nextParams
+                lastSearchParams: nextParams,
+                ...(isLocationRemoval ? { nearbyDestinations: [] } : {})
             }));
             void fetchAccommodations(nextParams);
         },
@@ -480,12 +580,16 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
     return {
         messages: state.messages,
         currentFilters: state.currentFilters,
+        lastSearchParams: state.lastSearchParams,
         results: state.results,
         resultsLoading: state.resultsLoading,
+        hasSearched: state.hasSearched,
         currentReply: state.currentReply,
         isStreaming: state.isStreaming,
         conversationId: state.conversationId,
         confidence: state.confidence,
+        nearbyDestinations: state.nearbyDestinations,
+        attractionLocationConflict: state.attractionLocationConflict,
         lastTurnHadEntities: state.lastTurnHadEntities,
         error: state.error,
         errorStatus: state.errorStatus,

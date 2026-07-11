@@ -60,6 +60,22 @@ export const GetDestinationBreadcrumbInputSchema = z.object({
 });
 export type GetDestinationBreadcrumbInput = z.infer<typeof GetDestinationBreadcrumbInputSchema>;
 
+/**
+ * Input schema for getting geographically nearby destinations (HOS-111 T-011).
+ *
+ * `radiusKm` and `fallbackCount` are optional overrides for the model's
+ * defaults (`NEARBY_DESTINATION_RADIUS_KM` = 50 km, OQ-2; a small
+ * fixed-N fallback used when the radius pass returns zero rows so a
+ * "destinos cercanos" follow-up never comes back empty). No UI control
+ * exposes these — they exist for testability and future tuning only.
+ */
+export const GetDestinationNearbyInputSchema = z.object({
+    destinationId: z.string().uuid(),
+    radiusKm: z.number().positive().max(500).optional(),
+    fallbackCount: z.number().int().min(1).max(50).optional()
+});
+export type GetDestinationNearbyInput = z.infer<typeof GetDestinationNearbyInputSchema>;
+
 // ============================================================================
 // OUTPUT / ITEM SCHEMAS
 // ============================================================================

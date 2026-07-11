@@ -21,9 +21,11 @@
  * Hydration: caller MUST use `client:load`.
  */
 
+import { OffersIcon } from '@repo/icons';
 import type { OwnerPromotionListItem } from '@repo/schemas';
 import { TouristAudienceEnum } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -251,20 +253,14 @@ export function ExclusiveDealsList({ locale, apiUrl, userId: _userId }: Exclusiv
 
     if (isEmpty) {
         return (
-            <div
-                className={styles.dealsEmpty}
-                aria-live="polite"
-            >
-                <p className={styles.dealsEmptyTitle}>
-                    {t('account.exclusiveDeals.empty.title', 'No hay ofertas activas por ahora')}
-                </p>
-                <p className={styles.dealsEmptyBody}>
-                    {t(
-                        'account.exclusiveDeals.empty.body',
-                        'Volvé más tarde para ver nuevas ofertas exclusivas para tu plan.'
-                    )}
-                </p>
-            </div>
+            <AccountEmptyState
+                title={t('account.exclusiveDeals.empty.title', 'No hay ofertas activas por ahora')}
+                description={t(
+                    'account.exclusiveDeals.empty.body',
+                    'Volvé más tarde para ver nuevas ofertas exclusivas para tu plan.'
+                )}
+                icon={<OffersIcon size={28} />}
+            />
         );
     }
 

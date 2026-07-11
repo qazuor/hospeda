@@ -578,18 +578,20 @@ export const PARTNER_LISTING_PLAN: PlanDefinition = {
 
 /**
  * Real ARS charge amount (in centavos) for the daily test plan's single
- * price row. Chosen as ARS $1.00 — the smallest whole-currency-unit amount —
- * to minimize the real cost of every daily test charge while staying inside
- * MercadoPago's accepted range for a recurring `preapproval` (MP requires a
- * positive `transaction_amount`; ARS $1.00 is the conservative floor used
- * here absent a confirmed lower official minimum — see the JSDoc on
- * {@link TEST_DAILY_PLAN} for the full rationale and how to raise it if MP
- * ever rejects it in practice).
+ * price row. ARS $15.00 (1500 centavos) — MercadoPago's confirmed minimum
+ * `transaction_amount` for a recurring `preapproval` in Argentina. An
+ * earlier revision of this constant used ARS $1.00 (100 centavos), assuming
+ * that was the practical floor; MercadoPago's real API rejected it in
+ * production with `Create subscription - Cannot pay an amount lower than
+ * $ 15.00`, causing every checkout onto this plan to fail with a generic
+ * `INTERNAL_ERROR`. 1500 is not an arbitrary "small" value — it is the
+ * lowest amount MP will actually accept, so do NOT lower this again without
+ * first re-confirming MP's minimum has changed.
  *
  * Exported so the seed (`seedTestDailyPlan`) and this config share the exact
- * same value — never duplicate the literal `100` in two places.
+ * same value — never duplicate the literal `1500` in two places.
  */
-export const TEST_DAILY_PLAN_UNIT_AMOUNT_CENTAVOS = 100;
+export const TEST_DAILY_PLAN_UNIT_AMOUNT_CENTAVOS = 1500;
 
 /**
  * Testing-only daily-cadence plan (billing-interval-override tooling).
@@ -644,7 +646,7 @@ export const TEST_DAILY_PLAN: PlanDefinition = {
     slug: 'owner-test-daily',
     name: 'Test Daily (internal)',
     description:
-        'Testing-only plan that bills every 1 day at the minimum ARS amount. Hidden unless HOSPEDA_SHOW_TEST_BILLING_PLAN is set. Not a real product tier.',
+        "Testing-only plan that bills every 1 day at MercadoPago's minimum preapproval amount (ARS $15.00). Hidden unless HOSPEDA_SHOW_TEST_BILLING_PLAN is set. Not a real product tier.",
     // See JSDoc: 'owner' only satisfies the PlanCategory type; product_domain
     // (stamped by the seed as 'accommodation') is what makes entitlements load.
     category: 'owner',
@@ -652,8 +654,18 @@ export const TEST_DAILY_PLAN: PlanDefinition = {
     monthlyPriceArs: TEST_DAILY_PLAN_UNIT_AMOUNT_CENTAVOS,
     annualPriceArs: null,
     monthlyPriceUsdRef: 0,
-    hasTrial: false,
-    trialDays: 0,
+    // HOS-110: 1-day no-card trial so the full trial→expiry lifecycle
+    // (trialing subscription created no-card, then the daily
+    // `blockExpiredTrials` cron cancels it and fires the TRIAL_EXPIRED
+    // notification once the 1-day trial elapses) is exercisable end-to-end
+    // on a fast cadence. A no-card trial carries NO MercadoPago preapproval
+    // (`mp_subscription_id` stays NULL) — nothing auto-charges when the
+    // trial ends; converting to paid requires the user to go through a
+    // SEPARATE `/start-paid` checkout. See the dual-write counterpart
+    // `packages/seed/src/data-migrations/0005-owner-test-daily-trial.ts`
+    // for the already-seeded-environment backfill.
+    hasTrial: true,
+    trialDays: 1,
     isDefault: false,
     sortOrder: 999,
     // Seeded INACTIVE on purpose. The public plans endpoint

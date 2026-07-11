@@ -320,6 +320,12 @@
     letter-spacing: 0.04em;
 }
 
+/* Admin panel link — session zone, staff/host only (HOS-131 §6.5) */
+.adminPanelSection {
+    padding: 0.5rem 1.25rem 0.875rem;
+    border-top: 1px solid var(--border-a60);
+}
+
 /* Owner CTA link — accent pill button above auth section */
 .ctaLink {
     display: flex;

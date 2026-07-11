@@ -150,16 +150,23 @@ describe('UserMenu — authenticated render', () => {
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
 
-    it('shows always-on items (dashboard, favorites, messages, reviews, subscription, newsletter, preferences)', () => {
+    it('shows the curated always-on items (identity "Mi cuenta" link, Favoritos, Suscripción — HOS-131 §6.4)', () => {
         renderMenu();
         open();
-        expect(screen.getByRole('menuitem', { name: /mi cuenta/i })).toBeInTheDocument();
-        expect(screen.getByRole('menuitem', { name: /mis favoritos/i })).toBeInTheDocument();
-        expect(screen.getByRole('menuitem', { name: /mis consultas/i })).toBeInTheDocument();
-        expect(screen.getByRole('menuitem', { name: /mis reseñas/i })).toBeInTheDocument();
-        expect(screen.getByRole('menuitem', { name: /mi suscripción/i })).toBeInTheDocument();
-        expect(screen.getByRole('menuitem', { name: /boletín de novedades/i })).toBeInTheDocument();
-        expect(screen.getByRole('menuitem', { name: /preferencias/i })).toBeInTheDocument();
+        expect(screen.getByRole('menuitem', { name: /^mi cuenta$/i })).toBeInTheDocument();
+        expect(screen.getByRole('menuitem', { name: /^favoritos$/i })).toBeInTheDocument();
+        expect(screen.getByRole('menuitem', { name: /^suscripción$/i })).toBeInTheDocument();
+    });
+
+    it('does NOT show non-curated sidebar-only items (messages, reviews, newsletter, preferences)', () => {
+        renderMenu();
+        open();
+        expect(screen.queryByRole('menuitem', { name: /mis consultas/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('menuitem', { name: /mis reseñas/i })).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('menuitem', { name: /boletín de novedades/i })
+        ).not.toBeInTheDocument();
+        expect(screen.queryByRole('menuitem', { name: /preferencias/i })).not.toBeInTheDocument();
     });
 });
 
@@ -173,7 +180,7 @@ describe('UserMenu — permission-gated items', () => {
         sessionStorage.clear();
     });
 
-    it('hides "Mis alojamientos" while permissions are loading', () => {
+    it('hides the business shortcut (Panel del anfitrión) while permissions are loading', () => {
         global.fetch = vi.fn(
             () =>
                 new Promise(() => {
@@ -183,11 +190,12 @@ describe('UserMenu — permission-gated items', () => {
         renderMenu();
         open();
         expect(
-            screen.queryByRole('menuitem', { name: /mis alojamientos/i })
+            screen.queryByRole('menuitem', { name: /panel del anfitrión/i })
         ).not.toBeInTheDocument();
+        expect(screen.queryByRole('menuitem', { name: /mi comercio/i })).not.toBeInTheDocument();
     });
 
-    it('shows "Mis alojamientos" for users with accommodation.create permission', async () => {
+    it('shows the "Panel del anfitrión" business shortcut for users with accommodation.create permission', async () => {
         sessionStorage.setItem(
             AUTH_ME_CACHE_KEY,
             JSON.stringify({
@@ -200,7 +208,54 @@ describe('UserMenu — permission-gated items', () => {
         renderMenu();
         await waitFor(() => {
             open();
-            expect(screen.getByRole('menuitem', { name: /mis alojamientos/i })).toBeInTheDocument();
+            expect(
+                screen.getByRole('menuitem', { name: /panel del anfitrión/i })
+            ).toBeInTheDocument();
+            expect(
+                screen.queryByRole('menuitem', { name: /mi comercio/i })
+            ).not.toBeInTheDocument();
+        });
+    });
+
+    it('shows the "Mi comercio" business shortcut for users with only commerce.editOwn permission', async () => {
+        sessionStorage.setItem(
+            AUTH_ME_CACHE_KEY,
+            JSON.stringify({
+                isAuthenticated: true,
+                user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
+                permissions: ['commerce.editOwn'],
+                cachedAt: Date.now()
+            })
+        );
+        renderMenu();
+        await waitFor(() => {
+            open();
+            expect(screen.getByRole('menuitem', { name: /mi comercio/i })).toBeInTheDocument();
+            expect(
+                screen.queryByRole('menuitem', { name: /panel del anfitrión/i })
+            ).not.toBeInTheDocument();
+        });
+    });
+
+    it('prioritizes "Panel del anfitrión" over "Mi comercio" when the user has both business permissions', async () => {
+        sessionStorage.setItem(
+            AUTH_ME_CACHE_KEY,
+            JSON.stringify({
+                isAuthenticated: true,
+                user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
+                permissions: ['accommodation.create', 'commerce.editOwn'],
+                cachedAt: Date.now()
+            })
+        );
+        renderMenu();
+        await waitFor(() => {
+            open();
+            expect(
+                screen.getByRole('menuitem', { name: /panel del anfitrión/i })
+            ).toBeInTheDocument();
+            expect(
+                screen.queryByRole('menuitem', { name: /mi comercio/i })
+            ).not.toBeInTheDocument();
         });
     });
 
@@ -322,12 +377,14 @@ describe('UserMenu — TTL guard (rate-limit fix)', () => {
             initialUser: { id: 'u1', name: 'Cached User', email: 'cached@example.com' }
         });
 
-        // Permission-gated item should appear from the cached permissions
-        // without waiting for any network call.
+        // Permission-gated item (business shortcut) should appear from the
+        // cached permissions without waiting for any network call.
         const trigger = screen.getByRole('button', { name: /abrir menú de cuenta/i });
         fireEvent.click(trigger);
         await waitFor(() => {
-            expect(screen.getByRole('menuitem', { name: /mis alojamientos/i })).toBeInTheDocument();
+            expect(
+                screen.getByRole('menuitem', { name: /panel del anfitrión/i })
+            ).toBeInTheDocument();
         });
 
         expect(fetchMock).not.toHaveBeenCalled();

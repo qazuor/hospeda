@@ -151,6 +151,67 @@
     opacity: 0.8;
 }
 
+/* ─── Assistant bubble markdown content ───────────────────────────────────────
+   Assistant replies are rendered from sanitized markdown (renderChatMarkdown)
+   via dangerouslySetInnerHTML. Mirrors SearchChatPanel.module.css so both
+   chat surfaces render markdown consistently.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.assistantBubble p {
+    margin: 0;
+}
+
+.assistantBubble p + p {
+    margin-top: 8px;
+}
+
+.assistantBubble strong,
+.assistantBubble b {
+    font-weight: 700;
+}
+
+.assistantBubble em,
+.assistantBubble i {
+    font-style: italic;
+}
+
+.assistantBubble ul,
+.assistantBubble ol {
+    margin: 6px 0;
+    padding-left: 20px;
+}
+
+.assistantBubble li + li {
+    margin-top: 2px;
+}
+
+.assistantBubble a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.assistantBubble code {
+    padding: 2px 5px;
+    border-radius: var(--radius-sm, 4px);
+    background-color: var(--core-muted-foreground, rgba(0, 0, 0, 0.08));
+    font-family: var(--font-mono, monospace);
+    font-size: 0.85em;
+}
+
+.assistantBubble pre {
+    margin: 6px 0;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm, 6px);
+    background-color: var(--core-muted-foreground, rgba(0, 0, 0, 0.08));
+    overflow-x: auto;
+}
+
+.assistantBubble pre code {
+    padding: 0;
+    background: none;
+}
+
 .priceNotice {
     padding: 8px 12px;
     margin-top: 4px;

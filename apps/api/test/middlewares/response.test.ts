@@ -690,4 +690,88 @@ describe('Response Middleware', () => {
             expect(data.error.message).toBe('Internal server error');
         });
     });
+
+    // HOS-109 / OQ-1: expected client outcomes (401/403/404) must not be logged
+    // as ERROR + stack. The handler downgrades them via resolveErrorLogLevel.
+    describe('error log level for expected outcomes (HOS-109)', () => {
+        it('logs an expected 404 ServiceError at info without a stack', async () => {
+            const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
+            const { apiLogger } = await import('../../src/utils/logger');
+            const infoSpy = vi.spyOn(apiLogger, 'info').mockImplementation(() => undefined);
+            const errorSpy = vi.spyOn(apiLogger, 'error').mockImplementation(() => undefined);
+
+            app.get('/expected-404', () => {
+                throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+            });
+
+            const res = await app.request('/expected-404');
+
+            expect(res.status).toBe(404);
+            expect(infoSpy).toHaveBeenCalledWith(expect.stringContaining('Caught error'));
+            expect(errorSpy).not.toHaveBeenCalled();
+
+            infoSpy.mockRestore();
+            errorSpy.mockRestore();
+        });
+
+        it('logs an expected 401 ServiceError at info without a stack', async () => {
+            const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
+            const { apiLogger } = await import('../../src/utils/logger');
+            const infoSpy = vi.spyOn(apiLogger, 'info').mockImplementation(() => undefined);
+            const errorSpy = vi.spyOn(apiLogger, 'error').mockImplementation(() => undefined);
+
+            app.get('/expected-401', () => {
+                throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Authentication required');
+            });
+
+            const res = await app.request('/expected-401');
+
+            expect(res.status).toBe(401);
+            expect(infoSpy).toHaveBeenCalledWith(expect.stringContaining('Caught error'));
+            expect(errorSpy).not.toHaveBeenCalled();
+
+            infoSpy.mockRestore();
+            errorSpy.mockRestore();
+        });
+
+        it('logs an expected 403 ServiceError at warn without a stack', async () => {
+            const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
+            const { apiLogger } = await import('../../src/utils/logger');
+            const warnSpy = vi.spyOn(apiLogger, 'warn').mockImplementation(() => undefined);
+            const errorSpy = vi.spyOn(apiLogger, 'error').mockImplementation(() => undefined);
+
+            app.get('/expected-403', () => {
+                throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Only self or USER_READ_ALL');
+            });
+
+            const res = await app.request('/expected-403');
+
+            expect(res.status).toBe(403);
+            expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Caught error'));
+            expect(errorSpy).not.toHaveBeenCalled();
+
+            warnSpy.mockRestore();
+            errorSpy.mockRestore();
+        });
+
+        it('keeps a real 500 error at error level with a stack', async () => {
+            const { apiLogger } = await import('../../src/utils/logger');
+            const errorSpy = vi.spyOn(apiLogger, 'error').mockImplementation(() => undefined);
+
+            app.get('/real-500', () => {
+                throw new Error('unexpected boom');
+            });
+
+            const res = await app.request('/real-500');
+
+            expect(res.status).toBe(500);
+            expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Caught error'));
+            expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('📋 Stack:'));
+
+            errorSpy.mockRestore();
+        });
+    });
 });

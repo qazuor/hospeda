@@ -25,6 +25,15 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
     latitude: z.coerce.number().min(-90).max(90).optional(),
     longitude: z.coerce.number().min(-180).max(180).optional(),
     radius: z.coerce.number().positive().optional(),
+    /**
+     * HOS-113 §6.2 — "near POI" proximity search. Resolved server-side to
+     * `{ lat, long }`, which feeds the existing `latitude`/`longitude`/`radius`
+     * geo path. Mutually exclusive with `poiSlug`; when resolved, takes
+     * precedence over any explicit `latitude`/`longitude` in the same request.
+     */
+    poiId: z.string().uuid().optional(),
+    /** HOS-113 §6.2 — slug form of `poiId`. */
+    poiSlug: z.string().min(1).max(100).optional(),
     // SPEC-097 — Viewport bbox for listing maps
     bboxNorth: z.coerce.number().min(-90).max(90).optional(),
     bboxSouth: z.coerce.number().min(-90).max(90).optional(),
@@ -260,6 +269,7 @@ export const AccommodationCreateHttpSchema = z.object({
 
     // Contact information (flat fields mapped to ContactInfoSchema in converter)
     phone: z.string().optional(),
+    whatsapp: z.string().optional(),
     email: z
         .string()
         .email({ message: 'zodError.common.contact.personalEmail.invalid' })
@@ -429,6 +439,8 @@ export const httpToDomainAccommodationSearch = (
     latitude: httpParams.latitude,
     longitude: httpParams.longitude,
     radius: httpParams.radius,
+    poiId: httpParams.poiId,
+    poiSlug: httpParams.poiSlug,
     bboxNorth: httpParams.bboxNorth,
     bboxSouth: httpParams.bboxSouth,
     bboxEast: httpParams.bboxEast,
@@ -621,11 +633,13 @@ export const httpToDomainAccommodationCreate = (
 
     // Contact info mapping from flat HTTP fields to nested ContactInfoSchema
     ...(httpData.phone !== undefined ||
+    httpData.whatsapp !== undefined ||
     httpData.email !== undefined ||
     httpData.website !== undefined
         ? {
               contactInfo: {
                   mobilePhone: httpData.phone || '',
+                  whatsapp: httpData.whatsapp,
                   personalEmail: httpData.email,
                   website: httpData.website
               }
@@ -857,11 +871,13 @@ export const httpToDomainAccommodationUpdate = (
     // Critically, do NOT inject `mobilePhone: ''` when `phone` is absent — that
     // empty-string default would clobber the stored phone via the JSONB merge.
     ...(httpData.phone !== undefined ||
+    httpData.whatsapp !== undefined ||
     httpData.email !== undefined ||
     httpData.website !== undefined
         ? {
               contactInfo: {
                   ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
+                  ...(httpData.whatsapp === undefined ? {} : { whatsapp: httpData.whatsapp }),
                   ...(httpData.email === undefined ? {} : { personalEmail: httpData.email }),
                   ...(httpData.website === undefined ? {} : { website: httpData.website })
               }

@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "003-point-of-interest-palacio_san_jose",
+    "slug": "palacio_san_jose",
+    "lat": -32.1975,
+    "long": -58.4949,
+    "type": "MUSEUM",
+    "description": "Ex residencia de Justo José de Urquiza, hoy museo histórico nacional",
+    "icon": "museum",
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 90,
+    "lifecycleState": "ACTIVE"
+}

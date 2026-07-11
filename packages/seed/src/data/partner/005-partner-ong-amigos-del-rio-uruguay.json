@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/partner.schema.json",
+    "id": "005-partner-ong-amigos-del-rio-uruguay",
+    "slug": "ong-amigos-del-rio-uruguay",
+    "name": "ONG Amigos del Río Uruguay",
+    "type": "ngo",
+    "tier": "bronze",
+    "logoUrl": "https://images.pexels.com/photos/2131784/pexels-photo-2131784.jpeg",
+    "websiteUrl": "https://www.amigosdelriouruguay.org.ar",
+    "description": "Grupo de vecinos y voluntarios que trabaja por la preservación de las costas y balnearios del Río Uruguay en Colón y alrededores, organizando jornadas de forestación y avistaje de aves para visitantes.",
+    "subscriptionStatus": "active",
+    "lifecycleState": "ACTIVE",
+    "startsAt": "2025-09-05T00:00:00.000Z"
+}

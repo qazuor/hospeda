@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
     AccommodationListWrapperSchema,
+    AccommodationSearchSchema,
     AccommodationStatsWrapperSchema
 } from '../../../src/entities/accommodation/accommodation.query.schema';
 
@@ -129,6 +130,61 @@ describe('AccommodationListWrapperSchema', () => {
         };
 
         expect(() => AccommodationListWrapperSchema.parse(wrapper)).toThrow(ZodError);
+    });
+});
+
+describe('AccommodationSearchSchema — poiId/poiSlug (HOS-113 T-031)', () => {
+    it('should accept a search with neither poiId nor poiSlug (both remain optional)', () => {
+        const result = AccommodationSearchSchema.safeParse({});
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.poiId).toBeUndefined();
+            expect(result.data.poiSlug).toBeUndefined();
+        }
+    });
+
+    it('should accept a valid poiId (UUID)', () => {
+        const result = AccommodationSearchSchema.safeParse({
+            poiId: '12345678-1234-4234-8234-123456789012'
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.poiId).toBe('12345678-1234-4234-8234-123456789012');
+        }
+    });
+
+    it('should accept a valid poiSlug', () => {
+        const result = AccommodationSearchSchema.safeParse({ poiSlug: 'autodromo-cdu' });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.poiSlug).toBe('autodromo-cdu');
+        }
+    });
+
+    it('should reject a poiId that is not a valid UUID', () => {
+        const result = AccommodationSearchSchema.safeParse({ poiId: 'not-a-uuid' });
+        expect(result.success).toBe(false);
+    });
+
+    it('should accept both poiId and poiSlug at the schema level (precedence/mutual-exclusion is a service-layer rule — HOS-113 T-034)', () => {
+        // The schema itself is additive-only and does not enforce mutual
+        // exclusion; that 400 validation is applied in
+        // AccommodationService._beforeSearch (see accommodation.service.ts).
+        const result = AccommodationSearchSchema.safeParse({
+            poiId: '12345678-1234-4234-8234-123456789012',
+            poiSlug: 'autodromo-cdu'
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('should still accept the existing latitude/longitude/radius params alongside poiId/poiSlug at the schema level', () => {
+        const result = AccommodationSearchSchema.safeParse({
+            poiSlug: 'autodromo-cdu',
+            latitude: -32.4825,
+            longitude: -58.2372,
+            radius: 10
+        });
+        expect(result.success).toBe(true);
     });
 });
 

@@ -29,13 +29,15 @@ const {
     mockAddMedia,
     mockRemoveMedia,
     mockSetFeaturedMedia,
-    mockUploadEntityImage
+    mockUploadEntityImage,
+    mockAddToast
 } = vi.hoisted(() => ({
     mockListMedia: vi.fn(),
     mockAddMedia: vi.fn(),
     mockRemoveMedia: vi.fn(),
     mockSetFeaturedMedia: vi.fn(),
-    mockUploadEntityImage: vi.fn()
+    mockUploadEntityImage: vi.fn(),
+    mockAddToast: vi.fn()
 }));
 
 // ---------------------------------------------------------------------------
@@ -91,6 +93,12 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
 // Mock the upload helper at its source module so PhotoSection picks up the mock
 vi.mock('@/lib/media/upload-entity', () => ({
     uploadEntityImage: mockUploadEntityImage
+}));
+
+// BETA-144: upload failures now also fire a global toast — mock the store so
+// tests can assert on it without depending on the real pub/sub timers.
+vi.mock('@/store/toast-store', () => ({
+    addToast: mockAddToast
 }));
 
 vi.mock('@repo/schemas', () => ({
@@ -346,6 +354,14 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
 
             // No gallery images should appear
             expect(screen.queryAllByRole('img')).toHaveLength(0);
+
+            // BETA-144: the failure is ALSO surfaced via the global toast store,
+            // so it's visible even if the user is scrolled away from the inline
+            // error at the top of the editor.
+            expect(mockAddToast).toHaveBeenCalledWith({
+                type: 'error',
+                message: 'quota exceeded'
+            });
         });
     });
 
@@ -514,6 +530,12 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
 
             // No featured image in slot
             expect(screen.queryByAltText('Imagen principal')).not.toBeInTheDocument();
+
+            // BETA-144: toast mirrors the inline error
+            expect(mockAddToast).toHaveBeenCalledWith({
+                type: 'error',
+                message: 'featured op failed'
+            });
         });
     });
 

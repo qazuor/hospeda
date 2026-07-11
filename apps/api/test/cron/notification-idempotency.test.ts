@@ -4,6 +4,11 @@
  * Tests that notification idempotency keys are stored in Redis when available,
  * with fallback to in-memory Map (with TTL) when Redis is not configured.
  *
+ * These tests exercise the RENEWAL_REMINDER path: as of HOS-121 the trial
+ * reminders moved to a durable `billing_subscription_events` dedup ledger, so
+ * the Redis-TTL + in-memory Map mechanism is now used only for renewal
+ * reminders. The mechanism itself is unchanged — only its consumer is.
+ *
  * @module test/cron/notification-idempotency
  */
 
@@ -21,14 +26,19 @@ const { mockDbWithTransactionIdempotency } = vi.hoisted(() => {
         execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
         update: vi.fn().mockReturnThis(),
         set: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue(undefined)
+        where: vi.fn().mockResolvedValue(undefined),
+        select: vi.fn(() => ({
+            from: vi.fn(() => ({
+                where: vi.fn(() => ({ limit: vi.fn().mockResolvedValue([]) }))
+            }))
+        })),
+        insert: vi.fn(() => ({ values: vi.fn().mockResolvedValue(undefined) }))
     };
     const withTx = vi.fn(async <T>(callback: (innerTx: typeof tx) => Promise<T>) => callback(tx));
     return { mockDbWithTransactionIdempotency: withTx };
 });
 
 // Mock @repo/db — required for pg_try_advisory_xact_lock concurrency guard (GAP-034).
-// withTransaction is required because the job now wraps all work in a transaction.
 vi.mock('@repo/db', () => ({
     getDb: vi.fn().mockReturnValue({
         execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
@@ -45,6 +55,12 @@ vi.mock('@repo/db', () => ({
         status: 'status',
         errorMessage: 'error_message'
     },
+    billingSubscriptionEvents: {
+        id: 'id',
+        subscriptionId: 'subscription_id',
+        eventType: 'event_type'
+    },
+    and: vi.fn((...conds: unknown[]) => ({ __and: conds })),
     eq: vi.fn((_col: unknown, _val: unknown) => ({ __eq: true })),
     sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
         __sql: true,
@@ -58,9 +74,22 @@ vi.mock('../../src/middlewares/billing', () => ({
     getQZPayBilling: vi.fn()
 }));
 
-// Mock TrialService
+// Mock TrialService (no trials — this suite exercises renewals only).
+// buildTrialUpgradeUrl must still be exported: the module imports it eagerly.
 vi.mock('../../src/services/trial.service', () => ({
-    TrialService: vi.fn()
+    TrialService: vi.fn(),
+    buildTrialUpgradeUrl: vi.fn(
+        (input: { siteUrl: string }) => `${input.siteUrl}/es/suscriptores/planes/`
+    )
+}));
+
+// Mock customer lookup used by the renewal branch.
+vi.mock('../../src/utils/customer-lookup', () => ({
+    lookupCustomerDetails: vi.fn().mockResolvedValue({
+        email: 'renewal@test.com',
+        name: 'Renewal User',
+        userId: 'user-renewal'
+    })
 }));
 
 // Mock notification helper
@@ -130,7 +159,58 @@ function createMockContext(overrides?: Partial<CronJobContext>): CronJobContext 
     };
 }
 
-describe('Notification Idempotency Key Persistence', () => {
+/**
+ * Build a billing stub with one active subscription renewing in `daysAhead`
+ * days (default 7 — the first RENEWAL_REMINDER_DAYS window), plus no trials.
+ */
+function mockRenewalBilling(daysAhead = 7): void {
+    const now = Date.now();
+    // -1h buffer so Math.ceil(msRemaining / day) lands exactly on `daysAhead`
+    // (ceil rounds UP: a value just under N days rounds to N, just over rounds to N+1).
+    const currentPeriodEnd = new Date(now + daysAhead * 24 * 60 * 60 * 1000 - 60 * 60 * 1000);
+
+    const mockBilling = {
+        subscriptions: {
+            list: vi.fn().mockResolvedValue({
+                data: [
+                    {
+                        customerId: 'cust-renewal',
+                        planId: 'plan-1',
+                        interval: 'monthly',
+                        currentPeriodEnd: currentPeriodEnd.toISOString()
+                    }
+                ]
+            })
+        },
+        plans: {
+            get: vi.fn().mockResolvedValue({
+                name: 'Owner Basico',
+                prices: [{ billingInterval: 'monthly', unitAmount: 5000 }]
+            })
+        }
+    };
+
+    vi.mocked(getQZPayBilling).mockReturnValue(
+        mockBilling as unknown as ReturnType<typeof getQZPayBilling>
+    );
+    vi.mocked(TrialService).mockImplementation(function () {
+        return {
+            findTrialsEndingSoon: vi.fn().mockResolvedValue([])
+        } as unknown as InstanceType<typeof TrialService>;
+    });
+    vi.mocked(RetryService).mockImplementation(function () {
+        return {
+            processRetries: vi.fn().mockResolvedValue({
+                processed: 0,
+                succeeded: 0,
+                failed: 0,
+                permanentlyFailed: 0
+            })
+        } as unknown as InstanceType<typeof RetryService>;
+    });
+}
+
+describe('Notification Idempotency Key Persistence (renewal reminders)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         resetSentNotificationsFallback();
@@ -142,61 +222,12 @@ describe('Notification Idempotency Key Persistence', () => {
     describe('Redis-backed idempotency', () => {
         it('should store idempotency key in Redis when available', async () => {
             // Arrange
-            const mockRedis = {
-                set: mockRedisSet,
-                exists: mockRedisExists
-            };
-            mockGetRedisClient.mockResolvedValue(mockRedis);
-
-            const ctx = createMockContext();
-            const now = new Date();
-            const trialEnd = new Date(now);
-            trialEnd.setDate(trialEnd.getDate() + 3);
-
-            const mockTrialService = {
-                findTrialsEndingSoon: vi
-                    .fn()
-                    .mockResolvedValueOnce([
-                        {
-                            id: 'sub-1',
-                            customerId: 'cust-1',
-                            userEmail: 'user@test.com',
-                            userName: 'Test User',
-                            userId: 'user-1',
-                            planSlug: 'owner-basico',
-                            trialEnd,
-                            daysRemaining: 3
-                        }
-                    ])
-                    .mockResolvedValueOnce([]) // 1 day - empty
-            };
-
-            const mockBilling = {
-                subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [] })
-                }
-            };
-
-            vi.mocked(getQZPayBilling).mockReturnValue(
-                mockBilling as unknown as ReturnType<typeof getQZPayBilling>
-            );
-            vi.mocked(TrialService).mockImplementation(function () {
-                return mockTrialService as unknown as InstanceType<typeof TrialService>;
-            });
+            mockGetRedisClient.mockResolvedValue({ set: mockRedisSet, exists: mockRedisExists });
+            mockRenewalBilling();
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(function () {
-                return {
-                    processRetries: vi.fn().mockResolvedValue({
-                        processed: 0,
-                        succeeded: 0,
-                        failed: 0,
-                        permanentlyFailed: 0
-                    })
-                } as unknown as InstanceType<typeof RetryService>;
-            });
 
             // Act
-            await notificationScheduleJob.handler(ctx);
+            await notificationScheduleJob.handler(createMockContext());
 
             // Assert - Redis set was called with idempotency key + TTL
             expect(mockRedisSet).toHaveBeenCalledWith(
@@ -209,61 +240,12 @@ describe('Notification Idempotency Key Persistence', () => {
 
         it('should check Redis for existing key before sending', async () => {
             // Arrange - key already exists in Redis
-            mockRedisExists.mockResolvedValue(1); // Key exists
-            const mockRedis = {
-                set: mockRedisSet,
-                exists: mockRedisExists
-            };
-            mockGetRedisClient.mockResolvedValue(mockRedis);
-
-            const ctx = createMockContext();
-            const now = new Date();
-            const trialEnd = new Date(now);
-            trialEnd.setDate(trialEnd.getDate() + 3);
-
-            const mockTrialService = {
-                findTrialsEndingSoon: vi
-                    .fn()
-                    .mockResolvedValueOnce([
-                        {
-                            id: 'sub-1',
-                            customerId: 'cust-1',
-                            userEmail: 'user@test.com',
-                            userName: 'Test User',
-                            userId: 'user-1',
-                            planSlug: 'owner-basico',
-                            trialEnd,
-                            daysRemaining: 3
-                        }
-                    ])
-                    .mockResolvedValueOnce([]) // 1 day - empty
-            };
-
-            const mockBilling = {
-                subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [] })
-                }
-            };
-
-            vi.mocked(getQZPayBilling).mockReturnValue(
-                mockBilling as unknown as ReturnType<typeof getQZPayBilling>
-            );
-            vi.mocked(TrialService).mockImplementation(function () {
-                return mockTrialService as unknown as InstanceType<typeof TrialService>;
-            });
-            vi.mocked(RetryService).mockImplementation(function () {
-                return {
-                    processRetries: vi.fn().mockResolvedValue({
-                        processed: 0,
-                        succeeded: 0,
-                        failed: 0,
-                        permanentlyFailed: 0
-                    })
-                } as unknown as InstanceType<typeof RetryService>;
-            });
+            mockRedisExists.mockResolvedValue(1);
+            mockGetRedisClient.mockResolvedValue({ set: mockRedisSet, exists: mockRedisExists });
+            mockRenewalBilling();
 
             // Act
-            await notificationScheduleJob.handler(ctx);
+            await notificationScheduleJob.handler(createMockContext());
 
             // Assert - notification was NOT sent (duplicate detected via Redis)
             expect(sendNotification).not.toHaveBeenCalled();
@@ -275,56 +257,11 @@ describe('Notification Idempotency Key Persistence', () => {
         it('should use in-memory Set when Redis is not available', async () => {
             // Arrange - no Redis
             mockGetRedisClient.mockResolvedValue(undefined);
-
-            const ctx = createMockContext();
-            const now = new Date();
-            const trialEnd = new Date(now);
-            trialEnd.setDate(trialEnd.getDate() + 3);
-
-            const mockTrialService = {
-                findTrialsEndingSoon: vi
-                    .fn()
-                    .mockResolvedValueOnce([
-                        {
-                            id: 'sub-1',
-                            customerId: 'cust-fallback',
-                            userEmail: 'fallback@test.com',
-                            userName: 'Fallback User',
-                            userId: 'user-fallback',
-                            planSlug: 'owner-basico',
-                            trialEnd,
-                            daysRemaining: 3
-                        }
-                    ])
-                    .mockResolvedValueOnce([]) // 1 day - empty
-            };
-
-            const mockBilling = {
-                subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [] })
-                }
-            };
-
-            vi.mocked(getQZPayBilling).mockReturnValue(
-                mockBilling as unknown as ReturnType<typeof getQZPayBilling>
-            );
-            vi.mocked(TrialService).mockImplementation(function () {
-                return mockTrialService as unknown as InstanceType<typeof TrialService>;
-            });
+            mockRenewalBilling();
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(function () {
-                return {
-                    processRetries: vi.fn().mockResolvedValue({
-                        processed: 0,
-                        succeeded: 0,
-                        failed: 0,
-                        permanentlyFailed: 0
-                    })
-                } as unknown as InstanceType<typeof RetryService>;
-            });
 
             // Act
-            await notificationScheduleJob.handler(ctx);
+            await notificationScheduleJob.handler(createMockContext());
 
             // Assert - notification was sent (in-memory fallback works)
             expect(sendNotification).toHaveBeenCalledTimes(1);
@@ -336,119 +273,26 @@ describe('Notification Idempotency Key Persistence', () => {
         it('should preserve idempotency across multiple runs without Redis', async () => {
             // Arrange - no Redis, same customer in both runs
             mockGetRedisClient.mockResolvedValue(undefined);
-
-            const now = new Date();
-            const trialEnd = new Date(now);
-            trialEnd.setDate(trialEnd.getDate() + 3);
-
-            const trialData = [
-                {
-                    id: 'sub-1',
-                    customerId: 'cust-multi-run',
-                    userEmail: 'multi@test.com',
-                    userName: 'Multi Run User',
-                    userId: 'user-multi',
-                    planSlug: 'owner-basico',
-                    trialEnd,
-                    daysRemaining: 3
-                }
-            ];
-
-            // Both runs return same customer for both 3-day and 1-day windows
-            const mockTrialService = {
-                findTrialsEndingSoon: vi.fn().mockResolvedValue(trialData)
-            };
-
-            const mockBilling = {
-                subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [] })
-                }
-            };
-
-            vi.mocked(getQZPayBilling).mockReturnValue(
-                mockBilling as unknown as ReturnType<typeof getQZPayBilling>
-            );
-            vi.mocked(TrialService).mockImplementation(function () {
-                return mockTrialService as unknown as InstanceType<typeof TrialService>;
-            });
+            mockRenewalBilling();
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(function () {
-                return {
-                    processRetries: vi.fn().mockResolvedValue({
-                        processed: 0,
-                        succeeded: 0,
-                        failed: 0,
-                        permanentlyFailed: 0
-                    })
-                } as unknown as InstanceType<typeof RetryService>;
-            });
 
             // Act - first run
-            const ctx1 = createMockContext();
-            await notificationScheduleJob.handler(ctx1);
-
+            await notificationScheduleJob.handler(createMockContext());
             // Act - second run (same day, same customer)
-            const ctx2 = createMockContext();
-            await notificationScheduleJob.handler(ctx2);
+            await notificationScheduleJob.handler(createMockContext());
 
-            // Assert - first run sends 2 notifications (d3 + d1 have different keys),
-            // second run sends 0 (both keys already exist in fallback map)
-            expect(sendNotification).toHaveBeenCalledTimes(2);
+            // Assert - first run sends once, second run is deduped by the fallback Map.
+            expect(sendNotification).toHaveBeenCalledTimes(1);
         });
 
         it('should fall back to in-memory when Redis throws error', async () => {
             // Arrange - Redis throws
             mockGetRedisClient.mockRejectedValue(new Error('Connection refused'));
-
-            const ctx = createMockContext();
-            const now = new Date();
-            const trialEnd = new Date(now);
-            trialEnd.setDate(trialEnd.getDate() + 3);
-
-            const mockTrialService = {
-                findTrialsEndingSoon: vi
-                    .fn()
-                    .mockResolvedValueOnce([
-                        {
-                            id: 'sub-1',
-                            customerId: 'cust-error',
-                            userEmail: 'error@test.com',
-                            userName: 'Error User',
-                            userId: 'user-error',
-                            planSlug: 'owner-basico',
-                            trialEnd,
-                            daysRemaining: 3
-                        }
-                    ])
-                    .mockResolvedValueOnce([]) // 1 day - empty
-            };
-
-            const mockBilling = {
-                subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [] })
-                }
-            };
-
-            vi.mocked(getQZPayBilling).mockReturnValue(
-                mockBilling as unknown as ReturnType<typeof getQZPayBilling>
-            );
-            vi.mocked(TrialService).mockImplementation(function () {
-                return mockTrialService as unknown as InstanceType<typeof TrialService>;
-            });
+            mockRenewalBilling();
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(function () {
-                return {
-                    processRetries: vi.fn().mockResolvedValue({
-                        processed: 0,
-                        succeeded: 0,
-                        failed: 0,
-                        permanentlyFailed: 0
-                    })
-                } as unknown as InstanceType<typeof RetryService>;
-            });
 
             // Act
-            await notificationScheduleJob.handler(ctx);
+            await notificationScheduleJob.handler(createMockContext());
 
             // Assert - notification was still sent despite Redis error
             expect(sendNotification).toHaveBeenCalledTimes(1);

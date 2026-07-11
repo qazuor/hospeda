@@ -51,6 +51,13 @@ import { toArticleCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
+import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
+import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
+import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
+import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
+import { XCircleIcon } from '@repo/icons';
+import { PostCategoryEnum } from '@repo/schemas';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -64,6 +71,25 @@ const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 const pageSize = 9;
 const q = url.searchParams.get('q') ?? undefined;
 const category = url.searchParams.get('category') ?? undefined;
+/**
+ * Active `categories` values (the postCategory facet's array `paramKey`) —
+ * computed once, up front, and reused for both the API fetch (below) and the
+ * category chip active/href state (HOS-96 T-012). Singular `category` is
+ * still read and forwarded too (backward compat — the array takes
+ * precedence server-side when both are present, US-10).
+ *
+ * HOS-96 pre-merge review (Option A): also passes `singularParamKey` so a
+ * legacy singular-only link (`?category=CULTURE`, no `categories`) still
+ * resolves an active value here — otherwise the dedicated-landing SEO
+ * canonical (`/publicaciones/categoria/{slug}/`) and the chip/sidebar
+ * highlight were silently lost even though the grid kept filtering
+ * correctly (the singular value is forwarded to the API separately below).
+ */
+const postCategoryActiveValues = readFacetActiveValues({
+    searchParams: url.searchParams,
+    paramKey: FACET_CONFIG_BY_ID.postCategory.paramKey,
+    singularParamKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey
+});
 
 /**
  * Maps the URL's user-friendly sort key (e.g. `newest`, `mostSaved`) to the
@@ -123,6 +149,11 @@ const result = await postsApi.list({
     pageSize,
     q,
     category,
+    // HOS-96 T-012: forward the accumulated multi-select values as a CSV
+    // string (never the raw JS array — `serializeParams` in `api/client.ts`
+    // does `String(value)`, which on an array yields a comma-joined string
+    // too, but relying on that implicit coercion is fragile; join explicitly).
+    categories: postCategoryActiveValues.length > 0 ? postCategoryActiveValues.join(',') : undefined,
     sortBy: sortResolved.sortBy,
     sortOrder: sortResolved.sortOrder,
     isFeatured: isFeatured ?? undefined,
@@ -172,6 +203,7 @@ const filterSummary = buildPostListingSummary({
 const hasActiveFilters =
     Boolean(q) ||
     Boolean(category) ||
+    postCategoryActiveValues.length > 0 ||
     isFeatured === true ||
     Boolean(destinationId) ||
     Boolean(publishedAfterFilter) ||
@@ -182,13 +214,54 @@ const hasActiveFilters =
 /** Canonical URL for this listing (no query params) — used as "clear filters" target. */
 const baseUrl = buildUrl({ locale, path: 'publicaciones' });
 
+/**
+ * HOS-96 T-019 (NET-NEW — this page never called `resolvePromotedFacetCanonical`
+ * nor emitted `noindex` before this task). Mirrors the accommodations/events
+ * `hasOther*Filters` pattern: any OTHER (non-category) narrowing filter —
+ * excludes the `categories`/`category` facet itself, `sortBy`, and `page`
+ * (sort/pagination don't narrow the result set, same convention as the other
+ * two listings).
+ */
+const hasOtherPostFilters = Boolean(
+    q ||
+        destinationId ||
+        publishedAfterFilter ||
+        publishedBeforeFilter ||
+        isFeatured
+);
+
+// SPEC-306-style single-facet canonical / HOS-96 US-6/US-7 (T-019): the shared
+// `resolveFacetSeoDecision` predicate decides both `noindex` and the
+// canonical target for this facet's active values in ONE call — 0 values or
+// another filter active -> indexable, base canonical; exactly 1 value, no
+// other filter -> indexable, canonical is the category's first-class
+// dedicated landing (`/publicaciones/categoria/{slug}/`); 2+ values ->
+// noindex,follow + base canonical.
+const facetSeoDecision = resolveFacetSeoDecision({
+    facetValues: postCategoryActiveValues,
+    hasOtherFilters: hasOtherPostFilters,
+    validEnumValues: Object.values(PostCategoryEnum),
+    dedicatedLandingPattern: FACET_CONFIG_BY_ID.postCategory.dedicatedLandingPattern
+});
+const canonicalBaseUrl =
+    facetSeoDecision.canonical.kind === 'dedicatedLanding' &&
+    FACET_CONFIG_BY_ID.postCategory.dedicatedLandingPattern
+        ? buildUrl({
+              locale,
+              path: FACET_CONFIG_BY_ID.postCategory.dedicatedLandingPattern.replace(
+                  '{slug}',
+                  facetSeoDecision.canonical.slug
+              )
+          })
+        : baseUrl;
+
 // Self-canonical for paginated pages (SPEC-157 follow-up). Pages 2+ are served
 // at `/{locale}/publicaciones/page/{n}/` via an Astro.rewrite to this listing
 // with `?page=n`; the rewrite drops the `/page/n/` segment from
 // Astro.url.pathname, so we rebuild the crawlable URL from the page number to
 // keep each paginated page self-canonical and indexable (not canonicalized to
 // page 1).
-const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
+const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalBaseUrl;
 
 /**
  * Build the `filterGroups` config for FilterSidebar.
@@ -206,7 +279,16 @@ const filterGroups = [
         type: 'toggle' as const
     },
     {
-        id: 'category',
+        // HOS-96 T-015: id is the PLURAL array paramKey ('categories',
+        // matching the postCategory facet's `paramKey` in `facet-config.ts`),
+        // not the legacy singular 'category'. `filter-reducer.ts`'s generic
+        // `initStateFromParams`/`buildParamsFromState`/`TOGGLE_CHECKBOX` are
+        // all keyed on `group.id`, so this rename makes 2+ checked categories
+        // serialize as `?categories=A,B` (accepted end-to-end since HOS-96
+        // T-002/T-012) instead of the silently-rejected `?category=A,B`. The
+        // singular `category` param is still accepted on READ elsewhere
+        // (backward compat, US-10) — only the sidebar's own group id changes.
+        id: 'categories',
         label: t('blog.filters.category', 'Categoría'),
         type: 'checkbox' as const,
         options: [
@@ -262,12 +344,19 @@ const sortOptions = [
 
 /**
  * Build the `initialParams` record for FilterSidebar so server-rendered state
- * matches the URL on first paint (avoids hydration flash). Keys match the URL
- * param names emitted by FilterSidebar's reducer.
+ * matches the URL on first paint (avoids hydration flash). Keys match each
+ * `FilterGroup.id`, NOT necessarily the raw URL param name.
+ * `FilterSidebar.client.tsx` seeds its initial state exclusively from THIS
+ * prop (`initStateFromParams({ ..., params: initialParams ?? {} })`) — it
+ * never reads `window.location.search` itself — so the `categories` checkbox
+ * group (HOS-96 T-015 renamed its id from `category` to `categories`) must be
+ * seeded under the `categories` key here, reusing the same
+ * `postCategoryActiveValues` array already computed above for the API fetch
+ * (T-012), or the sidebar would silently desync from the URL on load.
  */
 const sidebarInitialParams: Record<string, string> = {};
 if (q)                          sidebarInitialParams['q'] = q;
-if (category)                   sidebarInitialParams['category'] = category;
+if (postCategoryActiveValues.length > 0) sidebarInitialParams['categories'] = postCategoryActiveValues.join(',');
 if (isFeaturedParam === 'true') sidebarInitialParams['isFeatured'] = 'true';
 if (destinationId)              sidebarInitialParams['destinationId'] = destinationId;
 if (publishedAfterFilter)       sidebarInitialParams['publishedAfter'] = publishedAfterFilter;
@@ -289,22 +378,68 @@ const itemListEntries = cards.map((card) => ({
     name: card.title,
 }));
 
-/** Quick-filter chips: top post categories. Hrefs use lowercase slugs consistent
- * with the [category] route which normalises incoming slugs via resolvePostCategorySlug.
+/** Quick-filter chips: top post categories.
  * BETA-113 (icon parity): each chip's icon is resolved via `@repo/icons`'
  * `getPostCategoryIcon`, the same canonical post-category → icon mapping used
  * elsewhere in the platform (no local mapping needed — every category slug
- * below already exists in `POST_CATEGORY_VISUALS`). */
-const postCategoryChips = [
-    { label: t('blog.categories.culture',    'Cultura'),     href: buildUrl({ locale, path: '/publicaciones/categoria/culture/' }),    icon: getPostCategoryIcon({ category: 'culture' }) },
-    { label: t('blog.categories.gastronomy', 'Gastronomía'), href: buildUrl({ locale, path: '/publicaciones/categoria/gastronomy/' }), icon: getPostCategoryIcon({ category: 'gastronomy' }) },
-    { label: t('blog.categories.nature',     'Naturaleza'),  href: buildUrl({ locale, path: '/publicaciones/categoria/nature/' }),     icon: getPostCategoryIcon({ category: 'nature' }) },
-    { label: t('blog.categories.tourism',    'Turismo'),     href: buildUrl({ locale, path: '/publicaciones/categoria/tourism/' }),    icon: getPostCategoryIcon({ category: 'tourism' }) },
-    { label: t('blog.categories.history',    'Historia'),    href: buildUrl({ locale, path: '/publicaciones/categoria/history/' }),    icon: getPostCategoryIcon({ category: 'history' }) },
-    { label: t('blog.categories.events',     'Eventos'),     href: buildUrl({ locale, path: '/publicaciones/categoria/events/' }),     icon: getPostCategoryIcon({ category: 'events' }) },
-    { label: t('blog.categories.carnival',   'Carnaval'),    href: buildUrl({ locale, path: '/publicaciones/categoria/carnival/' }),   icon: getPostCategoryIcon({ category: 'carnival' }) },
-    { label: t('blog.categories.tips',       'Consejos'),    href: buildUrl({ locale, path: '/publicaciones/categoria/tips/' }),       icon: getPostCategoryIcon({ category: 'tips' }) }
+ * below already exists in `POST_CATEGORY_VISUALS`).
+ *
+ * HOS-96 T-012: the chip href is now a real in-place multi-select toggle on
+ * `categories` (via `buildMultiToggleParamHref`, keyed on the postCategory
+ * facet's `paramKey`) instead of navigating to the dedicated
+ * `/publicaciones/categoria/{slug}/` route — clicking a second chip
+ * accumulates instead of replacing (US-1). The dedicated landing itself
+ * renders no chip row of its own (verified — it fixes the category via the
+ * URL path instead), so there is no "escape from the landing's own chips"
+ * case to handle there; it stays intact and unmodified as the single-value
+ * canonical entry (US-6). `postCategoryActiveValues` (computed once, near
+ * the top of this file) already drives both the `categories` fetch param
+ * above and each chip's `active`/`aria-current` state here. `aria-current`
+ * (not `aria-pressed`) is what `FilterChips.astro` renders — `aria-pressed`
+ * briefly existed here but was removed after the CI a11y sweep flagged it as
+ * an `aria-allowed-attr` violation (invalid on `<a>`).
+ */
+const POST_CATEGORY_CHIP_DEFS = [
+    { value: 'CULTURE',    slug: 'culture',    label: t('blog.categories.culture',    'Cultura') },
+    { value: 'GASTRONOMY', slug: 'gastronomy', label: t('blog.categories.gastronomy', 'Gastronomía') },
+    { value: 'NATURE',     slug: 'nature',     label: t('blog.categories.nature',     'Naturaleza') },
+    { value: 'TOURISM',    slug: 'tourism',    label: t('blog.categories.tourism',    'Turismo') },
+    { value: 'HISTORY',    slug: 'history',    label: t('blog.categories.history',    'Historia') },
+    { value: 'EVENTS',     slug: 'events',     label: t('blog.categories.events',     'Eventos') },
+    { value: 'CARNIVAL',   slug: 'carnival',   label: t('blog.categories.carnival',   'Carnaval') },
+    { value: 'TIPS',       slug: 'tips',       label: t('blog.categories.tips',       'Consejos') }
 ] as const;
+
+const postCategoryChips = POST_CATEGORY_CHIP_DEFS.map(({ value, slug, label }) => {
+    const active = postCategoryActiveValues.includes(value);
+    return {
+        label,
+        href: buildMultiToggleParamHref({
+            baseUrl,
+            searchParams: paginationParams,
+            key: FACET_CONFIG_BY_ID.postCategory.paramKey,
+            value,
+            singularKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey
+        }),
+        icon: getPostCategoryIcon({ category: slug }),
+        active
+    };
+});
+
+// HOS-96 T-010/T-012: "Clear (N)" bulk-reset chip — appears only once 2+
+// categories are active (US-4). HOS-96 pre-merge review: also deletes the
+// legacy singular `category` param, so clearing a mixed/legacy URL fully
+// resets the facet instead of leaving a stale `?category=` behind.
+const postCategoryClearChip = buildClearFacetChip({
+    baseUrl,
+    searchParams: paginationParams,
+    paramKey: FACET_CONFIG_BY_ID.postCategory.paramKey,
+    singularParamKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey,
+    count: postCategoryActiveValues.length,
+    labelTemplate: t('common.filterChips.clearLabel'),
+    ariaLabelTemplate: t('common.filterChips.clearAriaLabel'),
+    icon: XCircleIcon
+});
 ---
 
 <ListingLayout
@@ -312,6 +447,7 @@ const postCategoryChips = [
     title={t('blog.title', 'Publicaciones')}
     description={t('blog.description', 'Artículos sobre cultura, gastronomía, turismo y más del Litoral Entrerriano.')}
     canonicalPath={canonicalPath}
+    noindex={facetSeoDecision.noindex}
     showFilters={true}
     filterPosition="left"
     totalCount={total}
@@ -358,7 +494,7 @@ const postCategoryChips = [
     />
 
     <FilterChips
-        chips={postCategoryChips}
+        chips={postCategoryClearChip ? [...postCategoryChips, postCategoryClearChip] : postCategoryChips}
         ariaLabel={t('blog.categoryChips.ariaLabel', 'Filtrar por categoría de publicación')}
         showScrollButtons
         prevLabel={t('common.prev', 'Anterior')}

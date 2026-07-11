@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { ACCOUNT_NAV_GROUPS } from '../../src/config/navigation';
+
 const accountLayoutSource = readFileSync(
     resolve(__dirname, '../../src/layouts/AccountLayout.astro'),
     'utf8'
@@ -18,19 +20,22 @@ const preferencesSource = readFileSync(
 );
 
 describe('account layout whats-new wiring', () => {
-    it('renders the whats-new badge in the account navigation', () => {
+    it('renders the whats-new count pill in the account navigation', () => {
         expect(accountLayoutSource).toContain(
-            "import { WhatsNewBadge } from '@/components/shared/whats-new/WhatsNewBadge.client';"
+            "import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPill.client';"
         );
         expect(accountLayoutSource).toContain(
-            "section === 'novedades' && <WhatsNewBadge locale={locale} client:idle />"
+            "item.id === 'whatsNew' && <WhatsNewCountPill locale={locale} client:idle />"
         );
     });
 
-    it('maps the edit profile link to the profile tour target', () => {
-        expect(accountLayoutSource).toContain("if (section === 'editar') return 'profile';");
+    it('maps the edit profile link to the profile tour target via the nav config', () => {
+        const editProfileItem = ACCOUNT_NAV_GROUPS.flatMap((group) => group.items).find(
+            (item) => item.id === 'editProfile'
+        );
+        expect(editProfileItem?.tourTarget).toBe('profile');
         expect(accountLayoutSource).toContain(
-            "{...(tourTarget ? { 'data-tour': tourTarget } : {})}"
+            "{...(item.tourTarget ? { 'data-tour': item.tourTarget } : {})}"
         );
     });
 

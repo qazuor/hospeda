@@ -12,6 +12,7 @@ import { publicGetPostsByRelatedEventRoute } from './getByRelatedEvent';
 import { publicGetPostBySlugRoute } from './getBySlug';
 import { publicGetFeaturedPostsRoute } from './getFeatured';
 import { publicGetNewsPostsRoute } from './getNews';
+import { publicPostRssRedirectRoute } from './getRssRedirect';
 import { publicGetPostStatsRoute } from './getStats';
 import { publicGetPostSummaryRoute } from './getSummary';
 import { publicListPostsRoute } from './list';
@@ -34,6 +35,10 @@ app.route('/', publicGetFeaturedPostsRoute);
 
 // GET /stats - Get statistics
 app.route('/', publicGetPostStatsRoute);
+
+// GET /slug/rss.xml - Redirect legacy RSS probes to the web feed (HOS-109 T-011).
+// MUST be registered before /slug/:slug so Hono matches this static path first.
+app.route('/', publicPostRssRedirectRoute);
 
 // GET /slug/:slug - Get by slug
 app.route('/', publicGetPostBySlugRoute);

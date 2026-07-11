@@ -117,8 +117,10 @@ import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction.js';
+import { DEFAULT_TRIAL_PLAN_SLUG } from '../billing/addon/trial.types.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
+import { PointOfInterestService } from '../point-of-interest/point-of-interest.service';
 import {
     flattenAccommodationJoinRelations,
     flattenAccommodationJoinRelationsList,
@@ -147,6 +149,7 @@ import {
     checkCanVerify,
     checkCanView
 } from './accommodation.permissions';
+import { resolvePoiToCoordinates } from './accommodation.poi-proximity.helper';
 import {
     applyAccommodationLocationPrivacy,
     applyAccommodationLocationPrivacyList,
@@ -335,6 +338,14 @@ export class AccommodationService extends BaseCrudService<
     private readonly _accommodationMediaModel: AccommodationMediaModel;
 
     /**
+     * Service used to resolve a `poiId`/`poiSlug` accommodation-search
+     * parameter to coordinates (HOS-113 §6.2, T-033). Composed the same way
+     * as `destinationService`/`conversationService` — always constructed
+     * (optionally injectable for unit tests), never lazily instantiated.
+     */
+    private readonly pointOfInterestService: PointOfInterestService;
+
+    /**
      * Initializes a new instance of the AccommodationService.
      * @param ctx - The service context, containing the logger.
      * @param model - Optional AccommodationModel instance (for testing/mocking).
@@ -349,6 +360,8 @@ export class AccommodationService extends BaseCrudService<
      * @param accommodationMediaModel - Optional media model for `accommodation_media` (for testing/mocking).
      *   When omitted, a default `AccommodationMediaModel` is instantiated. Pass a mock in unit tests
      *   to avoid requiring a real database connection when the payload includes a `media` field.
+     * @param pointOfInterestService - Optional `PointOfInterestService` instance (for testing/mocking).
+     *   Used to resolve `poiId`/`poiSlug` accommodation-search params (HOS-113 T-033).
      */
     constructor(
         ctx: ServiceConfig,
@@ -360,7 +373,8 @@ export class AccommodationService extends BaseCrudService<
         rFeatureModel?: RAccommodationFeatureModel,
         amenityModel?: AmenityModel,
         featureCatalogModel?: FeatureModel,
-        accommodationMediaModel?: AccommodationMediaModel
+        accommodationMediaModel?: AccommodationMediaModel,
+        pointOfInterestService?: PointOfInterestService
     ) {
         super(ctx, AccommodationService.ENTITY_NAME);
         this.model = model ?? new AccommodationModel();
@@ -383,6 +397,7 @@ export class AccommodationService extends BaseCrudService<
         // SPEC-204 T-007: shadow-write to accommodation_media on every create/update.
         // Injectable for unit tests that need to mock DB operations (see FIX 1 note).
         this._accommodationMediaModel = accommodationMediaModel ?? new AccommodationMediaModel();
+        this.pointOfInterestService = pointOfInterestService ?? new PointOfInterestService(ctx);
     }
 
     /**
@@ -1661,7 +1676,12 @@ export class AccommodationService extends BaseCrudService<
                                     subscriptionId: trialSubscriptionId,
                                     accommodationId: id,
                                     ownerId: accommodation.ownerId,
-                                    planSlug: 'owner-basico',
+                                    // The publish flow always starts the trial on the
+                                    // default plan (`AccommodationPublishDeps.startTrial`
+                                    // never threads a `planSlug`), so this constant IS the
+                                    // actual slug used — shared single source of truth
+                                    // with `TrialService.startTrial`'s own default (HOS-110).
+                                    planSlug: DEFAULT_TRIAL_PLAN_SLUG,
                                     eligibility
                                 },
                                 '[accommodation.publish] trial subscription linkage'
@@ -2085,6 +2105,79 @@ export class AccommodationService extends BaseCrudService<
             }
         }
         return result;
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * HOS-113 §6.2 — "near POI" proximity search (T-033/T-034). When the
+     * caller supplies `poiId`/`poiSlug`, resolves it via
+     * {@link resolvePoiToCoordinates} and feeds the result into the SAME
+     * `latitude`/`longitude`/`radius`/`sorts` params the EXISTING geo-search
+     * path already consumes (`AccommodationModel.search`/`searchWithRelations`,
+     * backed by `@repo/db`'s `geo.ts` — NG-2, zero new distance SQL).
+     *
+     * Precedence rules (T-034):
+     * - `poiId` AND `poiSlug` together is a 400 `VALIDATION_ERROR` — a single
+     *   POI-reference entry point, not two that could disagree.
+     * - A resolved POI is a MORE SPECIFIC intent signal than an explicit
+     *   `latitude`/`longitude` also present in the same request, so its
+     *   coordinates always WIN, silently overriding any conflicting explicit
+     *   coordinates (not a validation error — documented behavior).
+     * - An unresolvable `poiId`/`poiSlug` (no matching POI) is a 404
+     *   `NOT_FOUND` — the search does NOT silently fall through to an
+     *   unfiltered or empty result, so a typo'd slug is visible to the caller.
+     *
+     * When no explicit `sorts` was requested, defaults to ranking by
+     * `distance` ascending (AC-4 — "near POI" results are ranked by
+     * proximity by default); an explicit `sorts` from the caller is always
+     * respected instead.
+     *
+     * @param params - The search parameters, potentially carrying `poiId`/`poiSlug`.
+     * @param actor - The actor performing the search (forwarded to the POI read).
+     * @param ctx - Service execution context (transaction propagation).
+     * @returns The search parameters with `poiId`/`poiSlug` resolved into
+     *   `latitude`/`longitude`/`radius` (and a default distance sort).
+     */
+    protected override async _beforeSearch(
+        params: AccommodationSearchInput,
+        actor: Actor,
+        ctx: ServiceContext
+    ): Promise<AccommodationSearchInput> {
+        if (!params.poiId && !params.poiSlug) {
+            return params;
+        }
+        if (params.poiId && params.poiSlug) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'Provide either poiId or poiSlug for a "near POI" search, not both'
+            );
+        }
+
+        const resolution = await resolvePoiToCoordinates(
+            { poiId: params.poiId, poiSlug: params.poiSlug, radius: params.radius },
+            actor,
+            this.pointOfInterestService,
+            ctx
+        );
+
+        if (!resolution.found) {
+            throw new ServiceError(
+                ServiceErrorCode.NOT_FOUND,
+                'Point of interest not found for the given poiId/poiSlug'
+            );
+        }
+
+        return {
+            ...params,
+            latitude: resolution.lat,
+            longitude: resolution.long,
+            radius: resolution.radiusKm,
+            sorts:
+                params.sorts && params.sorts.length > 0
+                    ? params.sorts
+                    : [{ field: 'distance', order: 'asc' as const }]
+        };
     }
 
     // --- Core Logic ---

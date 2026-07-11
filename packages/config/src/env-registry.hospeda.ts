@@ -563,6 +563,7 @@ export const HOSPEDA_ENV_VARS = [
             'Clave maestra AES-256-GCM para el vault de credenciales de IA (solo apps/api). Cifra/descifra las API keys de proveedores en reposo. Mínimo 32 caracteres (Zod). Opcional hasta que las features de IA estén cableadas en todos los entornos.',
         type: 'string',
         required: false,
+        requiredScope: 'production',
         secret: true,
         exampleValue: 'your-aes-256-gcm-master-key-min-32-chars-xxxxxxxx',
         apps: ['api'],
@@ -2057,11 +2058,12 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_SOCIAL_VAULT_MASTER_KEY',
         description:
-            'AES-256-GCM master key for the social credentials vault (apps/api only). Encrypts/decrypts make_webhook_url, make_api_key, ai_social_key, and operator_pin at rest. Min 32 chars (Zod). Separate blast radius from HOSPEDA_AI_VAULT_MASTER_KEY — do not reuse. Optional until the social vault data migration (T-025/T-033) runs.',
+            'AES-256-GCM master key for the social credentials vault (apps/api only). Encrypts/decrypts make_webhook_url, make_api_key, ai_social_key, and operator_pin at rest. Min 32 chars (Zod). Separate blast radius from HOSPEDA_AI_VAULT_MASTER_KEY — do not reuse. REQUIRED in production (enforced by the env.ts superRefine): without it the API boots but every social credential save/rotate fails with a 500. Optional only in local/test.',
         descriptionEs:
-            'Clave maestra AES-256-GCM para el vault de credenciales sociales (solo apps/api). Cifra/descifra make_webhook_url, make_api_key, ai_social_key y operator_pin en reposo. Mínimo 32 caracteres (Zod). Radio de impacto separado de HOSPEDA_AI_VAULT_MASTER_KEY — no reutilizar. Opcional hasta que corra la migración de datos del vault social (T-025/T-033).',
+            'Clave maestra AES-256-GCM para el vault de credenciales sociales (solo apps/api). Cifra/descifra make_webhook_url, make_api_key, ai_social_key y operator_pin en reposo. Mínimo 32 caracteres (Zod). Radio de impacto separado de HOSPEDA_AI_VAULT_MASTER_KEY — no reutilizar. REQUERIDA en producción (la impone el superRefine de env.ts): sin ella la API arranca pero todo guardado/rotación de credencial social falla con un 500. Opcional solo en local/test.',
         type: 'string',
         required: false,
+        requiredScope: 'production',
         secret: true,
         exampleValue: 'your-aes-256-gcm-master-key-min-32-chars-yyyyyyyy',
         apps: ['api'],

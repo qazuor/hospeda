@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "009-point-of-interest-complejo_termal_concordia",
+    "slug": "complejo_termal_concordia",
+    "lat": -31.4008,
+    "long": -58.0209,
+    "type": "OTHER",
+    "description": "Parque termal con piscinas de aguas mineromedicinales en la ciudad de Concordia",
+    "icon": "hot_tub",
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 65,
+    "lifecycleState": "ACTIVE"
+}

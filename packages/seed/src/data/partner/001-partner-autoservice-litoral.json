@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/partner.schema.json",
+    "id": "001-partner-autoservice-litoral",
+    "slug": "autoservice-litoral",
+    "name": "AutoService Litoral",
+    "type": "commerce",
+    "tier": "gold",
+    "logoUrl": "https://images.pexels.com/photos/3806288/pexels-photo-3806288.jpeg",
+    "websiteUrl": "https://www.autoservicelitoral.com.ar",
+    "description": "Cadena de talleres mecánicos y service de neumáticos con sucursales en Concepción del Uruguay, Colón y Gualeguaychú. Más de 20 años acompañando a turistas y locales con asistencia mecánica, alineación y balanceo, y auxilio en ruta las 24 horas.",
+    "subscriptionStatus": "active",
+    "lifecycleState": "ACTIVE",
+    "startsAt": "2025-02-01T00:00:00.000Z"
+}

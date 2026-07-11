@@ -16,6 +16,8 @@
             "legalRequired": "Você precisa confirmar o aviso legal.",
             "submit": "Não foi possível importar a acomodação. Tente novamente.",
             "network": "Não foi possível conectar ao servidor.",
+            "forbidden": "Você não tem permissão para importar de uma URL. Verifique se seu plano inclui isso.",
+            "rateLimit": "Você fez muitas importações seguidas. Aguarde um momento e tente novamente.",
             "failure": {
                 "invalidUrl": "Verifique se a URL é válida e corresponde a uma acomodação.",
                 "sourceBlocked": "A fonte está temporariamente indisponível. Aguarde alguns minutos e tente novamente, ou preencha os dados manualmente.",
@@ -210,12 +212,18 @@
                 "confirmNo": "Cancelar",
                 "delete": "Excluir",
                 "deleteConfirm": "Excluir este imóvel? Ele será removido da sua lista e do site.",
-                "deleteYes": "Sim, excluir"
+                "deleteYes": "Sim, excluir",
+                "publishConfirmTitle": "14 dias grátis ao publicar",
+                "publishConfirmNote": "Ao publicar começa seu período de avaliação gratuito de 14 dias. Sem cartão, sem compromisso.",
+                "publishYes": "Sim, publicar"
             },
             "pricePerNight": "[TODO]",
             "unpublishSuccess": "Imóvel despublicado",
             "unpublishError": "Não foi possível despublicar. Tente novamente.",
             "deleteError": "Não foi possível excluir. Tente novamente.",
+            "publishError": "Não foi possível publicar. Tente novamente.",
+            "publishSubscriptionRequiredMessage": "Você já usou seu período de avaliação gratuito de 14 dias. Assine um plano para publicar este imóvel.",
+            "publishSubscriptionRequiredCta": "Ver planos",
             "priceOnRequest": "Preço a consultar"
         },
         "editor": {
@@ -229,7 +237,11 @@
                 "socialNetworks": "Redes sociais",
                 "photos": "Fotos",
                 "photosDescription": "Faça upload de fotos do seu imóvel para atrair mais hóspedes",
+                "externalReputation": "Reputação externa",
                 "featuredToggle": "[PT] Destacado"
+            },
+            "sectionNav": {
+                "ariaLabel": "Navegação de seções do formulário"
             },
             "field": {
                 "name": "Nome",
@@ -246,9 +258,15 @@
                 "bathrooms": "Banheiros",
                 "price": "Preço por noite",
                 "currency": "Moeda",
+                "currencyFixedArs": "ARS — Peso argentino",
                 "amenities": "Comodidades",
                 "features": "Recursos",
                 "phone": "Telefone",
+                "phoneCountry": "País",
+                "phoneCountrySearchPlaceholder": "Buscar país...",
+                "phoneCountryNoResults": "Nenhum país encontrado",
+                "phoneNumber": "Número",
+                "whatsapp": "WhatsApp",
                 "email": "Email",
                 "website": "Site",
                 "facebook": "Facebook",

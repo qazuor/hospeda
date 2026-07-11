@@ -130,3 +130,62 @@ describe('DestinationWeatherIsland (US-3 graceful degradation)', () => {
         expect(screen.getByText('3mm')).toBeInTheDocument();
     });
 });
+
+// ─── HOS-117 T-005: SSR-first seasonal fallback ───────────────────────────────
+
+describe('DestinationWeatherIsland — SSR-first seasonal fallback (HOS-117 T-005)', () => {
+    beforeEach(() => {
+        global.fetch = vi.fn() as unknown as typeof fetch;
+    });
+    afterEach(() => vi.restoreAllMocks());
+
+    const seasonalFallback = { seasonKey: 'autumn', avgTempMinC: 10.4, avgTempMaxC: 20.6 };
+
+    it('renders the seasonal average as text in the loading state (what SSR emits)', () => {
+        // Fetch never resolves → stays in the loading state, which is exactly the
+        // HTML a no-JS crawler receives. It must contain real climate text.
+        (global.fetch as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
+        render(
+            <DestinationWeatherIsland
+                locale="es"
+                destinationId="d1"
+                apiUrl="http://api.test"
+                seasonalFallback={seasonalFallback}
+            />
+        );
+        const status = screen.getByRole('status');
+        expect(status).toHaveAttribute('aria-busy', 'true');
+        // mock t() returns the fallback string, so the season key resolves to 'autumn'
+        expect(status.textContent).toContain('autumn');
+        expect(status.textContent).toContain('10° / 21°C');
+    });
+
+    it('renders an empty skeleton in loading when no seasonalFallback is provided', () => {
+        (global.fetch as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
+        render(
+            <DestinationWeatherIsland
+                locale="es"
+                destinationId="d1"
+                apiUrl="http://api.test"
+            />
+        );
+        const status = screen.getByRole('status');
+        expect(status).toHaveAttribute('aria-busy', 'true');
+        // The skeleton is a decorative empty div — no climate text.
+        expect(status.textContent).toBe('');
+    });
+
+    it('shows the seasonal average (not the unavailable line) when live data fails but a fallback exists', async () => {
+        (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('network'));
+        render(
+            <DestinationWeatherIsland
+                locale="es"
+                destinationId="d1"
+                apiUrl="http://api.test"
+                seasonalFallback={seasonalFallback}
+            />
+        );
+        await waitFor(() => expect(screen.getByText('autumn')).toBeInTheDocument());
+        expect(screen.queryByText(UNAVAILABLE)).not.toBeInTheDocument();
+    });
+});

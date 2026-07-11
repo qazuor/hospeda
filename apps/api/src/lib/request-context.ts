@@ -11,6 +11,10 @@
  * - No logger imports — this module must remain dependency-free so it can be
  *   consumed by SPEC-180 (Sentry) and the app-log DB sink without cycles.
  * - No ip / user-agent — explicitly excluded (PII).
+ * - `visitorId` is an opaque random UUID (see {@link ../middlewares/visitor-id.ts}),
+ *   NOT PII — it identifies a browser session cookie, never a real person,
+ *   and carries no personal data. Same exclusion rationale as above does NOT
+ *   apply to it.
  * - MUTABLE store object so downstream middlewares can enrich it in-place
  *   without re-running the ALS.
  *
@@ -40,6 +44,19 @@ export interface RequestContextStore {
     userId?: string;
     /** Authenticated user role string — set after actor resolution. */
     role?: string;
+    /**
+     * Better Auth session ID — set alongside `userId`/`role` at actor
+     * resolution when the request carries a resolved session. `undefined`
+     * for guest/anonymous requests.
+     */
+    sessionId?: string;
+    /**
+     * Opaque, non-PII visitor identifier read from (or newly generated into)
+     * the `hospeda_vid` session cookie — set by the visitor-id middleware.
+     * Allows grouping anonymous requests from the same browser session even
+     * without an authenticated user.
+     */
+    visitorId?: string;
 }
 
 /**
@@ -60,6 +77,22 @@ export interface SetRequestContextActorInput {
     userId: string;
     /** Authenticated user role string. */
     role: string;
+    /**
+     * Better Auth session ID, when the request carries a resolved session.
+     * Set at the same seam as `userId`/`role` (actor middleware), so the
+     * three fields land on the store together. Omitted for requests with no
+     * session (should not happen when `userId`/`role` are set, but the field
+     * stays optional for forward compatibility).
+     */
+    sessionId?: string;
+}
+
+/**
+ * Input shape for {@link setRequestContextVisitor}.
+ */
+export interface SetRequestContextVisitorInput {
+    /** Opaque, non-PII visitor identifier from the `hospeda_vid` cookie. */
+    visitorId: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -131,12 +164,13 @@ export function getRequestContext(): RequestContextStore | undefined {
  * unauthenticated code paths or unit tests that don't run the middleware),
  * so it is always safe to call unconditionally.
  *
- * @param input - Actor identity to attach to the current request context.
+ * @param input - Actor identity (and, when available, session ID) to attach
+ * to the current request context.
  *
  * @example
  * ```ts
  * // Inside actor middleware, after resolving the authenticated user:
- * setRequestContextActor({ userId: user.id, role: user.role });
+ * setRequestContextActor({ userId: user.id, role: user.role, sessionId: session.id });
  * ```
  */
 export function setRequestContextActor(input: SetRequestContextActorInput): void {
@@ -148,4 +182,34 @@ export function setRequestContextActor(input: SetRequestContextActorInput): void
     }
     store.userId = input.userId;
     store.role = input.role;
+    if (input.sessionId !== undefined) {
+        store.sessionId = input.sessionId;
+    }
+}
+
+/**
+ * Mutates the active request's store to record the anonymous visitor ID.
+ *
+ * This is a no-op when called outside an active ALS scope, so it is always
+ * safe to call unconditionally. Set by the visitor-id middleware for BOTH
+ * authenticated and guest requests — an authenticated request can still have
+ * a `visitorId` (the same browser session), giving operators a way to
+ * correlate an authenticated user's requests with any anonymous requests
+ * from the same browser session before login.
+ *
+ * @param input - The visitor ID to attach to the current request context.
+ *
+ * @example
+ * ```ts
+ * // Inside the visitor-id middleware, after resolving/generating the cookie:
+ * setRequestContextVisitor({ visitorId });
+ * ```
+ */
+export function setRequestContextVisitor(input: SetRequestContextVisitorInput): void {
+    const store = requestContextStorage.getStore();
+    if (!store) {
+        // No active scope — no-op.
+        return;
+    }
+    store.visitorId = input.visitorId;
 }

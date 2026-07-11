@@ -24,6 +24,7 @@ const ENTITY_FOLDER_MAP: Record<string, string> = {
     destinationReviews: 'destinationReview',
     postSponsorships: 'postSponsorship',
     postSponsors: 'postSponsor',
+    partners: 'partner',
     eventOrganizers: 'eventOrganizer',
     eventLocations: 'eventLocation',
     userBookmarkCollections: 'userBookmarkCollection',
@@ -36,7 +37,8 @@ const ENTITY_FOLDER_MAP: Record<string, string> = {
     hostTrades: 'hostTrade',
     gastronomies: 'gastronomy',
     gastronomyFaqs: 'gastronomy/faqs',
-    gastronomyReviews: 'gastronomy/reviews'
+    gastronomyReviews: 'gastronomy/reviews',
+    pointsOfInterest: 'pointOfInterest'
 };
 
 /**

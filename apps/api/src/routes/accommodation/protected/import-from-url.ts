@@ -52,7 +52,6 @@ import {
     AccommodationImportRequestSchema,
     AccommodationImportResponseSchema,
     type LanguageEnum,
-    PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
@@ -299,8 +298,12 @@ export function buildImportFromUrlDispatchResponse(
 /**
  * Protected route: `POST /api/v1/protected/accommodations/import-from-url`.
  *
- * `requiredPermissions` is intentionally omitted — the create/update OR check
- * is done in the handler (the factory's AND semantics cannot express it).
+ * Authenticated-user only — no accommodation permission is required (BETA-153).
+ * This is a stateless pre-creation helper: it scrapes an external listing and
+ * returns a per-field draft, persisting nothing. It deliberately mirrors the
+ * auth model of `host-onboarding/start`, so a plain USER publishing their first
+ * listing can import BEFORE the USER -> HOST promotion that happens later on the
+ * mini-form submit. Abuse is bounded by auth + the per-user rate limit.
  */
 export const protectedImportFromUrlRoute = createProtectedRoute({
     method: 'post',
@@ -336,17 +339,12 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
     ) => {
         const actor = getActorFromContext(ctx);
 
-        // Authorization: create OR update.own OR update.any (OR semantics).
-        const canImport =
-            actor.permissions.includes(PermissionEnum.ACCOMMODATION_CREATE) ||
-            actor.permissions.includes(PermissionEnum.ACCOMMODATION_UPDATE_OWN) ||
-            actor.permissions.includes(PermissionEnum.ACCOMMODATION_UPDATE_ANY);
-        if (!canImport) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: importing accommodation data requires create or update permission.'
-            );
-        }
+        // Authorization: authenticated-user only (BETA-153). No accommodation
+        // permission is required — this endpoint persists nothing (pure scrape +
+        // draft return) and shares the auth model of `host-onboarding/start`, so a
+        // plain USER can import their first listing BEFORE the USER -> HOST
+        // promotion that happens on the mini-form submit. Auth is already
+        // guaranteed by the protected-route tier; the per-user rate limit caps abuse.
 
         const input = body as AccommodationImportRequest;
 

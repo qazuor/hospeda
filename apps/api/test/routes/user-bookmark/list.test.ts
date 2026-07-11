@@ -1,3 +1,4 @@
+import { EntityTypeEnum } from '@repo/schemas';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app.js';
 import type { AppOpenAPI } from '../../../src/types.js';
@@ -182,6 +183,33 @@ describe('GET /api/v1/protected/user-bookmarks (list user bookmarks)', () => {
             }
         }
     });
+
+    // Regression test (BETA-xxx): entityType query validation used a stale
+    // hand-written enum missing GASTRONOMY/EXPERIENCE, causing a spurious 400
+    // for those tabs in the favorites UI. Iterate the full shared enum so this
+    // can't silently go stale again if the enum grows further.
+    for (const entityType of Object.values(EntityTypeEnum)) {
+        it(`accepts entityType=${entityType} query param (never 400, per the full shared EntityTypeEnum)`, async () => {
+            try {
+                const res = await app.request(`${base}?entityType=${entityType}`, {
+                    method: 'GET',
+                    headers: {
+                        'user-agent': 'vitest',
+                        accept: 'application/json'
+                    }
+                });
+
+                expect(res.status).not.toBe(400);
+                expect([200, 401, 403]).toContain(res.status);
+            } catch (error: unknown) {
+                if (error && typeof error === 'object' && 'status' in error) {
+                    expect([401, 403]).toContain((error as { status: number }).status);
+                } else {
+                    throw error;
+                }
+            }
+        });
+    }
 
     it('accepts combined entityType and pagination params', async () => {
         try {

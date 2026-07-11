@@ -61,6 +61,7 @@ vi.mock('@/lib/urls', () => ({
 const defaultHookReturn = {
     messages: [] as Array<{ role: 'user' | 'assistant'; content: string }>,
     currentFilters: null,
+    lastSearchParams: null,
     results: [] as Array<{
         id: string;
         slug: string;
@@ -73,10 +74,12 @@ const defaultHookReturn = {
         cityDestination: null;
     }>,
     resultsLoading: false,
+    hasSearched: false,
     currentReply: '',
     isStreaming: false,
     conversationId: null,
     confidence: null,
+    nearbyDestinations: [] as Array<{ id: string; name: string; slug: string }>,
     lastTurnHadEntities: false,
     error: null,
     errorStatus: null,
@@ -96,7 +99,15 @@ vi.mock('../../src/components/ai-search/useSearchChat', () => ({
         send: mockSend,
         abort: mockAbort,
         reset: mockReset
-    }))
+    })),
+    // ActiveFilterChips (rendered for real, not mocked, by SearchChatPanel)
+    // imports this map directly from useSearchChat — the mock must re-export
+    // it so that import doesn't fail.
+    INTENT_TO_PARAM_KEY: {
+        accommodationType: 'type',
+        amenitySlugs: 'amenities',
+        featureSlugs: 'features'
+    }
 }));
 
 // Import after mocks are set up.
@@ -145,9 +156,15 @@ describe('SearchChatPanel', () => {
     // ── Initial empty state ─────────────────────────────────────────────────
 
     describe('Initial empty state', () => {
-        it('renders the panel title', () => {
+        // HOS-111 T-001: the panel used to render its own "Búsqueda
+        // conversacional" heading, duplicating the drawer's "Búsqueda
+        // inteligente" title. The panel no longer owns a title at all — the
+        // drawer wrapper (AiSearchEntry) is the single source of the visible
+        // heading now.
+        it('does NOT render its own heading (unified into the drawer header, HOS-111 T-001)', () => {
             renderPanel();
-            expect(screen.getByText('Búsqueda conversacional')).toBeInTheDocument();
+            expect(screen.queryByText('Búsqueda conversacional')).not.toBeInTheDocument();
+            expect(screen.queryAllByRole('heading')).toHaveLength(0);
         });
 
         it('renders empty-state message before first turn', () => {
@@ -211,6 +228,31 @@ describe('SearchChatPanel', () => {
                 )
             ).not.toBeInTheDocument();
         });
+
+        // ── Assistant markdown rendering (bug fix) ──────────────────────────
+        //
+        // Regression coverage: assistant replies used to render as a plain
+        // React text child, so markdown markers (**bold**) showed up
+        // literally instead of being interpreted.
+
+        it('renders markdown emphasis in a completed assistant message as HTML, not literal asterisks', () => {
+            mockHook({
+                messages: [{ role: 'assistant', content: 'Encontré **3 opciones** para vos.' }]
+            });
+            renderPanel();
+            const reply = screen.getByTestId('ai-search-reply');
+            expect(reply.innerHTML).toContain('<strong>3 opciones</strong>');
+            expect(reply.textContent).not.toContain('**');
+        });
+
+        it('does NOT render markdown for a user message (kept as plain text)', () => {
+            mockHook({
+                messages: [{ role: 'user', content: 'busco **algo** con pileta' }]
+            });
+            renderPanel();
+            // The literal asterisks must survive untouched for user bubbles.
+            expect(screen.getByText('busco **algo** con pileta')).toBeInTheDocument();
+        });
     });
 
     // ── Streaming reply ─────────────────────────────────────────────────────
@@ -259,6 +301,16 @@ describe('SearchChatPanel', () => {
             mockHook({ isStreaming: false, currentReply: '' });
             renderPanel();
             expect(screen.queryByRole('status', { name: /pensando/i })).not.toBeInTheDocument();
+        });
+
+        it('renders markdown emphasis in the live-streamed reply as HTML, not literal asterisks', () => {
+            mockHook({
+                isStreaming: true,
+                currentReply: 'Aquí tenés **algunas opciones**'
+            });
+            renderPanel();
+            const bubble = document.querySelector('.streaming');
+            expect(bubble?.innerHTML).toContain('<strong>algunas opciones</strong>');
         });
     });
 
@@ -317,10 +369,187 @@ describe('SearchChatPanel', () => {
             expect(screen.getByText('Consultar precio')).toBeInTheDocument();
         });
 
-        it('does NOT render results section when results is empty and not loading', () => {
-            mockHook({ results: [], resultsLoading: false });
+        // ── Compact card + overlaid badges (HOS-111 T-002) ──────────────────
+
+        it('renders the type badge overlaid on the photo, not in a separate meta row', () => {
+            mockHook({ results: [mockResults[0]] as ReturnType<typeof useSearchChat>['results'] });
+            renderPanel();
+            expect(screen.getByTestId('ai-search-result-type-badge')).toHaveTextContent('CABIN');
+        });
+
+        it('renders a single star + numeric rating badge overlaid on the photo', () => {
+            mockHook({ results: [mockResults[0]] as ReturnType<typeof useSearchChat>['results'] });
+            renderPanel();
+            const badge = screen.getByTestId('ai-search-result-rating-badge');
+            // Single numeric value — no repeated star glyphs.
+            expect(badge.textContent).toContain('4.5');
+            expect(badge.textContent?.match(/★/g)?.length ?? 0).toBeLessThanOrEqual(1);
+        });
+
+        it('does NOT render a rating badge when the accommodation has no rating', () => {
+            mockHook({ results: [mockResults[1]] as ReturnType<typeof useSearchChat>['results'] });
+            renderPanel();
+            expect(screen.queryByTestId('ai-search-result-rating-badge')).not.toBeInTheDocument();
+        });
+
+        it('applies the compact card layout class', () => {
+            mockHook({ results: [mockResults[0]] as ReturnType<typeof useSearchChat>['results'] });
+            renderPanel();
+            const link = screen.getByRole('link', { name: 'Cabaña Río Verde' });
+            expect(link.className).toContain('resultCardCompact');
+        });
+
+        it('does NOT render results section when results is empty and not loading and no search has run', () => {
+            mockHook({ results: [], resultsLoading: false, hasSearched: false });
             renderPanel();
             expect(screen.queryByText('Resultados')).not.toBeInTheDocument();
+        });
+
+        // ── Zero-results empty state (bug fix) ──────────────────────────────
+        //
+        // Regression coverage: previously `showResults` only considered
+        // `results.length > 0 || resultsLoading`, so a completed search with
+        // ZERO matches (resultsLoading false, results empty, hasSearched
+        // true) rendered nothing at all — the drawer looked exactly like the
+        // "never searched" empty state, and the `resultsEmpty` copy was
+        // unreachable dead code.
+
+        it('renders the results section with an empty-state message once a search has run and matched zero results', () => {
+            mockHook({ results: [], resultsLoading: false, hasSearched: true });
+            renderPanel();
+            expect(screen.getByTestId('ai-search-results')).toBeInTheDocument();
+            expect(screen.getByTestId('ai-search-results-empty')).toBeInTheDocument();
+        });
+
+        it('does NOT render the zero-results empty state before any search has run', () => {
+            mockHook({ results: [], resultsLoading: false, hasSearched: false });
+            renderPanel();
+            expect(screen.queryByTestId('ai-search-results-empty')).not.toBeInTheDocument();
+        });
+
+        it('does NOT render the zero-results empty state while a search is still loading', () => {
+            mockHook({ results: [], resultsLoading: true, hasSearched: true });
+            renderPanel();
+            expect(screen.queryByTestId('ai-search-results-empty')).not.toBeInTheDocument();
+        });
+
+        it('prefers the results grid over the empty state once results arrive after hasSearched is true', () => {
+            mockHook({
+                results: mockResults as ReturnType<typeof useSearchChat>['results'],
+                resultsLoading: false,
+                hasSearched: true
+            });
+            renderPanel();
+            expect(screen.queryByTestId('ai-search-results-empty')).not.toBeInTheDocument();
+            expect(screen.getByText('Cabaña Río Verde')).toBeInTheDocument();
+        });
+
+        // ── Results surface background (HOS-111 T-003) ──────────────────────
+
+        it('applies the resultsSurface background class to the results container', () => {
+            mockHook({ results: mockResults as ReturnType<typeof useSearchChat>['results'] });
+            renderPanel();
+            expect(screen.getByTestId('ai-search-results').className).toContain('resultsSurface');
+        });
+
+        // ── Prominent results count (HOS-111 T-004) ──────────────────────────
+
+        describe('Prominent results count', () => {
+            it('renders the count matching the number of results', () => {
+                mockHook({ results: mockResults as ReturnType<typeof useSearchChat>['results'] });
+                renderPanel();
+                expect(screen.getByTestId('ai-search-results-count')).toHaveTextContent('2');
+            });
+
+            it('updates the count when the results array length changes', () => {
+                mockHook({
+                    results: [mockResults[0]] as ReturnType<typeof useSearchChat>['results']
+                });
+                const { rerender } = renderPanel();
+                expect(screen.getByTestId('ai-search-results-count')).toHaveTextContent('1');
+
+                mockHook({ results: mockResults as ReturnType<typeof useSearchChat>['results'] });
+                rerender(
+                    <SearchChatPanel
+                        locale="es"
+                        apiUrl="http://localhost:3001"
+                        isAuthenticated={true}
+                        currentUrl="http://localhost:4321/es/alojamientos"
+                    />
+                );
+                expect(screen.getByTestId('ai-search-results-count')).toHaveTextContent('2');
+            });
+
+            it('does NOT render the count while results are loading', () => {
+                mockHook({ resultsLoading: true, results: [] });
+                renderPanel();
+                expect(screen.queryByTestId('ai-search-results-count')).not.toBeInTheDocument();
+            });
+        });
+
+        // ── HOS-111 T-014: nearby destinations indicator (G-9) ─────────────────
+
+        describe('Nearby destinations indicator', () => {
+            it('renders the included destination names when nearbyDestinations is non-empty', () => {
+                mockHook({
+                    nearbyDestinations: [
+                        { id: 'dest-1', name: 'Pueblo Liebig', slug: 'pueblo-liebig' },
+                        { id: 'dest-2', name: 'San José', slug: 'san-jose' },
+                        {
+                            id: 'dest-3',
+                            name: 'Concepción del Uruguay',
+                            slug: 'concepcion-del-uruguay'
+                        }
+                    ]
+                });
+                renderPanel();
+                const indicator = screen.getByTestId('ai-search-nearby-destinations');
+                expect(indicator).toHaveTextContent('Pueblo Liebig');
+                expect(indicator).toHaveTextContent('San José');
+                expect(indicator).toHaveTextContent('Concepción del Uruguay');
+            });
+
+            it('does NOT render the indicator when nearbyDestinations is empty (normal, non-expanded turn)', () => {
+                mockHook({ nearbyDestinations: [] });
+                renderPanel();
+                expect(
+                    screen.queryByTestId('ai-search-nearby-destinations')
+                ).not.toBeInTheDocument();
+            });
+        });
+
+        // ── Bug #8 regression: multi-column grid vs empty-state (HOS-111 T-008) ──
+        //
+        // Confirmed diagnosis (per spec §6): the "2 columns → 1 column" report
+        // was never a `.resultsGrid` CSS regression — it was the empty-state
+        // paragraph (full-width, not a grid at all) rendering on a 0-result
+        // refinement and reading as "the grid collapsed". These two tests lock
+        // in the distinction: >1 result always renders the real grid; 0
+        // results always renders the (visually distinct, T-003) empty-state
+        // card — never the other way around.
+
+        describe('Bug #8 regression — grid vs empty-state distinction', () => {
+            it('renders a real multi-item <ul> grid (not the empty-state) when there is more than one result', () => {
+                mockHook({
+                    results: mockResults as ReturnType<typeof useSearchChat>['results'],
+                    resultsLoading: false,
+                    hasSearched: true
+                });
+                renderPanel();
+                const grid = screen.getByRole('list', { name: /resultados encontrados/i });
+                expect(grid.className).toContain('resultsGrid');
+                expect(within(grid).getAllByRole('listitem')).toHaveLength(2);
+                expect(screen.queryByTestId('ai-search-results-empty')).not.toBeInTheDocument();
+            });
+
+            it('renders the empty-state card (not a 1-column grid) when a refinement matches zero results', () => {
+                mockHook({ results: [], resultsLoading: false, hasSearched: true });
+                renderPanel();
+                expect(
+                    screen.queryByRole('list', { name: /resultados encontrados/i })
+                ).not.toBeInTheDocument();
+                expect(screen.getByTestId('ai-search-results-empty')).toBeInTheDocument();
+            });
         });
     });
 
@@ -634,6 +863,78 @@ describe('SearchChatPanel', () => {
             const examples = screen.getByTestId('ai-search-examples');
             // The type-specific example key is prepended to the generic pool.
             expect(within(examples).getAllByRole('button')[0].textContent).toContain('typeCabin');
+        });
+    });
+
+    // ── Chips derive from applied params, not raw intent (HOS-111 T-006 / AC-6) ──
+
+    describe('Filter chips wired to applied params (HOS-111 T-006)', () => {
+        it('passes the hook lastSearchParams through to ActiveFilterChips as appliedParams', () => {
+            // maxGuests is present in the raw intent but the mapper never
+            // forwards it (min-only guest semantics) — lastSearchParams
+            // reflects that by omitting it entirely.
+            mockHook({
+                currentFilters: { maxGuests: 4, minGuests: 4 },
+                lastSearchParams: { minGuests: 4 }
+            });
+            renderPanel();
+            // Only the applied (minGuests) chip renders; maxGuests is suppressed.
+            const chips = screen.getAllByRole('listitem');
+            expect(chips).toHaveLength(1);
+            expect(chips[0].textContent).toContain('minGuests');
+        });
+
+        it('renders no chips at all when lastSearchParams applies none of the extracted intent', () => {
+            mockHook({
+                currentFilters: { maxGuests: 6 },
+                lastSearchParams: {}
+            });
+            renderPanel();
+            expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+        });
+    });
+
+    // ── State-aware composer placeholder (HOS-111 T-007 / OQ-5) ─────────────
+
+    describe('State-aware composer placeholder (HOS-111 T-007)', () => {
+        it('shows the initial onboarding placeholder before any search has run', () => {
+            mockHook({ results: [], hasSearched: false, resultsLoading: false });
+            renderPanel();
+            expect(screen.getByRole('textbox')).toHaveAttribute(
+                'placeholder',
+                'Contame qué buscás, por ejemplo: cabaña para 4 con pileta cerca del río'
+            );
+        });
+
+        it('shows the has-results refinement placeholder once there is at least one match', () => {
+            mockHook({
+                results: [{ id: 'acc-1' }] as ReturnType<typeof useSearchChat>['results'],
+                hasSearched: true,
+                resultsLoading: false
+            });
+            renderPanel();
+            expect(screen.getByRole('textbox')).toHaveAttribute(
+                'placeholder',
+                'Afiná tu búsqueda: sumá precio, características, o pedí destinos cercanos'
+            );
+        });
+
+        it('shows the no-results placeholder once a completed search matched zero results', () => {
+            mockHook({ results: [], hasSearched: true, resultsLoading: false });
+            renderPanel();
+            expect(screen.getByRole('textbox')).toHaveAttribute(
+                'placeholder',
+                'No encontré nada con esos filtros. Probá quitando alguno o buscá en destinos cercanos.'
+            );
+        });
+
+        it('keeps the initial placeholder while a search is still loading (not yet zero-confirmed)', () => {
+            mockHook({ results: [], hasSearched: true, resultsLoading: true });
+            renderPanel();
+            expect(screen.getByRole('textbox')).toHaveAttribute(
+                'placeholder',
+                'Contame qué buscás, por ejemplo: cabaña para 4 con pileta cerca del río'
+            );
         });
     });
 });

@@ -95,7 +95,7 @@ function makeCronCtx(dryRun = false) {
 
 describe('abandoned-pending-subs internals', () => {
     it('reserves advisory lock key 1006 (no overlap with sibling crons)', () => {
-        // Sibling keys: 1003 dunning, 1004 trial-expiry, 1005 trial-pre-end-notif.
+        // Sibling keys: 1003 dunning, 1004 trial-expiry (1005 free — HOS-121).
         // Drift would let two jobs share a lock and starve each other.
         expect(_internals.ADVISORY_LOCK_KEY).toBe(1006);
     });
@@ -408,5 +408,123 @@ describe('abandonedPendingSubsJob handler — user notifications (SPEC-194 T-022
             expect.stringContaining('Customer not found'),
             expect.objectContaining({ subscriptionId: 'sub-ghost' })
         );
+    });
+});
+
+// ─── HOS-123 T-020: abandoned annual reactivation checkout ─────────────────
+//
+// AUDIT (SPEC-126 D6): the job's candidate WHERE clause is
+// `status IN ('incomplete', 'pending_provider') AND created_at < cutoff AND
+// deleted_at IS NULL` (abandoned-pending-subs.job.ts:150-159), and its
+// `.returning()` projection is `{ id, customerId, planId }` only
+// (lines 160-164). Neither the WHERE clause nor the projection reference
+// `metadata`, `billingInterval`, or `supersedesSubscriptionId` in any way,
+// so an annual reactivation's `pending_provider` row (which DOES carry
+// `metadata.supersedesSubscriptionId` — see `create-annual-subscription.ts`)
+// can never be excluded: the query is structurally metadata- and
+// interval-agnostic. NO GAP — this coverage is test-only, proving the row is
+// reaped exactly like any other pending row and that the superseded (old)
+// subscription is never touched by this cron
+// (`completeSupersessionPairing` / `completeReactivationSupersession` are
+// not imported by this job at all — the deferred supersession only ever
+// completes via the webhook confirm path or the T-014 reconcile cron, never
+// here).
+describe('HOS-123 T-020: abandoned annual reactivation checkout (metadata-agnostic reap)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockTx.execute.mockResolvedValue({ rows: [{ acquired: true }] });
+        const selectChain = {
+            from: vi.fn().mockReturnThis(),
+            where: vi.fn().mockResolvedValue([])
+        };
+        mockTx.select.mockReturnValue(selectChain);
+        mockBillingCustomersGet.mockResolvedValue({
+            id: 'cust-annual-reactivate',
+            email: 'annual-reactivate@example.com',
+            metadata: { name: 'Annual Reactivator' }
+        });
+        mockBillingPlansGet.mockResolvedValue({ id: 'plan-annual', name: 'Owner Pro (annual)' });
+        mockSendNotification.mockResolvedValue(undefined);
+    });
+
+    it('reaps a pending_provider annual reactivation row past TTL exactly like any other pending row, and never references the superseded subscription', async () => {
+        // ARRANGE: the query's `.returning()` result mirrors the real
+        // projection ({ id, customerId, planId } only — no metadata, no
+        // billingInterval column). In production this row's REAL `metadata`
+        // column carries `supersedesSubscriptionId` pointing at the OLD
+        // subscription the abandoned reactivation was meant to supersede,
+        // but the job never selects or reads that column.
+        const newAnnualPendingSubId = 'sub-annual-pending-reactivation';
+        const supersededOldSubId = 'sub-old-superseded-by-abandoned-reactivation';
+
+        const returningChain = {
+            where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([
+                    {
+                        id: newAnnualPendingSubId,
+                        customerId: 'cust-annual-reactivate',
+                        planId: 'plan-annual'
+                    }
+                ])
+            })
+        };
+        const setChain = { set: vi.fn().mockReturnValue(returningChain) };
+        mockTx.update.mockReturnValue(setChain);
+
+        const ctx = makeCronCtx(false);
+
+        // Act
+        const result = await abandonedPendingSubsJob.handler(ctx);
+
+        // Assert: reaped exactly like any other abandoned pending_provider
+        // row — one bulk UPDATE, one row processed.
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(1);
+        expect(mockTx.update).toHaveBeenCalledTimes(1);
+        expect(ctx.logger.error).not.toHaveBeenCalled();
+
+        // Assert: the notification fired for the NEW (reaped) subscription
+        // only — never for the superseded old one.
+        expect(mockSendNotification).toHaveBeenCalledOnce();
+        expect(mockSendNotification).toHaveBeenCalledWith(
+            expect.objectContaining({
+                customerId: 'cust-annual-reactivate',
+                idempotencyKey: `abandoned-sub-${newAnnualPendingSubId}`
+            })
+        );
+
+        // ── KEY ASSERTION (T-020): the OLD (superseded) subscription's id
+        // never appears anywhere in this run's DB/notification call
+        // history — this cron issues exactly one bulk UPDATE scoped by
+        // (status, createdAt, deletedAt) and has no code path that reads or
+        // writes a subscription by a "superseded" id. No supersession can
+        // have fired, because the new sub never confirmed. ────────────────
+        const allCallArgsSerialized = JSON.stringify([
+            ...mockTx.execute.mock.calls,
+            ...mockTx.select.mock.calls,
+            ...mockTx.update.mock.calls,
+            ...mockBillingCustomersGet.mock.calls,
+            ...mockBillingPlansGet.mock.calls,
+            ...mockSendNotification.mock.calls
+        ]);
+        expect(allCallArgsSerialized).not.toContain(supersededOldSubId);
+        expect(mockBillingCustomersGet).toHaveBeenCalledTimes(1);
+        expect(mockBillingCustomersGet).not.toHaveBeenCalledWith(supersededOldSubId);
+    });
+
+    it('dry-run mode counts the annual reactivation candidate without writing or notifying', async () => {
+        const selectChain = {
+            from: vi.fn().mockReturnThis(),
+            where: vi.fn().mockResolvedValue([{ id: 'sub-annual-pending-dry' }])
+        };
+        mockTx.select.mockReturnValue(selectChain);
+
+        const ctx = makeCronCtx(true);
+        const result = await abandonedPendingSubsJob.handler(ctx);
+
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(1);
+        expect(mockTx.update).not.toHaveBeenCalled();
+        expect(mockSendNotification).not.toHaveBeenCalled();
     });
 });

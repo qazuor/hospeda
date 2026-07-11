@@ -16,6 +16,7 @@
     "whatsNewPanel": {
         "title": "What's New",
         "empty": "No updates yet",
+        "emptyDesc": "When we ship platform improvements or new features, you'll see them here.",
         "markAllRead": "Mark all as read",
         "seeEntry": "View"
     },
@@ -65,6 +66,67 @@
     },
     "navigation": "Account navigation",
     "sections": "Account sections",
+    "nav": {
+        "groupAccount": "My account",
+        "groupTourist": "Traveler area",
+        "groupHost": "Host area",
+        "groupCommerce": "Business area",
+        "dashboard": "My account",
+        "editProfile": "Edit profile",
+        "subscription": "Subscription",
+        "preferences": "Preferences",
+        "newsletter": "Newsletter",
+        "whatsNew": "What's new",
+        "favorites": "Favorites",
+        "searchHistory": "Search history",
+        "alerts": "Price alerts",
+        "exclusiveDeals": "Exclusive deals",
+        "reviews": "My reviews",
+        "hostDashboard": "Host dashboard",
+        "properties": "My accommodations",
+        "promotions": "My promotions",
+        "tradeDirectory": "Provider directory"
+    },
+    "doors": {
+        "sectionLabel": "Discover more",
+        "publish": {
+            "title": "List on Hospeda",
+            "subtitle": "Choose which vertical you want to add to Hospeda and follow the steps to publish.",
+            "options": {
+                "accommodation": {
+                    "title": "Accommodation",
+                    "description": "List your accommodation on Hospeda and reach thousands of travelers looking to stay in the region.",
+                    "cta": "List your accommodation"
+                },
+                "commerce": {
+                    "title": "Dining and shops",
+                    "description": "Tell us about your business and we'll reach out to add it to Hospeda.",
+                    "cta": "Tell us and we'll reach out"
+                }
+            }
+        },
+        "partner": {
+            "title": "Become a partner",
+            "titleStateful": "Add another partnership",
+            "subtitle": "Become a Hospeda partner: showcase your brand or services to thousands of travelers and hosts.",
+            "options": {
+                "sponsor": {
+                    "title": "Sponsor",
+                    "description": "Showcase your brand on Hospeda with sponsored content and visibility across events and posts."
+                },
+                "serviceProvider": {
+                    "title": "Service provider",
+                    "description": "Join the local provider directory that hosts recommend to their guests."
+                }
+            }
+        },
+        "common": {
+            "manageCta": "Manage",
+            "acquiredLabel": "Already have it",
+            "comingSoonBadge": "Coming soon",
+            "contactCta": "Contact us"
+        }
+    },
     "avatar": {
         "hint": "JPEG, PNG and WebP only · Max. 5 MB",
         "actions": {
@@ -414,7 +476,7 @@
                 "hostDashboard": "Host dashboard",
                 "hostDashboardDesc": "Summary of your activity as a host",
                 "promotions": "My Promotions",
-                "recommendations": "Recommendations",
+                "recommendations": "Suggestions",
                 "recommendationsDesc": "Accommodations picked for you"
             },
             "stats": {
@@ -588,7 +650,7 @@
             "description": "Discover exclusive offers and discounts for your plan on Hospeda"
         },
         "recommendations": {
-            "title": "For you",
+            "title": "Suggestions for you",
             "description": "Accommodations picked especially for you, based on your favorites, searches, and recent activity on Hospeda"
         }
     },
@@ -822,7 +884,12 @@
     "recommendations": {
         "loading": "Loading recommendations...",
         "errorFetch": "We couldn't load your recommendations",
-        "listLabel": "Recommendations for you",
+        "listLabel": "Suggestions for you",
+        "groups": {
+            "destination": "Based on destinations you like",
+            "type": "Of the type you prefer",
+            "other": "Other suggestions for you"
+        },
         "viewDetails": "View accommodation",
         "coldStart": {
             "title": "We're still getting to know your taste",

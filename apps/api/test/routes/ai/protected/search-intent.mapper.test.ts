@@ -113,6 +113,71 @@ describe('mapIntentToSearchParams — location priority', () => {
     });
 });
 
+// ─── resolvedDestinationId (server-resolved from city, fix #4) ───────────────
+
+describe('mapIntentToSearchParams — resolvedDestinationId (city → destination resolution)', () => {
+    it('resolvedDestinationId wins over entities.destinationId, geo, and city', () => {
+        // Arrange: the route handler resolved entities.city to a real destination
+        // AND the model also hallucinated an entities.destinationId — the
+        // server-verified resolution must win.
+        const entities = {
+            destinationId: 'a0000000-0000-4000-8000-000000000099',
+            city: 'Colón',
+            latitude: -32.22,
+            longitude: -58.14
+        };
+
+        // Act
+        const result = mapIntentToSearchParams(
+            entities,
+            [],
+            [],
+            'b0000000-0000-4000-8000-000000000042'
+        );
+
+        // Assert
+        expect(result.destinationId).toBe('b0000000-0000-4000-8000-000000000042');
+        expect(result.q).toBeUndefined();
+        expect(result.latitude).toBeUndefined();
+    });
+
+    it('city resolved to a known destination → emits destinationId, not q', () => {
+        // Arrange: a bare city name that the route handler resolved server-side.
+        const entities = { city: 'Colón' };
+
+        // Act
+        const result = mapIntentToSearchParams(
+            entities,
+            [],
+            [],
+            'c0000000-0000-4000-8000-000000000001'
+        );
+
+        // Assert
+        expect(result.destinationId).toBe('c0000000-0000-4000-8000-000000000001');
+        expect(result.q).toBeUndefined();
+    });
+
+    it('city NOT resolved (resolvedDestinationId undefined) → falls back to q', () => {
+        // Arrange: the route handler could not match the city to a known
+        // destination — resolvedDestinationId stays undefined (the default).
+        const entities = { city: 'Nowhereland' };
+
+        // Act
+        const result = mapIntentToSearchParams(entities);
+
+        // Assert
+        expect(result.q).toBe('Nowhereland');
+        expect(result.destinationId).toBeUndefined();
+    });
+
+    it('resolvedDestinationId absent (not passed) → existing priority order applies unchanged', () => {
+        const entities = { destinationId: 'a0000000-0000-4000-8000-000000000005' };
+        const result = mapIntentToSearchParams(entities, [], []);
+        expect(result.destinationId).toBe('a0000000-0000-4000-8000-000000000005');
+    });
+});
+
 // ─── Radius clamping ─────────────────────────────────────────────────────────
 
 describe('mapIntentToSearchParams — radius clamping', () => {
@@ -167,7 +232,7 @@ describe('mapIntentToSearchParams — guest capacity', () => {
         expect(result.minGuests).toBe('4');
     });
 
-    it('both minGuests and maxGuests set when valid range', () => {
+    it('min < max (explicit range, e.g. "between 2 and 6 people") → both emitted', () => {
         const result = mapIntentToSearchParams({ minGuests: 2, maxGuests: 6 });
         expect(result.minGuests).toBe('2');
         expect(result.maxGuests).toBe('6');
@@ -179,10 +244,14 @@ describe('mapIntentToSearchParams — guest capacity', () => {
         expect(result.maxGuests).toBeUndefined();
     });
 
-    it('equal minGuests == maxGuests → both emitted', () => {
+    it('equal minGuests == maxGuests → collapses to minGuests only (fix: capacity is >=, not exact-match)', () => {
+        // Arrange / Act: "for 4 people" must mean capacity >= 4, not capacity === 4 —
+        // an accommodation has a single `capacity` value, so emitting maxGuests=4
+        // here would wrongly exclude accommodations that comfortably fit more guests.
         const result = mapIntentToSearchParams({ minGuests: 4, maxGuests: 4 });
+        // Assert
         expect(result.minGuests).toBe('4');
-        expect(result.maxGuests).toBe('4');
+        expect(result.maxGuests).toBeUndefined();
     });
 
     it('only maxGuests set → emitted correctly', () => {
@@ -207,10 +276,16 @@ describe('mapIntentToSearchParams — bedroom count', () => {
         expect(result.maxBedrooms).toBeUndefined();
     });
 
-    it('equal minBedrooms == maxBedrooms → both emitted', () => {
+    it('equal minBedrooms == maxBedrooms → collapses to minBedrooms only (fix: capacity is >=, not exact-match)', () => {
         const result = mapIntentToSearchParams({ minBedrooms: 2, maxBedrooms: 2 });
         expect(result.minBedrooms).toBe('2');
-        expect(result.maxBedrooms).toBe('2');
+        expect(result.maxBedrooms).toBeUndefined();
+    });
+
+    it('min < max (explicit range) → both emitted', () => {
+        const result = mapIntentToSearchParams({ minBedrooms: 1, maxBedrooms: 4 });
+        expect(result.minBedrooms).toBe('1');
+        expect(result.maxBedrooms).toBe('4');
     });
 
     it('only minBedrooms set → emitted without maxBedrooms', () => {
@@ -241,10 +316,16 @@ describe('mapIntentToSearchParams — bathroom count', () => {
         expect(result.maxBathrooms).toBeUndefined();
     });
 
-    it('equal minBathrooms == maxBathrooms → both emitted', () => {
+    it('equal minBathrooms == maxBathrooms → collapses to minBathrooms only (fix: capacity is >=, not exact-match)', () => {
         const result = mapIntentToSearchParams({ minBathrooms: 2, maxBathrooms: 2 });
         expect(result.minBathrooms).toBe('2');
-        expect(result.maxBathrooms).toBe('2');
+        expect(result.maxBathrooms).toBeUndefined();
+    });
+
+    it('min < max (explicit range) → both emitted', () => {
+        const result = mapIntentToSearchParams({ minBathrooms: 1, maxBathrooms: 3 });
+        expect(result.minBathrooms).toBe('1');
+        expect(result.maxBathrooms).toBe('3');
     });
 
     it('only minBathrooms → emitted without maxBathrooms', () => {
@@ -537,6 +618,20 @@ describe('mapIntentToSearchParams — whitelist enforcement', () => {
         const result = mapIntentToSearchParams(entities);
         expect('featureSlugs' in result).toBe(false);
         expect(result.features).toBeUndefined();
+    });
+
+    it('expandToNearby internal hint is never emitted as a param (HOS-111 T-012/T-013)', () => {
+        // expandToNearby is a pure signal read by the search-chat route handler
+        // (T-013) to trigger nearby-destination resolution — it is never a
+        // valid AccommodationSearchHttp query param, so the whitelist mapper
+        // must drop it like locationType/amenitySlugs/featureSlugs.
+        const entities = {
+            destinationId: '11111111-1111-4111-8111-111111111111',
+            expandToNearby: true
+        };
+        const result = mapIntentToSearchParams(entities);
+        expect('expandToNearby' in result).toBe(false);
+        expect(result.destinationId).toBe('11111111-1111-4111-8111-111111111111');
     });
 
     it('empty entities object returns empty record', () => {

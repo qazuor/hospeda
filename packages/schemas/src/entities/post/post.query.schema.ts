@@ -29,6 +29,14 @@ export const PostFiltersSchema = z.object({
     // Basic filters
     status: LifecycleStatusEnumSchema.optional(),
     category: PostCategoryEnumSchema.optional(),
+    /**
+     * Multi-value sibling of `category` (HOS-96 US-9). OR-union: matches any
+     * post whose `category` is in this array. Kept alongside the singular
+     * `category` for backward compatibility (US-10) — the array takes
+     * precedence when both are present (model-layer precedence, mirrors
+     * `AccommodationModel`'s `types`/`type`).
+     */
+    categories: z.array(PostCategoryEnumSchema).optional(),
     isFeatured: z.boolean().optional(),
     isPublished: z.boolean().optional(),
 
@@ -80,6 +88,8 @@ export const PostSearchSchema = BaseSearchSchema.extend({
     // Basic filters (flattened from PostFiltersSchema)
     status: LifecycleStatusEnumSchema.optional(),
     category: PostCategoryEnumSchema.optional(),
+    /** Multi-value sibling of `category` — see {@link PostFiltersSchema.categories}. */
+    categories: z.array(PostCategoryEnumSchema).optional(),
     isFeatured: z.boolean().optional(),
     isPublished: z.boolean().optional(),
 

@@ -28,7 +28,7 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     color: var(--core-foreground);
-    background-color: var(--background);
+    background-color: var(--core-background);
     border: 1px solid var(--border);
     border-radius: var(--radius-button, 8px);
     padding: var(--space-2, 8px) var(--space-3, 12px);
@@ -62,28 +62,8 @@
 }
 
 .submitButton {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: white;
-    background-color: var(--brand-accent);
-    border: none;
-    border-radius: var(--radius-button, 8px);
-    padding: var(--space-2, 8px) var(--space-4, 16px);
-    cursor: pointer;
+    composes: primary from "./AccountButton.module.css";
     align-self: flex-end;
-    transition:
-        background-color var(--duration-fast, 0.2s) ease,
-        opacity var(--duration-fast, 0.2s) ease;
-}
-
-.submitButton:hover:not(:disabled) {
-    background-color: var(--brand-accent-lm05);
-}
-
-.submitButton:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
 }
 
 .error {

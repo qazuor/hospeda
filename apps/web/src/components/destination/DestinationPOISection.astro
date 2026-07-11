@@ -1,0 +1,166 @@
+---
+/**
+ * @file DestinationPOISection.astro
+ * @description Points-of-interest (POI) section for the destination detail
+ * page (HOS-113 Phase 4). Renders the destination's POIs as a **list / grid**
+ * — NOT map pins (multi-marker rendering is deferred, see spec NG-3 / OQ-4;
+ * `LocationMap` has no multi-marker mode). Built fresh — this does NOT
+ * resurrect the dead `DestinationAttractionsGrid.astro`, though its
+ * displayWeight-then-alphabetical sort + card shape informed this one.
+ *
+ * Each card shows: a type-derived icon, the i18n-resolved display name
+ * (`destinations.poiNames.<slug>` — POIs have no `name` column, HOS-113
+ * OQ-2), a translated type label (`destinations.poiTypeLabels.<TYPE>`), and
+ * an optional 2-line description. Ordered featured-first, then by
+ * `displayWeight` descending, then by display name (§8). Renders nothing
+ * when the destination has no POIs, mirroring how the attractions grid
+ * guards against an empty array.
+ */
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { translatePoiName, translatePoiTypeLabel } from '@/lib/poi-labels';
+import { getPointOfInterestTypeIcon } from '@/lib/poi-type-icons';
+
+/** A single point of interest belonging to a destination. */
+export interface DestinationPOIItem {
+	readonly id: string;
+	readonly slug: string;
+	readonly type: string;
+	readonly description?: string | null;
+	readonly isFeatured?: boolean;
+	readonly displayWeight?: number;
+}
+
+interface Props {
+	readonly pointsOfInterest: ReadonlyArray<DestinationPOIItem>;
+	readonly locale: SupportedLocale;
+}
+
+const { pointsOfInterest, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+if (!pointsOfInterest || pointsOfInterest.length === 0) return;
+
+const sorted = [...pointsOfInterest]
+	.map((poi) => ({ ...poi, displayName: translatePoiName({ t, slug: poi.slug }) }))
+	.sort((a, b) => {
+		// Featured first.
+		const featuredDelta = (a.isFeatured ? 0 : 1) - (b.isFeatured ? 0 : 1);
+		if (featuredDelta !== 0) return featuredDelta;
+		// Then by displayWeight descending.
+		const wA = a.displayWeight ?? 0;
+		const wB = b.displayWeight ?? 0;
+		if (wB !== wA) return wB - wA;
+		// Then alphabetically by the resolved display name.
+		return a.displayName.localeCompare(b.displayName);
+	});
+---
+
+<section class="poi-section" aria-labelledby="poi-section-title">
+	<h2 class="poi-section__title" id="poi-section-title">
+		{t('destinations.detailPage.pointsOfInterestTitle', 'Puntos de interés')}
+	</h2>
+
+	<div class="poi-section__grid">
+		{sorted.map((poi) => {
+			const Icon = getPointOfInterestTypeIcon({ type: poi.type });
+			const typeLabel = translatePoiTypeLabel({ t, type: poi.type });
+			return (
+				<div class="poi-section__card">
+					<span class="poi-section__icon" aria-hidden="true">
+						<Icon size={28} weight="fill" aria-hidden="true" />
+					</span>
+					<h3 class="poi-section__name">{poi.displayName}</h3>
+					<span class="poi-section__type-badge">{typeLabel}</span>
+					{poi.description && (
+						<p class="poi-section__description">{poi.description}</p>
+					)}
+				</div>
+			);
+		})}
+	</div>
+</section>
+
+<style>
+	.poi-section {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+
+	.poi-section__title {
+		font-family: var(--font-heading);
+		font-size: 1.5rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+		margin: 0;
+	}
+
+	.poi-section__grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+
+	@media (min-width: 640px) {
+		.poi-section__grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.poi-section__grid {
+			grid-template-columns: repeat(4, 1fr);
+		}
+	}
+
+	.poi-section__card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		padding: 1.25rem;
+		background-color: var(--core-card);
+		border-radius: var(--radius-card);
+		box-shadow: var(--shadow-card);
+		transition: box-shadow var(--duration-fast) ease;
+	}
+
+	.poi-section__card:hover {
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	.poi-section__icon {
+		display: inline-flex;
+		color: var(--brand-primary);
+	}
+
+	.poi-section__name {
+		font-family: var(--font-heading);
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+		margin: 0;
+	}
+
+	.poi-section__type-badge {
+		align-self: flex-start;
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--brand-primary);
+		background-color: var(--surface-warm);
+		border-radius: var(--radius-pill);
+		padding: 0.25rem 0.75rem;
+	}
+
+	.poi-section__description {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		color: var(--core-muted-foreground);
+		margin: 0;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+</style>

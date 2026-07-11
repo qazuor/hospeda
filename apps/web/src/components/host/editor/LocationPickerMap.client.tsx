@@ -3,9 +3,12 @@
  * @description Raw Leaflet map for the LocationPicker (SPEC-208, Phase C PR2).
  *
  * Uses raw Leaflet (NOT react-leaflet) for React 19 compatibility.
- * This component is dynamically imported with `ssr: false` to avoid
- * Leaflet touching `window` during SSR.
+ * This component is dynamically imported via `React.lazy()` (see
+ * LocationPicker.client.tsx) so it never touches `window`/`document`
+ * during SSR — Leaflet only loads once this chunk mounts on the client.
  */
+import 'leaflet/dist/leaflet.css';
+
 import { useEffect, useRef } from 'react';
 import styles from './LocationPicker.module.css';
 
@@ -35,6 +38,7 @@ export function LocationPickerMap({
     const mapRef = useRef<HTMLDivElement>(null);
     const leafletMapRef = useRef<unknown>(null);
     const markerRef = useRef<unknown>(null);
+    const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
     // Initialize Leaflet map
     // biome-ignore lint/correctness/useExhaustiveDependencies: Leaflet map needs full re-init on prop changes
@@ -55,6 +59,16 @@ export function LocationPickerMap({
                 import('leaflet/dist/images/marker-icon-2x.png'),
                 import('leaflet/dist/images/marker-shadow.png')
             ]);
+            // HOS-95: Leaflet's `Icon.Default._getIconUrl` prepends its CSS-detected
+            // `imagePath` (e.g. `.../leaflet/dist/images/`) to whatever `iconUrl` we
+            // set. Since the bundler already resolves these imports to fully-qualified
+            // URLs, that prepend produces a DOUBLED, broken path and the marker never
+            // renders (see ListingMapInner.client.tsx for the same fix). Deleting the
+            // override makes Leaflet use the base `Icon._getIconUrl`, which returns our
+            // explicit URL verbatim.
+            // biome-ignore lint/performance/noDelete: one-time reset of a prototype method; not a hot path.
+            // TYPE-WORKAROUND: Leaflet's public types don't expose the internal `_getIconUrl` member we must delete.
+            delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
             L.Icon.Default.mergeOptions({
                 iconUrl: toAssetUrl(iconMod),
                 iconRetinaUrl: toAssetUrl(iconRetinaMod),
@@ -68,6 +82,18 @@ export function LocationPickerMap({
             });
 
             L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION }).addTo(map);
+
+            // BETA-132: on first mount (or when the container is revealed after
+            // being hidden/collapsed) Leaflet may cache a stale/zero container
+            // size and never request tiles for the true visible area, leaving
+            // the map half-loaded. Force a remeasure right after setup, then
+            // keep remeasuring on every container resize (mirrors the pattern
+            // in ListingMapInner.client.tsx's FitBoundsOnce).
+            map.invalidateSize();
+            const container = mapRef.current;
+            const ro = new ResizeObserver(() => map.invalidateSize());
+            ro.observe(container);
+            resizeObserverRef.current = ro;
 
             // Add marker
             const marker = markerPosition
@@ -94,6 +120,8 @@ export function LocationPickerMap({
         });
 
         return () => {
+            resizeObserverRef.current?.disconnect();
+            resizeObserverRef.current = null;
             if (
                 leafletMapRef.current &&
                 typeof (leafletMapRef.current as { remove?: () => void }).remove === 'function'

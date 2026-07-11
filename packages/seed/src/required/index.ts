@@ -19,6 +19,7 @@ import { seedExchangeRates } from './exchangeRates.seed.js';
 import { seedFeatures } from './features.seed.js';
 import { seedInternalTags } from './internalTags.seed.js';
 import { seedPartnerPlan } from './partnerPlan.seed.js';
+import { seedPointsOfInterest } from './pointsOfInterest.seed.js';
 import { seedPostTags } from './postTags.seed.js';
 import { seedRevalidationConfig } from './revalidationConfig.seed.js';
 import { seedRolePermissions } from './rolePermissions.seed.js';
@@ -40,7 +41,8 @@ import { seedUsers } from './users.seed.js';
  * - Role permissions
  * - Amenities and features
  * - Attractions
- * - Destinations with their relationships
+ * - Points of interest (HOS-113)
+ * - Destinations with their relationships (attractions + points of interest)
  * - Sponsorship levels and packages
  * - Billing entitlements, limits, plans, and add-ons
  * - Exchange rate configuration and initial rates
@@ -68,7 +70,8 @@ import { seedUsers } from './users.seed.js';
  * // 7. Amenities
  * // 8. Features
  * // 9. Attractions
- * // 10. Destinations with attractions
+ * // 9.1 Points of interest (HOS-113)
+ * // 10. Destinations with attractions + points of interest
  * // 11. Sponsorship levels
  * // 12. Sponsorship packages
  * // 13. Billing entitlements
@@ -128,7 +131,13 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
         // 6. Load attractions (before destinations to have ID mapping)
         await seedAttractions(context);
 
-        // 7. Load destinations (uses ID mapping for relationships)
+        // 6.1 Load points of interest (HOS-113) — before destinations, same
+        //     reason as attractions: the destination↔POI relationship seed
+        //     step (run as part of seedDestinations below) needs the POI
+        //     seed-id → real-id mapping already populated.
+        await seedPointsOfInterest(context);
+
+        // 7. Load destinations (uses ID mapping for attraction + POI relationships)
         await seedDestinations(context);
 
         // 8. Load sponsorship levels (before packages to have ID mapping)

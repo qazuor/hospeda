@@ -1004,6 +1004,9 @@
                 "invalidType": "Promo code has an invalid data type",
                 "max": "Promo code cannot exceed {{max}} characters",
                 "min": "Promo code must be at least {{min}} characters"
+            },
+            "promoCodeIgnored": {
+                "invalid": "The promo code ignored flag is not valid"
             }
         },
         "subscriptionEvent": {
@@ -1072,9 +1075,60 @@
                 }
             },
             "reactivate": {
+                "billingInterval": {
+                    "invalid": "[EN] El intervalo de facturación no es válido"
+                },
                 "planId": {
                     "invalidType": "[EN] El ID del plan tiene un tipo de dato inválido",
                     "min": "[EN] El ID del plan debe tener al menos {{min}} caracteres"
+                },
+                "response": {
+                    "checkoutUrl": {
+                        "invalid": "[EN] La URL de pago no es válida",
+                        "invalidType": "[EN] La URL de pago tiene un tipo de dato inválido"
+                    },
+                    "message": {
+                        "invalidType": "[EN] El mensaje tiene un tipo de dato inválido"
+                    },
+                    "status": {
+                        "invalid": "[EN] El estado no es válido"
+                    },
+                    "subscriptionId": {
+                        "invalidType": "[EN] El subscription id tiene un tipo de dato inválido"
+                    },
+                    "success": {
+                        "invalidType": "[EN] El resultado exitoso debe ser un booleano"
+                    }
+                }
+            },
+            "reactivateSubscription": {
+                "billingInterval": {
+                    "invalid": "[EN] El intervalo de facturación no es válido"
+                },
+                "planId": {
+                    "invalidType": "[EN] El ID del plan tiene un tipo de dato inválido",
+                    "min": "[EN] El ID del plan debe tener al menos {{min}} caracteres"
+                },
+                "response": {
+                    "checkoutUrl": {
+                        "invalid": "[EN] La URL de pago no es válida",
+                        "invalidType": "[EN] La URL de pago tiene un tipo de dato inválido"
+                    },
+                    "message": {
+                        "invalidType": "[EN] El mensaje tiene un tipo de dato inválido"
+                    },
+                    "previousPlanId": {
+                        "invalidType": "[EN] El previous plan id tiene un tipo de dato inválido"
+                    },
+                    "status": {
+                        "invalid": "[EN] El estado no es válido"
+                    },
+                    "subscriptionId": {
+                        "invalidType": "[EN] El subscription id tiene un tipo de dato inválido"
+                    },
+                    "success": {
+                        "invalidType": "[EN] El resultado exitoso debe ser un booleano"
+                    }
                 }
             },
             "start": {
@@ -1209,6 +1263,9 @@
             },
             "mobilePhone": {
                 "international": "[EN] El mobile phone no es válido"
+            },
+            "whatsapp": {
+                "international": "[EN] El WhatsApp no es válido"
             },
             "personalEmail": {
                 "invalid": "[EN] El personal email no es válido"
@@ -2017,6 +2074,9 @@
         },
         "permissionEffect": {
             "invalid": "The permission effect is invalid"
+        },
+        "pointOfInterestType": {
+            "invalid": "[EN] El point of interest type no es válido"
         },
         "postCategory": {
             "invalid": "[EN] El post category no es válido"
@@ -2946,6 +3006,67 @@
         "version": {
             "format": "[EN] El formato de la versión no es válido",
             "required": "[EN] La versión es obligatoria"
+        }
+    },
+    "pointOfInterest": {
+        "bulkAdd": {
+            "pointOfInterestIds": {
+                "max": "[EN] El point of interest ids no puede superar los {{max}} caracteres",
+                "min": "[EN] El point of interest ids debe tener al menos {{min}} caracteres"
+            }
+        },
+        "bulkRemove": {
+            "pointOfInterestIds": {
+                "max": "[EN] El point of interest ids no puede superar los {{max}} caracteres",
+                "min": "[EN] El point of interest ids debe tener al menos {{min}} caracteres"
+            }
+        },
+        "description": {
+            "max": "[EN] La descripción no puede superar los {{max}} caracteres",
+            "min": "[EN] La descripción debe tener al menos {{min}} caracteres",
+            "required": "[EN] La descripción es obligatoria"
+        },
+        "displayWeight": {
+            "int": "[EN] El peso de visualización debe ser un número entero",
+            "max": "[EN] El peso de visualización no puede superar los {{max}} caracteres",
+            "min": "[EN] El peso de visualización debe tener al menos {{min}} caracteres",
+            "required": "[EN] El peso de visualización es obligatorio"
+        },
+        "icon": {
+            "max": "[EN] El ícono no puede superar los {{max}} caracteres",
+            "min": "[EN] El ícono debe tener al menos {{min}} caracteres",
+            "required": "[EN] El ícono es obligatorio"
+        },
+        "lat": {
+            "max": "[EN] El lat no puede superar los {{max}} caracteres",
+            "min": "[EN] El lat debe tener al menos {{min}} caracteres",
+            "required": "[EN] El lat es obligatorio"
+        },
+        "listItem": {
+            "destinationCount": {
+                "int": "[EN] El destination count debe ser un número entero",
+                "min": "[EN] El destination count debe tener al menos {{min}} caracteres"
+            }
+        },
+        "long": {
+            "max": "[EN] El long no puede superar los {{max}} caracteres",
+            "min": "[EN] El long debe tener al menos {{min}} caracteres",
+            "required": "[EN] El long es obligatorio"
+        },
+        "relation": {
+            "notes": {
+                "max": "[EN] El notas no puede superar los {{max}} caracteres"
+            },
+            "order": {
+                "int": "[EN] El orden debe ser un número entero",
+                "min": "[EN] El orden debe tener al menos {{min}} caracteres"
+            }
+        },
+        "slug": {
+            "max": "[EN] El slug no puede superar los {{max}} caracteres",
+            "min": "[EN] El slug debe tener al menos {{min}} caracteres",
+            "pattern": "[EN] El formato del slug no es válido",
+            "required": "[EN] El slug es obligatorio"
         }
     },
     "positive": "[EN] El valor debe ser un número positivo",
