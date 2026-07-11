@@ -52,8 +52,16 @@ const { locale, navItems, currentPath, logoSrc, homeHref, initialUser, initialRo
     Astro.props;
 ---
 
+<!--
+  client:load (not client:idle): this island resolves auth state client-side
+  and is the sole gate for the mobile menu's logged-in/host affordances. On
+  Cloudflare-cached pages (e.g. home) `Astro.locals.user` is always null, so a
+  signed-in user's correct state only appears after hydration — client:idle
+  would leave them looking logged-out until the browser goes idle. Matches
+  UserMenu's client:load so the "wrong state" window is the same for both.
+-->
 <MobileMenu
-    client:idle
+    client:load
     locale={locale}
     navItems={navItems}
     currentPath={currentPath}
