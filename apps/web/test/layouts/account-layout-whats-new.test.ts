@@ -20,12 +20,12 @@ const preferencesSource = readFileSync(
 );
 
 describe('account layout whats-new wiring', () => {
-    it('renders the whats-new badge in the account navigation', () => {
+    it('renders the whats-new count pill in the account navigation', () => {
         expect(accountLayoutSource).toContain(
-            "import { WhatsNewBadge } from '@/components/shared/whats-new/WhatsNewBadge.client';"
+            "import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPill.client';"
         );
         expect(accountLayoutSource).toContain(
-            "item.id === 'whatsNew' && <WhatsNewBadge locale={locale} client:idle />"
+            "item.id === 'whatsNew' && <WhatsNewCountPill locale={locale} client:idle />"
         );
     });
 

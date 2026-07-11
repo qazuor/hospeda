@@ -68,9 +68,9 @@
     "sections": "Account sections",
     "nav": {
         "groupAccount": "My account",
-        "groupTourist": "Traveler",
-        "groupHost": "Host",
-        "groupCommerce": "Business",
+        "groupTourist": "Traveler area",
+        "groupHost": "Host area",
+        "groupCommerce": "Business area",
         "dashboard": "My account",
         "editProfile": "Edit profile",
         "subscription": "Subscription",

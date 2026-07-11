@@ -16,7 +16,7 @@ import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { WhatsNewBadge } from '@/components/shared/whats-new/WhatsNewBadge.client';
+import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPill.client';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import { getNavForSurface } from '@/config/navigation';
@@ -135,7 +135,7 @@ const { groups: navGroups } = getNavForSurface({
 											</span>
 											<span class="account-nav__label">
 												{t(item.i18nKey)}
-												{item.id === 'whatsNew' && <WhatsNewBadge locale={locale} client:idle />}
+												{item.id === 'whatsNew' && <WhatsNewCountPill locale={locale} client:idle />}
 											</span>
 										</a>
 									</li>
