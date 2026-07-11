@@ -1187,15 +1187,18 @@ export class AccommodationService extends BaseCrudService<
      * - `created`  - no privileged role, no active draft. A fresh DRAFT is inserted
      *   with `ownerId = actor.id`, `lifecycleState = DRAFT`, `lastWarnedAt = null`,
      *   and the owner is atomically promoted USER -> HOST in the same transaction.
-     *   The promotion is required so the owner can access the admin panel
-     *   (`ACCESS_PANEL_ADMIN` is granted to HOST). The trial subscription is NOT
-     *   created here — it is deferred to the first publish (see `publish()`).
+     *   The promotion is required so the owner gains the HOST role's permissions
+     *   (manage their own accommodations, upload media, etc.) — NOT for admin
+     *   panel access, which HOST does not have (`ACCESS_PANEL_ADMIN` is
+     *   staff-only; see HOS-152). The trial subscription is NOT created here —
+     *   it is deferred to the first publish (see `publish()`).
      *
      * - `resumed`  - a non-deleted DRAFT already exists for this owner. The existing
      *   row is returned and the caller resumes onboarding on it. This is the
      *   idempotency guarantee: at most one active DRAFT per USER at any given time.
      *   Defensively re-promotes a `USER` who somehow has an active DRAFT (legacy
-     *   data) so the admin-access invariant is restored.
+     *   data) so the HOST-permissions invariant is restored (again, not related
+     *   to admin panel access).
      *
      * Slug generation and destination validation reuse the same `_beforeCreate` hook
      * as the generic create flow, so the resulting row is structurally identical to
@@ -1238,7 +1241,9 @@ export class AccommodationService extends BaseCrudService<
                 if (existingDraft) {
                     // Defense-in-depth: legacy data may have a USER who owns
                     // an active DRAFT but was never promoted. Re-promote so
-                    // the admin panel access gate is satisfied. No-op when the
+                    // the owner has the HOST role's permissions (manage own
+                    // accommodations, upload media, etc.) — not for admin
+                    // panel access, which HOST does not have. No-op when the
                     // user is already HOST (most common path on resume).
                     if (user && user.role === RoleEnum.USER) {
                         await this._userModel.update(
@@ -1267,9 +1272,11 @@ export class AccommodationService extends BaseCrudService<
                 // (SPEC-258 B-API fix)
                 //
                 // Promoting at draft creation (rather than at first publish) is
-                // required so the owner can access the admin panel right away
-                // (`ACCESS_PANEL_ADMIN` is granted to HOST). The trial subscription
-                // is still deferred to the first publish — see `publish()`.
+                // required so the owner gains the HOST role's permissions right
+                // away (manage own accommodations, upload media, etc.) — NOT for
+                // admin panel access, which HOST does not have. The trial
+                // subscription is still deferred to the first publish — see
+                // `publish()`.
                 const result = await withServiceTransaction(
                     async (txCtx) => {
                         // Run _beforeCreate inside the tx so that hookState mutations
@@ -1557,9 +1564,10 @@ export class AccommodationService extends BaseCrudService<
      * first time.
      *
      * Role promotion (USER -> HOST) is NOT done here — it happens earlier, at
-     * draft creation time in `createForOnboarding`, so the owner can access the
-     * admin panel to complete the listing. By the time `publish` runs, the
-     * owner is already HOST (or higher).
+     * draft creation time in `createForOnboarding`, so the owner has the HOST
+     * role's permissions (manage own accommodations, upload media, etc.) to
+     * complete the listing — not for admin panel access, which HOST does not
+     * have. By the time `publish` runs, the owner is already HOST (or higher).
      *
      * Flow (Option C "external first, then short tx" pattern):
      *
