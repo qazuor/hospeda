@@ -14,7 +14,9 @@
  *
  * This is the CI-executed unit-level coverage for the POI resolution logic
  * (apps/api runs under the default vitest config); the end-to-end AC-6 case
- * lives in `test/integration/ai/search-chat.poi.test.ts`.
+ * lives inline in `test/integration/ai/search-chat.test.ts` (see the
+ * "AC-6 (HOS-113 T-044) — AI chat POI resolution acceptance test" describe
+ * block), not a separate `search-chat.poi.test.ts` file.
  *
  * @module apps/api/routes/ai/protected/poi-resolver.test
  */

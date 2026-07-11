@@ -13,17 +13,38 @@
  *
  * ## Owner decision — empty-intersection is a NO-MATCH, not a fallback
  *
- * Same rule as `attraction-resolver.ts`: when the user gives BOTH an
- * explicit location AND a point-of-interest mention, and the two share no
- * destination, the chat must return ZERO accommodations and the assistant
- * must explain the conflict — it must NOT silently substitute the POI's
+ * Same INTERSECT-OR-NO-MATCH rule as `attraction-resolver.ts` (spec §6.3
+ * point 3): when the user gives BOTH an explicit location AND a
+ * point-of-interest mention, and the two share no destination, this resolver
+ * reports `no-match` rather than silently substituting the POI's
  * destinations. The same NO-MATCH outcome applies when the matched POI(s)
  * resolve to zero destinations at all.
+ *
+ * One deliberate divergence from `attraction-resolver.ts`, reconciled here
+ * after a HOS-113 review pass (H-1/M-1): a POI `no-match` does NOT force the
+ * search to return ZERO accommodations the way an attraction conflict does.
+ * `search-chat.ts` leaves `params` untouched on `no-match`/`none` — the
+ * accommodation search still runs, just without the proximity narrowing
+ * (see Step 7.7's comment there). Forcing zero results was never
+ * implemented for POI and is out of scope for T-038..T-044. What WAS
+ * missing — and is now fixed — is the REPLY narrative: `search-chat.ts`
+ * builds a `poiLocationConflict` (mirroring `attractionLocationConflict`'s
+ * shape) whenever this resolver returns `no-match`, or `none` with a raw
+ * `poiSlugs` mention still present, and `buildSearchReplyMessages`
+ * (`search-chat.prompt.ts`) both scrubs the unresolved slug out of the
+ * reply's filters context and injects a corrective system note — so the
+ * assistant never narrates a proximity search that didn't actually run.
+ * That correction is narrative-only; it never blocks the search itself, so
+ * there is still no `poiLocationConflict` field on the `filters` SSE frame
+ * (unlike `AttractionLocationConflictSchema`).
  *
  * Non-fatal on infrastructure failure: a service error/throw degrades to
  * `none` (constraint skipped), NOT `no-match` — a DB failure is not evidence
  * that "this landmark has no destination", so it must not force a misleading
- * "no existe ese lugar" message.
+ * "no existe ese lugar" message. It still gets the same reply-narrative
+ * correction as a `no-match` when a raw mention was present (see above),
+ * since the model's context should never carry a slug that was not actually
+ * applied, regardless of why.
  *
  * @module apps/api/routes/ai/protected/poi-resolver
  */
