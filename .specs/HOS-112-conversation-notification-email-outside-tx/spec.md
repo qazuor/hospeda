@@ -175,13 +175,15 @@ For each due schedule, sequentially:
 4. On send **success** → record the schedule (+ its captured `streakCount`) in an
    in-memory "to advance" list for Phase 2.
 
-### Phase 2 — persist streak advances (short transaction, lock as first statement)
+### Phase 2 — persist each streak advance immediately, per schedule (REVISED during implementation — see OQ-2 note in §11)
 
-Open one short `withTransaction` whose **first statement** is
-`pg_try_advisory_xact_lock(43020)` (unchanged lock id). Inside it, only DB writes:
-for each successfully-sent schedule, `advanceSchedule(...)` (streak++ / cancel at
-3). No I/O. The lock now serializes only the write phase; its hold time is bounded
-by DB work, independent of provider latency (G-3).
+Rather than collecting a batch of successfully-sent schedules and persisting all
+their advances in one transaction at the end, each schedule's `advanceSchedule(...)`
+call runs in its OWN short `withTransaction`, immediately after that schedule's
+`sendEmail` call returns successfully — still inside the same per-schedule loop
+iteration, before moving on to the next schedule. No advisory lock is acquired.
+This bounds the blast radius of a crash between send and persist to exactly ONE
+schedule (at most one duplicate email) instead of an entire batch.
 
 ### Delivery-semantics decision (the crux)
 
@@ -246,9 +248,12 @@ the emails themselves are unchanged.
   enqueued; the schedule is eligible again next tick (test).
 - **AC-4** — On send success, exactly one `advanceSchedule` runs in the Phase-2
   transaction; streak is not advanced for failed sends (test).
-- **AC-5** — The advisory lock (`43020`) is acquired as the first statement of the
-  Phase-2 transaction only, and the transaction contains no external HTTP call
-  (test / code review).
+- **AC-5** — **REVISED during implementation (HOS-112 review):** no `advanceSchedule`
+  runs while an email HTTP call is in flight; each advance is persisted in its own
+  short transaction immediately after its schedule's send succeeds, with no
+  advisory lock held (test / code review). Advisory lock 43020 was removed from
+  this job entirely (see OQ-2 revision note above) rather than acquired at the
+  start of a batched Phase-2 transaction.
 - **AC-6** — Overlapping-run simulation: two runs over the same due set produce at
   most one email per schedule and at most one streak advance per schedule (test).
 - **AC-7** — Existing behavior preserved: skip-on-lock, dry-run (no sends, no
@@ -296,6 +301,15 @@ into §4/§6/§7/§9 above.
   (cheap, matches the weather-job precedent, guards against a Redis-outage
   fail-open storm). The atomic Redis claim is now the primary double-send guard;
   the lock is insurance.
+
+  **REVISED during implementation (HOS-112 review):** the batched phase-3
+  transaction gated by `pg_try_advisory_xact_lock` was found to DROP all
+  advances when the lock is contended, causing duplicate sends after the Redis
+  TTL (the email was already sent in phase 2). Resolved by persisting each
+  advance immediately per-schedule in its own short transaction and REMOVING
+  advisory lock 43020 from this job — the atomic Redis claim serializes
+  per-schedule and the double-advance guard is the DB safety net, so the lock
+  was redundant.
 - **OQ-3** — Streak-advance idempotency → **RESOLVED: re-read the row under the
   Phase-2 lock and verify `streakCount` before advancing.** Low cost, fully closes
   the double-advance risk (R-3).
