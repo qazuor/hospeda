@@ -480,7 +480,7 @@
       "id": "T-016",
       "title": "Regression: monthly reactivation byte-for-byte unchanged",
       "description": "Cross-cutting regression pass across every file touched by T-002/T-008/T-009: run the FULL existing suites for `apps/api/test/services/trial.service.test.ts` (`reactivateFromTrial (HOS-114)` and `reactivateSubscription (HOS-114)` describe blocks), `apps/api/test/services/billing/reactivation-plan-guard.test.ts`, `apps/api/test/routes/trial-reactivate.test.ts`, and `apps/api/test/routes/reactivate-subscription.test.ts`, asserting zero assertion changes needed for the default/monthly `billingInterval` path (NG-3, spec §8 bullet 5). If any existing assertion needed modification to pass, that is a regression — do not adjust the test to fit new behavior; fix the implementation instead. Add one new explicit guard test per suite (if not already covered by T-003/T-008/T-009's own new cases) asserting `billingInterval` omitted produces IDENTICAL request/response payloads to the pre-HOS-123 baseline (compare against the HOS-114-era fixtures/snapshots already in these files).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-002",
@@ -499,21 +499,21 @@
       ],
       "phase": "testing",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T23:48:02Z",
+        "completed": "2026-07-11T00:08:33Z"
       }
     },
     {
       "id": "T-017",
       "title": "Idempotency: preapproval-path vs payment-path never double-cancel",
       "description": "OQ-5's cross-path idempotency guarantee, tested explicitly (spec §8 bullet 6): seed a scenario where BOTH the monthly preapproval-confirm path (`subscription-logic.ts::completeReactivationSupersession`, triggered via `subscription_preapproval.created`) and the annual payment-confirm path (`payment-logic.ts::confirmAnnualSubscription` -> T-013's new call) could in principle race for the SAME `(newSubscriptionId, supersededId)` pairing (a contrived-but-real race: two webhook deliveries for the same pairing, one via each code path, e.g. a retry storm). Call `completeSupersessionPairing` twice for the identical pairing (once via each entry point, or twice via the shared function directly with the same args) and assert: exactly ONE `billing_subscription_events` audit row exists afterward (the extras/029 partial unique index `uq_billing_subscription_events_supersession_pairing` on `(subscription_id, metadata->>'supersededSubscriptionId')` enforces this at the DB level — the second call's INSERT must either no-op via the pre-check or fail gracefully on the unique constraint, never throw uncaught or create a duplicate row), and the superseded subscription's `cancel()` is called AT MOST once against the provider.\n\nTest location: extend `apps/api/test/services/billing/reactivation-supersession-complete.test.ts` with a new 'cross-path idempotency' describe block, or (preferred, since it exercises the DB constraint) add an integration-tier test if this package has a real-Postgres integration suite for billing (check `apps/api/test/integration/` for an existing pattern before adding a new one).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-013",
@@ -531,21 +531,21 @@
       ],
       "phase": "testing",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T23:48:02Z",
+        "completed": "2026-07-11T00:08:33Z"
       }
     },
     {
       "id": "T-018",
       "title": "E2E flow: annual reactivation from trial",
       "description": "Full-flow test (spec §8 bullet 1): a trial-status user calls `POST /billing/trial/reactivate` with `{ planId, billingInterval: 'annual' }` -> creates a `pending_provider` local annual subscription + returns a hosted-checkout `checkoutUrl` (the `successUrl` sentinel, not a synchronous activation) -> simulating the `payment.updated` webhook with an approved status confirms the annual subscription to `active` AND completes the deferred supersession (old trial subscription cancelled + audited + entitlement cache cleared, T-013) -- and NOT before the webhook fires (assert the old trial sub is STILL active/granting entitlements immediately after the initial POST, before the webhook).\n\nTest location: extend `apps/api/test/e2e/flows/billing/annual-checkout.test.ts` with a 'reactivation' scenario, or add a new sibling file `apps/api/test/e2e/flows/billing/annual-reactivation.test.ts` if the existing file is scoped to first-time checkout only (check its current scope before deciding). Reuse the existing e2e MP-stub harness this suite already uses.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-010",
@@ -563,21 +563,21 @@
       ],
       "phase": "testing",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-11T00:16:27Z",
+        "completed": "2026-07-11T00:38:18Z"
       }
     },
     {
       "id": "T-019",
       "title": "E2E flow: annual reactivation from canceled subscription",
       "description": "Mirror T-018 for the `POST /billing/trial/reactivate-subscription` entry point (a previously-canceled, non-trial subscription): `{ planId, billingInterval: 'annual' }` -> `pending_provider` annual sub + `checkoutUrl`, `previousPlanId` carried in the response -> `payment.updated` confirm flips to `active` and completes supersession (old canceled subscription's audit trail updated per the existing `subscription-reactivation` triggerSource marker, T-009). Assert `triggerSource` recorded in the audit row is `'subscription-reactivation'`, not `'trial-reactivation'` (distinguishing marker verified in T-009).\n\nTest location: same file/pattern as T-018 (`apps/api/test/e2e/flows/billing/annual-reactivation.test.ts` or wherever T-018 lands), second scenario in the same describe block or a sibling one.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 3,
       "blockedBy": [
         "T-011",
@@ -595,21 +595,21 @@
       ],
       "phase": "testing",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-11T00:16:28Z",
+        "completed": "2026-07-11T00:38:18Z"
       }
     },
     {
       "id": "T-020",
       "title": "Abandoned annual reactivation checkout reaped by cron",
       "description": "Spec §8 bullet 3: an annual reactivation that creates a `pending_provider` local row but whose checkout is never completed (user abandons the hosted checkout page) must leave the OLD subscription untouched (still active/granting entitlements — no supersession ever fires since the new sub never confirms) and the new `pending_provider` row must be collected by the existing `abandoned-pending-subs` cron (SPEC-126 D6) once `PENDING_PROVIDER_TTL_MS` elapses, exactly like a first-time annual checkout abandonment already works.\n\nVerify `apps/api/src/cron/jobs/abandoned-pending-subs.job.ts`'s query has no interval- or reactivation-specific exclusion that would skip a `supersedesSubscriptionId`-carrying row (grep for `supersedesSubscriptionId` / `billingInterval` in that file before assuming no change needed — if the cron's query filters differently for rows carrying reactivation metadata, that's a real gap to fix here).\n\nTests: extend `apps/api/test/cron/abandoned-pending-subs.test.ts` with a case seeding a `pending_provider` annual row carrying `metadata.supersedesSubscriptionId` past its TTL — assert the cron reaps it (marks abandoned/expired per its existing behavior for non-reactivation annual rows) and that the OLD (superseded) subscription's status is untouched by this cron run.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-010",
@@ -627,21 +627,21 @@
       ],
       "phase": "testing",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-11T00:16:28Z",
+        "completed": "2026-07-11T00:38:18Z"
       }
     },
     {
       "id": "T-021",
       "title": "Integration regression: free/unknown plan rejection unchanged for annual",
       "description": "Spec §8 bullet 4: verify at the full service+route integration level (not just T-003's guard-level unit tests) that `billingInterval: 'annual'` requests correctly reject a free plan with `INVALID_REACTIVATION_PLAN` and an unknown `planId` with `PLAN_NOT_FOUND`, mapped to the correct HTTP status via `mapSubscriptionCheckoutErrorToHttp` (`apps/api/src/services/billing/subscription-checkout-error-http.ts`) through BOTH `reactivateFromTrial` and `reactivateSubscription` entry points.\n\nTests: extend `apps/api/test/routes/trial-reactivate.test.ts` and `apps/api/test/routes/reactivate-subscription.test.ts` with `billingInterval: 'annual'` variants of the existing free-plan and unknown-plan rejection cases (these files likely already have the monthly equivalents from HOS-114 — mirror them, do not duplicate the guard-level unit assertions from T-003).",
-      "status": "pending",
+      "status": "completed",
       "complexity": 2,
       "blockedBy": [
         "T-003",
@@ -659,21 +659,21 @@
       ],
       "phase": "testing",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "pass"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-10T23:48:02Z",
+        "completed": "2026-07-11T00:08:33Z"
       }
     },
     {
       "id": "T-022",
       "title": "Update JSDoc references marking HOS-123 resolved",
       "description": "Sweep and update the in-repo JSDoc comments that currently describe annual reactivation as unsupported/deferred, now that it ships:\n- `apps/api/src/services/billing/reactivation-plan-guard.ts` — the `ANNUAL_REACTIVATION_UNSUPPORTED` JSDoc block (line ~96-99, 'Annual reactivation is architecturally incompatible... deferred to HOS-123') and the `NO_ANNUAL_PRICE` reference in the error line (~147, 'deferred to HOS-123') — update to describe the now-conditional (monthly-only-by-default) behavior per T-003.\n- `apps/api/src/services/trial.service.ts` — `reactivateFromTrial`/`reactivateSubscription` JSDoc, if it references the HOS-114 monthly-only scoping, add a note that annual is now supported via `billingInterval`.\n- `apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts` and `reactivation-supersession-reconcile.job.ts` — update `completeReactivationSupersession`'s JSDoc (post T-012 export) to mention it is now called from BOTH the preapproval-confirm path AND the annual payment-confirm path (T-013), not just the former.\n- `HOS-114`'s own spec doc if it lives locally (`.specs/HOS-114-*/spec.md` or wherever HOS-114's `.specs` folder ended up) — no code change there, just leave as historical record; do NOT retroactively rewrite it, only note in this repo's CLAUDE.md-adjacent doc (if any references HOS-123 as 'annual deferred') that it is now resolved.\n\nNo test requirement — doc-only change. Verify via `pnpm --filter api typecheck` (JSDoc isn't typechecked but confirms no accidental code touch) and a final `rg -n 'deferred to HOS-123'` sweep across the repo returning zero remaining stale references.",
-      "status": "pending",
+      "status": "completed",
       "complexity": 1,
       "blockedBy": [
         "T-008",
@@ -691,14 +691,14 @@
       ],
       "phase": "docs",
       "qualityGate": {
-        "lint": null,
-        "typecheck": null,
-        "tests": null
+        "lint": "pass",
+        "typecheck": "pass",
+        "tests": "n/a"
       },
       "timestamps": {
         "created": "2026-07-10T17:33:37.000Z",
-        "started": null,
-        "completed": null
+        "started": "2026-07-11T00:43:07Z",
+        "completed": "2026-07-11T00:48:55Z"
       }
     },
     {
@@ -739,9 +739,9 @@
   ],
   "summary": {
     "total": 23,
-    "pending": 8,
+    "pending": 1,
     "inProgress": 0,
-    "completed": 15,
+    "completed": 22,
     "blocked": 0,
     "averageComplexity": 2.1
   }
