@@ -124,17 +124,37 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         expect(experience?.href).toBe('publicar-experiencia');
     });
 
-    it('gives the partner door two coming-soon options with no acquiredPermission (NG-2)', () => {
+    it('gives the partner door four options: sponsor, partner, serviceProvider, editor (HOS-134)', () => {
         const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
-        expect(partner?.options.map((option) => option.id)).toEqual(['sponsor', 'serviceProvider']);
-        for (const option of partner?.options ?? []) {
+        expect(partner?.options.map((option) => option.id)).toEqual([
+            'sponsor',
+            'partner',
+            'serviceProvider',
+            'editor'
+        ]);
+    });
+
+    it('keeps sponsor, partner, and serviceProvider as coming-soon placeholders with no acquiredPermission (NG-2)', () => {
+        const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
+        const comingSoonOptions = partner?.options.filter((option) => option.id !== 'editor') ?? [];
+        expect(comingSoonOptions).toHaveLength(3);
+        for (const option of comingSoonOptions) {
             expect(option.comingSoon).toBe(true);
             expect(option.acquiredPermission).toBeUndefined();
             expect(option.href).toBe('contacto');
         }
     });
 
-    it('declares the stateful "Sumá otra alianza" key on the partner door, unused for now (TODO HOS-131)', () => {
+    it('gives the editor option a real acquired signal (POST_CREATE), no comingSoon, and admin-panel management (HOS-134 D-4)', () => {
+        const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
+        const editor = partner?.options.find((option) => option.id === 'editor');
+        expect(editor?.acquiredPermission).toBe(PermissionEnum.POST_CREATE);
+        expect(editor?.managesInAdminPanel).toBe(true);
+        expect(editor?.comingSoon).toBeUndefined();
+        expect(editor?.href).toBe('colaborar/editores');
+    });
+
+    it('declares the stateful "Sumá otra alianza" key on the partner door, activated once the editor option is acquired (HOS-134)', () => {
         const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
         expect(partner?.statefulI18nKey).toBe('account.doors.partner.titleStateful');
     });

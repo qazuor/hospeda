@@ -8,9 +8,11 @@ import type { IconProps } from '@repo/icons';
 import {
     BuildingIcon,
     CompassIcon,
+    EditIcon,
     ForkKnifeIcon,
     HomeIcon,
     MegaphoneIcon,
+    StarIcon,
     UsersIcon,
     WrenchIcon
 } from '@repo/icons';
@@ -57,6 +59,14 @@ export interface DiscoveryDoorOption {
      * service provider). Never combined with `acquiredPermission`.
      */
     readonly comingSoon?: boolean;
+    /**
+     * `true` when this option's role is managed cross-app in the admin panel
+     * rather than under `/mi-cuenta` (HOS-134 D-4 — e.g. the `editor` role,
+     * assigned/managed by staff). When set AND the option is `acquired`, the
+     * hub links the absolute admin-panel URL (`getAdminUrl()`) instead of a
+     * locale-relative `manageHref`.
+     */
+    readonly managesInAdminPanel?: boolean;
 }
 
 /**
@@ -146,12 +156,11 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
         id: 'partner',
         i18nKey: 'account.doors.partner.title',
         subtitleI18nKey: 'account.doors.partner.subtitle',
-        // TODO(HOS-131): activate the stateful partner-door label
-        // ("Sumá otra alianza") once sponsor/provider roles exist — i.e. once
-        // at least one option below gains a real `acquiredPermission`. Wire
-        // it in whichever surface renders `ACCOUNT_DISCOVERY_DOORS` by
-        // switching to `statefulI18nKey` when `isDoorVisible` finds ≥1
-        // ALREADY-acquired option alongside the remaining unacquired one(s).
+        // RESOLVED (HOS-134 D-4): `editor` below is the acquired-capable
+        // option that drives the stateful label — once a user holds
+        // `POST_CREATE` (the editor role), `resolveDoorLabelKey`
+        // (`src/lib/nav-gating.ts`) switches this door's rendered title from
+        // `i18nKey` to `statefulI18nKey` ("Sumá otra alianza").
         statefulI18nKey: 'account.doors.partner.titleStateful',
         kind: 'partner',
         href: 'mi-cuenta/aliados',
@@ -169,6 +178,17 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 comingSoon: true
             },
             {
+                id: 'partner',
+                i18nKey: 'account.doors.partner.options.partner.title',
+                descriptionI18nKey: 'account.doors.partner.options.partner.description',
+                icon: StarIcon,
+                href: 'contacto',
+                ctaI18nKey: 'account.doors.common.contactCta',
+                // No acquiredPermission: the home-ad partner role doesn't exist
+                // yet (NG-2) — this option can never resolve to 'acquired'.
+                comingSoon: true
+            },
+            {
                 id: 'serviceProvider',
                 i18nKey: 'account.doors.partner.options.serviceProvider.title',
                 descriptionI18nKey: 'account.doors.partner.options.serviceProvider.description',
@@ -178,6 +198,20 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 // No acquiredPermission: service-provider roles don't exist yet
                 // (NG-2) — this option can never resolve to 'acquired'.
                 comingSoon: true
+            },
+            {
+                id: 'editor',
+                i18nKey: 'account.doors.partner.options.editor.title',
+                descriptionI18nKey: 'account.doors.partner.options.editor.description',
+                icon: EditIcon,
+                href: 'colaborar/editores',
+                ctaI18nKey: 'account.doors.partner.options.editor.cta',
+                // The only aliado with a real entry form today (HOS-134 §2) —
+                // an admin manually promotes the applicant to RoleEnum.EDITOR,
+                // who then holds POST_CREATE and manages content in the admin
+                // panel, not under /mi-cuenta (`managesInAdminPanel`).
+                acquiredPermission: PermissionEnum.POST_CREATE,
+                managesInAdminPanel: true
             }
         ]
     }

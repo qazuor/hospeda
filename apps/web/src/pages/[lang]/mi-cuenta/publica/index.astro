@@ -17,6 +17,7 @@ import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { getAdminUrl } from '@/lib/env';
 
 export const prerender = false;
 
@@ -40,5 +41,5 @@ const description = t(door.subtitleI18nKey);
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="publica">
     <AccountPageHeader title={title} />
-    <DiscoveryDoorHub locale={locale} door={door} role={user.role} />
+    <DiscoveryDoorHub locale={locale} door={door} role={user.role} adminUrl={getAdminUrl()} />
 </AccountLayout>

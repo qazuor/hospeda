@@ -1,10 +1,12 @@
 ---
 /**
  * @file mi-cuenta/aliados/index.astro
- * @description "Sumate como aliado" discovery-door hub page (HOS-131 §6.2).
- * Lists the B2B alliance roles (sponsor, service provider) — both are
- * not-yet-implemented verticals (NG-2), so every option renders as
- * "Próximamente" with a "Contactanos" CTA until those roles exist.
+ * @description "Sumate como aliado" discovery-door hub page (HOS-131 §6.2,
+ * expanded HOS-134 §5.3). Lists the four B2B alliance roles: sponsor, partner
+ * (home-ad), and service provider are not-yet-implemented verticals (NG-2)
+ * that render "Próximamente" + a "Contactanos" CTA; `editor` has a real entry
+ * form (`/colaborar/editores`) and resolves `acquired` once the user holds
+ * `POST_CREATE`, linking the admin panel to manage it.
  *
  * @route     /[lang]/mi-cuenta/aliados/
  * @rendering SSR (prerender = false — requires authenticated user)
@@ -17,6 +19,7 @@ import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { getAdminUrl } from '@/lib/env';
 
 export const prerender = false;
 
@@ -40,5 +43,5 @@ const description = t(door.subtitleI18nKey);
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="aliados">
     <AccountPageHeader title={title} />
-    <DiscoveryDoorHub locale={locale} door={door} role={user.role} />
+    <DiscoveryDoorHub locale={locale} door={door} role={user.role} adminUrl={getAdminUrl()} />
 </AccountLayout>

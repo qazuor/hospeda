@@ -47,12 +47,13 @@ describe('mi-cuenta/publica/index.astro (HOS-131 "Publicá en Hospeda" hub)', ()
         expect(source).toContain('t(door.subtitleI18nKey)');
     });
 
-    it('renders the shared DiscoveryDoorHub component, forwarding locale/door/role', () => {
+    it('renders the shared DiscoveryDoorHub component, forwarding locale/door/role/adminUrl (HOS-134)', () => {
         expect(source).toContain(
             "import DiscoveryDoorHub from '@/components/account/DiscoveryDoorHub.astro';"
         );
+        expect(source).toContain("import { getAdminUrl } from '@/lib/env';");
         expect(source).toContain(
-            '<DiscoveryDoorHub locale={locale} door={door} role={user.role} />'
+            '<DiscoveryDoorHub locale={locale} door={door} role={user.role} adminUrl={getAdminUrl()} />'
         );
     });
 

@@ -116,12 +116,21 @@
             "subtitle": "Sumate como aliado de Hospeda: destacá tu marca o tus servicios frente a miles de viajeros y anfitriones.",
             "options": {
                 "sponsor": {
-                    "title": "Sponsor",
-                    "description": "Destacá tu marca en Hospeda con contenido patrocinado y presencia en eventos y publicaciones."
+                    "title": "Sponsor de contenido",
+                    "description": "Destacá tu marca con contenido patrocinado: aparecé en notas y eventos de Hospeda."
+                },
+                "partner": {
+                    "title": "Partner",
+                    "description": "Mostrá tu marca en un espacio publicitario destacado en la home de Hospeda."
                 },
                 "serviceProvider": {
                     "title": "Proveedor de servicios",
                     "description": "Sumate al directorio de proveedores locales que los anfitriones recomiendan a sus huéspedes."
+                },
+                "editor": {
+                    "title": "Editor",
+                    "description": "¿Querés escribir notas y cargar eventos en Hospeda? Postulate como editor de contenidos.",
+                    "cta": "Postulate como editor"
                 }
             }
         },

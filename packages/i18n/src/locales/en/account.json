@@ -116,12 +116,21 @@
             "subtitle": "Become a Hospeda partner: showcase your brand or services to thousands of travelers and hosts.",
             "options": {
                 "sponsor": {
-                    "title": "Sponsor",
-                    "description": "Showcase your brand on Hospeda with sponsored content and visibility across events and posts."
+                    "title": "Content sponsor",
+                    "description": "Showcase your brand with sponsored content: appear in Hospeda's posts and events."
+                },
+                "partner": {
+                    "title": "Partner",
+                    "description": "Showcase your brand in a featured ad placement on the Hospeda homepage."
                 },
                 "serviceProvider": {
                     "title": "Service provider",
                     "description": "Join the local provider directory that hosts recommend to their guests."
+                },
+                "editor": {
+                    "title": "Editor",
+                    "description": "Want to write posts and add events on Hospeda? Apply to become a content editor.",
+                    "cta": "Apply as an editor"
                 }
             }
         },

@@ -34,6 +34,16 @@ describe('PERMISSION_ROLE_MAP', () => {
             PERMISSION_ROLE_MAP[PermissionEnum.ACCOMMODATION_CREATE]?.has(RoleEnum.COMMERCE_OWNER)
         ).toBe(false);
     });
+
+    it('grants POST_CREATE to EDITOR (and platform staff), but not HOST or COMMERCE_OWNER (HOS-134 editor door signal)', () => {
+        const mapped = PERMISSION_ROLE_MAP[PermissionEnum.POST_CREATE];
+        expect(mapped).toBeDefined();
+        expect(mapped?.has(RoleEnum.EDITOR)).toBe(true);
+        expect(mapped?.has(RoleEnum.ADMIN)).toBe(true);
+        expect(mapped?.has(RoleEnum.SUPER_ADMIN)).toBe(true);
+        expect(mapped?.has(RoleEnum.HOST)).toBe(false);
+        expect(mapped?.has(RoleEnum.COMMERCE_OWNER)).toBe(false);
+    });
 });
 
 describe('isVisibleByPermissions (client, exact evaluation)', () => {

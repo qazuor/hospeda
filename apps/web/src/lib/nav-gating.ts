@@ -71,6 +71,15 @@ export const PERMISSION_ROLE_MAP: Partial<Record<PermissionEnum, ReadonlySet<Rol
         RoleEnum.COMMERCE_OWNER,
         RoleEnum.ADMIN,
         RoleEnum.SUPER_ADMIN
+    ]),
+    // Editors + admins hold POST_CREATE; hosts/tourists/commerce-owners do
+    // not. This is the editor discovery-door "acquired" signal (HOS-134
+    // §5.3/§5.4) — it drives both the "Ya lo tenés" state on the aliados hub
+    // and the stateful partner-door label.
+    [PermissionEnum.POST_CREATE]: new Set<RoleEnum>([
+        RoleEnum.EDITOR,
+        RoleEnum.ADMIN,
+        RoleEnum.SUPER_ADMIN
     ])
 };
 

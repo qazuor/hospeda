@@ -11,7 +11,9 @@
  * D-4 — no effective-permissions round-trip on SSR).
  *
  * Per option:
- * - `acquired`   -> check badge + "Gestionar" button (`option.manageHref`).
+ * - `acquired`   -> check badge + "Gestionar" button. Links `option.manageHref`
+ *   (locale-relative), except `managesInAdminPanel` options (HOS-134), which
+ *   link the absolute admin-panel URL (`adminUrl` prop) instead.
  * - `unacquired` -> mini-explanation + acquire CTA button (`option.href`).
  * - `comingSoon` -> "Próximamente" badge + "Contactanos" button (`option.href`).
  */
@@ -29,9 +31,16 @@ interface Props {
     readonly locale: SupportedLocale;
     readonly door: DiscoveryDoor;
     readonly role: string | null;
+    /**
+     * Admin panel base URL (`getAdminUrl()`), used for `managesInAdminPanel`
+     * acquired options (HOS-134). `undefined` when the env var isn't
+     * configured — the "Gestionar" link then falls back to the relative door
+     * href instead of emitting a broken empty href.
+     */
+    readonly adminUrl?: string;
 }
 
-const { locale, door, role } = Astro.props;
+const { locale, door, role, adminUrl } = Astro.props;
 const { t } = createTranslations(locale);
 
 const visibility = (node: GatedNavNode) => isVisibleByRole(node, role);
@@ -69,7 +78,11 @@ const optionRows = door.options.map((option) => ({
                             </span>
                             <GradientButton
                                 label={t('account.doors.common.manageCta')}
-                                href={buildUrl({ locale, path: option.manageHref ?? door.href })}
+                                href={
+                                    option.managesInAdminPanel && adminUrl
+                                        ? adminUrl
+                                        : buildUrl({ locale, path: option.manageHref ?? door.href })
+                                }
                                 variant="outline-primary"
                                 size="sm"
                                 shape="rounded"
