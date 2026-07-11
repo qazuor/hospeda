@@ -773,5 +773,60 @@ describe('Response Middleware', () => {
 
             errorSpy.mockRestore();
         });
+
+        // HOS-129: a raw Hono HTTPException (e.g. the auth guard's guest-on-
+        // protected-route 401) never carries a ServiceErrorCode, so it must be
+        // leveled from its HTTP status instead of falling through to `error`.
+        it('logs a raw HTTPException(401) at info without a stack, response unchanged', async () => {
+            const { HTTPException } = await import('hono/http-exception');
+            const { apiLogger } = await import('../../src/utils/logger');
+            const infoSpy = vi.spyOn(apiLogger, 'info').mockImplementation(() => undefined);
+            const errorSpy = vi.spyOn(apiLogger, 'error').mockImplementation(() => undefined);
+
+            app.get('/guest-denied', () => {
+                throw new HTTPException(401, { message: 'Authentication required' });
+            });
+
+            const res = await app.request('/guest-denied');
+
+            // Client-facing response is unchanged: same status, same code, same message
+            expect(res.status).toBe(401);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('UNAUTHORIZED');
+            expect(data.error.message).toBe('Authentication required');
+
+            // Only the log level/verbosity changed
+            expect(infoSpy).toHaveBeenCalledWith(expect.stringContaining('Caught error'));
+            expect(errorSpy).not.toHaveBeenCalled();
+
+            infoSpy.mockRestore();
+            errorSpy.mockRestore();
+        });
+
+        it('logs a raw HTTPException(403) at warn without a stack, response unchanged', async () => {
+            const { HTTPException } = await import('hono/http-exception');
+            const { apiLogger } = await import('../../src/utils/logger');
+            const warnSpy = vi.spyOn(apiLogger, 'warn').mockImplementation(() => undefined);
+            const errorSpy = vi.spyOn(apiLogger, 'error').mockImplementation(() => undefined);
+
+            app.get('/permission-denied', () => {
+                throw new HTTPException(403, { message: 'Insufficient permissions' });
+            });
+
+            const res = await app.request('/permission-denied');
+
+            expect(res.status).toBe(403);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('FORBIDDEN');
+            expect(data.error.message).toBe('Insufficient permissions');
+
+            expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Caught error'));
+            expect(errorSpy).not.toHaveBeenCalled();
+
+            warnSpy.mockRestore();
+            errorSpy.mockRestore();
+        });
     });
 });
