@@ -193,6 +193,8 @@
             "amountDetails": "Monto: {{amount}}",
             "verifyingStatus": "Verificando estado del pago...",
             "verifyingSubtitle": "Estamos confirmando tu pago. Esto puede tardar unos instantes.",
+            "timeoutTitle": "Está tardando más de lo normal",
+            "timeoutSubtitle": "El pago puede seguir procesándose. Revisá tu cuenta en unos minutos para confirmar tu suscripción.",
             "cta": "Ir a mi cuenta",
             "pageTitle": "Pago aprobado — Hospeda",
             "promoIgnoredNote": "Tu código de descuento no se aplicó porque activaste la prueba gratis."

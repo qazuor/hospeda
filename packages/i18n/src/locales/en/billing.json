@@ -193,6 +193,8 @@
             "amountDetails": "Amount: {{amount}}",
             "verifyingStatus": "Verifying payment status...",
             "verifyingSubtitle": "We are confirming your payment. This may take a moment.",
+            "timeoutTitle": "This is taking longer than usual",
+            "timeoutSubtitle": "Your payment may still be processing. Check your account in a few minutes to confirm your subscription.",
             "cta": "Go to my account",
             "pageTitle": "Payment approved — Hospeda",
             "promoIgnoredNote": "Your discount code was not applied because you started your free trial instead."
