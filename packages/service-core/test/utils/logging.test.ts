@@ -137,6 +137,16 @@ describe('resolveErrorLogLevel', () => {
         expect(resolveErrorLogLevel(ServiceErrorCode.FORBIDDEN)).toBe('warn');
     });
 
+    // HOS-129: plan-gating denials (entitlement/limit gates) are routine,
+    // expected client outcomes in the same class as FORBIDDEN — not faults.
+    it('maps ENTITLEMENT_REQUIRED (403) to warn', () => {
+        expect(resolveErrorLogLevel(ServiceErrorCode.ENTITLEMENT_REQUIRED)).toBe('warn');
+    });
+
+    it('maps LIMIT_REACHED (403) to warn', () => {
+        expect(resolveErrorLogLevel(ServiceErrorCode.LIMIT_REACHED)).toBe('warn');
+    });
+
     it('maps INTERNAL_ERROR to error', () => {
         expect(resolveErrorLogLevel(ServiceErrorCode.INTERNAL_ERROR)).toBe('error');
     });

@@ -1,4 +1,5 @@
 import { ServiceErrorCode } from '@repo/schemas';
+import type { ErrorLogLevel } from '@repo/service-core';
 import { resolveErrorLogLevel, ServiceError } from '@repo/service-core';
 /**
  * Response formatting middleware
@@ -283,6 +284,33 @@ function isDbPoolExhausted(error: Error): boolean {
 }
 
 /**
+ * Maps a raw HTTP status code to the log level its errors should be emitted at.
+ *
+ * Companion to {@link resolveErrorLogLevel} (`@repo/service-core`) for errors
+ * that do NOT carry a `ServiceErrorCode` — namely Hono's `HTTPException`,
+ * thrown directly by middleware (e.g. the auth guard's 401 on a guest hitting
+ * a protected route, or its 403 on a permission/admin-access denial). Mirrors
+ * the same EXPECTED-outcome intent as `resolveErrorLogLevel` (HOS-109 / OQ-1):
+ * a guest 401 and a missing-resource 404 are routine
+ * browsing outcomes → `info`; a 403 permission denial is a probing signal
+ * worth slightly more visibility → `warn`; everything else stays `error`.
+ *
+ * @param status - The HTTP status code carried by the `HTTPException`.
+ * @returns The log level to emit at; defaults to `error`.
+ */
+const resolveHttpStatusLogLevel = (status: number): ErrorLogLevel => {
+    switch (status) {
+        case 401:
+        case 404:
+            return 'info';
+        case 403:
+            return 'warn';
+        default:
+            return 'error';
+    }
+};
+
+/**
  * Creates an error handler for Hono app.onError()
  * This is the preferred way to handle errors in Hono
  *
@@ -301,10 +329,15 @@ export const createErrorHandler = () => {
         // Log the error for debugging. EXPECTED outcomes (401/403/404) are not
         // application faults: emit them at a reduced level without a stack trace
         // so they don't flood the error stream (HOS-109 / OQ-1). Real faults keep
-        // `error` + the full stack.
-        const logLevel = resolveErrorLogLevel(
-            error instanceof ServiceError ? error.code : undefined
-        );
+        // `error` + the full stack. `HTTPException` (e.g. the auth guard's raw
+        // 401/403, which never carries a ServiceErrorCode) is leveled separately
+        // via its HTTP status.
+        const logLevel =
+            error instanceof ServiceError
+                ? resolveErrorLogLevel(error.code)
+                : error instanceof HTTPException
+                  ? resolveHttpStatusLogLevel(error.status)
+                  : resolveErrorLogLevel(undefined);
         apiLogger[logLevel](
             `Caught error in ${c.req.method} ${c.req.path}: [${error.name}] ${error.message}`
         );
