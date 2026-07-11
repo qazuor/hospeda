@@ -19,10 +19,17 @@
  * the admin-panel link built by the shared `buildAdminPanelItem`,
  * `@/lib/admin-panel-link`) mirrors UserMenu's session zone too.
  *
- * Since this island only receives `{ name, email, image }` from the server
- * (no permissions), it resolves the effective permission list itself on
- * mount via `useAccountPermissions` (`@/hooks/use-account-permissions`) —
- * the SAME shared hook `UserMenu.client.tsx` uses, never a second mechanism.
+ * Auth state (user, permissions, role) resolves the SAME way UserMenu's
+ * does: `useAccountPermissions` (`@/hooks/use-account-permissions`) in
+ * SSR-reconciling mode, seeded from `initialUser`/`initialRole` (the SSR
+ * hint from `Astro.locals.user`, forwarded through `MobileMenuIsland.astro`
+ * — `null` on pages whose middleware didn't parse the session) and refined
+ * client-side from the shared `authMeSnapshot` cache / `/auth/me` fetch.
+ * This island no longer runs inside a `server:defer` Server Island (see
+ * `MobileMenuIsland.astro`'s file doc for why), so it can never assume a
+ * freshly-parsed session — the host-mode CTA (`isHostMode`/`ctaLabel`/
+ * `ctaHref`, formerly computed server-side in `MobileMenuIsland.astro`) is
+ * now derived here from the resolved `role`.
  *
  * Tasks: T-074
  */
@@ -35,11 +42,13 @@ import { IconButton } from '@/components/ui/IconButtonReact';
 import type { NavItem as AccountNavItem } from '@/config/navigation';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { buildAdminPanelItem } from '@/lib/admin-panel-link';
+import type { AuthMeUser } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { getCuratedAccountNav } from '@/lib/nav-avatar';
+import { buildUrl } from '@/lib/urls';
 import styles from './MobileMenu.module.css';
 import { MobileMenuAccountSection } from './MobileMenuAccountSection.client';
 
@@ -77,16 +86,6 @@ interface NavItem {
     readonly href: string;
 }
 
-/** Authenticated user data passed from the server. */
-interface MobileMenuUser {
-    /** User's display name. */
-    readonly name: string;
-    /** User's email address. */
-    readonly email: string;
-    /** Optional avatar image URL. */
-    readonly image?: string;
-}
-
 /** Props for the MobileMenu component. */
 interface MobileMenuProps {
     /** Active locale .. passed through for future i18n use. */
@@ -99,16 +98,19 @@ interface MobileMenuProps {
     readonly logoSrc: string;
     /** Home URL for the logo link. */
     readonly homeHref: string;
-    /** Authenticated user data (null/undefined when not logged in). */
-    readonly user?: MobileMenuUser | null;
-    /** Label for the owner CTA button. */
-    readonly ctaLabel?: string;
-    /** Destination href for the owner CTA button. */
-    readonly ctaHref?: string;
+    /**
+     * SSR auth hint (`Astro.locals.user`, mapped to `AuthMeUser`), `null`
+     * for guests AND for pages whose middleware didn't parse the session.
+     * Reconciled against the shared client cache via `useAccountPermissions`
+     * — see the file JSDoc.
+     */
+    readonly initialUser: AuthMeUser | null;
+    /** SSR role hint (`Astro.locals.user?.role`), for the host-mode CTA on first paint. */
+    readonly initialRole: string | null;
     /**
      * Admin panel base URL for the session-zone admin-panel link (HOS-131
-     * §6.5, staff/host only, gated by `access.panelAdmin`). `undefined`
-     * (env var not configured) always hides the link.
+     * §6.5, staff/host only, gated by `access.panelAdmin`) and the
+     * host-mode CTA. `undefined` (env var not configured) hides both.
      */
     readonly adminPanelUrl?: string;
 }
@@ -141,9 +143,8 @@ export function MobileMenu({
     currentPath,
     logoSrc,
     homeHref,
-    user,
-    ctaLabel,
-    ctaHref,
+    initialUser,
+    initialRole,
     adminPanelUrl
 }: MobileMenuProps) {
     const { t } = createTranslations(locale);
@@ -153,14 +154,44 @@ export function MobileMenu({
     const authTexts = AUTH_TEXTS[locale] ?? AUTH_TEXTS.es;
 
     // ------------------------------------------------------------------
-    // Resolve effective permissions for the curated account block + the
-    // admin-panel session link. Simple mode (no `initialUser`) — this
-    // island already has its own SSR `user` prop, so it skips entirely for
-    // guests and never touches `data-user-authenticated` (that's UserMenu's
-    // responsibility). Uses the SAME shared hook as UserMenu.client.tsx —
-    // never a second mechanism.
+    // Resolve auth state (user, permissions, role) for the whole auth
+    // section — curated account block, admin-panel session link, AND the
+    // host-mode CTA. SSR-reconciling mode (same as UserMenu.client.tsx):
+    // `initialUser`/`initialRole` seed first paint, the shared
+    // `authMeSnapshot` cache / `/auth/me` fetch refines it on hydration.
+    // Never a second auth mechanism — see the file JSDoc.
     // ------------------------------------------------------------------
-    const { permissions } = useAccountPermissions({ skip: !user });
+    // `syncAuthenticatedAttribute: false` — UserMenu (client:load, mounted
+    // on every page) is the single owner of `<html data-user-authenticated>`;
+    // this island must not become a second writer of the same attribute.
+    const { user, permissions, role } = useAccountPermissions({
+        initialUser,
+        initialRole,
+        syncAuthenticatedAttribute: false
+    });
+
+    // ------------------------------------------------------------------
+    // Owner CTA (SPEC-182 D3, moved from the old server:defer
+    // MobileMenuIsland.astro). A HOST may still be mid-onboarding with only
+    // a DRAFT, but role=HOST is still enough to point the CTA at the host
+    // surfaces. Unauthenticated visitors and tourists keep the /publicar
+    // funnel. `role` starts at `initialRole` and is refined by the same
+    // hook resolution as `user`/`permissions` above.
+    // ------------------------------------------------------------------
+    const isHostMode = role === 'HOST' && Boolean(adminPanelUrl);
+    const ctaLabel = isHostMode ? t('nav.hostModeCta', 'Modo anfitrión') : t('nav.ownerCta');
+    const ctaHref = isHostMode
+        ? (adminPanelUrl as string)
+        : buildUrl({ locale, path: '/publicar/' });
+
+    // ------------------------------------------------------------------
+    // Map the resolved AuthMeUser (id/name/email/avatarUrl) to the shape
+    // MobileMenuAccountSection expects (name/email/image) — a pure
+    // presentational adapter, not a second auth source.
+    // ------------------------------------------------------------------
+    const accountSectionUser = user
+        ? { name: user.name, email: user.email, image: user.avatarUrl }
+        : null;
 
     // ------------------------------------------------------------------
     // Curated account nav (identity "Mi cuenta" link + Favoritos + business
@@ -183,8 +214,8 @@ export function MobileMenu({
     // ------------------------------------------------------------------
     // Admin panel session item (HOS-131 §6.5, staff/host only). Hidden
     // while permissions are loading (fail-closed) — same contract as
-    // UserMenu.client.tsx. Naturally stays null for guests too, since
-    // `permissions` never resolves past `null` when `skip: !user` is set.
+    // UserMenu.client.tsx. Naturally stays null for guests too, since a
+    // guest's resolved `permissions` is `[]`.
     // ------------------------------------------------------------------
     const adminPanelItem = useMemo(() => {
         if (permissions === null) return null;
@@ -293,7 +324,7 @@ export function MobileMenu({
     // ------------------------------------------------------------------
     // Inline-style fallback that guarantees the overlay is fixed-positioned
     // and hidden off-screen even when the CSS module fails to load. Astro's
-    // ClientRouter occasionally re-renders the server-island parent without
+    // ClientRouter has occasionally re-rendered this island without
     // re-injecting the module's <link> on back navigation (the CSS Module's
     // hashed class then matches no rule), which used to leave the menu's
     // raw content in the page flow and push the hero down. These inline
@@ -375,7 +406,7 @@ export function MobileMenu({
                 locale={locale}
                 t={t}
                 isOpen={isOpen}
-                user={user}
+                user={accountSectionUser}
                 ctaLabel={ctaLabel}
                 ctaHref={ctaHref}
                 curatedAccountItems={curatedAccountItems}

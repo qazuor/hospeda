@@ -1,18 +1,26 @@
 ---
 /**
  * @file MobileMenuIsland.astro
- * @description Server Island wrapper that resolves auth state and renders MobileMenu.
+ * @description Thin wrapper that mounts the mobile navigation React island.
  *
- * Uses `server:defer` so the auth session is always fresh, even on SSG pages.
- * Passes the authenticated user data (or null) as props to the React island.
+ * Historically this was a `server:defer` Server Island so it could resolve
+ * `Astro.locals.user` fresh on every render. That made the mobile menu a
+ * SEPARATE browser→server request on EVERY page view (server:defer islands
+ * are their own `/_server-islands/*` fetch), which fired an extra
+ * `get-session` call site-wide and flooded the API's `auth` rate-limit
+ * bucket. Fixed by dropping `server:defer` here — the menu now renders
+ * inline with the page (still SSR'd, just not deferred) — and resolving
+ * auth state CLIENT-SIDE in `MobileMenu.client.tsx`, via the same shared
+ * `authMeSnapshot` cache `UserMenu.client.tsx` already uses. `initialUser` /
+ * `initialRole` are SSR HINTS (correct on pages whose middleware parsed the
+ * session; `null` elsewhere) passed straight through from `Header.astro` —
+ * the client cache/fetch refines them after hydration, exactly like
+ * `UserMenu`.
  */
 
-import { getImage } from 'astro:assets';
 import { MobileMenu } from './MobileMenu.client';
-import { getAdminUrl } from '@/lib/env';
+import type { AuthMeUser } from '@/lib/auth-cache';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 
 interface Props {
     /** Current locale for i18n. */
@@ -25,56 +33,41 @@ interface Props {
     readonly logoSrc: string;
     /** Home URL for the logo link. */
     readonly homeHref: string;
+    /**
+     * SSR auth hint (`Astro.locals.user`, mapped to `AuthMeUser`). `null`
+     * for guests AND for pages whose middleware did not parse the session —
+     * `MobileMenu.client.tsx` reconciles it against the shared client cache.
+     */
+    readonly initialUser: AuthMeUser | null;
+    /** SSR role hint (`Astro.locals.user?.role`), for the host-mode CTA on first paint. */
+    readonly initialRole: string | null;
+    /**
+     * Admin panel base URL for the session-zone admin-panel link and the
+     * host-mode CTA. `undefined` (env var not configured) hides both.
+     */
+    readonly adminPanelUrl: string | undefined;
 }
 
-const { locale, navItems, currentPath, logoSrc, homeHref } = Astro.props;
-const { t } = createTranslations(locale);
-
-const serverUser = Astro.locals.user;
-
-/** Pre-optimized avatar image URL for MobileMenu (64px @ 2x for retina). */
-let optimizedUserImage: string | undefined;
-if (serverUser && 'image' in serverUser && typeof serverUser.image === 'string' && serverUser.image) {
-    const raw = serverUser.image;
-    if (!raw.includes('placeholder') && !raw.endsWith('.svg')) {
-        try {
-            const optimized = await getImage({ src: raw, width: 64, format: 'webp' });
-            optimizedUserImage = optimized.src;
-        } catch {
-            optimizedUserImage = raw;
-        }
-    } else {
-        optimizedUserImage = raw;
-    }
-}
-
-const user = serverUser
-    ? { name: serverUser.name || 'Usuario', email: serverUser.email || '', image: optimizedUserImage }
-    : null;
-
-/**
- * SPEC-182 (D3): host-mode CTA. This is a Server Island (`server:defer`), so the
- * session is fresh even on cached/SSG pages and the role can be resolved
- * server-side. A HOST may still be mid-onboarding with only a DRAFT, but
- * role=HOST is still enough to point the CTA at the host surfaces.
- * Unauthenticated visitors and tourists keep the /publicar funnel.
- */
-const adminUrl = getAdminUrl();
-const isHostMode = serverUser?.role === 'HOST' && Boolean(adminUrl);
-const ctaLabel = isHostMode ? t('nav.hostModeCta', 'Modo anfitrión') : t('nav.ownerCta');
-const ctaHref = isHostMode ? (adminUrl as string) : buildUrl({ locale, path: '/publicar/' });
-
+const { locale, navItems, currentPath, logoSrc, homeHref, initialUser, initialRole, adminPanelUrl } =
+    Astro.props;
 ---
 
+<!--
+  client:load (not client:idle): this island resolves auth state client-side
+  and is the sole gate for the mobile menu's logged-in/host affordances. On
+  Cloudflare-cached pages (e.g. home) `Astro.locals.user` is always null, so a
+  signed-in user's correct state only appears after hydration — client:idle
+  would leave them looking logged-out until the browser goes idle. Matches
+  UserMenu's client:load so the "wrong state" window is the same for both.
+-->
 <MobileMenu
-    client:idle
+    client:load
     locale={locale}
     navItems={navItems}
     currentPath={currentPath}
     logoSrc={logoSrc}
     homeHref={homeHref}
-    user={user}
-    ctaLabel={ctaLabel}
-    ctaHref={ctaHref}
-    adminPanelUrl={adminUrl}
+    initialUser={initialUser}
+    initialRole={initialRole}
+    adminPanelUrl={adminPanelUrl}
 />

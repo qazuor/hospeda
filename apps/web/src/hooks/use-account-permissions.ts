@@ -8,17 +8,28 @@
  * only needs `permissions` since it already has its own SSR `user` prop).
  *
  * Two modes, selected by whether `initialUser` is passed:
- * - **SSR-reconciling mode** (`UserMenu`): pass `initialUser` (the SSR
- *   snapshot, `null` for guests). A fresh cache is only trusted when its
- *   `isAuthenticated` flag AGREES with `initialUser !== null` — otherwise a
- *   post-sign-in/sign-out full reload could apply a stale, contradictory
- *   cache. Also updates `<html data-user-authenticated>` (consumed by
- *   `GuestPreferenceNudge`), matching the original `UserMenu` behavior.
- * - **Simple mode** (`MobileMenu`): omit `initialUser` entirely. Any fresh,
- *   *authenticated* cache is trusted directly — no reconciliation, no
- *   `data-user-authenticated` write (that attribute is `UserMenu`'s
- *   responsibility alone, since it's the component mounted with
- *   `client:load` on every page).
+ * - **SSR-reconciling mode** (`UserMenu`, `MobileMenu`): pass `initialUser`
+ *   (the SSR snapshot, `null` for guests). A fresh cache is only trusted when
+ *   its `isAuthenticated` flag AGREES with `initialUser !== null` —
+ *   otherwise a post-sign-in/sign-out full reload could apply a stale,
+ *   contradictory cache.
+ * - **Simple mode** (omit `initialUser` entirely): any fresh, *authenticated*
+ *   cache is trusted directly — no reconciliation.
+ *
+ * `<html data-user-authenticated>` (consumed by `GuestPreferenceNudge`) is
+ * written ONLY by `UserMenu` — the single owner of that DOM attribute, since
+ * it's the component mounted with `client:load` on every page. This
+ * defaults to "on" whenever `initialUser` is passed (preserving `UserMenu`'s
+ * original, unparameterized behavior) but `MobileMenu` explicitly opts out
+ * via `syncAuthenticatedAttribute: false` — it's ALSO in SSR-reconciling
+ * mode (for the same cache/SSR reconciliation), but must not become a
+ * second writer of an attribute UserMenu already owns.
+ *
+ * `initialRole` is an optional companion to `initialUser`: it seeds the
+ * `role` state so a caller with an SSR role hint (e.g. `MobileMenu`'s
+ * host-mode CTA) renders correctly on first paint, before the cache/fetch
+ * resolves. Purely additive — omitting it (as `UserMenu` does) keeps `role`
+ * starting at `null`, unchanged from before this param existed.
  */
 
 import { useEffect, useState } from 'react';
@@ -39,10 +50,27 @@ export interface UseAccountPermissionsParams {
      */
     readonly initialUser?: AuthMeUser | null;
     /**
-     * Skip resolving entirely (e.g. `MobileMenu` on a guest page, where
-     * there is no `user` prop to reconcile against). Defaults to `false`.
+     * SSR role hint (`Astro.locals.user?.role`), seeding the `role` state so
+     * first paint is correct before the cache/fetch resolves. Optional and
+     * additive — omit to leave `role` starting at `null` (original
+     * behavior, still used by `UserMenu`).
+     */
+    readonly initialRole?: string | null;
+    /**
+     * Skip resolving entirely (e.g. a guest-only consumer with no `user`
+     * prop to reconcile against). Defaults to `false`.
      */
     readonly skip?: boolean;
+    /**
+     * Whether to sync `<html data-user-authenticated>` from the resolved
+     * auth state. Defaults to `true` whenever `initialUser` is passed
+     * (matches `UserMenu`'s original, unparameterized behavior). Pass
+     * `false` for any OTHER SSR-reconciling caller (e.g. `MobileMenu`) —
+     * `UserMenu` is the single owner of this attribute; a second writer
+     * risks a brief flicker if the two components' resolutions land in a
+     * different order.
+     */
+    readonly syncAuthenticatedAttribute?: boolean;
 }
 
 /** Output of `useAccountPermissions`. */
@@ -67,16 +95,22 @@ export interface UseAccountPermissionsResult {
  */
 export function useAccountPermissions({
     initialUser,
-    skip = false
+    initialRole = null,
+    skip = false,
+    syncAuthenticatedAttribute
 }: UseAccountPermissionsParams = {}): UseAccountPermissionsResult {
     const [user, setUser] = useState<AuthMeUser | null>(initialUser ?? null);
     const [permissions, setPermissions] = useState<ReadonlyArray<string> | null>(null);
-    const [role, setRole] = useState<string | null>(null);
+    const [role, setRole] = useState<string | null>(initialRole);
 
-    // `initialUser === undefined` means the caller never passed it (MobileMenu's
-    // simple mode) — distinct from explicitly passing `null` for a guest
-    // (UserMenu's SSR-reconciling mode, which always passes a concrete value).
+    // `initialUser === undefined` means the caller never passed it (simple
+    // mode) — distinct from explicitly passing `null` for a guest
+    // (SSR-reconciling mode, which always passes a concrete value).
     const hasSsrSignal = initialUser !== undefined;
+
+    // Default to hasSsrSignal (UserMenu's original, unparameterized
+    // behavior); callers like MobileMenu explicitly pass `false`.
+    const shouldSyncAttribute = syncAuthenticatedAttribute ?? hasSsrSignal;
 
     // TTL guard + SSR reconciliation: see the file JSDoc for the two modes.
     // Mount-only by design (matches the original UserMenu effect) — `skip` is
@@ -96,7 +130,7 @@ export function useAccountPermissions({
             setUser(cached.user);
             setPermissions(cached.permissions);
             setRole(cached.role);
-            if (hasSsrSignal) {
+            if (shouldSyncAttribute) {
                 document.documentElement.setAttribute(
                     'data-user-authenticated',
                     cached.isAuthenticated ? 'true' : 'false'
@@ -114,7 +148,7 @@ export function useAccountPermissions({
                 setUser(snapshot.user);
                 setPermissions(snapshot.permissions);
                 setRole(snapshot.role);
-                if (hasSsrSignal) {
+                if (shouldSyncAttribute) {
                     document.documentElement.setAttribute(
                         'data-user-authenticated',
                         snapshot.isAuthenticated ? 'true' : 'false'

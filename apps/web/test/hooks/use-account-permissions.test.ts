@@ -3,8 +3,13 @@
  * @description Unit tests for the shared `/auth/me` resolution hook,
  * extracted from `UserMenu.client.tsx` so `MobileMenu.client.tsx` (HOS-131
  * §6.5) can reuse the exact same cache-first pattern. Covers both modes:
- * - SSR-reconciling mode (`initialUser` passed — UserMenu).
- * - Simple mode (`initialUser` omitted — MobileMenu).
+ * - SSR-reconciling mode (`initialUser` passed — UserMenu AND MobileMenu).
+ * - Simple mode (`initialUser` omitted entirely).
+ *
+ * Also covers `syncAuthenticatedAttribute`: MobileMenu is in
+ * SSR-reconciling mode but must NOT also write `<html
+ * data-user-authenticated>` — that stays UserMenu's exclusive
+ * responsibility.
  */
 
 import { renderHook, waitFor } from '@testing-library/react';
@@ -127,6 +132,76 @@ describe('useAccountPermissions — SSR-reconciling mode (initialUser passed)', 
     });
 });
 
+describe('useAccountPermissions — syncAuthenticatedAttribute opt-out (MobileMenu)', () => {
+    beforeEach(() => {
+        sessionStorage.clear();
+        document.documentElement.removeAttribute('data-user-authenticated');
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        sessionStorage.clear();
+        document.documentElement.removeAttribute('data-user-authenticated');
+    });
+
+    it('does NOT write data-user-authenticated when syncAuthenticatedAttribute is false, even in SSR-reconciling mode', async () => {
+        mockFetchOnce(AUTHENTICATED_RESPONSE);
+
+        const { result } = renderHook(() =>
+            useAccountPermissions({ initialUser: null, syncAuthenticatedAttribute: false })
+        );
+
+        await waitFor(() => {
+            expect(result.current.permissions).toEqual(['accommodation.create']);
+        });
+        expect(document.documentElement.hasAttribute('data-user-authenticated')).toBe(false);
+    });
+
+    it('still reconciles a mismatched cache against initialUser when the attribute write is suppressed', async () => {
+        sessionStorage.setItem(
+            AUTH_ME_CACHE_KEY,
+            JSON.stringify({
+                isAuthenticated: false,
+                user: null,
+                permissions: [],
+                role: null,
+                cachedAt: Date.now()
+            })
+        );
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValue({ ok: true, json: async () => AUTHENTICATED_RESPONSE });
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        renderHook(() =>
+            useAccountPermissions({
+                initialUser: { id: 'u1', name: 'Test User', email: 'test@example.com' },
+                syncAuthenticatedAttribute: false
+            })
+        );
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+        expect(document.documentElement.hasAttribute('data-user-authenticated')).toBe(false);
+    });
+
+    it('seeds role from initialRole on first render, before any effect runs', () => {
+        // Never-resolving fetch: only the synchronous initial state is asserted.
+        global.fetch = vi.fn(() => new Promise(() => {})) as unknown as typeof fetch;
+
+        const { result } = renderHook(() =>
+            useAccountPermissions({
+                initialUser: { id: 'u1', name: 'Test User', email: 'test@example.com' },
+                initialRole: 'HOST',
+                syncAuthenticatedAttribute: false
+            })
+        );
+
+        expect(result.current.role).toBe('HOST');
+    });
+});
+
 describe('useAccountPermissions — simple mode (initialUser omitted)', () => {
     beforeEach(() => {
         sessionStorage.clear();
@@ -207,7 +282,7 @@ describe('useAccountPermissions — simple mode (initialUser omitted)', () => {
         });
     });
 
-    it('never fetches when skip is true (e.g. MobileMenu guest, no user prop)', async () => {
+    it('never fetches when skip is true', async () => {
         const fetchMock = vi.fn();
         global.fetch = fetchMock as unknown as typeof fetch;
 

@@ -1,9 +1,15 @@
 /**
  * @file MobileMenuIsland.test.ts
- * @description Source-level tests for the mobile menu Server Island CTA
- * (SPEC-182 T-016). Astro components cannot be rendered in Vitest, so the
- * host-mode CTA wiring is asserted by inspecting the source (per the web
- * CLAUDE.md "Astro component test" pattern).
+ * @description Source-level tests for the mobile menu island wrapper.
+ * Astro components cannot be rendered in Vitest, so this asserts on the
+ * source (per the web CLAUDE.md "Astro component test" pattern).
+ *
+ * The host-mode CTA logic previously lived here (SPEC-182 T-016) and moved
+ * to `MobileMenu.client.tsx` (executable RTL tests — see
+ * `MobileMenu.cta.test.tsx`) as part of removing this component's
+ * `server:defer` directive, which used to fire an extra `get-session` call
+ * on EVERY page view (mobile menu is in the global Header) and flooded the
+ * API's `auth` rate-limit bucket.
  */
 
 import { readFileSync } from 'node:fs';
@@ -15,30 +21,45 @@ const src = readFileSync(
     'utf8'
 );
 
-describe('MobileMenuIsland.astro — host-mode CTA (SPEC-182)', () => {
-    it('derives host mode from the server session role (D3: role === HOST)', () => {
-        expect(src).toContain("serverUser?.role === 'HOST'");
+describe('MobileMenuIsland.astro — thin wrapper (no server:defer)', () => {
+    it('does NOT use the server:defer directive', () => {
+        expect(src).not.toMatch(/<MobileMenu\s+client:idle[\s\S]*?server:defer/);
+        // Belt-and-suspenders: the literal directive must not appear at all
+        // outside of explanatory prose in the file's JSDoc.
+        const codeAfterFrontmatterClose = src.slice(src.indexOf('---', 4) + 3);
+        expect(codeAfterFrontmatterClose).not.toContain('server:defer');
     });
 
-    it('resolves the admin panel URL from env', () => {
-        expect(src).toContain('getAdminUrl()');
+    it('mounts MobileMenu with client:idle', () => {
+        expect(src).toContain('<MobileMenu');
+        expect(src).toContain('client:idle');
     });
 
-    it('only enters host mode when the admin URL is configured', () => {
-        expect(src).toMatch(/role === 'HOST' && Boolean\(adminUrl\)/);
+    it('does NOT read Astro.locals directly (auth resolution moved client-side)', () => {
+        // Prose comments legitimately mention `Astro.locals.user` for
+        // historical context (see the file/prop JSDoc) — assert on the
+        // actual extraction expression instead of a blanket substring check.
+        expect(src).not.toMatch(/=\s*Astro\.locals/);
+        expect(src).not.toContain('Astro.locals.user;');
     });
 
-    it('keeps the /publicar funnel as the non-host CTA target', () => {
-        expect(src).toContain("buildUrl({ locale, path: '/publicar/' })");
+    it('does NOT compute the host-mode CTA itself (moved to MobileMenu.client.tsx)', () => {
+        expect(src).not.toContain('isHostMode');
+        expect(src).not.toContain('ctaLabel');
+        expect(src).not.toContain('ctaHref');
     });
 
-    it('uses the host-mode label for hosts and the owner CTA otherwise', () => {
-        expect(src).toContain("t('nav.hostModeCta', 'Modo anfitrión')");
-        expect(src).toContain("t('nav.ownerCta')");
+    it('forwards initialUser and initialRole SSR hints to MobileMenu', () => {
+        expect(src).toContain('initialUser={initialUser}');
+        expect(src).toContain('initialRole={initialRole}');
     });
 
-    it('passes the computed label and href to the MobileMenu island', () => {
-        expect(src).toContain('ctaLabel={ctaLabel}');
-        expect(src).toContain('ctaHref={ctaHref}');
+    it('forwards adminPanelUrl to MobileMenu', () => {
+        expect(src).toContain('adminPanelUrl={adminPanelUrl}');
+    });
+
+    it('declares initialUser and initialRole in Props', () => {
+        expect(src).toContain('readonly initialUser: AuthMeUser | null');
+        expect(src).toContain('readonly initialRole: string | null');
     });
 });

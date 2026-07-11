@@ -166,9 +166,31 @@ describe('Header.astro — mobile hamburger', () => {
         expect(src).toContain('[data-mobile-menu-open]');
     });
 
-    it('uses MobileMenuIsland with server:defer', () => {
-        expect(src).toContain('MobileMenuIsland');
-        expect(src).toContain('server:defer');
+    it('renders MobileMenuIsland WITHOUT server:defer (fixed the get-session flood)', () => {
+        // server:defer islands are a SEPARATE browser→server request. Mounted
+        // in the global Header, it fired an extra get-session call on EVERY
+        // page view and flooded the API's `auth` rate-limit bucket. The
+        // mobile menu now renders inline and resolves auth state client-side
+        // (see MobileMenuIsland.astro / MobileMenu.client.tsx).
+        expect(src).toContain('<MobileMenuIsland');
+        const islandTag = src.slice(
+            src.indexOf('<MobileMenuIsland'),
+            src.indexOf('/>', src.indexOf('<MobileMenuIsland')) + 2
+        );
+        expect(islandTag).not.toContain('server:defer');
+    });
+
+    it('passes the SSR auth hint (initialUser/initialRole) to MobileMenuIsland', () => {
+        expect(src).toContain('initialUser={initialUserMenuUser}');
+        expect(src).toContain('initialRole={serverUser?.role ?? null}');
+    });
+
+    it('passes adminPanelUrl to MobileMenuIsland', () => {
+        const islandTag = src.slice(
+            src.indexOf('<MobileMenuIsland'),
+            src.indexOf('/>', src.indexOf('<MobileMenuIsland')) + 2
+        );
+        expect(islandTag).toContain('adminPanelUrl={adminPanelUrl}');
     });
 });
 
