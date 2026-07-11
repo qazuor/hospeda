@@ -8,9 +8,11 @@
  * @route POST /api/v1/protected/price-alerts
  * @module routes/price-alert/protected/create
  */
+import { EntitlementKey } from '@repo/billing';
 import { CreatePriceAlertInputSchema, PriceAlertResponseSchema } from '@repo/schemas';
 import { AccommodationService, AlertSubscriptionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { hasEntitlement } from '../../../middlewares/entitlement';
 import { gateAlerts } from '../../../middlewares/tourist-entitlements';
 import type { AppMiddleware } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
@@ -30,8 +32,22 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * `accommodation/protected/compare.ts`, except the count comes from a
  * service call (the actor's current active-subscription count) rather than
  * from the request body.
+ *
+ * Skips the `countActive` DB query entirely when the actor lacks the
+ * `PRICE_ALERTS` entitlement: those requests are about to be rejected by
+ * {@link gateAlerts} anyway, so populating a count for them just pays for a
+ * query whose result is never used. Entitled actors (and staff, who always
+ * carry the unlimited bypass set — INV-6) still get the count populated as
+ * before, since `gateAlerts` needs it for the limit check.
  */
 const populateActiveAlertsCount: AppMiddleware = async (c, next) => {
+    if (!hasEntitlement(c, EntitlementKey.PRICE_ALERTS)) {
+        // No entitlement — `gateAlerts` will throw ENTITLEMENT_REQUIRED
+        // before ever reading `currentActiveAlertsCount`. Leave it unset.
+        await next();
+        return;
+    }
+
     const actor = getActorFromContext(c);
     const result = await alertSubscriptionService.countActive(actor);
     const count = result.error ? 0 : (result.data?.count ?? 0);
@@ -47,7 +63,9 @@ const populateActiveAlertsCount: AppMiddleware = async (c, next) => {
  * 1. `protectedAuthMiddleware` — enforces session (injected by `createProtectedRoute`)
  * 2. `entitlementMiddleware` — loads the actor's entitlement + limit set into context
  *    (mounted globally in `create-app.ts`; NOT repeated here)
- * 3. `populateActiveAlertsCount` — reads the actor's active-alert count via the service
+ * 3. `populateActiveAlertsCount` — reads the actor's active-alert count via the service,
+ *    but ONLY when the actor already has `PRICE_ALERTS` — otherwise it's a no-op, since
+ *    step 4 is about to reject the request regardless of the count
  * 4. `gateAlerts` — throws ENTITLEMENT_REQUIRED or LIMIT_REACHED when appropriate
  *
  * The response denormalizes `accommodationName` from a fresh accommodation
