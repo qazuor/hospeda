@@ -28,10 +28,15 @@ describe('DestinationService.getByPath', () => {
     let loggerMock: ServiceLogger;
 
     beforeEach(() => {
-        modelMock = createTypedModelMock(DestinationModel, ['findByPath', 'getAttractionsMap']);
-        // Default the attractions hydration to an empty map; specific tests can
-        // override this when they want to assert on populated attractions.
+        modelMock = createTypedModelMock(DestinationModel, [
+            'findByPath',
+            'getAttractionsMap',
+            'getPointsOfInterestMap'
+        ]);
+        // Default the attractions/POI hydration to empty maps; specific tests
+        // can override this when they want to assert on populated relations.
         asMock(modelMock.getAttractionsMap).mockResolvedValue(new Map());
+        asMock(modelMock.getPointsOfInterestMap).mockResolvedValue(new Map());
         loggerMock = createLoggerMock();
         service = createServiceTestInstance(DestinationService, modelMock, loggerMock);
     });
