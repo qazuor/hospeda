@@ -63,7 +63,7 @@ function assertCookieForwarding(src: string, ctx: string): void {
     });
 }
 
-function assertBulkCheckPattern(src: string, ctx: string): void {
+function assertBulkCheckPattern(src: string, ctx: string, guardVar = 'isAuthenticated'): void {
     it(`[${ctx}] imports userBookmarksApi from endpoints-protected`, () => {
         expect(src).toContain("from '@/lib/api/endpoints-protected'");
         expect(src).toContain('userBookmarksApi');
@@ -77,13 +77,13 @@ function assertBulkCheckPattern(src: string, ctx: string): void {
         expect(src).toContain('checkBulk');
     });
 
-    it(`[${ctx}] guards checkBulk with isAuthenticated`, () => {
-        expect(src).toContain('isAuthenticated');
-        // The bulk call must be inside an auth guard
+    it(`[${ctx}] guards checkBulk with ${guardVar}`, () => {
+        expect(src).toContain(guardVar);
+        // The bulk call must be inside a guard
         const checkBulkIdx = src.indexOf('checkBulk');
-        const isAuthIdx = src.indexOf('isAuthenticated');
-        // isAuthenticated appears before checkBulk (it guards the call)
-        expect(isAuthIdx).toBeLessThan(checkBulkIdx);
+        const guardIdx = src.indexOf(guardVar);
+        // The guard variable appears before checkBulk (it gates the call)
+        expect(guardIdx).toBeLessThan(checkBulkIdx);
     });
 
     it(`[${ctx}] has a warn fallback on bulk-check failure`, () => {
@@ -284,19 +284,21 @@ describe('pages/[lang]/destinos/[slug]/eventos/index.astro — event bulk check'
 // ---------------------------------------------------------------------------
 // NextEventsSection.astro — homepage server:defer events bento
 //
-// HOS fix (get-session flood): this section's `isAuthenticated` used to come
-// from `Astro.locals.user`, populated only because middleware unconditionally
-// parsed the session for every `/_server-islands/*` request — the same
-// mechanism that made the mobile-menu island flood the API's `auth`
-// rate-limit bucket (it ran on EVERY page view). That middleware behavior
-// was removed, so `Astro.locals.user` is no longer reliable here. The SSR
-// bulk favorite pre-check (`checkBulk`) is gone with it; each card's
-// FavoriteButton now resolves its own favorited state via its existing
-// client-side hydration fallback (`checkStatus` on mount, real browser
-// cookie). See NextEventsSection.astro's isAuthenticated comment.
+// HOS fix (get-session flood, follow-up): this section's `isAuthenticated`
+// used to come from `Astro.locals.user`, populated only because middleware
+// unconditionally parsed the session for every `/_server-islands/*` request —
+// the same mechanism that made the mobile-menu island flood the API's `auth`
+// rate-limit bucket (it ran on EVERY page view). That middleware behavior was
+// removed, so `Astro.locals.user` is no longer reliable here, and this
+// section cannot call `parseSessionUser`/`get-session` either (that would
+// reintroduce the flood). Instead it uses `requestHasSessionCookie` — a
+// cheap, synchronous presence check on the raw `Cookie` header, no network
+// call — to gate a single SSR bulk favorite pre-check (`checkBulk`), exactly
+// like the other listing pages. Guests (no session cookie) skip the bulk
+// check entirely and render guest-state cards.
 // ---------------------------------------------------------------------------
 
-describe('components/sections/NextEventsSection.astro — no SSR bulk check (client-hydrated fallback)', () => {
+describe('components/sections/NextEventsSection.astro — cookie-gated SSR bulk check', () => {
     const src = readSrc('components/sections/NextEventsSection.astro');
 
     it('does NOT read Astro.locals.user (unreliable for server:defer requests post-fix)', () => {
@@ -306,22 +308,55 @@ describe('components/sections/NextEventsSection.astro — no SSR bulk check (cli
         expect(src).not.toMatch(/=\s*Astro\.locals\.user/);
     });
 
-    it('does NOT call checkBulk (SSR bulk pre-check removed)', () => {
-        expect(src).not.toContain('checkBulk');
-        expect(src).not.toContain("from '@/lib/api/endpoints-protected'");
+    it('does NOT call parseSessionUser / get-session (would reintroduce the flood)', () => {
+        // Check the actual call/endpoint patterns, not prose — the file's own
+        // explanatory comment legitimately mentions these terms.
+        expect(src).not.toContain('parseSessionUser(');
+        expect(src).not.toContain('/api/auth/get-session');
     });
 
-    it('hardcodes isAuthenticated to true so FavoriteButton always attempts client hydration', () => {
-        expect(src).toContain('const isAuthenticated = true;');
+    it('imports requestHasSessionCookie from middleware-helpers', () => {
+        expect(src).toContain("from '@/lib/middleware-helpers'");
+        expect(src).toContain('requestHasSessionCookie');
     });
 
-    it('resolvedEventItems is a straight alias of eventItems (no favorite injection)', () => {
-        expect(src).toContain('const resolvedEventItems: EventCardData[] = eventItems;');
+    it('derives hasSessionCookie from the raw Cookie header (no network call)', () => {
+        const hasSessionCookieIdx = src.indexOf('hasSessionCookie');
+        const cookieReadIdx = src.indexOf("Astro.request.headers.get('cookie')");
+        expect(hasSessionCookieIdx).toBeGreaterThan(-1);
+        expect(cookieReadIdx).toBeGreaterThan(-1);
+        expect(cookieReadIdx).toBeLessThan(
+            src.indexOf('checkBulk') > -1 ? src.indexOf('checkBulk') : Infinity
+        );
+    });
+
+    it('derives isAuthenticated from hasSessionCookie (not hardcoded true)', () => {
+        expect(src).not.toContain('const isAuthenticated = true;');
+        expect(src).toContain('const isAuthenticated = hasSessionCookie;');
+    });
+
+    assertBulkCheckPattern(src, 'NextEventsSection', 'hasSessionCookie');
+
+    it('calls checkBulk with entityType EVENT', () => {
+        expect(src).toContain("entityType: 'EVENT'");
+    });
+
+    it('runs the bulk check only when hasSessionCookie is true', () => {
+        // Nearest `if (` before the checkBulk call is its guard condition.
+        const checkBulkIdx = src.indexOf('checkBulk');
+        const guardIdx = src.lastIndexOf('if (', checkBulkIdx);
+        expect(guardIdx).toBeGreaterThan(-1);
+        const guardCondition = src.slice(guardIdx, src.indexOf(')', guardIdx));
+        expect(guardCondition).toContain('hasSessionCookie');
+    });
+
+    it('creates resolvedEventItems with injected favorite state (not a straight alias)', () => {
+        expect(src).not.toContain('const resolvedEventItems: EventCardData[] = eventItems;');
+        expect(src).toContain('isFavorited: entry.isBookmarked');
+        expect(src).toContain('favoriteBookmarkId: entry.bookmarkId');
     });
 
     it('splits resolvedEventItems into bento grid zones', () => {
-        // featuredEvent and topEvents still derive from resolvedEventItems —
-        // this logic is unrelated to the removed bulk check.
         expect(src).toContain('resolvedEventItems.find(');
         expect(src).toContain('resolvedEventItems.filter(');
     });
