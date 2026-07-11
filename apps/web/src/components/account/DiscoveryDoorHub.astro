@@ -206,7 +206,10 @@ const optionRows = door.options.map((option) => {
         font-family: var(--font-sans);
         font-size: 0.8125rem;
         font-weight: 600;
-        color: var(--brand-tertiary, var(--core-muted-foreground));
+        /* Use a foreground token, not the `--brand-tertiary` SURFACE token, which
+         * fails WCAG AA as text on the white/dark card (HOS-134 a11y fix). The
+         * CheckCircle icon keeps the green tint; the label stays legible. */
+        color: var(--core-muted-foreground);
     }
 
     .door-hub__coming-soon-badge {

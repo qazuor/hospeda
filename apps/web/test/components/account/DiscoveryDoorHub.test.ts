@@ -55,6 +55,15 @@ describe('DiscoveryDoorHub.astro — wiring', () => {
         expect(source).toContain("t('account.doors.common.comingSoonBadge')");
     });
 
+    it('renders the acquired badge with a legible foreground token, not the brand-tertiary SURFACE token (WCAG AA — HOS-134)', () => {
+        const badgeBlock = source.slice(
+            source.indexOf('.door-hub__acquired-badge'),
+            source.indexOf('.door-hub__coming-soon-badge')
+        );
+        expect(badgeBlock).toContain('color: var(--core-muted-foreground)');
+        expect(badgeBlock).not.toContain('color: var(--brand-tertiary');
+    });
+
     it('reads the comingSoon CTA label from option.ctaI18nKey, not a hardcoded key (avoids drift with the config)', () => {
         const comingSoonBranch = source.slice(
             source.indexOf("state === 'comingSoon'"),
