@@ -87,6 +87,46 @@
         "promotions": "Mis promociones",
         "tradeDirectory": "Directorio de proveedores"
     },
+    "doors": {
+        "sectionLabel": "Descubrí más",
+        "publish": {
+            "title": "Publicá en Hospeda",
+            "subtitle": "Elegí qué vertical querés sumar a Hospeda y seguí los pasos para publicar.",
+            "options": {
+                "accommodation": {
+                    "title": "Alojamiento",
+                    "description": "Publicá tu alojamiento en Hospeda y llegá a miles de viajeros que buscan hospedarse en la región.",
+                    "cta": "Publicá tu alojamiento"
+                },
+                "commerce": {
+                    "title": "Gastronomía y comercio",
+                    "description": "Contanos sobre tu local y te contactamos para sumarlo a Hospeda.",
+                    "cta": "Contanos y te contactamos"
+                }
+            }
+        },
+        "partner": {
+            "title": "Sumate como aliado",
+            "titleStateful": "Sumá otra alianza",
+            "subtitle": "Sumate como aliado de Hospeda: destacá tu marca o tus servicios frente a miles de viajeros y anfitriones.",
+            "options": {
+                "sponsor": {
+                    "title": "Sponsor",
+                    "description": "Destacá tu marca en Hospeda con contenido patrocinado y presencia en eventos y publicaciones."
+                },
+                "serviceProvider": {
+                    "title": "Proveedor de servicios",
+                    "description": "Sumate al directorio de proveedores locales que los anfitriones recomiendan a sus huéspedes."
+                }
+            }
+        },
+        "common": {
+            "manageCta": "Gestionar",
+            "acquiredLabel": "Ya lo tenés",
+            "comingSoonBadge": "Próximamente",
+            "contactCta": "Contactanos"
+        }
+    },
     "avatar": {
         "hint": "Solo JPEG, PNG y WebP · Máx. 5 MB",
         "actions": {

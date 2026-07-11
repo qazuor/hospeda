@@ -126,3 +126,75 @@ export function isVisibleByRole(node: GatedNavNode, role: string | null): boolea
     const rolesForPermission = PERMISSION_ROLE_MAP[node.requiredPermission];
     return rolesForPermission?.has(role as RoleEnum) ?? false;
 }
+
+// -----------------------------------------------------------------------------
+// Discovery-door helpers (HOS-131 §6.2/§6.3, OQ-3: acquired signal = permissions)
+// -----------------------------------------------------------------------------
+
+/**
+ * Structural shape for a discovery-door option, as needed by the door
+ * helpers below. Kept local (not imported from `src/config/navigation`) for
+ * the same circular-dependency reason as `GatedNavNode` above.
+ */
+export interface DoorGatingOption {
+    /** The permission that signals "already acquired". Omitted = never acquired. */
+    readonly acquiredPermission?: PermissionEnum;
+    /** `true` = a not-yet-implemented placeholder (sponsor, service provider). */
+    readonly comingSoon?: boolean;
+}
+
+/** The three states a discovery-door option can resolve to (spec §6.3). */
+export type DoorOptionState = 'acquired' | 'unacquired' | 'comingSoon';
+
+/**
+ * Resolves a single discovery-door option's state (HOS-131 §6.3), using the
+ * SAME visibility predicate as the two nav evaluators above — pass
+ * `(node) => isVisibleByPermissions(node, permissions)` on client surfaces or
+ * `(node) => isVisibleByRole(node, role)` on the server-rendered sidebar/hub
+ * pages.
+ *
+ * An option with no `acquiredPermission` (the sponsor/service-provider
+ * placeholders — HOS-131 NG-2) is NEVER `'acquired'`: it resolves to
+ * `'comingSoon'` when `comingSoon` is set, or `'unacquired'` otherwise. This
+ * is what makes the "Sumate como aliado" door "always shown" fall out of the
+ * SAME `isDoorVisible` logic used for the listing door — no `kind`-based
+ * branching required.
+ *
+ * @param params - `{ option, visibility }` (RO-RO).
+ * @returns The option's resolved state.
+ */
+export function resolveDoorOptionState({
+    option,
+    visibility
+}: {
+    readonly option: DoorGatingOption;
+    readonly visibility: (node: GatedNavNode) => boolean;
+}): DoorOptionState {
+    if (!option.acquiredPermission) {
+        return option.comingSoon ? 'comingSoon' : 'unacquired';
+    }
+    return visibility({ requiredPermission: option.acquiredPermission })
+        ? 'acquired'
+        : 'unacquired';
+}
+
+/**
+ * Decides whether a discovery door should be shown (HOS-131 §6.3): a door
+ * stays visible while at least one of its options is NOT `'acquired'`, and
+ * disappears once every option is. Both the sidebar CTA entries and the hub
+ * pages call this with the surface-appropriate `visibility` predicate.
+ *
+ * @param params - `{ door, visibility }` (RO-RO).
+ * @returns `true` if the door has at least one unacquired/coming-soon option.
+ */
+export function isDoorVisible({
+    door,
+    visibility
+}: {
+    readonly door: { readonly options: readonly DoorGatingOption[] };
+    readonly visibility: (node: GatedNavNode) => boolean;
+}): boolean {
+    return door.options.some(
+        (option) => resolveDoorOptionState({ option, visibility }) !== 'acquired'
+    );
+}

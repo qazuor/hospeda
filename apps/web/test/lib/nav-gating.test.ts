@@ -6,9 +6,11 @@ import {
     ROLES_WITH_COMMERCE_NAV
 } from '../../src/lib/account-roles';
 import {
+    isDoorVisible,
     isVisibleByPermissions,
     isVisibleByRole,
-    PERMISSION_ROLE_MAP
+    PERMISSION_ROLE_MAP,
+    resolveDoorOptionState
 } from '../../src/lib/nav-gating';
 
 describe('PERMISSION_ROLE_MAP', () => {
@@ -97,5 +99,102 @@ describe('isVisibleByRole (server SSR, approximate evaluation)', () => {
         expect(isVisibleByRole(commerceNode, RoleEnum.ADMIN)).toBe(true);
         expect(isVisibleByRole(hostNode, RoleEnum.SUPER_ADMIN)).toBe(true);
         expect(isVisibleByRole(commerceNode, RoleEnum.SUPER_ADMIN)).toBe(true);
+    });
+});
+
+describe('resolveDoorOptionState (HOS-131 §6.3, OQ-3: acquired signal = permissions)', () => {
+    const byRole =
+        (role: string | null) => (node: { readonly requiredPermission?: PermissionEnum }) =>
+            isVisibleByRole(node, role);
+
+    it('resolves an acquirable option to "acquired" when the role/permission is present', () => {
+        const option = { acquiredPermission: PermissionEnum.ACCOMMODATION_CREATE };
+        expect(resolveDoorOptionState({ option, visibility: byRole(RoleEnum.HOST) })).toBe(
+            'acquired'
+        );
+    });
+
+    it('resolves an acquirable option to "unacquired" when the role/permission is absent', () => {
+        const option = { acquiredPermission: PermissionEnum.ACCOMMODATION_CREATE };
+        expect(resolveDoorOptionState({ option, visibility: byRole(RoleEnum.USER) })).toBe(
+            'unacquired'
+        );
+        expect(resolveDoorOptionState({ option, visibility: byRole(null) })).toBe('unacquired');
+    });
+
+    it('resolves a comingSoon option (no acquiredPermission) to "comingSoon", never "acquired"', () => {
+        const option = { comingSoon: true };
+        expect(resolveDoorOptionState({ option, visibility: byRole(RoleEnum.ADMIN) })).toBe(
+            'comingSoon'
+        );
+        expect(resolveDoorOptionState({ option, visibility: byRole(null) })).toBe('comingSoon');
+    });
+
+    it('resolves a plain option with neither acquiredPermission nor comingSoon to "unacquired"', () => {
+        expect(resolveDoorOptionState({ option: {}, visibility: byRole(RoleEnum.ADMIN) })).toBe(
+            'unacquired'
+        );
+    });
+});
+
+describe('isDoorVisible (HOS-131 §6.3 door lifecycle)', () => {
+    const byRole =
+        (role: string | null) => (node: { readonly requiredPermission?: PermissionEnum }) =>
+            isVisibleByRole(node, role);
+    const byPermissions =
+        (permissions: readonly string[]) =>
+        (node: { readonly requiredPermission?: PermissionEnum }) =>
+            isVisibleByPermissions(node, permissions);
+
+    const listingDoor = {
+        options: [
+            { id: 'accommodation', acquiredPermission: PermissionEnum.ACCOMMODATION_CREATE },
+            { id: 'commerce', acquiredPermission: PermissionEnum.COMMERCE_EDIT_OWN }
+        ]
+    };
+
+    const partnerDoor = {
+        options: [
+            { id: 'sponsor', comingSoon: true },
+            { id: 'serviceProvider', comingSoon: true }
+        ]
+    };
+
+    it('shows the listing door when the user has neither acquirable permission', () => {
+        expect(isDoorVisible({ door: listingDoor, visibility: byRole(RoleEnum.USER) })).toBe(true);
+    });
+
+    it('shows the listing door when the user has exactly one of the two options', () => {
+        expect(isDoorVisible({ door: listingDoor, visibility: byRole(RoleEnum.HOST) })).toBe(true);
+        expect(
+            isDoorVisible({ door: listingDoor, visibility: byRole(RoleEnum.COMMERCE_OWNER) })
+        ).toBe(true);
+    });
+
+    it('hides the listing door once the user holds BOTH acquirable permissions (spec §6.3)', () => {
+        expect(isDoorVisible({ door: listingDoor, visibility: byRole(RoleEnum.ADMIN) })).toBe(
+            false
+        );
+        expect(
+            isDoorVisible({
+                door: listingDoor,
+                visibility: byPermissions([
+                    PermissionEnum.ACCOMMODATION_CREATE,
+                    PermissionEnum.COMMERCE_EDIT_OWN
+                ])
+            })
+        ).toBe(false);
+    });
+
+    it('always shows the partner door — both options are comingSoon and can never resolve to acquired', () => {
+        expect(isDoorVisible({ door: partnerDoor, visibility: byRole(null) })).toBe(true);
+        expect(isDoorVisible({ door: partnerDoor, visibility: byRole(RoleEnum.USER) })).toBe(true);
+        expect(isDoorVisible({ door: partnerDoor, visibility: byRole(RoleEnum.ADMIN) })).toBe(true);
+        expect(
+            isDoorVisible({
+                door: partnerDoor,
+                visibility: byPermissions(['some.unrelated.permission'])
+            })
+        ).toBe(true);
     });
 });

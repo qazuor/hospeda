@@ -1,0 +1,202 @@
+---
+/**
+ * @file DiscoveryDoorHub.astro
+ * @description Shared hub component for the two `/mi-cuenta` discovery doors
+ * (HOS-131 §6.2/§6.3): "Publicá en Hospeda" (`mi-cuenta/publica`) and
+ * "Sumate como aliado" (`mi-cuenta/aliados`). Both pages render the SAME
+ * component with a different `door` from `ACCOUNT_DISCOVERY_DOORS` — the
+ * per-option state (acquired / unacquired / coming soon) is resolved here,
+ * server-side, the same way `AccountLayout.astro`'s sidebar approximates
+ * gating: via `isVisibleByRole` against `Astro.locals.user.role` (HOS-131
+ * D-4 — no effective-permissions round-trip on SSR).
+ *
+ * Per option:
+ * - `acquired`   -> check badge + "Gestionar" button (`option.manageHref`).
+ * - `unacquired` -> mini-explanation + acquire CTA button (`option.href`).
+ * - `comingSoon` -> "Próximamente" badge + "Contactanos" button (`option.href`).
+ */
+
+import type { DiscoveryDoor } from '@/config/navigation';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import type { GatedNavNode } from '@/lib/nav-gating';
+import { isVisibleByRole, resolveDoorOptionState } from '@/lib/nav-gating';
+import { buildUrl } from '@/lib/urls';
+import { CheckCircleIcon } from '@repo/icons';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+
+interface Props {
+    readonly locale: SupportedLocale;
+    readonly door: DiscoveryDoor;
+    readonly role: string | null;
+}
+
+const { locale, door, role } = Astro.props;
+const { t } = createTranslations(locale);
+
+const visibility = (node: GatedNavNode) => isVisibleByRole(node, role);
+
+const optionRows = door.options.map((option) => ({
+    option,
+    state: resolveDoorOptionState({ option, visibility })
+}));
+---
+
+<div class="door-hub">
+    <p class="door-hub__subtitle">{t(door.subtitleI18nKey)}</p>
+
+    <ul class="door-hub__list">
+        {optionRows.map(({ option, state }) => {
+            const OptionIcon = option.icon;
+
+            return (
+            <li class="door-hub__option">
+                <div class="door-hub__option-icon" aria-hidden="true">
+                    <OptionIcon size={22} weight="regular" aria-hidden="true" />
+                </div>
+
+                <div class="door-hub__option-body">
+                    <h2 class="door-hub__option-title">{t(option.i18nKey)}</h2>
+                    <p class="door-hub__option-description">{t(option.descriptionI18nKey)}</p>
+                </div>
+
+                <div class="door-hub__option-action">
+                    {state === 'acquired' && (
+                        <>
+                            <span class="door-hub__acquired-badge">
+                                <CheckCircleIcon size={16} weight="fill" aria-hidden="true" />
+                                {t('account.doors.common.acquiredLabel')}
+                            </span>
+                            <GradientButton
+                                label={t('account.doors.common.manageCta')}
+                                href={buildUrl({ locale, path: option.manageHref ?? door.href })}
+                                variant="outline-primary"
+                                size="sm"
+                                shape="rounded"
+                            />
+                        </>
+                    )}
+                    {state === 'comingSoon' && (
+                        <>
+                            <span class="door-hub__coming-soon-badge">
+                                {t('account.doors.common.comingSoonBadge')}
+                            </span>
+                            <GradientButton
+                                label={t(option.ctaI18nKey)}
+                                href={buildUrl({ locale, path: option.href })}
+                                variant="outline-accent"
+                                size="sm"
+                                shape="rounded"
+                            />
+                        </>
+                    )}
+                    {state === 'unacquired' && (
+                        <GradientButton
+                            label={t(option.ctaI18nKey)}
+                            href={buildUrl({ locale, path: option.href })}
+                            variant="accent"
+                            size="sm"
+                            shape="rounded"
+                        />
+                    )}
+                </div>
+            </li>
+            );
+        })}
+    </ul>
+</div>
+
+<style>
+    .door-hub__subtitle {
+        margin: 0 0 var(--space-6);
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm, 0.9375rem);
+        color: var(--core-muted-foreground);
+        max-width: 60ch;
+    }
+
+    .door-hub__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-card-gap);
+    }
+
+    @media (min-width: 768px) {
+        .door-hub__list {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .door-hub__option {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        background-color: var(--core-card);
+        border: 1px solid var(--core-foreground-a08);
+        border-radius: var(--radius-card);
+        padding: var(--space-6);
+        box-shadow: 0 1px 2px var(--core-foreground-a05);
+    }
+
+    .door-hub__option-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: var(--radius-md);
+        background-color: var(--brand-accent-a08);
+        color: var(--brand-accent);
+    }
+
+    .door-hub__option-title {
+        margin: 0 0 var(--space-1);
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1.125rem;
+        color: var(--core-foreground);
+    }
+
+    .door-hub__option-description {
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: 0.9375rem;
+        color: var(--core-muted-foreground);
+    }
+
+    .door-hub__option-action {
+        margin-top: auto;
+        padding-top: var(--space-3);
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+    }
+
+    .door-hub__acquired-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        font-family: var(--font-sans);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--brand-tertiary, var(--core-muted-foreground));
+    }
+
+    .door-hub__coming-soon-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem var(--space-3);
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--core-muted-foreground);
+        background-color: var(--surface-warm);
+        border-radius: var(--radius-pill);
+    }
+</style>

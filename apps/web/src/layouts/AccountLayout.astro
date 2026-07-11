@@ -19,9 +19,9 @@ import { buildUrl } from '@/lib/urls';
 import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPill.client';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
-import { getNavForSurface } from '@/config/navigation';
+import { ACCOUNT_DISCOVERY_DOORS, getNavForSurface } from '@/config/navigation';
 import type { NavItem } from '@/config/navigation';
-import { isVisibleByRole } from '@/lib/nav-gating';
+import { isDoorVisible, isVisibleByRole } from '@/lib/nav-gating';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -78,6 +78,17 @@ const { groups: navGroups } = getNavForSurface({
 	surface: 'sidebar',
 	visibility: (node) => isVisibleByRole(node, userRole),
 });
+
+/**
+ * Discovery doors (HOS-131 §6.2/§6.3) render ONLY on this surface — they're
+ * discovery CTAs ("get something new"), deliberately kept out of the curated
+ * avatar/mobile set (§6.4/§6.5). A door stays visible while ≥1 of its
+ * options is not yet acquired, approximated server-side the same way the
+ * nav groups above are (D-4 — see `isDoorVisible`/`isVisibleByRole`).
+ */
+const visibleDoors = ACCOUNT_DISCOVERY_DOORS.filter((door) =>
+	isDoorVisible({ door, visibility: (node) => isVisibleByRole(node, userRole) }),
+);
 ---
 
 <BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
@@ -146,6 +157,37 @@ const { groups: navGroups } = getNavForSurface({
 						);
 					})}
 				</nav>
+
+				{visibleDoors.length > 0 && (
+					<div class="account-nav__doors">
+						<p class="account-nav__doors-label">{t('account.doors.sectionLabel')}</p>
+						<ul class="account-nav__doors-list">
+							{visibleDoors.map((door) => {
+								const DoorIcon = door.icon;
+								const doorSectionKey = getActiveSectionKey(door.href);
+								const isActiveDoor = doorSectionKey === activeSection;
+
+								return (
+								<li class="account-nav__door-item">
+									<a
+										href={buildUrl({ locale, path: door.href })}
+										class:list={[
+											'account-nav__door-link',
+											{ 'account-nav__door-link--active': isActiveDoor },
+										]}
+										aria-current={isActiveDoor ? 'page' : undefined}
+									>
+										<span class="account-nav__door-icon" aria-hidden="true">
+											<DoorIcon size={18} weight="regular" aria-hidden="true" />
+										</span>
+										<span class="account-nav__door-label">{t(door.i18nKey)}</span>
+									</a>
+								</li>
+								);
+							})}
+						</ul>
+					</div>
+				)}
 			</aside>
 
 			<!-- Content area -->
@@ -331,6 +373,86 @@ const { groups: navGroups } = getNavForSurface({
 		height: 60%;
 		background-color: var(--brand-accent);
 		border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+	}
+
+	/*
+	 * Discovery doors (HOS-131 §6.2/§6.3) — deliberately styled as CTAs, NOT
+	 * as another nav group: dashed accent border + tinted background instead
+	 * of the plain-link treatment above. "Nav = manage what you have";
+	 * "doors = get something new" must read as visually distinct at a glance.
+	 */
+	.account-nav__doors {
+		margin-top: var(--space-3);
+		padding-top: var(--space-3);
+		border-top: 1px dashed var(--core-foreground-a08);
+	}
+
+	.account-nav__doors-label {
+		margin: 0 0 var(--space-1);
+		padding: 0 var(--space-3);
+		font-family: var(--font-sans);
+		font-size: 0.6875rem;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--core-muted-foreground);
+	}
+
+	.account-nav__doors-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.account-nav__door-link {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		padding: 0.5rem var(--space-3);
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		font-weight: 600;
+		color: var(--brand-accent);
+		text-decoration: none;
+		background-color: var(--brand-accent-a08);
+		border: 1px dashed var(--brand-accent-a30);
+		border-radius: var(--radius-button);
+		transition: background-color var(--duration-fast) ease,
+					border-color var(--duration-fast) ease;
+	}
+
+	.account-nav__door-link:hover {
+		background-color: var(--brand-accent-a12);
+		border-color: var(--brand-accent);
+	}
+
+	.account-nav__door-link:focus-visible {
+		outline: 2px solid var(--brand-accent);
+		outline-offset: 2px;
+	}
+
+	/*
+	 * Active-door treatment: subtle, still visually a CTA (keeps the dashed
+	 * border + tint) — just a filled background + solid border instead of the
+	 * left accent bar nav links use, so "you're here" doesn't make the door
+	 * look like a regular managed nav item.
+	 */
+	.account-nav__door-link--active {
+		background-color: var(--brand-accent-a20);
+		border-style: solid;
+		border-color: var(--brand-accent);
+	}
+
+	.account-nav__door-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.5rem;
+		height: 1.5rem;
+		flex-shrink: 0;
 	}
 
 	/* Content */

@@ -87,6 +87,46 @@
         "promotions": "My promotions",
         "tradeDirectory": "Provider directory"
     },
+    "doors": {
+        "sectionLabel": "Discover more",
+        "publish": {
+            "title": "List on Hospeda",
+            "subtitle": "Choose which vertical you want to add to Hospeda and follow the steps to publish.",
+            "options": {
+                "accommodation": {
+                    "title": "Accommodation",
+                    "description": "List your accommodation on Hospeda and reach thousands of travelers looking to stay in the region.",
+                    "cta": "List your accommodation"
+                },
+                "commerce": {
+                    "title": "Dining and shops",
+                    "description": "Tell us about your business and we'll reach out to add it to Hospeda.",
+                    "cta": "Tell us and we'll reach out"
+                }
+            }
+        },
+        "partner": {
+            "title": "Become a partner",
+            "titleStateful": "Add another partnership",
+            "subtitle": "Become a Hospeda partner: showcase your brand or services to thousands of travelers and hosts.",
+            "options": {
+                "sponsor": {
+                    "title": "Sponsor",
+                    "description": "Showcase your brand on Hospeda with sponsored content and visibility across events and posts."
+                },
+                "serviceProvider": {
+                    "title": "Service provider",
+                    "description": "Join the local provider directory that hosts recommend to their guests."
+                }
+            }
+        },
+        "common": {
+            "manageCta": "Manage",
+            "acquiredLabel": "Already have it",
+            "comingSoonBadge": "Coming soon",
+            "contactCta": "Contact us"
+        }
+    },
     "avatar": {
         "hint": "JPEG, PNG and WebP only · Max. 5 MB",
         "actions": {

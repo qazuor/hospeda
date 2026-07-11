@@ -77,9 +77,82 @@ describe('ACCOUNT_NAV_GROUPS (config shape)', () => {
             }
         }
     });
+});
 
-    it('leaves ACCOUNT_DISCOVERY_DOORS empty pending HOS-131 T-011 (OQ-1/OQ-3)', () => {
-        expect(ACCOUNT_DISCOVERY_DOORS).toEqual([]);
+describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
+    it('defines exactly the two doors: listing ("Publicá en Hospeda") and partner ("Sumate como aliado")', () => {
+        expect(ACCOUNT_DISCOVERY_DOORS.map((door) => door.id)).toEqual(['listing', 'partner']);
+        expect(ACCOUNT_DISCOVERY_DOORS.map((door) => door.kind)).toEqual(['listing', 'partner']);
+    });
+
+    it('routes each door to its internal hub page (OQ-1)', () => {
+        const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
+        const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
+        expect(listing?.href).toBe('mi-cuenta/publica');
+        expect(partner?.href).toBe('mi-cuenta/aliados');
+    });
+
+    it('gives the listing door two acquirable options: accommodation and commerce', () => {
+        const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
+        expect(listing?.options.map((option) => option.id)).toEqual(['accommodation', 'commerce']);
+    });
+
+    it('gates listing-door options behind ACCOMMODATION_CREATE and COMMERCE_EDIT_OWN (OQ-3: signal = permissions)', () => {
+        const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
+        const accommodation = listing?.options.find((option) => option.id === 'accommodation');
+        const commerce = listing?.options.find((option) => option.id === 'commerce');
+        expect(accommodation?.acquiredPermission).toBe(PermissionEnum.ACCOMMODATION_CREATE);
+        expect(commerce?.acquiredPermission).toBe(PermissionEnum.COMMERCE_EDIT_OWN);
+    });
+
+    it('links the acquired listing-door options to their management pages', () => {
+        const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
+        const accommodation = listing?.options.find((option) => option.id === 'accommodation');
+        const commerce = listing?.options.find((option) => option.id === 'commerce');
+        expect(accommodation?.manageHref).toBe('mi-cuenta/host-dashboard');
+        expect(commerce?.manageHref).toBe('mi-cuenta/comercio');
+    });
+
+    it('routes the commerce option to the lead form, not a self-service publish flow', () => {
+        const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
+        const commerce = listing?.options.find((option) => option.id === 'commerce');
+        expect(commerce?.href).toBe('publicar-restaurante');
+    });
+
+    it('gives the partner door two coming-soon options with no acquiredPermission (NG-2)', () => {
+        const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
+        expect(partner?.options.map((option) => option.id)).toEqual(['sponsor', 'serviceProvider']);
+        for (const option of partner?.options ?? []) {
+            expect(option.comingSoon).toBe(true);
+            expect(option.acquiredPermission).toBeUndefined();
+            expect(option.href).toBe('contacto');
+        }
+    });
+
+    it('declares the stateful "Sumá otra alianza" key on the partner door, unused for now (TODO HOS-131)', () => {
+        const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
+        expect(partner?.statefulI18nKey).toBe('account.doors.partner.titleStateful');
+    });
+
+    it('keeps every door/option label as an i18n key, never resolved text', () => {
+        for (const door of ACCOUNT_DISCOVERY_DOORS) {
+            expect(door.i18nKey).toMatch(/^[a-zA-Z0-9.]+$/);
+            expect(door.subtitleI18nKey).toMatch(/^[a-zA-Z0-9.]+$/);
+            for (const option of door.options) {
+                expect(option.i18nKey).toMatch(/^[a-zA-Z0-9.]+$/);
+                expect(option.descriptionI18nKey).toMatch(/^[a-zA-Z0-9.]+$/);
+                expect(option.ctaI18nKey).toMatch(/^[a-zA-Z0-9.]+$/);
+            }
+        }
+    });
+
+    it('gives every door and option an @repo/icons component reference, not a string', () => {
+        for (const door of ACCOUNT_DISCOVERY_DOORS) {
+            expect(typeof door.icon).toBe('function');
+            for (const option of door.options) {
+                expect(typeof option.icon).toBe('function');
+            }
+        }
     });
 });
 
