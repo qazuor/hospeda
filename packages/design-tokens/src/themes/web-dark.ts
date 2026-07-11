@@ -38,10 +38,13 @@ export const webDark: Theme = {
     'brand-primary-text': oklchValue(0.68, 0.17, 259),
     // SPEC-308: the vibrant blue (0.68) clears AA on the page canvas, but as
     // text on the faint blue-tinted chips (8-15% brand over navy) it lands at
-    // ~4.0-4.49 — just under 4.5. Lift the link/AA text token to 0.74 so brand
-    // text on those tinted chips clears AA. Used by dest-card chips, event-card
-    // location, and the category chips (repointed to this token in lib/colors).
-    'brand-primary-link': oklchValue(0.74, 0.16, 259),
+    // ~4.0-4.49 — just under 4.5. Lift the link/AA text token so brand text on
+    // those tinted chips clears AA. Used by dest-card chips, event-card location,
+    // and the category chips (repointed to this token in lib/colors).
+    // BETA-126: 0.74 still landed at 4.48 on the sky-tinted post category chip
+    // ("Deportes" over #2e3f57) — 0.02 short. Lifted to 0.77 (~4.93 on that same
+    // chip) so every primary-link chip clears AA with a comfortable margin.
+    'brand-primary-link': oklchValue(0.77, 0.16, 259),
     'primary-foreground': oklchValue(0.1, 0.02, 259),
     'brand-secondary': oklchValue(0.25, 0.05, 255),
     'brand-secondary-foreground': oklchValue(0.8, 0.08, 255),

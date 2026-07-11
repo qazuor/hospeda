@@ -47,7 +47,11 @@ interface Props {
 
 const { data, locale, isTrending = false, isAuthenticated = false } = Astro.props;
 const { t } = createTranslations(locale);
-const newsColors = { bg: 'var(--info, #0ea5e9)', text: '#fff' };
+// `--info-foreground` is the theme-paired ink for `--info`: near-white in light
+// (dark info surface) and dark ink in dark mode (light info surface). Hardcoding
+// white failed WCAG AA in dark (white on the light-blue dark `--info` = 2.92:1);
+// the paired token clears AA in both themes. BETA-126.
+const newsColors = { bg: 'var(--info, #0ea5e9)', text: 'var(--info-foreground, #fff)' };
 
 const expiryStatus = getExpiryStatus({ expiresAt: data.expiresAt });
 const showExpiryBadge = expiryStatus.status === 'expiring-soon';
