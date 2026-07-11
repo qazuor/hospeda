@@ -502,8 +502,9 @@ describe('DestinationModel.getPointsOfInterestMap', () => {
         expect(getDbMock).not.toHaveBeenCalled();
     });
 
-    it('groups a single POI under its destination id', async () => {
-        // Arrange
+    it('groups a single POI under its destination id, preserving the full row shape (HOS-113 review fix)', async () => {
+        // Arrange — includes description/isFeatured/isBuiltin, the three fields
+        // dropped by the original projection bug (HOS-113 review Fix 1).
         const rows = [
             {
                 destinationId: 'dest-1',
@@ -512,7 +513,10 @@ describe('DestinationModel.getPointsOfInterestMap', () => {
                 lat: -32.48,
                 long: -58.24,
                 type: 'STADIUM',
+                description: 'The regional racing circuit, home to national events.',
                 icon: 'flag-checkered',
+                isFeatured: true,
+                isBuiltin: false,
                 displayWeight: 80
             }
         ];
@@ -522,7 +526,8 @@ describe('DestinationModel.getPointsOfInterestMap', () => {
         // Act
         const result = await model.getPointsOfInterestMap(['dest-1']);
 
-        // Assert
+        // Assert — full row shape, not a partial projection: a regression here
+        // must fail this assertion, not silently pass on a subset of fields.
         expect(result.get('dest-1')).toEqual([
             {
                 id: 'poi-1',
@@ -530,10 +535,33 @@ describe('DestinationModel.getPointsOfInterestMap', () => {
                 lat: -32.48,
                 long: -58.24,
                 type: 'STADIUM',
+                description: 'The regional racing circuit, home to national events.',
                 icon: 'flag-checkered',
+                isFeatured: true,
+                isBuiltin: false,
                 displayWeight: 80
             }
         ]);
+    });
+
+    it('projects description/isFeatured/isBuiltin into the select() call itself (HOS-113 review fix)', async () => {
+        // Arrange — asserts the query projection, not just the mapped output,
+        // so a regression that drops these columns from `.select({...})` is
+        // caught even if the (mocked) row happens to carry them anyway.
+        const { selectMock } = buildSelectChain([]);
+        getDbMock.mockReturnValue({ select: selectMock });
+
+        // Act
+        await model.getPointsOfInterestMap(['dest-1']);
+
+        // Assert
+        expect(selectMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                description: expect.anything(),
+                isFeatured: expect.anything(),
+                isBuiltin: expect.anything()
+            })
+        );
     });
 
     it('groups multiple POIs across multiple destinations', async () => {

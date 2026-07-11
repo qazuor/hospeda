@@ -506,7 +506,10 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                 readonly lat: number;
                 readonly long: number;
                 readonly type: PointOfInterestTypeEnum;
+                readonly description: string | null;
                 readonly icon: string | null;
+                readonly isFeatured: boolean;
+                readonly isBuiltin: boolean;
                 readonly displayWeight: number;
             }>
         >
@@ -522,7 +525,10 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                     lat: pointsOfInterest.lat,
                     long: pointsOfInterest.long,
                     type: pointsOfInterest.type,
+                    description: pointsOfInterest.description,
                     icon: pointsOfInterest.icon,
+                    isFeatured: pointsOfInterest.isFeatured,
+                    isBuiltin: pointsOfInterest.isBuiltin,
                     displayWeight: pointsOfInterest.displayWeight
                 })
                 .from(rDestinationPointOfInterest)
@@ -541,7 +547,10 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                     readonly lat: number;
                     readonly long: number;
                     readonly type: PointOfInterestTypeEnum;
+                    readonly description: string | null;
                     readonly icon: string | null;
+                    readonly isFeatured: boolean;
+                    readonly isBuiltin: boolean;
                     readonly displayWeight: number;
                 }>
             >();
@@ -553,7 +562,10 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                     lat: row.lat,
                     long: row.long,
                     type: row.type as PointOfInterestTypeEnum,
+                    description: row.description,
                     icon: row.icon,
+                    isFeatured: row.isFeatured,
+                    isBuiltin: row.isBuiltin,
                     displayWeight: row.displayWeight
                 });
                 map.set(row.destinationId, existing);
