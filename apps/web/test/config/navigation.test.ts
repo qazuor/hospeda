@@ -1,12 +1,7 @@
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-
-import {
-    ACCOUNT_DISCOVERY_DOORS,
-    ACCOUNT_NAV_GROUPS,
-    getNavForSurface,
-    type NavGroup
-} from '../../src/config/navigation';
+import { ACCOUNT_DISCOVERY_DOORS } from '../../src/config/discovery-doors';
+import { ACCOUNT_NAV_GROUPS, getNavForSurface, type NavGroup } from '../../src/config/navigation';
 import {
     isVisibleByPermissions,
     isVisibleByRole,

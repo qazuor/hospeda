@@ -12,7 +12,7 @@ import { resolve } from 'node:path';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 
-import { ACCOUNT_DISCOVERY_DOORS } from '../../../src/config/navigation';
+import { ACCOUNT_DISCOVERY_DOORS } from '../../../src/config/discovery-doors';
 import { isVisibleByRole, resolveDoorOptionState } from '../../../src/lib/nav-gating';
 
 const source = readFileSync(

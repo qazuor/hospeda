@@ -19,8 +19,9 @@ import { buildUrl } from '@/lib/urls';
 import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPill.client';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
-import { ACCOUNT_DISCOVERY_DOORS, getNavForSurface } from '@/config/navigation';
+import { getNavForSurface } from '@/config/navigation';
 import type { NavItem } from '@/config/navigation';
+import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
 import { isDoorVisible, isVisibleByRole } from '@/lib/nav-gating';
 
 interface Props {

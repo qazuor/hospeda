@@ -31,7 +31,9 @@ describe('mi-cuenta/aliados/index.astro (HOS-131 "Sumate como aliado" hub)', () 
     });
 
     it('looks up the "partner" door from ACCOUNT_DISCOVERY_DOORS, not a hardcoded object', () => {
-        expect(source).toContain("import { ACCOUNT_DISCOVERY_DOORS } from '@/config/navigation';");
+        expect(source).toContain(
+            "import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';"
+        );
         expect(source).toContain("candidate.id === 'partner'");
     });
 
