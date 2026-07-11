@@ -536,6 +536,14 @@ const AUTODROMO_POI_SLUG = 'autodromo_concepcion_del_uruguay';
 const AUTODROMO_LAT = -32.423;
 const AUTODROMO_LONG = -58.2591;
 
+/**
+ * HOS-113 review M-2: fixed UUID for the cross-allowlist ambiguity
+ * regression fixture (Concordia — the destination shared by BOTH the
+ * attraction allowlist's bare "termas" entry and the POI allowlist's
+ * "termas de concordia" entry).
+ */
+const CONCORDIA_UUID = '66666666-6666-4666-8666-666666666666';
+
 // ---------------------------------------------------------------------------
 // Test app
 // ---------------------------------------------------------------------------
@@ -2688,6 +2696,298 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(payload.poiSlugs).toEqual([]);
             expect(payload.params.latitude).toBeUndefined();
             expect(mockApiLogger.warn).toHaveBeenCalled();
+        });
+
+        // ---------------------------------------------------------------------
+        // HOS-113 review H-1/M-1: the reply narrative must not misrepresent an
+        // unresolved POI mention. Reuses the "no-match" and "non-fatal" setups
+        // above, but asserts the `streamText` messages instead of `params` —
+        // these are new checkpoints, not replacements for the existing ones.
+        // ---------------------------------------------------------------------
+
+        it('H-1/M-1: no-match scrubs poiSlugs from the reply filters context and injects a corrective note', async () => {
+            // Arrange: same incompatible destination + POI setup as the
+            // "no-match: ... silently skips proximity" test above.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: {
+                        destinationId: GUALEGUAYCHU_UUID,
+                        poiSlugs: [AUTODROMO_POI_SLUG]
+                    }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'en Gualeguaychú, cerca del autódromo' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+            expect(streamTextCalls).toHaveLength(1);
+            const messages = streamTextCalls[0]?.messages ?? [];
+
+            // The raw unresolved landmark slug must NOT reach the assistant's
+            // filters-context note — otherwise the model could claim the
+            // search was centered near it when it wasn't (H-1's original bug).
+            const assistantNote = messages.find(
+                (m) => m.role === 'assistant' && m.content.startsWith('Extracted search filters')
+            );
+            expect(assistantNote).toBeDefined();
+            expect(assistantNote?.content).not.toContain(AUTODROMO_POI_SLUG);
+
+            // A corrective system note must instruct the model not to narrate
+            // an unapplied proximity search.
+            const correctiveNote = messages.find(
+                (m) => m.role === 'system' && m.content.includes('LANDMARK NOT APPLIED')
+            );
+            expect(correctiveNote).toBeDefined();
+            expect(correctiveNote?.content).toContain(AUTODROMO_POI_SLUG);
+            // Unlike the attraction conflict, this must not claim zero results.
+            expect(correctiveNote?.content.toUpperCase()).not.toContain('ZERO');
+        });
+
+        it('H-1/M-1: a non-fatal POI-resolution failure (with a raw mention) also scrubs poiSlugs and injects the corrective note', async () => {
+            // Arrange: same non-fatal failure setup as the "non-fatal: a
+            // POI-resolution failure ..." test above (poiResolution kind
+            // degrades to `none`, but a raw poiSlugs mention was extracted).
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.9, entities: { poiSlugs: [AUTODROMO_POI_SLUG] } },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                error: { code: 'INTERNAL_ERROR', message: 'DB unavailable' }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cerca del autódromo' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+            expect(streamTextCalls).toHaveLength(1);
+            const messages = streamTextCalls[0]?.messages ?? [];
+
+            const assistantNote = messages.find(
+                (m) => m.role === 'assistant' && m.content.startsWith('Extracted search filters')
+            );
+            expect(assistantNote?.content).not.toContain(AUTODROMO_POI_SLUG);
+
+            const correctiveNote = messages.find(
+                (m) => m.role === 'system' && m.content.includes('LANDMARK NOT APPLIED')
+            );
+            expect(correctiveNote).toBeDefined();
+        });
+
+        it('H-1/M-1: a successfully resolved POI does NOT scrub poiSlugs or inject the corrective note', async () => {
+            // Arrange: happy-path resolution (matched: poiSlugs resolves ...).
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { poiSlugs: [AUTODROMO_POI_SLUG] }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'busco algo cerca del autódromo' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+            expect(streamTextCalls).toHaveLength(1);
+            const messages = streamTextCalls[0]?.messages ?? [];
+
+            const assistantNote = messages.find(
+                (m) => m.role === 'assistant' && m.content.startsWith('Extracted search filters')
+            );
+            // A resolved landmark IS expected to appear in the reply context.
+            expect(assistantNote?.content).toContain(AUTODROMO_POI_SLUG);
+
+            const correctiveNote = messages.find((m) => m.content.includes('LANDMARK NOT APPLIED'));
+            expect(correctiveNote).toBeUndefined();
+        });
+    });
+
+    // =========================================================================
+    // HOS-113 review M-2 — cross-allowlist ambiguity regression
+    //
+    // `ATTRACTION_ALLOWLIST.es.termas` (a bare word) substring-matches THREE
+    // `POI_ALLOWLIST` terms ("termas de concordia", "complejo termal
+    // concordia", "termas de federación"). A message that trips BOTH
+    // dictionaries only resolves correctly today because Concordia and
+    // Federación both happen to be within the attraction "termas"
+    // 7-destination seed set — a SUPERSET ASSUMPTION that is not enforced
+    // anywhere else. This guards it: if a future seed/migration change ever
+    // drops one of those destinations from the "termas" attraction set, the
+    // intersection computed in Step 7.7 goes empty and this test fails
+    // loudly instead of the POI proximity narrowing silently vanishing.
+    // =========================================================================
+
+    describe('HOS-113 review M-2 — cross-allowlist ambiguity ("termas" bare-word vs POI-specific terms)', () => {
+        it('a message matching BOTH the attraction "termas" bare-word AND the POI-specific "termas de concordia" term resolves coherently (POI proximity applies, not silently dropped)', async () => {
+            // Arrange: mirrors what matchAttractionTerms('cerca de las termas
+            // de concordia', 'es') and matchPoiTerms(..., 'es') would each
+            // independently flag — see attraction-allowlist.ts's bare
+            // "termas" entry and poi-allowlist.ts's "termas de concordia" /
+            // "complejo termal concordia" entries.
+            const TERMAS_ATTRACTION_SLUGS = [
+                'aqua_parque_termal',
+                'centro_spa_termal',
+                'complejo_termal_principal',
+                'piscinas_termales',
+                'termas_familiares'
+            ];
+            const CONCORDIA_TERMAL_POI_SLUG = 'complejo_termal_concordia';
+            const CONCORDIA_LAT = -31.393;
+            const CONCORDIA_LONG = -58.021;
+
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.85,
+                    entities: {
+                        attractionSlugs: TERMAS_ATTRACTION_SLUGS,
+                        poiSlugs: [CONCORDIA_TERMAL_POI_SLUG]
+                    }
+                },
+                usage: { promptTokens: 14, completionTokens: 7, totalTokens: 21 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // The "termas" attraction's real 7-destination seed set. Concordia
+            // is deliberately included — this is the superset assumption
+            // documented above.
+            nextAttractionResolveResult.current = {
+                data: {
+                    destinationIds: [
+                        CONCORDIA_UUID,
+                        GUALEGUAYCHU_UUID,
+                        GUALEGUAY_UUID,
+                        COLON_DESTINATION_UUID,
+                        CONCEPCION_DEL_URUGUAY_UUID,
+                        PUEBLO_LIEBIG_UUID,
+                        SAN_JOSE_UUID
+                    ]
+                }
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-concordia-termas',
+                    slug: CONCORDIA_TERMAL_POI_SLUG,
+                    lat: CONCORDIA_LAT,
+                    long: CONCORDIA_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCORDIA_UUID] }
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cerca de las termas de concordia' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+                attractionLocationConflict?: unknown;
+            };
+
+            // Step 7.6 (attraction): no prior location constraint → constrains
+            // to the full termas-destination set (7 destinations).
+            // Step 7.7 (POI): intersects that set with the POI's single
+            // destination (Concordia) — a NON-EMPTY intersection → narrows
+            // further to Concordia AND centers the search on the POI's own
+            // coordinates. If the superset assumption ever broke (Concordia
+            // dropped from the termas set), this intersection would go empty,
+            // `resolvePoiConstraint` would return `no-match`, and
+            // `params.destinationIds` would stay at the full 7-destination
+            // attraction set with NO latitude/longitude — these assertions
+            // would fail.
+            expect(payload.params.destinationIds).toEqual([CONCORDIA_UUID]);
+            expect(payload.params.latitude).toBe(CONCORDIA_LAT);
+            expect(payload.params.longitude).toBe(CONCORDIA_LONG);
+            expect(payload.poiSlugs).toEqual([CONCORDIA_TERMAL_POI_SLUG]);
+            expect(payload.attractionLocationConflict).toBeUndefined();
+
+            // The reply-narrative correction (H-1/M-1) must NOT fire — the
+            // POI resolved successfully, so the model may cite it.
+            expect(streamTextCalls).toHaveLength(1);
+            const correctiveNote = (streamTextCalls[0]?.messages ?? []).find((m) =>
+                m.content.includes('LANDMARK NOT APPLIED')
+            );
+            expect(correctiveNote).toBeUndefined();
         });
     });
 
