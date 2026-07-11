@@ -50,7 +50,12 @@
  * (HOS-113 §6.2, NG-2: no new distance SQL). The resolved slugs are echoed
  * back on the `filters` frame's `poiSlugs` field (T-043) so the UI/reply can
  * cite what was resolved; an unmatched or conflicting mention silently skips
- * the proximity constraint (R-4 — never a hallucinated slug, never a crash).
+ * the proximity constraint on the SEARCH itself (R-4 — never a hallucinated
+ * slug, never a crash). On the REPLY side, a `no-match` (or a non-fatal
+ * resolution failure with a raw mention still present) now builds a
+ * `poiLocationConflict` and threads it into `buildSearchReplyMessages` (HOS-113
+ * review H-1/M-1) so the assistant never narrates a proximity search that
+ * didn't actually run — see the Step 7.7 comment below.
  *
  * @module apps/api/routes/ai/protected/search-chat
  */
@@ -96,7 +101,8 @@ import { persistSearchChatTurn } from './search-chat.persistence.js';
 import {
     buildConversationalSearchPrompt,
     buildSearchReplyMessages,
-    buildSearchReplySystemPrompt
+    buildSearchReplySystemPrompt,
+    type PoiLocationConflict
 } from './search-chat.prompt.js';
 import { mapIntentToSearchParams } from './search-intent.mapper.js';
 
@@ -623,11 +629,23 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         // otherwise falls back to the Phase-2 default (5km).
         //
         // On `no-match`/`none`: deliberately NOT surfaced as a conflict frame
-        // (unlike attractionLocationConflict) — out of scope for this phase's
-        // tasks (T-038..T-044). The search simply proceeds without the
-        // proximity constraint; the resolved `poiSlugs` response field stays
-        // empty so the reply never cites an unresolved/hallucinated landmark
-        // (R-4).
+        // on the `filters` SSE payload (unlike attractionLocationConflict) —
+        // forcing zero accommodations is out of scope for this phase's tasks
+        // (T-038..T-044). The search simply proceeds without the proximity
+        // constraint; the resolved `poiSlugs` response field stays empty so
+        // the reply never cites an unresolved/hallucinated landmark (R-4).
+        //
+        // HOS-113 review H-1/M-1: that "search proceeds untouched" is exactly
+        // what makes the REPLY narrative risky — `validatedEntities.poiSlugs`
+        // (the model's raw, unresolved mention) would otherwise still reach
+        // buildSearchReplyMessages' `extractedFilters` context, so the reply
+        // could claim a proximity search was applied when it wasn't. When
+        // `poiResolution` is `no-match`, or `none` with a raw mention still
+        // present (e.g. a non-fatal service failure), `poiLocationConflict`
+        // is built below and threaded into Step 8's reply call, which both
+        // scrubs the raw slug out of the filters context and injects a
+        // corrective system note — see `buildSearchReplyMessages` and
+        // `poi-resolver.ts`'s module doc for the full rationale.
         // -----------------------------------------------------------------------
         const poiSlugs = validatedEntities.poiSlugs ?? [];
         const singularDestinationIdForPoi =
@@ -646,6 +664,7 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         });
 
         let resolvedPoiSlugs: string[] = [];
+        let poiLocationConflict: PoiLocationConflict | undefined;
         if (poiResolution.kind === 'constrain') {
             params.destinationIds = poiResolution.destinationIds;
             params.latitude = poiResolution.lat;
@@ -656,6 +675,20 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
                     : Math.min(validatedEntities.radius, MAX_POI_RADIUS_KM);
             params.radius = radiusKm;
             resolvedPoiSlugs = [...poiResolution.poiSlugs];
+        } else if (poiSlugs.length > 0) {
+            // A raw mention was extracted but did not resolve (no-match) or
+            // degraded non-fatally (none, service error) while still carrying
+            // a real mention — flag it for the reply narrative (see the block
+            // comment above). Mirrors the attraction conflict's best-effort
+            // location label derivation.
+            const locationLabel =
+                typeof validatedEntities.city === 'string' && validatedEntities.city.trim() !== ''
+                    ? validatedEntities.city
+                    : undefined;
+            poiLocationConflict = {
+                poiSlugs: [...poiSlugs],
+                ...(locationLabel === undefined ? {} : { locationLabel })
+            };
         }
 
         // -----------------------------------------------------------------------
@@ -667,7 +700,10 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         // model outputs a friendly conversational text, not structured JSON.
         // On an attraction/location conflict, the conflict note is threaded into
         // the reply so the assistant names it ("no hay carnaval en Chajarí")
-        // instead of emitting a generic empty-results acknowledgment.
+        // instead of emitting a generic empty-results acknowledgment. On an
+        // unresolved POI mention (HOS-113 review H-1/M-1), `poiLocationConflict`
+        // is threaded the same way, but corrects the narrative only — it never
+        // claims zero results, since the search itself still ran.
         // -----------------------------------------------------------------------
         const replySystemPrompt = buildSearchReplySystemPrompt({ locale });
         const replyMessages = buildSearchReplyMessages({
@@ -675,7 +711,8 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
             history,
             message,
             extractedFilters: validatedEntities,
-            attractionLocationConflict
+            attractionLocationConflict,
+            poiLocationConflict
         });
 
         const { stream: rawStream, meta: rawMeta } = await aiService.streamText({

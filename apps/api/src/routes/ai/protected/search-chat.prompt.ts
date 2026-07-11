@@ -165,6 +165,30 @@ export function buildConversationalSearchPrompt({
 // ─── Reply prompt (T-006) ─────────────────────────────────────────────────────
 
 /**
+ * POI ↔ narrative conflict signal (HOS-113 review H-1/M-1).
+ *
+ * Unlike {@link AttractionLocationConflict}, this is NOT part of the
+ * `filters` SSE contract — a POI `no-match` does not force zero
+ * accommodations, it only skips the proximity narrowing, so the search
+ * still runs (see `search-chat.ts` Step 7.7 and the `poi-resolver.ts`
+ * module doc). This type exists purely to correct the REPLY narrative: when
+ * the model extracted a `poiSlugs` mention that could not be resolved
+ * (`no-match` — incompatible with the location constraint, or the mention
+ * matched no destination at all — or a non-fatal resolution failure that
+ * still carried a raw mention), the reply must not claim a proximity
+ * search was applied around that landmark.
+ *
+ * @property poiSlugs - The raw (unresolved) point-of-interest slugs the
+ *   model extracted this turn.
+ * @property locationLabel - Best-effort human location label (mirrors
+ *   {@link AttractionLocationConflict}'s field), when available.
+ */
+export type PoiLocationConflict = {
+    readonly poiSlugs: readonly string[];
+    readonly locationLabel?: string;
+};
+
+/**
  * Locale-specific greeting lines used by {@link buildSearchReplySystemPrompt}.
  * Each value maps to the instruction language for the assistant's reply.
  */
@@ -233,6 +257,15 @@ export function buildSearchReplySystemPrompt({
  *   injected instructing the model to explain there are ZERO results because
  *   no destination combines the two, and to suggest loosening a filter — so the
  *   reply names the conflict instead of a generic empty-state acknowledgment.
+ * @param params.poiLocationConflict - HOS-113 review H-1/M-1: present only
+ *   when the turn's `poiSlugs` mention could not be resolved this turn (a
+ *   `no-match`, or a non-fatal resolution failure that still carried a raw
+ *   mention — see {@link PoiLocationConflict}). Unlike
+ *   `attractionLocationConflict` this does NOT mean zero results — the
+ *   accommodation search still ran, just without the proximity narrowing —
+ *   so this ONLY (a) scrubs the unresolved `poiSlugs` out of the serialized
+ *   `extractedFilters` context and (b) injects a corrective note so the
+ *   reply never claims a proximity search happened around that landmark.
  * @returns An ordered `AiMessage[]` ready for `aiService.streamText({ messages })`.
  */
 export function buildSearchReplyMessages({
@@ -240,19 +273,33 @@ export function buildSearchReplyMessages({
     history,
     message,
     extractedFilters,
-    attractionLocationConflict
+    attractionLocationConflict,
+    poiLocationConflict
 }: {
     readonly systemPrompt: string;
     readonly history: readonly AiChatMessage[];
     readonly message: string;
     readonly extractedFilters: SearchIntentEntities;
     readonly attractionLocationConflict?: AttractionLocationConflict;
+    readonly poiLocationConflict?: PoiLocationConflict;
 }): AiMessage[] {
     const recentHistory = history.slice(-CONVERSATION_HISTORY_LIMIT);
 
-    const hasFilters = Object.keys(extractedFilters).length > 0;
+    // HOS-113 review H-1/M-1: when the POI mention could not be honored this
+    // turn, scrub the raw unresolved `poiSlugs` out of the filters context
+    // BEFORE it reaches the reply prompt. Left unscrubbed, the model sees the
+    // raw landmark slug in "Extracted search filters" and can narrate a
+    // proximity search that never actually ran (the resolved outcome is
+    // always an empty set whenever `poiLocationConflict` is present — see
+    // the Step 7.7 caller in search-chat.ts).
+    const effectiveFilters: SearchIntentEntities =
+        poiLocationConflict === undefined
+            ? extractedFilters
+            : { ...extractedFilters, poiSlugs: [] };
+
+    const hasFilters = Object.keys(effectiveFilters).length > 0;
     const filtersContext = hasFilters
-        ? `Extracted search filters: ${JSON.stringify(extractedFilters)}`
+        ? `Extracted search filters: ${JSON.stringify(effectiveFilters)}`
         : 'No specific search filters were extracted (broad or unclear query).';
 
     const messages: AiMessage[] = [
@@ -280,6 +327,29 @@ export function buildSearchReplyMessages({
                 'accommodations. Briefly and warmly explain that no destination matches both, name ' +
                 'the conflict, and suggest loosening one filter (e.g. dropping the location or the ' +
                 'attraction). Do NOT invent results or destinations.'
+        });
+    }
+
+    // HOS-113 review H-1/M-1: on a POI mention that could not be honored
+    // this turn, tell the model explicitly so it doesn't claim a proximity
+    // search happened. Unlike the attraction conflict above, this is NOT a
+    // zero-results signal — the accommodation search still ran (see
+    // `poi-resolver.ts`'s module doc) — so the note only corrects the
+    // narrative, it never announces zero results.
+    if (poiLocationConflict !== undefined) {
+        const poiPhrase = poiLocationConflict.poiSlugs.join(', ');
+        const locationPhrase =
+            poiLocationConflict.locationLabel === undefined
+                ? ''
+                : ` near the requested location (${poiLocationConflict.locationLabel})`;
+        messages.push({
+            role: 'system',
+            content:
+                `IMPORTANT — LANDMARK NOT APPLIED: the user mentioned a specific point of interest ` +
+                `(${poiPhrase}) but it could NOT be resolved${locationPhrase} — the search proceeded ` +
+                'WITHOUT centering or narrowing on that landmark. Do NOT say the search is near, ' +
+                'centered on, or narrowed around that landmark, and do NOT invent a reason why. If ' +
+                'relevant, you may briefly note that the specific landmark could not be found.'
         });
     }
 
