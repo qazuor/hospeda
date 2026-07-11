@@ -57,6 +57,8 @@ export const DestinationPublicSchema = DestinationSchema.pick({
 
     // Nested public data
     attractions: true,
+    // Points of interest (HOS-113 Phase 4): public-safe, mirrors attractions.
+    pointsOfInterest: true,
     rating: true,
     faqs: true,
 
@@ -93,6 +95,8 @@ export const DestinationProtectedSchema = DestinationSchema.pick({
     seo: true,
     tags: true,
     attractions: true,
+    // Points of interest (HOS-113 Phase 4): also surfaced to authenticated users.
+    pointsOfInterest: true,
     rating: true,
     faqs: true,
 

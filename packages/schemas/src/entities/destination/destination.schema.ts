@@ -14,6 +14,7 @@ import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { DestinationTypeEnumSchema } from '../../enums/destination-type.schema.js';
 import { AttractionSummarySchema } from '../attraction/attraction.schema.js';
 import { DestinationReviewSchema } from '../destinationReview/destinationReview.schema.js';
+import { PointOfInterestSummarySchema } from '../point-of-interest/point-of-interest.schema.js';
 import { TagSchema } from '../tag/tag.schema.js';
 import { DestinationClimateSchema } from './subtypes/destination.climate.schema.js';
 import { DestinationRatingSchema } from './subtypes/destination.rating.schema.js';
@@ -97,6 +98,11 @@ export const DestinationSchema = z.object({
     // Attractions (lightweight summary — destinations only carry attraction
     // identifiers and display metadata, not the full audit/lifecycle entity).
     attractions: z.array(AttractionSummarySchema).optional(),
+
+    // Points of interest (HOS-113 Phase 4): lightweight summary array,
+    // hydrated by `DestinationService._withPointsOfInterest` for the
+    // destination detail response. Mirrors `attractions` above.
+    pointsOfInterest: z.array(PointOfInterestSummarySchema).optional(),
     reviews: z.array(DestinationReviewSchema).optional(),
     rating: DestinationRatingSchema.nullish(),
 
