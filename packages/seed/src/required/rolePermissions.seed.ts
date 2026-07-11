@@ -993,9 +993,10 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.OWNER_PROMOTION_RESTORE_OWN,
         PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_OWN,
 
-        // ACCESS: Basic access
+        // ACCESS: Basic dashboard access (HOST self-manages entirely in the web
+        // app's /mi-cuenta — NOT the admin panel; ACCESS_PANEL_ADMIN is
+        // intentionally absent here)
         PermissionEnum.DASHBOARD_BASE_VIEW,
-        PermissionEnum.ACCESS_PANEL_ADMIN,
         PermissionEnum.ACCESS_API_PUBLIC,
 
         // MEDIA: Cross-entity media management (HOST uploads images to own accommodations)
@@ -1070,9 +1071,10 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_BOOKMARK_COLLECTION_DELETE,
         PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
 
-        // ACCESS: Admin panel access (for the owner self-service section)
+        // ACCESS: Basic dashboard access (owner self-service now lives entirely
+        // in the web app's /mi-cuenta — NOT the admin panel; ACCESS_PANEL_ADMIN
+        // is intentionally absent here)
         PermissionEnum.DASHBOARD_BASE_VIEW,
-        PermissionEnum.ACCESS_PANEL_ADMIN,
         PermissionEnum.ACCESS_API_PUBLIC,
 
         // MEDIA: Upload and delete own images
