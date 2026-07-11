@@ -23,6 +23,7 @@
  */
 
 import type { QZPayBilling, QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
+import { apiLogger } from '../../utils/logger.js';
 import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
 
 /**
@@ -84,6 +85,10 @@ export interface CreatePaidSubscriptionResult {
  * @returns The created subscription plus its non-empty checkout URL.
  * @throws SubscriptionCheckoutError With code `MISSING_INIT_POINT` when the
  *   payment adapter returns neither a live nor a sandbox init point.
+ * @throws SubscriptionCheckoutError With code `MISSING_PROVIDER_SUBSCRIPTION_ID`
+ *   (HOS-151 Bug C) when MercadoPago returns a 2xx preapproval with no provider
+ *   subscription id. The just-created local row is cancelled (best-effort)
+ *   before the throw so no unlinkable `incomplete` row survives.
  *
  * @example
  * ```ts
@@ -133,6 +138,37 @@ export async function createPaidSubscription(
         throw new SubscriptionCheckoutError(
             'MISSING_INIT_POINT',
             'Payment provider did not return a checkout URL'
+        );
+    }
+
+    // HOS-151 Bug C: a 2xx preapproval with no provider subscription id is
+    // unrecoverable — the webhook lookup keys on `mpSubscriptionId`, so a row
+    // persisted with an empty id can never activate and its preapproval can
+    // never be located to cancel. Fail loudly instead of leaving an orphan.
+    // Clean up the just-created local row best-effort first (mirrors the
+    // `cancelSubscriptionFailClosed` fail-closed pattern in
+    // subscription-checkout.service.ts); the abandoned-pending cron is the
+    // backstop if the cancel does not take effect.
+    const mpSubscriptionId = subscription.providerSubscriptionIds?.mercadopago;
+    if (!mpSubscriptionId) {
+        try {
+            await billing.subscriptions.cancel(subscription.id);
+            apiLogger.warn(
+                { subscriptionId: subscription.id },
+                'HOS-151 Bug C: cancelled subscription created with an empty provider id (fail-closed)'
+            );
+        } catch (cancelErr) {
+            apiLogger.error(
+                {
+                    subscriptionId: subscription.id,
+                    error: cancelErr instanceof Error ? cancelErr.message : String(cancelErr)
+                },
+                'HOS-151 Bug C: FAILED to cancel subscription created with an empty provider id — abandoned-pending cron will reap it'
+            );
+        }
+        throw new SubscriptionCheckoutError(
+            'MISSING_PROVIDER_SUBSCRIPTION_ID',
+            'Payment provider returned no subscription id — cannot link the preapproval; subscription cancelled.'
         );
     }
 
