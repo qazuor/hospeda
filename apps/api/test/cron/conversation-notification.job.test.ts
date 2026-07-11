@@ -5,15 +5,17 @@
  * Redis client so no real DB, email, or Redis is needed.
  *
  * Test scenarios:
- * - Job configuration (name, schedule, advisory lock, enabled flag)
+ * - Job configuration (name, schedule, no advisory lock, enabled flag)
  * - Dry run mode (skips email, returns wouldProcess count)
- * - Advisory lock not acquired (skipped result)
  * - Empty due list (processed = 0)
  * - findDue service error → failure result
  * - Missing RESEND API key → skips dispatch
  * - Unhandled exception → failure result
- * - HOS-112: email dispatch never runs while the phase-3 (persist) transaction
- *   is open, and the advisory lock is acquired only AFTER all sends (AC-1/AC-5)
+ * - HOS-112: `sendEmail` never runs while a write transaction is open; the
+ *   per-schedule advance transaction opens only AFTER that schedule's send
+ *   returns successfully, and no `pg_try_advisory_xact_lock` call is ever
+ *   executed anywhere in this job (AC-1/AC-5 — the advisory lock was REMOVED
+ *   during implementation review, see the job's module doc-comment)
  * - HOS-112: atomic Redis claim skips a schedule already claimed by another
  *   run/tick (AC-2)
  * - HOS-112: a failed send releases the Redis claim and does not advance the
@@ -21,11 +23,17 @@
  * - HOS-112: only successfully-sent schedules advance their streak (AC-4)
  * - HOS-112: two overlapping runs over the same due set dispatch/advance each
  *   schedule at most once, via the shared Redis claim (AC-6)
+ * - HOS-112 (review): a DB failure persisting one schedule's advance AFTER
+ *   its send succeeded is counted as an error and logged, and does not
+ *   trigger a re-send within the same run
  *
  * AC-9 (send timeout) is covered in `packages/email/test/send.test.ts` — the
  * timeout lives entirely inside `sendEmail`, with no cron-specific behavior
- * to assert here. AC-10 (double-advance guard) is covered in
+ * to assert here. AC-10 (double-advance guard, including the terminal
+ * double-cancel case) is covered in
  * `packages/service-core/test/services/conversation/notification-schedule.service.test.ts`.
+ * `resolveNotification`'s branch coverage lives in
+ * `apps/api/test/cron/conversation-notification.resolve.test.ts`.
  *
  * @module test/cron/conversation-notification
  */
@@ -157,7 +165,6 @@ vi.mock('@repo/db', () => {
                 })
             }))
         })),
-        sql: vi.fn((strings: TemplateStringsArray) => ({ sql: strings.join('') })),
         conversations: conversationsTableRef,
         messages: messagesTableRef,
         AccommodationModel: vi.fn().mockImplementation(function () {
@@ -292,15 +299,19 @@ describe('Conversation Notification Cron Job', () => {
     };
     let mockContext: CronJobContext;
 
+    /**
+     * Default `withTransaction` mock: tracks whether a write transaction is
+     * open (via `txOpenState`) for the AC-1 boundary assertion, and provides
+     * a `fakeTx.execute` spy so any test can assert it was NEVER called with
+     * a `pg_try_advisory_xact_lock` statement — there is no advisory lock in
+     * this job anymore (HOS-112 review), so `execute` should simply never be
+     * invoked by production code. Invoked once PER schedule (inside the
+     * phase-2 loop), not once for the whole batch.
+     */
     const acquiredTransaction = async (callback: (tx: unknown) => Promise<unknown>) => {
         txOpenState.open = true;
         try {
-            const fakeTx = {
-                execute: vi.fn().mockImplementation(async () => {
-                    callOrder.push('lock-acquire');
-                    return { rows: [{ acquired: true }] };
-                })
-            };
+            const fakeTx = { execute: vi.fn().mockResolvedValue({ rows: [] }) };
             return await callback(fakeTx);
         } finally {
             txOpenState.open = false;
@@ -365,29 +376,6 @@ describe('Conversation Notification Cron Job', () => {
 
         it('has a 2-minute timeout', () => {
             expect(conversationNotificationJob.timeoutMs).toBe(120000);
-        });
-    });
-
-    // -------------------------------------------------------------------------
-    // Advisory lock
-    // -------------------------------------------------------------------------
-
-    describe('Advisory lock', () => {
-        it('skips execution when advisory lock is not acquired', async () => {
-            mockWithTransaction.mockImplementation(async function (
-                callback: (tx: unknown) => Promise<unknown>
-            ) {
-                const fakeTx = {
-                    execute: vi.fn().mockResolvedValue({ rows: [{ acquired: false }] })
-                };
-                return callback(fakeTx);
-            });
-
-            const result = await conversationNotificationJob.handler(mockContext);
-
-            expect(result.success).toBe(true);
-            expect(result.processed).toBe(0);
-            expect(result.message).toContain('Skipped');
         });
     });
 
@@ -458,7 +446,11 @@ describe('Conversation Notification Cron Job', () => {
 
     describe('Unhandled error', () => {
         it('catches unexpected exceptions and returns failure', async () => {
-            mockWithTransaction.mockRejectedValue(new Error('Unexpected DB failure'));
+            // findDue rejecting (as opposed to returning an `{ error }` result)
+            // is genuinely unhandled — it happens before the per-schedule loop
+            // (and therefore before any per-item try/catch) can intercept it,
+            // so it must surface via the handler's outer try/catch.
+            mockFindDue.mockRejectedValue(new Error('Unexpected DB failure'));
 
             const result = await conversationNotificationJob.handler(mockContext);
 
@@ -472,8 +464,8 @@ describe('Conversation Notification Cron Job', () => {
     // HOS-112: dispatch/transaction boundary
     // -------------------------------------------------------------------------
 
-    describe('Boundary: email dispatch runs outside the phase-3 transaction (AC-1/AC-5)', () => {
-        it('sends the email before any transaction is open, and acquires the advisory lock only afterwards', async () => {
+    describe('Boundary: email dispatch runs with no transaction open; advance persists per-schedule right after (AC-1/AC-5)', () => {
+        it('sends the email before any transaction is open, and persists the streak advance in its own transaction only after that send returns — with no advisory-lock statement ever executed', async () => {
             const schedule = seedResolvableSchedule({
                 scheduleId: 'sched-boundary',
                 conversationId: 'conv-boundary',
@@ -490,14 +482,73 @@ describe('Conversation Notification Cron Job', () => {
                 return { success: true, messageId: 'msg-boundary' };
             });
 
+            const executedStatements: unknown[] = [];
+            mockWithTransaction.mockImplementation(
+                async (callback: (tx: unknown) => Promise<unknown>) => {
+                    txOpenState.open = true;
+                    callOrder.push('advance-tx-open');
+                    try {
+                        const fakeTx = {
+                            execute: vi.fn().mockImplementation(async (query: unknown) => {
+                                executedStatements.push(query);
+                                return { rows: [] };
+                            })
+                        };
+                        return await callback(fakeTx);
+                    } finally {
+                        txOpenState.open = false;
+                        callOrder.push('advance-tx-close');
+                    }
+                }
+            );
+
             const result = await conversationNotificationJob.handler(mockContext);
 
             expect(result.processed).toBe(1);
             // No write transaction was open while sendEmail ran.
             expect(txOpenDuringSend).toEqual([false]);
-            // The advisory lock (tracked via tx.execute) is only acquired AFTER
-            // every send in this run has already happened.
-            expect(callOrder).toEqual(['send', 'lock-acquire']);
+            // The per-schedule advance transaction opens only AFTER this
+            // schedule's send has already completed — there is no separate
+            // lock-acquisition step anymore, just the advance transaction.
+            expect(callOrder).toEqual(['send', 'advance-tx-open', 'advance-tx-close']);
+            // No `pg_try_advisory_xact_lock` (or any other raw) statement is
+            // ever executed inside the advance transaction — the advisory
+            // lock was removed from this job entirely.
+            expect(executedStatements).toHaveLength(0);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // HOS-112 (review): advance persistence failure after a successful send
+    // -------------------------------------------------------------------------
+
+    describe('Advance persistence failure after successful send (regression, HOS-112 review)', () => {
+        it('counts the schedule as an error and logs it, without re-sending within the same run', async () => {
+            const schedule = seedResolvableSchedule({
+                scheduleId: 'sched-adv-fail',
+                conversationId: 'conv-adv-fail',
+                accommodationId: 'acc-adv-fail',
+                ownerId: 'owner-adv-fail',
+                recipientEmail: 'owner-adv-fail@example.com'
+            });
+            mockFindDue.mockResolvedValue({ data: [schedule], error: null });
+            fakeRedisState.client = createFakeRedis();
+
+            // The send succeeds, but persisting its streak advance fails (e.g.
+            // a DB connection drop mid-transaction) — this must NOT propagate
+            // as an unhandled exception; it is swallowed, logged, and counted.
+            mockWithTransaction.mockRejectedValue(new Error('DB connection lost mid-persist'));
+
+            const result = await conversationNotificationJob.handler(mockContext);
+
+            expect(mockSendEmail).toHaveBeenCalledTimes(1);
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(1);
+            expect(result.errors).toBeGreaterThan(0);
+            expect(mockLogger.warn).toHaveBeenCalledWith(
+                'Failed to persist streak advance after send',
+                expect.objectContaining({ scheduleId: 'sched-adv-fail' })
+            );
         });
     });
 

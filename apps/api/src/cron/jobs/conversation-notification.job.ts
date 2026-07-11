@@ -15,49 +15,74 @@
  * - Authenticated recipient (userId present): `ConversationNewMessage`
  * - Anonymous guest (recipientSide GUEST, no userId): `ConversationNewMessageAnon`
  *
- * ## Why email dispatch runs outside the advisory-lock transaction (HOS-112)
+ * ## Why email dispatch never shares a transaction with the DB write (HOS-112)
  *
- * `sendEmail` makes an HTTP call to Brevo per due schedule. The original
- * implementation ran that call INSIDE the `pg_try_advisory_xact_lock(43020)`
- * transaction, so a slow/unresponsive provider held both the DB connection
- * AND the advisory lock for the entire batch — the same
- * `idle_in_transaction_session_timeout` risk documented on
- * `destination-weather-fetch.job.ts`, but worse here because the lock also
- * serialized every other overlapping run for as long as email sends took.
- * This job now runs three phases, mirroring the weather-fetch fix:
+ * `sendEmail` makes an HTTP call to Brevo per due schedule. An earlier
+ * implementation ran that call INSIDE a `pg_try_advisory_xact_lock(43020)`
+ * transaction that also persisted every schedule's streak advance in one
+ * batch at the end — so a slow/unresponsive provider held a DB connection
+ * for the whole batch (the same `idle_in_transaction_session_timeout` risk
+ * documented on `destination-weather-fetch.job.ts`), AND, worse, if the
+ * batched persist transaction's `try`-lock lost to a concurrent run, the
+ * ENTIRE batch of streak advances was silently dropped even though every one
+ * of those emails had already been sent — the schedules stayed "due" and
+ * were re-sent (duplicated) once their Redis claim TTL lapsed. This job now
+ * runs two logical phases with the persist step folded into the dispatch
+ * loop, per-schedule:
  *
  *  1. **Resolve** (`findDue` + per-schedule reads) — no transaction, no lock.
  *     Builds an in-memory list of everything needed to send each email.
- *  2. **Dispatch** (`sendEmail`, guarded by an atomic Redis claim) — no
- *     transaction, no lock. `SET conv:notif:{scheduleId} 1 NX EX 600`
- *     replaces the old check-then-set `isAlreadyDispatched`/`markDispatched`
- *     pair, closing the race where two ticks could both pass the check
- *     before either set the key. A failed send releases the claim (`DEL`) so
- *     the schedule is retried next tick instead of being locked out for the
- *     full TTL.
- *  3. **Persist** (`withTransaction`, advisory lock as the FIRST statement) —
- *     only `advanceSchedule` calls for schedules that were actually sent in
- *     phase 2. No external I/O happens inside this transaction, so it can
- *     never sit idle waiting on a provider.
+ *  2. **Dispatch + persist** — for each due schedule, sequentially:
+ *     - Claim it atomically in Redis: `SET conv:notif:{scheduleId} 1 NX EX
+ *       600`. This is what actually prevents a double-send across
+ *       overlapping runs/ticks — NOT a Postgres advisory lock. A schedule
+ *       already claimed by another run is skipped silently.
+ *     - `await sendEmail(...)` — no transaction open, no lock held.
+ *     - On failure: release the claim (`DEL`) so the schedule retries next
+ *       tick instead of waiting out the full TTL. No advance is persisted.
+ *     - On success: IMMEDIATELY persist that one schedule's streak advance
+ *       in its OWN short `withTransaction` call, right here in the loop —
+ *       before moving on to the next schedule. This is the fix: the advance
+ *       for a sent email can never be dropped as part of a larger batch,
+ *       because there is no larger batch — each send/advance pair is
+ *       atomic-in-effect at the granularity that matters (one schedule).
  *
- * ## Trade-off: the lock now only guards the PERSIST phase
+ * ## There is no advisory lock in this job anymore
  *
- * Because emails are sent (phase 2) before the lock is acquired (phase 3),
- * two overlapping runs can both dispatch — but only for DIFFERENT schedules,
- * since the Redis claim in phase 2 already serializes per-schedule ownership
- * across runs. If phase 3's lock is not acquired (some other run holds it),
- * this run's streak advances for schedules it just sent are deferred/lost
- * for this tick — the schedule is not re-sent (its Redis claim is still set)
- * but its streak bookkeeping falls behind until a later tick catches up.
- * Accepted trade-off (no retry queue, NG-2) — logged at `warn` so it is
- * visible in ops. See `packages/service-core/.../notification-schedule.service.ts`
- * `advanceSchedule` for the double-advance guard (AC-10) that keeps this safe
- * even if two runs somehow race on the same schedule.
+ * Lock `43020` (see `packages/db/docs/advisory-locks.md`) has been REMOVED
+ * from this job — it is reserved but no longer acquired anywhere in this
+ * file. Two things make it redundant here:
+ *
+ * - The atomic Redis claim (`SET NX EX`) already serializes per-schedule
+ *   ownership across overlapping runs — only one run/tick ever claims a
+ *   given schedule, so at most one run ever sends and advances it.
+ * - `advanceSchedule`'s double-advance guard (AC-10, in
+ *   `packages/service-core/.../notification-schedule.service.ts`) is the
+ *   DB-level safety net for the case Redis fails open (outage) and two runs
+ *   somehow race on the same schedule anyway — it re-reads the row and
+ *   refuses to advance (or re-cancel) a schedule that already moved past the
+ *   caller-observed state.
+ *
+ * With those two guards already covering correctness, an advisory lock would
+ * only add serialization overhead without closing any remaining gap — which
+ * is exactly why the spec calls it "largely redundant" (HOS-112 OQ-2).
+ *
+ * ## Residual risk (accepted, no retry queue — NG-2)
+ *
+ * A hard process crash between a successful `sendEmail` and that SAME
+ * schedule's advance-transaction commit orphans exactly that ONE schedule:
+ * its Redis claim is set (so it won't re-send until the ~10-minute TTL
+ * expires) but its `pendingNotificationAt` never moved, so once the claim
+ * expires it becomes "due" again and gets re-sent — one duplicate email.
+ * This is accepted (owner decision, 2026-07-10): a rare duplicate here is
+ * preferable to building a retry queue for a non-critical notification
+ * email. There is no catch-up mechanism for this case — it is a narrow,
+ * logged (`warn`), single-schedule blast radius, not a batch-wide one.
  *
  * @module cron/jobs/conversation-notification
  */
 
-import { AccommodationModel, getDb, sql, UserModel, withTransaction } from '@repo/db';
+import { AccommodationModel, getDb, UserModel, withTransaction } from '@repo/db';
 import { createEmailClient, sendEmail } from '@repo/email';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { NotificationScheduleService } from '@repo/service-core';
@@ -73,9 +98,6 @@ import {
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-
-/** PostgreSQL advisory lock ID reserved for this job. */
-const ADVISORY_LOCK_ID = 43020;
 
 /** Redis key prefix for per-schedule idempotency. */
 const REDIS_IDEMPOTENCY_PREFIX = 'conv:notif:';
@@ -168,14 +190,6 @@ async function releaseClaim(scheduleId: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Discriminated union for the phase-3 withTransaction return
-// ---------------------------------------------------------------------------
-
-type CronTransactionResult =
-    | { readonly skipped: true }
-    | { readonly skipped: false; readonly advanceErrors: number };
-
-// ---------------------------------------------------------------------------
 // Job definition
 // ---------------------------------------------------------------------------
 
@@ -183,7 +197,8 @@ type CronTransactionResult =
  * Conversation notification cron job.
  *
  * Schedule: every 5 minutes
- * Advisory lock: 43020
+ * Advisory lock: none (removed HOS-112 — see module doc-comment; the atomic
+ * Redis claim + `advanceSchedule`'s double-advance guard cover correctness).
  */
 export const conversationNotificationJob: CronJobDefinition = {
     name: 'conversation-notification',
@@ -293,11 +308,13 @@ export const conversationNotificationJob: CronJobDefinition = {
             }
 
             // ---------------------------------------------------------------
-            // Phase 2 — dispatch emails. No transaction, no advisory lock.
-            // Guarded per-schedule by an atomic Redis claim.
+            // Phase 2 — dispatch emails and persist each successful send's
+            // streak advance immediately. No batched write phase, no
+            // advisory lock — see module doc-comment for the HOS-112
+            // rationale (the batched phase-3 transaction this replaced could
+            // drop an entire batch of advances on lock contention, causing
+            // duplicate sends after the Redis TTL).
             // ---------------------------------------------------------------
-            const toAdvance: Array<{ scheduleId: string; streakCount: number }> = [];
-
             for (const item of resolved) {
                 const { scheduleId } = item;
                 try {
@@ -329,15 +346,46 @@ export const conversationNotificationJob: CronJobDefinition = {
                         continue;
                     }
 
-                    toAdvance.push({ scheduleId, streakCount: item.streakCount });
-                    processed++;
-
                     logger.debug('Notification email dispatched', {
                         scheduleId,
                         recipientSide: item.recipientSide,
                         streak: item.streakCount,
                         messageId: emailResult.messageId
                     });
+
+                    // Persist THIS schedule's streak advance right now, in its
+                    // own short transaction — the core HOS-112 fix. No batching
+                    // across schedules, so a crash window here can orphan at
+                    // most this one schedule (see module doc-comment).
+                    try {
+                        const advanceResult = await withTransaction((tx) =>
+                            schedSvc.advanceSchedule(
+                                SYSTEM_ACTOR,
+                                { scheduleId, currentStreakCount: item.streakCount },
+                                { tx }
+                            )
+                        );
+                        if (advanceResult.error) {
+                            errors++;
+                            logger.warn('Failed to advance notification schedule streak', {
+                                scheduleId,
+                                error: advanceResult.error.message
+                            });
+                        } else if (advanceResult.data === null) {
+                            logger.debug('Schedule cancelled after streak 3', { scheduleId });
+                        }
+                    } catch (advErr) {
+                        // Advance failed AFTER the email was sent — the schedule stays due and
+                        // will be re-sent (a duplicate) once the Redis claim TTL lapses. Rare
+                        // (needs a DB failure mid-persist); logged so it is visible. No retry queue.
+                        errors++;
+                        logger.warn('Failed to persist streak advance after send', {
+                            scheduleId,
+                            error: advErr instanceof Error ? advErr.message : String(advErr)
+                        });
+                    }
+
+                    processed++;
                 } catch (itemError) {
                     errors++;
                     logger.error('Unexpected error dispatching schedule', {
@@ -347,61 +395,6 @@ export const conversationNotificationJob: CronJobDefinition = {
                     await releaseClaim(scheduleId);
                 }
             }
-
-            // ---------------------------------------------------------------
-            // Phase 3 — persist streak advances. Short transaction; advisory
-            // lock is the FIRST statement. No external I/O in this phase, so
-            // it can never sit idle waiting on the email provider.
-            // ---------------------------------------------------------------
-            const cronResult = await withTransaction<CronTransactionResult>(async (tx) => {
-                const lockResult = await tx.execute(
-                    sql`SELECT pg_try_advisory_xact_lock(${ADVISORY_LOCK_ID}) AS acquired`
-                );
-                if (!lockResult.rows[0]?.acquired) {
-                    return { skipped: true };
-                }
-
-                let advanceErrors = 0;
-
-                for (const { scheduleId, streakCount } of toAdvance) {
-                    const advanceResult = await schedSvc.advanceSchedule(
-                        SYSTEM_ACTOR,
-                        { scheduleId, currentStreakCount: streakCount },
-                        { tx }
-                    );
-
-                    if (advanceResult.error) {
-                        advanceErrors++;
-                        logger.warn('Failed to advance notification schedule streak', {
-                            scheduleId,
-                            error: advanceResult.error.message
-                        });
-                    } else if (advanceResult.data === null) {
-                        logger.debug('Schedule cancelled after streak 3', { scheduleId });
-                    }
-                }
-
-                return { skipped: false, advanceErrors };
-            });
-
-            if (cronResult.skipped) {
-                // Another run holds the advisory lock. Emails already sent in
-                // phase 2 are not re-sent (their Redis claims are set), but
-                // this run's streak advances are deferred/lost for this tick —
-                // accepted trade-off, see module doc-comment. No retry queue.
-                logger.warn(
-                    'conversation-notification cron: skipping — previous run holds advisory lock'
-                );
-                return {
-                    success: true,
-                    message: 'Skipped — another instance is already running',
-                    processed: 0,
-                    errors: 0,
-                    durationMs: Date.now() - startedAt.getTime()
-                };
-            }
-
-            errors += cronResult.advanceErrors;
 
             const durationMs = Date.now() - startedAt.getTime();
 
