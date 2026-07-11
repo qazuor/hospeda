@@ -67,14 +67,24 @@ vi.mock('../../../../src/components/ui/IconButtonReact', () => ({
     )
 }));
 
-vi.mock('@repo/icons', () => ({
-    CloseIcon: () => <span data-testid="icon-close" />,
-    BuildingIcon: () => <span data-testid="icon-building" />,
-    ChevronDownIcon: () => <span data-testid="icon-chevron" />,
-    UserIcon: () => <span data-testid="icon-user" />,
-    LogoutIcon: () => <span data-testid="icon-logout" />,
-    SearchIcon: () => <span data-testid="icon-search" />
-}));
+// MobileMenu now transitively imports the full ACCOUNT_NAV_GROUPS config
+// (via getCuratedAccountNav), which references many more @repo/icons exports
+// than this file's own JSX does (HomeIcon, FavoriteIcon, CreditCardIcon,
+// DashboardIcon, BriefcaseIcon, ShieldIcon, ...). Spread the real module
+// instead of hand-listing icons so this mock can never silently fall behind
+// the config again — override only the icons these tests actually assert on.
+vi.mock('@repo/icons', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/icons')>();
+    return {
+        ...actual,
+        CloseIcon: () => <span data-testid="icon-close" />,
+        BuildingIcon: () => <span data-testid="icon-building" />,
+        ChevronDownIcon: () => <span data-testid="icon-chevron" />,
+        UserIcon: () => <span data-testid="icon-user" />,
+        LogoutIcon: () => <span data-testid="icon-logout" />,
+        SearchIcon: () => <span data-testid="icon-search" />
+    };
+});
 
 // Mock auth-client signOut — returns a never-resolving promise to capture loading state
 const mockSignOut = vi.fn();
