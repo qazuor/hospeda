@@ -1,8 +1,8 @@
 /**
  * @file RecommendationsFeed.client.tsx
  * @description React island rendering the tourist-facing personalized
- * recommendations feed ("Para vos") for the `/recomendaciones` page
- * (SPEC-284 T-011). The Astro host page itself is built separately (T-012).
+ * recommendations feed ("Sugerencias para vos") for the `/recomendaciones`
+ * page (SPEC-284 T-011). The Astro host page itself is built separately (T-012).
  *
  * On mount, fetches `GET /api/v1/protected/recommendations` and renders one
  * of the following states:
@@ -17,7 +17,9 @@
  *    popular/featured fallback per spec §5.5); a banner is rendered above the
  *    normal grid, not an empty state.
  *  - **True-empty** — `items.length === 0 && isColdStart === false`.
- *  - **Populated grid** — the normal case, one card per recommendation.
+ *  - **Populated, grouped** — the normal case: cards are grouped under a
+ *    heading per recommendation reason (destination / type / other — BETA-152).
+ *    Cold-start skips grouping and renders one flat grid (no personal signal).
  *
  * Card decision: `AccommodationCard.astro` cannot be used inside a React
  * island (established precedent — see `SearchChatPanel.client.tsx`'s
@@ -31,7 +33,11 @@
  * directive guide).
  */
 
-import type { RecommendationFeedResponse, ScoredAccommodation } from '@repo/schemas';
+import type {
+    RecommendationFeedResponse,
+    RecommendationReason,
+    ScoredAccommodation
+} from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
 import { formatPrice } from '@/lib/format-utils';
@@ -61,6 +67,42 @@ export interface RecommendationsFeedProps {
 
 /** Number of skeleton cards shown while the feed is loading. */
 const SKELETON_COUNT = 6;
+
+/**
+ * Order in which reason groups are rendered (BETA-152): strongest personal
+ * signal first, discovery bucket last.
+ */
+const REASON_ORDER: readonly RecommendationReason[] = ['DESTINATION', 'TYPE', 'OTHER'];
+
+/** i18n key + fallback copy for each reason group's heading. */
+const REASON_HEADING: Readonly<
+    Record<RecommendationReason, { readonly key: string; readonly fallback: string }>
+> = {
+    DESTINATION: {
+        key: 'account.recommendations.groups.destination',
+        fallback: 'Por los destinos que te gustan'
+    },
+    TYPE: { key: 'account.recommendations.groups.type', fallback: 'Del tipo que preferís' },
+    OTHER: { key: 'account.recommendations.groups.other', fallback: 'Otras sugerencias para vos' }
+};
+
+/** A reason group: its reason and the items attributed to it (order preserved). */
+interface ReasonGroup {
+    readonly reason: RecommendationReason;
+    readonly items: readonly ScoredAccommodation[];
+}
+
+/**
+ * Buckets scored items into reason groups in {@link REASON_ORDER}, preserving
+ * each item's incoming order (already ranked by `totalScore`). A missing
+ * `reason` defaults to `OTHER` defensively. Empty groups are dropped.
+ */
+function groupByReason(items: readonly ScoredAccommodation[]): readonly ReasonGroup[] {
+    return REASON_ORDER.map((reason) => ({
+        reason,
+        items: items.filter((item) => (item.reason ?? 'OTHER') === reason)
+    })).filter((group) => group.items.length > 0);
+}
 
 // ─── RecommendationCard sub-component ──────────────────────────────────────────
 
@@ -159,7 +201,7 @@ function RecommendationCard({ scored, locale, t }: RecommendationCardProps) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 /**
- * Personalized recommendations feed island ("Para vos").
+ * Personalized recommendations feed island ("Sugerencias para vos").
  *
  * Fetches the authenticated user's recommendation feed on mount and renders
  * loading / error / entitlement-required / cold-start / empty / populated
@@ -344,19 +386,52 @@ export function RecommendationsFeed({ locale, apiUrl }: RecommendationsFeedProps
                 </div>
             )}
 
-            <ul
-                className={styles.grid}
-                aria-label={t('account.recommendations.listLabel', 'Recomendaciones para vos')}
-            >
-                {items.map((scored) => (
-                    <RecommendationCard
-                        key={scored.accommodation.id}
-                        scored={scored}
-                        locale={locale}
-                        t={t}
-                    />
-                ))}
-            </ul>
+            {isColdStart ? (
+                // Cold-start has no personal signal, so grouping by reason would be
+                // misleading — render one flat grid (every item is 'OTHER' anyway).
+                <ul
+                    className={styles.grid}
+                    aria-label={t('account.recommendations.listLabel', 'Sugerencias para vos')}
+                >
+                    {items.map((scored) => (
+                        <RecommendationCard
+                            key={scored.accommodation.id}
+                            scored={scored}
+                            locale={locale}
+                            t={t}
+                        />
+                    ))}
+                </ul>
+            ) : (
+                // Personalized feed: group items under a heading per reason (BETA-152).
+                groupByReason(items).map((group) => (
+                    <section
+                        key={group.reason}
+                        className={styles.group}
+                        aria-labelledby={`rec-group-${group.reason}`}
+                    >
+                        <h2
+                            id={`rec-group-${group.reason}`}
+                            className={styles.groupHeading}
+                        >
+                            {t(
+                                REASON_HEADING[group.reason].key,
+                                REASON_HEADING[group.reason].fallback
+                            )}
+                        </h2>
+                        <ul className={styles.grid}>
+                            {group.items.map((scored) => (
+                                <RecommendationCard
+                                    key={scored.accommodation.id}
+                                    scored={scored}
+                                    locale={locale}
+                                    t={t}
+                                />
+                            ))}
+                        </ul>
+                    </section>
+                ))
+            )}
         </div>
     );
 }

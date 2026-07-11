@@ -415,7 +415,7 @@
                 "hostDashboard": "Host dashboard",
                 "hostDashboardDesc": "Summary of your activity as a host",
                 "promotions": "My Promotions",
-                "recommendations": "Recommendations",
+                "recommendations": "Suggestions",
                 "recommendationsDesc": "Accommodations picked for you"
             },
             "stats": {
@@ -589,7 +589,7 @@
             "description": "Discover exclusive offers and discounts for your plan on Hospeda"
         },
         "recommendations": {
-            "title": "For you",
+            "title": "Suggestions for you",
             "description": "Accommodations picked especially for you, based on your favorites, searches, and recent activity on Hospeda"
         }
     },
@@ -823,7 +823,12 @@
     "recommendations": {
         "loading": "Loading recommendations...",
         "errorFetch": "We couldn't load your recommendations",
-        "listLabel": "Recommendations for you",
+        "listLabel": "Suggestions for you",
+        "groups": {
+            "destination": "Based on destinations you like",
+            "type": "Of the type you prefer",
+            "other": "Other suggestions for you"
+        },
         "viewDetails": "View accommodation",
         "coldStart": {
             "title": "We're still getting to know your taste",

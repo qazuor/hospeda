@@ -415,7 +415,7 @@
                 "hostDashboard": "Painel do anfitrião",
                 "hostDashboardDesc": "Resumo da sua atividade como anfitrião",
                 "promotions": "Minhas promoções",
-                "recommendations": "Recomendações",
+                "recommendations": "Sugestões",
                 "recommendationsDesc": "Acomodações escolhidas para você"
             },
             "stats": {
@@ -589,7 +589,7 @@
             "description": "Descubra ofertas e descontos exclusivos para o seu plano no Hospeda"
         },
         "recommendations": {
-            "title": "Para você",
+            "title": "Sugestões para você",
             "description": "Acomodações escolhidas especialmente para você, com base nos seus favoritos, buscas e atividade recente no Hospeda"
         }
     },
@@ -823,7 +823,12 @@
     "recommendations": {
         "loading": "Carregando recomendações...",
         "errorFetch": "Não conseguimos carregar suas recomendações",
-        "listLabel": "Recomendações para você",
+        "listLabel": "Sugestões para você",
+        "groups": {
+            "destination": "Pelos destinos que você curte",
+            "type": "Do tipo que você prefere",
+            "other": "Outras sugestões para você"
+        },
         "viewDetails": "Ver acomodação",
         "coldStart": {
             "title": "Ainda estamos conhecendo o seu gosto",

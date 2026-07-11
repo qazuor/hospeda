@@ -68,10 +68,10 @@ export const DESTINATION_REGION_MATCH_POINTS = 12;
 export const DESTINATION_COUNTRY_MATCH_POINTS = 4;
 
 /** Maximum points for the destination component (spec §5.4). */
-const DESTINATION_MAX_POINTS = 40;
+export const DESTINATION_MAX_POINTS = 40;
 
 /** Maximum points for the type component (spec §5.4). */
-const TYPE_MAX_POINTS = 20;
+export const TYPE_MAX_POINTS = 20;
 
 /** Maximum points for the price component (spec §5.4). */
 const PRICE_MAX_POINTS = 20;

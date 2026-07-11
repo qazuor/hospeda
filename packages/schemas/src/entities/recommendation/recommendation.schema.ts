@@ -228,6 +228,36 @@ export type RecommendationCandidateAccommodation = z.infer<
 >;
 
 // ============================================================================
+// RECOMMENDATION REASON (BETA-152)
+// ============================================================================
+
+/**
+ * The dominant reason a candidate was recommended, attributed from its
+ * {@link RecommendationScoreBreakdownSchema}. Drives the feed's grouping in
+ * the web UI (BETA-152) — items are shown under a heading per reason instead
+ * of one flat grid.
+ *
+ * Only the two strongest personal signals earn a dedicated group:
+ *  - `DESTINATION` — the candidate strongly matches a destination the user
+ *    has shown affinity for (region-level match or deeper).
+ *  - `TYPE` — the candidate is of an accommodation type the user prefers.
+ *
+ * Everything else — a weak/country-only destination match, a price/amenities/
+ * quality-driven pick, and every item of a cold-start feed (where the profile
+ * is empty, so `destination` and `type` are both 0) — collapses into:
+ *  - `OTHER` — "other suggestions for you" (discovery bucket).
+ *
+ * @example
+ * ```ts
+ * const reason: RecommendationReason = 'DESTINATION';
+ * ```
+ */
+export const RecommendationReasonEnumSchema = z.enum(['DESTINATION', 'TYPE', 'OTHER']);
+
+/** TypeScript type for {@link RecommendationReasonEnumSchema}. */
+export type RecommendationReason = z.infer<typeof RecommendationReasonEnumSchema>;
+
+// ============================================================================
 // SCORED ACCOMMODATION
 // ============================================================================
 
@@ -241,6 +271,7 @@ export type RecommendationCandidateAccommodation = z.infer<
  *   accommodation: candidate,
  *   score: { destination: 40, type: 20, price: 14, amenities: 9, quality: 5 },
  *   totalScore: 88,
+ *   reason: 'DESTINATION',
  * };
  * ```
  */
@@ -250,7 +281,19 @@ export const ScoredAccommodationSchema = z.object({
     /** Per-component score breakdown. */
     score: RecommendationScoreBreakdownSchema,
     /** Sum of all score components (0–100). */
-    totalScore: z.number().min(0).max(100)
+    totalScore: z.number().min(0).max(100),
+    /**
+     * The dominant reason this candidate was recommended, attributed from
+     * `score` (BETA-152). Drives the feed's per-reason grouping in the web UI.
+     *
+     * Optional because a `ScoredAccommodation` is built in two phases: the pure
+     * scorer (SPEC-284 T-004) produces the `score`/`totalScore`, and the
+     * service layer then attributes the reason from that score. Every item that
+     * actually reaches the client via the feed endpoint carries a reason; the
+     * field is optional only to model that intermediate scorer output. The web
+     * UI defaults a missing reason to `OTHER` defensively.
+     */
+    reason: RecommendationReasonEnumSchema.optional()
 });
 
 /** TypeScript type for {@link ScoredAccommodationSchema}. */
