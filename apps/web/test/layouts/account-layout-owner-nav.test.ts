@@ -38,7 +38,7 @@ describe('AccountLayout — sidebar wiring (HOS-131 T-007)', () => {
 
     it('gates server-side via isVisibleByRole (HOS-131 D-4), not the scattered role helpers', () => {
         expect(source).toContain(
-            "import { isDoorVisible, isVisibleByRole } from '@/lib/nav-gating';"
+            "import { isDoorVisible, isVisibleByRole, resolveDoorLabelKey } from '@/lib/nav-gating';"
         );
         expect(source).not.toContain('isHostRole');
         expect(source).not.toContain('isCommerceOwnerRole');
