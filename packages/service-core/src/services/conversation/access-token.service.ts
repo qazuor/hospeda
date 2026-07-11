@@ -45,7 +45,8 @@ const RevokeAllInputSchema = z.object({
 });
 
 const FindDueRemindersInputSchema = z.object({
-    reminderType: z.enum(['day15', 'day25'])
+    reminderType: z.enum(['day15', 'day25']),
+    limit: z.number().int().positive().optional()
 });
 
 const MarkReminderSentInputSchema = z.object({
@@ -328,14 +329,20 @@ export class AccessTokenService extends BaseService {
      * Only tokens where the corresponding `*_reminder_sent_at IS NULL` are returned.
      * Revoked tokens are excluded at the model layer.
      *
+     * Rows are returned closest-to-expiry first (`expires_at ASC`); pass `limit`
+     * to cap the batch in SQL so overflow tokens are drained fairly on
+     * subsequent runs instead of being non-deterministically starved (HOS-133).
+     *
      * @param actor - Actor performing the query (must hold CONVERSATION_VIEW_ANY).
-     * @param input - `{ reminderType }` — `'day15'` or `'day25'`.
+     * @param input - `{ reminderType, limit? }` — `'day15'` or `'day25'`, plus an
+     *   optional maximum batch size.
      * @param ctx - Optional service context.
-     * @returns ServiceOutput wrapping an array of token rows due for dispatch.
+     * @returns ServiceOutput wrapping an array of token rows due for dispatch,
+     *   closest-to-expiry first.
      */
     public async findDueReminders(
         actor: Actor,
-        input: { reminderType: 'day15' | 'day25' },
+        input: { reminderType: 'day15' | 'day25'; limit?: number },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<SelectConversationAccessToken[]>> {
         return this.runWithLoggingAndValidation({
@@ -362,6 +369,7 @@ export class AccessTokenService extends BaseService {
                     windowStart,
                     windowEnd,
                     validated.reminderType,
+                    validated.limit,
                     execCtx?.tx
                 );
             }

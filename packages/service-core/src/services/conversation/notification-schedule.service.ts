@@ -41,7 +41,8 @@ const CancelAllInputSchema = z.object({
 });
 
 const FindDueInputSchema = z.object({
-    now: z.date()
+    now: z.date(),
+    limit: z.number().int().positive().optional()
 });
 
 const AdvanceScheduleInputSchema = z.object({
@@ -290,10 +291,15 @@ export class NotificationScheduleService extends BaseService {
      *
      * Used by the notification cron job (runs every 5 minutes).
      *
+     * Rows are returned oldest-due first (`pending_notification_at ASC`); pass
+     * `limit` to cap the batch in SQL so overflow rows are drained fairly on
+     * subsequent runs instead of being non-deterministically starved (HOS-133).
+     *
      * @param actor - Actor performing the query (must hold CONVERSATION_VIEW_ANY).
-     * @param input - `{ now }` — reference timestamp (typically `new Date()`).
+     * @param input - `{ now, limit? }` — reference timestamp (typically
+     *   `new Date()`) and an optional maximum batch size.
      * @param ctx - Optional service context.
-     * @returns ServiceOutput wrapping an array of due schedule rows.
+     * @returns ServiceOutput wrapping an array of due schedule rows, oldest-due first.
      *
      * @example
      * ```ts
@@ -305,7 +311,7 @@ export class NotificationScheduleService extends BaseService {
      */
     public async findDue(
         actor: Actor,
-        input: { now: Date },
+        input: { now: Date; limit?: number },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<SelectConversationNotificationSchedule[]>> {
         return this.runWithLoggingAndValidation({
@@ -315,7 +321,7 @@ export class NotificationScheduleService extends BaseService {
             ctx,
             execute: async (validated, validatedActor, execCtx) => {
                 this._requireAdminAccess(validatedActor);
-                return this.model.findDue(validated.now, execCtx?.tx);
+                return this.model.findDue(validated.now, validated.limit, execCtx?.tx);
             }
         });
     }

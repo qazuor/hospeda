@@ -301,6 +301,23 @@ describe('AccessTokenService', () => {
             expect(type).toBe('day25');
         });
 
+        it('should forward the batch limit to model.findDueReminders for deterministic capping (HOS-133)', async () => {
+            asMock(modelMock.findDueReminders).mockResolvedValue([makeTokenRow()]);
+
+            await service.findDueReminders(SYSTEM_ACTOR, { reminderType: 'day15', limit: 200 });
+
+            // The cap must reach the model so it becomes a SQL LIMIT (with ORDER
+            // BY expires_at ASC), not a post-hoc JS slice — otherwise overflow
+            // tokens can be starved non-deterministically.
+            const call0 = asMock(modelMock.findDueReminders).mock.calls[0] as [
+                Date,
+                Date,
+                string,
+                number | undefined
+            ];
+            expect(call0[3]).toBe(200);
+        });
+
         it('should return FORBIDDEN when actor lacks CONVERSATION_VIEW_ANY', async () => {
             const result = await service.findDueReminders(GUEST_ACTOR, { reminderType: 'day15' });
             expectForbiddenError(result);

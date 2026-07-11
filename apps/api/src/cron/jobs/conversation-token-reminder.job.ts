@@ -260,8 +260,14 @@ export const conversationTokenReminderJob: CronJobDefinition = {
             // no advisory lock.
             // -----------------------------------------------------------
             const [day15Result, day25Result] = await Promise.all([
-                accessTokenSvc.findDueReminders(SYSTEM_ACTOR, { reminderType: 'day15' }),
-                accessTokenSvc.findDueReminders(SYSTEM_ACTOR, { reminderType: 'day25' })
+                accessTokenSvc.findDueReminders(SYSTEM_ACTOR, {
+                    reminderType: 'day15',
+                    limit: MAX_BATCH_SIZE
+                }),
+                accessTokenSvc.findDueReminders(SYSTEM_ACTOR, {
+                    reminderType: 'day25',
+                    limit: MAX_BATCH_SIZE
+                })
             ]);
 
             if (day15Result.error) {
@@ -275,8 +281,11 @@ export const conversationTokenReminderJob: CronJobDefinition = {
                 });
             }
 
-            const day15Tokens = (day15Result.data ?? []).slice(0, MAX_BATCH_SIZE);
-            const day25Tokens = (day25Result.data ?? []).slice(0, MAX_BATCH_SIZE);
+            // The batch cap is enforced in SQL (ORDER BY expires_at ASC LIMIT
+            // MAX_BATCH_SIZE) inside findDueReminders, so no JS slice is needed
+            // here — overflow tokens drain deterministically on the next run (HOS-133).
+            const day15Tokens = day15Result.data ?? [];
+            const day25Tokens = day25Result.data ?? [];
 
             logger.info('Token reminder candidates', {
                 day15Count: day15Tokens.length,

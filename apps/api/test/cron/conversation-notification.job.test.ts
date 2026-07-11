@@ -423,6 +423,24 @@ describe('Conversation Notification Cron Job', () => {
     });
 
     // -------------------------------------------------------------------------
+    // Batch limit (HOS-133)
+    // -------------------------------------------------------------------------
+
+    describe('Batch limit', () => {
+        it('passes the batch cap to findDue so it is enforced as a SQL LIMIT, not a JS slice', async () => {
+            await conversationNotificationJob.handler(mockContext);
+
+            // The cap must reach the service (and thence the model's ORDER BY
+            // pending_notification_at ASC LIMIT n) so overflow rows drain
+            // deterministically instead of being non-deterministically starved.
+            expect(mockFindDue).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({ limit: 100 })
+            );
+        });
+    });
+
+    // -------------------------------------------------------------------------
     // findDue error
     // -------------------------------------------------------------------------
 
