@@ -11,8 +11,8 @@
  * `latitude`/`longitude` in the same request; supplying BOTH `poiId` AND
  * `poiSlug` is a 400 `VALIDATION_ERROR`.
  */
-import type { AccommodationModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import type { AccommodationMediaModel, AccommodationModel } from '@repo/db';
+import { LifecycleStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import type { PointOfInterestService } from '../../../src/services/point-of-interest/point-of-interest.service';
@@ -64,8 +64,7 @@ describe('AccommodationService — "near POI" proximity search (HOS-113 T-033/T-
             undefined,
             undefined,
             undefined,
-            // biome-ignore lint/suspicious/noExplicitAny: test stub
-            makeMediaModelStub() as any,
+            makeMediaModelStub() as unknown as AccommodationMediaModel,
             poiService
         );
     }
@@ -200,6 +199,43 @@ describe('AccommodationService — "near POI" proximity search (HOS-113 T-033/T-
 
         const result = await service.search(actor, {
             poiSlug: 'does-not-exist',
+            page: 1,
+            pageSize: 10
+        });
+
+        expect(result.data).toBeUndefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(model.searchWithRelations).not.toHaveBeenCalled();
+    });
+
+    it('returns NOT_FOUND when the resolved poiSlug points to a soft-deleted POI', async () => {
+        const poi = PointOfInterestFactoryBuilder.create({
+            slug: 'removed-poi',
+            deletedAt: new Date()
+        });
+        const getBySlug = vi.fn().mockResolvedValue({ data: poi });
+        const service = buildService(createPoiServiceMock({ getBySlug }));
+
+        const result = await service.search(actor, {
+            poiSlug: 'removed-poi',
+            page: 1,
+            pageSize: 10
+        });
+
+        expect(result.data).toBeUndefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(model.searchWithRelations).not.toHaveBeenCalled();
+    });
+
+    it('returns NOT_FOUND when the resolved poiId points to a non-ACTIVE (ARCHIVED) POI', async () => {
+        const poi = PointOfInterestFactoryBuilder.create({
+            lifecycleState: LifecycleStatusEnum.ARCHIVED
+        });
+        const getById = vi.fn().mockResolvedValue({ data: poi });
+        const service = buildService(createPoiServiceMock({ getById }));
+
+        const result = await service.search(actor, {
+            poiId: poi.id,
             page: 1,
             pageSize: 10
         });
