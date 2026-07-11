@@ -33,9 +33,13 @@ describe('DestinationService.getBySlug', () => {
 
     it('should return a destination by slug', async () => {
         (model.findOne as Mock).mockResolvedValue(entity);
-        // Service now hydrates the attractions relation after the base lookup —
-        // mock the batch loader so the override doesn't blow up.
+        // Service now hydrates the attractions + pointsOfInterest relations
+        // after the base lookup — mock both batch loaders so the overrides
+        // don't blow up.
         (model as unknown as { getAttractionsMap: Mock }).getAttractionsMap = vi
+            .fn()
+            .mockResolvedValue(new Map());
+        (model as unknown as { getPointsOfInterestMap: Mock }).getPointsOfInterestMap = vi
             .fn()
             .mockResolvedValue(new Map());
         vi.spyOn(permissionHelpers, 'checkCanViewDestination').mockImplementation(() => {});
@@ -54,12 +58,61 @@ describe('DestinationService.getBySlug', () => {
         (model as unknown as { getAttractionsMap: Mock }).getAttractionsMap = vi
             .fn()
             .mockResolvedValue(new Map([[entity.id, mockAttractions]]));
+        (model as unknown as { getPointsOfInterestMap: Mock }).getPointsOfInterestMap = vi
+            .fn()
+            .mockResolvedValue(new Map());
         vi.spyOn(permissionHelpers, 'checkCanViewDestination').mockImplementation(() => {});
         const result = await service.getBySlug(actor, entity.slug);
         expect(result.data).toBeDefined();
         expect(
             (result.data as unknown as { attractions: ReadonlyArray<{ name: string }> }).attractions
         ).toEqual(mockAttractions);
+    });
+
+    it('should hydrate the pointsOfInterest relation after the base lookup (HOS-113 T-046)', async () => {
+        (model.findOne as Mock).mockResolvedValue(entity);
+        const mockPois = [
+            {
+                id: 'poi-1',
+                slug: 'autodromo',
+                lat: -32.48,
+                long: -58.24,
+                type: 'STADIUM',
+                icon: null,
+                displayWeight: 80
+            }
+        ];
+        (model as unknown as { getAttractionsMap: Mock }).getAttractionsMap = vi
+            .fn()
+            .mockResolvedValue(new Map());
+        (model as unknown as { getPointsOfInterestMap: Mock }).getPointsOfInterestMap = vi
+            .fn()
+            .mockResolvedValue(new Map([[entity.id, mockPois]]));
+        vi.spyOn(permissionHelpers, 'checkCanViewDestination').mockImplementation(() => {});
+        const result = await service.getBySlug(actor, entity.slug);
+        expect(result.data).toBeDefined();
+        expect(
+            (result.data as unknown as { pointsOfInterest: ReadonlyArray<{ slug: string }> })
+                .pointsOfInterest
+        ).toEqual(mockPois);
+    });
+
+    it('leaves an already-hydrated pointsOfInterest array untouched', async () => {
+        const preHydrated = { ...entity, pointsOfInterest: [{ id: 'existing-poi', slug: 'x' }] };
+        (model.findOne as Mock).mockResolvedValue(preHydrated);
+        (model as unknown as { getAttractionsMap: Mock }).getAttractionsMap = vi
+            .fn()
+            .mockResolvedValue(new Map());
+        const getPointsOfInterestMapMock = vi.fn().mockResolvedValue(new Map());
+        (model as unknown as { getPointsOfInterestMap: Mock }).getPointsOfInterestMap =
+            getPointsOfInterestMapMock;
+        vi.spyOn(permissionHelpers, 'checkCanViewDestination').mockImplementation(() => {});
+        const result = await service.getBySlug(actor, entity.slug);
+        expect(
+            (result.data as unknown as { pointsOfInterest: ReadonlyArray<{ id: string }> })
+                .pointsOfInterest
+        ).toEqual([{ id: 'existing-poi', slug: 'x' }]);
+        expect(getPointsOfInterestMapMock).not.toHaveBeenCalled();
     });
 
     it('should return a "not found" error if the entity does not exist', async () => {

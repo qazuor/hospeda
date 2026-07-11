@@ -1,4 +1,9 @@
-import type { Destination, DestinationType, DestinationWithAttractionNames } from '@repo/schemas';
+import type {
+    Destination,
+    DestinationType,
+    DestinationWithAttractionNames,
+    PointOfInterestTypeEnum
+} from '@repo/schemas';
 import {
     type AnyColumn,
     and,
@@ -18,7 +23,9 @@ import {
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { attractions } from '../../schemas/destination/attraction.dbschema.ts';
 import { destinations } from '../../schemas/destination/destination.dbschema.ts';
+import { pointsOfInterest } from '../../schemas/destination/point-of-interest.dbschema.ts';
 import { rDestinationAttraction } from '../../schemas/destination/r_destination_attraction.dbschema.ts';
+import { rDestinationPointOfInterest } from '../../schemas/destination/r_destination_point_of_interest.dbschema.ts';
 import { userBookmarks } from '../../schemas/user/user_bookmark.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { buildWhereClause, safeIlike } from '../../utils/drizzle-helpers.ts';
@@ -470,6 +477,105 @@ export class DestinationModel extends BaseModelImpl<Destination> {
             throw new DbError(
                 this.entityName,
                 'getAttractionsMap',
+                { destIds },
+                (error as Error).message
+            );
+        }
+    }
+
+    /**
+     * Batch-loads points of interest (POIs) for a set of destination IDs in a
+     * single query, mirroring {@link getAttractionsMap}'s shape (HOS-113
+     * Phase 4). Uses the `r_destination_point_of_interest` many-to-many join
+     * table (HOS-113 OQ-1) — a single POI row can appear under more than one
+     * destinationId in the returned map.
+     * @param destIds - Array of destination UUIDs
+     * @param tx - Optional transaction client
+     * @returns Map of destinationId to array of POI display objects, ordered
+     * by `displayWeight` descending
+     */
+    async getPointsOfInterestMap(
+        destIds: readonly string[],
+        tx?: DrizzleClient
+    ): Promise<
+        Map<
+            string,
+            Array<{
+                readonly id: string;
+                readonly slug: string;
+                readonly lat: number;
+                readonly long: number;
+                readonly type: PointOfInterestTypeEnum;
+                readonly description: string | null;
+                readonly icon: string | null;
+                readonly isFeatured: boolean;
+                readonly isBuiltin: boolean;
+                readonly displayWeight: number;
+            }>
+        >
+    > {
+        if (destIds.length === 0) return new Map();
+        const db = this.getClient(tx);
+        try {
+            const results = await db
+                .select({
+                    destinationId: rDestinationPointOfInterest.destinationId,
+                    id: pointsOfInterest.id,
+                    slug: pointsOfInterest.slug,
+                    lat: pointsOfInterest.lat,
+                    long: pointsOfInterest.long,
+                    type: pointsOfInterest.type,
+                    description: pointsOfInterest.description,
+                    icon: pointsOfInterest.icon,
+                    isFeatured: pointsOfInterest.isFeatured,
+                    isBuiltin: pointsOfInterest.isBuiltin,
+                    displayWeight: pointsOfInterest.displayWeight
+                })
+                .from(rDestinationPointOfInterest)
+                .innerJoin(
+                    pointsOfInterest,
+                    eq(rDestinationPointOfInterest.pointOfInterestId, pointsOfInterest.id)
+                )
+                .where(inArray(rDestinationPointOfInterest.destinationId, [...destIds]))
+                .orderBy(desc(pointsOfInterest.displayWeight));
+
+            const map = new Map<
+                string,
+                Array<{
+                    readonly id: string;
+                    readonly slug: string;
+                    readonly lat: number;
+                    readonly long: number;
+                    readonly type: PointOfInterestTypeEnum;
+                    readonly description: string | null;
+                    readonly icon: string | null;
+                    readonly isFeatured: boolean;
+                    readonly isBuiltin: boolean;
+                    readonly displayWeight: number;
+                }>
+            >();
+            for (const row of results) {
+                const existing = map.get(row.destinationId) ?? [];
+                existing.push({
+                    id: row.id,
+                    slug: row.slug,
+                    lat: row.lat,
+                    long: row.long,
+                    type: row.type as PointOfInterestTypeEnum,
+                    description: row.description,
+                    icon: row.icon,
+                    isFeatured: row.isFeatured,
+                    isBuiltin: row.isBuiltin,
+                    displayWeight: row.displayWeight
+                });
+                map.set(row.destinationId, existing);
+            }
+            return map;
+        } catch (error) {
+            logError(this.entityName, 'getPointsOfInterestMap', { destIds }, error as Error);
+            throw new DbError(
+                this.entityName,
+                'getPointsOfInterestMap',
                 { destIds },
                 (error as Error).message
             );

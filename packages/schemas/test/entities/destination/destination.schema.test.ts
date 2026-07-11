@@ -191,6 +191,53 @@ describe('DestinationSchema', () => {
                 expect(() => DestinationSchema.parse(dataWithEmptyAttractions)).not.toThrow();
             });
         });
+
+        describe('pointsOfInterest field (HOS-113 T-047)', () => {
+            it('should accept a valid pointsOfInterest array', () => {
+                const validData = createValidDestination();
+                const dataWithPois = {
+                    ...validData,
+                    pointsOfInterest: [
+                        {
+                            id: '550e8400-e29b-41d4-a716-446655440099',
+                            slug: 'autodromo',
+                            lat: -32.48,
+                            long: -58.24,
+                            type: 'STADIUM',
+                            description: 'Regional motorsports circuit.',
+                            icon: 'flag-checkered',
+                            isFeatured: true,
+                            isBuiltin: true,
+                            displayWeight: 80
+                        }
+                    ]
+                };
+
+                expect(() => DestinationSchema.parse(dataWithPois)).not.toThrow();
+                const result = DestinationSchema.parse(dataWithPois);
+                expect(result.pointsOfInterest?.[0]?.slug).toBe('autodromo');
+                expect(result.pointsOfInterest?.[0]?.type).toBe('STADIUM');
+            });
+
+            it('should accept an empty pointsOfInterest array', () => {
+                const validData = createValidDestination();
+                const dataWithEmptyPois = {
+                    ...validData,
+                    pointsOfInterest: []
+                };
+
+                expect(() => DestinationSchema.parse(dataWithEmptyPois)).not.toThrow();
+            });
+
+            it('should omit pointsOfInterest when not provided (optional field)', () => {
+                const validData = createValidDestination();
+                const { pointsOfInterest: _pointsOfInterest, ...withoutPois } = {
+                    ...validData
+                } as Record<string, unknown>;
+
+                expect(() => DestinationSchema.parse(withoutPois)).not.toThrow();
+            });
+        });
     });
 
     describe('Optional Fields', () => {

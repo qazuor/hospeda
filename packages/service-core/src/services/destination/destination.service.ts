@@ -1469,7 +1469,8 @@ export class DestinationService extends BaseCrudService<
                         `Destination not found at path: ${validData.path}`
                     );
                 }
-                return this._withAttractions(destination, resolvedCtx);
+                const withAttractions = await this._withAttractions(destination, resolvedCtx);
+                return this._withPointsOfInterest(withAttractions, resolvedCtx);
             }
         });
     }
@@ -1495,7 +1496,8 @@ export class DestinationService extends BaseCrudService<
     ): Promise<ServiceOutput<Destination | null>> {
         const result = await super.getBySlug(actor, slug, ctx);
         if (result.error || !result.data) return result;
-        const hydrated = await this._withAttractions(result.data, ctx);
+        const withAttractions = await this._withAttractions(result.data, ctx);
+        const hydrated = await this._withPointsOfInterest(withAttractions, ctx);
         return { data: hydrated };
     }
 
@@ -1519,6 +1521,29 @@ export class DestinationService extends BaseCrudService<
         const map = await this.model.getAttractionsMap([destination.id], ctx?.tx);
         const attractions = map.get(destination.id) ?? [];
         return { ...destination, attractions } as Destination;
+    }
+
+    /**
+     * Loads points of interest (POIs) for a single destination via the
+     * existing batch loader (HOS-113 Phase 4, mirrors `_withAttractions`
+     * exactly) and merges them onto the destination object. If the
+     * destination already carries a `pointsOfInterest` array (e.g. loaded by
+     * a future relations query), we leave it untouched.
+     *
+     * @param destination - Destination to enrich
+     * @param ctx - Optional service context for transaction propagation
+     * @returns The destination object with `pointsOfInterest` populated
+     */
+    private async _withPointsOfInterest(
+        destination: Destination,
+        ctx?: ServiceContext
+    ): Promise<Destination> {
+        const existing = (destination as { pointsOfInterest?: ReadonlyArray<unknown> })
+            .pointsOfInterest;
+        if (Array.isArray(existing) && existing.length > 0) return destination;
+        const map = await this.model.getPointsOfInterestMap([destination.id], ctx?.tx);
+        const pointsOfInterest = map.get(destination.id) ?? [];
+        return { ...destination, pointsOfInterest } as Destination;
     }
 
     /**
