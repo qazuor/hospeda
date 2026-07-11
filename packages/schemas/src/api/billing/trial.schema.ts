@@ -38,8 +38,8 @@ export const ReactivateTrialRequestSchema = z.object({
         .enum(['monthly', 'annual'], {
             message: 'zodError.billing.trial.reactivate.billingInterval.invalid'
         })
-        .default('monthly')
         .optional()
+        .default('monthly')
 });
 
 /** TypeScript type inferred from ReactivateTrialRequestSchema */
@@ -58,9 +58,15 @@ export type ReactivateTrialRequest = z.infer<typeof ReactivateTrialRequestSchema
  * confirms it.
  *
  * For `billingInterval: 'annual'`, there is no MercadoPago preapproval —
- * the subscription row is inserted directly via Drizzle and the response
- * carries `status: 'pending_provider'` (the normalized
- * `SubscriptionStatusEnum` value) with `checkoutUrl: null`.
+ * the subscription row is inserted directly via Drizzle for a one-time
+ * charge instead. The response STILL carries a non-null `checkoutUrl` (the
+ * real MercadoPago hosted-checkout URL) that the caller MUST redirect the
+ * user to, exactly like the monthly path — annual reactivation never
+ * returns `checkoutUrl: null`; a missing init point is treated as an error
+ * (`MISSING_INIT_POINT`), not a valid null response. The only differences
+ * from monthly are `status: 'pending_provider'` (the normalized
+ * `SubscriptionStatusEnum` value) and the underlying charge mechanism
+ * (one-time payment vs. preapproval).
  */
 export const ReactivateTrialResponseSchema = z.object({
     success: z.boolean({
@@ -118,8 +124,8 @@ export const ReactivateSubscriptionRequestSchema = z.object({
         .enum(['monthly', 'annual'], {
             message: 'zodError.billing.trial.reactivateSubscription.billingInterval.invalid'
         })
-        .default('monthly')
         .optional()
+        .default('monthly')
 });
 
 /** TypeScript type inferred from ReactivateSubscriptionRequestSchema */
@@ -129,8 +135,9 @@ export type ReactivateSubscriptionRequest = z.infer<typeof ReactivateSubscriptio
  * Response body for `POST /api/v1/protected/billing/trial/reactivate-subscription`
  * (HOS-114, widened HOS-123). Mirrors {@link ReactivateTrialResponseSchema}
  * (including the `'annual'` billing-interval / `'pending_provider'` status
- * path), plus the previous plan id carried over from the canceled
- * subscription being reactivated.
+ * path — annual reactivation ALWAYS returns a non-null `checkoutUrl`, the
+ * real MercadoPago hosted-checkout URL, same as monthly), plus the previous
+ * plan id carried over from the canceled subscription being reactivated.
  */
 export const ReactivateSubscriptionResponseSchema = z.object({
     success: z.boolean({
