@@ -12,7 +12,7 @@ import { resolve } from 'node:path';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 
-import { ACCOUNT_DISCOVERY_DOORS } from '../../../src/config/navigation';
+import { ACCOUNT_DISCOVERY_DOORS } from '../../../src/config/discovery-doors';
 import { isVisibleByRole, resolveDoorOptionState } from '../../../src/lib/nav-gating';
 
 const source = readFileSync(
@@ -39,8 +39,29 @@ describe('DiscoveryDoorHub.astro — wiring', () => {
         expect(source).toContain('option.manageHref ?? door.href');
     });
 
+    it('resolves the manage href to the absolute adminUrl for a managesInAdminPanel acquired option, and hides the Gestionar button entirely when adminUrl is unset (HOS-134)', () => {
+        expect(source).toContain('readonly adminUrl?: string;');
+        // manageHref is computed once per acquired option: absolute adminUrl for
+        // managesInAdminPanel, else the relative built href.
+        expect(source).toContain('option.managesInAdminPanel');
+        expect(source).toContain('? adminUrl');
+        expect(source).toContain('buildUrl({ locale, path: option.manageHref ?? door.href })');
+        // The button only renders when a href resolved — no self-referential
+        // link when adminUrl is undefined.
+        expect(source).toContain('manageHref && (');
+    });
+
     it('shows a "Próximamente" badge for comingSoon options', () => {
         expect(source).toContain("t('account.doors.common.comingSoonBadge')");
+    });
+
+    it('renders the acquired badge with a legible foreground token, not the brand-tertiary SURFACE token (WCAG AA — HOS-134)', () => {
+        const badgeBlock = source.slice(
+            source.indexOf('.door-hub__acquired-badge'),
+            source.indexOf('.door-hub__coming-soon-badge')
+        );
+        expect(badgeBlock).toContain('color: var(--core-muted-foreground)');
+        expect(badgeBlock).not.toContain('color: var(--brand-tertiary');
     });
 
     it('reads the comingSoon CTA label from option.ctaI18nKey, not a hardcoded key (avoids drift with the config)', () => {
@@ -86,27 +107,32 @@ describe('DiscoveryDoorHub — per-option state resolution (engine integration)'
         ).toBe('unacquired');
     });
 
-    it('resolves "commerce" to acquired for a COMMERCE_OWNER role, unacquired for a HOST', () => {
-        const commerce = listing?.options.find((option) => option.id === 'commerce');
-        expect(commerce).toBeDefined();
-        if (!commerce) return;
+    it('resolves "gastronomy" and "experience" to acquired for a COMMERCE_OWNER role, unacquired for a HOST (HOS-134)', () => {
+        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const experience = listing?.options.find((option) => option.id === 'experience');
+        expect(gastronomy).toBeDefined();
+        expect(experience).toBeDefined();
+        if (!gastronomy || !experience) return;
 
-        expect(
-            resolveDoorOptionState({
-                option: commerce,
-                visibility: (node) => isVisibleByRole(node, RoleEnum.COMMERCE_OWNER)
-            })
-        ).toBe('acquired');
-        expect(
-            resolveDoorOptionState({
-                option: commerce,
-                visibility: (node) => isVisibleByRole(node, RoleEnum.HOST)
-            })
-        ).toBe('unacquired');
+        for (const option of [gastronomy, experience]) {
+            expect(
+                resolveDoorOptionState({
+                    option,
+                    visibility: (node) => isVisibleByRole(node, RoleEnum.COMMERCE_OWNER)
+                })
+            ).toBe('acquired');
+            expect(
+                resolveDoorOptionState({
+                    option,
+                    visibility: (node) => isVisibleByRole(node, RoleEnum.HOST)
+                })
+            ).toBe('unacquired');
+        }
     });
 
-    it('resolves both partner-door options to comingSoon regardless of role (NG-2, no acquiredPermission exists)', () => {
-        for (const option of partner?.options ?? []) {
+    it('resolves the three placeholder partner-door options to comingSoon regardless of role (NG-2, no acquiredPermission exists)', () => {
+        const placeholders = partner?.options.filter((option) => option.id !== 'editor') ?? [];
+        for (const option of placeholders) {
             expect(
                 resolveDoorOptionState({
                     option,
@@ -114,6 +140,25 @@ describe('DiscoveryDoorHub — per-option state resolution (engine integration)'
                 })
             ).toBe('comingSoon');
         }
+    });
+
+    it('resolves "editor" to acquired for an EDITOR role, unacquired for a plain USER (HOS-134)', () => {
+        const editor = partner?.options.find((option) => option.id === 'editor');
+        expect(editor).toBeDefined();
+        if (!editor) return;
+
+        expect(
+            resolveDoorOptionState({
+                option: editor,
+                visibility: (node) => isVisibleByRole(node, RoleEnum.EDITOR)
+            })
+        ).toBe('acquired');
+        expect(
+            resolveDoorOptionState({
+                option: editor,
+                visibility: (node) => isVisibleByRole(node, RoleEnum.USER)
+            })
+        ).toBe('unacquired');
     });
 
     it('resolves both listing-door options to acquired for platform staff (ADMIN)', () => {

@@ -1,12 +1,7 @@
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-
-import {
-    ACCOUNT_DISCOVERY_DOORS,
-    ACCOUNT_NAV_GROUPS,
-    getNavForSurface,
-    type NavGroup
-} from '../../src/config/navigation';
+import { ACCOUNT_DISCOVERY_DOORS } from '../../src/config/discovery-doors';
+import { ACCOUNT_NAV_GROUPS, getNavForSurface, type NavGroup } from '../../src/config/navigation';
 import {
     isVisibleByPermissions,
     isVisibleByRole,
@@ -92,44 +87,74 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         expect(partner?.href).toBe('mi-cuenta/aliados');
     });
 
-    it('gives the listing door two acquirable options: accommodation and commerce', () => {
+    it('gives the listing door three acquirable options: accommodation, gastronomy, and experience (HOS-134)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
-        expect(listing?.options.map((option) => option.id)).toEqual(['accommodation', 'commerce']);
+        expect(listing?.options.map((option) => option.id)).toEqual([
+            'accommodation',
+            'gastronomy',
+            'experience'
+        ]);
     });
 
     it('gates listing-door options behind ACCOMMODATION_CREATE and COMMERCE_EDIT_OWN (OQ-3: signal = permissions)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
-        const commerce = listing?.options.find((option) => option.id === 'commerce');
+        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const experience = listing?.options.find((option) => option.id === 'experience');
         expect(accommodation?.acquiredPermission).toBe(PermissionEnum.ACCOMMODATION_CREATE);
-        expect(commerce?.acquiredPermission).toBe(PermissionEnum.COMMERCE_EDIT_OWN);
+        expect(gastronomy?.acquiredPermission).toBe(PermissionEnum.COMMERCE_EDIT_OWN);
+        expect(experience?.acquiredPermission).toBe(PermissionEnum.COMMERCE_EDIT_OWN);
     });
 
     it('links the acquired listing-door options to their management pages', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
-        const commerce = listing?.options.find((option) => option.id === 'commerce');
+        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const experience = listing?.options.find((option) => option.id === 'experience');
         expect(accommodation?.manageHref).toBe('mi-cuenta/host-dashboard');
-        expect(commerce?.manageHref).toBe('mi-cuenta/comercio');
+        expect(gastronomy?.manageHref).toBe('mi-cuenta/comercio');
+        expect(experience?.manageHref).toBe('mi-cuenta/comercio');
     });
 
-    it('routes the commerce option to the lead form, not a self-service publish flow', () => {
+    it('routes gastronomy and experience options to their own lead forms, not a self-service publish flow (HOS-134)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
-        const commerce = listing?.options.find((option) => option.id === 'commerce');
-        expect(commerce?.href).toBe('publicar-restaurante');
+        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const experience = listing?.options.find((option) => option.id === 'experience');
+        expect(gastronomy?.href).toBe('publicar-restaurante');
+        expect(experience?.href).toBe('publicar-experiencia');
     });
 
-    it('gives the partner door two coming-soon options with no acquiredPermission (NG-2)', () => {
+    it('gives the partner door four options: sponsor, partner, serviceProvider, editor (HOS-134)', () => {
         const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
-        expect(partner?.options.map((option) => option.id)).toEqual(['sponsor', 'serviceProvider']);
-        for (const option of partner?.options ?? []) {
+        expect(partner?.options.map((option) => option.id)).toEqual([
+            'sponsor',
+            'partner',
+            'serviceProvider',
+            'editor'
+        ]);
+    });
+
+    it('keeps sponsor, partner, and serviceProvider as coming-soon placeholders with no acquiredPermission (NG-2)', () => {
+        const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
+        const comingSoonOptions = partner?.options.filter((option) => option.id !== 'editor') ?? [];
+        expect(comingSoonOptions).toHaveLength(3);
+        for (const option of comingSoonOptions) {
             expect(option.comingSoon).toBe(true);
             expect(option.acquiredPermission).toBeUndefined();
             expect(option.href).toBe('contacto');
         }
     });
 
-    it('declares the stateful "Sumá otra alianza" key on the partner door, unused for now (TODO HOS-131)', () => {
+    it('gives the editor option a real acquired signal (POST_CREATE), no comingSoon, and admin-panel management (HOS-134 D-4)', () => {
+        const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
+        const editor = partner?.options.find((option) => option.id === 'editor');
+        expect(editor?.acquiredPermission).toBe(PermissionEnum.POST_CREATE);
+        expect(editor?.managesInAdminPanel).toBe(true);
+        expect(editor?.comingSoon).toBeUndefined();
+        expect(editor?.href).toBe('colaborar/editores');
+    });
+
+    it('declares the stateful "Sumá otra alianza" key on the partner door, activated once the editor option is acquired (HOS-134)', () => {
         const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
         expect(partner?.statefulI18nKey).toBe('account.doors.partner.titleStateful');
     });

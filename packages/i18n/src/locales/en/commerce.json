@@ -2,6 +2,10 @@
     "lead": {
         "title": "Add your business",
         "subtitle": "Fill out the form and we'll get in touch to add your establishment to the platform.",
+        "experience": {
+            "title": "List your experience",
+            "subtitle": "Tell us about the experiences you offer and we'll reach out to add you to Hospeda."
+        },
         "fields": {
             "businessName": "Business name",
             "contactName": "Your name",

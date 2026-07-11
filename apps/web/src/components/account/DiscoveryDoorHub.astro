@@ -11,12 +11,14 @@
  * D-4 — no effective-permissions round-trip on SSR).
  *
  * Per option:
- * - `acquired`   -> check badge + "Gestionar" button (`option.manageHref`).
+ * - `acquired`   -> check badge + "Gestionar" button. Links `option.manageHref`
+ *   (locale-relative), except `managesInAdminPanel` options (HOS-134), which
+ *   link the absolute admin-panel URL (`adminUrl` prop) instead.
  * - `unacquired` -> mini-explanation + acquire CTA button (`option.href`).
  * - `comingSoon` -> "Próximamente" badge + "Contactanos" button (`option.href`).
  */
 
-import type { DiscoveryDoor } from '@/config/navigation';
+import type { DiscoveryDoor } from '@/config/discovery-doors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { GatedNavNode } from '@/lib/nav-gating';
@@ -29,24 +31,43 @@ interface Props {
     readonly locale: SupportedLocale;
     readonly door: DiscoveryDoor;
     readonly role: string | null;
+    /**
+     * Admin panel base URL (`getAdminUrl()`), used for `managesInAdminPanel`
+     * acquired options (HOS-134). `undefined` when the env var isn't
+     * configured — the "Gestionar" link then falls back to the relative door
+     * href instead of emitting a broken empty href.
+     */
+    readonly adminUrl?: string;
 }
 
-const { locale, door, role } = Astro.props;
+const { locale, door, role, adminUrl } = Astro.props;
 const { t } = createTranslations(locale);
 
 const visibility = (node: GatedNavNode) => isVisibleByRole(node, role);
 
-const optionRows = door.options.map((option) => ({
-    option,
-    state: resolveDoorOptionState({ option, visibility })
-}));
+const optionRows = door.options.map((option) => {
+    const state = resolveDoorOptionState({ option, visibility });
+    // Resolve the "Gestionar" target only for acquired options. A
+    // `managesInAdminPanel` option (the editor role — HOS-134) links the
+    // absolute admin URL; when that env var isn't configured, `manageHref`
+    // stays undefined and the button is hidden entirely rather than emitting
+    // a self-referential link back to the current hub page (mirrors the
+    // hide-on-unavailable behavior of `buildAdminPanelItem`).
+    const manageHref =
+        state === 'acquired'
+            ? option.managesInAdminPanel
+                ? adminUrl
+                : buildUrl({ locale, path: option.manageHref ?? door.href })
+            : undefined;
+    return { option, state, manageHref };
+});
 ---
 
 <div class="door-hub">
     <p class="door-hub__subtitle">{t(door.subtitleI18nKey)}</p>
 
     <ul class="door-hub__list">
-        {optionRows.map(({ option, state }) => {
+        {optionRows.map(({ option, state, manageHref }) => {
             const OptionIcon = option.icon;
 
             return (
@@ -67,13 +88,15 @@ const optionRows = door.options.map((option) => ({
                                 <CheckCircleIcon size={16} weight="fill" aria-hidden="true" />
                                 {t('account.doors.common.acquiredLabel')}
                             </span>
-                            <GradientButton
-                                label={t('account.doors.common.manageCta')}
-                                href={buildUrl({ locale, path: option.manageHref ?? door.href })}
-                                variant="outline-primary"
-                                size="sm"
-                                shape="rounded"
-                            />
+                            {manageHref && (
+                                <GradientButton
+                                    label={t('account.doors.common.manageCta')}
+                                    href={manageHref}
+                                    variant="outline-primary"
+                                    size="sm"
+                                    shape="rounded"
+                                />
+                            )}
                         </>
                     )}
                     {state === 'comingSoon' && (
@@ -183,7 +206,10 @@ const optionRows = door.options.map((option) => ({
         font-family: var(--font-sans);
         font-size: 0.8125rem;
         font-weight: 600;
-        color: var(--brand-tertiary, var(--core-muted-foreground));
+        /* Use a foreground token, not the `--brand-tertiary` SURFACE token, which
+         * fails WCAG AA as text on the white/dark card (HOS-134 a11y fix). The
+         * CheckCircle icon keeps the green tint; the label stays legible. */
+        color: var(--core-muted-foreground);
     }
 
     .door-hub__coming-soon-badge {
