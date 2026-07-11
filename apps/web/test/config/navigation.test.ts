@@ -135,9 +135,23 @@ describe('getNavForSurface (selector)', () => {
         ]);
     });
 
-    it('returns nothing for the avatar surface — curation is deferred to a later HOS-131 task', () => {
+    it('returns only the always-curated items (dashboard, favorites, subscription) for the avatar surface', () => {
         const { groups } = getNavForSurface({ surface: 'avatar', visibility: ALLOW_ALL });
-        expect(groups).toEqual([]);
+        // cuenta -> dashboard + subscription; turista -> favorites. hostDashboard
+        // and commerce are picked by priority via pickBusinessShortcut, NOT
+        // surface membership, so anfitrion/comercio contribute nothing here.
+        expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista']);
+        const cuenta = findGroup(groups, 'cuenta');
+        const turista = findGroup(groups, 'turista');
+        expect(cuenta?.items.map((item) => item.id)).toEqual(['dashboard', 'subscription']);
+        expect(turista?.items.map((item) => item.id)).toEqual(['favorites']);
+    });
+
+    it('does not surface hostDashboard/commerce on the avatar surface (business shortcut is priority-picked, not surface-membership-based)', () => {
+        const { groups } = getNavForSurface({ surface: 'avatar', visibility: ALLOW_ALL });
+        const allIds = groups.flatMap((group) => group.items.map((item) => item.id));
+        expect(allIds).not.toContain('hostDashboard');
+        expect(allIds).not.toContain('commerce');
     });
 
     it('drops a group entirely once all of its items are filtered out by visibility', () => {
@@ -198,6 +212,28 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
             'anfitrion',
             'comercio'
         ]);
+    });
+
+    it('keeps the avatar surface limited to dashboard/favorites/subscription regardless of business permissions (HOS-131 §6.4)', () => {
+        const { groups } = getNavForSurface({
+            surface: 'avatar',
+            visibility: (node) =>
+                isVisibleByPermissions(node, [
+                    PermissionEnum.ACCOMMODATION_CREATE,
+                    PermissionEnum.COMMERCE_EDIT_OWN
+                ])
+        });
+        const allIds = groups.flatMap((group) => group.items.map((item) => item.id));
+        expect(allIds.sort()).toEqual(['dashboard', 'favorites', 'subscription']);
+    });
+
+    it('shows the avatar surface even with zero permissions — those three items have no requiredPermission', () => {
+        const { groups } = getNavForSurface({
+            surface: 'avatar',
+            visibility: (node) => isVisibleByPermissions(node, [])
+        });
+        const allIds = groups.flatMap((group) => group.items.map((item) => item.id));
+        expect(allIds.sort()).toEqual(['dashboard', 'favorites', 'subscription']);
     });
 });
 

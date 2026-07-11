@@ -181,6 +181,21 @@
     white-space: nowrap;
 }
 
+.menuHeaderAccountLink {
+    display: inline-block;
+    margin-top: 8px;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--brand-primary);
+    text-decoration: none;
+}
+
+.menuHeaderAccountLink:hover,
+.menuHeaderAccountLink:focus-visible {
+    text-decoration: underline;
+}
+
 .menuList {
     list-style: none;
     margin: 0;

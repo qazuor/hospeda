@@ -125,11 +125,22 @@ export interface DiscoveryDoor {
 }
 
 /**
- * Both desktop surfaces (`sidebar`, `mobile`) render the full navigation
- * today — only the `avatar` dropdown curates a subset (spec §6.4), which is
- * populated in a later HOS-131 task once `UserMenu.client.tsx` is rewritten.
+ * Both desktop surfaces (`sidebar`, `mobile`) render the full navigation.
+ * The `avatar` dropdown curates a subset (spec §6.4) — only `dashboard`,
+ * `favorites`, and `subscription` opt into it via `CURATED_SURFACES` below.
+ * The single business-panel shortcut (`hostDashboard` / `commerce`, spec
+ * §6.4 "one, by priority") is NOT selected via surface membership — it's
+ * picked at render time by `pickBusinessShortcut` (`src/lib/nav-avatar.ts`),
+ * so those two items intentionally keep `FULL_SURFACES` here.
  */
 const FULL_SURFACES: readonly NavSurface[] = ['sidebar', 'mobile'];
+
+/**
+ * Surface set for the always-curated avatar/mobile items (`dashboard`,
+ * `favorites`, `subscription` — HOS-131 §6.4/§6.5). Adds `avatar` on top of
+ * `FULL_SURFACES` so `getNavForSurface({ surface: 'avatar' })` returns them.
+ */
+const CURATED_SURFACES: readonly NavSurface[] = [...FULL_SURFACES, 'avatar'];
 
 /**
  * Single source of truth for the `/mi-cuenta/*` navigation, grouped per the
@@ -146,7 +157,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 i18nKey: 'account.nav.dashboard',
                 href: 'mi-cuenta',
                 icon: HomeIcon,
-                surfaces: FULL_SURFACES
+                surfaces: CURATED_SURFACES
             },
             {
                 id: 'editProfile',
@@ -161,7 +172,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 i18nKey: 'account.nav.subscription',
                 href: 'mi-cuenta/suscripcion',
                 icon: CreditCardIcon,
-                surfaces: FULL_SURFACES
+                surfaces: CURATED_SURFACES
             },
             {
                 id: 'preferences',
@@ -195,7 +206,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 i18nKey: 'account.nav.favorites',
                 href: 'mi-cuenta/favoritos',
                 icon: FavoriteIcon,
-                surfaces: FULL_SURFACES
+                surfaces: CURATED_SURFACES
             },
             {
                 id: 'searchHistory',

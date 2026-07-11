@@ -7,14 +7,22 @@
  *   - "loading": avatar trigger with always-on items only, while `/auth/me` resolves.
  *   - "ready": full dropdown with permission-filtered items.
  *
- * The component refines authentication state on mount by hitting
- * `/api/v1/public/auth/me` (cached for 60s in sessionStorage). The fetch is
- * needed because middleware only parses the session on routes that explicitly
- * require it; SSG pages would otherwise see every visitor as a guest. Once the
- * fetch resolves the component:
- *   - Updates `<html data-user-authenticated>` so `GuestPreferenceNudge`
- *     stops or starts firing as needed.
- *   - Adds permission-gated items (Mis alojamientos, Panel de administración).
+ * The component refines authentication state on mount via
+ * `useAccountPermissions` (`@/hooks/use-account-permissions`), which hits
+ * `/api/v1/public/auth/me` (cached for 60s in sessionStorage, via
+ * `@/lib/auth-cache`) — SSR-reconciling mode, since this is the component
+ * responsible for `<html data-user-authenticated>` (consumed by
+ * `GuestPreferenceNudge`). The fetch is needed because middleware only
+ * parses the session on routes that explicitly require it; SSG pages would
+ * otherwise see every visitor as a guest.
+ *
+ * Nav items (identity "Mi cuenta" link + shortcuts: Favoritos, ONE
+ * business-panel shortcut, Suscripción) are the curated set from
+ * `ACCOUNT_NAV_GROUPS` / `getCuratedAccountNav` (HOS-131 §6.4) — this
+ * component is NOT the source of truth for those items, it only resolves
+ * `dashboardItem`/`shortcutItems` and renders them. The admin-panel session
+ * link is built by the shared `buildAdminPanelItem` (`@/lib/admin-panel-link`,
+ * also used by `MobileMenu.client.tsx`'s session zone).
  *
  * Composes `LanguageSwitcher` and `ThemeControl` inside the dropdown so users
  * can change locale / theme without leaving the navbar. The same primitives
@@ -22,33 +30,23 @@
  * and visual interaction stays consistent.
  */
 
-import {
-    BuildingIcon,
-    ChatIcon,
-    ChevronDownIcon,
-    CreditCardIcon,
-    DashboardIcon,
-    FavoriteIcon,
-    type IconProps,
-    LogoutIcon,
-    NewsletterIcon,
-    SettingsIcon,
-    ShieldIcon,
-    StarIcon,
-    UserIcon
-} from '@repo/icons';
-import type { ComponentType, JSX } from 'react';
+import { ChevronDownIcon, LogoutIcon } from '@repo/icons';
+import type { JSX } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
+import { useAccountPermissions } from '@/hooks/use-account-permissions';
+import { buildAdminPanelItem, STAFF_DISCRIMINATOR_PERMISSION } from '@/lib/admin-panel-link';
 import { syncPlanPersonProperties } from '@/lib/analytics/plan-properties';
 import { identifyUser, resetUser, setPersonProperties } from '@/lib/analytics/posthog-client';
-import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
+import { AUTH_ME_CACHE_KEY, type AuthMeUser } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
 import { getInitials } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { getCuratedAccountNav } from '@/lib/nav-avatar';
 import { buildUrl } from '@/lib/urls';
 import styles from './UserMenu.module.css';
 
@@ -57,12 +55,7 @@ import styles from './UserMenu.module.css';
 // ---------------------------------------------------------------------------
 
 /** User data passed in from server-rendered layout. */
-export interface UserMenuUser {
-    readonly id: string;
-    readonly name: string;
-    readonly email: string;
-    readonly avatarUrl?: string;
-}
+export type UserMenuUser = AuthMeUser;
 
 /** Visual variant matching the navbar scroll state. */
 export type UserMenuVariant = 'hero' | 'scrolled';
@@ -87,23 +80,8 @@ export interface UserMenuProps {
     readonly adminPanelUrl: string | undefined;
 }
 
-interface MenuItem {
-    readonly id: string;
-    readonly label: string;
-    readonly href: string;
-    readonly icon: ComponentType<IconProps>;
-    readonly external?: boolean;
-    /**
-     * Permission required to see this item. Items without a permission are
-     * always shown to authenticated users.
-     */
-    readonly requiredPermission?: string;
-    /** Render a divider above this item. */
-    readonly separatorBefore?: boolean;
-}
-
 // ---------------------------------------------------------------------------
-// Localized text
+// Localized text (session zone only — nav items resolve via t(item.i18nKey))
 // ---------------------------------------------------------------------------
 
 const TEXTS = {
@@ -112,77 +90,28 @@ const TEXTS = {
         openMenu: 'Abrir menú de cuenta',
         signOut: 'Cerrar sesión',
         language: 'Idioma',
-        theme: 'Tema',
-        items: {
-            dashboard: 'Mi cuenta',
-            favorites: 'Mis favoritos',
-            properties: 'Mis alojamientos',
-            messages: 'Mis consultas',
-            reviews: 'Mis reseñas',
-            hostDashboard: 'Panel del anfitrión',
-            subscription: 'Mi suscripción',
-            preferences: 'Preferencias',
-            newsletter: 'Boletín de novedades',
-            adminPanel: 'Panel de administración',
-            hostMode: 'Modo anfitrión'
-        }
+        theme: 'Tema'
     },
     en: {
         signIn: 'Sign in',
         openMenu: 'Open account menu',
         signOut: 'Sign out',
         language: 'Language',
-        theme: 'Theme',
-        items: {
-            dashboard: 'My account',
-            favorites: 'My favorites',
-            properties: 'My listings',
-            messages: 'My inquiries',
-            reviews: 'My reviews',
-            hostDashboard: 'Host dashboard',
-            subscription: 'My subscription',
-            preferences: 'Preferences',
-            newsletter: 'Newsletter',
-            adminPanel: 'Admin panel',
-            hostMode: 'Host mode'
-        }
+        theme: 'Theme'
     },
     pt: {
         signIn: 'Entrar',
         openMenu: 'Abrir menu da conta',
         signOut: 'Sair',
         language: 'Idioma',
-        theme: 'Tema',
-        items: {
-            dashboard: 'Minha conta',
-            favorites: 'Meus favoritos',
-            properties: 'Meus imóveis',
-            messages: 'Minhas consultas',
-            reviews: 'Minhas avaliações',
-            hostDashboard: 'Painel do anfitrião',
-            subscription: 'Minha assinatura',
-            preferences: 'Preferências',
-            newsletter: 'Boletim de novidades',
-            adminPanel: 'Painel de administração',
-            hostMode: 'Modo anfitrião'
-        }
+        theme: 'Tema'
     }
 } as const;
 
 /**
- * Permission that distinguishes platform staff (ADMIN / SUPER_ADMIN /
- * CLIENT_MANAGER / EDITOR) from a HOST. All five roles share
- * `access.panelAdmin`, but only staff get `access.apiAdmin`. We use this to
- * pick between the "Modo anfitrión" label (for a HOST that just got admin
- * access to manage their own listings) and "Panel de administración" (for
- * actual Hospeda staff doing platform-wide work).
- */
-const STAFF_DISCRIMINATOR_PERMISSION = 'access.apiAdmin' as const;
-
-/**
- * Permission that marks a user as a host (owner of accommodations). Same string
- * used to gate the "Mis alojamientos" menu item. Fed to PostHog as the
- * `is_host` person property so funnels can segment hosts vs pure tourists.
+ * Permission that marks a user as a host (owner of accommodations). Fed to
+ * PostHog as the `is_host` person property so funnels can segment hosts vs
+ * pure tourists.
  */
 const HOST_PERMISSION = 'accommodation.create' as const;
 
@@ -192,196 +121,12 @@ const HOST_PERMISSION = 'accommodation.create' as const;
  */
 const COMMERCE_OWNER_PERMISSION = 'commerce.editOwn' as const;
 
-// ---------------------------------------------------------------------------
-// /auth/me fetch with sessionStorage cache
-// ---------------------------------------------------------------------------
-
 /**
  * Re-exported from `@/lib/auth-cache` so existing importers of
  * `AUTH_ME_CACHE_KEY` from this module keep working without churn.
  * The canonical declaration lives in the shared module — see the JSDoc there.
  */
 export { AUTH_ME_CACHE_KEY };
-
-const AUTH_ME_CACHE_TTL_MS = 60 * 1000;
-
-interface AuthMeSnapshot {
-    readonly isAuthenticated: boolean;
-    readonly user: UserMenuUser | null;
-    readonly permissions: ReadonlyArray<string>;
-    /** Actor role (e.g. USER, HOST, ADMIN). Null for guests. Fed to PostHog. */
-    readonly role: string | null;
-    readonly cachedAt: number;
-}
-
-function readCachedAuthMe(): AuthMeSnapshot | null {
-    try {
-        const raw = sessionStorage.getItem(AUTH_ME_CACHE_KEY);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw) as AuthMeSnapshot;
-        if (Date.now() - parsed.cachedAt > AUTH_ME_CACHE_TTL_MS) return null;
-        return parsed;
-    } catch {
-        return null;
-    }
-}
-
-function writeCachedAuthMe(snapshot: AuthMeSnapshot): void {
-    try {
-        sessionStorage.setItem(AUTH_ME_CACHE_KEY, JSON.stringify(snapshot));
-    } catch {
-        // Quota exceeded or unavailable — ignore.
-    }
-}
-
-async function fetchAuthMe(): Promise<AuthMeSnapshot> {
-    const apiUrl = getApiUrl();
-    const response = await fetch(`${apiUrl}/api/v1/public/auth/me`, {
-        credentials: 'include'
-    });
-    if (!response.ok) {
-        return {
-            isAuthenticated: false,
-            user: null,
-            permissions: [],
-            role: null,
-            cachedAt: Date.now()
-        };
-    }
-    const json = (await response.json()) as {
-        data?: {
-            actor?: {
-                id?: string;
-                name?: string;
-                email?: string;
-                image?: string;
-                role?: string;
-                permissions?: ReadonlyArray<string>;
-            };
-            isAuthenticated?: boolean;
-        };
-    };
-
-    const actor = json.data?.actor;
-    const isAuthenticated = json.data?.isAuthenticated === true;
-
-    return {
-        isAuthenticated,
-        user:
-            isAuthenticated && actor?.id
-                ? {
-                      id: actor.id,
-                      name: actor.name ?? '',
-                      email: actor.email ?? '',
-                      // Map actor.image → avatarUrl so the navbar avatar
-                      // stays in sync after the post-mount /auth/me refresh
-                      // (otherwise OAuth users would flicker from the
-                      // SSR-provided picture back to initials after ~1s,
-                      // mirroring the name flicker fixed in PR #1111).
-                      avatarUrl:
-                          typeof actor.image === 'string' && actor.image.length > 0
-                              ? actor.image
-                              : undefined
-                  }
-                : null,
-        permissions: actor?.permissions ?? [],
-        role: isAuthenticated && actor?.role ? actor.role : null,
-        cachedAt: Date.now()
-    };
-}
-
-// ---------------------------------------------------------------------------
-// Menu item registry
-// ---------------------------------------------------------------------------
-
-function buildMenuItems({
-    texts,
-    locale,
-    adminPanelUrl,
-    permissions
-}: {
-    readonly texts: (typeof TEXTS)[keyof typeof TEXTS];
-    readonly locale: SupportedLocale;
-    readonly adminPanelUrl: string | undefined;
-    readonly permissions: ReadonlyArray<string>;
-}): ReadonlyArray<MenuItem> {
-    // Discriminate HOST vs staff: a HOST has `access.panelAdmin` but NOT
-    // `access.apiAdmin`. See STAFF_DISCRIMINATOR_PERMISSION JSDoc above.
-    const isStaff = permissions.includes(STAFF_DISCRIMINATOR_PERMISSION);
-    const adminPanelLabel = isStaff ? texts.items.adminPanel : texts.items.hostMode;
-
-    return [
-        {
-            id: 'dashboard',
-            label: texts.items.dashboard,
-            href: buildUrl({ locale, path: 'mi-cuenta' }),
-            icon: UserIcon
-        },
-        {
-            id: 'favorites',
-            label: texts.items.favorites,
-            href: buildUrl({ locale, path: 'mi-cuenta/favoritos' }),
-            icon: FavoriteIcon
-        },
-        {
-            id: 'properties',
-            label: texts.items.properties,
-            href: buildUrl({ locale, path: 'mi-cuenta/propiedades' }),
-            icon: BuildingIcon,
-            requiredPermission: 'accommodation.create'
-        },
-        {
-            id: 'messages',
-            label: texts.items.messages,
-            href: buildUrl({ locale, path: 'mi-cuenta/consultas' }),
-            icon: ChatIcon
-        },
-        {
-            id: 'reviews',
-            label: texts.items.reviews,
-            href: buildUrl({ locale, path: 'mi-cuenta/resenas' }),
-            icon: StarIcon
-        },
-        {
-            id: 'host-dashboard',
-            label: texts.items.hostDashboard,
-            href: buildUrl({ locale, path: 'mi-cuenta/host-dashboard' }),
-            icon: DashboardIcon,
-            requiredPermission: 'access.panelAdmin'
-        },
-        {
-            id: 'subscription',
-            label: texts.items.subscription,
-            href: buildUrl({ locale, path: 'mi-cuenta/suscripcion' }),
-            icon: CreditCardIcon
-        },
-        {
-            id: 'newsletter',
-            label: texts.items.newsletter,
-            href: buildUrl({ locale, path: 'mi-cuenta/newsletter' }),
-            icon: NewsletterIcon
-        },
-        {
-            id: 'preferences',
-            label: texts.items.preferences,
-            href: buildUrl({ locale, path: 'mi-cuenta/preferencias' }),
-            icon: SettingsIcon
-        },
-        ...(adminPanelUrl
-            ? ([
-                  {
-                      id: 'admin-panel',
-                      label: adminPanelLabel,
-                      href: adminPanelUrl,
-                      icon: ShieldIcon,
-                      external: true,
-                      requiredPermission: 'access.panelAdmin',
-                      separatorBefore: true
-                  }
-              ] as const)
-            : [])
-    ];
-}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -410,75 +155,14 @@ export function UserMenu({
     adminPanelUrl
 }: UserMenuProps): JSX.Element {
     const [isOpen, setIsOpen] = useState(false);
-    const [user, setUser] = useState<UserMenuUser | null>(initialUser);
-    const [permissions, setPermissions] = useState<ReadonlyArray<string> | null>(null);
-    const [role, setRole] = useState<string | null>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
     const texts = TEXTS[locale] ?? TEXTS.es;
+    const { t } = createTranslations(locale);
 
-    // ── Refine auth state from /auth/me on mount ────────────────────────
-    // TTL guard: if the sessionStorage cache is still within its 60s window,
-    // apply it immediately and skip the background refetch. This prevents a
-    // redundant /auth/me request on every View Transition navigation (the
-    // component remounts on each client-side nav but the cache from the
-    // previous mount is still fresh).
-    //
-    // When the cache is absent or expired (first load, post-signout, 60s
-    // elapsed) we fall through and fetch from the server. OAuth callbacks
-    // always trigger a full page reload which re-initialises the JS module
-    // and may produce an expired or missing cache, so the fetch still fires
-    // in that path. See SPEC-103 T-093 for original rationale.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only refine; initialUser is the SSR snapshot captured at mount
-    useEffect(() => {
-        let cancelled = false;
-        const cached = readCachedAuthMe();
-        // Only trust the cache when it AGREES with the server-rendered auth state.
-        // sessionStorage survives full-page reloads, so after a sign-in (OAuth does a
-        // full reload) a still-fresh GUEST cache would otherwise overwrite the
-        // authenticated `initialUser` the SSR just provided — hiding the avatar for up
-        // to the TTL window. The same applies in reverse after sign-out. When cache and
-        // SSR disagree, discard the cache and fall through to a fresh fetch.
-        // See SPEC-103 T-093.
-        const cacheMatchesSsr =
-            cached !== null && cached.isAuthenticated === (initialUser !== null);
-        if (cached && cacheMatchesSsr) {
-            setUser(cached.user);
-            setPermissions(cached.permissions);
-            setRole(cached.role);
-            document.documentElement.setAttribute(
-                'data-user-authenticated',
-                cached.isAuthenticated ? 'true' : 'false'
-            );
-            // Cache is within TTL and consistent with SSR — skip the server hit.
-            return () => {
-                cancelled = true;
-            };
-        }
-
-        fetchAuthMe()
-            .then((snapshot) => {
-                if (cancelled) return;
-                writeCachedAuthMe(snapshot);
-                setUser(snapshot.user);
-                setPermissions(snapshot.permissions);
-                setRole(snapshot.role);
-                document.documentElement.setAttribute(
-                    'data-user-authenticated',
-                    snapshot.isAuthenticated ? 'true' : 'false'
-                );
-            })
-            .catch(() => {
-                // Network error — keep whatever the server-rendered initialUser
-                // hint already gave us; set permissions to empty so gated items
-                // stay hidden rather than flashing briefly.
-                if (!cancelled) setPermissions([]);
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+    // SSR-reconciling mode (see the hook's JSDoc) — this is the component
+    // responsible for the `data-user-authenticated` attribute.
+    const { user, permissions, role } = useAccountPermissions({ initialUser });
 
     // ── PostHog identify ─────────────────────────────────────────────────
     // Fires whenever `user` resolves to a known, authenticated id (from the
@@ -575,24 +259,22 @@ export function UserMenu({
         }
     }, [locale]);
 
-    // ── Item filtering ──────────────────────────────────────────────────
-    const visibleItems = useMemo(() => {
-        // Empty array while permissions are still resolving — `buildMenuItems`
-        // uses it to pick the staff-vs-host label, and the filter below hides
-        // gated items until permissions arrive.
-        const all = buildMenuItems({
-            texts,
-            locale,
-            adminPanelUrl,
-            permissions: permissions ?? []
-        });
-        return all.filter((item) => {
-            if (!item.requiredPermission) return true;
-            // While permissions are loading, hide gated items so we don't flash items the user can't actually use.
-            if (permissions === null) return false;
-            return permissions.includes(item.requiredPermission);
-        });
-    }, [texts, locale, adminPanelUrl, permissions]);
+    // ── Curated nav (identity + shortcuts, HOS-131 §6.4) ─────────────────
+    // Fail-closed while permissions are loading: `permissions ?? []` hides
+    // the gated business shortcut until the real list resolves. `dashboard`,
+    // `favorites`, and `subscription` have no `requiredPermission`, so they
+    // stay visible for any authenticated user regardless of loading state.
+    const avatarNav = useMemo(
+        () => getCuratedAccountNav({ permissions: permissions ?? [] }),
+        [permissions]
+    );
+
+    // ── Admin panel session item ──────────────────────────────────────────
+    const adminPanelItem = useMemo(() => {
+        // While permissions are loading, hide rather than flash the link.
+        if (permissions === null) return null;
+        return buildAdminPanelItem({ locale, adminPanelUrl, permissions });
+    }, [locale, adminPanelUrl, permissions]);
 
     // ── Render: guest ──────────────────────────────────────────────────
     if (!user) {
@@ -662,24 +344,31 @@ export function UserMenu({
                     aria-label={texts.openMenu}
                     className={cn(styles.menu, 'overlay-surface')}
                 >
-                    {/* Header */}
+                    {/* Identity zone: name/email + "Mi cuenta" link */}
                     <div className={styles.menuHeader}>
                         <p className={styles.menuHeaderName}>{displayName}</p>
                         {showEmailLine && <p className={styles.menuHeaderEmail}>{user.email}</p>}
+                        {avatarNav.dashboardItem && (
+                            <a
+                                href={buildUrl({ locale, path: avatarNav.dashboardItem.href })}
+                                role="menuitem"
+                                onClick={() => setIsOpen(false)}
+                                className={styles.menuHeaderAccountLink}
+                            >
+                                {t(avatarNav.dashboardItem.i18nKey)}
+                            </a>
+                        )}
                     </div>
 
-                    {/* Navigation items */}
+                    {/* Shortcuts zone: Favoritos, business shortcut, Suscripción */}
                     <ul className={styles.menuList}>
-                        {visibleItems.map((item) => {
+                        {avatarNav.shortcutItems.map((item) => {
                             const Icon = item.icon;
                             return (
                                 <li key={item.id}>
-                                    {item.separatorBefore && <hr className={styles.divider} />}
                                     <a
-                                        href={item.href}
+                                        href={buildUrl({ locale, path: item.href })}
                                         role="menuitem"
-                                        target={item.external ? '_blank' : undefined}
-                                        rel={item.external ? 'noopener noreferrer' : undefined}
                                         onClick={() => setIsOpen(false)}
                                         className={styles.menuLink}
                                     >
@@ -688,7 +377,7 @@ export function UserMenu({
                                             weight="regular"
                                             aria-hidden="true"
                                         />
-                                        <span>{item.label}</span>
+                                        <span>{t(item.i18nKey)}</span>
                                     </a>
                                 </li>
                             );
@@ -716,9 +405,30 @@ export function UserMenu({
                         </div>
                     </div>
 
+                    {/* Session zone: admin panel link + sign out */}
+                    {adminPanelItem && (
+                        <>
+                            <hr className={styles.divider} />
+                            <a
+                                href={adminPanelItem.href}
+                                role="menuitem"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => setIsOpen(false)}
+                                className={styles.menuLink}
+                            >
+                                <adminPanelItem.icon
+                                    size={18}
+                                    weight="regular"
+                                    aria-hidden="true"
+                                />
+                                <span>{adminPanelItem.label}</span>
+                            </a>
+                        </>
+                    )}
+
                     <hr className={styles.divider} />
 
-                    {/* Sign out */}
                     <button
                         type="button"
                         role="menuitem"

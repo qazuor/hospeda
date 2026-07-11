@@ -11,71 +11,59 @@
  * Applies a body scroll lock while open and releases it on close.
  * Traps focus on the close button when the menu opens.
  *
+ * The account accordion (identity "Mi cuenta" link + Favoritos + ONE
+ * business-panel shortcut + Suscripción) renders the SAME curated set as
+ * the avatar dropdown (`UserMenu.client.tsx`), via `getCuratedAccountNav`
+ * (HOS-131 §6.5 mobile "option A" — one curated set, not two divergent
+ * lists). The session zone (language, theme, sign-out, and — staff only —
+ * the admin-panel link built by the shared `buildAdminPanelItem`,
+ * `@/lib/admin-panel-link`) mirrors UserMenu's session zone too.
+ *
+ * Since this island only receives `{ name, email, image }` from the server
+ * (no permissions), it resolves the effective permission list itself on
+ * mount via `useAccountPermissions` (`@/hooks/use-account-permissions`) —
+ * the SAME shared hook `UserMenu.client.tsx` uses, never a second mechanism.
+ *
  * Tasks: T-074
  */
 
-import {
-    BuildingIcon,
-    ChevronDownIcon,
-    CloseIcon,
-    LogoutIcon,
-    SearchIcon,
-    UserIcon
-} from '@repo/icons';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { LoadingButton } from '@/components/shared/feedback/LoadingButton';
+import { CloseIcon, SearchIcon } from '@repo/icons';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
 import { IconButton } from '@/components/ui/IconButtonReact';
+import type { NavItem as AccountNavItem } from '@/config/navigation';
+import { useAccountPermissions } from '@/hooks/use-account-permissions';
+import { buildAdminPanelItem } from '@/lib/admin-panel-link';
 import { signOut } from '@/lib/auth-client';
-import { getInitials as getInitialsShared } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
+import { getCuratedAccountNav } from '@/lib/nav-avatar';
 import styles from './MobileMenu.module.css';
+import { MobileMenuAccountSection } from './MobileMenuAccountSection.client';
 
 // ---------------------------------------------------------------------------
 // Localized texts for the auth section
 // ---------------------------------------------------------------------------
+// Curated nav item labels (dashboard/favorites/business shortcut/subscription)
+// resolve via t(item.i18nKey) from the shared ACCOUNT_NAV_GROUPS config —
+// only the sign-out labels stay local, as they aren't nav config items.
 
 const AUTH_TEXTS = {
     es: {
-        myAccount: 'Mi cuenta',
-        favorites: 'Favoritos',
-        myReviews: 'Mis resenas',
-        preferences: 'Preferencias',
         signOut: 'Cerrar sesion',
         signingOut: 'Cerrando sesion…'
     },
     en: {
-        myAccount: 'My account',
-        favorites: 'Favorites',
-        myReviews: 'My reviews',
-        preferences: 'Preferences',
         signOut: 'Sign out',
         signingOut: 'Signing out…'
     },
     pt: {
-        myAccount: 'Minha conta',
-        favorites: 'Favoritos',
-        myReviews: 'Minhas avaliacoes',
-        preferences: 'Preferencias',
         signOut: 'Sair',
         signingOut: 'Saindo…'
     }
 } as const;
-
-/**
- * Returns up to two uppercase initials from a full name.
- *
- * Thin wrapper around `getInitials` from `@/lib/avatar-utils` that preserves
- * the empty-string default this component has always returned (instead of the
- * shared helper's default `"?"` placeholder).
- */
-function getInitials({ name }: { readonly name: string }): string {
-    return getInitialsShared({ name, placeholder: '' });
-}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -117,6 +105,12 @@ interface MobileMenuProps {
     readonly ctaLabel?: string;
     /** Destination href for the owner CTA button. */
     readonly ctaHref?: string;
+    /**
+     * Admin panel base URL for the session-zone admin-panel link (HOS-131
+     * §6.5, staff/host only, gated by `access.panelAdmin`). `undefined`
+     * (env var not configured) always hides the link.
+     */
+    readonly adminPanelUrl?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -149,14 +143,53 @@ export function MobileMenu({
     homeHref,
     user,
     ctaLabel,
-    ctaHref
+    ctaHref,
+    adminPanelUrl
 }: MobileMenuProps) {
     const { t } = createTranslations(locale);
     const [isOpen, setIsOpen] = useState(false);
-    const [isAccountOpen, setIsAccountOpen] = useState(false);
     const [isSigningOut, setIsSigningOut] = useState(false);
     const closeButtonRef = useRef<HTMLButtonElement>(null);
     const authTexts = AUTH_TEXTS[locale] ?? AUTH_TEXTS.es;
+
+    // ------------------------------------------------------------------
+    // Resolve effective permissions for the curated account block + the
+    // admin-panel session link. Simple mode (no `initialUser`) — this
+    // island already has its own SSR `user` prop, so it skips entirely for
+    // guests and never touches `data-user-authenticated` (that's UserMenu's
+    // responsibility). Uses the SAME shared hook as UserMenu.client.tsx —
+    // never a second mechanism.
+    // ------------------------------------------------------------------
+    const { permissions } = useAccountPermissions({ skip: !user });
+
+    // ------------------------------------------------------------------
+    // Curated account nav (identity "Mi cuenta" link + Favoritos + business
+    // shortcut + Suscripción) — the SAME curated set as UserMenu's avatar
+    // dropdown (HOS-131 §6.5 mobile "option A"). Fail-closed while
+    // `permissions` is still loading via `permissions ?? []`.
+    // ------------------------------------------------------------------
+    const avatarNav = useMemo(
+        () => getCuratedAccountNav({ permissions: permissions ?? [] }),
+        [permissions]
+    );
+    const curatedAccountItems = useMemo(
+        () =>
+            [avatarNav.dashboardItem, ...avatarNav.shortcutItems].filter(
+                (item): item is AccountNavItem => item !== null
+            ),
+        [avatarNav]
+    );
+
+    // ------------------------------------------------------------------
+    // Admin panel session item (HOS-131 §6.5, staff/host only). Hidden
+    // while permissions are loading (fail-closed) — same contract as
+    // UserMenu.client.tsx. Naturally stays null for guests too, since
+    // `permissions` never resolves past `null` when `skip: !user` is set.
+    // ------------------------------------------------------------------
+    const adminPanelItem = useMemo(() => {
+        if (permissions === null) return null;
+        return buildAdminPanelItem({ locale, adminPanelUrl, permissions });
+    }, [locale, adminPanelUrl, permissions]);
 
     // ------------------------------------------------------------------
     // Toggle handler — listens for a window-level CustomEvent dispatched
@@ -234,10 +267,13 @@ export function MobileMenu({
 
     // ------------------------------------------------------------------
     // Close handler
+    //
+    // The account accordion (isAccountOpen) lives inside
+    // MobileMenuAccountSection now — it collapses itself via its own `isOpen`
+    // prop effect, so this handler only needs to close the overlay.
     // ------------------------------------------------------------------
     const handleClose = useCallback(() => {
         setIsOpen(false);
-        setIsAccountOpen(false);
     }, []);
 
     // ------------------------------------------------------------------
@@ -334,125 +370,21 @@ export function MobileMenu({
                 </ul>
             </nav>
 
-            {/* Auth section */}
-            <div className={styles.authSection}>
-                {ctaLabel && ctaHref && (
-                    <a
-                        href={ctaHref}
-                        onClick={handleClose}
-                        tabIndex={isOpen ? 0 : -1}
-                        className={styles.ctaLink}
-                    >
-                        <BuildingIcon
-                            size={18}
-                            weight="regular"
-                            aria-hidden="true"
-                        />
-                        {ctaLabel}
-                    </a>
-                )}
-                {user ? (
-                    <>
-                        {/* User profile row with expandable account menu */}
-                        <button
-                            type="button"
-                            onClick={() => setIsAccountOpen((prev) => !prev)}
-                            tabIndex={isOpen ? 0 : -1}
-                            className={styles.userRow}
-                            aria-expanded={isAccountOpen}
-                        >
-                            {user.image ? (
-                                <img
-                                    src={user.image}
-                                    alt={user.name ?? 'Usuario'}
-                                    className={styles.userAvatar}
-                                />
-                            ) : (
-                                <span
-                                    aria-hidden="true"
-                                    className={styles.userInitials}
-                                >
-                                    {getInitials({ name: user.name ?? '' })}
-                                </span>
-                            )}
-                            <span className={styles.userName}>{user.name ?? 'Usuario'}</span>
-                            <span
-                                aria-hidden="true"
-                                className={cn(
-                                    styles.userChevron,
-                                    isAccountOpen && styles.userChevronOpen
-                                )}
-                            >
-                                <ChevronDownIcon size={18} />
-                            </span>
-                        </button>
-
-                        {/* Expandable account links */}
-                        {isAccountOpen && (
-                            <div className={styles.accountLinks}>
-                                <a
-                                    href={buildUrl({ locale, path: 'mi-cuenta' })}
-                                    onClick={handleClose}
-                                    tabIndex={isOpen ? 0 : -1}
-                                    className={styles.accountLink}
-                                >
-                                    <UserIcon
-                                        size={18}
-                                        aria-hidden="true"
-                                    />
-                                    {authTexts.myAccount}
-                                </a>
-                                <a
-                                    href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })}
-                                    onClick={handleClose}
-                                    tabIndex={isOpen ? 0 : -1}
-                                    className={styles.accountLink}
-                                >
-                                    {authTexts.favorites}
-                                </a>
-                                <a
-                                    href={buildUrl({ locale, path: 'mi-cuenta/resenas' })}
-                                    onClick={handleClose}
-                                    tabIndex={isOpen ? 0 : -1}
-                                    className={styles.accountLink}
-                                >
-                                    {authTexts.myReviews}
-                                </a>
-                                <a
-                                    href={buildUrl({ locale, path: 'mi-cuenta/preferencias' })}
-                                    onClick={handleClose}
-                                    tabIndex={isOpen ? 0 : -1}
-                                    className={styles.accountLink}
-                                >
-                                    {authTexts.preferences}
-                                </a>
-                                <LoadingButton
-                                    loading={isSigningOut}
-                                    loadingLabel={authTexts.signingOut}
-                                    onClick={() => void handleSignOut()}
-                                    tabIndex={isOpen ? 0 : -1}
-                                    className={styles.signOutButton}
-                                >
-                                    <LogoutIcon
-                                        size={18}
-                                        aria-hidden="true"
-                                    />
-                                    {authTexts.signOut}
-                                </LoadingButton>
-                            </div>
-                        )}
-                    </>
-                ) : (
-                    <a
-                        href={`/${locale}/auth/signin/`}
-                        onClick={handleClose}
-                        tabIndex={isOpen ? 0 : -1}
-                        className={styles.authButton}
-                    >
-                        {t('nav.signIn', 'Iniciar sesión')}
-                    </a>
-                )}
-            </div>
+            {/* Auth section — CTA link, user row + curated accordion, or guest sign-in */}
+            <MobileMenuAccountSection
+                locale={locale}
+                t={t}
+                isOpen={isOpen}
+                user={user}
+                ctaLabel={ctaLabel}
+                ctaHref={ctaHref}
+                curatedAccountItems={curatedAccountItems}
+                signOutLabel={authTexts.signOut}
+                signingOutLabel={authTexts.signingOut}
+                isSigningOut={isSigningOut}
+                onSignOut={() => void handleSignOut()}
+                onClose={handleClose}
+            />
 
             {/* Language + theme controls — shared primitives */}
             <div className={styles.preferencesSection}>
@@ -472,6 +404,26 @@ export function MobileMenu({
                     />
                 </div>
             </div>
+
+            {/* Session zone: admin panel link (staff/host only, HOS-131 §6.5) */}
+            {adminPanelItem && (
+                <div className={styles.adminPanelSection}>
+                    <a
+                        href={adminPanelItem.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={handleClose}
+                        tabIndex={isOpen ? 0 : -1}
+                        className={styles.accountLink}
+                    >
+                        <adminPanelItem.icon
+                            size={18}
+                            aria-hidden="true"
+                        />
+                        {adminPanelItem.label}
+                    </a>
+                </div>
+            )}
 
             {/* Bottom search link */}
             <div className={styles.footer}>
