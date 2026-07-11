@@ -42,8 +42,8 @@ Section 5 grounds this precisely.
 
 ## 1. Summary
 
-Introduce a downstream PostHog event — working name **`trial_converted_to_paid`**
-(name is OQ-1) — captured at the single, idempotent point where a trial→paid
+Introduce a downstream PostHog event — **`trial_converted_to_paid`** (D-9) —
+captured at the single, idempotent point where a trial→paid
 supersession is *confirmed*: `completeSupersessionPairing` (the shared helper
 called by both the live `subscription_preapproval.{created,updated}` webhook and
 the hourly reconcile cron backstop), gated on `triggerSource ==='trial-reactivation'`
@@ -97,7 +97,7 @@ stops at "started a trial" and never closes the loop to "converted".
   D-6; inline string literal + test-asserted name).
 - **NG-4** — No `checkout_started`/`checkout_completed` instrumentation added to
   the `/trial/reactivate` route in this spec, even though it currently has none
-  (a genuine funnel gap — see R-3 / OQ-5). This spec captures the *outcome-side*
+  (a genuine funnel gap — see R-3 / D-13). This spec captures the *outcome-side*
   conversion event only.
 - **NG-5** — No instrumentation of the trial-expiry (non-conversion) cron. A
   "trial expired without converting" event, if wanted, is a separate follow-up.
@@ -246,8 +246,7 @@ Hono context, keeping the person identity stitched across `checkout_completed` �
 warning and never affects the supersession transaction (which has already
 committed by this point anyway).
 
-Illustrative capture (mirrors the existing non-blocking style; event name pending
-OQ-1, person `$set` pending OQ-3):
+Capture (mirrors the existing non-blocking style; all OQs resolved — see D-9..D-13):
 
 ```ts
 // inside completeSupersessionPairing, after the Step 5 audit insert succeeds
@@ -257,18 +256,22 @@ try {
     (supersededRow.metadata as Record<string, unknown> | null)?.intendedInterval
   );                                                   // 'monthly' | 'annual' | null
   const plan = await billing.plans.get(newSubscription.planId).catch(() => null);
+  const convertedInterval = plan?.billingInterval ?? null;
   getPostHogClient()?.capture({
     distinctId: resolveOwnerUserId({ customerId: newSubscription.customerId }),
-    event: 'trial_converted_to_paid',                  // OQ-1
+    event: 'trial_converted_to_paid',                  // D-9
     properties: {
-      intendedInterval,                                // original choice (attribution)
-      convertedInterval: plan?.billingInterval ?? null,// actual converted interval
+      intendedInterval,                                // D-10 original choice (attribution)
+      convertedInterval,                               // D-10 actual converted interval
       planSlug: plan?.slug ?? null,
-      supersededSubscriptionId: supersededId,          // join key → checkout_completed
-      newSubscriptionId: newSubscription.id,
+      amount: plan?.amount ?? null,                    // D-12 (major units | null)
+      currency: plan?.currency ?? null,                // D-12
+      supersededSubscriptionId: supersededId,          // D-4 join key → checkout_completed
+      newSubscriptionId: newSubscription.id,           // D-4 forward correlation
       triggerSource,                                   // 'trial-reactivation'
       source,                                          // 'webhook' | reconcile-cron sentinel
-      // OQ-3: optional $set person property
+      // D-11 person property for cohorting converts:
+      $set: { converted_from_trial: true, last_conversion_interval: convertedInterval }
     }
   });
 } catch (phErr) {
@@ -280,7 +283,7 @@ try {
 
 - **No DB migration.** Analytics-only. (D-5 widens a SELECT, not the schema.)
 - **No new env var.** Reuses `HOSPEDA_POSTHOG_KEY` + `getPostHogClient()`.
-- **New PostHog event** `trial_converted_to_paid` (name pending OQ-1) with the
+- **New PostHog event** `trial_converted_to_paid` (D-9) with the
   property set in D-3/D-4/D-6.
 - **No wire/HTTP contract change** — server-emitted only; not part of any route
   response.
@@ -330,34 +333,34 @@ None. No user-facing surface.
   conversion event has no *same-flow* funnel predecessor — only the *original*
   trial-checkout's `checkout_completed`. Stitching is therefore trial-checkout →
   conversion, not reactivate-start → conversion. Closing that gap is out of scope
-  (NG-4 / OQ-5).
+  (NG-4 / D-13).
 - **R-4 — Event-name typo has no compile-time guard** (no registry — NG-3).
   Mitigation: name asserted by AC-1..AC-3 tests.
 - **R-5 — Double-fire on concurrent webhook + cron.** Mitigated by the
   `onConflictDoNothing` audit insert: only the caller that writes the new row sees
   `'completed'`; the loser sees `'already-audited'` and does not capture.
 
-## 11. Open questions
+## 11. Resolved decisions
 
-- **OQ-1 — Event name.** Recommend **`trial_converted_to_paid`** (reads as the
-  explicit downstream counterpart to `checkout_completed`). Alternatives:
+All open questions were resolved with the owner on 2026-07-10 (each with the
+recommended option).
+
+- **D-9 (was OQ-1) — Event name is `trial_converted_to_paid`.** Reads as the
+  explicit downstream counterpart to `checkout_completed`. Rejected
   `subscription_activated` (too broad — collides conceptually with lapsed
-  reactivation) or `trial_conversion`. Owner to confirm the literal string.
-- **OQ-2 — Should the event carry both intervals (D-3), or only the attributed
-  `intendedInterval`?** Recommend **both** (`intendedInterval` +
-  `convertedInterval`) — the cross-tab is strictly richer and surfaces
-  interval-switching at conversion at near-zero cost. Owner to confirm.
-- **OQ-3 — `$set` a person property on conversion?** Mirror of HOS-122 D-10.
-  Recommend **yes**: `$set { converted_from_trial: true, last_conversion_interval: convertedInterval }`
-  for cohorting converts. Owner to confirm the property name(s), or decline.
-- **OQ-4 — Emit `amount` / `currency` on the conversion event?** The paid plan's
-  charge amount is resolvable from the plan lookup (D-6). Recommend **yes**
-  (enables revenue-weighted conversion analysis), but it is additive and can be
-  deferred. Owner to confirm.
-- **OQ-5 — Instrument `/trial/reactivate` with a `checkout_started`/`checkout_completed`
-  pair for funnel symmetry (R-3)?** Recommend **no in this spec** (keeps HOS-130 a
-  small, outcome-side change; the reactivate route is a distinct funnel worth its
-  own follow-up if wanted). Owner to confirm defer.
+  reactivation) and `trial_conversion`.
+- **D-10 (was OQ-2) — Carry both intervals** (`intendedInterval` +
+  `convertedInterval`, per D-3). The cross-tab is strictly richer and surfaces
+  interval-switching at conversion at near-zero cost.
+- **D-11 (was OQ-3) — Yes, `$set` a person property on conversion** (mirror of
+  HOS-122 D-10): `$set { converted_from_trial: true, last_conversion_interval: convertedInterval }`
+  for cohorting converts.
+- **D-12 (was OQ-4) — Emit `amount` / `currency`** on the conversion event,
+  resolved from the plan lookup (D-6), enabling revenue-weighted conversion
+  analysis. Emit `null` for each when the plan lookup fails (non-blocking, D-8).
+- **D-13 (was OQ-5) — No `/trial/reactivate` funnel instrumentation in this
+  spec.** Keeps HOS-130 a small, outcome-side change; the reactivate route is a
+  distinct funnel (R-3) worth its own follow-up if wanted, not part of this spec.
 
 ## 12. Implementation notes
 
@@ -374,8 +377,8 @@ None. No user-facing surface.
 - If a PostHog event catalog/doc exists at implementation time (none in-repo at
   spec time), add `trial_converted_to_paid` there.
 - **Sequencing:** implement after HOS-114/HOS-123's reactivation flow is stable on
-  `staging` (R-1). Candidate for a single-PR implementation once OQ-1..OQ-5 are
-  resolved.
+  `staging` (R-1). All OQs resolved (D-9..D-13) → candidate for a single-PR
+  implementation.
 
 ## 13. Linear
 
