@@ -47,9 +47,11 @@ type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId:
 let eventFavoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
 if (isAuthenticated && cards.length > 0) {
     try {
+        const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
         const bulkResult = await userBookmarksApi.checkBulk({
             entityType: 'EVENT',
-            entityIds: cards.map((card) => card.id)
+            entityIds: cards.map((card) => card.id),
+            cookieHeader
         });
         if (bulkResult.ok) {
             eventFavoriteChecks = bulkResult.data.checks;

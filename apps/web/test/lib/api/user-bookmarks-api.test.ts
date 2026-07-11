@@ -5,6 +5,12 @@
  * forward the SSR `cookieHeader`, unlike its sibling protected wrappers
  * (e.g. `accommodationMediaApi.listMedia`, `protectedConversationsApi.list`).
  *
+ * Also covers the identical `checkBulk()` bug (production incident: repeated
+ * `POST /user-bookmarks/check-bulk` 401s with `actorRole: guest` for genuinely
+ * logged-in users) — `checkBulk` did not accept/forward `cookieHeader` while
+ * its sibling `checkStatus` did, so every SSR bulk-hydration call silently
+ * lost the session cookie.
+ *
  * Mirrors the style of `accommodation-media-api.test.ts`: mock `apiClient` at
  * the module level and assert on the call shape.
  */
@@ -72,5 +78,53 @@ describe('userBookmarksApi.checkStatus', () => {
 
         const call = vi.mocked(apiClient.getProtected).mock.calls[0]?.[0];
         expect(call?.params).not.toHaveProperty('cookieHeader');
+    });
+});
+
+describe('userBookmarksApi.checkBulk', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.mocked(apiClient.postProtected).mockResolvedValue({
+            ok: true,
+            data: { checks: { [ENTITY_ID]: { isBookmarked: true, bookmarkId: 'bookmark-uuid-1' } } }
+        });
+    });
+
+    it('forwards the cookieHeader to apiClient.postProtected for SSR calls (production incident)', async () => {
+        await userBookmarksApi.checkBulk({
+            entityType: 'ACCOMMODATION',
+            entityIds: [ENTITY_ID],
+            cookieHeader: COOKIE_HEADER
+        });
+
+        expect(apiClient.postProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/user-bookmarks/check-bulk',
+            body: { entityType: 'ACCOMMODATION', entityIds: [ENTITY_ID] },
+            cookieHeader: COOKIE_HEADER
+        });
+    });
+
+    it('passes cookieHeader as undefined for browser calls that omit it', async () => {
+        await userBookmarksApi.checkBulk({
+            entityType: 'ACCOMMODATION',
+            entityIds: [ENTITY_ID]
+        });
+
+        expect(apiClient.postProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/user-bookmarks/check-bulk',
+            body: { entityType: 'ACCOMMODATION', entityIds: [ENTITY_ID] },
+            cookieHeader: undefined
+        });
+    });
+
+    it('does not leak cookieHeader into the request body sent to the API', async () => {
+        await userBookmarksApi.checkBulk({
+            entityType: 'ACCOMMODATION',
+            entityIds: [ENTITY_ID],
+            cookieHeader: COOKIE_HEADER
+        });
+
+        const call = vi.mocked(apiClient.postProtected).mock.calls[0]?.[0];
+        expect(call?.body).not.toHaveProperty('cookieHeader');
     });
 });

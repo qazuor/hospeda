@@ -302,6 +302,10 @@ try {
 // --- Auth -------------------------------------------------------------------
 const userId = Astro.locals.user?.id ?? null;
 const isAuthenticated = userId !== null;
+// SSR-only: forwarded to every protected user-bookmarks call below so the
+// server-to-server fetch carries the session (credentials: 'include' only
+// forwards cookies in the browser, not during SSR).
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 
 // --- Bookmark count + favorite status (graceful degradation) ----------------
 let bookmarkCount: number | undefined;
@@ -322,7 +326,6 @@ try {
 
 if (isAuthenticated) {
 	try {
-		const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 		const statusResult = await userBookmarksApi.checkStatus({
 			entityId: destId,
 			entityType: 'DESTINATION',
@@ -346,7 +349,8 @@ if (isAuthenticated && eventCards.length > 0) {
 	try {
 		const bulkResult = await userBookmarksApi.checkBulk({
 			entityType: 'EVENT',
-			entityIds: eventCards.map((card) => card.id)
+			entityIds: eventCards.map((card) => card.id),
+			cookieHeader
 		});
 		if (bulkResult.ok) {
 			eventCardFavoriteChecks = bulkResult.data.checks;
@@ -378,7 +382,8 @@ if (isAuthenticated && nearbyDestinations.length > 0) {
 		if (nearbyIds.length > 0) {
 			const bulkResult = await userBookmarksApi.checkBulk({
 				entityType: 'DESTINATION',
-				entityIds: nearbyIds
+				entityIds: nearbyIds,
+				cookieHeader
 			});
 			if (bulkResult.ok) {
 				nearbyDestFavoriteChecks = bulkResult.data.checks;

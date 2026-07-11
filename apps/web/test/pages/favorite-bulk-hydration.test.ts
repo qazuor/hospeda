@@ -9,6 +9,14 @@
  * request on mount when `initialIsFavorited === undefined`. The fix passes a
  * pre-resolved value from a single SSR-side /check-bulk call.
  *
+ * Also guards against a second, separate bug: `checkBulk` did not forward the
+ * SSR `Cookie` header (unlike its sibling `checkStatus`), so every one of
+ * these SSR calls silently ran as an anonymous request — the API saw
+ * `actorRole: guest` for genuinely logged-in users and returned 401
+ * (production incident). Every SSR call site below must read
+ * `Astro.request.headers.get('cookie')` and forward it as `cookieHeader` on
+ * the `checkBulk` call, exactly like `checkStatus` already does.
+ *
  * Pattern reference: `apps/web/src/pages/[lang]/alojamientos/index.astro`
  */
 
@@ -25,6 +33,35 @@ function readSrc(relPath: string): string {
 // ---------------------------------------------------------------------------
 // Helper: common assertions extracted so every describe block stays DRY
 // ---------------------------------------------------------------------------
+
+/**
+ * Regression guard for the production incident: `checkBulk` did not forward
+ * the SSR `Cookie` header (unlike its sibling `checkStatus`), so every SSR
+ * call site ran as an anonymous request — the API saw `actorRole: guest` for
+ * genuinely logged-in users and returned 401. Split out from
+ * {@link assertBulkCheckPattern} so it can also cover call sites that don't
+ * (yet) follow the full webLogger-fallback pattern.
+ */
+function assertCookieForwarding(src: string, ctx: string): void {
+    it(`[${ctx}] reads the SSR cookie header from Astro.request`, () => {
+        // Server-to-server SSR fetch has no cookie jar — `credentials:
+        // 'include'` only forwards cookies in the browser.
+        expect(src).toContain("Astro.request.headers.get('cookie')");
+    });
+
+    it(`[${ctx}] forwards cookieHeader on the checkBulk call (so removing it re-breaks this test)`, () => {
+        const checkBulkIdx = src.indexOf('checkBulk');
+        const cookieHeaderDeclIdx = src.indexOf("Astro.request.headers.get('cookie')");
+        // The cookie header must be read before the checkBulk call site...
+        expect(cookieHeaderDeclIdx).toBeGreaterThan(-1);
+        expect(cookieHeaderDeclIdx).toBeLessThan(checkBulkIdx);
+        // ...and the checkBulk call block itself must reference cookieHeader
+        // (the call closes at the first `});` after the checkBulk() open).
+        const callBlockEnd = src.indexOf('});', checkBulkIdx);
+        const callBlock = src.slice(checkBulkIdx, callBlockEnd);
+        expect(callBlock).toContain('cookieHeader');
+    });
+}
 
 function assertBulkCheckPattern(src: string, ctx: string): void {
     it(`[${ctx}] imports userBookmarksApi from endpoints-protected`, () => {
@@ -52,6 +89,8 @@ function assertBulkCheckPattern(src: string, ctx: string): void {
     it(`[${ctx}] has a warn fallback on bulk-check failure`, () => {
         expect(src).toContain('webLogger.warn');
     });
+
+    assertCookieForwarding(src, ctx);
 }
 
 // ---------------------------------------------------------------------------
@@ -98,6 +137,77 @@ describe('pages/[lang]/destinos/index.astro — destination bulk check', () => {
     it('passes initialBookmarkId to DestinationCard', () => {
         expect(src).toContain('initialBookmarkId=');
     });
+});
+
+// ---------------------------------------------------------------------------
+// alojamientos/index.astro — accommodation listing page
+// ---------------------------------------------------------------------------
+
+describe('pages/[lang]/alojamientos/index.astro — accommodation bulk check', () => {
+    const src = readSrc('pages/[lang]/alojamientos/index.astro');
+
+    assertBulkCheckPattern(src, 'alojamientos/index');
+
+    it('calls checkBulk with entityType ACCOMMODATION', () => {
+        expect(src).toContain("entityType: 'ACCOMMODATION'");
+    });
+});
+
+// ---------------------------------------------------------------------------
+// experiencias/index.astro — experience listing page
+// ---------------------------------------------------------------------------
+
+describe('pages/[lang]/experiencias/index.astro — experience bulk check', () => {
+    const src = readSrc('pages/[lang]/experiencias/index.astro');
+
+    // NOTE: unlike the other listing pages, this one does not (yet) use
+    // webLogger on bulk-check failure, so it can't use the full
+    // assertBulkCheckPattern helper — only the cookie-forwarding regression
+    // guard applies here. Adding the webLogger fallback is out of scope for
+    // this fix.
+    it('imports userBookmarksApi from endpoints-protected', () => {
+        expect(src).toContain("from '@/lib/api/endpoints-protected'");
+        expect(src).toContain('userBookmarksApi');
+    });
+
+    it('calls checkBulk with entityType EXPERIENCE', () => {
+        expect(src).toContain("entityType: 'EXPERIENCE'");
+    });
+
+    it('guards checkBulk with isAuthenticated', () => {
+        const checkBulkIdx = src.indexOf('checkBulk');
+        const isAuthIdx = src.indexOf('isAuthenticated');
+        expect(isAuthIdx).toBeLessThan(checkBulkIdx);
+    });
+
+    assertCookieForwarding(src, 'experiencias/index');
+});
+
+// ---------------------------------------------------------------------------
+// gastronomia/index.astro — gastronomy listing page
+// ---------------------------------------------------------------------------
+
+describe('pages/[lang]/gastronomia/index.astro — gastronomy bulk check', () => {
+    const src = readSrc('pages/[lang]/gastronomia/index.astro');
+
+    // NOTE: same as experiencias/index.astro — no webLogger fallback (out of
+    // scope for this fix), so only the cookie-forwarding guard applies.
+    it('imports userBookmarksApi from endpoints-protected', () => {
+        expect(src).toContain("from '@/lib/api/endpoints-protected'");
+        expect(src).toContain('userBookmarksApi');
+    });
+
+    it('calls checkBulk with entityType GASTRONOMY', () => {
+        expect(src).toContain("entityType: 'GASTRONOMY'");
+    });
+
+    it('guards checkBulk with isAuthenticated', () => {
+        const checkBulkIdx = src.indexOf('checkBulk');
+        const isAuthIdx = src.indexOf('isAuthenticated');
+        expect(isAuthIdx).toBeLessThan(checkBulkIdx);
+    });
+
+    assertCookieForwarding(src, 'gastronomia/index');
 });
 
 // ---------------------------------------------------------------------------
@@ -226,6 +336,22 @@ describe('pages/[lang]/destinos/[...path].astro — event card + nearby bulk che
 
     it('passes nearbyDestFavoriteChecks to DestinationNearbySection', () => {
         expect(src).toContain('favoriteChecks={nearbyDestFavoriteChecks}');
+    });
+
+    it('reads the SSR cookie header from Astro.request', () => {
+        expect(src).toContain("Astro.request.headers.get('cookie')");
+    });
+
+    it('forwards cookieHeader on BOTH checkBulk calls (event preview + nearby destinations)', () => {
+        // This page has two independent checkBulk call sites sharing one
+        // hoisted `cookieHeader` const — every call block must reference it,
+        // not just the first, so a partial regression (only one call site
+        // losing the forward) still fails this test.
+        const checkBulkBlocks = [...src.matchAll(/checkBulk\(\{[\s\S]*?\}\);/g)];
+        expect(checkBulkBlocks.length).toBe(2);
+        for (const block of checkBulkBlocks) {
+            expect(block[0]).toContain('cookieHeader');
+        }
     });
 });
 
