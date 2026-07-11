@@ -566,5 +566,45 @@ describe('reactivateSubscriptionRoute handler', () => {
             // Act & Assert
             await expect(handler(ctx)).rejects.toMatchObject({ status: 404 });
         });
+
+        // -------------------------------------------------------------------
+        // HOS-123 T-021: free/unknown plan rejection unchanged for annual, at
+        // the route (mapSubscriptionCheckoutErrorToHttp) level. Mirrors the
+        // monthly PLAN_NOT_FOUND / INVALID_REACTIVATION_PLAN cases above, with
+        // `billingInterval: 'annual'` in the request body — the mapper is
+        // interval-agnostic (switches on `error.code`, never on the request
+        // body), so these must map identically to their monthly counterparts.
+        // -------------------------------------------------------------------
+
+        it('should map PLAN_NOT_FOUND to HTTPException 404 when billingInterval is "annual", same as the monthly case', async () => {
+            // Arrange
+            const handler = getReactivateSubscriptionHandler();
+            mockReactivateSubscription.mockRejectedValue(
+                new SubscriptionCheckoutError('PLAN_NOT_FOUND', "Plan 'x' not found")
+            );
+            const ctx = createMockContext({
+                body: { planId: 'unknown-plan', billingInterval: 'annual' }
+            });
+
+            // Act & Assert
+            await expect(handler(ctx)).rejects.toMatchObject({ status: 404 });
+        });
+
+        it('should map INVALID_REACTIVATION_PLAN to HTTPException 422 when billingInterval is "annual", same as the monthly case', async () => {
+            // Arrange
+            const handler = getReactivateSubscriptionHandler();
+            mockReactivateSubscription.mockRejectedValue(
+                new SubscriptionCheckoutError(
+                    'INVALID_REACTIVATION_PLAN',
+                    'Free annual plan rejected'
+                )
+            );
+            const ctx = createMockContext({
+                body: { planId: 'free-annual-plan', billingInterval: 'annual' }
+            });
+
+            // Act & Assert
+            await expect(handler(ctx)).rejects.toMatchObject({ status: 422 });
+        });
     });
 });
