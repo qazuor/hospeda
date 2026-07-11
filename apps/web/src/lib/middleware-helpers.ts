@@ -423,6 +423,59 @@ export async function parseSessionUser({
 }
 
 /**
+ * Better Auth session cookie names this app must recognize.
+ *
+ * Better Auth's default cookie is `<cookiePrefix>.session_token`, with
+ * `cookiePrefix` defaulting to `"better-auth"` (see `apps/api/src/lib/auth.ts`
+ * — neither `advanced.cookiePrefix` nor `advanced.cookies.session_token.name`
+ * is overridden there, so the default applies). When `useSecureCookies` is on
+ * (production — `NODE_ENV === 'production'` in `auth.ts`), Better Auth sets
+ * the cookie with the `__Secure-` prefix instead of the plain name. Both
+ * forms must be checked since dev/staging and production can differ.
+ */
+const SESSION_COOKIE_NAMES = [
+    'better-auth.session_token',
+    '__Secure-better-auth.session_token'
+] as const;
+
+/**
+ * Checks whether a raw `Cookie` request header carries a Better Auth session
+ * cookie, WITHOUT validating the session (no network call).
+ *
+ * This is a cheap, synchronous presence check — it does not confirm the
+ * session is still valid server-side. It exists specifically for contexts
+ * that must not call `parseSessionUser` / `get-session` per request (e.g.
+ * `server:defer` Server Islands — see `NextEventsSection.astro`), because
+ * that round-trip on every page view floods the API's `auth` rate-limit
+ * bucket (the bug fixed by removing the per-page-view session parse in
+ * `middleware.ts` Step 2). A visitor with an EXPIRED session cookie will
+ * still test positive here; callers that gate a single bulk API call on this
+ * check accept that trade-off (one 401 that gracefully falls back, not an
+ * N+1) — see the call site for details.
+ *
+ * @param cookieHeader - Raw `Cookie` request header value (or `null`)
+ * @returns `true` if a recognized session cookie name is present
+ *
+ * @example
+ * ```ts
+ * requestHasSessionCookie('better-auth.session_token=abc; theme=dark') // true
+ * requestHasSessionCookie('theme=dark') // false
+ * requestHasSessionCookie(null) // false
+ * ```
+ */
+export function requestHasSessionCookie(cookieHeader: string | null): boolean {
+    if (!cookieHeader) {
+        return false;
+    }
+
+    return cookieHeader.split(';').some((pair) => {
+        const separatorIndex = pair.indexOf('=');
+        const name = (separatorIndex === -1 ? pair : pair.slice(0, separatorIndex)).trim();
+        return (SESSION_COOKIE_NAMES as readonly string[]).includes(name);
+    });
+}
+
+/**
  * Generates a cryptographic nonce for Content Security Policy.
  * Produces a base64-encoded string from 16 random bytes.
  *
