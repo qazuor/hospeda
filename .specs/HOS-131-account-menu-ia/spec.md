@@ -52,8 +52,11 @@ de fondo: **no hay una fuente única de navegación de cuenta.**
 - **G-3** — Unificar las **tres definiciones de menú** en una única config tipada +
   i18n; cada superficie (sidebar desktop, avatar, hamburguesa mobile) renderiza un
   subconjunto de esa fuente.
-- **G-4** — Unificar el **gating** en un único modelo por `PermissionEnum` (nunca por
-  chequeo directo de rol).
+- **G-4** — Unificar la **declaración** de gating: cada ítem declara su
+  `PermissionEnum` como fuente única de verdad. La **evaluación** es exacta en el
+  cliente (permisos reales) y aproximada por rol en el server SSR (ver D-4 —
+  exponer permisos efectivos server-side cuesta un round-trip `/auth/me` sin
+  cachear por render, descartado por performance).
 - **G-5** — Curar el `UserMenu` del avatar como accesos rápidos (identidad + atajos +
   sesión), NO como espejo del sidebar.
 - **G-6** — Definir la estructura del hamburguesa mobile como **única superficie de
@@ -177,9 +180,29 @@ Las tres definiciones colapsan en **una** config tipada e i18n'd. Cada superfici
 renderiza un subconjunto: el avatar cura, el hamburguesa muestra completo con acordeón,
 el sidebar desktop muestra completo plano. **Una fuente, tres vistas.**
 
-Gating unificado por `PermissionEnum` (regla del proyecto: nunca chequear roles
-directamente). El link al panel de admin apunta a admin/super_admin/editor vía el
-permiso existente `access.panelAdmin`, no una lista hardcodeada de roles.
+**Decisión D-4 (gating — modelo de declaración única, evaluación asimétrica).**
+Cada ítem/grupo de la config declara su `requiredPermission` (`PermissionEnum`) —
+fuente única de la semántica de gating. La evaluación difiere por superficie por una
+restricción real de arquitectura:
+
+- **Cliente** (UserMenu, islands): evalúa con los permisos efectivos reales
+  `(rol ∪ grants) \ denies` que ya trae `GET /api/v1/public/auth/me` (cacheado
+  client-side 60s). **Exacto**, respeta overrides por-usuario (SPEC-170).
+- **Server SSR** (sidebar `AccountLayout.astro`): NO tiene los permisos efectivos.
+  `Astro.locals.user` sólo trae `role` (de la sesión Better Auth); resolverlos
+  server-side exige un round-trip nuevo a `/auth/me` sin cache por cada render de
+  `/mi-cuenta` (web no tiene cache server-side de auth, y agravaría el
+  SSR-over-fetching de HOS-103). **Descartado por costo.** El server aproxima vía un
+  único mapa `permiso → roles` (centralizado, reemplaza los `isHostRole`/
+  `isCommerceOwnerRole` dispersos), derivando del `role` que sí tiene.
+- **Trade-off**: el sidebar es impreciso sólo para el caso marginal de un usuario con
+  override manual de permisos (grant/deny) que contradice su rol — comportamiento
+  idéntico al actual (hoy ya gatea por rol). El UserMenu, la superficie más mirada, es
+  exacto. Si en el futuro web gana un cache server-side de auth (candidato SPEC-111
+  §4.3), el sidebar puede pasar a evaluación exacta sin cambiar la config.
+
+El link al panel de admin se gatea por `access.panelAdmin` (cubre admin/super_admin/
+editor), nunca por una lista hardcodeada de roles.
 
 ## 7. Data model / contracts
 
@@ -225,8 +248,11 @@ permiso existente `access.panelAdmin`, no una lista hardcodeada de roles.
   la consumen (no hay tres listas divergentes).
 - **AC-8** — Todo label pasa por `t()` (i18n); cero labels hardcodeados en las tres
   superficies. `pnpm check-locales` sin faltantes.
-- **AC-9** — El gating es por `PermissionEnum`; el panel admin se gatea por
-  `access.panelAdmin`. Sin chequeos directos de rol en la config de navegación.
+- **AC-9** — La config declara `requiredPermission` (`PermissionEnum`) por ítem (fuente
+  única). El cliente evalúa con permisos reales; el server SSR aproxima vía un único
+  mapa `permiso → roles` (per D-4). El panel admin se gatea por `access.panelAdmin`. No
+  hay `isHostRole`/`isCommerceOwnerRole` dispersos: el único mapeo rol↔permiso vive
+  centralizado.
 - **AC-10** — `pnpm typecheck`, `pnpm lint`, `pnpm test` verdes.
 
 ## 10. Risks
