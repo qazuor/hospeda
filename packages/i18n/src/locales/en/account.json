@@ -98,9 +98,14 @@
                     "description": "List your accommodation on Hospeda and reach thousands of travelers looking to stay in the region.",
                     "cta": "List your accommodation"
                 },
-                "commerce": {
-                    "title": "Dining and shops",
-                    "description": "Tell us about your business and we'll reach out to add it to Hospeda.",
+                "gastronomy": {
+                    "title": "Dining",
+                    "description": "Add your restaurant, bar, or café to Hospeda: tell us about your business and we'll reach out to publish it.",
+                    "cta": "Tell us and we'll reach out"
+                },
+                "experience": {
+                    "title": "Experiences",
+                    "description": "Do you offer tours, activities, or experiences for travelers? Tell us and we'll reach out to add them to Hospeda.",
                     "cta": "Tell us and we'll reach out"
                 }
             }

@@ -98,9 +98,14 @@
                     "description": "Publicá tu alojamiento en Hospeda y llegá a miles de viajeros que buscan hospedarse en la región.",
                     "cta": "Publicá tu alojamiento"
                 },
-                "commerce": {
-                    "title": "Gastronomía y comercio",
-                    "description": "Contanos sobre tu local y te contactamos para sumarlo a Hospeda.",
+                "gastronomy": {
+                    "title": "Gastronomía",
+                    "description": "Sumá tu restaurante, bar o café a Hospeda: contanos sobre tu local y te contactamos para publicarlo.",
+                    "cta": "Contanos y te contactamos"
+                },
+                "experience": {
+                    "title": "Experiencias",
+                    "description": "¿Ofrecés tours, actividades o experiencias para viajeros? Contanos y te contactamos para sumarlas a Hospeda.",
                     "cta": "Contanos y te contactamos"
                 }
             }

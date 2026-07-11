@@ -2,6 +2,10 @@
     "lead": {
         "title": "Sumá tu negocio",
         "subtitle": "Completá el formulario y nos ponemos en contacto para incorporar tu establecimiento a la plataforma.",
+        "experience": {
+            "title": "Publicá tu experiencia",
+            "subtitle": "Contanos sobre las experiencias que ofrecés y te contactamos para sumarte a Hospeda."
+        },
         "fields": {
             "businessName": "Nombre del negocio",
             "contactName": "Tu nombre",

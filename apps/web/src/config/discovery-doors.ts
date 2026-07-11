@@ -6,8 +6,9 @@
 
 import type { IconProps } from '@repo/icons';
 import {
-    BriefcaseIcon,
     BuildingIcon,
+    CompassIcon,
+    ForkKnifeIcon,
     HomeIcon,
     MegaphoneIcon,
     UsersIcon,
@@ -115,16 +116,27 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 manageHref: 'mi-cuenta/host-dashboard'
             },
             {
-                id: 'commerce',
-                i18nKey: 'account.doors.publish.options.commerce.title',
-                descriptionI18nKey: 'account.doors.publish.options.commerce.description',
-                icon: BriefcaseIcon,
-                // Commerce is admin-provisioned, NOT instant self-service — this
-                // is a LEAD form, not a publish flow (see the option's `cta`
-                // copy, which asks the user to leave their info rather than
-                // implying an immediate listing).
+                id: 'gastronomy',
+                i18nKey: 'account.doors.publish.options.gastronomy.title',
+                descriptionI18nKey: 'account.doors.publish.options.gastronomy.description',
+                icon: ForkKnifeIcon,
+                // Gastronomy and experience are both admin-provisioned, NOT
+                // instant self-service — these are LEAD forms, not publish
+                // flows (see each option's `cta` copy, which asks the user to
+                // leave their info rather than implying an immediate listing).
                 href: 'publicar-restaurante',
-                ctaI18nKey: 'account.doors.publish.options.commerce.cta',
+                ctaI18nKey: 'account.doors.publish.options.gastronomy.cta',
+                acquiredPermission: PermissionEnum.COMMERCE_EDIT_OWN,
+                manageHref: 'mi-cuenta/comercio'
+            },
+            {
+                id: 'experience',
+                i18nKey: 'account.doors.publish.options.experience.title',
+                descriptionI18nKey: 'account.doors.publish.options.experience.description',
+                icon: CompassIcon,
+                // See the `gastronomy` option above — same lead-form nature.
+                href: 'publicar-experiencia',
+                ctaI18nKey: 'account.doors.publish.options.experience.cta',
                 acquiredPermission: PermissionEnum.COMMERCE_EDIT_OWN,
                 manageHref: 'mi-cuenta/comercio'
             }

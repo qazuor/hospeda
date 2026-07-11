@@ -236,7 +236,7 @@ describe('CommerceLead', () => {
             });
         });
 
-        it('sends domain: gastronomy in the request body', async () => {
+        it('sends domain: gastronomy in the request body by default', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({ success: true })
@@ -253,6 +253,31 @@ describe('CommerceLead', () => {
                     unknown
                 >;
                 expect(body.domain).toBe('gastronomy');
+            });
+        });
+
+        it('sends domain: experience in the request body when the domain prop is set (HOS-134)', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ success: true })
+            } as Response);
+
+            render(
+                <CommerceLead
+                    locale="es"
+                    domain="experience"
+                />
+            );
+            await fillRequiredFields();
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                const callArgs = vi.mocked(global.fetch).mock.calls[0];
+                const body = JSON.parse((callArgs?.[1] as RequestInit).body as string) as Record<
+                    string,
+                    unknown
+                >;
+                expect(body.domain).toBe('experience');
             });
         });
 

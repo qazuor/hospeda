@@ -86,23 +86,27 @@ describe('DiscoveryDoorHub — per-option state resolution (engine integration)'
         ).toBe('unacquired');
     });
 
-    it('resolves "commerce" to acquired for a COMMERCE_OWNER role, unacquired for a HOST', () => {
-        const commerce = listing?.options.find((option) => option.id === 'commerce');
-        expect(commerce).toBeDefined();
-        if (!commerce) return;
+    it('resolves "gastronomy" and "experience" to acquired for a COMMERCE_OWNER role, unacquired for a HOST (HOS-134)', () => {
+        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const experience = listing?.options.find((option) => option.id === 'experience');
+        expect(gastronomy).toBeDefined();
+        expect(experience).toBeDefined();
+        if (!gastronomy || !experience) return;
 
-        expect(
-            resolveDoorOptionState({
-                option: commerce,
-                visibility: (node) => isVisibleByRole(node, RoleEnum.COMMERCE_OWNER)
-            })
-        ).toBe('acquired');
-        expect(
-            resolveDoorOptionState({
-                option: commerce,
-                visibility: (node) => isVisibleByRole(node, RoleEnum.HOST)
-            })
-        ).toBe('unacquired');
+        for (const option of [gastronomy, experience]) {
+            expect(
+                resolveDoorOptionState({
+                    option,
+                    visibility: (node) => isVisibleByRole(node, RoleEnum.COMMERCE_OWNER)
+                })
+            ).toBe('acquired');
+            expect(
+                resolveDoorOptionState({
+                    option,
+                    visibility: (node) => isVisibleByRole(node, RoleEnum.HOST)
+                })
+            ).toBe('unacquired');
+        }
     });
 
     it('resolves both partner-door options to comingSoon regardless of role (NG-2, no acquiredPermission exists)', () => {

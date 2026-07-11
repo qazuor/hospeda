@@ -87,31 +87,41 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         expect(partner?.href).toBe('mi-cuenta/aliados');
     });
 
-    it('gives the listing door two acquirable options: accommodation and commerce', () => {
+    it('gives the listing door three acquirable options: accommodation, gastronomy, and experience (HOS-134)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
-        expect(listing?.options.map((option) => option.id)).toEqual(['accommodation', 'commerce']);
+        expect(listing?.options.map((option) => option.id)).toEqual([
+            'accommodation',
+            'gastronomy',
+            'experience'
+        ]);
     });
 
     it('gates listing-door options behind ACCOMMODATION_CREATE and COMMERCE_EDIT_OWN (OQ-3: signal = permissions)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
-        const commerce = listing?.options.find((option) => option.id === 'commerce');
+        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const experience = listing?.options.find((option) => option.id === 'experience');
         expect(accommodation?.acquiredPermission).toBe(PermissionEnum.ACCOMMODATION_CREATE);
-        expect(commerce?.acquiredPermission).toBe(PermissionEnum.COMMERCE_EDIT_OWN);
+        expect(gastronomy?.acquiredPermission).toBe(PermissionEnum.COMMERCE_EDIT_OWN);
+        expect(experience?.acquiredPermission).toBe(PermissionEnum.COMMERCE_EDIT_OWN);
     });
 
     it('links the acquired listing-door options to their management pages', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
-        const commerce = listing?.options.find((option) => option.id === 'commerce');
+        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const experience = listing?.options.find((option) => option.id === 'experience');
         expect(accommodation?.manageHref).toBe('mi-cuenta/host-dashboard');
-        expect(commerce?.manageHref).toBe('mi-cuenta/comercio');
+        expect(gastronomy?.manageHref).toBe('mi-cuenta/comercio');
+        expect(experience?.manageHref).toBe('mi-cuenta/comercio');
     });
 
-    it('routes the commerce option to the lead form, not a self-service publish flow', () => {
+    it('routes gastronomy and experience options to their own lead forms, not a self-service publish flow (HOS-134)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
-        const commerce = listing?.options.find((option) => option.id === 'commerce');
-        expect(commerce?.href).toBe('publicar-restaurante');
+        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const experience = listing?.options.find((option) => option.id === 'experience');
+        expect(gastronomy?.href).toBe('publicar-restaurante');
+        expect(experience?.href).toBe('publicar-experiencia');
     });
 
     it('gives the partner door two coming-soon options with no acquiredPermission (NG-2)', () => {
