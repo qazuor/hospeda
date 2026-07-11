@@ -1,4 +1,9 @@
-import { AttractionModel, DestinationModel, RDestinationAttractionModel } from '@repo/db';
+import {
+    AttractionModel,
+    attractions,
+    DestinationModel,
+    RDestinationAttractionModel
+} from '@repo/db';
 import type {
     Attraction,
     AttractionIdType,
@@ -29,6 +34,7 @@ import {
     DestinationsByAttractionInputSchema,
     ServiceErrorCode
 } from '@repo/schemas';
+import { inArray, type SQL } from 'drizzle-orm';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import {
@@ -54,6 +60,16 @@ import {
     checkCanUpdateAttraction,
     checkCanViewAttraction
 } from './attraction.permissions';
+
+/**
+ * Upper bound for a single destination's attraction-relation lookup in
+ * {@link AttractionService.resolveDestinationIdFilter}. The base model caps
+ * `pageSize` at `MAX_PAGE_SIZE` (200), so this pulls the full relation set
+ * (not the default page of 20) and keeps the `destinationId` id-filter
+ * complete. A single destination realistically never has this many
+ * attractions.
+ */
+const DESTINATION_RELATIONS_PAGE_SIZE = 200;
 
 /**
  * Service for managing attractions. Implements business logic, permissions, and hooks for Attraction entities.
@@ -499,19 +515,101 @@ export class AttractionService extends BaseCrudRelatedService<
         });
     }
 
-    protected async _executeSearch(
-        params: AttractionSearchInput,
-        _actor: Actor,
-        _ctx: ServiceContext
-    ): Promise<PaginatedListOutput<Attraction>> {
-        const { name, slug, isFeatured, isBuiltin, destinationId } = params;
+    /**
+     * Builds the plain `where` object for search/count/searchForList.
+     *
+     * Deliberately EXCLUDES `destinationId` — `attractions` has no
+     * `destinationId` column (the relation is M2M via
+     * `r_destination_attraction`, HOS-125). Passing it through to
+     * `buildWhereClause` would either throw `DbError` (unknown column, when
+     * it's the only filter) or be silently dropped (when combined with
+     * another known filter), returning attractions across ALL destinations.
+     * See {@link resolveDestinationIdFilter} for how `destinationId` is
+     * applied instead, as an `id IN (...)` additional condition.
+     *
+     * @param params - Search params containing the plain-column filters.
+     * @returns A `where` object safe to pass to `model.findAll`/`model.count`.
+     */
+    private buildSearchWhere(
+        params: Pick<AttractionSearchInput, 'name' | 'slug' | 'isFeatured' | 'isBuiltin'>
+    ): Record<string, unknown> {
+        const { name, slug, isFeatured, isBuiltin } = params;
         const where: Record<string, unknown> = {};
         if (name) where.name = name;
         if (slug) where.slug = slug;
         if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
-        if (destinationId) where.destinationId = destinationId;
-        const { items, total } = await this.model.findAll(where);
+        return where;
+    }
+
+    /**
+     * Resolves a `destinationId` search filter to an `id IN (...)`
+     * additional SQL condition, via the `r_destination_attraction` join
+     * table (HOS-125 — attractions have no `destinationId` column).
+     *
+     * Reuses the same relation lookup as {@link getAttractionsForDestination}:
+     * query the join table for every `attractionId` mapped to the
+     * destination, then constrain the main query with
+     * `inArray(attractions.id, ids)`. The relation lookup requests the full
+     * page ({@link DESTINATION_RELATIONS_PAGE_SIZE}) rather than the model's
+     * default of 20, so the id-filter is not silently truncated for a
+     * destination with many attractions.
+     *
+     * @param destinationId - The destination id filter from search params,
+     *   if any.
+     * @returns `{ empty: true }` when `destinationId` was provided but maps
+     *   to zero attractions (callers MUST short-circuit to an empty result
+     *   rather than falling through to an unfiltered query).
+     *   `{ empty: false, additionalConditions: [] }` when no `destinationId`
+     *   filter was requested. `{ empty: false, additionalConditions: [SQL] }`
+     *   otherwise, containing the `id IN (...)` condition to combine with the
+     *   plain `where` object.
+     */
+    private async resolveDestinationIdFilter(
+        destinationId: string | undefined
+    ): Promise<{ empty: boolean; additionalConditions: SQL[] }> {
+        if (!destinationId) {
+            return { empty: false, additionalConditions: [] };
+        }
+        const { items: relations } = await this.relatedModel.findAll(
+            { destinationId },
+            { page: 1, pageSize: DESTINATION_RELATIONS_PAGE_SIZE }
+        );
+        if (relations.length === 0) {
+            return { empty: true, additionalConditions: [] };
+        }
+        const attractionIds = relations.map(
+            (r: DestinationAttractionRelation) => r.attractionId as string
+        );
+        return { empty: false, additionalConditions: [inArray(attractions.id, attractionIds)] };
+    }
+
+    protected async _executeSearch(
+        params: AttractionSearchInput,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<PaginatedListOutput<Attraction>> {
+        const where = this.buildSearchWhere(params);
+        const { empty, additionalConditions } = await this.resolveDestinationIdFilter(
+            params.destinationId
+        );
+        if (empty) {
+            return { items: [], total: 0 };
+        }
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params
+        // (SPEC-088) and re-publishes them via ctx.pagination. Forward them
+        // explicitly so the model uses the caller-provided page/pageSize
+        // instead of falling back to its default of 20.
+        const { items, total } = await this.model.findAll(
+            where,
+            {
+                page: ctx.pagination?.page ?? 1,
+                pageSize: ctx.pagination?.pageSize ?? 10,
+                sortBy: ctx.pagination?.sortBy,
+                sortOrder: ctx.pagination?.sortOrder
+            },
+            additionalConditions
+        );
         return { items, total };
     }
 
@@ -520,14 +618,14 @@ export class AttractionService extends BaseCrudRelatedService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<CountResponse> {
-        const { name, slug, isFeatured, isBuiltin, destinationId } = params;
-        const where: Record<string, unknown> = {};
-        if (name) where.name = name;
-        if (slug) where.slug = slug;
-        if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
-        if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
-        if (destinationId) where.destinationId = destinationId;
-        const count = await this.model.count(where);
+        const where = this.buildSearchWhere(params);
+        const { empty, additionalConditions } = await this.resolveDestinationIdFilter(
+            params.destinationId
+        );
+        if (empty) {
+            return { count: 0 };
+        }
+        const count = await this.model.count(where, { additionalConditions });
         return { count };
     }
 
@@ -545,32 +643,38 @@ export class AttractionService extends BaseCrudRelatedService<
         _ctx?: ServiceContext
     ): Promise<AttractionListWithCountsResponse> {
         await this._canSearch(actor);
-        const { name, slug, isFeatured, isBuiltin, destinationId } = params;
         const page = params.page ?? 1;
         const pageSize = params.pageSize ?? 10;
 
-        const where: Record<string, unknown> = {};
-        if (name) where.name = name;
-        if (slug) where.slug = slug;
-        if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
-        if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
-        if (destinationId) where.destinationId = destinationId;
+        const where = this.buildSearchWhere(params);
+        const { empty, additionalConditions } = await this.resolveDestinationIdFilter(
+            params.destinationId
+        );
 
-        const { items, total } = await this.model.findAll(where, { page, pageSize });
+        const buildEmptyPage = (total: number) => ({
+            data: [],
+            pagination: {
+                page,
+                pageSize,
+                total,
+                totalPages: 0,
+                hasNextPage: false,
+                hasPreviousPage: false
+            }
+        });
+        if (empty) {
+            return buildEmptyPage(0);
+        }
+
+        const { items, total } = await this.model.findAll(
+            where,
+            { page, pageSize },
+            additionalConditions
+        );
 
         // If no items, return early
         if (items.length === 0) {
-            return {
-                data: [],
-                pagination: {
-                    page,
-                    pageSize,
-                    total,
-                    totalPages: 0,
-                    hasNextPage: false,
-                    hasPreviousPage: false
-                }
-            };
+            return buildEmptyPage(total);
         }
 
         // Get all attraction IDs from the current page
