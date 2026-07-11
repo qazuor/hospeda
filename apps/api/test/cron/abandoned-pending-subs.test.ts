@@ -1,13 +1,17 @@
 /**
- * Unit tests for the abandoned-pending-subs cron job (SPEC-126 D6).
+ * Unit tests for the abandoned-pending-subs cron job (SPEC-126 D6, HOS-151 Bug B).
  *
  * Covers:
  * - Constants (TTL, lock key, status sets) so they don't drift from the
  *   `/start-paid` route's expiresAt and from sibling cron lock keys.
  * - Job definition shape (name, schedule, enabled, timeout).
- * - Transition guard: illegal guard result skips the bulk write (SPEC-194 T-002).
- * - User notification: each abandoned sub triggers a best-effort
- *   SUBSCRIPTION_CANCELLED notification (SPEC-194 T-022).
+ * - `reapPendingCandidate` (HOS-151 Bug B core): a row holding a live
+ *   `mp_subscription_id` is only abandoned AFTER MercadoPago confirms the
+ *   preapproval is cancelled (cancel + verify via retrieve); a failed/unconfirmed
+ *   cancel leaves the row pending and is captured to Sentry; rows with no
+ *   preapproval id are abandoned directly.
+ * - Handler orchestration: advisory-lock skip, transition-guard skip, dry-run
+ *   count, billing-unavailable skip, and best-effort user notifications.
  *
  * @module test/cron/abandoned-pending-subs
  */
@@ -21,30 +25,34 @@ import {
 
 // ─── Hoisted mocks (must be before vi.mock calls) ─────────────────────────────
 
-const { mockBillingCustomersGet, mockBillingPlansGet, mockSendNotification } = vi.hoisted(() => ({
+const {
+    mockBillingCustomersGet,
+    mockBillingPlansGet,
+    mockBillingSubscriptionsCancel,
+    mockSendNotification,
+    mockAdapterRetrieve,
+    mockCreateMercadoPagoAdapter,
+    mockSentryCapture,
+    mockGetDb
+} = vi.hoisted(() => ({
     mockBillingCustomersGet: vi.fn(),
     mockBillingPlansGet: vi.fn(),
-    mockSendNotification: vi.fn().mockResolvedValue(undefined)
+    mockBillingSubscriptionsCancel: vi.fn().mockResolvedValue(undefined),
+    mockSendNotification: vi.fn().mockResolvedValue(undefined),
+    mockAdapterRetrieve: vi.fn(),
+    mockCreateMercadoPagoAdapter: vi.fn(),
+    mockSentryCapture: vi.fn(),
+    mockGetDb: vi.fn()
 }));
 
 // ─── DB mock ──────────────────────────────────────────────────────────────────
-// Minimal mock for @repo/db so the handler can acquire the advisory lock and
-// conditionally execute the bulk UPDATE.
+// Minimal mock for @repo/db so the handler can acquire the advisory lock, SELECT
+// candidates, and (post-commit) run per-row abandon UPDATEs via getDb().
 
 const mockTx = {
     execute: vi.fn(),
-    select: vi.fn(),
-    update: vi.fn()
+    select: vi.fn()
 };
-
-const mockUpdateReturning = {
-    where: vi.fn().mockResolvedValue([])
-};
-const _mockUpdateSet = {
-    set: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue(mockUpdateReturning) })
-};
-// Expose returning() on the mock chain for the actual UPDATE path.
-mockUpdateReturning.where = vi.fn().mockResolvedValue([]);
 
 vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
@@ -57,29 +65,58 @@ vi.mock('@repo/db', async (importOriginal) => {
             deletedAt: 'DELETED_AT',
             updatedAt: 'UPDATED_AT',
             customerId: 'CUSTOMER_ID',
-            planId: 'PLAN_ID'
+            planId: 'PLAN_ID',
+            mpSubscriptionId: 'MP_SUBSCRIPTION_ID'
         },
         sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
             _sql: { strings, values }
         }),
+        getDb: mockGetDb,
         withTransaction: vi.fn(async (cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx))
     };
 });
 
-// ─── Billing + notification mocks (T-022) ─────────────────────────────────────
+// ─── Billing / adapter / notification / Sentry / logger mocks ─────────────────
 
 vi.mock('../../src/middlewares/billing.js', () => ({
     getQZPayBilling: vi.fn(() => ({
         customers: { get: mockBillingCustomersGet },
-        plans: { get: mockBillingPlansGet }
+        plans: { get: mockBillingPlansGet },
+        subscriptions: { cancel: mockBillingSubscriptionsCancel }
     }))
+}));
+
+vi.mock('@repo/billing', () => ({
+    createMercadoPagoAdapter: mockCreateMercadoPagoAdapter
+}));
+
+vi.mock('../../src/lib/qzpay-logger.js', () => ({
+    qzpayLogger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+}));
+
+// Only the CONFIRMED_TERMINAL_STATUSES set is used from this module — mock it to
+// avoid pulling in the module's heavy dependency tree (Sentry, db, services).
+vi.mock('../../src/services/billing/reactivation-supersession-complete.js', () => ({
+    CONFIRMED_TERMINAL_STATUSES: new Set([
+        'canceled',
+        'cancelled',
+        'incomplete_expired',
+        'finished',
+        'expired'
+    ])
+}));
+
+vi.mock('@sentry/node', () => ({
+    captureException: mockSentryCapture
 }));
 
 vi.mock('../../src/utils/notification-helper.js', () => ({
     sendNotification: mockSendNotification
 }));
 
-/** Builds a minimal CronJobContext for the handler */
+// ─── Test helpers ─────────────────────────────────────────────────────────────
+
+/** Builds a minimal CronJobContext for the handler. */
 function makeCronCtx(dryRun = false) {
     return {
         logger: {
@@ -93,17 +130,35 @@ function makeCronCtx(dryRun = false) {
     };
 }
 
+/** Minimal logger for direct reapPendingCandidate unit tests. */
+function makeLogger() {
+    return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
+}
+
+/**
+ * Builds a `db` mock whose single `update(...).set(...).where(...).returning()`
+ * chain resolves to `returningRows`. Returns the db plus the leaf spies so a
+ * test can assert whether the abandon write ran.
+ */
+function makeDbMock(returningRows: unknown[]) {
+    const returning = vi.fn().mockResolvedValue(returningRows);
+    const where = vi.fn().mockReturnValue({ returning });
+    const set = vi.fn().mockReturnValue({ where });
+    const update = vi.fn().mockReturnValue({ set });
+    return { db: { update }, update, set, where, returning };
+}
+
+const ABANDONED_ROW = { id: 'sub-1', customerId: 'cust-1', planId: 'plan-1' };
+
+// ─── Constants + definition ───────────────────────────────────────────────────
+
 describe('abandoned-pending-subs internals', () => {
     it('reserves advisory lock key 1006 (no overlap with sibling crons)', () => {
         // Sibling keys: 1003 dunning, 1004 trial-expiry (1005 free — HOS-121).
-        // Drift would let two jobs share a lock and starve each other.
         expect(_internals.ADVISORY_LOCK_KEY).toBe(1006);
     });
 
     it('uses a 30-minute TTL matching the start-paid route expiresAt', () => {
-        // The /start-paid response advertises a 30min expiresAt window;
-        // this cron must use the same value or the front and the reaper
-        // disagree about when a sub is abandoned.
         expect(_internals.PENDING_PROVIDER_TTL_MS).toBe(30 * 60 * 1000);
     });
 
@@ -113,10 +168,6 @@ describe('abandoned-pending-subs internals', () => {
     });
 
     it('writes canonical abandoned (Hospeda enum) as the terminal status', () => {
-        // SPEC-194 T-003: the cron now writes the canonical Hospeda enum value
-        // so direct DB queries for status='abandoned' find all abandoned rows.
-        // Legacy incomplete_expired rows are normalised by the 010-abandoned-status
-        // extras migration.
         expect(_internals.ABANDONED_STATUS).toBe('abandoned');
     });
 });
@@ -134,32 +185,201 @@ describe('abandonedPendingSubsJob definition', () => {
         expect(abandonedPendingSubsJob.enabled).toBe(true);
     });
 
-    it('uses a 2-minute timeout (single bulk UPDATE)', () => {
+    it('uses a 2-minute timeout', () => {
         expect(abandonedPendingSubsJob.timeoutMs).toBe(2 * 60 * 1000);
     });
 });
 
-// ─── Transition guard tests (SPEC-194 T-002) ──────────────────────────────────
+// ─── reapPendingCandidate — HOS-151 Bug B core ────────────────────────────────
 
-describe('abandonedPendingSubsJob handler — transition guard (SPEC-194 T-002)', () => {
+describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)', () => {
+    const billing = {
+        subscriptions: { cancel: mockBillingSubscriptionsCancel }
+    };
+    const paymentAdapter = {
+        subscriptions: { retrieve: mockAdapterRetrieve }
+    };
+
     beforeEach(() => {
         vi.clearAllMocks();
-        // Default tx.execute: lock acquired, UPDATE path proceeds.
-        // Row 1: pg_try_advisory_xact_lock result
+        mockBillingSubscriptionsCancel.mockResolvedValue(undefined);
+    });
+
+    it('abandons a row directly when it has NO preapproval id (nothing to cancel)', async () => {
+        const { db, update, returning } = makeDbMock([ABANDONED_ROW]);
+
+        const outcome = await _internals.reapPendingCandidate({
+            candidate: {
+                id: 'sub-1',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: null
+            },
+            billing: billing as any,
+            paymentAdapter: paymentAdapter as any,
+            db: db as any,
+            logger: makeLogger()
+        });
+
+        expect(outcome).toEqual({ abandoned: true, info: ABANDONED_ROW });
+        // No preapproval → never cancels or verifies against MP.
+        expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
+        expect(mockAdapterRetrieve).not.toHaveBeenCalled();
+        expect(update).toHaveBeenCalledOnce();
+        expect(returning).toHaveBeenCalledOnce();
+    });
+
+    it('treats an empty-string preapproval id as "nothing to cancel"', async () => {
+        const { db } = makeDbMock([ABANDONED_ROW]);
+
+        const outcome = await _internals.reapPendingCandidate({
+            candidate: {
+                id: 'sub-1',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: ''
+            },
+            billing: billing as any,
+            paymentAdapter: paymentAdapter as any,
+            db: db as any,
+            logger: makeLogger()
+        });
+
+        expect(outcome.abandoned).toBe(true);
+        expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
+        expect(mockAdapterRetrieve).not.toHaveBeenCalled();
+    });
+
+    it('cancels then verifies via retrieve, and abandons once MP confirms cancelled', async () => {
+        mockAdapterRetrieve.mockResolvedValue({ status: 'cancelled' });
+        const { db, update } = makeDbMock([ABANDONED_ROW]);
+
+        const outcome = await _internals.reapPendingCandidate({
+            candidate: {
+                id: 'sub-1',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-pre-123'
+            },
+            billing: billing as any,
+            paymentAdapter: paymentAdapter as any,
+            db: db as any,
+            logger: makeLogger()
+        });
+
+        expect(mockBillingSubscriptionsCancel).toHaveBeenCalledWith('sub-1');
+        expect(mockAdapterRetrieve).toHaveBeenCalledWith('mp-pre-123');
+        expect(update).toHaveBeenCalledOnce();
+        expect(outcome).toEqual({ abandoned: true, info: ABANDONED_ROW });
+        expect(mockSentryCapture).not.toHaveBeenCalled();
+    });
+
+    it('does NOT abandon and captures to Sentry when MP still reports a live status', async () => {
+        // The preapproval is still 'authorized' (live/chargeable) after cancel.
+        mockAdapterRetrieve.mockResolvedValue({ status: 'authorized' });
+        const { db, update } = makeDbMock([ABANDONED_ROW]);
+
+        const outcome = await _internals.reapPendingCandidate({
+            candidate: {
+                id: 'sub-1',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-pre-123'
+            },
+            billing: billing as any,
+            paymentAdapter: paymentAdapter as any,
+            db: db as any,
+            logger: makeLogger()
+        });
+
+        expect(outcome).toEqual({ abandoned: false, reason: 'cancel-unverified' });
+        // CRITICAL: the row is NOT abandoned while its preapproval is live.
+        expect(update).not.toHaveBeenCalled();
+        expect(mockSentryCapture).toHaveBeenCalledOnce();
+    });
+
+    it('still abandons when the cancel call throws but retrieve confirms cancelled', async () => {
+        mockBillingSubscriptionsCancel.mockRejectedValueOnce(new Error('MP 500'));
+        mockAdapterRetrieve.mockResolvedValue({ status: 'canceled' });
+        const { db, update } = makeDbMock([ABANDONED_ROW]);
+
+        const outcome = await _internals.reapPendingCandidate({
+            candidate: {
+                id: 'sub-1',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-pre-123'
+            },
+            billing: billing as any,
+            paymentAdapter: paymentAdapter as any,
+            db: db as any,
+            logger: makeLogger()
+        });
+
+        // The cancel error is swallowed; retrieve() is the source of truth.
+        expect(outcome.abandoned).toBe(true);
+        expect(update).toHaveBeenCalledOnce();
+    });
+
+    it('does NOT abandon and captures to Sentry when retrieve itself throws', async () => {
+        mockAdapterRetrieve.mockRejectedValue(new Error('MP unreachable'));
+        const { db, update } = makeDbMock([ABANDONED_ROW]);
+
+        const outcome = await _internals.reapPendingCandidate({
+            candidate: {
+                id: 'sub-1',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-pre-123'
+            },
+            billing: billing as any,
+            paymentAdapter: paymentAdapter as any,
+            db: db as any,
+            logger: makeLogger()
+        });
+
+        expect(outcome).toEqual({ abandoned: false, reason: 'cancel-unverified' });
+        expect(update).not.toHaveBeenCalled();
+        expect(mockSentryCapture).toHaveBeenCalledOnce();
+    });
+
+    it('returns already-reaped when the guarded UPDATE matches no row (concurrent run)', async () => {
+        const { db } = makeDbMock([]); // returning() empty → another run won already
+
+        const outcome = await _internals.reapPendingCandidate({
+            candidate: {
+                id: 'sub-1',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: null
+            },
+            billing: billing as any,
+            paymentAdapter: paymentAdapter as any,
+            db: db as any,
+            logger: makeLogger()
+        });
+
+        expect(outcome).toEqual({ abandoned: false, reason: 'already-reaped' });
+    });
+});
+
+// ─── Handler orchestration ────────────────────────────────────────────────────
+
+describe('abandonedPendingSubsJob handler', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        // Lock acquired by default.
         mockTx.execute.mockResolvedValue({ rows: [{ acquired: true }] });
-        // Default tx.select: empty (used in dryRun path only)
-        const selectChain = {
+        // Default candidate SELECT: empty.
+        mockTx.select.mockReturnValue({
             from: vi.fn().mockReturnThis(),
             where: vi.fn().mockResolvedValue([])
-        };
-        mockTx.select.mockReturnValue(selectChain);
-        // Default tx.update chain: returning([]) — no rows abandoned
-        const returningChain = {
-            where: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([]) })
-        };
-        const setChain = { set: vi.fn().mockReturnValue(returningChain) };
-        mockTx.update.mockReturnValue(setChain);
-        // Default billing/notification stubs (T-022)
+        });
+        // Adapter constructs fine by default.
+        mockCreateMercadoPagoAdapter.mockReturnValue({
+            subscriptions: { retrieve: mockAdapterRetrieve }
+        });
+        mockBillingSubscriptionsCancel.mockResolvedValue(undefined);
         mockBillingCustomersGet.mockResolvedValue({
             id: 'cust-1',
             email: 'user@example.com',
@@ -167,10 +387,29 @@ describe('abandonedPendingSubsJob handler — transition guard (SPEC-194 T-002)'
         });
         mockBillingPlansGet.mockResolvedValue({ id: 'plan-1', name: 'Owner Básico' });
         mockSendNotification.mockResolvedValue(undefined);
+        // Default getDb: abandon UPDATE echoes one row.
+        mockGetDb.mockReturnValue(makeDbMock([ABANDONED_ROW]).db);
     });
 
-    it('skips bulk UPDATE and logs error when guard returns invalid (spy)', async () => {
-        // Arrange: force checkSubscriptionStatusTransition to report invalid
+    /** Configure the candidate SELECT to resolve `rows`. */
+    function withCandidates(rows: unknown[]) {
+        mockTx.select.mockReturnValue({
+            from: vi.fn().mockReturnThis(),
+            where: vi.fn().mockResolvedValue(rows)
+        });
+    }
+
+    it('skips when another replica holds the advisory lock', async () => {
+        mockTx.execute.mockResolvedValue({ rows: [{ acquired: false }] });
+
+        const result = await abandonedPendingSubsJob.handler(makeCronCtx(false));
+
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(0);
+        expect(result.message).toContain('another replica');
+    });
+
+    it('skips status writes and logs error when the transition guard is invalid', async () => {
         const guardSpy = vi
             .spyOn(serviceCore, 'checkSubscriptionStatusTransition')
             .mockReturnValue({
@@ -179,115 +418,68 @@ describe('abandonedPendingSubsJob handler — transition guard (SPEC-194 T-002)'
             });
 
         const ctx = makeCronCtx(false);
-
-        // Act
         const result = await abandonedPendingSubsJob.handler(ctx);
 
-        // Assert: job completes with 0 processed, no UPDATE executed, error logged
         expect(result.success).toBe(true);
         expect(result.processed).toBe(0);
-        expect(mockTx.update).not.toHaveBeenCalled();
+        expect(mockGetDb).not.toHaveBeenCalled();
         expect(ctx.logger.error).toHaveBeenCalledWith(
             expect.stringContaining('invalid transition guard'),
-            expect.objectContaining({
-                from: 'pending_provider',
-                to: 'abandoned'
-            })
+            expect.objectContaining({ from: 'pending_provider', to: 'abandoned' })
         );
 
         guardSpy.mockRestore();
     });
 
-    it('legal transition (pending_provider → abandoned): guard passes and update proceeds', async () => {
-        // Arrange: real guard — should always return valid for this edge
-        // (no spy, uses actual checkSubscriptionStatusTransition)
-        const returningChain = {
-            where: vi.fn().mockReturnValue({
-                returning: vi
-                    .fn()
-                    .mockResolvedValue([{ id: 'sub-1', customerId: 'cust-1', planId: 'plan-1' }])
-            })
-        };
-        const setChain = { set: vi.fn().mockReturnValue(returningChain) };
-        mockTx.update.mockReturnValue(setChain);
-
-        const ctx = makeCronCtx(false);
-
-        // Act
-        const result = await abandonedPendingSubsJob.handler(ctx);
-
-        // Assert: guard passes → UPDATE executed → 1 row abandoned
-        expect(result.success).toBe(true);
-        expect(mockTx.update).toHaveBeenCalled();
-        expect(ctx.logger.error).not.toHaveBeenCalled();
-        expect(result.processed).toBe(1);
-    });
-
-    it('regression SPEC-194 T-003: cron writes canonical "abandoned" not "incomplete_expired"', async () => {
-        // Arrange: capture the value passed to tx.update().set()
-        let capturedSetArg: Record<string, unknown> | undefined;
-        const returningChain = {
-            where: vi.fn().mockReturnValue({
-                returning: vi
-                    .fn()
-                    .mockResolvedValue([{ id: 'sub-1', customerId: 'cust-1', planId: 'plan-1' }])
-            })
-        };
-        const setChain = {
-            set: vi.fn().mockImplementation((arg: Record<string, unknown>) => {
-                capturedSetArg = arg;
-                return returningChain;
-            })
-        };
-        mockTx.update.mockReturnValue(setChain);
-
-        const ctx = makeCronCtx(false);
-
-        // Act
-        await abandonedPendingSubsJob.handler(ctx);
-
-        // Assert: the DB write uses canonical Hospeda vocabulary, not qzpay vocabulary.
-        // If this flips back to 'incomplete_expired' then direct DB queries for
-        // status='abandoned' will silently find nothing.
-        expect(capturedSetArg?.status).toBe('abandoned');
-    });
-});
-
-// ─── User notification tests (SPEC-194 T-022) ─────────────────────────────────
-
-describe('abandonedPendingSubsJob handler — user notifications (SPEC-194 T-022)', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        mockTx.execute.mockResolvedValue({ rows: [{ acquired: true }] });
-        const selectChain = {
+    it('dry-run counts candidates without cancelling, writing, or notifying', async () => {
+        mockTx.select.mockReturnValue({
             from: vi.fn().mockReturnThis(),
-            where: vi.fn().mockResolvedValue([])
-        };
-        mockTx.select.mockReturnValue(selectChain);
+            where: vi.fn().mockResolvedValue([{ id: 'sub-dry-1' }, { id: 'sub-dry-2' }])
+        });
+
+        const result = await abandonedPendingSubsJob.handler(makeCronCtx(true));
+
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(2);
+        expect(mockCreateMercadoPagoAdapter).not.toHaveBeenCalled();
+        expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
+        expect(mockSendNotification).not.toHaveBeenCalled();
+    });
+
+    it('leaves candidates pending (0 processed) when the MP adapter cannot be constructed', async () => {
+        withCandidates([
+            { id: 'sub-1', customerId: 'cust-1', planId: 'plan-1', mpSubscriptionId: 'mp-pre-1' }
+        ]);
+        mockCreateMercadoPagoAdapter.mockImplementation(() => {
+            throw new Error('MP creds missing');
+        });
+
+        const result = await abandonedPendingSubsJob.handler(makeCronCtx(false));
+
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(0);
+        expect(mockGetDb).not.toHaveBeenCalled();
+        expect(result.message).toContain('adapter unavailable');
+    });
+
+    it('abandons a no-preapproval candidate and sends its SUBSCRIPTION_CANCELLED notification', async () => {
+        withCandidates([
+            { id: 'sub-abc', customerId: 'cust-1', planId: 'plan-1', mpSubscriptionId: null }
+        ]);
+        mockGetDb.mockReturnValue(
+            makeDbMock([{ id: 'sub-abc', customerId: 'cust-1', planId: 'plan-1' }]).db
+        );
         mockBillingCustomersGet.mockResolvedValue({
             id: 'cust-1',
             email: 'owner@example.com',
             metadata: { name: 'Ana García' }
         });
-        mockBillingPlansGet.mockResolvedValue({ id: 'plan-1', name: 'Owner Básico' });
-        mockSendNotification.mockResolvedValue(undefined);
-    });
 
-    it('sends SUBSCRIPTION_CANCELLED notification for each abandoned sub', async () => {
-        const returningChain = {
-            where: vi.fn().mockReturnValue({
-                returning: vi
-                    .fn()
-                    .mockResolvedValue([{ id: 'sub-abc', customerId: 'cust-1', planId: 'plan-1' }])
-            })
-        };
-        const setChain = { set: vi.fn().mockReturnValue(returningChain) };
-        mockTx.update.mockReturnValue(setChain);
-
-        const ctx = makeCronCtx(false);
-        const result = await abandonedPendingSubsJob.handler(ctx);
+        const result = await abandonedPendingSubsJob.handler(makeCronCtx(false));
 
         expect(result.success).toBe(true);
+        expect(result.processed).toBe(1);
+        expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
         expect(mockSendNotification).toHaveBeenCalledOnce();
         expect(mockSendNotification).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -301,43 +493,59 @@ describe('abandonedPendingSubsJob handler — user notifications (SPEC-194 T-022
         );
     });
 
-    it('does NOT send notifications in dry-run mode', async () => {
-        const selectChain = {
-            from: vi.fn().mockReturnThis(),
-            where: vi.fn().mockResolvedValue([{ id: 'sub-dry' }])
-        };
-        mockTx.select.mockReturnValue(selectChain);
+    it('cancels + verifies a candidate that holds a live preapproval before abandoning it', async () => {
+        withCandidates([
+            { id: 'sub-mp', customerId: 'cust-1', planId: 'plan-1', mpSubscriptionId: 'mp-pre-9' }
+        ]);
+        mockAdapterRetrieve.mockResolvedValue({ status: 'cancelled' });
+        mockGetDb.mockReturnValue(
+            makeDbMock([{ id: 'sub-mp', customerId: 'cust-1', planId: 'plan-1' }]).db
+        );
 
-        const ctx = makeCronCtx(true);
-        await abandonedPendingSubsJob.handler(ctx);
+        const result = await abandonedPendingSubsJob.handler(makeCronCtx(false));
 
-        expect(mockSendNotification).not.toHaveBeenCalled();
+        expect(result.processed).toBe(1);
+        expect(mockBillingSubscriptionsCancel).toHaveBeenCalledWith('sub-mp');
+        expect(mockAdapterRetrieve).toHaveBeenCalledWith('mp-pre-9');
+        expect(result.errors).toBe(0);
     });
 
-    it('continues sweep when one notification fails (non-fatal)', async () => {
-        const returningChain = {
-            where: vi.fn().mockReturnValue({
-                returning: vi.fn().mockResolvedValue([
-                    { id: 'sub-ok', customerId: 'cust-1', planId: 'plan-1' },
-                    { id: 'sub-fail', customerId: 'cust-2', planId: 'plan-1' }
-                ])
-            })
-        };
-        const setChain = { set: vi.fn().mockReturnValue(returningChain) };
-        mockTx.update.mockReturnValue(setChain);
+    it('leaves a live-preapproval candidate pending and reports it via errors when cancel is unconfirmed', async () => {
+        withCandidates([
+            { id: 'sub-live', customerId: 'cust-1', planId: 'plan-1', mpSubscriptionId: 'mp-live' }
+        ]);
+        mockAdapterRetrieve.mockResolvedValue({ status: 'authorized' });
 
+        const result = await abandonedPendingSubsJob.handler(makeCronCtx(false));
+
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(0);
+        expect(result.errors).toBe(1);
+        expect(mockSendNotification).not.toHaveBeenCalled();
+        expect(mockSentryCapture).toHaveBeenCalledOnce();
+    });
+
+    it('continues the sweep when one notification fails (non-fatal)', async () => {
+        withCandidates([
+            { id: 'sub-ok', customerId: 'cust-1', planId: 'plan-1', mpSubscriptionId: null },
+            { id: 'sub-fail', customerId: 'cust-2', planId: 'plan-1', mpSubscriptionId: null }
+        ]);
+        // getDb() is called ONCE and shared across candidates — its single
+        // update chain must return a different row per (sequential) abandon call.
+        const returning = vi
+            .fn()
+            .mockResolvedValueOnce([{ id: 'sub-ok', customerId: 'cust-1', planId: 'plan-1' }])
+            .mockResolvedValueOnce([{ id: 'sub-fail', customerId: 'cust-2', planId: 'plan-1' }]);
+        const where = vi.fn().mockReturnValue({ returning });
+        const set = vi.fn().mockReturnValue({ where });
+        mockGetDb.mockReturnValue({ update: vi.fn().mockReturnValue({ set }) });
         mockBillingCustomersGet
             .mockResolvedValueOnce({
                 id: 'cust-1',
                 email: 'ok@example.com',
-                metadata: { name: 'OK User' }
+                metadata: { name: 'OK' }
             })
-            .mockResolvedValueOnce({
-                id: 'cust-2',
-                email: 'fail@example.com',
-                metadata: {}
-            });
-
+            .mockResolvedValueOnce({ id: 'cust-2', email: 'fail@example.com', metadata: {} });
         mockSendNotification
             .mockResolvedValueOnce(undefined)
             .mockRejectedValueOnce(new Error('SMTP timeout'));
@@ -345,7 +553,6 @@ describe('abandonedPendingSubsJob handler — user notifications (SPEC-194 T-022
         const ctx = makeCronCtx(false);
         const result = await abandonedPendingSubsJob.handler(ctx);
 
-        // Job still reports success despite one notification failure
         expect(result.success).toBe(true);
         expect(result.processed).toBe(2);
         expect(mockSendNotification).toHaveBeenCalledTimes(2);
@@ -355,48 +562,38 @@ describe('abandonedPendingSubsJob handler — user notifications (SPEC-194 T-022
         );
     });
 
-    it('falls back to email prefix when customer metadata.name is absent', async () => {
-        const returningChain = {
-            where: vi.fn().mockReturnValue({
-                returning: vi
-                    .fn()
-                    .mockResolvedValue([
-                        { id: 'sub-noname', customerId: 'cust-noname', planId: 'plan-1' }
-                    ])
-            })
-        };
-        const setChain = { set: vi.fn().mockReturnValue(returningChain) };
-        mockTx.update.mockReturnValue(setChain);
-
+    it('falls back to the email prefix when customer metadata.name is absent', async () => {
+        withCandidates([
+            {
+                id: 'sub-noname',
+                customerId: 'cust-noname',
+                planId: 'plan-1',
+                mpSubscriptionId: null
+            }
+        ]);
+        mockGetDb.mockReturnValue(
+            makeDbMock([{ id: 'sub-noname', customerId: 'cust-noname', planId: 'plan-1' }]).db
+        );
         mockBillingCustomersGet.mockResolvedValueOnce({
             id: 'cust-noname',
             email: 'juanperez@example.com',
             metadata: {}
         });
 
-        const ctx = makeCronCtx(false);
-        await abandonedPendingSubsJob.handler(ctx);
+        await abandonedPendingSubsJob.handler(makeCronCtx(false));
 
         expect(mockSendNotification).toHaveBeenCalledWith(
-            expect.objectContaining({
-                recipientName: 'juanperez'
-            })
+            expect.objectContaining({ recipientName: 'juanperez' })
         );
     });
 
-    it('warns and skips notification when customer is not found', async () => {
-        const returningChain = {
-            where: vi.fn().mockReturnValue({
-                returning: vi
-                    .fn()
-                    .mockResolvedValue([
-                        { id: 'sub-ghost', customerId: 'cust-ghost', planId: 'plan-1' }
-                    ])
-            })
-        };
-        const setChain = { set: vi.fn().mockReturnValue(returningChain) };
-        mockTx.update.mockReturnValue(setChain);
-
+    it('warns and skips the notification when the customer is not found', async () => {
+        withCandidates([
+            { id: 'sub-ghost', customerId: 'cust-ghost', planId: 'plan-1', mpSubscriptionId: null }
+        ]);
+        mockGetDb.mockReturnValue(
+            makeDbMock([{ id: 'sub-ghost', customerId: 'cust-ghost', planId: 'plan-1' }]).db
+        );
         mockBillingCustomersGet.mockResolvedValueOnce(null);
 
         const ctx = makeCronCtx(false);
@@ -409,122 +606,52 @@ describe('abandonedPendingSubsJob handler — user notifications (SPEC-194 T-022
             expect.objectContaining({ subscriptionId: 'sub-ghost' })
         );
     });
-});
 
-// ─── HOS-123 T-020: abandoned annual reactivation checkout ─────────────────
-//
-// AUDIT (SPEC-126 D6): the job's candidate WHERE clause is
-// `status IN ('incomplete', 'pending_provider') AND created_at < cutoff AND
-// deleted_at IS NULL` (abandoned-pending-subs.job.ts:150-159), and its
-// `.returning()` projection is `{ id, customerId, planId }` only
-// (lines 160-164). Neither the WHERE clause nor the projection reference
-// `metadata`, `billingInterval`, or `supersedesSubscriptionId` in any way,
-// so an annual reactivation's `pending_provider` row (which DOES carry
-// `metadata.supersedesSubscriptionId` — see `create-annual-subscription.ts`)
-// can never be excluded: the query is structurally metadata- and
-// interval-agnostic. NO GAP — this coverage is test-only, proving the row is
-// reaped exactly like any other pending row and that the superseded (old)
-// subscription is never touched by this cron
-// (`completeSupersessionPairing` / `completeReactivationSupersession` are
-// not imported by this job at all — the deferred supersession only ever
-// completes via the webhook confirm path or the T-014 reconcile cron, never
-// here).
-describe('HOS-123 T-020: abandoned annual reactivation checkout (metadata-agnostic reap)', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        mockTx.execute.mockResolvedValue({ rows: [{ acquired: true }] });
-        const selectChain = {
-            from: vi.fn().mockReturnThis(),
-            where: vi.fn().mockResolvedValue([])
-        };
-        mockTx.select.mockReturnValue(selectChain);
+    // HOS-123 T-020 (preserved through the HOS-151 Bug B rewrite): an abandoned
+    // annual-reactivation pending row is reaped exactly like any other pending
+    // row. The cron cancels only the candidate's OWN preapproval and abandons
+    // only the candidate's OWN row — it never references, cancels, or completes
+    // the supersession of the OLD (superseded) subscription. Structurally the job
+    // does not even import completeSupersessionPairing; this asserts the id never
+    // leaks into any DB / provider / notification call.
+    it('reaps an annual-reactivation candidate without ever touching the superseded old subscription', async () => {
+        const newPendingId = 'sub-annual-pending-reactivation';
+        const supersededOldId = 'sub-old-superseded-by-abandoned-reactivation';
+        withCandidates([
+            {
+                id: newPendingId,
+                customerId: 'cust-annual',
+                planId: 'plan-annual',
+                mpSubscriptionId: 'mp-annual-pre'
+            }
+        ]);
+        mockAdapterRetrieve.mockResolvedValue({ status: 'cancelled' });
+        mockGetDb.mockReturnValue(
+            makeDbMock([{ id: newPendingId, customerId: 'cust-annual', planId: 'plan-annual' }]).db
+        );
         mockBillingCustomersGet.mockResolvedValue({
-            id: 'cust-annual-reactivate',
-            email: 'annual-reactivate@example.com',
+            id: 'cust-annual',
+            email: 'annual@example.com',
             metadata: { name: 'Annual Reactivator' }
         });
         mockBillingPlansGet.mockResolvedValue({ id: 'plan-annual', name: 'Owner Pro (annual)' });
-        mockSendNotification.mockResolvedValue(undefined);
-    });
 
-    it('reaps a pending_provider annual reactivation row past TTL exactly like any other pending row, and never references the superseded subscription', async () => {
-        // ARRANGE: the query's `.returning()` result mirrors the real
-        // projection ({ id, customerId, planId } only — no metadata, no
-        // billingInterval column). In production this row's REAL `metadata`
-        // column carries `supersedesSubscriptionId` pointing at the OLD
-        // subscription the abandoned reactivation was meant to supersede,
-        // but the job never selects or reads that column.
-        const newAnnualPendingSubId = 'sub-annual-pending-reactivation';
-        const supersededOldSubId = 'sub-old-superseded-by-abandoned-reactivation';
+        const result = await abandonedPendingSubsJob.handler(makeCronCtx(false));
 
-        const returningChain = {
-            where: vi.fn().mockReturnValue({
-                returning: vi.fn().mockResolvedValue([
-                    {
-                        id: newAnnualPendingSubId,
-                        customerId: 'cust-annual-reactivate',
-                        planId: 'plan-annual'
-                    }
-                ])
-            })
-        };
-        const setChain = { set: vi.fn().mockReturnValue(returningChain) };
-        mockTx.update.mockReturnValue(setChain);
-
-        const ctx = makeCronCtx(false);
-
-        // Act
-        const result = await abandonedPendingSubsJob.handler(ctx);
-
-        // Assert: reaped exactly like any other abandoned pending_provider
-        // row — one bulk UPDATE, one row processed.
-        expect(result.success).toBe(true);
         expect(result.processed).toBe(1);
-        expect(mockTx.update).toHaveBeenCalledTimes(1);
-        expect(ctx.logger.error).not.toHaveBeenCalled();
-
-        // Assert: the notification fired for the NEW (reaped) subscription
-        // only — never for the superseded old one.
-        expect(mockSendNotification).toHaveBeenCalledOnce();
+        expect(mockBillingSubscriptionsCancel).toHaveBeenCalledWith(newPendingId);
+        expect(mockAdapterRetrieve).toHaveBeenCalledWith('mp-annual-pre');
         expect(mockSendNotification).toHaveBeenCalledWith(
-            expect.objectContaining({
-                customerId: 'cust-annual-reactivate',
-                idempotencyKey: `abandoned-sub-${newAnnualPendingSubId}`
-            })
+            expect.objectContaining({ idempotencyKey: `abandoned-sub-${newPendingId}` })
         );
 
-        // ── KEY ASSERTION (T-020): the OLD (superseded) subscription's id
-        // never appears anywhere in this run's DB/notification call
-        // history — this cron issues exactly one bulk UPDATE scoped by
-        // (status, createdAt, deletedAt) and has no code path that reads or
-        // writes a subscription by a "superseded" id. No supersession can
-        // have fired, because the new sub never confirmed. ────────────────
-        const allCallArgsSerialized = JSON.stringify([
-            ...mockTx.execute.mock.calls,
-            ...mockTx.select.mock.calls,
-            ...mockTx.update.mock.calls,
+        // The superseded old id never appears anywhere in this run.
+        const allCalls = JSON.stringify([
+            ...mockBillingSubscriptionsCancel.mock.calls,
+            ...mockAdapterRetrieve.mock.calls,
             ...mockBillingCustomersGet.mock.calls,
-            ...mockBillingPlansGet.mock.calls,
             ...mockSendNotification.mock.calls
         ]);
-        expect(allCallArgsSerialized).not.toContain(supersededOldSubId);
-        expect(mockBillingCustomersGet).toHaveBeenCalledTimes(1);
-        expect(mockBillingCustomersGet).not.toHaveBeenCalledWith(supersededOldSubId);
-    });
-
-    it('dry-run mode counts the annual reactivation candidate without writing or notifying', async () => {
-        const selectChain = {
-            from: vi.fn().mockReturnThis(),
-            where: vi.fn().mockResolvedValue([{ id: 'sub-annual-pending-dry' }])
-        };
-        mockTx.select.mockReturnValue(selectChain);
-
-        const ctx = makeCronCtx(true);
-        const result = await abandonedPendingSubsJob.handler(ctx);
-
-        expect(result.success).toBe(true);
-        expect(result.processed).toBe(1);
-        expect(mockTx.update).not.toHaveBeenCalled();
-        expect(mockSendNotification).not.toHaveBeenCalled();
+        expect(allCalls).not.toContain(supersededOldId);
     });
 });

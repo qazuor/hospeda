@@ -93,7 +93,13 @@ import { resolveOwnerUserId } from '../subscription-pause.service.js';
  *   case) reads whatever vocabulary the stored row happens to be in, which
  *   can be EITHER qzpay's or Hospeda's depending on write path (HOS-108).
  */
-const CONFIRMED_TERMINAL_STATUSES: ReadonlySet<string> = new Set([
+// Exported (HOS-151 Bug B): the abandoned-pending-subs cron reuses this exact
+// ALLOW-list to verify — after issuing a cancel — that MercadoPago reflects a
+// truly terminal status before it marks a stale preapproval row `abandoned`.
+// Single-source so the two provider-verify paths can never drift. Note 'paused'
+// is deliberately absent: a merely-paused preapproval can still resume charging,
+// so it must NOT be accepted as confirmed-cancelled.
+export const CONFIRMED_TERMINAL_STATUSES: ReadonlySet<string> = new Set([
     'canceled', // qzpay-core / MercadoPago raw vocabulary (1 L)
     'cancelled', // Hospeda vocabulary (2 L's) — SubscriptionStatusEnum.CANCELLED
     'incomplete_expired', // qzpay-core vocabulary — abandoned mode:'paid' preapproval
