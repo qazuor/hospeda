@@ -31,9 +31,10 @@
  *
  * **Annual interval (HOS-123 T-003 — resolved)**: `ANNUAL_REACTIVATION_UNSUPPORTED`
  * was originally a permanent dead-end for any plan whose only recurring
- * price was annual, with a "deferred to HOS-123" note on both the error
- * message and this module's JSDoc. That deferral is now closed: passing
- * `billingInterval: 'annual'` resolves the plan's annual price instead
+ * price was annual — both the error message and this module's JSDoc marked
+ * annual reactivation as out of scope, pending this follow-up spec. That gap
+ * is now closed: passing `billingInterval: 'annual'` resolves the plan's
+ * annual price instead
  * (see {@link resolveReactivationPlan}'s own JSDoc for the full annual
  * validation order). `ANNUAL_REACTIVATION_UNSUPPORTED` remains a live error
  * code for exactly one case — a monthly reactivation request
@@ -227,7 +228,7 @@ export async function resolveReactivationPlan(
     if (!monthlyPrice) {
         throw new SubscriptionCheckoutError(
             'ANNUAL_REACTIVATION_UNSUPPORTED',
-            `Plan '${planId}' has no active monthly price — annual reactivation is not supported (deferred to HOS-123)`
+            `Plan '${planId}' has no active monthly price (request the annual interval to reactivate onto this plan)`
         );
     }
 

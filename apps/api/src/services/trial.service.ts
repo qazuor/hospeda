@@ -912,21 +912,27 @@ export class TrialService {
 
     /**
      * Reactivate from trial to a real, card-collecting paid subscription
-     * (HOS-114).
+     * (HOS-114). Supports both the monthly and annual billing intervals
+     * (HOS-123 T-006) via `input.billingInterval`.
      *
      * Unlike the pre-HOS-114 behavior, this method does NOT create a
      * locally-`active` subscription with no MercadoPago preapproval behind
      * it (the "phantom-active" bug — see HOS-114 spec §2). It instead:
      *
-     * 1. Resolves + validates `input.planId` against the live plan catalog,
-     *    fail-closed on unknown/free/annual targets ({@link resolveReactivationPlan}).
+     * 1. Resolves + validates `input.planId` (and `input.billingInterval`)
+     *    against the live plan catalog, fail-closed on an unknown plan, a
+     *    free plan, or a plan with no active price for the requested
+     *    interval ({@link resolveReactivationPlan}).
      * 2. Ensures the billing customer exists.
-     * 3. Creates a real `mode: 'paid'` MercadoPago preapproval via the
-     *    shared {@link createPaidSubscription} helper (also used by
-     *    `/start-paid`) — fail-closed if the provider returns no checkout URL.
+     * 3. For `billingInterval: 'monthly'` (the default), creates a real
+     *    `mode: 'paid'` MercadoPago preapproval via the shared
+     *    {@link createPaidSubscription} helper (also used by `/start-paid`).
+     *    For `billingInterval: 'annual'`, creates a one-time hosted-checkout
+     *    charge via `createAnnualSubscription` instead (HOS-123 T-006) — both
+     *    paths fail-closed if the provider returns no checkout URL.
      * 4. Returns a `checkoutUrl` the caller MUST redirect the user to. The
-     *    created subscription is `incomplete`, not `active`, until the
-     *    `subscription_preapproval.created` webhook confirms it.
+     *    created subscription is `incomplete`/`pending_provider`, not
+     *    `active`, until the corresponding webhook confirms it.
      *
      * The old trial subscription is deliberately NOT cancelled here — see
      * the inline comment below (spec §6.4/§6.5, HOS-114 T-007).
@@ -934,10 +940,10 @@ export class TrialService {
      * @param input - Reactivation parameters, including the resolved MP
      *   checkout return/notification URLs.
      * @returns The new (not-yet-confirmed) subscription id, its checkout URL,
-     *   and its `incomplete` status.
+     *   and its `incomplete`/`pending_provider` status.
      * @throws SubscriptionCheckoutError With code `PLAN_NOT_FOUND`,
      *   `INVALID_REACTIVATION_PLAN`, `ANNUAL_REACTIVATION_UNSUPPORTED`,
-     *   `CUSTOMER_NOT_FOUND`, or `MISSING_INIT_POINT`.
+     *   `NO_ANNUAL_PRICE`, `CUSTOMER_NOT_FOUND`, or `MISSING_INIT_POINT`.
      */
     async reactivateFromTrial(input: ReactivateFromTrialInput): Promise<ReactivateFromTrialResult> {
         if (!this.billing) {
@@ -1118,7 +1124,8 @@ export class TrialService {
 
     /**
      * Reactivate a canceled subscription by creating a real, card-collecting
-     * paid subscription (HOS-114).
+     * paid subscription (HOS-114). Supports both the monthly and annual
+     * billing intervals (HOS-123 T-006) via `input.billingInterval`.
      *
      * Rejects if:
      * - Any subscription is active or trialing (use plan-change instead)
@@ -1126,21 +1133,24 @@ export class TrialService {
      *
      * Like {@link reactivateFromTrial}, this method no longer creates a
      * locally-`active` subscription with no MercadoPago preapproval behind
-     * it. It resolves + validates the target plan, creates a real
-     * `mode: 'paid'` preapproval via {@link createPaidSubscription}, and
-     * returns a `checkoutUrl` the caller MUST redirect the user to. See the
-     * inline comment near the end of this method for why the old canceled
-     * subscription is not touched synchronously here (spec §6.4, HOS-114 T-007).
+     * it. It resolves + validates the target plan and interval, creates a
+     * real `mode: 'paid'` preapproval (monthly) or a one-time
+     * hosted-checkout charge (annual, HOS-123 T-006) via the shared
+     * helpers, and returns a `checkoutUrl` the caller MUST redirect the
+     * user to. See the inline comment near the end of this method for why
+     * the old canceled subscription is not touched synchronously here
+     * (spec §6.4, HOS-114 T-007).
      *
      * @param input - Reactivation parameters, including the resolved MP
      *   checkout return/notification URLs.
      * @returns The new (not-yet-confirmed) subscription id, the previous
-     *   plan id, the checkout URL, and the `incomplete` status.
+     *   plan id, the checkout URL, and the `incomplete`/`pending_provider`
+     *   status.
      * @throws SubscriptionCheckoutError With code `PLAN_NOT_FOUND`,
      *   `INVALID_REACTIVATION_PLAN`, `ANNUAL_REACTIVATION_UNSUPPORTED`,
-     *   `CUSTOMER_NOT_FOUND`, `ACTIVE_SUBSCRIPTION_EXISTS` (HOS-114 T-015b —
-     *   HTTP 409), `NO_CANCELED_SUBSCRIPTION` (HOS-114 T-015b — HTTP 404),
-     *   or `MISSING_INIT_POINT`.
+     *   `NO_ANNUAL_PRICE`, `CUSTOMER_NOT_FOUND`, `ACTIVE_SUBSCRIPTION_EXISTS`
+     *   (HOS-114 T-015b — HTTP 409), `NO_CANCELED_SUBSCRIPTION` (HOS-114
+     *   T-015b — HTTP 404), or `MISSING_INIT_POINT`.
      */
     async reactivateSubscription(
         input: ReactivateSubscriptionInput

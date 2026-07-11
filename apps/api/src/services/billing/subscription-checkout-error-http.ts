@@ -48,8 +48,9 @@ export function mapSubscriptionCheckoutErrorToHttp(err: SubscriptionCheckoutErro
         case 'NOT_AN_UPGRADE':
         // HOS-114 T-004: thrown by the reactivation plan-resolution guard
         // (`billing/reactivation-plan-guard.ts`) for a `planId` that resolves
-        // to a free or annual-only plan — reactivation only supports
-        // monthly, paid plans (annual is deferred to HOS-123).
+        // to a free plan, or an annual-only plan requested without
+        // `billingInterval: 'annual'`. Annual reactivation itself is
+        // supported (HOS-123 T-003) via that flag.
         case 'INVALID_REACTIVATION_PLAN':
         case 'ANNUAL_REACTIVATION_UNSUPPORTED':
             return new HTTPException(422, { message: err.message });

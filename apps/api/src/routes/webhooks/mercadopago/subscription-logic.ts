@@ -224,10 +224,13 @@ export function shouldSendAdminAlert(previousStatus: string, newStatus: string):
  * see that module's JSDoc for the idempotency guarantee, the T-015a
  * cancel-verification hardening, and the error-isolation contract.
  *
- * Only invoked by {@link processSubscriptionUpdated} when the observed
- * transition is exactly `PENDING_PROVIDER -> ACTIVE` — callers MUST NOT
- * invoke this for any other transition (pause/cancel/past-due/etc. must
- * never trigger a supersession swap).
+ * Invoked from two confirm paths — {@link processSubscriptionUpdated}
+ * (monthly preapproval-confirm) and, since HOS-123 T-013,
+ * `payment-logic.ts::confirmAnnualSubscription` (annual `payment.updated`
+ * confirm — see @remarks below) — and ONLY when the observed transition is
+ * exactly `PENDING_PROVIDER -> ACTIVE`. Callers MUST NOT invoke this for any
+ * other transition (pause/cancel/past-due/etc. must never trigger a
+ * supersession swap).
  *
  * @param input - The billing instance, DB handle, the just-activated local
  *   subscription row, and webhook context for logging/audit.
