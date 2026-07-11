@@ -1,3 +1,4 @@
+import { LifecycleStatusEnum } from '@repo/schemas';
 import type { Actor, ServiceContext } from '../../types';
 import type { PointOfInterestService } from '../point-of-interest/point-of-interest.service';
 
@@ -36,7 +37,12 @@ export interface ResolvedPoiCoordinates {
     readonly radiusKm: number;
 }
 
-/** Resolution failure: neither `poiId` nor `poiSlug` matched an existing point of interest. */
+/**
+ * Resolution failure: neither `poiId` nor `poiSlug` matched an existing,
+ * live point of interest. Also returned when the matched POI is
+ * soft-deleted or not `ACTIVE` (e.g. `DRAFT`/`ARCHIVED`) — such a POI is
+ * treated as not found, never used to center a search.
+ */
 export interface UnresolvedPoiCoordinates {
     readonly found: false;
 }
@@ -54,13 +60,18 @@ export type PoiCoordinatesResolution = ResolvedPoiCoordinates | UnresolvedPoiCoo
  *
  * Looks up the point of interest via `PointOfInterestService.getById`/
  * `getBySlug` (both public-read, no permission gate required — see
- * `checkCanViewPointOfInterest`). Deliberately NEVER throws on a not-found
- * POI: it returns `{ found: false }` so callers decide how to react. The
- * accommodation service's `_beforeSearch` hook turns a not-found result into
- * a `NOT_FOUND` `ServiceError` (HTTP 404) so the public API never silently
- * returns an empty page for a typo'd slug, but a different caller (e.g. a
- * best-effort AI resolver) is free to treat `{ found: false }` as "skip this
- * constraint" instead.
+ * `checkCanViewPointOfInterest`). Because that lookup returns rows
+ * regardless of `deletedAt`/`lifecycleState` (and `_canView` is an
+ * unconditional no-op), this helper force-filters the result itself: a
+ * soft-deleted or non-`ACTIVE` POI is treated exactly like a typo'd/
+ * unmatched slug, i.e. `{ found: false }`. Deliberately NEVER throws on a
+ * not-found (or not-live) POI: it returns `{ found: false }` so callers
+ * decide how to react. The accommodation service's `_beforeSearch` hook
+ * turns a not-found result into a `NOT_FOUND` `ServiceError` (HTTP 404) so
+ * the public API never silently returns an empty page for a typo'd slug —
+ * or centers a search on a POI that is no longer live — but a different
+ * caller (e.g. a best-effort AI resolver) is free to treat
+ * `{ found: false }` as "skip this constraint" instead.
  *
  * @param params - Receive-object: `poiId` XOR `poiSlug`, plus an optional radius override.
  * @param actor - The actor performing the search (forwarded to the POI read for permission checks).
@@ -87,6 +98,17 @@ export async function resolvePoiToCoordinates(
         : await pointOfInterestService.getBySlug(actor, poiSlug as string, ctx);
 
     if (result.error || !result.data) {
+        return { found: false };
+    }
+
+    // `PointOfInterestService.getById`/`getBySlug` (via `BaseCrudRead.getByField`
+    // → `BaseModel.findOne`) return rows regardless of `deletedAt`/`lifecycleState`,
+    // and `PointOfInterestService._canView` is an unconditional no-op. Force-filter
+    // here so a public caller can never center a proximity search on a
+    // soft-deleted or non-ACTIVE (e.g. DRAFT/ARCHIVED) POI — treat it the same as
+    // a typo'd/unmatched slug (`{ found: false }`), which the accommodation
+    // service's `_beforeSearch` hook turns into a `NOT_FOUND` (404).
+    if (result.data.lifecycleState !== LifecycleStatusEnum.ACTIVE || result.data.deletedAt) {
         return { found: false };
     }
 

@@ -4,10 +4,12 @@
  *
  * Covers: found-by-id, found-by-slug, not-found (both the "no id supplied"
  * and the "lookup returned nothing" cases), explicit-radius, and
- * default-radius (OQ-5, 5km) resolution.
+ * default-radius (OQ-5, 5km) resolution. Also covers the review-fix
+ * guarding a soft-deleted / non-ACTIVE POI from being resolved (see the
+ * "does not resolve" block below).
  */
 import type { PointOfInterest } from '@repo/schemas';
-import { ServiceErrorCode } from '@repo/schemas';
+import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import {
     DEFAULT_POI_PROXIMITY_RADIUS_KM,
@@ -142,5 +144,60 @@ describe('resolvePoiToCoordinates (HOS-113 T-032)', () => {
         expect(getById).toHaveBeenCalledTimes(1);
         expect(getBySlug).not.toHaveBeenCalled();
         expect(result.found).toBe(true);
+    });
+
+    describe('does not resolve a soft-deleted or non-ACTIVE POI', () => {
+        it('returns { found: false } when the POI (by id) is soft-deleted', async () => {
+            const poi: PointOfInterest = PointOfInterestFactoryBuilder.create({
+                deletedAt: new Date()
+            });
+            const getById = vi.fn().mockResolvedValue({ data: poi });
+            const service = createPoiServiceMock({ getById });
+
+            const result = await resolvePoiToCoordinates({ poiId: poi.id }, actor, service);
+
+            expect(result).toEqual({ found: false });
+        });
+
+        it('returns { found: false } when the POI (by slug) is soft-deleted', async () => {
+            const poi: PointOfInterest = PointOfInterestFactoryBuilder.create({
+                slug: 'removed-poi',
+                deletedAt: new Date()
+            });
+            const getBySlug = vi.fn().mockResolvedValue({ data: poi });
+            const service = createPoiServiceMock({ getBySlug });
+
+            const result = await resolvePoiToCoordinates(
+                { poiSlug: 'removed-poi' },
+                actor,
+                service
+            );
+
+            expect(result).toEqual({ found: false });
+        });
+
+        it('returns { found: false } when the POI lifecycleState is ARCHIVED', async () => {
+            const poi: PointOfInterest = PointOfInterestFactoryBuilder.create({
+                lifecycleState: LifecycleStatusEnum.ARCHIVED
+            });
+            const getById = vi.fn().mockResolvedValue({ data: poi });
+            const service = createPoiServiceMock({ getById });
+
+            const result = await resolvePoiToCoordinates({ poiId: poi.id }, actor, service);
+
+            expect(result).toEqual({ found: false });
+        });
+
+        it('returns { found: false } when the POI lifecycleState is DRAFT', async () => {
+            const poi: PointOfInterest = PointOfInterestFactoryBuilder.create({
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            });
+            const getBySlug = vi.fn().mockResolvedValue({ data: poi });
+            const service = createPoiServiceMock({ getBySlug });
+
+            const result = await resolvePoiToCoordinates({ poiSlug: poi.slug }, actor, service);
+
+            expect(result).toEqual({ found: false });
+        });
     });
 });
