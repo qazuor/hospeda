@@ -695,18 +695,19 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         // Step 8 (T-006): Build the reply system prompt + messages, then call
         // streamText to stream the natural-language acknowledgment.
         //
-        // The reply system prompt is supplied as a caller-wins system message —
-        // this OVERRIDES `DEFAULT_PROMPTS['search']` (the JSON extractor) so the
-        // model outputs a friendly conversational text, not structured JSON.
-        // On an attraction/location conflict, the conflict note is threaded into
-        // the reply so the assistant names it ("no hay carnaval en Chajarí")
-        // instead of emitting a generic empty-results acknowledgment. On an
-        // unresolved POI mention (HOS-113 review H-1/M-1), `poiLocationConflict`
-        // is threaded the same way, but corrects the narrative only — it never
-        // claims zero results, since the search itself still ran.
+        // The reply system prompt is supplied via the engine's `system` option
+        // (caller-wins) — this OVERRIDES `DEFAULT_PROMPTS['search']` (the JSON
+        // extractor) so the model outputs a friendly conversational text, not
+        // structured JSON. On an attraction/location conflict, the conflict note
+        // is concatenated into that same `system` string so the assistant names
+        // it ("no hay carnaval en Chajarí") instead of emitting a generic
+        // empty-results acknowledgment. On an unresolved POI mention (HOS-113
+        // review H-1/M-1), `poiLocationConflict` is threaded the same way, but
+        // corrects the narrative only — it never claims zero results, since the
+        // search itself still ran.
         // -----------------------------------------------------------------------
         const replySystemPrompt = buildSearchReplySystemPrompt({ locale });
-        const replyMessages = buildSearchReplyMessages({
+        const { system: replySystem, messages: replyMessages } = buildSearchReplyMessages({
             systemPrompt: replySystemPrompt,
             history,
             message,
@@ -717,6 +718,7 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
 
         const { stream: rawStream, meta: rawMeta } = await aiService.streamText({
             feature: 'search',
+            system: replySystem,
             messages: replyMessages,
             locale
         });

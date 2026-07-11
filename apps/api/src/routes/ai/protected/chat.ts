@@ -36,7 +36,7 @@
  *    `MAX_AI_CHAT_CONSUMER_PER_MONTH`; exhausted → 403 `LIMIT_REACHED` with the
  *    DISTINCT consumer-side copy `accommodations.aiChat.consumerLimitReached`.
  * 8. Assemble the accommodation-scoped context and system message.
- * 9. Stream tokens from `aiService.streamText({ feature: 'chat', messages, locale })`.
+ * 9. Stream tokens from `aiService.streamText({ feature: 'chat', system, messages, locale })`.
  * 10. After drain, `recordAiUsage` TWICE: owner-keyed (cost) + consumer-keyed
  *     (advances the consumer quota). Both fire-and-try (non-fatal).
  * 11. Race `persistChatTurn(...)` vs 1500 ms and add `conversationId` to the
@@ -154,14 +154,29 @@ function captureChatEvent(actorId: string, event: string, properties: ChatPostHo
     });
 }
 
+/**
+ * Result of {@link toEngineMessages}: the assembled `system` content plus the
+ * mapped conversation `messages`, ready for `aiService.streamText({ system,
+ * messages })`.
+ *
+ * `messages` never contains a `role: 'system'` entry — the accommodation
+ * context + resolved prompt is forwarded via the engine's native `system`
+ * option instead of a mid-array system message (avoids the AI SDK's
+ * security-risk warning for stacked system messages).
+ */
+interface EngineMessages {
+    readonly system: string;
+    readonly messages: AiMessage[];
+}
+
 function toEngineMessages(
     systemMessage: string,
     messages: ReadonlyArray<AiChatMessage>
-): AiMessage[] {
-    return [
-        { role: 'system', content: systemMessage },
-        ...messages.map((message) => ({ role: message.role, content: message.content }))
-    ];
+): EngineMessages {
+    return {
+        system: systemMessage,
+        messages: messages.map((message) => ({ role: message.role, content: message.content }))
+    };
 }
 
 function getLastUserTurn(messages: ReadonlyArray<AiChatMessage>): string {
@@ -413,7 +428,10 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         });
 
         const aiService = await createConfiguredAiService();
-        const messages = toEngineMessages(systemMessage, body.messages);
+        const { system: engineSystem, messages: engineMessages } = toEngineMessages(
+            systemMessage,
+            body.messages
+        );
         const maxTokens = await resolveChatMaxOutputTokens();
 
         captureChatEvent(actor.id, 'ai_chat_message_sent', {
@@ -425,7 +443,8 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
 
         const { stream: rawStream, meta } = await aiService.streamText({
             feature: FEATURE,
-            messages,
+            system: engineSystem,
+            messages: engineMessages,
             locale,
             params: { maxTokens }
         });

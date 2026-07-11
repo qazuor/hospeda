@@ -889,6 +889,47 @@ describe('injectSystemPrompt — messages-path with undefined messages', () => {
 });
 
 // ---------------------------------------------------------------------------
+// 14b. injectSystemPrompt — `system` field caller-wins
+//     (search-chat.ts / chat.ts fix: caller passes `system` instead of a
+//     role:'system' message; the resolved admin/default prompt must NOT be
+//     auto-injected on top of it)
+// ---------------------------------------------------------------------------
+
+describe('injectSystemPrompt — `system` field caller-wins', () => {
+    it('should return the request unchanged when req.system is already set (admin prompt is NOT injected)', () => {
+        // Arrange
+        const req = {
+            system: 'Caller-supplied system content.',
+            messages: [{ role: 'user', content: 'hi' }]
+        };
+
+        // Act
+        const result = injectSystemPrompt({
+            req,
+            systemContent: 'Resolved admin prompt (must be ignored).'
+        });
+
+        // Assert — same reference, nothing was mutated or replaced.
+        expect(result).toBe(req);
+        expect((result as typeof req).system).toBe('Caller-supplied system content.');
+    });
+
+    it('should still inject the resolved prompt as a role:"system" message when req.system is absent', () => {
+        // Arrange — no `system` field and no role:'system' message.
+        const req = { messages: [{ role: 'user', content: 'hi' }] };
+
+        // Act
+        const result = injectSystemPrompt({ req, systemContent: 'Resolved admin prompt.' });
+
+        // Assert — the auto-injection fallback path is unchanged by the new field.
+        expect((result as { messages: { role: string; content: string }[] }).messages[0]).toEqual({
+            role: 'system',
+            content: 'Resolved admin prompt.'
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
 // 15. AiEngineExhaustedError with empty attempts (covers lastError fallback branch)
 // ---------------------------------------------------------------------------
 

@@ -288,6 +288,33 @@ describe('AnthropicAdapter', () => {
                 expect.objectContaining({ temperature: 0.5, maxOutputTokens: 512 })
             );
         });
+
+        it('should forward `system` to the SDK native system option (not a role:"system" message)', async () => {
+            // Arrange
+            const adapter = new AnthropicAdapter({ apiKey: TEST_API_KEY });
+            mockGenerateText.mockResolvedValueOnce({
+                text: 'ok',
+                usage: FAKE_SDK_USAGE,
+                finishReason: 'stop'
+            });
+
+            // Act
+            await adapter.generateText({
+                feature: 'search',
+                locale: 'es',
+                system: 'You are a friendly assistant.',
+                messages: [{ role: 'user', content: 'hola' }]
+            });
+
+            // Assert
+            expect(mockGenerateText).toHaveBeenCalledWith(
+                expect.objectContaining({ system: 'You are a friendly assistant.' })
+            );
+            const callArgs = mockGenerateText.mock.calls[0]?.[0] as { messages: unknown[] };
+            expect(callArgs.messages.some((m) => (m as { role: string }).role === 'system')).toBe(
+                false
+            );
+        });
     });
 
     // -------------------------------------------------------------------------
@@ -407,6 +434,36 @@ describe('AnthropicAdapter', () => {
             // Assert
             expect(finalMeta.model).toBe(MOCK_MODEL_ID);
             expect(finalMeta.finishReason).toBe('length');
+        });
+
+        it('should forward `system` to the SDK native system option (not a role:"system" message)', async () => {
+            // Arrange
+            const adapter = new AnthropicAdapter({ apiKey: TEST_API_KEY });
+            async function* fakeTextStream() {
+                yield 'ok';
+            }
+            mockStreamText.mockReturnValueOnce({
+                textStream: fakeTextStream(),
+                usage: Promise.resolve(FAKE_SDK_USAGE),
+                finishReason: Promise.resolve('stop')
+            });
+
+            // Act
+            await adapter.streamText({
+                feature: 'search',
+                locale: 'es',
+                system: 'You are a friendly assistant.',
+                messages: [{ role: 'user', content: 'hola' }]
+            });
+
+            // Assert
+            expect(mockStreamText).toHaveBeenCalledWith(
+                expect.objectContaining({ system: 'You are a friendly assistant.' })
+            );
+            const callArgs = mockStreamText.mock.calls[0]?.[0] as { messages: unknown[] };
+            expect(callArgs.messages.some((m) => (m as { role: string }).role === 'system')).toBe(
+                false
+            );
         });
     });
 
