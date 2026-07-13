@@ -3,8 +3,8 @@
 ## Progress: 13/13 tasks (100%)
 
 > All tasks complete. T-012 (AC-6 dual-write convergence) verified end-to-end against
-> real postgres on the worktree DB: both the 0009 create path and the 0010 UPDATE
-> backfill path converge to identical per-locale nameI18n; 0010 is idempotent.
+> real postgres on the worktree DB: both the 0009 create path and the 0011 UPDATE
+> backfill path converge to identical per-locale nameI18n; 0011 is idempotent.
 > T-013: full quality gate green (typecheck repo-wide + schemas 6673 / service-core
 > 6903 / api 9131 suites); AC-8 destination POI section renders correctly in es/en/pt
 > (English names via nameI18n confirm the multilang path; ES unchanged = no-op).
@@ -42,7 +42,7 @@
   - Blocked by: T-001, T-003
   - Blocks: T-011
 
-- [ ] **T-011** (complexity: 3) - Data migration 0010-hos-138-poi-v2-model-core
+- [ ] **T-011** (complexity: 3) - Data migration 0011-hos-138-poi-v2-model-core
   - idempotent by-slug apply to live rows, mirrors 0009
   - Blocked by: T-010
   - Blocks: T-012

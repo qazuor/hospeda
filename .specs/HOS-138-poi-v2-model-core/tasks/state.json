@@ -372,15 +372,15 @@
         },
         {
             "id": "T-011",
-            "title": "Data migration 0010-hos-138-poi-v2-model-core",
-            "description": "packages/seed/src/data-migrations/0010-hos-138-poi-v2-model-core.ts (next sequential after 0009): apply identical nameI18n/descriptionI18n/translationMeta values to the 12 already-seeded rows on live envs, by slug lookup, idempotent (skip a POI whose nameI18n is already non-null). Mirror structure of 0009-hos-113-points-of-interest.ts. Ledgered in seed_migrations. Tests: idempotency (re-run skips), and applies to a pre-HOS-138-shaped row.",
+            "title": "Data migration 0011-hos-138-poi-v2-model-core",
+            "description": "packages/seed/src/data-migrations/0011-hos-138-poi-v2-model-core.ts (next sequential after 0009): apply identical nameI18n/descriptionI18n/translationMeta values to the 12 already-seeded rows on live envs, by slug lookup, idempotent (skip a POI whose nameI18n is already non-null). Mirror structure of 0009-hos-113-points-of-interest.ts. Ledgered in seed_migrations. Tests: idempotency (re-run skips), and applies to a pre-HOS-138-shaped row.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010"],
             "blocks": ["T-012"],
             "subtasks": [
                 {
-                    "title": "Create 0010 module mirroring 0009",
+                    "title": "Create 0011 module mirroring 0009",
                     "completed": true
                 },
                 {
