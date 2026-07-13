@@ -9,6 +9,7 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, loadEnv } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { z } from 'zod';
+import { resolveSourcemapSetting } from './src/lib/sentry/sourcemap-config.ts';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -450,8 +451,16 @@ export default defineConfig({
             transformMixedEsModules: true,
             requireReturnsDefault: 'auto'
         },
-        // Source maps for production debugging
-        sourcemap: process.env.NODE_ENV === 'production' ? 'hidden' : true
+        // Source maps for production debugging. BETA-66: see
+        // resolveSourcemapSetting() for the gating rationale (tested in
+        // test/lib/sentry/sourcemap-config.test.ts) — in production this
+        // only generates 'hidden' maps when SENTRY_AUTH_TOKEN is present
+        // (so sentryVitePlugin can upload+delete them); without a token,
+        // no maps are generated at all (fail-safe, no leak).
+        sourcemap: resolveSourcemapSetting({
+            authToken: process.env.SENTRY_AUTH_TOKEN,
+            isProduction: process.env.NODE_ENV === 'production'
+        })
     },
     define: {
         'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production')
