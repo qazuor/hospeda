@@ -379,6 +379,13 @@
             "when": 1783935022527,
             "tag": "0053_abandoned_ironclad",
             "breakpoints": true
+        },
+        {
+            "idx": 54,
+            "version": "7",
+            "when": 1783970085042,
+            "tag": "0054_silky_inertia",
+            "breakpoints": true
         }
     ]
 }
