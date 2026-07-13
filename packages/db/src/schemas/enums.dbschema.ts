@@ -30,6 +30,7 @@ import {
     NewsletterSourceEnum,
     NewsletterSubscriberStatusEnum,
     NotificationRecipientSideEnum,
+    OccupancySourceEnum,
     OwnerPromotionDiscountTypeEnum,
     PartnerSubscriptionStatusEnum,
     PartnerTierEnum,
@@ -358,4 +359,13 @@ export const PartnerTierPgEnum = pgEnum('partner_tier_enum', enumToTuple(Partner
 export const PartnerSubscriptionStatusPgEnum = pgEnum(
     'partner_subscription_status_enum',
     enumToTuple(PartnerSubscriptionStatusEnum)
+);
+
+/**
+ * PostgreSQL enum for the origin of an `accommodation_occupancy` row (HOS-43
+ * Phase 1). Values: MANUAL, GOOGLE_CALENDAR, AIRBNB, BOOKING.
+ */
+export const OccupancySourcePgEnum = pgEnum(
+    'occupancy_source_enum',
+    enumToTuple(OccupancySourceEnum)
 );
