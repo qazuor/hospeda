@@ -38,6 +38,7 @@ import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { DestinationReviewSidebarCard } from '@/components/destination/DestinationReviewSidebarCard.client';
 import DestinationReviewSignInCta from '@/components/destination/DestinationReviewSignInCta.astro';
 import { getApiUrl } from '@/lib/env';
+import type { I18nText } from '@repo/schemas';
 import {
 	faqSetInLanguage,
 	toAccommodationCardProps,
@@ -132,7 +133,10 @@ const attractions = (dest.attractions as ReadonlyArray<{
 
 // HOS-113 Phase 4: destination points of interest (POIs), hydrated by
 // DestinationService._withPointsOfInterest. List/grid rendering only — NOT
-// map pins (NG-3 / OQ-4).
+// map pins (NG-3 / OQ-4). HOS-138: nameI18n/descriptionI18n carry the
+// admin-editable multilang content when a POI has been migrated (nullable —
+// DestinationPOISection.astro falls back to the legacy i18n-by-slug lookup
+// and the plain `description` column when they are null).
 const pointsOfInterest = (dest.pointsOfInterest as ReadonlyArray<{
 	readonly id: string;
 	readonly slug: string;
@@ -140,6 +144,8 @@ const pointsOfInterest = (dest.pointsOfInterest as ReadonlyArray<{
 	readonly description?: string | null;
 	readonly isFeatured?: boolean;
 	readonly displayWeight?: number;
+	readonly nameI18n?: I18nText | null;
+	readonly descriptionI18n?: I18nText | null;
 }>) ?? [];
 
 const ratingBreakdown = dest.rating as Record<string, number | undefined> | null | undefined;

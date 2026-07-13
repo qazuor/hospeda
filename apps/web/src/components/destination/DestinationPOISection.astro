@@ -2,24 +2,30 @@
 /**
  * @file DestinationPOISection.astro
  * @description Points-of-interest (POI) section for the destination detail
- * page (HOS-113 Phase 4). Renders the destination's POIs as a **list / grid**
- * — NOT map pins (multi-marker rendering is deferred, see spec NG-3 / OQ-4;
- * `LocationMap` has no multi-marker mode). Built fresh — this does NOT
- * resurrect the dead `DestinationAttractionsGrid.astro`, though its
- * displayWeight-then-alphabetical sort + card shape informed this one.
+ * page (HOS-113 Phase 4, extended HOS-138). Renders the destination's POIs
+ * as a **list / grid** — NOT map pins (multi-marker rendering is deferred,
+ * see spec NG-3 / OQ-4; `LocationMap` has no multi-marker mode). Built
+ * fresh — this does NOT resurrect the dead `DestinationAttractionsGrid.astro`,
+ * though its displayWeight-then-alphabetical sort + card shape informed this
+ * one.
  *
- * Each card shows: a type-derived icon, the i18n-resolved display name
- * (`destinations.poiNames.<slug>` — POIs have no `name` column, HOS-113
- * OQ-2), a translated type label (`destinations.poiTypeLabels.<TYPE>`), and
- * an optional 2-line description. Ordered featured-first, then by
- * `displayWeight` descending, then by display name (§8). Renders nothing
- * when the destination has no POIs, mirroring how the attractions grid
- * guards against an empty array.
+ * Each card shows: a type-derived icon, the display name (HOS-138 prefers
+ * admin-editable multilang `nameI18n` content when present, falling back to
+ * the legacy i18n-by-slug lookup — `destinations.poiNames.<slug>` — for POIs
+ * not yet migrated, see `poi-labels.ts`), a translated type label
+ * (`destinations.poiTypeLabels.<TYPE>`), and an optional 2-line description
+ * (same multilang-first/legacy-fallback order via `descriptionI18n` /
+ * `description`). Ordered featured-first, then by `displayWeight`
+ * descending, then by display name (§8). Renders nothing when the
+ * destination has no POIs, mirroring how the attractions grid guards
+ * against an empty array.
  */
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { translatePoiName, translatePoiTypeLabel } from '@/lib/poi-labels';
 import { getPointOfInterestTypeIcon } from '@/lib/poi-type-icons';
+import { resolveI18nText } from '@/lib/resolve-i18n-text';
+import type { I18nText } from '@repo/schemas';
 
 /** A single point of interest belonging to a destination. */
 export interface DestinationPOIItem {
@@ -29,6 +35,10 @@ export interface DestinationPOIItem {
 	readonly description?: string | null;
 	readonly isFeatured?: boolean;
 	readonly displayWeight?: number;
+	/** Admin-editable multilang name content (HOS-138); null for POIs not yet migrated. */
+	readonly nameI18n?: I18nText | null;
+	/** Admin-editable multilang description content (HOS-138); null for POIs not yet migrated. */
+	readonly descriptionI18n?: I18nText | null;
 }
 
 interface Props {
@@ -42,7 +52,11 @@ const { t } = createTranslations(locale);
 if (!pointsOfInterest || pointsOfInterest.length === 0) return;
 
 const sorted = [...pointsOfInterest]
-	.map((poi) => ({ ...poi, displayName: translatePoiName({ t, slug: poi.slug }) }))
+	.map((poi) => ({
+		...poi,
+		displayName: translatePoiName({ t, slug: poi.slug, nameI18n: poi.nameI18n, locale }),
+		resolvedDescription: resolveI18nText(poi.descriptionI18n, locale) || poi.description
+	}))
 	.sort((a, b) => {
 		// Featured first.
 		const featuredDelta = (a.isFeatured ? 0 : 1) - (b.isFeatured ? 0 : 1);
@@ -72,8 +86,8 @@ const sorted = [...pointsOfInterest]
 					</span>
 					<h3 class="poi-section__name">{poi.displayName}</h3>
 					<span class="poi-section__type-badge">{typeLabel}</span>
-					{poi.description && (
-						<p class="poi-section__description">{poi.description}</p>
+					{poi.resolvedDescription && (
+						<p class="poi-section__description">{poi.resolvedDescription}</p>
 					)}
 				</div>
 			);
