@@ -156,7 +156,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         name: 'destination-weather-fetch',
         displayName: 'Clima de destinos',
         category: 'content',
-        schedule: '0 */12 * * *',
+        schedule: '0 6,18 * * *',
         description:
             'Refresh cached Open-Meteo weather (current + 16-day forecast) for published destinations with coordinates.'
     },
