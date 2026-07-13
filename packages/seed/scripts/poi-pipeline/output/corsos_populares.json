@@ -1,7 +1,7 @@
 {
     "slug": "corsos_populares",
-    "lat": null,
-    "long": null,
+    "lat": -32.4796598,
+    "long": -58.2402889,
     "type": "OTHER",
     "icon": null,
     "description": "Celebración de carnaval con agrupaciones, música, baile y participación comunitaria.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://urdinarrain.tur.ar/que-hacer/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

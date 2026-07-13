@@ -1,7 +1,7 @@
 {
     "slug": "cepida",
-    "lat": null,
-    "long": null,
+    "lat": -31.007269899999994,
+    "long": -57.890814500000005,
     "type": "OTHER",
     "icon": null,
     "description": "Productor apícola de la Antigua Ciudad incluido en la propuesta turística de mieles y derivados.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/otros-atractivos/",
-    "notes": "Actividad incluida en el circuito productivo oficial. Falta validar visita y geocodificar.",
+    "notes": "Actividad incluida en el circuito productivo oficial. Falta validar visita y geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

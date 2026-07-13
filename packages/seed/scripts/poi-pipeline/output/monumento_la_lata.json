@@ -1,7 +1,7 @@
 {
     "slug": "monumento_la_lata",
-    "lat": null,
-    "long": null,
+    "lat": -32.1549148,
+    "long": -58.1943244,
     "type": "MONUMENT",
     "icon": null,
     "description": "Monumento relacionado con la identidad industrial y la producción de carne envasada que dio reconocimiento internacional a Pueblo Liebig.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://puebloliebig.gob.ar/category/noticias/page/19/",
-    "notes": "Existencia y uso como lugar de homenajes confirmados por la Municipalidad. Falta geocodificar y documentar autor y fecha de inauguración.",
+    "notes": "Existencia y uso como lugar de homenajes confirmados por la Municipalidad. Falta geocodificar y documentar autor y fecha de inauguración. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

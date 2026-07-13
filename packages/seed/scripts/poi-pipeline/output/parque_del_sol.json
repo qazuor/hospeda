@@ -1,7 +1,7 @@
 {
     "slug": "parque_del_sol",
-    "lat": null,
-    "long": null,
+    "lat": -32.984740699999996,
+    "long": -58.498847700000006,
     "type": "BEACH",
     "icon": null,
     "description": "Extenso complejo recreativo a orillas del río con playa, camping, servicios y espacios para pasar el día.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/playas; https://gualeguaychu.gov.ar/noticia/29722-parque-del-sol%3A-servicios%2C-camping-y-playa-para-disfrutar-el-verano-en-gualeguaychu",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

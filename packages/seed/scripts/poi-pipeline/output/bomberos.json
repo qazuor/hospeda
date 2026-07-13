@@ -1,7 +1,7 @@
 {
     "slug": "bomberos",
-    "lat": null,
-    "long": null,
+    "lat": -33.4997714,
+    "long": -58.809025600000005,
     "type": "OTHER",
     "icon": null,
     "description": "Servicio de emergencias y respuesta ante incendios, accidentes viales e incidentes en zonas rurales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N11132368105",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

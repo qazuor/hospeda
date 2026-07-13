@@ -1,7 +1,7 @@
 {
     "slug": "cooperativa_lucienville",
-    "lat": null,
-    "long": null,
+    "lat": -32.3810646,
+    "long": -58.880753500000004,
     "type": "OTHER",
     "icon": null,
     "description": "Institución productiva histórica vinculada con el desarrollo agrícola, económico y comunitario de las colonias judías.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.turismoentrerios.com/villaguay/circuito-colonias-judias.htm",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

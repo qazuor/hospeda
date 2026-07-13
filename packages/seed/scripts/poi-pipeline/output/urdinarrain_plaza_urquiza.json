@@ -1,7 +1,7 @@
 {
     "slug": "urdinarrain_plaza_urquiza",
-    "lat": null,
-    "long": null,
+    "lat": -32.6909455,
+    "long": -58.888583499999996,
     "type": "PLAZA",
     "icon": null,
     "description": "Plaza céntrica próxima a la parroquia y a la terminal, utilizada como espacio cívico y recreativo.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N2590702312",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

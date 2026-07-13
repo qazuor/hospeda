@@ -1,7 +1,7 @@
 {
     "slug": "festival_teatro",
-    "lat": null,
-    "long": null,
+    "lat": -33.034435,
+    "long": -59.005360100000004,
     "type": "OTHER",
     "icon": null,
     "description": "Festival escénico con obras, talleres, invitados y actividades distribuidas entre la Sala Padre Alberto Paoli y otros espacios culturales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.larroque.gob.ar/noticia/2608/se_llevo_a_cabo_exitosamente_el_vi_festival_de_teatro_larroque",
-    "notes": "Evento recurrente confirmado. La programación y fechas varían en cada edición.",
+    "notes": "Evento recurrente confirmado. La programación y fechas varían en cada edición. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

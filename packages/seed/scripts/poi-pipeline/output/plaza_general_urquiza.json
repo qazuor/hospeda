@@ -1,7 +1,7 @@
 {
     "slug": "plaza_general_urquiza",
-    "lat": null,
-    "long": null,
+    "lat": -32.2123807,
+    "long": -58.219126599999996,
     "type": "PLAZA",
     "icon": null,
     "description": "Plaza principal y centro cívico de San José, rodeada por edificios patrimoniales y utilizada para actos y celebraciones de la comunidad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sanjose.gob.ar/se-presento-la-38-fiesta-nacional-de-la-colonizacion/; https://mapcarta.com/es/28447862",
-    "notes": "Nombre y uso confirmados; falta recuperar coordenadas exactas del polígono.",
+    "notes": "Nombre y uso confirmados; falta recuperar coordenadas exactas del polígono. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "auditorio_bicentenario",
-    "lat": null,
-    "long": null,
+    "lat": -30.985996499999995,
+    "long": -57.91788510000001,
     "type": "OTHER",
     "icon": null,
     "description": "Sala cultural y de convenciones utilizada para danza, espectáculos, actos y encuentros de alcance local y regional.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.gob.ar/areas-noticias/secretaria-turismo; https://mapcarta.com/es/W1101824521",
-    "notes": "Actividad vigente y ubicación relativa confirmadas. Falta geocodificar.",
+    "notes": "Actividad vigente y ubicación relativa confirmadas. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

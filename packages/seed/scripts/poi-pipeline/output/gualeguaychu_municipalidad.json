@@ -1,7 +1,7 @@
 {
     "slug": "gualeguaychu_municipalidad",
-    "lat": null,
-    "long": null,
+    "lat": -33.007736699999995,
+    "long": -58.5189932,
     "type": "OTHER",
     "icon": null,
     "description": "Sede administrativa del gobierno municipal y punto de referencia para trámites e información pública.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.gov.ar/; https://www.facebook.com/municipalidaddegualeguaychu/",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

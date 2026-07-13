@@ -1,7 +1,7 @@
 {
     "slug": "parque_acuatico",
-    "lat": null,
-    "long": null,
+    "lat": -30.9774426,
+    "long": -57.93159929999999,
     "type": "OTHER",
     "icon": null,
     "description": "Parque recreativo con río lento de 600 metros, piscina de olas, toboganes de gran altura, plaza náutica, juegos de agua y servicios familiares.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/parque-acuatico1/",
-    "notes": "Características y funcionamiento confirmados. Falta geocodificar el acceso específico al parque acuático.",
+    "notes": "Características y funcionamiento confirmados. Falta geocodificar el acceso específico al parque acuático. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

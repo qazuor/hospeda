@@ -1,7 +1,7 @@
 {
     "slug": "reserva_forestal_aromito",
-    "lat": null,
-    "long": null,
+    "lat": -30.986393800000002,
+    "long": -57.91229130000001,
     "type": "NATURAL",
     "icon": null,
     "description": "Espacio forestal y recreativo ubicado junto a Playa Grande, destinado al contacto con la naturaleza y al descanso.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
-    "notes": "Nombre y ubicación relativa confirmados en el plano turístico. Falta geocodificar.",
+    "notes": "Nombre y ubicación relativa confirmados en el plano turístico. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "calle_de_sal",
-    "lat": null,
-    "long": null,
+    "lat": -32.3009409,
+    "long": -59.139274199999996,
     "type": "NATURAL",
     "icon": null,
     "description": "Destino de excursiones náuticas guiadas desde Playa Grande por sectores poco accesibles del río.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=que-hacer",
-    "notes": "Sector fluvial confirmado como destino de salidas. Falta nombre cartográfico, coordenadas y accesos.",
+    "notes": "Sector fluvial confirmado como destino de salidas. Falta nombre cartográfico, coordenadas y accesos. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

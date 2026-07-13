@@ -1,7 +1,7 @@
 {
     "slug": "calera_osinalde_izaguirre",
-    "lat": null,
-    "long": null,
+    "lat": -32.3121393,
+    "long": -59.074371799999994,
     "type": "OTHER",
     "icon": null,
     "description": "Antiguo complejo industrial de hornos Hoffmann que produjo cal hasta la década de 1960 y marcó el desarrollo económico local.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf",
-    "notes": "Complejo histórico parcialmente conservado. Falta delimitar vestigios y condiciones de acceso.",
+    "notes": "Complejo histórico parcialmente conservado. Falta delimitar vestigios y condiciones de acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

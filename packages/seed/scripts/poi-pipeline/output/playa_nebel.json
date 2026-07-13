@@ -1,7 +1,7 @@
 {
     "slug": "playa_nebel",
-    "lat": null,
-    "long": null,
+    "lat": -31.390552399999997,
+    "long": -57.987089499999996,
     "type": "BEACH",
     "icon": null,
     "description": "Playa y sector costero tradicional de Concordia, reconocido por sus formaciones rocosas y su relación directa con el río Uruguay.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/turismo/atractivos/playas; https://egob.concordia.gob.ar/servicios/digesto.do?idNormativa=987&opcion=idNormativa",
-    "notes": "Playa y sitio arqueológico municipalmente reconocidos. Falta geocodificar el acceso.",
+    "notes": "Playa y sitio arqueológico municipalmente reconocidos. Falta geocodificar el acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

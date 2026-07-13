@@ -1,7 +1,7 @@
 {
     "slug": "quinta_la_suiza",
-    "lat": null,
-    "long": null,
+    "lat": -31.817214999999997,
+    "long": -59.026422999999994,
     "type": "OTHER",
     "icon": null,
     "description": "Emprendimiento productivo familiar con nuez pecán, higos, cítricos, apicultura, visitas guiadas y venta de productos.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://es.wikipedia.org/wiki/Villaguay",
-    "notes": "Oferta productiva documentada. Falta validar visitas actuales y geocodificar.",
+    "notes": "Oferta productiva documentada. Falta validar visitas actuales y geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

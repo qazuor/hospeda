@@ -1,7 +1,7 @@
 {
     "slug": "villa_elisa_hospital_san_roque",
-    "lat": null,
-    "long": null,
+    "lat": -32.1577927,
+    "long": -58.395134199999994,
     "type": "OTHER",
     "icon": null,
     "description": "Hospital público de referencia de Villa Elisa, con servicios sanitarios y atención para la ciudad y localidades cercanas.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://villaelisa.gov.ar/?eventDisplay=list&post_type=tribe_venue&tribe_venue=hospital-san-roque-maria-aguer-de-francou; https://villaelisa.gov.ar/reconocimiento-para-el-hospital-san-roque/",
-    "notes": "Nombre, dirección y vigencia confirmados por la Municipalidad. Falta geocodificar.",
+    "notes": "Nombre, dirección y vigencia confirmados por la Municipalidad. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

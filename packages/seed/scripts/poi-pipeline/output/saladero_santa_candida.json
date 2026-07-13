@@ -1,7 +1,7 @@
 {
     "slug": "saladero_santa_candida",
-    "lat": null,
-    "long": null,
+    "lat": -32.5117538,
+    "long": -58.2363906,
     "type": "OTHER",
     "icon": null,
     "description": "Conjunto histórico asociado con uno de los mayores saladeros del siglo XIX y con la actividad portuaria de Urquiza.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://institutodecultura.cudes.org.ar/articulo/santa-candida-el-majestuoso-palacio-de-1847-que-atesora-su-capitulo-en-la-historia-argentina-y-aun-conserva-su-esplendor-por-leandro-vesco/",
-    "notes": "Conjunto privado; falta inventariar sectores accesibles.",
+    "notes": "Conjunto privado; falta inventariar sectores accesibles. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

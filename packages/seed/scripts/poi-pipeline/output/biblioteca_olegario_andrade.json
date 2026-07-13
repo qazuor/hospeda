@@ -1,7 +1,7 @@
 {
     "slug": "biblioteca_olegario_andrade",
-    "lat": null,
-    "long": null,
+    "lat": -31.398113,
+    "long": -58.0160552,
     "type": "OTHER",
     "icon": null,
     "description": "Biblioteca histórica con patrimonio bibliográfico y actividad cultural y educativa en el centro de Concordia.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://egob.concordia.gob.ar/servicios/digesto.do?idNormativa=987&opcion=idNormativa",
-    "notes": "Dirección y valor patrimonial confirmados. Falta geocodificar.",
+    "notes": "Dirección y valor patrimonial confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

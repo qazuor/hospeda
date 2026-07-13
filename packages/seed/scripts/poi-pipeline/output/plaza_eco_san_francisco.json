@@ -1,7 +1,7 @@
 {
     "slug": "plaza_eco_san_francisco",
-    "lat": null,
-    "long": null,
+    "lat": -32.467875299999996,
+    "long": -58.48102989999999,
     "type": "PARK",
     "icon": null,
     "description": "Espacio verde educativo asociado con el Sendero del Túnel y con actividades de conciencia ambiental.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://caseros.gob.ar/turismo-y-cultura/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

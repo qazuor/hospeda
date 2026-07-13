@@ -1,7 +1,7 @@
 {
     "slug": "salon_cultura",
-    "lat": null,
-    "long": null,
+    "lat": -32.1538932,
+    "long": -58.1899907,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio cultural municipal utilizado para talleres, tango, celebraciones religiosas, actividades artísticas y encuentros comunitarios.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://puebloliebig.gob.ar/category/cultura/; https://puebloliebig.gob.ar/otras/pueblo-liebig-celebra-sus-51-anos-de-historia/",
-    "notes": "Uso cultural actual confirmado en publicaciones de 2026. Falta identificar dirección y coordenadas exactas.",
+    "notes": "Uso cultural actual confirmado en publicaciones de 2026. Falta identificar dirección y coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

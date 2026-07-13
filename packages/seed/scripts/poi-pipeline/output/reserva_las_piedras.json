@@ -1,7 +1,7 @@
 {
     "slug": "reserva_las_piedras",
-    "lat": null,
-    "long": null,
+    "lat": -32.8875429,
+    "long": -58.51817510000001,
     "type": "OTHER",
     "icon": null,
     "description": "Área natural municipal sobre la Ruta Provincial 20, destinada a conservación, educación ambiental y experiencias de naturaleza.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/naturaleza",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

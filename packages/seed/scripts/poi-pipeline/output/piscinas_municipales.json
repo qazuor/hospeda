@@ -1,7 +1,7 @@
 {
     "slug": "piscinas_municipales",
-    "lat": null,
-    "long": null,
+    "lat": -31.865035600000002,
+    "long": -59.002894299999994,
     "type": "STADIUM",
     "icon": null,
     "description": "Piscinas recreativas integradas al predio del balneario y utilizadas durante la temporada estival.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://www.villaguay.gob.ar/app/noticias/controles_de_salud_gratuitos_y_actividades_para_el_desarrollo_y_la_integracion_",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

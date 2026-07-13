@@ -1,7 +1,7 @@
 {
     "slug": "anfiteatro_walter_perafan",
-    "lat": null,
-    "long": null,
+    "lat": -31.4043059,
+    "long": -58.00752670000001,
     "type": "OTHER",
     "icon": null,
     "description": "Anfiteatro al aire libre del Parque Mitre utilizado para espectáculos, festivales y actividades culturales frente a la Costanera.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/noticias/costanera/un-fin-de-semana-con-mucha-actividad-en-la-costanera-de-concordia",
-    "notes": "Nombre y ubicación general confirmados. Falta geocodificar.",
+    "notes": "Nombre y ubicación general confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

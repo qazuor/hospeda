@@ -1,7 +1,7 @@
 {
     "slug": "club_nautico_colon",
-    "lat": null,
-    "long": null,
+    "lat": -32.2150853,
+    "long": -58.137281900000005,
     "type": "STADIUM",
     "icon": null,
     "description": "Institución náutica vinculada con actividades deportivas, navegación, regatas y propuestas recreativas sobre el río Uruguay.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://colon.gov.ar/se-puso-en-marcha-verano-colon-para-lanzar-la-temporada-junto-a-prestadores-y-fuerzas-de-seguridad/",
-    "notes": "Existencia y actividad confirmadas por la Municipalidad. Falta validar dirección y coordenadas.",
+    "notes": "Existencia y actividad confirmadas por la Municipalidad. Falta validar dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

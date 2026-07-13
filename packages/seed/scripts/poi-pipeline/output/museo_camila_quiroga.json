@@ -1,7 +1,7 @@
 {
     "slug": "museo_camila_quiroga",
-    "lat": null,
-    "long": null,
+    "lat": -30.7464713,
+    "long": -57.97834830000001,
     "type": "MUSEUM",
     "icon": null,
     "description": "Museo regional instalado en la casa natal de la actriz Camila Quiroga, dedicado a la historia local, la vida cotidiana y la memoria cultural de Chajarí.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf; https://termaschajari.tur.ar/arco-de-entrada/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

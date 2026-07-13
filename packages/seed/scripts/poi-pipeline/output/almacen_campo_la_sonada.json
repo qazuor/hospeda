@@ -1,7 +1,7 @@
 {
     "slug": "almacen_campo_la_sonada",
-    "lat": null,
-    "long": null,
+    "lat": -30.7440739,
+    "long": -58.018874700000005,
     "type": "OTHER",
     "icon": null,
     "description": "Establecimiento rural del camino al camping, asociado con la tradición de los almacenes de campo y la oferta de alojamiento.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf; https://termaschajari.tur.ar/ciudad/turismo-rural/",
-    "notes": "Incluido en el plano turístico rural. Falta validar atención, servicios y coordenadas.",
+    "notes": "Incluido en el plano turístico rural. Falta validar atención, servicios y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

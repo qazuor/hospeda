@@ -1,7 +1,7 @@
 {
     "slug": "plazoleta_centenario",
-    "lat": null,
-    "long": null,
+    "lat": -31.6241547,
+    "long": -58.504942099999994,
     "type": "PLAZA",
     "icon": null,
     "description": "Paseo de avenida Malarín que reúne el Mural del Centenario y las letras corpóreas con el nombre de San Salvador, una de las postales habituales de la ciudad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/ciudad/",
-    "notes": "Nombre, avenida y elementos confirmados por la Municipalidad. Falta geocodificar.",
+    "notes": "Nombre, avenida y elementos confirmados por la Municipalidad. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

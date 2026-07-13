@@ -1,7 +1,7 @@
 {
     "slug": "comparsa_papelitos",
-    "lat": null,
-    "long": null,
+    "lat": -33.0176522,
+    "long": -58.51380199999999,
     "type": "OTHER",
     "icon": null,
     "description": "Comparsa histórica del Carnaval del País vinculada con el Club Juventud Unida.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/carnaval",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

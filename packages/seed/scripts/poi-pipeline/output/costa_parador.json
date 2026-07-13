@@ -1,7 +1,7 @@
 {
     "slug": "costa_parador",
-    "lat": null,
-    "long": null,
+    "lat": -33.0081706,
+    "long": -58.501141499999996,
     "type": "BEACH",
     "icon": null,
     "description": "Parador y sector de playa urbana con servicios gastronómicos y recreativos frente al río.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/playas",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

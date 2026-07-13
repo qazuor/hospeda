@@ -1,7 +1,7 @@
 {
     "slug": "termas_colon",
-    "lat": null,
-    "long": null,
+    "lat": -32.2097666,
+    "long": -58.145095600000005,
     "type": "OTHER",
     "icon": null,
     "description": "Complejo termal ubicado en la zona norte de la ciudad, con piscinas de distintas temperaturas, sectores cubiertos, espacios verdes, propuestas de bienestar y parque acuático.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://termascolon.gov.ar/rincon-de-termas/",
-    "notes": "Nombre, servicios y domicilio confirmados en el sitio oficial. Falta validar coordenadas del acceso principal.",
+    "notes": "Nombre, servicios y domicilio confirmados en el sitio oficial. Falta validar coordenadas del acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "gruta_virgen",
-    "lat": null,
-    "long": null,
+    "lat": -33.0305469,
+    "long": -59.005376999999996,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio de devoción religiosa y paseo urbano incluido entre los sitios tradicionales de la ciudad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.turismoentrerios.com/larroque/sitios.htm",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

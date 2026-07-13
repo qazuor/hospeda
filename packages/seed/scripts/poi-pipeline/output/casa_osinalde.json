@@ -1,7 +1,7 @@
 {
     "slug": "casa_osinalde",
-    "lat": null,
-    "long": null,
+    "lat": -32.308725599999995,
+    "long": -59.1403486,
     "type": "OTHER",
     "icon": null,
     "description": "Residencia histórica de notable arquitectura situada junto a la antigua calera y reutilizada por la dirección del Hospital Luis A. Ellerman.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir",
-    "notes": "Edificio con uso sanitario actual. La visita debe respetar funciones y restricciones institucionales.",
+    "notes": "Edificio con uso sanitario actual. La visita debe respetar funciones y restricciones institucionales. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

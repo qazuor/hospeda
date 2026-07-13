@@ -1,7 +1,7 @@
 {
     "slug": "balneario_santiago_inkier",
-    "lat": null,
-    "long": null,
+    "lat": -32.227336199999996,
+    "long": -58.128674200000006,
     "type": "BEACH",
     "icon": null,
     "description": "Balneario de la zona sur de Colón, ubicado junto al Parque Quirós y utilizado para recreación, actividades deportivas y disfrute de la costa.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://colon.gov.ar/colon-inauguro-la-temporada-de-verano-25-26-con-transmision-especial-de-tn-y-bendicion-de-aguas/",
-    "notes": "Existencia y uso actual confirmados por la Municipalidad. Falta validar coordenadas.",
+    "notes": "Existencia y uso actual confirmados por la Municipalidad. Falta validar coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

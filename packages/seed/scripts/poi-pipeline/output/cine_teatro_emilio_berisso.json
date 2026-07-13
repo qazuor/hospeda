@@ -1,7 +1,7 @@
 {
     "slug": "cine_teatro_emilio_berisso",
-    "lat": null,
-    "long": null,
+    "lat": -31.8650795,
+    "long": -59.0275559,
     "type": "OTHER",
     "icon": null,
     "description": "Sala construida en la década de 1940 y utilizada para cine, teatro y actividades culturales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://es.wikipedia.org/wiki/Villaguay",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

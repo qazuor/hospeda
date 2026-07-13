@@ -1,7 +1,7 @@
 {
     "slug": "cementerio_eden",
-    "lat": null,
-    "long": null,
+    "lat": -31.385969199999998,
+    "long": -58.033578299999995,
     "type": "OTHER",
     "icon": null,
     "description": "Cementerio y parque memorial que conserva el mural cerámico La Despedida, vinculado con Benito Quinquela Martín.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://egob.concordia.gob.ar/servicios/digesto.do?idNormativa=987&opcion=idNormativa",
-    "notes": "Ubicación y obra patrimonial confirmadas. Falta geocodificar.",
+    "notes": "Ubicación y obra patrimonial confirmadas. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

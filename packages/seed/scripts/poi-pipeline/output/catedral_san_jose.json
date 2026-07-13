@@ -1,7 +1,7 @@
 {
     "slug": "catedral_san_jose",
-    "lat": null,
-    "long": null,
+    "lat": -33.0083117,
+    "long": -58.511926800000005,
     "type": "OTHER",
     "icon": null,
     "description": "Principal templo católico de la ciudad y uno de los edificios centrales del casco histórico de Gualeguaychú.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/cultura; https://www.entrerios.tur.ar/localidades-1/gualeguaych%C3%BA",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

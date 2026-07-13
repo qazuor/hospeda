@@ -1,7 +1,7 @@
 {
     "slug": "parque_acuatico_ayui",
-    "lat": null,
-    "long": null,
+    "lat": -31.2555835,
+    "long": -57.956172599999995,
     "type": "OTHER",
     "icon": null,
     "description": "Sector recreativo con juegos y atracciones acuáticas integrado al complejo Termas del Ayuí.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/turismo/atractivos/termas/termas-del-ayu%C3%AD",
-    "notes": "Funciona dentro del complejo termal. Falta geocodificar el sector.",
+    "notes": "Funciona dentro del complejo termal. Falta geocodificar el sector. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

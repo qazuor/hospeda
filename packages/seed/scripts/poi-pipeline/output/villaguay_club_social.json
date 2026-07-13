@@ -1,7 +1,7 @@
 {
     "slug": "villaguay_club_social",
-    "lat": null,
-    "long": null,
+    "lat": -31.8615074,
+    "long": -59.0278053,
     "type": "OTHER",
     "icon": null,
     "description": "Institución social histórica construida a comienzos del siglo XX y vinculada con la vida cultural del entorno de la plaza.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://es.wikipedia.org/wiki/Villaguay; https://www.entrerios.tur.ar/localidades-1/villaguay",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

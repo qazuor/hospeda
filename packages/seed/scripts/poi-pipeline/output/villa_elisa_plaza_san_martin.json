@@ -1,7 +1,7 @@
 {
     "slug": "villa_elisa_plaza_san_martin",
-    "lat": null,
-    "long": null,
+    "lat": -32.1624111,
+    "long": -58.397689,
     "type": "PLAZA",
     "icon": null,
     "description": "Espacio público céntrico conectado con la avenida Urquiza, utilizado para recreación, circulación peatonal y actividades comunitarias.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://villaelisa.gov.ar/se-construyen-rampas-en-las-plazas-urquiza-y-san-martin/",
-    "notes": "Nombre y vigencia confirmados por la Municipalidad. Falta dirección y coordenadas exactas.",
+    "notes": "Nombre y vigencia confirmados por la Municipalidad. Falta dirección y coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

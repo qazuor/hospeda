@@ -1,7 +1,7 @@
 {
     "slug": "museo_artes_visuales",
-    "lat": null,
-    "long": null,
+    "lat": -31.397104,
+    "long": -58.0178121,
     "type": "MUSEUM",
     "icon": null,
     "description": "Museo municipal con obras pictóricas y escultóricas, exposiciones y un mural cerámico de Benito Quinquela Martín en su fachada.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/turismo/atractivos/museos/museo-de-artes-visuales; https://egob.concordia.gob.ar/servicios/digesto.do?idNormativa=987&opcion=idNormativa",
-    "notes": "Dirección y patrimonio artístico confirmados. Falta geocodificar.",
+    "notes": "Dirección y patrimonio artístico confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

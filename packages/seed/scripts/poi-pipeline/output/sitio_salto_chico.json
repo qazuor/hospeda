@@ -1,7 +1,7 @@
 {
     "slug": "sitio_salto_chico",
-    "lat": null,
-    "long": null,
+    "lat": -31.3577328,
+    "long": -57.9916851,
     "type": "OTHER",
     "icon": null,
     "description": "Sector costero asociado con antiguos pasos del río, ocupaciones indígenas y etapas tempranas de la historia regional.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://egob.concordia.gob.ar/servicios/digesto.do?idNormativa=987&opcion=idNormativa",
-    "notes": "Sitio incluido en el catálogo arqueológico municipal. Requiere delimitación cartográfica y validación de acceso.",
+    "notes": "Sitio incluido en el catálogo arqueológico municipal. Requiere delimitación cartográfica y validación de acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

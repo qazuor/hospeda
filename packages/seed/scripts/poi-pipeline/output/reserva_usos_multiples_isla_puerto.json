@@ -1,7 +1,7 @@
 {
     "slug": "reserva_usos_multiples_isla_puerto",
-    "lat": null,
-    "long": null,
+    "lat": -32.47972970000001,
+    "long": -58.2155106,
     "type": "OTHER",
     "icon": null,
     "description": "Reserva urbana de humedales, selva en galería, playas y ambientes ribereños con actividades de educación ambiental y conservación.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://isladelpuerto.cdeluruguay.gob.ar/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "fiesta_pejerrey",
-    "lat": null,
-    "long": null,
+    "lat": -33.7349001,
+    "long": -58.7901903,
     "type": "OTHER",
     "icon": null,
     "description": "Concurso de pesca embarcada de invierno acompañado por premios, encuentros y actividades solidarias.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.villaparanacito.gob.ar/turismo/eventos",
-    "notes": "Evento anual confirmado. La largada y sede deben verificarse por edición.",
+    "notes": "Evento anual confirmado. La largada y sede deben verificarse por edición. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

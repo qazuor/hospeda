@@ -1,7 +1,7 @@
 {
     "slug": "monumento_urquiza",
-    "lat": null,
-    "long": null,
+    "lat": -31.7179736,
+    "long": -60.537909299999995,
     "type": "MONUMENT",
     "icon": null,
     "description": "Obra conmemorativa próxima al centro cívico dedicada al organizador nacional y figura central de la región.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N9066927915",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

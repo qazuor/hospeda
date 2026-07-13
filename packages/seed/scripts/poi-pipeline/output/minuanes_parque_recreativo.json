@@ -1,7 +1,7 @@
 {
     "slug": "minuanes_parque_recreativo",
-    "lat": null,
-    "long": null,
+    "lat": -33.1530576,
+    "long": -59.29661409999999,
     "type": "OTHER",
     "icon": null,
     "description": "Complejo de aventura y naturaleza con arborismo, tirolesas, palestra, arquería, senderos y actividades familiares.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/gualeguay; https://www.instagram.com/reel/DL40jPvO-uK/",
-    "notes": "Actividad actual confirmada. Falta dirección exacta y coordenadas del acceso.",
+    "notes": "Actividad actual confirmada. Falta dirección exacta y coordenadas del acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

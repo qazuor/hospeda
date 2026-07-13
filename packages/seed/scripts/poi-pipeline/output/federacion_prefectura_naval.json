@@ -1,7 +1,7 @@
 {
     "slug": "federacion_prefectura_naval",
-    "lat": null,
-    "long": null,
+    "lat": -30.9932409,
+    "long": -57.9149678,
     "type": "OTHER",
     "icon": null,
     "description": "Puesto de Prefectura ubicado en el área portuaria y referencia para seguridad y actividades náuticas en el lago.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf; https://mapcarta.com/es/W1245062864",
-    "notes": "Ubicación relativa confirmada. Falta geocodificar.",
+    "notes": "Ubicación relativa confirmada. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

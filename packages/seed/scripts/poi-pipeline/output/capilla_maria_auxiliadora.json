@@ -1,7 +1,7 @@
 {
     "slug": "capilla_maria_auxiliadora",
-    "lat": null,
-    "long": null,
+    "lat": -33.0332958,
+    "long": -59.01198659999999,
     "type": "OTHER",
     "icon": null,
     "description": "Capilla católica incluida entre los espacios religiosos y patrimoniales visitables de Larroque.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.turismoentrerios.com/larroque/sitios.htm",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

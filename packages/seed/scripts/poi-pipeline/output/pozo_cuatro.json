@@ -1,7 +1,7 @@
 {
     "slug": "pozo_cuatro",
-    "lat": null,
-    "long": null,
+    "lat": -32.3121393,
+    "long": -59.074371799999994,
     "type": "BEACH",
     "icon": null,
     "description": "Sector de playa y baño habilitado del río Gualeguay, asociado al parque balneario municipal.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://es.wikipedia.org/wiki/Rosario_del_Tala; https://www.turismoentrerios.com/rosariotala/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

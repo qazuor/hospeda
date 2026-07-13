@@ -1,7 +1,7 @@
 {
     "slug": "reserva_natural_termas",
-    "lat": null,
-    "long": null,
+    "lat": -30.741268899999998,
+    "long": -58.0141844,
     "type": "OTHER",
     "icon": null,
     "description": "Área natural del complejo termal con senderos, juegos de madera, espacios verdes, miradores y observación de aves.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://termaschajari.tur.ar/reserva-natural/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "ferroclub",
-    "lat": null,
-    "long": null,
+    "lat": -32.3015168,
+    "long": -59.131421599999996,
     "type": "MUSEUM",
     "icon": null,
     "description": "Espacio de preservación ferroviaria que ofrece paseos en zorra e interpretación de la historia del tren.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://www.rosariodeltala.gob.ar/?q=que-hacer",
-    "notes": "Actividad municipalmente promovida. Falta validar días, reservas y ubicación interna.",
+    "notes": "Actividad municipalmente promovida. Falta validar días, reservas y ubicación interna. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

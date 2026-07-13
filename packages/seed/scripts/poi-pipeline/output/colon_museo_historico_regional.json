@@ -1,7 +1,7 @@
 {
     "slug": "colon_museo_historico_regional",
-    "lat": null,
-    "long": null,
+    "lat": -32.2235412,
+    "long": -58.14173339999999,
     "type": "MUSEUM",
     "icon": null,
     "description": "Museo dedicado a conservar y difundir la historia de la ciudad, el puerto, la inmigración y el desarrollo social y productivo regional.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.colonturismo.tur.ar/directorio/museo-historico-regional-de-colon/",
-    "notes": "Nombre y dirección confirmados por Turismo Colón. Falta geocodificar la entrada.",
+    "notes": "Nombre y dirección confirmados por Turismo Colón. Falta geocodificar la entrada. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

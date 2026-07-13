@@ -1,7 +1,7 @@
 {
     "slug": "rancho_pesquero",
-    "lat": null,
-    "long": null,
+    "lat": -32.0632525,
+    "long": -58.538813,
     "type": "NATURAL",
     "icon": null,
     "description": "Emprendimiento rural con diez lagos para pesca recreativa, piscina estilo playa, parque y experiencia gastronómica de jornada completa.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://villaelisa.tur.ar/atractivos/",
-    "notes": "Actividad y servicios confirmados. Falta dirección precisa y geocodificación.",
+    "notes": "Actividad y servicios confirmados. Falta dirección precisa y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

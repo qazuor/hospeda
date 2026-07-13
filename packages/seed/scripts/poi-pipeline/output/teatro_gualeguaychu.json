@@ -1,7 +1,7 @@
 {
     "slug": "teatro_gualeguaychu",
-    "lat": null,
-    "long": null,
+    "lat": -33.0088331,
+    "long": -58.51374930000001,
     "type": "OTHER",
     "icon": null,
     "description": "Teatro histórico de la ciudad utilizado para obras, conciertos, danza y presentaciones culturales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/cultura",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

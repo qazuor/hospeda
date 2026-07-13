@@ -1,7 +1,7 @@
 {
     "slug": "playa_norte",
-    "lat": null,
-    "long": null,
+    "lat": -32.9681716,
+    "long": -58.520841000000004,
     "type": "BEACH",
     "icon": null,
     "description": "Balneario y camping situado junto al arroyo Gualeyán, con sectores de recreación y acampe.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/playas",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

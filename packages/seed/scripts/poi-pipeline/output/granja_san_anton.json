@@ -1,7 +1,7 @@
 {
     "slug": "granja_san_anton",
-    "lat": null,
-    "long": null,
+    "lat": -32.303119599999995,
+    "long": -59.12422229999999,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio rural y recreativo ubicado sobre el acceso Eva Perón, vinculado con actividades familiares y contacto con animales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=que-hacer",
-    "notes": "Prestador listado oficialmente. Falta validar modalidad actual de visita y coordenadas.",
+    "notes": "Prestador listado oficialmente. Falta validar modalidad actual de visita y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

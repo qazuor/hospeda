@@ -1,7 +1,7 @@
 {
     "slug": "arroyo_chajari",
-    "lat": null,
-    "long": null,
+    "lat": -30.7244061,
+    "long": -57.9711797,
     "type": "NATURAL",
     "icon": null,
     "description": "Curso de agua que forma parte del paisaje y de la organización territorial de la ciudad y su entorno rural.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf; https://chajari.gob.ar/ubicacion/",
-    "notes": "Curso de agua; requiere geometría lineal, no un único punto definitivo.",
+    "notes": "Curso de agua; requiere geometría lineal, no un único punto definitivo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

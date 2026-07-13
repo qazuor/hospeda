@@ -1,7 +1,7 @@
 {
     "slug": "parque_intendente_quintana",
-    "lat": null,
-    "long": null,
+    "lat": -33.155006,
+    "long": -59.3085893,
     "type": "PARK",
     "icon": null,
     "description": "Parque histórico de aproximadamente doce hectáreas a orillas del río Gualeguay, con arboleda, juegos, canchas, senderos y espacios de recreación.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/gualeguay; https://www.turismoentrerios.com/gualeguay/parquesypaseos.htm",
-    "notes": "Área extensa confirmada. Falta definir acceso principal y polígono.",
+    "notes": "Área extensa confirmada. Falta definir acceso principal y polígono. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

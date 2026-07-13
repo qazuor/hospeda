@@ -1,7 +1,7 @@
 {
     "slug": "caps_augusto_gaillard",
-    "lat": null,
-    "long": null,
+    "lat": -32.1549732,
+    "long": -58.1948004,
     "type": "OTHER",
     "icon": null,
     "description": "Centro público de atención primaria que presta servicios sanitarios y desarrolla actividades de prevención y promoción de la salud para la comunidad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://puebloliebig.gob.ar/noticias/se-realizo-en-pueblo-liebig-la-charla-taller-sobre-lactancia-materna/",
-    "notes": "Institución y actividad actual confirmadas. Falta domicilio exacto y coordenadas.",
+    "notes": "Institución y actividad actual confirmadas. Falta domicilio exacto y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

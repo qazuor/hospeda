@@ -1,7 +1,7 @@
 {
     "slug": "puente_mendez_casariego",
-    "lat": null,
-    "long": null,
+    "lat": -33.0083857,
+    "long": -58.500514300000006,
     "type": "MONUMENT",
     "icon": null,
     "description": "Puente que conecta la ciudad con Parque Unzué y el sector oriental del río, además de ser uno de los puntos visuales más reconocibles del paseo costero.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/gualeguaych%C3%BA; https://gualeguaychu.tur.ar/",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

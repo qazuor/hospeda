@@ -1,7 +1,7 @@
 {
     "slug": "fuente_centenario",
-    "lat": null,
-    "long": null,
+    "lat": -32.3017166,
+    "long": -59.141433299999996,
     "type": "MONUMENT",
     "icon": null,
     "description": "Fuente de fabricación francesa donada para el centenario de la Revolución de Mayo y ubicada en Plaza Libertad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

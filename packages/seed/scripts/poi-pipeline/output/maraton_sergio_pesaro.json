@@ -1,7 +1,7 @@
 {
     "slug": "maraton_sergio_pesaro",
-    "lat": null,
-    "long": null,
+    "lat": -32.464394500000004,
+    "long": -58.4806222,
     "type": "STADIUM",
     "icon": null,
     "description": "Carrera pedestre anual que recorre calles y caminos de Caseros y convoca participantes de la región.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.facebook.com/munidecaseros/videos/2321705734955385/",
-    "notes": "Evento recurrente; falta digitalizar recorrido y calendario.",
+    "notes": "Evento recurrente; falta digitalizar recorrido y calendario. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

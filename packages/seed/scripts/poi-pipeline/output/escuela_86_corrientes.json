@@ -1,7 +1,7 @@
 {
     "slug": "escuela_86_corrientes",
-    "lat": null,
-    "long": null,
+    "lat": -32.462048599999996,
+    "long": -58.480119,
     "type": "OTHER",
     "icon": null,
     "description": "Institución educativa de nivel primario ubicada en el área urbana de Caseros y utilizada como punto de referencia comunitario.",
@@ -30,7 +30,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/",
-    "notes": "La institución y el domicilio están identificados; falta validar coordenadas puntuales.",
+    "notes": "La institución y el domicilio están identificados; falta validar coordenadas puntuales. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

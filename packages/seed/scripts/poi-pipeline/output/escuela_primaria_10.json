@@ -1,7 +1,7 @@
 {
     "slug": "escuela_primaria_10",
-    "lat": null,
-    "long": null,
+    "lat": -30.8988817,
+    "long": -57.930059799999995,
     "type": "OTHER",
     "icon": null,
     "description": "Institución educativa primaria y referencia comunitaria del casco urbano.",
@@ -30,7 +30,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N5539089594; https://mapcarta.com/es/W704414820",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

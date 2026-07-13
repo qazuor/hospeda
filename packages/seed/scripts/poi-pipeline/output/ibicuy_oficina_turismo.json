@@ -1,7 +1,7 @@
 {
     "slug": "ibicuy_oficina_turismo",
-    "lat": null,
-    "long": null,
+    "lat": -33.7458168,
+    "long": -59.15929699999999,
     "type": "OTHER",
     "icon": null,
     "description": "Punto municipal de información sobre circuitos, pesca, naturaleza, alojamiento y actividades del destino.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ibicuy.gob.ar/?q=oficina-turismo",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "iglesia_santa_ana",
-    "lat": null,
-    "long": null,
+    "lat": -30.8998564,
+    "long": -57.931584799999996,
     "type": "OTHER",
     "icon": null,
     "description": "Templo religioso asociado con la identidad histórica y espiritual de la localidad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/santa-ana",
-    "notes": "Atractivo mencionado por Turismo Entre Ríos. Falta dirección y geocodificación exactas.",
+    "notes": "Atractivo mencionado por Turismo Entre Ríos. Falta dirección y geocodificación exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

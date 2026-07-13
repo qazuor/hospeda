@@ -1,7 +1,7 @@
 {
     "slug": "vinedo_la_dominga",
-    "lat": null,
-    "long": null,
+    "lat": -33.0441565,
+    "long": -58.5438001,
     "type": "OTHER",
     "icon": null,
     "description": "Emprendimiento familiar fundado en 2019 e integrado al Camino del Vino Entrerriano, con enfoque artesanal y sustentable.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/detalle?id=431; https://gualeguaychu.tur.ar/caminodelvino",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

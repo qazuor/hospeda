@@ -1,7 +1,7 @@
 {
     "slug": "monumento_antepasados",
-    "lat": null,
-    "long": null,
+    "lat": -33.025670999999996,
+    "long": -58.5230038,
     "type": "MONUMENT",
     "icon": null,
     "description": "Monumento urbano dedicado a quienes contribuyeron a la formación histórica y social de la ciudad.",
@@ -30,7 +30,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/cultura",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

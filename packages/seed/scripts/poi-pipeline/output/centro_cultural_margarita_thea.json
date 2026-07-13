@@ -1,7 +1,7 @@
 {
     "slug": "centro_cultural_margarita_thea",
-    "lat": null,
-    "long": null,
+    "lat": -32.4651498,
+    "long": -58.48105239999999,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio cultural de Caseros utilizado para actividades artísticas, talleres, encuentros comunitarios, ferias y propuestas vinculadas con la identidad local.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.instagram.com/museos_caseros/",
-    "notes": "La institución y su vínculo con el predio ferroviario están confirmados; falta fijar el punto exacto dentro del predio.",
+    "notes": "La institución y su vínculo con el predio ferroviario están confirmados; falta fijar el punto exacto dentro del predio. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "corsodromo_jose_luis_gestro",
-    "lat": null,
-    "long": null,
+    "lat": -33.0175737,
+    "long": -58.5200383,
     "type": "OTHER",
     "icon": null,
     "description": "Escenario del Carnaval del País y de otras celebraciones populares, con pista de desfile, tribunas y talleres vinculados con las comparsas.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/carnaval; https://www.entrerios.tur.ar/event-details/el-carnaval-del-pais-2025-03-03-19-00",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

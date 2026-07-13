@@ -1,7 +1,7 @@
 {
     "slug": "feria_costanera",
-    "lat": null,
-    "long": null,
+    "lat": -32.2170348,
+    "long": -58.134756599999996,
     "type": "OTHER",
     "icon": null,
     "description": "Feria de artesanías y manualidades con productos textiles, madera, pintura decorativa, cerámica y otras producciones locales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.colonturismo.tur.ar/directorio/feria-costanera/",
-    "notes": "Ubicación por calles confirmada por Turismo Colón. Falta fijar coordenadas.",
+    "notes": "Ubicación por calles confirmada por Turismo Colón. Falta fijar coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

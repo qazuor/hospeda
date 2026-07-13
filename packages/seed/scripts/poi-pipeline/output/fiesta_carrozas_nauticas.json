@@ -1,7 +1,7 @@
 {
     "slug": "fiesta_carrozas_nauticas",
-    "lat": null,
-    "long": null,
+    "lat": -32.208559799999996,
+    "long": -58.225457000000006,
     "type": "OTHER",
     "icon": null,
     "description": "Fiesta iniciada en 1981 con desfile nocturno de carrozas iluminadas montadas sobre embarcaciones en el río Paranacito.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.villaparanacito.gob.ar/turismo/eventos",
-    "notes": "Evento anual confirmado. Falta geocodificar largada, recorrido y predio de cierre.",
+    "notes": "Evento anual confirmado. Falta geocodificar largada, recorrido y predio de cierre. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

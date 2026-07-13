@@ -1,7 +1,7 @@
 {
     "slug": "san_jose_polideportivo_municipal",
-    "lat": null,
-    "long": null,
+    "lat": -32.217589,
+    "long": -58.2148043,
     "type": "STADIUM",
     "icon": null,
     "description": "Complejo deportivo público utilizado para rugby, newcom, tejo, arquería, encuentros estudiantiles y distintas actividades comunitarias.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sanjose.gob.ar/con-diferentes-disciplinas-deportivas-el-polideportivo-municipal-volvio-a-funcionar/; https://sanjose.gob.ar/cambio-de-luminarias-en-el-polideportivo-municipal-san-jose/",
-    "notes": "Actividad y vigencia confirmadas por el municipio; falta geocodificar el acceso principal.",
+    "notes": "Actividad y vigencia confirmadas por el municipio; falta geocodificar el acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

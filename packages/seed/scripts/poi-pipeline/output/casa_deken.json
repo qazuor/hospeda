@@ -1,7 +1,7 @@
 {
     "slug": "casa_deken",
-    "lat": null,
-    "long": null,
+    "lat": -33.0092911,
+    "long": -58.513900799999995,
     "type": "OTHER",
     "icon": null,
     "description": "Casa histórica del centro urbano, vinculada con el patrimonio arquitectónico y la memoria local.",
@@ -30,7 +30,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/cultura",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

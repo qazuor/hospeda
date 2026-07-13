@@ -1,7 +1,7 @@
 {
     "slug": "casa_micheloud",
-    "lat": null,
-    "long": null,
+    "lat": -32.1985074,
+    "long": -58.1568054,
     "type": "OTHER",
     "icon": null,
     "description": "Vivienda histórica incluida en el circuito patrimonial de San José y vinculada con la arquitectura y la memoria de la antigua colonia.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sanjose.gob.ar/con-nueva-politica-de-turismo-sostenible-el-gobierno-municipal-busca-impulsar-el-sector/",
-    "notes": "Incluida por el municipio en el circuito patrimonial; falta dirección, estado de visita y coordenadas.",
+    "notes": "Incluida por el municipio en el circuito patrimonial; falta dirección, estado de visita y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

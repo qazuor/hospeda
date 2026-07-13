@@ -1,7 +1,7 @@
 {
     "slug": "plaza_colonizadores",
-    "lat": null,
-    "long": null,
+    "lat": -32.2163338,
+    "long": -58.138137099999994,
     "type": "PLAZA",
     "icon": null,
     "description": "Espacio verde del entorno portuario dedicado a la memoria de quienes participaron en la formación y desarrollo de la colonia.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N1560698900",
-    "notes": "Existencia confirmada en OpenStreetMap. Falta recuperar coordenadas exactas.",
+    "notes": "Existencia confirmada en OpenStreetMap. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

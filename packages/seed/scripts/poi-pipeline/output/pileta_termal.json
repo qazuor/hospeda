@@ -1,7 +1,7 @@
 {
     "slug": "pileta_termal",
-    "lat": null,
-    "long": null,
+    "lat": -30.8976121,
+    "long": -57.93479949999999,
     "type": "OTHER",
     "icon": null,
     "description": "Pileta de agua termal promocionada por el municipio como alternativa de relax y recreación.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.santaana.gob.ar/home/2025/02/07/disfruta-santa-ana/",
-    "notes": "Servicio actual confirmado por la promoción municipal de 2025. Falta geocodificar el acceso.",
+    "notes": "Servicio actual confirmado por la promoción municipal de 2025. Falta geocodificar el acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

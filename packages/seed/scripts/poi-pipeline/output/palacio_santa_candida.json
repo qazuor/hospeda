@@ -1,7 +1,7 @@
 {
     "slug": "palacio_santa_candida",
-    "lat": null,
-    "long": null,
+    "lat": -32.5117538,
+    "long": -58.2363906,
     "type": "OTHER",
     "icon": null,
     "description": "Palacio italianizante construido por Justo José de Urquiza en 1847, rodeado por un parque histórico junto al arroyo La China.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.estanciasargentinas.com/estancias/estancia-santa-candida/estancia-santa-candida.php",
-    "notes": "Propiedad privada. La visita debe confirmarse previamente.",
+    "notes": "Propiedad privada. La visita debe confirmarse previamente. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "primera_administracion_colonia",
-    "lat": null,
-    "long": null,
+    "lat": -32.2196514,
+    "long": -58.192319999999995,
     "type": "OTHER",
     "icon": null,
     "description": "Edificio histórico vinculado con la organización administrativa de la primera colonia agrícola y con el circuito patrimonial del Molino Forclaz.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sanjose.gob.ar/con-nueva-politica-de-turismo-sostenible-el-gobierno-municipal-busca-impulsar-el-sector/; https://mapcarta.com/es/N512926538",
-    "notes": "Existencia y cercanía al Molino Forclaz confirmadas; falta geocodificar el edificio.",
+    "notes": "Existencia y cercanía al Molino Forclaz confirmadas; falta geocodificar el edificio. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "monumento_republica_manos",
-    "lat": null,
-    "long": null,
+    "lat": -32.4707079,
+    "long": -58.2261007,
     "type": "MONUMENT",
     "icon": null,
     "description": "Monumento urbano de gran escala asociado con la identidad republicana y el acceso a La Histórica.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://palacio-santa-candida.entre-rios-hoteles.com/es/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

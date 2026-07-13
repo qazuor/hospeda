@@ -1,7 +1,7 @@
 {
     "slug": "apimania",
-    "lat": null,
-    "long": null,
+    "lat": -31.007468399999997,
+    "long": -57.899809700000006,
     "type": "OTHER",
     "icon": null,
     "description": "Emprendimiento apícola de la Antigua Ciudad con productos derivados de la miel y propuestas vinculadas con la producción local.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/otros-atractivos/",
-    "notes": "Actividad incluida en el circuito productivo oficial. Falta validar atención al público y geocodificar.",
+    "notes": "Actividad incluida en el circuito productivo oficial. Falta validar atención al público y geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

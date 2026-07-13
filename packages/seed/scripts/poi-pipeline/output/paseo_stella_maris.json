@@ -1,7 +1,7 @@
 {
     "slug": "paseo_stella_maris",
-    "lat": null,
-    "long": null,
+    "lat": -30.9901586,
+    "long": -57.9140243,
     "type": "PARK",
     "icon": null,
     "description": "Paseo costero dedicado a Stella Maris, patrona de los navegantes, situado en el entorno portuario.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf; https://mapcarta.com/es/W1245062864",
-    "notes": "Nombre y ubicación relativa confirmados. Falta geocodificar.",
+    "notes": "Nombre y ubicación relativa confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

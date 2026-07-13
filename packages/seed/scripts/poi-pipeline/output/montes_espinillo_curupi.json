@@ -1,7 +1,7 @@
 {
     "slug": "montes_espinillo_curupi",
-    "lat": null,
-    "long": null,
+    "lat": -31.715940399999997,
+    "long": -60.52316949999999,
     "type": "NATURAL",
     "icon": null,
     "description": "Montes ribereños y de albardón que complementan los ambientes inundables y aumentan la diversidad de fauna de Ceibas.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.lanacion.com.ar/revista-lugares/meca-internacional-el-pueblo-que-convoca-gente-del-mundo-entero-para-ver-y-fotografiar-aves-nid03082025/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "instituto_san_jose_obrero",
-    "lat": null,
-    "long": null,
+    "lat": -32.4457483,
+    "long": -58.43381289999999,
     "type": "OTHER",
     "icon": null,
     "description": "Institución educativa agrotécnica vinculada con la formación rural y productiva de la comunidad de San Justo.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N9066937279",
-    "notes": "La institución aparece cartografiada; falta verificar domicilio y coordenadas exactas.",
+    "notes": "La institución aparece cartografiada; falta verificar domicilio y coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

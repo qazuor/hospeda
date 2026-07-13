@@ -1,7 +1,7 @@
 {
     "slug": "nandubaysal",
-    "lat": null,
-    "long": null,
+    "lat": -33.063461499999995,
+    "long": -58.390704899999996,
     "type": "BEACH",
     "icon": null,
     "description": "Complejo sobre el río Uruguay con amplia playa, camping, naturaleza y servicios recreativos.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/playas",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

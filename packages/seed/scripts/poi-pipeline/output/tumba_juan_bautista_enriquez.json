@@ -1,7 +1,7 @@
 {
     "slug": "tumba_juan_bautista_enriquez",
-    "lat": null,
-    "long": null,
+    "lat": -32.3093391,
+    "long": -59.15594209999999,
     "type": "OTHER",
     "icon": null,
     "description": "Sepulcro declarado Tumba Histórica Provincial dentro del cementerio local.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

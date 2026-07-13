@@ -1,7 +1,7 @@
 {
     "slug": "laguna_parque_unzue",
-    "lat": null,
-    "long": null,
+    "lat": -33.013049599999995,
+    "long": -58.490079099999996,
     "type": "NATURAL",
     "icon": null,
     "description": "Laguna urbana integrada al paisaje del parque, utilizada para observación de naturaleza, paseo y descanso.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/naturaleza",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

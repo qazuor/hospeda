@@ -1,7 +1,7 @@
 {
     "slug": "santa_ana_centro_cultural",
-    "lat": null,
-    "long": null,
+    "lat": -30.898784799999994,
+    "long": -57.9314432,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio público dedicado a talleres, encuentros, actividades educativas y propuestas culturales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/19202584; https://mapcarta.com/es/N5539089594",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

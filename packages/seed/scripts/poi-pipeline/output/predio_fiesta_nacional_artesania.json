@@ -1,7 +1,7 @@
 {
     "slug": "predio_fiesta_nacional_artesania",
-    "lat": null,
-    "long": null,
+    "lat": -32.234806,
+    "long": -58.1587441,
     "type": "OTHER",
     "icon": null,
     "description": "Sector utilizado para la Fiesta Nacional de la Artesanía, con exposiciones, espectáculos, actividades culturales y deportivas de gran convocatoria.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://colon.gov.ar/los-deportes-seran-protagonistas-en-la-40-fiesta-nacional-de-la-artesania/",
-    "notes": "Uso y localización general confirmados; falta definir el acceso principal del predio.",
+    "notes": "Uso y localización general confirmados; falta definir el acceso principal del predio. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

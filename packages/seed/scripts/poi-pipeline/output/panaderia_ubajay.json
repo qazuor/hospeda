@@ -1,7 +1,7 @@
 {
     "slug": "panaderia_ubajay",
-    "lat": null,
-    "long": null,
+    "lat": -31.7942135,
+    "long": -58.3132535,
     "type": "OTHER",
     "icon": null,
     "description": "Panadería tradicional con casi un siglo de historia, reconocida por sus panes en horno a leña y productos dulces artesanales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades; https://www.lanacion.com.ar/revista-lugares/el-encantador-pueblo-fundado-por-colonos-judios-que-es-base-ideal-para-visitar-el-pn-el-palmar-nid12072025/",
-    "notes": "Historia y vigencia confirmadas. Falta dirección y coordenadas.",
+    "notes": "Historia y vigencia confirmadas. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

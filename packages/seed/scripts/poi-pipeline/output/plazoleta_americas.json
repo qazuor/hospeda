@@ -1,7 +1,7 @@
 {
     "slug": "plazoleta_americas",
-    "lat": null,
-    "long": null,
+    "lat": -31.3849195,
+    "long": -58.0175808,
     "type": "PLAZA",
     "icon": null,
     "description": "Espacio verde ubicado junto al Centro de Convenciones, integrado al corredor de eventos y recreación del sector norte.",
@@ -30,7 +30,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/W622178553",
-    "notes": "Existencia y ubicación relativa confirmadas. Falta geocodificar.",
+    "notes": "Existencia y ubicación relativa confirmadas. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

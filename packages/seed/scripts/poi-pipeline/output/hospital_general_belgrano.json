@@ -1,7 +1,7 @@
 {
     "slug": "hospital_general_belgrano",
-    "lat": null,
-    "long": null,
+    "lat": -32.6706401,
+    "long": -58.888819899999994,
     "type": "OTHER",
     "icon": null,
     "description": "Hospital público y principal referencia sanitaria para Urdinarrain y su área rural.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/19211508",
-    "notes": "Existencia y ubicación general confirmadas. Falta recuperar dirección y coordenadas exactas.",
+    "notes": "Existencia y ubicación general confirmadas. Falta recuperar dirección y coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

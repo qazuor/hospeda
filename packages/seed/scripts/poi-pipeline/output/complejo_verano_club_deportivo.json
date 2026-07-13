@@ -1,7 +1,7 @@
 {
     "slug": "complejo_verano_club_deportivo",
-    "lat": null,
-    "long": null,
+    "lat": -32.6871402,
+    "long": -58.896035499999996,
     "type": "STADIUM",
     "icon": null,
     "description": "Complejo con piscina semiolímpica, piletones infantiles, quinchos, parrillas, camping, tenis y pádel.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://urdinarrain.tur.ar/que-hacer/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

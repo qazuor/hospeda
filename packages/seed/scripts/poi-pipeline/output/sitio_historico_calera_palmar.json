@@ -1,7 +1,7 @@
 {
     "slug": "sitio_historico_calera_palmar",
-    "lat": null,
-    "long": null,
+    "lat": -31.816523399999994,
+    "long": -58.321273100000006,
     "type": "OTHER",
     "icon": null,
     "description": "Conjunto arqueológico e histórico asociado con la producción de cal desde el período jesuítico, con restos de capilla, viviendas, cementerio y hornos.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades; https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar",
-    "notes": "Relevancia histórica confirmada por Parques Nacionales. Falta geocodificar el centro del sitio.",
+    "notes": "Relevancia histórica confirmada por Parques Nacionales. Falta geocodificar el centro del sitio. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "pozo_el_jopo",
-    "lat": null,
-    "long": null,
+    "lat": -32.2947176,
+    "long": -59.0819353,
     "type": "NATURAL",
     "icon": null,
     "description": "Sector del río alcanzado mediante salidas guiadas de stand up paddle desde Playa Grande.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=que-hacer",
-    "notes": "Punto fluvial confirmado por el circuito oficial. Falta geocodificar y validar condiciones de navegación.",
+    "notes": "Punto fluvial confirmado por el circuito oficial. Falta geocodificar y validar condiciones de navegación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

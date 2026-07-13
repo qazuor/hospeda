@@ -1,7 +1,7 @@
 {
     "slug": "concordia_costanera",
-    "lat": null,
-    "long": null,
+    "lat": -31.4025751,
+    "long": -58.0053204,
     "type": "OTHER",
     "icon": null,
     "description": "Paseo ribereño sobre el río Uruguay con espacios verdes, gastronomía, sectores deportivos, playas y vistas hacia la ciudad uruguaya de Salto.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/turismo/atractivos/costanera",
-    "notes": "Paseo turístico oficial. Falta definir un punto central representativo o geometría lineal.",
+    "notes": "Paseo turístico oficial. Falta definir un punto central representativo o geometría lineal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

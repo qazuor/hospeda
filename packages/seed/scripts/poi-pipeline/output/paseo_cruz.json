@@ -1,7 +1,7 @@
 {
     "slug": "paseo_cruz",
-    "lat": null,
-    "long": null,
+    "lat": -33.7461802,
+    "long": -59.1565818,
     "type": "PARK",
     "icon": null,
     "description": "Espacio público que integra la Cruz de los Ingleses con áreas de descanso y un recorrido de interpretación de la historia local.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ibicuy.gob.ar/?q=content%2Fque-visitar",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

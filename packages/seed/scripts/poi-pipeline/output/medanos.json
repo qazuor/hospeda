@@ -1,7 +1,7 @@
 {
     "slug": "medanos",
-    "lat": null,
-    "long": null,
+    "lat": -33.4357863,
+    "long": -59.0675878,
     "type": "NATURAL",
     "icon": null,
     "description": "Formaciones de arena que explican el origen guaraní del nombre Ibicuy y forman parte de su paisaje e identidad productiva.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/ibicuy",
-    "notes": "Formaciones distribuidas en el territorio. Falta identificar sectores públicos y no afectados por explotación.",
+    "notes": "Formaciones distribuidas en el territorio. Falta identificar sectores públicos y no afectados por explotación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

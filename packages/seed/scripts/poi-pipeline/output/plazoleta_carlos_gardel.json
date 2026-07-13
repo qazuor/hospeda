@@ -1,7 +1,7 @@
 {
     "slug": "plazoleta_carlos_gardel",
-    "lat": null,
-    "long": null,
+    "lat": -32.6815591,
+    "long": -58.8922521,
     "type": "PLAZA",
     "icon": null,
     "description": "Espacio urbano dedicado al cantor Carlos Gardel e integrado al circuito de monumentos de la ciudad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N5688670076",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

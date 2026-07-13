@@ -1,7 +1,7 @@
 {
     "slug": "hospital_masvernat",
-    "lat": null,
-    "long": null,
+    "lat": -31.364219700000003,
+    "long": -58.01765859999999,
     "type": "OTHER",
     "icon": null,
     "description": "Hospital público de alta complejidad y principal centro sanitario de referencia del noreste de Entre Ríos.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.hdcm.gov.ar/",
-    "notes": "Dirección, urgencias y servicios confirmados por el sitio oficial. Falta geocodificar.",
+    "notes": "Dirección, urgencias y servicios confirmados por el sitio oficial. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

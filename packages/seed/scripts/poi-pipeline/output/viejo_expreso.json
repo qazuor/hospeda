@@ -1,7 +1,7 @@
 {
     "slug": "viejo_expreso",
-    "lat": null,
-    "long": null,
+    "lat": -30.979904199999996,
+    "long": -57.92776239999999,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido guiado en tren turístico por la nueva y la vieja Federación, con interpretación histórica y paisajística.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/otros-atractivos/",
-    "notes": "Servicio y punto habitual de salida confirmados. Falta geocodificar y validar horarios actuales.",
+    "notes": "Servicio y punto habitual de salida confirmados. Falta geocodificar y validar horarios actuales. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

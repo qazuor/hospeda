@@ -1,7 +1,7 @@
 {
     "slug": "playa_del_lago",
-    "lat": null,
-    "long": null,
+    "lat": -32.1251203,
+    "long": -58.439930499999996,
     "type": "BEACH",
     "icon": null,
     "description": "Sector recreativo de aproximadamente 400 metros desarrollado junto al lago artificial del complejo termal, pensado para descanso y actividades familiares.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://termasvillaelisa.com/se-habilito-playa-del-lago-el-nuevo-atractivo-de-termas-villa-elisa/",
-    "notes": "Existencia y ubicación dentro del complejo confirmadas. Falta geocodificar un punto representativo.",
+    "notes": "Existencia y ubicación dentro del complejo confirmadas. Falta geocodificar un punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

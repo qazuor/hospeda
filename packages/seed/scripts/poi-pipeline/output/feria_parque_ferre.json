@@ -1,7 +1,7 @@
 {
     "slug": "feria_parque_ferre",
-    "lat": null,
-    "long": null,
+    "lat": -31.392057400000002,
+    "long": -58.0327377,
     "type": "OTHER",
     "icon": null,
     "description": "Feria popular con puestos de productos, artesanías y propuestas comunitarias instalada en el Parque Ferré.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/noticias/gesti%C3%B3n/mejoras-y-valorizaci%C3%B3n-de-la-feria-del-parque-ferr%C3%A9",
-    "notes": "Existencia y funcionamiento confirmados. Falta geocodificar el sector de puestos.",
+    "notes": "Existencia y funcionamiento confirmados. Falta geocodificar el sector de puestos. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

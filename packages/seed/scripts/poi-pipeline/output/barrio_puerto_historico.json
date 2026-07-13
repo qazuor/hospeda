@@ -1,7 +1,7 @@
 {
     "slug": "barrio_puerto_historico",
-    "lat": null,
-    "long": null,
+    "lat": -32.2157724,
+    "long": -58.13603549999999,
     "type": "OTHER",
     "icon": null,
     "description": "Sector histórico que rodea al puerto y conserva parte de la identidad urbana vinculada con el desarrollo fluvial y comercial de Colón.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://colon.gov.ar/llega-a-colon-la-edicion-2023-de-la-noche-de-los-museos/",
-    "notes": "Área histórica reconocida en circuitos culturales locales. Debe definirse un punto representativo.",
+    "notes": "Área histórica reconocida en circuitos culturales locales. Debe definirse un punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

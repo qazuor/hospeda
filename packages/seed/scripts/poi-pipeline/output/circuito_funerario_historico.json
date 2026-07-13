@@ -1,7 +1,7 @@
 {
     "slug": "circuito_funerario_historico",
-    "lat": null,
-    "long": null,
+    "lat": -32.4851941,
+    "long": -58.2334373,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido interpretativo por antiguos cementerios, capillas, mausoleos y sitios de memoria de la ciudad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/concepcion-del-uruguay-tendra-su-noche-de-los-museos",
-    "notes": "Recorrido temático documentado; falta consolidar trazado permanente.",
+    "notes": "Recorrido temático documentado; falta consolidar trazado permanente. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

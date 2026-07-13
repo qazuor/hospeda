@@ -1,7 +1,7 @@
 {
     "slug": "camping_itape",
-    "lat": null,
-    "long": null,
+    "lat": -32.4957221,
+    "long": -58.255998000000005,
     "type": "OTHER",
     "icon": null,
     "description": "Sector de acampe y recreación asociado con el balneario y el parque ribereño.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/apertura-de-sesiones-2026-di%C3%A1logo%2C-gesti%C3%B3n-y-anuncios-en-un-contexto-adverso-2",
-    "notes": "Falta geocodificar accesos, parcelas y servicios.",
+    "notes": "Falta geocodificar accesos, parcelas y servicios. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

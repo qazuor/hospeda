@@ -1,7 +1,7 @@
 {
     "slug": "actividades_nauticas",
-    "lat": null,
-    "long": null,
+    "lat": -30.9100085,
+    "long": -57.9232891,
     "type": "STADIUM",
     "icon": null,
     "description": "Propuesta de kayak, navegación recreativa y deportes de agua en sectores habilitados del lago.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/santa-ana",
-    "notes": "Oferta general confirmada. Falta identificar prestadores, muelles y zonas habilitadas.",
+    "notes": "Oferta general confirmada. Falta identificar prestadores, muelles y zonas habilitadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

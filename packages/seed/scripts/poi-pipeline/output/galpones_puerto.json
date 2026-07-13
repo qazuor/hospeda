@@ -1,7 +1,7 @@
 {
     "slug": "galpones_puerto",
-    "lat": null,
-    "long": null,
+    "lat": -33.015706,
+    "long": -58.5040316,
     "type": "OTHER",
     "icon": null,
     "description": "Conjunto portuario reutilizado como sede de ferias, exposiciones, actividades culturales, propuestas familiares y grandes eventos.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.gov.ar/redaccion/los-galpones-y-el-paseo-del-puerto-ahora-cuentan-con-cerramiento-permanente; https://gualeguaychu.gov.ar/redaccion/-exitosa-propuesta-cultural-en-los-galpones-del-puerto-durante-las-vacaciones-de-invierno",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

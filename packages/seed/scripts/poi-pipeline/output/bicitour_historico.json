@@ -1,7 +1,7 @@
 {
     "slug": "bicitour_historico",
-    "lat": null,
-    "long": null,
+    "lat": -32.301356399999996,
+    "long": -59.1389941,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido autoguiado en bicicleta que conecta patrimonio, plazas, edificios históricos y espacios culturales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=que-hacer; https://www.rosariodeltala.gob.ar/?q=areas-noticias%2Fturismo",
-    "notes": "Circuito oficial confirmado. Falta digitalizar trazado y paradas.",
+    "notes": "Circuito oficial confirmado. Falta digitalizar trazado y paradas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

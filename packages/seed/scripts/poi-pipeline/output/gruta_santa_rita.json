@@ -1,7 +1,7 @@
 {
     "slug": "gruta_santa_rita",
-    "lat": null,
-    "long": null,
+    "lat": -32.1533146,
+    "long": -58.196708799999996,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio religioso y parque de devoción popular situado en el ingreso al pueblo, visitado especialmente durante las celebraciones dedicadas a Santa Rita de Casia.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://aldiaentrerios.com.ar/pueblo-liebig-celebro-el-dia-de-santa-rita-de-casia; https://www.argentinaturismo.com.ar/pueblo-liebig/gruta-de-santa-rita.html",
-    "notes": "Ubicación general y vigencia confirmadas en mayo de 2026. Falta geocodificar la entrada.",
+    "notes": "Ubicación general y vigencia confirmadas en mayo de 2026. Falta geocodificar la entrada. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

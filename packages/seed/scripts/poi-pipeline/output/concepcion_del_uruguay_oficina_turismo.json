@@ -1,7 +1,7 @@
 {
     "slug": "concepcion_del_uruguay_oficina_turismo",
-    "lat": null,
-    "long": null,
+    "lat": -32.4837819,
+    "long": -58.2307182,
     "type": "OTHER",
     "icon": null,
     "description": "Punto oficial de información sobre atractivos, visitas guiadas, playas, eventos y servicios turísticos.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/nuevos-puntos-de-venta-de-entradas-para-la-fiesta-de-la-playa",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

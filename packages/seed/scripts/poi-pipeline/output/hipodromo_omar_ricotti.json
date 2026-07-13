@@ -1,7 +1,7 @@
 {
     "slug": "hipodromo_omar_ricotti",
-    "lat": null,
-    "long": null,
+    "lat": -32.4604341,
+    "long": -58.31043759999999,
     "type": "STADIUM",
     "icon": null,
     "description": "Predio hípico utilizado para carreras, actividad ecuestre y encuentros deportivos.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/19201368",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

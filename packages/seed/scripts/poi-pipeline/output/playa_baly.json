@@ -1,7 +1,7 @@
 {
     "slug": "playa_baly",
-    "lat": null,
-    "long": null,
+    "lat": -30.989099399999997,
+    "long": -57.912727499999995,
     "type": "BEACH",
     "icon": null,
     "description": "Playa urbana próxima al puerto y al anfiteatro, utilizada para descanso, actividades recreativas y deportes acuáticos.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/nuestras-playas/; https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
-    "notes": "Nombre y ubicación general confirmados. Falta geocodificar.",
+    "notes": "Nombre y ubicación general confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

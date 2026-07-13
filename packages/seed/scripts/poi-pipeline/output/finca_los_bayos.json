@@ -1,7 +1,7 @@
 {
     "slug": "finca_los_bayos",
-    "lat": null,
-    "long": null,
+    "lat": -32.6494126,
+    "long": -58.885979600000006,
     "type": "OTHER",
     "icon": null,
     "description": "Viñedo y bodega artesanal con Merlot, Chardonnay, nuez pecán, visitas guiadas y degustaciones de vinos y productos regionales.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://urdinarrain.tur.ar/que-hacer/; https://www.argentina.gob.ar/jefatura/turismo/best-tourism-villages-argentina/urdinarrain-entre-rios; https://www.lanacion.com.ar/revista-lugares/urdinarrain-el-pueblo-de-entre-rios-ideal-para-recorrer-en-bici-y-probar-un-dulce-de-leche-premiado-nid18072024/",
-    "notes": "Oferta enoturística confirmada. Falta geocodificar el acceso y validar reservas.",
+    "notes": "Oferta enoturística confirmada. Falta geocodificar el acceso y validar reservas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

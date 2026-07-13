@@ -1,7 +1,7 @@
 {
     "slug": "administracion_complejo_turistico",
-    "lat": null,
-    "long": null,
+    "lat": -32.2196514,
+    "long": -58.192319999999995,
     "type": "OTHER",
     "icon": null,
     "description": "Punto de información y administración del sector termal y balneario, útil para orientación, servicios y consultas de visitantes.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/W202761730",
-    "notes": "La oficina aparece cartografiada junto a Termas San José; falta recuperar coordenadas exactas.",
+    "notes": "La oficina aparece cartografiada junto a Termas San José; falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

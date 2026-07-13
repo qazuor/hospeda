@@ -1,7 +1,7 @@
 {
     "slug": "axion",
-    "lat": null,
-    "long": null,
+    "lat": -32.4698525,
+    "long": -58.47819599999999,
     "type": "OTHER",
     "icon": null,
     "description": "Estación de servicio ubicada en el acceso sur de Caseros, útil como punto de abastecimiento y referencia para quienes recorren la Ruta Provincial 39.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N9205468871",
-    "notes": "El establecimiento aparece cartografiado al sur de la localidad; falta fijar el punto exacto y confirmar el domicilio.",
+    "notes": "El establecimiento aparece cartografiado al sur de la localidad; falta fijar el punto exacto y confirmar el domicilio. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

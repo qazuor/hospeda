@@ -1,7 +1,7 @@
 {
     "slug": "ex_teatro_mayo",
-    "lat": null,
-    "long": null,
+    "lat": -31.867673399999997,
+    "long": -59.02698319999999,
     "type": "OTHER",
     "icon": null,
     "description": "Edificio cultural histórico incluido entre los hitos arquitectónicos del centro cívico de Villaguay.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/villaguay",
-    "notes": "Hito patrimonial confirmado por Turismo Entre Ríos. Falta validar uso actual y geocodificar.",
+    "notes": "Hito patrimonial confirmado por Turismo Entre Ríos. Falta validar uso actual y geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

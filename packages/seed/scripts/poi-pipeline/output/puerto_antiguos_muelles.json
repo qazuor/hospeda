@@ -1,7 +1,7 @@
 {
     "slug": "puerto_antiguos_muelles",
-    "lat": null,
-    "long": null,
+    "lat": -32.1529861,
+    "long": -58.18712049999999,
     "type": "OTHER",
     "icon": null,
     "description": "Sector portuario histórico desde el que se embarcaban productos del frigorífico hacia mercados internacionales y que explica la relación productiva del pueblo con el río Uruguay.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/capital-humano/cultura/monumentos/pueblo-liebig",
-    "notes": "La existencia de tres muelles históricos está documentada. Falta identificar sectores accesibles y coordenadas representativas.",
+    "notes": "La existencia de tres muelles históricos está documentada. Falta identificar sectores accesibles y coordenadas representativas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

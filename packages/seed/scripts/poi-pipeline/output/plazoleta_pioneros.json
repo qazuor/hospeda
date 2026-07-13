@@ -1,7 +1,7 @@
 {
     "slug": "plazoleta_pioneros",
-    "lat": null,
-    "long": null,
+    "lat": -31.6266413,
+    "long": -58.502046400000005,
     "type": "PLAZA",
     "icon": null,
     "description": "Paseo conmemorativo dedicado a los primeros pobladores, inmigrantes y familias vinculadas con la formación de la colonia.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/ciudad/",
-    "notes": "Existencia confirmada en el inventario municipal. Falta geocodificar.",
+    "notes": "Existencia confirmada en el inventario municipal. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

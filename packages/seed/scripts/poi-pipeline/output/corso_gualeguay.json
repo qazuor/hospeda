@@ -1,7 +1,7 @@
 {
     "slug": "corso_gualeguay",
-    "lat": null,
-    "long": null,
+    "lat": -33.148673599999995,
+    "long": -59.32862849999999,
     "type": "OTHER",
     "icon": null,
     "description": "Carnaval de verano con comparsas, carrozas, batucadas, pasistas y fuerte participación comunitaria.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://corso.gualeguay.gob.ar/; https://www.entrerios.tur.ar/localidades-1/gualeguay",
-    "notes": "Evento confirmado; comparte ubicación general con el Corsódromo.",
+    "notes": "Evento confirmado; comparte ubicación general con el Corsódromo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

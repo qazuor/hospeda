@@ -1,7 +1,7 @@
 {
     "slug": "escuela_tecnica_7",
-    "lat": null,
-    "long": null,
+    "lat": -32.4486822,
+    "long": -58.435995399999996,
     "type": "OTHER",
     "icon": null,
     "description": "Institución de educación técnica y referencia formativa del municipio.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N9066927915",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

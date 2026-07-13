@@ -1,7 +1,7 @@
 {
     "slug": "biblioteca_fiat_lux",
-    "lat": null,
-    "long": null,
+    "lat": -32.2206046,
+    "long": -58.137223999999996,
     "type": "OTHER",
     "icon": null,
     "description": "Biblioteca popular histórica que ofrece servicios de lectura, consulta y actividades culturales y educativas para residentes y visitantes.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://colon.gov.ar/llega-a-colon-la-edicion-2023-de-la-noche-de-los-museos/",
-    "notes": "Nombre y dirección confirmados por el municipio. Falta geocodificar.",
+    "notes": "Nombre y dirección confirmados por el municipio. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "centro_cultural_linares_cardozo",
-    "lat": null,
-    "long": null,
+    "lat": -32.4964048,
+    "long": -58.252295700000005,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio municipal dedicado a talleres de música, danza, artes visuales, fotografía, idiomas y otras actividades culturales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://colon.gov.ar/inscriben-para-los-talleres-culturales-2023-de-colon/",
-    "notes": "Institución y domicilio confirmados por la Municipalidad. Falta geocodificar.",
+    "notes": "Institución y domicilio confirmados por la Municipalidad. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

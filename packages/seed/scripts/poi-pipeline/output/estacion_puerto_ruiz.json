@@ -1,7 +1,7 @@
 {
     "slug": "estacion_puerto_ruiz",
-    "lat": null,
-    "long": null,
+    "lat": -33.219740699999996,
+    "long": -59.3629554,
     "type": "OTHER",
     "icon": null,
     "description": "Estación del primer ferrocarril entrerriano, vinculada con el transporte de cargas y pasajeros entre Gualeguay y el puerto.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://es.wikipedia.org/wiki/Puerto_Ruiz; https://es.wikipedia.org/wiki/Ferrocarril_Primer_Entrerriano",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

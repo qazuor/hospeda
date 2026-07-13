@@ -1,7 +1,7 @@
 {
     "slug": "anfiteatro_natural",
-    "lat": null,
-    "long": null,
+    "lat": -32.1922676,
+    "long": -58.161198,
     "type": "OTHER",
     "icon": null,
     "description": "Sector recreativo al aire libre ubicado en el complejo termal y balneario, utilizado para encuentros, espectáculos y actividades comunitarias.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/W202761730",
-    "notes": "Existencia cartográfica confirmada; falta recuperar coordenadas exactas.",
+    "notes": "Existencia cartográfica confirmada; falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "concordia_puerto",
-    "lat": null,
-    "long": null,
+    "lat": -31.403316399999998,
+    "long": -58.0020267,
     "type": "OTHER",
     "icon": null,
     "description": "Puerto histórico sobre el río Uruguay, vinculado con el desarrollo comercial, ferroviario y fluvial de la ciudad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://egob.concordia.gob.ar/servicios/digesto.do?idNormativa=987&opcion=idNormativa; https://www.concordia.gob.ar/turismo/atractivos/costanera",
-    "notes": "Valor histórico y ubicación costera confirmados. Falta geocodificar el acceso representativo.",
+    "notes": "Valor histórico y ubicación costera confirmados. Falta geocodificar el acceso representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

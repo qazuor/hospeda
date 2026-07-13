@@ -1,7 +1,7 @@
 {
     "slug": "gualeguaychu_terminal_omnibus",
-    "lat": null,
-    "long": null,
+    "lat": -33.0208866,
+    "long": -58.5348939,
     "type": "OTHER",
     "icon": null,
     "description": "Principal terminal terrestre de pasajeros con conexiones regionales y nacionales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.centraldepasajes.com.ar/pasaje-micro/terminal-de-gualeguaychu.html; https://gualeguaychu.gov.ar/transportepublico/",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

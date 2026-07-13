@@ -1,7 +1,7 @@
 {
     "slug": "escuela_secundaria_7_heroes_malvinas",
-    "lat": null,
-    "long": null,
+    "lat": -32.4621146,
+    "long": -58.4801381,
     "type": "OTHER",
     "icon": null,
     "description": "Institución educativa secundaria de Caseros y punto de referencia para actividades escolares y comunitarias de la localidad.",
@@ -30,7 +30,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N9205468871",
-    "notes": "La institución aparece cartografiada en el área urbana; falta verificar domicilio y coordenadas exactas.",
+    "notes": "La institución aparece cartografiada en el área urbana; falta verificar domicilio y coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

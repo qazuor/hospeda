@@ -1,7 +1,7 @@
 {
     "slug": "cancha_ferrocarril",
-    "lat": null,
-    "long": null,
+    "lat": -31.793998900000002,
+    "long": -58.325249299999996,
     "type": "STADIUM",
     "icon": null,
     "description": "Espacio deportivo dentro del predio ferroviario, utilizado para torneos, actividades recreativas y encuentros comunitarios.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ubajay.gob.ar/comienzan-los-trabajos-de-mejora-en-la-cancha-del-ferrocarril-para-una-nueva-edicion-del-torneo-de-las-empresas/",
-    "notes": "Uso deportivo y vigencia confirmados en junio de 2026. Falta geocodificar.",
+    "notes": "Uso deportivo y vigencia confirmados en junio de 2026. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

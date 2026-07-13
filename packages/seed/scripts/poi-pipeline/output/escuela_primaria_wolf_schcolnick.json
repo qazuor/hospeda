@@ -1,7 +1,7 @@
 {
     "slug": "escuela_primaria_wolf_schcolnick",
-    "lat": null,
-    "long": null,
+    "lat": -33.50099,
+    "long": -58.8070249,
     "type": "OTHER",
     "icon": null,
     "description": "Institución educativa primaria de la localidad y punto de referencia del sector urbano.",
@@ -30,7 +30,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N11132368105",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "termas_ayui",
-    "lat": null,
-    "long": null,
+    "lat": -31.2555835,
+    "long": -57.956172599999995,
     "type": "OTHER",
     "icon": null,
     "description": "Complejo termal del perilago de Salto Grande con piscinas, parque acuático y entorno natural.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/turismo/atractivos/termas/termas-del-ayu%C3%AD; https://www.concordia.gob.ar/mapas/termas-del-ayui",
-    "notes": "Complejo vigente y ubicación general confirmados. Falta geocodificar el acceso.",
+    "notes": "Complejo vigente y ubicación general confirmados. Falta geocodificar el acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

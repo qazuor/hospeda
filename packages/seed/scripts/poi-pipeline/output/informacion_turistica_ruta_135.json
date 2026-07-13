@@ -1,7 +1,7 @@
 {
     "slug": "informacion_turistica_ruta_135",
-    "lat": null,
-    "long": null,
+    "lat": -32.2157078,
+    "long": -58.13650620000001,
     "type": "OTHER",
     "icon": null,
     "description": "Punto de orientación para visitantes ubicado en el acceso oeste de Colón, cercano a la bodega y al velódromo.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/W904795075",
-    "notes": "La oficina aparece cartografiada como Información Turística. Falta recuperar coordenadas exactas.",
+    "notes": "La oficina aparece cartografiada como Información Turística. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

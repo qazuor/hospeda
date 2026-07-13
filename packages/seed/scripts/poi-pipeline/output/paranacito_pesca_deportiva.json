@@ -1,7 +1,7 @@
 {
     "slug": "paranacito_pesca_deportiva",
-    "lat": null,
-    "long": null,
+    "lat": -33.7349001,
+    "long": -58.7901903,
     "type": "STADIUM",
     "icon": null,
     "description": "Salidas de pesca embarcada con guías locales en ríos y arroyos del delta.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.villaparanacito.gob.ar/turismo/actividades",
-    "notes": "Oferta oficial vigente. Falta relevar bajadas, permisos y circuitos por temporada.",
+    "notes": "Oferta oficial vigente. Falta relevar bajadas, permisos y circuitos por temporada. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "santa_ana_lago_salto_grande",
-    "lat": null,
-    "long": null,
+    "lat": -30.8987766,
+    "long": -57.952814000000004,
     "type": "NATURAL",
     "icon": null,
     "description": "Gran embalse que rodea Santa Ana y define sus playas, pesca, navegación, atardeceres y paisaje turístico.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.santaana.gob.ar/home/ciudad/; https://www.entrerios.tur.ar/localidades-1/santa-ana",
-    "notes": "Cuerpo de agua extenso; requiere geometría y accesos diferenciados.",
+    "notes": "Cuerpo de agua extenso; requiere geometría y accesos diferenciados. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "anfiteatro_parque_quintana",
-    "lat": null,
-    "long": null,
+    "lat": -33.155006,
+    "long": -59.3085893,
     "type": "OTHER",
     "icon": null,
     "description": "Anfiteatro al aire libre ubicado junto al río y utilizado para espectáculos, festivales y actividades comunitarias.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.turismoentrerios.com/gualeguay/parquesypaseos.htm; https://www.welcomeargentina.com/gualeguay/citytour-gualeguay.html",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

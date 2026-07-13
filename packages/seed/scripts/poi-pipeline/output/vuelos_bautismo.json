@@ -1,7 +1,7 @@
 {
     "slug": "vuelos_bautismo",
-    "lat": null,
-    "long": null,
+    "lat": -33.6817697,
+    "long": -58.7069666,
     "type": "OTHER",
     "icon": null,
     "description": "Experiencia aérea para contemplar desde altura el entramado de islas, ríos y humedales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://es.wikipedia.org/wiki/Villa_Paranacito; https://www.facebook.com/aeroclub.islasdelibicuy/",
-    "notes": "Actividad vinculada al aeroclub. Requiere reserva y validación de disponibilidad.",
+    "notes": "Actividad vinculada al aeroclub. Requiere reserva y validación de disponibilidad. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

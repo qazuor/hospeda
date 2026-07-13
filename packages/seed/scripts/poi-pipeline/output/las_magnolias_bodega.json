@@ -1,7 +1,7 @@
 {
     "slug": "las_magnolias_bodega",
-    "lat": null,
-    "long": null,
+    "lat": -33.0307788,
+    "long": -58.558540699999995,
     "type": "OTHER",
     "icon": null,
     "description": "Bodega boutique con viñedo, visitas guiadas, degustaciones y maridajes de variedades como Malbec, Tannat y Marselán.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/detalle?id=416; https://gualeguaychu.tur.ar/caminodelvino",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

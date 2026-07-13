@@ -1,7 +1,7 @@
 {
     "slug": "cabalgando_magnolias",
-    "lat": null,
-    "long": null,
+    "lat": -32.2678124,
+    "long": -59.123735800000006,
     "type": "OTHER",
     "icon": null,
     "description": "Paseos a caballo por bosques en galería, una laguna y ambientes de alto valor natural.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=que-hacer; https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir",
-    "notes": "Prestador oficial promocionado. Falta validar reservas actuales y coordenadas.",
+    "notes": "Prestador oficial promocionado. Falta validar reservas actuales y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

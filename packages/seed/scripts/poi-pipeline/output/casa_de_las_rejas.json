@@ -1,7 +1,7 @@
 {
     "slug": "casa_de_las_rejas",
-    "lat": null,
-    "long": null,
+    "lat": -33.149670199999996,
+    "long": -59.309800300000006,
     "type": "OTHER",
     "icon": null,
     "description": "Residencia histórica de 1913 reconocida por sus rejas ornamentales vinculadas con Cesáreo Bernaldo de Quirós.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/gualeguay; https://www.clarin.com/viajes/gualeguay-historia-naturaleza-carnaval-sur-entrerriano_0_mb81nYp6A.html; https://www.instagram.com/p/Cp8HgV8up9a/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

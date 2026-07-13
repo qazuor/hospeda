@@ -1,7 +1,7 @@
 {
     "slug": "reserva_natural_balneario",
-    "lat": null,
-    "long": null,
+    "lat": -32.193597000000004,
+    "long": -58.158560400000006,
     "type": "NATURAL",
     "icon": null,
     "description": "Área natural protegida asociada al complejo balneario, con ambientes ribereños y sectores destinados a conservación, observación y educación ambiental.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sanjose.gob.ar/con-nueva-politica-de-turismo-sostenible-el-gobierno-municipal-busca-impulsar-el-sector/; https://mapcarta.com/es/N9147097112",
-    "notes": "Área incluida en el circuito sostenible municipal; falta identificar el acceso o centroide oficial.",
+    "notes": "Área incluida en el circuito sostenible municipal; falta identificar el acceso o centroide oficial. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

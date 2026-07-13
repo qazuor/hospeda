@@ -1,7 +1,7 @@
 {
     "slug": "ceibas_centro_integrador_comunitario",
-    "lat": null,
-    "long": null,
+    "lat": -33.5009586,
+    "long": -58.8057645,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio comunitario destinado a actividades sociales, atención y programas de integración local.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N11132368105",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

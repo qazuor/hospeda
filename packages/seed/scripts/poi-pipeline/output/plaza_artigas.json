@@ -1,7 +1,7 @@
 {
     "slug": "plaza_artigas",
-    "lat": null,
-    "long": null,
+    "lat": -32.225255,
+    "long": -58.14202249999999,
     "type": "PLAZA",
     "icon": null,
     "description": "Espacio verde del centro urbano situado cerca de la parroquia, la Municipalidad y otros edificios institucionales de Colón.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/W334797623",
-    "notes": "Existencia confirmada en OpenStreetMap; falta recuperar coordenadas exactas.",
+    "notes": "Existencia confirmada en OpenStreetMap; falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

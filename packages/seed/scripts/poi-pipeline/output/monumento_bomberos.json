@@ -1,7 +1,7 @@
 {
     "slug": "monumento_bomberos",
-    "lat": null,
-    "long": null,
+    "lat": -33.0125299,
+    "long": -58.505236499999995,
     "type": "MONUMENT",
     "icon": null,
     "description": "Monumento del Parque de la Estación dedicado al servicio y la historia del cuerpo de bomberos local.",
@@ -30,7 +30,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.larroque.gob.ar/noticia/1995/la_rica_historia_de_larroque_y_la_conexion_de_sus_museos",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

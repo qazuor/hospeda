@@ -1,7 +1,7 @@
 {
     "slug": "fiesta_nacional_sandia",
-    "lat": null,
-    "long": null,
+    "lat": -30.900092500000003,
+    "long": -57.934898399999994,
     "type": "OTHER",
     "icon": null,
     "description": "Celebración nacional dedicada a los productores de sandía, con espectáculos, expositores, gastronomía y tradiciones.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/event-details/fiesta-nacional-de-la-sandia",
-    "notes": "Evento anual confirmado. La sede exacta debe actualizarse por edición.",
+    "notes": "Evento anual confirmado. La sede exacta debe actualizarse por edición. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

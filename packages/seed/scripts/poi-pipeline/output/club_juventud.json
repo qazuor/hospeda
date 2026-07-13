@@ -1,7 +1,7 @@
 {
     "slug": "club_juventud",
-    "lat": null,
-    "long": null,
+    "lat": -32.4633598,
+    "long": -58.479572399999995,
     "type": "STADIUM",
     "icon": null,
     "description": "Principal institución deportiva y social de Caseros, vinculada con el fútbol local y con distintas actividades recreativas y comunitarias.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacionentrerrianadefutbol.com/clubes/",
-    "notes": "Existencia y domicilio confirmados; falta validar las coordenadas del acceso principal.",
+    "notes": "Existencia y domicilio confirmados; falta validar las coordenadas del acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

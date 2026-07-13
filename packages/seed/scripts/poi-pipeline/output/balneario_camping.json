@@ -1,7 +1,7 @@
 {
     "slug": "balneario_camping",
-    "lat": null,
-    "long": null,
+    "lat": -32.190039299999995,
+    "long": -58.160633999999995,
     "type": "BEACH",
     "icon": null,
     "description": "Complejo municipal sobre el río Uruguay con playa, parcelas para carpas y motorhomes, servicios recreativos y propuestas culturales durante la temporada.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sanjose.gob.ar/el-municipio-continua-con-tareas-de-mantenimiento-integral-en-el-balneario-camping-san-jose/; https://sanjose.gob.ar/masiva-celebracion-de-la-fiesta-provincial-del-campamentista-en-el-balneario-san-jose-mas-de-20-000-personas-disfrutaron-de-los-shows-musicales-del-sabado-y-domingo/",
-    "notes": "Existencia y operación actual confirmadas; falta geocodificar el acceso principal.",
+    "notes": "Existencia y operación actual confirmadas; falta geocodificar el acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

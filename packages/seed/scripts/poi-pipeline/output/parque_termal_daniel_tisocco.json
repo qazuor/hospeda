@@ -1,7 +1,7 @@
 {
     "slug": "parque_termal_daniel_tisocco",
-    "lat": null,
-    "long": null,
+    "lat": -30.741268899999998,
+    "long": -58.0141844,
     "type": "OTHER",
     "icon": null,
     "description": "Complejo termal municipal con piscinas de distintas temperaturas, sectores cubiertos y al aire libre, hidromasajes, espacios verdes, servicios recreativos y propuestas de bienestar.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://termaschajari.tur.ar/; https://termaschajari.tur.ar/institucional/; https://termaschajari.tur.ar/termas/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "senderos_rincon_hondo",
-    "lat": null,
-    "long": null,
+    "lat": -32.3182676,
+    "long": -59.078050299999994,
     "type": "OTHER",
     "icon": null,
     "description": "Recorridos de naturaleza entre monte ribereño, miradores naturales y áreas de observación de aves.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://www.rosariodeltala.gob.ar/?q=areas-noticias%2Fturismo",
-    "notes": "Falta digitalizar trazados, dificultad y condiciones de acceso.",
+    "notes": "Falta digitalizar trazados, dificultad y condiciones de acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

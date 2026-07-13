@@ -1,7 +1,7 @@
 {
     "slug": "villaguay_camping_balneario",
-    "lat": null,
-    "long": null,
+    "lat": -31.865695799999997,
+    "long": -59.003698400000005,
     "type": "OTHER",
     "icon": null,
     "description": "Sector de acampe con sombra, parrillas, sanitarios y servicios dentro del balneario municipal.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://www.villaguay.gob.ar/app/noticias/el_verano_ya_se_vive_en_villaguay",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

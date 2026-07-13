@@ -1,7 +1,7 @@
 {
     "slug": "fiesta_pati_gualeyo",
-    "lat": null,
-    "long": null,
+    "lat": -33.158318699999995,
+    "long": -59.3059356,
     "type": "OTHER",
     "icon": null,
     "description": "Concurso de pesca embarcada y celebración provincial vinculada con el río, la gastronomía y la cultura pesquera.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/noticias/la-fiesta-del-pat%C3%AD-gualeyo-se-present%C3%B3-en-paran%C3%A1-y-anticipa-una-edici%C3%B3n-r%C3%A9cord-en-gualeguay",
-    "notes": "Evento vigente confirmado. Requiere identificar punto de largada y predio principal por edición.",
+    "notes": "Evento vigente confirmado. Requiere identificar punto de largada y predio principal por edición. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "casa_clinica_grieve",
-    "lat": null,
-    "long": null,
+    "lat": -32.4614293,
+    "long": -58.4809455,
     "type": "OTHER",
     "icon": null,
     "description": "Edificio histórico incluido en el recorrido audioguiado por su valor social y sanitario.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://caseros.gob.ar/turismo-y-cultura/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "sindicato_carne",
-    "lat": null,
-    "long": null,
+    "lat": -32.1555513,
+    "long": -58.1947782,
     "type": "OTHER",
     "icon": null,
     "description": "Institución vinculada con la memoria obrera del frigorífico y actualmente utilizada como sede para encuentros y actividades comunitarias.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://puebloliebig.gob.ar/noticias/se-realizo-en-pueblo-liebig-la-charla-taller-sobre-lactancia-materna/",
-    "notes": "Uso comunitario actual confirmado. Falta dirección, coordenadas y reseña histórica institucional.",
+    "notes": "Uso comunitario actual confirmado. Falta dirección, coordenadas y reseña histórica institucional. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

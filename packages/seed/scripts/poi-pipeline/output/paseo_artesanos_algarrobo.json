@@ -1,7 +1,7 @@
 {
     "slug": "paseo_artesanos_algarrobo",
-    "lat": null,
-    "long": null,
+    "lat": -30.987716499999998,
+    "long": -57.91899209999999,
     "type": "OTHER",
     "icon": null,
     "description": "Paseo artesanal sobre avenida San Martín donde se ofrecen trabajos en madera, cuero, piedras semipreciosas y productos regionales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/otros-atractivos/; https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
-    "notes": "Actividad y ubicación general confirmadas. Falta geocodificar.",
+    "notes": "Actividad y ubicación general confirmadas. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "salon_pirincho_lonardi",
-    "lat": null,
-    "long": null,
+    "lat": -33.034191199999995,
+    "long": -59.00447080000001,
     "type": "OTHER",
     "icon": null,
     "description": "Salón cultural y comunitario integrado al conjunto de espacios recuperados del predio ferroviario.",
@@ -30,7 +30,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.larroque.gob.ar/noticia/2205/visito_nuestra_ciudad_el_intendente_de_general_galarza",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "rio_parana_ibicuy",
-    "lat": null,
-    "long": null,
+    "lat": -33.7434675,
+    "long": -59.155755299999996,
     "type": "NATURAL",
     "icon": null,
     "description": "Brazo principal del Delta del Paraná que define el paisaje, la pesca, la navegación y la actividad portuaria local.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/ibicuy; https://mapcarta.com/es/19205950",
-    "notes": "Curso de agua; requiere geometría lineal y puntos de acceso diferenciados.",
+    "notes": "Curso de agua; requiere geometría lineal y puntos de acceso diferenciados. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "salon_usos_multiples_estacion",
-    "lat": null,
-    "long": null,
+    "lat": -33.035753,
+    "long": -59.006104099999995,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio municipal para danza, espectáculos, capacitaciones, encuentros comunitarios y actividades culturales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.larroque.gob.ar/noticia/2608/se_llevo_a_cabo_exitosamente_el_vi_festival_de_teatro_larroque; https://www.larroque.gob.ar/noticia/2205/visito_nuestra_ciudad_el_intendente_de_general_galarza",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

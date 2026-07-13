@@ -1,7 +1,7 @@
 {
     "slug": "parque_velocidad",
-    "lat": null,
-    "long": null,
+    "lat": -31.815889199999997,
+    "long": -59.0215336,
     "type": "STADIUM",
     "icon": null,
     "description": "Kartódromo del sector norte de la ciudad, utilizado para competencias, entrenamientos y actividades de automovilismo.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://es.wikipedia.org/wiki/Villaguay",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

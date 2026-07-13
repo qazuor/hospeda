@@ -1,7 +1,7 @@
 {
     "slug": "paseo_puerto_ruiz",
-    "lat": null,
-    "long": null,
+    "lat": -33.219740699999996,
+    "long": -59.3629554,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido junto al río con paisaje portuario, historia local, pesca y propuestas gastronómicas.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.facebook.com/municipalidaddegualeguay/videos/836069999500317/; https://es.wikipedia.org/wiki/Puerto_Ruiz",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

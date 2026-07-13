@@ -1,7 +1,7 @@
 {
     "slug": "sitio_combate_arroyo_ceballos",
-    "lat": null,
-    "long": null,
+    "lat": -33.0418437,
+    "long": -59.079435100000005,
     "type": "OTHER",
     "icon": null,
     "description": "Área rural donde fuerzas entrerrianas comandadas por Francisco Ramírez detuvieron una invasión el 25 de diciembre de 1817.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://es.wikipedia.org/wiki/Larroque_%28Argentina%29",
-    "notes": "Hecho histórico y área general confirmados. Falta delimitar el campo del combate.",
+    "notes": "Hecho histórico y área general confirmados. Falta delimitar el campo del combate. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "sendero_ubajay_palmar",
-    "lat": null,
-    "long": null,
+    "lat": -31.816523399999994,
+    "long": -58.321273100000006,
     "type": "OTHER",
     "icon": null,
     "description": "Circuito de aproximadamente cinco kilómetros para caminata o bicicleta que conecta el pueblo con el acceso al Parque Nacional El Palmar.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ubajay.gob.ar/turismo/; https://www.lanacion.com.ar/revista-lugares/el-encantador-pueblo-fundado-por-colonos-judios-que-es-base-ideal-para-visitar-el-pn-el-palmar-nid12072025/",
-    "notes": "Existencia, modalidad y distancia aproximada confirmadas. Falta digitalizar el trazado.",
+    "notes": "Existencia, modalidad y distancia aproximada confirmadas. Falta digitalizar el trazado. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

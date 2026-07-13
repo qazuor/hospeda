@@ -1,7 +1,7 @@
 {
     "slug": "concordia_plaza_urquiza",
-    "lat": null,
-    "long": null,
+    "lat": -31.391891400000002,
+    "long": -58.017049899999996,
     "type": "PLAZA",
     "icon": null,
     "description": "Plaza histórica del centro urbano, ubicada frente al Palacio Arruabarrena y utilizada como espacio de encuentro y recreación.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/turismo/atractivos/museos; https://mapcarta.com/es/W627635367",
-    "notes": "Nombre y ubicación relativa confirmados. Falta recuperar coordenadas exactas.",
+    "notes": "Nombre y ubicación relativa confirmados. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

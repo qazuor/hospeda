@@ -1,7 +1,7 @@
 {
     "slug": "arroyo_sauce",
-    "lat": null,
-    "long": null,
+    "lat": -30.9477785,
+    "long": -58.5539306,
     "type": "NATURAL",
     "icon": null,
     "description": "Arroyo del ejido municipal integrado a los paisajes naturales y productivos de Santa Ana.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.santaana.gob.ar/home/ciudad/",
-    "notes": "Curso de agua; requiere geometría lineal.",
+    "notes": "Curso de agua; requiere geometría lineal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

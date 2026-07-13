@@ -1,7 +1,7 @@
 {
     "slug": "parroquia",
-    "lat": null,
-    "long": null,
+    "lat": -31.7958057,
+    "long": -58.315703899999995,
     "type": "OTHER",
     "icon": null,
     "description": "Principal templo católico del pueblo, originado a partir de la comisión pro templo formada por vecinos en 1930.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ubajay.gob.ar/turismo/",
-    "notes": "Historia institucional confirmada por el municipio. Falta denominación completa, dirección y coordenadas.",
+    "notes": "Historia institucional confirmada por el municipio. Falta denominación completa, dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

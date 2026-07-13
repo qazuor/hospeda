@@ -1,7 +1,7 @@
 {
     "slug": "cooperativa_agua_villa_udine",
-    "lat": null,
-    "long": null,
+    "lat": -32.462590899999995,
+    "long": -58.4824811,
     "type": "OTHER",
     "icon": null,
     "description": "Institución comunitaria incluida en el circuito histórico por su papel en la organización y los servicios del pueblo.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://caseros.gob.ar/turismo-y-cultura/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "club_san_jose",
-    "lat": null,
-    "long": null,
+    "lat": -32.2110099,
+    "long": -58.2184944,
     "type": "STADIUM",
     "icon": null,
     "description": "Institución deportiva y social de la ciudad con estadio y actividades comunitarias vinculadas principalmente con el fútbol y la recreación.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N3282717736; https://mapcarta.com/es/W785406288",
-    "notes": "Existencia y ubicación relativa confirmadas; falta recuperar coordenadas exactas.",
+    "notes": "Existencia y ubicación relativa confirmadas; falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

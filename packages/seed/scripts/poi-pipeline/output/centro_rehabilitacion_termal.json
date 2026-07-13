@@ -1,7 +1,7 @@
 {
     "slug": "centro_rehabilitacion_termal",
-    "lat": null,
-    "long": null,
+    "lat": -31.852811100000004,
+    "long": -59.0256106,
     "type": "OTHER",
     "icon": null,
     "description": "Centro sanitario asociado al entorno termal y al Hospital Santa Rosa, orientado a tratamientos y recuperación funcional.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.termasdevillaguay.com/; https://mapcarta.com/es/W307479015",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

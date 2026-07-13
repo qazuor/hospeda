@@ -1,7 +1,7 @@
 {
     "slug": "museo_bellas_artes_porvenir",
-    "lat": null,
-    "long": null,
+    "lat": -32.485449599999995,
+    "long": -58.233328099999994,
     "type": "MUSEUM",
     "icon": null,
     "description": "Espacio artístico integrado a la biblioteca popular, con patrimonio plástico, exposiciones y actividades culturales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/concepcion-del-uruguay-tendra-su-noche-de-los-museos",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "hogar_igualar",
-    "lat": null,
-    "long": null,
+    "lat": -32.687682699999996,
+    "long": -58.88195749999999,
     "type": "OTHER",
     "icon": null,
     "description": "Centro de ayuda al discapacitado con producción de mermeladas, conservas, carpintería, reciclado y vivero.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://urdinarrain.tur.ar/que-hacer/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

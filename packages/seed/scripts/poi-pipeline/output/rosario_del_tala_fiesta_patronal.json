@@ -1,7 +1,7 @@
 {
     "slug": "rosario_del_tala_fiesta_patronal",
-    "lat": null,
-    "long": null,
+    "lat": -32.301288299999996,
+    "long": -59.139431099999996,
     "type": "OTHER",
     "icon": null,
     "description": "Celebración religiosa y comunitaria vinculada con la patrona y la historia fundacional de la ciudad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://www.rosariodeltala.gob.ar/?q=areas-noticias%2Fturismo",
-    "notes": "Celebración estable; calendario y recorrido deben actualizarse anualmente.",
+    "notes": "Celebración estable; calendario y recorrido deben actualizarse anualmente. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

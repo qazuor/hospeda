@@ -1,7 +1,7 @@
 {
     "slug": "costanera_puerto_ibicuy",
-    "lat": null,
-    "long": null,
+    "lat": -33.752561299999996,
+    "long": -59.1776751,
     "type": "OTHER",
     "icon": null,
     "description": "Paseo público junto al río que integra el muelle de transferencia, vistas portuarias y sectores para caminar y contemplar el atardecer.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ibicuy.gob.ar/?q=content%2Fque-visitar; https://www.entrerios.tur.ar/localidades-1/ibicuy",
-    "notes": "Paseo lineal. Conviene modelarlo como geometría y definir un acceso principal.",
+    "notes": "Paseo lineal. Conviene modelarlo como geometría y definir un acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

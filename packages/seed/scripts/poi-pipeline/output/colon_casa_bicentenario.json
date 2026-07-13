@@ -1,7 +1,7 @@
 {
     "slug": "colon_casa_bicentenario",
-    "lat": null,
-    "long": null,
+    "lat": -32.2149192,
+    "long": -58.14182039999999,
     "type": "OTHER",
     "icon": null,
     "description": "Sala cultural municipal utilizada para teatro, música, exposiciones, talleres y espectáculos de alcance local y nacional.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://colon.gov.ar/la-casa-del-bicentenario-de-colon-se-prepara-para-una-noche-de-jazz-internacional/",
-    "notes": "Institución y domicilio confirmados en publicaciones municipales. Falta geocodificar.",
+    "notes": "Institución y domicilio confirmados en publicaciones municipales. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

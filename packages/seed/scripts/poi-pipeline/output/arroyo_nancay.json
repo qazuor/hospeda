@@ -1,7 +1,7 @@
 {
     "slug": "arroyo_nancay",
-    "lat": null,
-    "long": null,
+    "lat": -33.3935695,
+    "long": -58.7272261,
     "type": "NATURAL",
     "icon": null,
     "description": "Curso de agua y corredor natural rodeado por humedales, montes y caminos rurales utilizados para observación de aves.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.lanacion.com.ar/revista-lugares/meca-internacional-el-pueblo-que-convoca-gente-del-mundo-entero-para-ver-y-fotografiar-aves-nid03082025/",
-    "notes": "Curso de agua; requiere geometría lineal y puntos de acceso seguros.",
+    "notes": "Curso de agua; requiere geometría lineal y puntos de acceso seguros. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

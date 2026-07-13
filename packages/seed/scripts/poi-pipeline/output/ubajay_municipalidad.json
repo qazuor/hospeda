@@ -1,7 +1,7 @@
 {
     "slug": "ubajay_municipalidad",
-    "lat": null,
-    "long": null,
+    "lat": -31.7937832,
+    "long": -58.3127889,
     "type": "OTHER",
     "icon": null,
     "description": "Sede administrativa municipal y punto de referencia para trámites, información pública y servicios locales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ubajay.gob.ar/",
-    "notes": "Institución y teléfono confirmados. Falta dirección y coordenadas.",
+    "notes": "Institución y teléfono confirmados. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

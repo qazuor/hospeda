@@ -1,7 +1,7 @@
 {
     "slug": "ubajay_plaza_san_martin",
-    "lat": null,
-    "long": null,
+    "lat": -31.7951453,
+    "long": -58.3150706,
     "type": "PLAZA",
     "icon": null,
     "description": "Principal espacio verde urbano de Ubajay, utilizado para recreación, actos, ferias y actividades comunitarias.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ubajay.gob.ar/category/obras/espacios-verdes/",
-    "notes": "Nombre y vigencia confirmados por la Municipalidad. Falta geocodificar.",
+    "notes": "Nombre y vigencia confirmados por la Municipalidad. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

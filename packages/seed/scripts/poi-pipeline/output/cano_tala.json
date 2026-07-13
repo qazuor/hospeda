@@ -1,7 +1,7 @@
 {
     "slug": "cano_tala",
-    "lat": null,
-    "long": null,
+    "lat": -32.3169459,
+    "long": -59.146917800000004,
     "type": "STADIUM",
     "icon": null,
     "description": "Escuela y prestador de canotaje con cursos básicos y salidas combinadas con ciclismo.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=que-hacer",
-    "notes": "Prestador listado oficialmente. Falta validar vigencia y ubicación dentro del balneario.",
+    "notes": "Prestador listado oficialmente. Falta validar vigencia y ubicación dentro del balneario. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

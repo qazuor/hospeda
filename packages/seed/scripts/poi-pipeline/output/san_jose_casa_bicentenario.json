@@ -1,7 +1,7 @@
 {
     "slug": "san_jose_casa_bicentenario",
-    "lat": null,
-    "long": null,
+    "lat": -32.2116554,
+    "long": -58.218073999999994,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio cultural municipal utilizado para talleres, exposiciones, presentaciones, danza, música, capacitación y actividades comunitarias.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sanjose.gob.ar/inscripciones-abiertas-a-los-talleres-anuales-culturales/; https://sanjose.gob.ar/la-casa-del-bicentenario-como-un-espacio-de-inclusion-social/",
-    "notes": "Domicilio y actividad confirmados por el municipio; falta geocodificar.",
+    "notes": "Domicilio y actividad confirmados por el municipio; falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

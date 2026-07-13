@@ -1,7 +1,7 @@
 {
     "slug": "ubajay_polideportivo_municipal",
-    "lat": null,
-    "long": null,
+    "lat": -31.787841999999998,
+    "long": -58.31001159999999,
     "type": "STADIUM",
     "icon": null,
     "description": "Complejo deportivo público utilizado para escuelas deportivas, competencias, actividades recreativas y encuentros comunitarios.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ubajay.gob.ar/category/obras/espacios-verdes/; https://ubajay.gob.ar/page/14/?et_blog=",
-    "notes": "Uso deportivo vigente confirmado por el municipio. Falta dirección y coordenadas.",
+    "notes": "Uso deportivo vigente confirmado por el municipio. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

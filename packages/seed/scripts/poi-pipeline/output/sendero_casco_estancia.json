@@ -1,7 +1,7 @@
 {
     "slug": "sendero_casco_estancia",
-    "lat": null,
-    "long": null,
+    "lat": -31.816523399999994,
+    "long": -58.321273100000006,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido de 400 metros desde el Centro de Visitantes por edificios y jardines que explican la vida de la antigua estancia.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
-    "notes": "Nombre, longitud y recorrido confirmados. Falta geocodificar.",
+    "notes": "Nombre, longitud y recorrido confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "villa_elisa_estacion_ferroviaria",
-    "lat": null,
-    "long": null,
+    "lat": -32.160054099999996,
+    "long": -58.414089000000004,
     "type": "OTHER",
     "icon": null,
     "description": "Estación histórica del Ferrocarril General Urquiza, declarada patrimonio histórico, arquitectónico, turístico y cultural de la ciudad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://villaelisa.gov.ar/local/estacion-ferroviaria-villa-elisa/; https://villaelisa.gov.ar/wp-content/uploads/2021/02/BOLETIN-OCTUBRE-2020.pdf",
-    "notes": "Dirección, actividad y protección patrimonial confirmadas. Falta geocodificar el edificio principal.",
+    "notes": "Dirección, actividad y protección patrimonial confirmadas. Falta geocodificar el edificio principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

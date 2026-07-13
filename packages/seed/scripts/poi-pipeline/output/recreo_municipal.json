@@ -1,7 +1,7 @@
 {
     "slug": "recreo_municipal",
-    "lat": null,
-    "long": null,
+    "lat": -32.21820340000001,
+    "long": -58.2318715,
     "type": "PARK",
     "icon": null,
     "description": "Parque municipal y espacio de encuentro en el acceso a la ciudad, utilizado para ferias, gastronomía, música y actividades culturales.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sanjose.gob.ar/el-recreo-no-duerme/; https://sanjose.gob.ar/el-recreo-un-lugar-de-encuentros/",
-    "notes": "Uso público y cultural vigente confirmado; falta geocodificar el acceso.",
+    "notes": "Uso público y cultural vigente confirmado; falta geocodificar el acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

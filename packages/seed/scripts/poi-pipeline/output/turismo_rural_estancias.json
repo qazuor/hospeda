@@ -1,7 +1,7 @@
 {
     "slug": "turismo_rural_estancias",
-    "lat": null,
-    "long": null,
+    "lat": -30.9100085,
+    "long": -57.9232891,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido por campos productivos, establecimientos rurales y paisajes de citrus, forestación y ganadería.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.santaana.gob.ar/home/ciudad/",
-    "notes": "Modalidad oficial del destino. Falta identificar establecimientos que reciban visitantes.",
+    "notes": "Modalidad oficial del destino. Falta identificar establecimientos que reciban visitantes. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

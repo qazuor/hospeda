@@ -1,7 +1,7 @@
 {
     "slug": "museo_pablo_lorentz",
-    "lat": null,
-    "long": null,
+    "lat": -32.484421399999995,
+    "long": -58.2330289,
     "type": "MUSEUM",
     "icon": null,
     "description": "Museo del Colegio del Uruguay con colecciones de historia natural y valor educativo e institucional.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/concepcion-del-uruguay-tendra-su-noche-de-los-museos",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

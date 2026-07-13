@@ -1,7 +1,7 @@
 {
     "slug": "capilla_sagrado_corazon",
-    "lat": null,
-    "long": null,
+    "lat": -32.1544162,
+    "long": -58.1915508,
     "type": "OTHER",
     "icon": null,
     "description": "Capilla inaugurada en 1950 y considerada la última construcción inglesa del pueblo, con vitrales vinculados con el último gerente de la compañía y su esposa.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.colonturismo.tur.ar/directorio/capilla-sagrado-corazon-de-jesus/; https://puebloliebig.gob.ar/noticias/70-aniversario-de-la-capilla-sagrado-corazon-de-jesus/",
-    "notes": "Historia y vigencia religiosa confirmadas. Falta dirección postal y coordenadas.",
+    "notes": "Historia y vigencia religiosa confirmadas. Falta dirección postal y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

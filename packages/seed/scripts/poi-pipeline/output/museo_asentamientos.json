@@ -1,7 +1,7 @@
 {
     "slug": "museo_asentamientos",
-    "lat": null,
-    "long": null,
+    "lat": -30.9865762,
+    "long": -57.9180382,
     "type": "MUSEUM",
     "icon": null,
     "description": "Museo instalado en el edificio de la primera iglesia de la antigua Federación, trasladado pieza por pieza. Conserva carros, herramientas y objetos de los distintos asentamientos.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/otros-atractivos/; https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
-    "notes": "Historia y dirección confirmadas. Falta geocodificar el edificio.",
+    "notes": "Historia y dirección confirmadas. Falta geocodificar el edificio. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

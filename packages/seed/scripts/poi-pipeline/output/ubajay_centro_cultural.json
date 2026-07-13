@@ -1,7 +1,7 @@
 {
     "slug": "ubajay_centro_cultural",
-    "lat": null,
-    "long": null,
+    "lat": -31.7919719,
+    "long": -58.31529930000001,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio municipal utilizado para talleres, danza, actividades artísticas y los Juegos Culturales Entrerrianos.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ubajay.gob.ar/tag/cultura/",
-    "notes": "Uso cultural vigente confirmado. Falta dirección y coordenadas.",
+    "notes": "Uso cultural vigente confirmado. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

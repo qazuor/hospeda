@@ -1,7 +1,7 @@
 {
     "slug": "chajari_palacio_municipal",
-    "lat": null,
-    "long": null,
+    "lat": -30.755038700000004,
+    "long": -57.980448300000006,
     "type": "OTHER",
     "icon": null,
     "description": "Edificio municipal histórico inaugurado a comienzos del siglo XX y ubicado dentro de la Plaza Urquiza.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://termaschajari.tur.ar/palacio-municipal/; https://chajari.gob.ar/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

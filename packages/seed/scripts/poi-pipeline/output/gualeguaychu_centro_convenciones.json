@@ -1,7 +1,7 @@
 {
     "slug": "gualeguaychu_centro_convenciones",
-    "lat": null,
-    "long": null,
+    "lat": -33.01866040000001,
+    "long": -58.5196531,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio destinado a congresos, exposiciones, jornadas, ferias y encuentros de turismo de reuniones.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/turismodereuniones",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

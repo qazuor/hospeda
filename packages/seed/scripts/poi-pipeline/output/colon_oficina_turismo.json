@@ -1,7 +1,7 @@
 {
     "slug": "colon_oficina_turismo",
-    "lat": null,
-    "long": null,
+    "lat": -32.2157078,
+    "long": -58.13650620000001,
     "type": "OTHER",
     "icon": null,
     "description": "Centro oficial de información turística, útil para obtener mapas, orientación, recomendaciones, datos de prestadores y agenda local.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.colonturismo.tur.ar/",
-    "notes": "Domicilio publicado por Turismo Colón. Falta validar coordenadas exactas del acceso.",
+    "notes": "Domicilio publicado por Turismo Colón. Falta validar coordenadas exactas del acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

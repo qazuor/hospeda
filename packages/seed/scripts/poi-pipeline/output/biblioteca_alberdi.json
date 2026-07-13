@@ -1,7 +1,7 @@
 {
     "slug": "biblioteca_alberdi",
-    "lat": null,
-    "long": null,
+    "lat": -33.034659399999995,
+    "long": -59.007153499999994,
     "type": "OTHER",
     "icon": null,
     "description": "Biblioteca popular con catálogo, obras digitalizadas, actividades culturales y servicios de lectura y consulta.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.larroque.gob.ar/; https://www.biblioteca-jba.ar/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

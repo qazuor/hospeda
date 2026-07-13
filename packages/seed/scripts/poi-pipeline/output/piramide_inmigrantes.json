@@ -1,7 +1,7 @@
 {
     "slug": "piramide_inmigrantes",
-    "lat": null,
-    "long": null,
+    "lat": -32.3032928,
+    "long": -59.1443327,
     "type": "MONUMENT",
     "icon": null,
     "description": "Monumento de Plaza Libertad dedicado a las comunidades inmigrantes que participaron en el desarrollo de la ciudad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

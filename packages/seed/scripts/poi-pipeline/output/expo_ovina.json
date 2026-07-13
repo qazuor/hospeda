@@ -1,7 +1,7 @@
 {
     "slug": "expo_ovina",
-    "lat": null,
-    "long": null,
+    "lat": -32.6739331,
+    "long": -58.885475799999995,
     "type": "OTHER",
     "icon": null,
     "description": "Exposición productiva y cultural vinculada con la actividad ovina, productores, genética, gastronomía y vida rural.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://urdinarrain.tur.ar/que-hacer/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

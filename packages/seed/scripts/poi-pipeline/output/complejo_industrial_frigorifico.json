@@ -1,7 +1,7 @@
 {
     "slug": "complejo_industrial_frigorifico",
-    "lat": null,
-    "long": null,
+    "lat": -32.1557568,
+    "long": -58.187684499999996,
     "type": "OTHER",
     "icon": null,
     "description": "Conjunto fabril histórico alrededor del cual se desarrolló Pueblo Liebig. Produjo extracto de carne, corned beef y otros alimentos exportados a distintos mercados del mundo.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/capital-humano/cultura/monumentos/pueblo-liebig; https://www.colonturismo.tur.ar/directorio/visita-a-la-fabrica-de-liebig/",
-    "notes": "Existencia, relevancia histórica y carácter patrimonial confirmados. Falta definir coordenada del acceso habilitado para visitas.",
+    "notes": "Existencia, relevancia histórica y carácter patrimonial confirmados. Falta definir coordenada del acceso habilitado para visitas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

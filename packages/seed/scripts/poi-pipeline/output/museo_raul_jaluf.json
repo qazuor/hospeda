@@ -1,7 +1,7 @@
 {
     "slug": "museo_raul_jaluf",
-    "lat": null,
-    "long": null,
+    "lat": -31.870939699999997,
+    "long": -59.02637219999999,
     "type": "MUSEUM",
     "icon": null,
     "description": "Museo histórico y natural instalado en una casa de 1873, con salas sobre pobladores, inmigrantes, ciencias naturales, prensa y cultura gauchesca.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.villaguay.gob.ar/app/noticias/exitoso_3_taller_de_cocineritos_en_el_museo_historico_raul_jaluf; https://www.entrerios.tur.ar/localidades-1/villaguay; https://apnoticias.com.ar/secciones/ampliada.php?id=19289&seccion=locales",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

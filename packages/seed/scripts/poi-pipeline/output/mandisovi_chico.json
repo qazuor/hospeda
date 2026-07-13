@@ -1,7 +1,7 @@
 {
     "slug": "mandisovi_chico",
-    "lat": null,
-    "long": null,
+    "lat": -30.947476799999997,
+    "long": -57.9476318,
     "type": "NATURAL",
     "icon": null,
     "description": "Curso de agua regional vinculado con humedales, actividad rural y el paisaje del corredor del perilago.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.santaana.gob.ar/home/ciudad/",
-    "notes": "Curso de agua; requiere geometría lineal.",
+    "notes": "Curso de agua; requiere geometría lineal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

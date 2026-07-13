@@ -1,7 +1,7 @@
 {
     "slug": "fiesta_regional_cerveza",
-    "lat": null,
-    "long": null,
+    "lat": -32.472577,
+    "long": -58.2360656,
     "type": "OTHER",
     "icon": null,
     "description": "Evento gastronómico y musical dedicado a productores cerveceros y propuestas regionales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://urdinarrain.tur.ar/que-hacer/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

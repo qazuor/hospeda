@@ -1,7 +1,7 @@
 {
     "slug": "cementerio_viejo",
-    "lat": null,
-    "long": null,
+    "lat": -31.388892000000002,
+    "long": -58.0304714,
     "type": "OTHER",
     "icon": null,
     "description": "Cementerio histórico con esculturas, sarcófagos y monumentos funerarios protegidos como patrimonio cultural.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://egob.concordia.gob.ar/servicios/digesto.do?idNormativa=987&opcion=idNormativa",
-    "notes": "Ubicación por calles y valor patrimonial confirmados. Falta geocodificar el acceso.",
+    "notes": "Ubicación por calles y valor patrimonial confirmados. Falta geocodificar el acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

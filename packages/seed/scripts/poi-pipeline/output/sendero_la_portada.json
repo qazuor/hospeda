@@ -1,7 +1,7 @@
 {
     "slug": "sendero_la_portada",
-    "lat": null,
-    "long": null,
+    "lat": -31.868303599999997,
+    "long": -58.2073239,
     "type": "OTHER",
     "icon": null,
     "description": "Sendero interpretativo de 600 metros y dificultad baja que atraviesa palmar y pastizal hasta un mirador sobre un bajo inundable.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades; https://www.argentina.gob.ar/sites/default/files/2024/09/pn_elpalmar_-_uso_publico_-_abril2024.pdf",
-    "notes": "Nombre, longitud y dificultad confirmados. Falta geocodificar el inicio.",
+    "notes": "Nombre, longitud y dificultad confirmados. Falta geocodificar el inicio. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

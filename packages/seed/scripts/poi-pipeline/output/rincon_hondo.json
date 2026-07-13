@@ -1,7 +1,7 @@
 {
     "slug": "rincon_hondo",
-    "lat": null,
-    "long": null,
+    "lat": -32.3182676,
+    "long": -59.078050299999994,
     "type": "OTHER",
     "icon": null,
     "description": "Sector natural al sur del balneario con bosques en galería, playas, aves, árboles nativos y vistas del río Gualeguay.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://www.rosariodeltala.gob.ar/?q=areas-noticias%2Fturismo",
-    "notes": "Sector proyectado como área protegida. Falta delimitar límites, accesos y plan de manejo vigente.",
+    "notes": "Sector proyectado como área protegida. Falta delimitar límites, accesos y plan de manejo vigente. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

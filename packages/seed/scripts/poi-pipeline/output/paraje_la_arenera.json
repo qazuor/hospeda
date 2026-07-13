@@ -1,7 +1,7 @@
 {
     "slug": "paraje_la_arenera",
-    "lat": null,
-    "long": null,
+    "lat": -33.7538797,
+    "long": -59.178289400000004,
     "type": "NATURAL",
     "icon": null,
     "description": "Sector rural y ribereño reconocido por la pesca y los campings en el entorno natural de Ibicuy.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/ibicuy",
-    "notes": "Paraje identificado por Turismo Entre Ríos. Falta geocodificar y relevar servicios vigentes.",
+    "notes": "Paraje identificado por Turismo Entre Ríos. Falta geocodificar y relevar servicios vigentes. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

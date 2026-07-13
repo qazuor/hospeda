@@ -1,7 +1,7 @@
 {
     "slug": "parque_jardin_esperanza",
-    "lat": null,
-    "long": null,
+    "lat": -31.629033599999996,
+    "long": -58.51346219999999,
     "type": "PARK",
     "icon": null,
     "description": "Parque barrial con canchas para básquet y fútbol, obras artísticas y espacios destinados al encuentro y recreación familiar.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/se-inauguro-el-nuevo-parque-jardin-esperanza/",
-    "notes": "Inauguración, equipamiento y uso comunitario confirmados. Falta geocodificar.",
+    "notes": "Inauguración, equipamiento y uso comunitario confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

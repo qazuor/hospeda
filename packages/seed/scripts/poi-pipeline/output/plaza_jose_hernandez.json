@@ -1,7 +1,7 @@
 {
     "slug": "plaza_jose_hernandez",
-    "lat": null,
-    "long": null,
+    "lat": -33.0331392,
+    "long": -59.009294399999995,
     "type": "PLAZA",
     "icon": null,
     "description": "Plaza barrial y espacio verde de recreación próximo al Grupo Scout y a instituciones comunitarias.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N6693597306; https://mapcarta.com/es/N2900151222",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

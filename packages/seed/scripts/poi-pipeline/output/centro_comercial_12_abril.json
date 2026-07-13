@@ -1,7 +1,7 @@
 {
     "slug": "centro_comercial_12_abril",
-    "lat": null,
-    "long": null,
+    "lat": -32.2193521,
+    "long": -58.13580899999999,
     "type": "OTHER",
     "icon": null,
     "description": "Principal corredor comercial y gastronómico de Colón, con tiendas, cafeterías, restaurantes y servicios en el centro urbano.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://colon.gov.ar/bus-turistico-y-caminatas-a-la-reserva-norte-dos-propuestas-guiadas-para-conocer-nuestra-ciudad/",
-    "notes": "El corredor está incluido en el circuito turístico oficial. Debe definirse un punto central representativo.",
+    "notes": "El corredor está incluido en el circuito turístico oficial. Debe definirse un punto central representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "gualeguay_costanera",
-    "lat": null,
-    "long": null,
+    "lat": -33.1586709,
+    "long": -59.306250399999996,
     "type": "OTHER",
     "icon": null,
     "description": "Paseo costero junto al río Gualeguay, utilizado para caminatas, pesca, recreación y contemplación del paisaje ribereño.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/gualeguay; https://www.turismoentrerios.com/gualeguay/parquesypaseos.htm",
-    "notes": "Paseo lineal confirmado. Conviene modelarlo como geometría.",
+    "notes": "Paseo lineal confirmado. Conviene modelarlo como geometría. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

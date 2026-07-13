@@ -1,7 +1,7 @@
 {
     "slug": "santa_anita",
-    "lat": null,
-    "long": null,
+    "lat": -32.1757845,
+    "long": -58.7861762,
     "type": "NATURAL",
     "icon": null,
     "description": "Predio natural privado con especies autóctonas, reconocido históricamente como lugar de interés local.",
@@ -30,7 +30,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes",
-    "notes": "La fuente municipal lo identifica como propiedad privada y en desuso. No debe promocionarse como visita abierta.",
+    "notes": "La fuente municipal lo identifica como propiedad privada y en desuso. No debe promocionarse como visita abierta. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

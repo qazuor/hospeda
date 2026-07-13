@@ -1,7 +1,7 @@
 {
     "slug": "concordia_palacio_municipal",
-    "lat": null,
-    "long": null,
+    "lat": -31.396852199999998,
+    "long": -58.01714419999999,
     "type": "OTHER",
     "icon": null,
     "description": "Sede histórica del gobierno municipal y edificio patrimonial del centro cívico de la ciudad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/; https://egob.concordia.gob.ar/servicios/digesto.do?idNormativa=987&opcion=idNormativa",
-    "notes": "Dirección y carácter patrimonial confirmados. Falta geocodificar.",
+    "notes": "Dirección y carácter patrimonial confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

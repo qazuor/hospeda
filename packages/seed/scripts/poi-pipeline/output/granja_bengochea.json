@@ -1,7 +1,7 @@
 {
     "slug": "granja_bengochea",
-    "lat": null,
-    "long": null,
+    "lat": -31.8521609,
+    "long": -59.07193629999999,
     "type": "OTHER",
     "icon": null,
     "description": "Emprendimiento familiar con actividades de granja, panificación, senderos de monte nativo y observación de animales.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://es.wikipedia.org/wiki/Villaguay",
-    "notes": "Oferta turística documentada. Falta validar condiciones actuales de visita y coordenadas.",
+    "notes": "Oferta turística documentada. Falta validar condiciones actuales de visita y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

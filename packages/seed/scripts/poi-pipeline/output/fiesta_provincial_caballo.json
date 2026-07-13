@@ -1,7 +1,7 @@
 {
     "slug": "fiesta_provincial_caballo",
-    "lat": null,
-    "long": null,
+    "lat": -32.6887183,
+    "long": -58.886857299999996,
     "type": "OTHER",
     "icon": null,
     "description": "Celebración tradicional con actividades ecuestres, música, gastronomía y expresiones de la cultura rural.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://urdinarrain.tur.ar/que-hacer/",
-    "notes": "Evento oficial confirmado. Falta identificar la sede correspondiente a cada edición.",
+    "notes": "Evento oficial confirmado. Falta identificar la sede correspondiente a cada edición. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

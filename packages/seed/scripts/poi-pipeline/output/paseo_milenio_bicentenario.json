@@ -1,7 +1,7 @@
 {
     "slug": "paseo_milenio_bicentenario",
-    "lat": null,
-    "long": null,
+    "lat": -31.614578700000003,
+    "long": -58.51629260000001,
     "type": "PLAZA",
     "icon": null,
     "description": "Conjunto de espacios conmemorativos de avenida Malarín dedicados al cambio de milenio y al Bicentenario argentino.",
@@ -30,7 +30,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/ciudad/",
-    "notes": "Los espacios del Milenio y Bicentenario están confirmados; se agrupan como un único POI hasta geocodificarlos por separado.",
+    "notes": "Los espacios del Milenio y Bicentenario están confirmados; se agrupan como un único POI hasta geocodificarlos por separado. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

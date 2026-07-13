@@ -1,7 +1,7 @@
 {
     "slug": "parroquia_san_pedro",
-    "lat": null,
-    "long": null,
+    "lat": -33.4997599,
+    "long": -58.7997694,
     "type": "OTHER",
     "icon": null,
     "description": "Principal templo católico de Ceibas y referencia religiosa del sector histórico de la localidad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://es.wikipedia.org/wiki/Ceibas; https://aica.org/noticia-nueva-parroquia-en-la-diocesis-de-gualeguaychu",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "concepcion_del_uruguay_sala_evocativa_malvinas",
-    "lat": null,
-    "long": null,
+    "lat": -32.483868699999995,
+    "long": -58.2324844,
     "type": "MUSEUM",
     "icon": null,
     "description": "Exposición permanente dedicada a la Guerra de Malvinas, sus veteranos, documentos, objetos y memoria local.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/concepcion-del-uruguay-tendra-su-noche-de-los-museos",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

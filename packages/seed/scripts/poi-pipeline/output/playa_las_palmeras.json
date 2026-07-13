@@ -1,7 +1,7 @@
 {
     "slug": "playa_las_palmeras",
-    "lat": null,
-    "long": null,
+    "lat": -30.9784102,
+    "long": -57.912837800000005,
     "type": "BEACH",
     "icon": null,
     "description": "Sector de playa del extremo sudeste de la ciudad, rodeado por espacios verdes y utilizado para recreación y actividades náuticas.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/nuestras-playas/; https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
-    "notes": "Ubicación general confirmada en el plano turístico. Falta geocodificar.",
+    "notes": "Ubicación general confirmada en el plano turístico. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

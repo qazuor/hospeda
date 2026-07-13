@@ -1,7 +1,7 @@
 {
     "slug": "circuito_avistaje_aves",
-    "lat": null,
-    "long": null,
+    "lat": -33.4912493,
+    "long": -58.6798977,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido guiado por caminos rurales, bañados, pajonales y montes donde se observan aves residentes y migratorias.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/ceibas; https://www.lanacion.com.ar/revista-lugares/meca-internacional-el-pueblo-que-convoca-gente-del-mundo-entero-para-ver-y-fotografiar-aves-nid03082025/",
-    "notes": "Circuito variable según clima, guía y estado de caminos. Falta digitalizar recorridos habilitados.",
+    "notes": "Circuito variable según clima, guía y estado de caminos. Falta digitalizar recorridos habilitados. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

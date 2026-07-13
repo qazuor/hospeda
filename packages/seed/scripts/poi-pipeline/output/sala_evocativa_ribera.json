@@ -1,7 +1,7 @@
 {
     "slug": "sala_evocativa_ribera",
-    "lat": null,
-    "long": null,
+    "lat": -32.500228899999996,
+    "long": -58.224577,
     "type": "MUSEUM",
     "icon": null,
     "description": "Espacio museístico dedicado a preservar la historia del puerto, la Aduana y la relación de la ciudad con el río.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/realizar%C3%A1n-el-iv-encuentro-regional-de-museos",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

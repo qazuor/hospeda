@@ -1,7 +1,7 @@
 {
     "slug": "san_salvador_natatorio_municipal",
-    "lat": null,
-    "long": null,
+    "lat": -31.623757,
+    "long": -58.5062863,
     "type": "STADIUM",
     "icon": null,
     "description": "Piscina pública municipal integrada al área recreativa del parque central y utilizada para actividades acuáticas y propuestas de verano.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/trabajos-de-mejoras-en-el-parque-eva-peron/; https://mapcarta.com/es/W447505174",
-    "notes": "Existencia y ubicación relativa confirmadas. Falta recuperar coordenadas exactas.",
+    "notes": "Existencia y ubicación relativa confirmadas. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

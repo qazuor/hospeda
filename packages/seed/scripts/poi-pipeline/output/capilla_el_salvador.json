@@ -1,7 +1,7 @@
 {
     "slug": "capilla_el_salvador",
-    "lat": null,
-    "long": null,
+    "lat": -31.629081900000003,
+    "long": -58.5012286,
     "type": "OTHER",
     "icon": null,
     "description": "Primer templo religioso de la ciudad, construido en 1912 junto a Villa Aurora, con retablo traído desde Francia y una imagen de Nuestra Señora de los Dolores.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/ciudad/",
-    "notes": "Historia, fecha y elementos interiores confirmados. Falta geocodificar.",
+    "notes": "Historia, fecha y elementos interiores confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

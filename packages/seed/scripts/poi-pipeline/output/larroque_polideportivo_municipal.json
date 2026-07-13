@@ -1,7 +1,7 @@
 {
     "slug": "larroque_polideportivo_municipal",
-    "lat": null,
-    "long": null,
+    "lat": -33.0324983,
+    "long": -59.01597919999999,
     "type": "STADIUM",
     "icon": null,
     "description": "Complejo deportivo utilizado para clases, torneos, actividades recreativas, newcom y propuestas municipales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.turismoentrerios.com/larroque/sitios.htm; https://www.larroque.gob.ar/larroque/storage/public/transparency/456/1732530489_09-_BO_SEPTIEMBRE_2024.pdf",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

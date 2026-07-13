@@ -1,7 +1,7 @@
 {
     "slug": "reserva_rio_de_los_pajaros",
-    "lat": null,
-    "long": null,
+    "lat": -32.2035449,
+    "long": -58.1508033,
     "type": "NATURAL",
     "icon": null,
     "description": "Área natural protegida de usos múltiples con humedales, pastizales y bosque ribereño, apta para senderismo, observación de fauna y educación ambiental.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.colonturismo.tur.ar/directorio/parque-rio-de-los-pajaros/",
-    "notes": "Existencia y usos confirmados por Turismo Colón. Falta definir el punto del acceso principal.",
+    "notes": "Existencia y usos confirmados por Turismo Colón. Falta definir el punto del acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

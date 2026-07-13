@@ -1,7 +1,7 @@
 {
     "slug": "san_jose_municipalidad",
-    "lat": null,
-    "long": null,
+    "lat": -32.213132099999996,
+    "long": -58.2183129,
     "type": "OTHER",
     "icon": null,
     "description": "Sede administrativa municipal y punto de referencia para trámites, información pública y servicios locales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sanjose.gob.ar/; https://mapcarta.com/es/N2482952274",
-    "notes": "Institución y ubicación relativa confirmadas; falta recuperar dirección y coordenadas exactas.",
+    "notes": "Institución y ubicación relativa confirmadas; falta recuperar dirección y coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

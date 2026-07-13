@@ -1,7 +1,7 @@
 {
     "slug": "centro_salud_diego_paroissien",
-    "lat": null,
-    "long": null,
+    "lat": -31.7958513,
+    "long": -58.3148639,
     "type": "OTHER",
     "icon": null,
     "description": "Centro público de atención primaria y guardia médica de referencia para residentes y visitantes de Ubajay.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ubajay.gob.ar/category/salud/; https://www.welcomeargentina.com/ubajay/c48671.html",
-    "notes": "Nombre, servicio y dirección confirmados. Falta geocodificar.",
+    "notes": "Nombre, servicio y dirección confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

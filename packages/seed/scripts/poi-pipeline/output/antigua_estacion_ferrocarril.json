@@ -1,7 +1,7 @@
 {
     "slug": "antigua_estacion_ferrocarril",
-    "lat": null,
-    "long": null,
+    "lat": -32.1392634,
+    "long": -58.266468399999994,
     "type": "OTHER",
     "icon": null,
     "description": "Estación ferroviaria histórica del ramal Concordia–Concepción del Uruguay, vinculada con el transporte regional y el desarrollo del pueblo industrial.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://es.wikipedia.org/wiki/Estaci%C3%B3n_Liebig",
-    "notes": "Existencia histórica confirmada. Falta verificar estado actual, acceso y coordenadas.",
+    "notes": "Existencia histórica confirmada. Falta verificar estado actual, acceso y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

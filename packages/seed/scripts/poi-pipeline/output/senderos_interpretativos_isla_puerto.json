@@ -1,7 +1,7 @@
 {
     "slug": "senderos_interpretativos_isla_puerto",
-    "lat": null,
-    "long": null,
+    "lat": -32.4875329,
+    "long": -58.2147848,
     "type": "OTHER",
     "icon": null,
     "description": "Red de senderos guiados para conocer los humedales, la vegetación ribereña y la biodiversidad de la reserva.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://isladelpuerto.cdeluruguay.gob.ar/; https://isladelpuerto.cdeluruguay.gob.ar/novedades/",
-    "notes": "Falta digitalizar recorridos, dificultad y puntos de ingreso.",
+    "notes": "Falta digitalizar recorridos, dificultad y puntos de ingreso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

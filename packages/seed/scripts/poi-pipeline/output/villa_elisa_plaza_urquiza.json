@@ -1,7 +1,7 @@
 {
     "slug": "villa_elisa_plaza_urquiza",
-    "lat": null,
-    "long": null,
+    "lat": -32.164139999999996,
+    "long": -58.40055759999999,
     "type": "PLAZA",
     "icon": null,
     "description": "Plaza central con mástil y monumento a Justo José de Urquiza, rodeada por avenidas y edificios representativos de la ciudad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://villaelisa.gov.ar/se-renueva-la-plaza-urquiza-de-villa-elisa/; https://villaelisa.gov.ar/local/plaza-urquiza/",
-    "notes": "Nombre, límites urbanos y elementos principales confirmados. Falta geocodificar el centro del polígono.",
+    "notes": "Nombre, límites urbanos y elementos principales confirmados. Falta geocodificar el centro del polígono. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

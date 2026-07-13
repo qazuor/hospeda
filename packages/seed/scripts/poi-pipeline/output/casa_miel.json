@@ -1,7 +1,7 @@
 {
     "slug": "casa_miel",
-    "lat": null,
-    "long": null,
+    "lat": -31.013119900000003,
+    "long": -57.944008399999994,
     "type": "OTHER",
     "icon": null,
     "description": "Punto de producción y venta de mieles y derivados ubicado sobre la ruta de acceso a Federación.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/otros-atractivos/",
-    "notes": "Actividad y ubicación general confirmadas. Falta dirección y geocodificación.",
+    "notes": "Actividad y ubicación general confirmadas. Falta dirección y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

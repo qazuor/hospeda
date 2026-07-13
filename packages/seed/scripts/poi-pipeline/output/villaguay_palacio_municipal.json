@@ -1,7 +1,7 @@
 {
     "slug": "villaguay_palacio_municipal",
-    "lat": null,
-    "long": null,
+    "lat": -31.8676401,
+    "long": -59.027630099999996,
     "type": "OTHER",
     "icon": null,
     "description": "Edificio neoclásico del gobierno local, con torre reloj, balcones y una fuerte presencia arquitectónica frente a la plaza.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.villaguay.gob.ar/; https://www.villaguay.gob.ar/app/turismo/declaracion_de_interes; https://www.entrerios.tur.ar/localidades-1/villaguay",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

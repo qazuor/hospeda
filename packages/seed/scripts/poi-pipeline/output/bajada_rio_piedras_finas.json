@@ -1,7 +1,7 @@
 {
     "slug": "bajada_rio_piedras_finas",
-    "lat": null,
-    "long": null,
+    "lat": -30.899350899999998,
+    "long": -57.931115399999996,
     "type": "OTHER",
     "icon": null,
     "description": "Acceso rural al agua utilizado como punto de observación y conexión con el paisaje del lago.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/W706820034; https://mapcarta.com/es/N8949729120",
-    "notes": "Ubicación relativa confirmada. Falta geocodificar y validar acceso público.",
+    "notes": "Ubicación relativa confirmada. Falta geocodificar y validar acceso público. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

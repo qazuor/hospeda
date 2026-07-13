@@ -1,7 +1,7 @@
 {
     "slug": "vagon_historico",
-    "lat": null,
-    "long": null,
+    "lat": -33.753298,
+    "long": -59.178332000000005,
     "type": "MONUMENT",
     "icon": null,
     "description": "Vagón declarado Monumento Histórico Provincial que recuerda la labor ferroviaria y la importancia conjunta del puerto y el tren.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ibicuy.gob.ar/?q=content%2Fque-visitar",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

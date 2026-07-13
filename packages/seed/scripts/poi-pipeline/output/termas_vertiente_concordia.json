@@ -1,7 +1,7 @@
 {
     "slug": "termas_vertiente_concordia",
-    "lat": null,
-    "long": null,
+    "lat": -31.2955902,
+    "long": -58.0041958,
     "type": "OTHER",
     "icon": null,
     "description": "Complejo termal con circuito hídrico y servicios de bienestar, ubicado en el acceso norte de la ciudad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/turismo/atractivos/termas/termas-de-concordia",
-    "notes": "Denominación y servicios confirmados. Falta dirección y geocodificación exacta.",
+    "notes": "Denominación y servicios confirmados. Falta dirección y geocodificación exacta. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

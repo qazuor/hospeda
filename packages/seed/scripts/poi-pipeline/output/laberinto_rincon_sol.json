@@ -1,7 +1,7 @@
 {
     "slug": "laberinto_rincon_sol",
-    "lat": null,
-    "long": null,
+    "lat": -30.979371500000003,
+    "long": -57.916323799999994,
     "type": "OTHER",
     "icon": null,
     "description": "Parque familiar con laberinto de ligustrina, minigolf, juegos infantiles y figuras de dinosaurios.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/otros-atractivos/",
-    "notes": "Servicios y dirección confirmados. Falta geocodificar.",
+    "notes": "Servicios y dirección confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

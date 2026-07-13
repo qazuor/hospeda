@@ -1,7 +1,7 @@
 {
     "slug": "colon_costanera",
-    "lat": null,
-    "long": null,
+    "lat": -32.2186972,
+    "long": -58.132971399999995,
     "type": "OTHER",
     "icon": null,
     "description": "Paseo ribereño que conecta playas, puerto, parques, miradores, espacios gastronómicos y sectores recreativos frente al río Uruguay.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://colon.gov.ar/bus-turistico-y-caminatas-a-la-reserva-norte-dos-propuestas-guiadas-para-conocer-nuestra-ciudad/",
-    "notes": "Paseo confirmado en el circuito turístico oficial. Debe definirse un punto central representativo.",
+    "notes": "Paseo confirmado en el circuito turístico oficial. Debe definirse un punto central representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

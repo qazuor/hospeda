@@ -1,7 +1,7 @@
 {
     "slug": "paranacito_fiesta_patronal",
-    "lat": null,
-    "long": null,
+    "lat": -33.7164006,
+    "long": -58.656856399999995,
     "type": "OTHER",
     "icon": null,
     "description": "Celebración religiosa y comunitaria con misa y peregrinación náutica y terrestre.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.villaparanacito.gob.ar/turismo/eventos",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "reserva_serena_gualeyan",
-    "lat": null,
-    "long": null,
+    "lat": -32.9881354,
+    "long": -58.54418090000001,
     "type": "OTHER",
     "icon": null,
     "description": "Reserva urbana y espacio de conservación ubicado en el sector del arroyo Gualeyán.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/naturaleza",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

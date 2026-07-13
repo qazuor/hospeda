@@ -1,7 +1,7 @@
 {
     "slug": "santa_ana_oficina_turismo",
-    "lat": null,
-    "long": null,
+    "lat": -30.9132853,
+    "long": -57.926673599999994,
     "type": "OTHER",
     "icon": null,
     "description": "Punto municipal de información sobre playas, alojamientos, camping, eventos y propuestas del destino.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.santaana.gob.ar/home/2025/02/07/disfruta-santa-ana/; https://www.santaana.gob.ar/home/",
-    "notes": "Contacto turístico municipal confirmado. Falta identificar oficina o mostrador específico.",
+    "notes": "Contacto turístico municipal confirmado. Falta identificar oficina o mostrador específico. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

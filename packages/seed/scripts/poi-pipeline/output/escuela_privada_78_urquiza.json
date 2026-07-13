@@ -1,7 +1,7 @@
 {
     "slug": "escuela_privada_78_urquiza",
-    "lat": null,
-    "long": null,
+    "lat": -32.4629609,
+    "long": -58.47890160000001,
     "type": "OTHER",
     "icon": null,
     "description": "Institución educativa integrante del conjunto histórico y arquitectónico del centro de Caseros.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://caseros.gob.ar/turismo-y-cultura/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "comparsa_ara_yevi",
-    "lat": null,
-    "long": null,
+    "lat": -33.0193867,
+    "long": -58.518776499999994,
     "type": "OTHER",
     "icon": null,
     "description": "Comparsa del Carnaval del País con producción de carrozas, vestuario, danza y percusión.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/carnaval",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

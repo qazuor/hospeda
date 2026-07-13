@@ -1,7 +1,7 @@
 {
     "slug": "parque_los_ponys",
-    "lat": null,
-    "long": null,
+    "lat": -32.158950499999996,
+    "long": -58.199550599999995,
     "type": "PARK",
     "icon": null,
     "description": "Parque recreativo y deportivo utilizado para campeonatos de tejo, encuentros de adultos mayores y actividades comunitarias al aire libre.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://puebloliebig.gob.ar/noticias/campeonato-de-tejo-duo-mixto-en-pueblo-liebig-2/; https://puebloliebig.gob.ar/noticias/entrega-de-tapitas-a-la-escuela-n2-rayo-de-luz/",
-    "notes": "Nombre, uso y ubicación relativa confirmados. Falta geocodificar el acceso.",
+    "notes": "Nombre, uso y ubicación relativa confirmados. Falta geocodificar el acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

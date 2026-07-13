@@ -1,7 +1,7 @@
 {
     "slug": "caseros_corsodromo",
-    "lat": null,
-    "long": null,
+    "lat": -32.464897199999996,
+    "long": -58.478484400000006,
     "type": "OTHER",
     "icon": null,
     "description": "Predio urbano donde se realizan los carnavales locales y desfilan las comparsas de la ciudad.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://caseros.gob.ar/vuelven-los-carnavales-de-caseros/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

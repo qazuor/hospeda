@@ -1,7 +1,7 @@
 {
     "slug": "plazoleta_belgrano",
-    "lat": null,
-    "long": null,
+    "lat": -31.6262743,
+    "long": -58.5097835,
     "type": "PLAZA",
     "icon": null,
     "description": "Espacio público de avenida Malarín dedicado al general Manuel Belgrano y a la memoria cívica nacional.",
@@ -30,7 +30,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/ciudad/",
-    "notes": "Existencia confirmada en el inventario municipal de paseos. Falta geocodificar.",
+    "notes": "Existencia confirmada en el inventario municipal de paseos. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

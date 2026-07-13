@@ -1,7 +1,7 @@
 {
     "slug": "sala_teatro_padre_paoli",
-    "lat": null,
-    "long": null,
+    "lat": -33.034479,
+    "long": -59.0057368,
     "type": "OTHER",
     "icon": null,
     "description": "Sala teatral municipal y principal escenario del Festival de Teatro Larroque, actos, charlas y producciones culturales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.larroque.gob.ar/noticia/2608/se_llevo_a_cabo_exitosamente_el_vi_festival_de_teatro_larroque; https://www.larroque.gob.ar/; https://www.instagram.com/areacultura.larroque/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

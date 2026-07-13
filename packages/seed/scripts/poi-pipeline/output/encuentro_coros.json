@@ -1,7 +1,7 @@
 {
     "slug": "encuentro_coros",
-    "lat": null,
-    "long": null,
+    "lat": -32.4694115,
+    "long": -58.478538300000004,
     "type": "OTHER",
     "icon": null,
     "description": "Encuentro coral regional realizado en el Centro Cultural Margarita Thea con participación de agrupaciones invitadas.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://caseros.gob.ar/este-sabado-se-realizara-el-xiv-encuentro-los-coros-cantan-a-caseros/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

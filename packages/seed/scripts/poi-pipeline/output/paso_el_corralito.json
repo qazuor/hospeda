@@ -1,7 +1,7 @@
 {
     "slug": "paso_el_corralito",
-    "lat": null,
-    "long": null,
+    "lat": -32.9190545,
+    "long": -59.155007899999994,
     "type": "BEACH",
     "icon": null,
     "description": "Paraje natural de arenas blancas sobre la costa del río Gualeguay, utilizado para pesca, deportes náuticos, ecoturismo y recreación.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes; https://es.wikipedia.org/wiki/Larroque_%28Argentina%29",
-    "notes": "Paraje confirmado. Falta geocodificar el acceso seguro y el sector de uso público.",
+    "notes": "Paraje confirmado. Falta geocodificar el acceso seguro y el sector de uso público. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "circuito_productivo_arrocero",
-    "lat": null,
-    "long": null,
+    "lat": -31.626862000000003,
+    "long": -58.4999366,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido educativo para conocer la historia y las etapas de producción del arroz, incluyendo Museo del Arroz, cooperativa y molinos modernos.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/gobierno/turismo/",
-    "notes": "Circuito oficial del programa de turismo educativo. Requiere reserva y falta digitalizar el trazado.",
+    "notes": "Circuito oficial del programa de turismo educativo. Requiere reserva y falta digitalizar el trazado. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

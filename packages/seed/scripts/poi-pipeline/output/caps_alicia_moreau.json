@@ -1,7 +1,7 @@
 {
     "slug": "caps_alicia_moreau",
-    "lat": null,
-    "long": null,
+    "lat": -32.4465759,
+    "long": -58.43376669999999,
     "type": "OTHER",
     "icon": null,
     "description": "Centro público de atención primaria de la salud que brinda servicios sanitarios básicos a la comunidad de San Justo.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N9066937279",
-    "notes": "La institución aparece cartografiada; falta confirmar coordenadas y domicilio exactos.",
+    "notes": "La institución aparece cartografiada; falta confirmar coordenadas y domicilio exactos. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

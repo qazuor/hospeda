@@ -1,7 +1,7 @@
 {
     "slug": "reserva_chaviyu",
-    "lat": null,
-    "long": null,
+    "lat": -31.0670978,
+    "long": -57.902121199999996,
     "type": "OTHER",
     "icon": null,
     "description": "Reserva natural situada a unos 12 kilómetros de la ciudad, con lago, islas, monte de eucaliptos, playas de piedras semipreciosas y abundante fauna.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/reserva-natural-chaviyu/",
-    "notes": "Distancia, ambientes y actividad turística confirmados. Falta geocodificar el acceso principal.",
+    "notes": "Distancia, ambientes y actividad turística confirmados. Falta geocodificar el acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

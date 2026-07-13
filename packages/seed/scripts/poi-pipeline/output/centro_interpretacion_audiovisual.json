@@ -1,7 +1,7 @@
 {
     "slug": "centro_interpretacion_audiovisual",
-    "lat": null,
-    "long": null,
+    "lat": -32.1538932,
+    "long": -58.1899907,
     "type": "MUSEUM",
     "icon": null,
     "description": "Espacio municipal que presenta la historia, la identidad y el patrimonio industrial de Pueblo Liebig mediante relatos, imágenes y materiales audiovisuales.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://puebloliebig.gob.ar/noticias/visita-al-centro-de-interpretacion-audiovisual/; https://www.facebook.com/TurismoVillaElisa/videos/376085384365923/",
-    "notes": "Nombre, función y dirección confirmados. Falta geocodificar la entrada principal.",
+    "notes": "Nombre, función y dirección confirmados. Falta geocodificar la entrada principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

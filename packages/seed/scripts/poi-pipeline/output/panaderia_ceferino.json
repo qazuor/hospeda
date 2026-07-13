@@ -1,7 +1,7 @@
 {
     "slug": "panaderia_ceferino",
-    "lat": null,
-    "long": null,
+    "lat": -32.6853498,
+    "long": -58.88868779999999,
     "type": "OTHER",
     "icon": null,
     "description": "Panadería artesanal con más de cincuenta años de trayectoria, horno a leña, visitas programadas y venta de productos regionales.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://urdinarrain.tur.ar/que-hacer/",
-    "notes": "Trayectoria y visitas programadas confirmadas. Falta dirección y geocodificación.",
+    "notes": "Trayectoria y visitas programadas confirmadas. Falta dirección y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

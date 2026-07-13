@@ -1,7 +1,7 @@
 {
     "slug": "federacion_plaza_libertad",
-    "lat": null,
-    "long": null,
+    "lat": -30.984419100000004,
+    "long": -57.921269499999994,
     "type": "PLAZA",
     "icon": null,
     "description": "Plaza céntrica próxima al Museo de los Asentamientos, Poblarte y el Auditorio del Bicentenario.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/W1101824521; https://mapcarta.com/es/N10082753555",
-    "notes": "Existencia y ubicación relativa confirmadas. Falta recuperar coordenadas exactas.",
+    "notes": "Existencia y ubicación relativa confirmadas. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

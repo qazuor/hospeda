@@ -1,7 +1,7 @@
 {
     "slug": "balneario_publico_obeliscos",
-    "lat": null,
-    "long": null,
+    "lat": -33.011127,
+    "long": -58.5050914,
     "type": "BEACH",
     "icon": null,
     "description": "Playa pública urbana ubicada en el paseo de la Costanera, cercana a los puestos de información turística.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/playas",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -1,7 +1,7 @@
 {
     "slug": "reserva_isla_banco_ines",
-    "lat": null,
-    "long": null,
+    "lat": -32.499576999999995,
+    "long": -58.2264754,
     "type": "OTHER",
     "icon": null,
     "description": "Área natural insular del río Uruguay destinada a la conservación de humedales, fauna y vegetación ribereña.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/naturaleza",
-    "notes": "Reserva insular confirmada. Requiere un punto de referencia o polígono y acceso náutico.",
+    "notes": "Reserva insular confirmada. Requiere un punto de referencia o polígono y acceso náutico. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

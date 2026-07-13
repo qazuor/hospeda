@@ -1,7 +1,7 @@
 {
     "slug": "puente_vieja_nueva",
-    "lat": null,
-    "long": null,
+    "lat": -30.999669,
+    "long": -57.912837499999995,
     "type": "OTHER",
     "icon": null,
     "description": "Puente que vincula visual y territorialmente el antiguo emplazamiento con la ciudad nueva, además de ser un punto utilizado para pesca.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/otros-atractivos/; https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
-    "notes": "Existencia y uso pesquero confirmados. Falta geocodificar.",
+    "notes": "Existencia y uso pesquero confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

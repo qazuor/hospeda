@@ -1,7 +1,7 @@
 {
     "slug": "federacion_playa_grande",
-    "lat": null,
-    "long": null,
+    "lat": -30.984963699999998,
+    "long": -57.913264999999996,
     "type": "BEACH",
     "icon": null,
     "description": "Amplio sector de playa urbana sobre el lago Salto Grande, próximo a áreas verdes y servicios recreativos.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/nuestras-playas/; https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
-    "notes": "Nombre y ubicación general confirmados. Falta geocodificar el acceso principal.",
+    "notes": "Nombre y ubicación general confirmados. Falta geocodificar el acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

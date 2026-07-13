@@ -1,7 +1,7 @@
 {
     "slug": "larroque_museo_estacion",
-    "lat": null,
-    "long": null,
+    "lat": -33.0348821,
+    "long": -59.005246199999995,
     "type": "MUSEUM",
     "icon": null,
     "description": "Museo ferroviario y social con objetos, documentos y fotografías que reconstruyen la historia de Larroque y su relación con el tren.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes; https://portallarroque.com/larroque-reabre-sus-puertas-el-museo-de-la-estacion/; https://www.larroque.gob.ar/noticia/1995/la_rica_historia_de_larroque_y_la_conexion_de_sus_museos",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

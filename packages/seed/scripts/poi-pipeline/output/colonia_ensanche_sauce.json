@@ -1,7 +1,7 @@
 {
     "slug": "colonia_ensanche_sauce",
-    "lat": null,
-    "long": null,
+    "lat": -30.851891700000003,
+    "long": -57.930711699999996,
     "type": "OTHER",
     "icon": null,
     "description": "Localidad rural que depende parcialmente del municipio de Santa Ana y forma parte de su paisaje productivo y comunitario.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/19202584; https://es.wikipedia.org/wiki/Colonia_Ensanche_Sauce",
-    "notes": "Localidad incluida en el municipio. Falta definir punto central representativo y servicios.",
+    "notes": "Localidad incluida en el municipio. Falta definir punto central representativo y servicios. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

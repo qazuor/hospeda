@@ -1,7 +1,7 @@
 {
     "slug": "hospital_centenario",
-    "lat": null,
-    "long": null,
+    "lat": -33.0102282,
+    "long": -58.532367099999995,
     "type": "OTHER",
     "icon": null,
     "description": "Hospital público provincial de referencia para urgencias, internación y servicios sanitarios de la ciudad y el departamento.",
@@ -31,7 +31,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://portal.entrerios.gov.ar/salud/ps/gualeguaychu/28199",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {
