@@ -326,9 +326,20 @@ describe('SubscriptionDashboard — resolved subscription', () => {
         });
     });
 
-    it('renders the upgrade link pointing to plans page', async () => {
+    // BETA-165: the upgrade link must point at the pricing page matching the
+    // user's audience — tourist (plain USER) vs owner (HOST/ADMIN/etc).
+    it('renders the upgrade link pointing to the tourist plans page for a USER role', async () => {
         mockSubscriptionSuccess();
-        renderDashboard();
+        renderDashboard(USER_ROLE);
+        await waitFor(() => {
+            const link = screen.getByRole('link', { name: /mejorar plan|ver planes/i });
+            expect(link).toHaveAttribute('href', '/es/suscriptores/turistas/');
+        });
+    });
+
+    it('renders the upgrade link pointing to the owner plans page for a HOST role', async () => {
+        mockSubscriptionSuccess();
+        renderDashboard(HOST_ROLE);
         await waitFor(() => {
             const link = screen.getByRole('link', { name: /mejorar plan|ver planes/i });
             expect(link).toHaveAttribute('href', '/es/suscriptores/planes/');
@@ -625,9 +636,21 @@ describe('SubscriptionDashboard — empty state', () => {
         });
     });
 
-    it('empty state has a link to plans page', async () => {
+    // BETA-165 regression: a plain tourist (USER role) with no active
+    // subscription must be routed to the TOURIST plans page, not the owner one.
+    it('empty state links a USER (tourist) role to the tourist plans page', async () => {
         mockNoSubscription();
-        renderDashboard();
+        renderDashboard(USER_ROLE);
+
+        await waitFor(() => {
+            const link = screen.getByRole('link', { name: /mejorar plan|ver planes/i });
+            expect(link).toHaveAttribute('href', '/es/suscriptores/turistas/');
+        });
+    });
+
+    it('empty state links a HOST role to the owner plans page', async () => {
+        mockNoSubscription();
+        renderDashboard(HOST_ROLE);
 
         await waitFor(() => {
             const link = screen.getByRole('link', { name: /mejorar plan|ver planes/i });
