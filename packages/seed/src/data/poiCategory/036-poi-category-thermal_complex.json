@@ -1,0 +1,29 @@
+{
+    "$schema": "../../schemas/poi-category.schema.json",
+    "id": "036-poi-category-thermal_complex",
+    "slug": "thermal_complex",
+    "nameI18n": {
+        "es": "Complejo termal",
+        "en": "Thermal complex",
+        "pt": "Complexo termal"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            }
+        }
+    },
+    "icon": "hot_tub",
+    "displayWeight": 85,
+    "lifecycleState": "ACTIVE"
+}
