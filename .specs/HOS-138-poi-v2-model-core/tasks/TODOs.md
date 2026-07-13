@@ -1,11 +1,13 @@
 # HOS-138: POI v2 model — core (multilang content, nullable coordinates, curation columns)
 
-## Progress: 11/13 tasks (85%)
+## Progress: 13/13 tasks (100%)
 
-> T-001..T-011 complete (green typecheck + unit tests across @repo/db, @repo/schemas,
-> @repo/service-core, hospeda-api, @repo/seed, hospeda-web). Remaining: **T-012**
-> (AC-6 dual-write convergence — needs the worktree DB via `wt:up`, NOT `db:fresh-dev`)
-> and **T-013** (quality gate + AC-8 browser no-op smoke — needs dev servers).
+> All tasks complete. T-012 (AC-6 dual-write convergence) verified end-to-end against
+> real postgres on the worktree DB: both the 0009 create path and the 0010 UPDATE
+> backfill path converge to identical per-locale nameI18n; 0010 is idempotent.
+> T-013: full quality gate green (typecheck repo-wide + schemas 6673 / service-core
+> 6903 / api 9131 suites); AC-8 destination POI section renders correctly in es/en/pt
+> (English names via nameI18n confirm the multilang path; ES unchanged = no-op).
 
 **Average Complexity:** 2.4/3 (max)
 **Critical Path:** T-001 → T-003 → T-010 → T-011 → T-012 → T-013 (6 steps)

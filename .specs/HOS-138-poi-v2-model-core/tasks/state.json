@@ -413,82 +413,82 @@
             "id": "T-012",
             "title": "Verify dual-write convergence (fresh + live path)",
             "description": "AC-6: confirm the 12 POIs carry non-null nameI18n/descriptionI18n after pnpm db:fresh-dev (baseline path) AND after pnpm db:seed:migrate against a staging-shaped pre-existing DB (data-migration path) — both converge to identical content. Verify check-seed-dual-write.sh passes (pointOfInterest glob already tracked). Tests: this task IS the verification (both seed paths).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002", "T-011"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Fresh DB path: db:fresh-dev populates i18n",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Live path: db:seed:migrate on pre-shaped DB",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "check-seed-dual-write.sh green",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "verification"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-12T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-12T20:35:00.000Z",
+                "completed": "2026-07-12T20:35:00.000Z"
             }
         },
         {
             "id": "T-013",
             "title": "Quality gate + AC-8 no-op smoke",
             "description": "AC-7/AC-8: run pnpm typecheck and the relevant test suites (@repo/db, @repo/schemas, @repo/service-core, apps/api, apps/web), confirm ≥90% coverage on the new null-guard branches, run check-seed-dual-write.sh, and perform the manual AC-8 smoke (pnpm dev, visit each of the 6 seeded destination detail pages that render POIs, confirm zero visual/content regression on the POI section). Resource-care: scope suites, run sequentially (per user prefs).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-005", "T-006", "T-009", "T-012"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "typecheck + scoped test suites green",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "≥90% coverage on null-guard branches",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "check-seed-dual-write.sh green",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Manual AC-8 no-op smoke on 6 pages",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "quality-gate"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-12T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-12T20:35:00.000Z",
+                "completed": "2026-07-12T20:35:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 13,
-        "pending": 2,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.4
     }
