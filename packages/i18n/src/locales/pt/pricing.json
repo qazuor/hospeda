@@ -29,7 +29,7 @@
     },
     "monthlyOnly": "Apenas plano mensal",
     "owner": {
-        "title": "Planos para anfitriões — Hospeda",
+        "title": "Planos para anfitriões",
         "description": "Publique sua hospedagem com o plano que melhor se adapta ao seu negócio.",
         "tagline": "Planos e preços",
         "heading": "Planos para anfitriões",
@@ -39,7 +39,7 @@
         "cardsHeading": "Comparação de planos para anfitriões"
     },
     "tourist": {
-        "title": "Planos para viajantes — Hospeda",
+        "title": "Planos para viajantes",
         "description": "Assine e aproveite benefícios exclusivos em suas viagens pela região do litoral.",
         "tagline": "Planos e preços",
         "heading": "Planos para viajantes",
@@ -55,12 +55,12 @@
         "teaserText": "Compare todas as funções, benefícios e limites lado a lado.",
         "owner": {
             "heading": "Comparação detalhada de planos para anfitriões",
-            "title": "Comparação de planos para anfitriões — Hospeda",
+            "title": "Comparação de planos para anfitriões",
             "description": "Compare todas as funções, benefícios e limites de cada plano para anfitriões."
         },
         "tourist": {
             "heading": "Comparação detalhada de planos para viajantes",
-            "title": "Comparação de planos para viajantes — Hospeda",
+            "title": "Comparação de planos para viajantes",
             "description": "Compare todas as funções, benefícios e limites de cada plano para viajantes."
         }
     }
