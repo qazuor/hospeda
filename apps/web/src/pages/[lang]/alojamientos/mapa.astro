@@ -128,6 +128,33 @@ const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 
+// BETA-166: the same filters used for the initial SSR fetch above must also
+// be forwarded to `useViewportSearch` (via `AccommodationsListingMap`'s
+// `extraSearchParams` prop). That hook refetches on every `moveend`/`zoomend`
+// — including the one `FitBoundsOnce` fires on first mount — and previously
+// sent ONLY the viewport bbox + `pageSize`, silently dropping every active
+// filter a few hundred ms after load and replacing the correctly filtered
+// `initialItems` with an unfiltered, capped-at-100 result set.
+const mapExtraSearchParams: Record<string, unknown> = {
+	q,
+	types,
+	destinationIds,
+	minPrice,
+	maxPrice,
+	sortBy,
+	sortOrder,
+	isFeatured,
+	minGuests,
+	minBedrooms,
+	minBathrooms,
+	minRating,
+	amenities: amenitiesParam,
+	features: featuresParam,
+	includeAmenities: true,
+	includeNoPrice,
+	includeNoReviews,
+};
+
 const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 
 const LITORAL_CENTER: [number, number] = [-31.8, -58.5];
@@ -438,6 +465,7 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 				initialCenter={mapCenter}
 				initialZoom={LITORAL_ZOOM}
 				ariaLabel={t('maps.ariaLabelAccommodation')}
+				extraSearchParams={mapExtraSearchParams}
 				typeLabels={typeLabels}
 				detailHrefById={detailHrefById}
 				reviewsLabelById={reviewsLabelById}

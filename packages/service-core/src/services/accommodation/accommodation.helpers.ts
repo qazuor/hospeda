@@ -83,10 +83,26 @@ export function flattenAccommodationJoinRelationsList<T extends Accommodation>(i
 }
 
 /**
+ * Maximum length allowed for an accommodation slug. MUST match
+ * `AccommodationSchema.slug.max(50)` in
+ * `packages/schemas/src/entities/accommodation/accommodation.schema.ts`.
+ *
+ * Enforcing this at generation time (rather than only validating it after
+ * the fact) is the root-cause fix for BETA-172: without it, long onboarding
+ * names produced slugs over 50 chars that the write schema rejected — or,
+ * once persisted, that read schemas failed to parse.
+ */
+const ACCOMMODATION_SLUG_MAX_LENGTH = 50;
+
+/**
  * Generates a unique slug for an accommodation based on its type and name.
  * It combines the type and name, creates a slugified version, and ensures
  * its uniqueness in the database by checking against existing accommodations.
  * If a generated slug already exists, it appends a unique suffix.
+ *
+ * The result is capped at {@link ACCOMMODATION_SLUG_MAX_LENGTH} chars
+ * (including any uniqueness suffix) so it always satisfies the `slug`
+ * field's `max(50)` constraint on the write schema.
  *
  * @param type The type of the accommodation (e.g., "hotel", "apartment").
  * @param name The name of the accommodation.
@@ -95,8 +111,12 @@ export function flattenAccommodationJoinRelationsList<T extends Accommodation>(i
 export async function generateSlug(type: string, name: string): Promise<string> {
     const baseString = `${type} ${name}`;
     const model = new AccommodationModel();
-    return createUniqueSlug(baseString, async (slug) => {
-        const exists = await model.findOne({ slug });
-        return !!exists;
-    });
+    return createUniqueSlug(
+        baseString,
+        async (slug) => {
+            const exists = await model.findOne({ slug });
+            return !!exists;
+        },
+        ACCOMMODATION_SLUG_MAX_LENGTH
+    );
 }

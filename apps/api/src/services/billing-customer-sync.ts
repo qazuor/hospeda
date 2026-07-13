@@ -13,6 +13,7 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { billingAddonPurchases, billingSubscriptions, withTransaction } from '@repo/db';
 import { and, eq, isNull } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
+import { sanitizeEmailForMercadoPago } from '../utils/mp-email';
 
 /**
  * Cache entry for customer lookups
@@ -76,7 +77,12 @@ export class BillingCustomerSyncService {
             return null;
         }
 
-        const { userId, email, name } = input;
+        const { userId, name } = input;
+        // Sanitize once, before create/persist — MP rejects '+' in the local
+        // part of an email (error 612). The persisted `billing_customers.email`
+        // must already be the MP-safe value, since checkout/preapproval reuse
+        // it directly from the DB on every subsequent call.
+        const email = sanitizeEmailForMercadoPago(input.email);
 
         try {
             // Check cache first
@@ -185,7 +191,9 @@ export class BillingCustomerSyncService {
             return null;
         }
 
-        const { userId, email, name } = input;
+        const { userId, name } = input;
+        // Sanitize once, before persisting — see ensureCustomerExists for rationale.
+        const email = sanitizeEmailForMercadoPago(input.email);
 
         try {
             // Find existing customer

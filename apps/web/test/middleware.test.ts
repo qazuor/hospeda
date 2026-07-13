@@ -106,3 +106,43 @@ describe('middleware onRequest — Server Island requests never trigger parseSes
         expect(parseSessionUserMock).toHaveBeenCalledTimes(1);
     });
 });
+
+describe('middleware onRequest — BETA-162 legacy /blog alias redirects to /publicaciones/', () => {
+    beforeEach(() => {
+        parseSessionUserMock.mockClear();
+    });
+
+    it('301-redirects /es/blog/ to /es/publicaciones/', async () => {
+        const { onRequest } = await import('../src/middleware');
+        const context = createContext({ pathname: '/es/blog/' });
+        const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+        await onRequest(context as any, next);
+
+        expect(context.redirect).toHaveBeenCalledWith('/es/publicaciones/', 301);
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    it('301-redirects a /blog subpath (e.g. /en/blog/some-post/) to the equivalent /publicaciones/ subpath', async () => {
+        const { onRequest } = await import('../src/middleware');
+        const context = createContext({ pathname: '/en/blog/some-post/' });
+        const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+        await onRequest(context as any, next);
+
+        expect(context.redirect).toHaveBeenCalledWith('/en/publicaciones/some-post/', 301);
+    });
+
+    it('redirects for all three supported locales (es/en/pt)', async () => {
+        const { onRequest } = await import('../src/middleware');
+
+        for (const locale of ['es', 'en', 'pt'] as const) {
+            const context = createContext({ pathname: `/${locale}/blog/` });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).toHaveBeenCalledWith(`/${locale}/publicaciones/`, 301);
+        }
+    });
+});

@@ -9,7 +9,8 @@
  *  - Cold-start feed renders the banner ABOVE the grid, items still render
  *  - True-empty feed (`items: []`, `isColdStart: false`) renders the empty state
  *  - Fetch error renders the error message + retry action; retry re-fetches
- *  - 403 response renders the entitlement-required message
+ *  - 403 response renders the rich upgrade gate (title + Plus/VIP message +
+ *    "Ver planes" CTA — BETA-168), not a bare one-line message
  *  - Unmounting mid-fetch does not trigger a React state-update warning
  */
 
@@ -356,13 +357,15 @@ describe('RecommendationsFeed', () => {
     // ── 6. Entitlement required (403) ─────────────────────────────────────────
 
     describe('Entitlement required', () => {
-        it('renders the entitlement-required message on a 403 response', async () => {
+        it('renders the rich upgrade gate (title + Plus/VIP message + CTA) on a 403 response', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce(makeEntitlementResponse());
             renderComponent();
             await waitFor(() => {
+                expect(screen.getByText('Sugerencias para vos')).toBeInTheDocument();
                 expect(
-                    screen.getByText('Esta función está disponible para suscriptores Plus y VIP.')
+                    screen.getByText(/las sugerencias personalizadas están disponibles/i)
                 ).toBeInTheDocument();
+                expect(screen.getByRole('link', { name: 'Ver planes' })).toBeInTheDocument();
             });
         });
 
@@ -370,9 +373,7 @@ describe('RecommendationsFeed', () => {
             vi.mocked(global.fetch).mockResolvedValueOnce(makeEntitlementResponse());
             renderComponent();
             await waitFor(() => {
-                expect(
-                    screen.getByText('Esta función está disponible para suscriptores Plus y VIP.')
-                ).toBeInTheDocument();
+                expect(screen.getByRole('link', { name: 'Ver planes' })).toBeInTheDocument();
             });
             expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument();
         });
