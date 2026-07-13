@@ -74,22 +74,6 @@ describe('points_of_interest required columns', () => {
         expect(config?.isUnique).toBe(true);
     });
 
-    it('lat column is notNull double precision (plain numeric, no JSONB/string)', () => {
-        const config = getColumnConfig('lat');
-        expect(config).toBeDefined();
-        expect(config?.notNull).toBe(true);
-        expect(config?.dataType).toBe('number');
-        expect(config?.columnType).toBe('PgDoublePrecision');
-    });
-
-    it('long column is notNull double precision (plain numeric, no JSONB/string)', () => {
-        const config = getColumnConfig('long');
-        expect(config).toBeDefined();
-        expect(config?.notNull).toBe(true);
-        expect(config?.dataType).toBe('number');
-        expect(config?.columnType).toBe('PgDoublePrecision');
-    });
-
     it('type column is notNull enum', () => {
         const col = getRawColumn('type');
         expect(col).toBeDefined();
@@ -128,6 +112,20 @@ describe('points_of_interest required columns', () => {
         expect(config?.default).toBe(50);
     });
 
+    it('has_own_page column is notNull boolean defaulting to false (HOS-138)', () => {
+        const config = getColumnConfig('has_own_page');
+        expect(config).toBeDefined();
+        expect(config?.notNull).toBe(true);
+        expect(config?.default).toBe(false);
+    });
+
+    it('verified column is notNull boolean defaulting to false (HOS-138)', () => {
+        const config = getColumnConfig('verified');
+        expect(config).toBeDefined();
+        expect(config?.notNull).toBe(true);
+        expect(config?.default).toBe(false);
+    });
+
     it('lifecycle_state column is notNull with default ACTIVE', () => {
         const config = getColumnConfig('lifecycle_state');
         expect(config).toBeDefined();
@@ -151,6 +149,44 @@ describe('points_of_interest required columns', () => {
 // ─── Optional (nullable) columns ────────────────────────────────────────────
 
 describe('points_of_interest nullable columns', () => {
+    it('lat column is nullable double precision (HOS-138; plain numeric, no JSONB/string)', () => {
+        const config = getColumnConfig('lat');
+        expect(config).toBeDefined();
+        expect(config?.notNull).toBeFalsy();
+        expect(config?.dataType).toBe('number');
+        expect(config?.columnType).toBe('PgDoublePrecision');
+    });
+
+    it('long column is nullable double precision (HOS-138; plain numeric, no JSONB/string)', () => {
+        const config = getColumnConfig('long');
+        expect(config).toBeDefined();
+        expect(config?.notNull).toBeFalsy();
+        expect(config?.dataType).toBe('number');
+        expect(config?.columnType).toBe('PgDoublePrecision');
+    });
+
+    it('name_i18n / description_i18n / translation_meta are nullable jsonb (HOS-138)', () => {
+        for (const name of ['name_i18n', 'description_i18n', 'translation_meta']) {
+            const config = getColumnConfig(name);
+            expect(config, name).toBeDefined();
+            expect(config?.notNull, name).toBeFalsy();
+        }
+    });
+
+    it('address / keywords / source / notes are nullable (HOS-138)', () => {
+        for (const name of ['address', 'keywords', 'source', 'notes']) {
+            const config = getColumnConfig(name);
+            expect(config, name).toBeDefined();
+            expect(config?.notNull, name).toBeFalsy();
+        }
+    });
+
+    it('verified_at column is nullable (HOS-138)', () => {
+        const config = getColumnConfig('verified_at');
+        expect(config).toBeDefined();
+        expect(config?.notNull).toBeFalsy();
+    });
+
     it('icon column is nullable', () => {
         const config = getColumnConfig('icon');
         expect(config).toBeDefined();
@@ -224,9 +260,16 @@ describe('points_of_interest indexes', () => {
         expect(idx?.config.unique).toBeFalsy();
     });
 
-    it('has exactly 4 named indexes', () => {
+    it('has a non-unique index on verified (pointsOfInterest_verified_idx, HOS-138)', () => {
         const indexes = getIndexes();
-        expect(indexes.length).toBe(4);
+        const idx = indexes.find((i) => i.config.name === 'pointsOfInterest_verified_idx');
+        expect(idx).toBeDefined();
+        expect(idx?.config.unique).toBeFalsy();
+    });
+
+    it('has exactly 5 named indexes', () => {
+        const indexes = getIndexes();
+        expect(indexes.length).toBe(5);
     });
 });
 
@@ -276,6 +319,17 @@ describe('points_of_interest type inference', () => {
             'type',
             'icon',
             'description',
+            // HOS-138 v2 columns
+            'name_i18n',
+            'description_i18n',
+            'translation_meta',
+            'address',
+            'keywords',
+            'has_own_page',
+            'verified',
+            'verified_at',
+            'source',
+            'notes',
             'is_builtin',
             'is_featured',
             'display_weight',
@@ -301,8 +355,8 @@ describe('points_of_interest type inference', () => {
         const _typeCheck = (_row: SelectPointOfInterest): void => {
             const _id: string = _row.id;
             const _slug: string = _row.slug;
-            const _lat: number = _row.lat;
-            const _long: number = _row.long;
+            const _lat: number | null = _row.lat;
+            const _long: number | null = _row.long;
             const _type: string = _row.type;
             const _icon: string | null = _row.icon;
             const _description: string | null = _row.description;
