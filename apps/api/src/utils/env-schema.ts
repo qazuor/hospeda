@@ -498,9 +498,15 @@ export const ApiEnvBaseSchema = z.object({
      * for Sentry event tagging — lets prod and staging both run with
      * NODE_ENV=production (preserving prod-like behavior like
      * tracesSampleRate>0) while still separating events in the Sentry
-     * dashboard. Recommended values: `production`, `staging`.
+     * dashboard.
+     *
+     * Only `production` and `staging` are ever set explicitly (see
+     * `docs/runbooks/sentry-setup.md` "Values by Environment" table).
+     * Local dev never sets this var — it falls back to `NODE_ENV` instead
+     * (see `apps/api/src/lib/sentry.ts`), so `development`/`test` are
+     * intentionally NOT valid explicit values here.
      */
-    HOSPEDA_SENTRY_ENVIRONMENT: z.string().optional(),
+    HOSPEDA_SENTRY_ENVIRONMENT: z.enum(['production', 'staging']).optional(),
 
     // Media / Cloudinary
     /** Cloudinary cloud name (cloud_name in Cloudinary dashboard) */

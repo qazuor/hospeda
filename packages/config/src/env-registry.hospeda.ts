@@ -1399,9 +1399,9 @@ export const HOSPEDA_ENV_VARS = [
     },
     {
         name: 'HOSPEDA_SENTRY_ENVIRONMENT',
-        description: 'Sentry environment tag (production | staging | development)',
+        description: 'Sentry environment tag (production | staging)',
         descriptionEs:
-            'Tag de entorno en Sentry (production | staging | development) — separa eventos prod y staging cuando ambos corren con NODE_ENV=production.',
+            'Tag de entorno en Sentry (production | staging) — separa eventos prod y staging cuando ambos corren con NODE_ENV=production.',
         type: 'string',
         required: false,
         secret: false,

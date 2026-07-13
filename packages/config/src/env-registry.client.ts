@@ -82,9 +82,9 @@ export const CLIENT_WEB_ENV_VARS = [
     },
     {
         name: 'PUBLIC_SENTRY_ENVIRONMENT',
-        description: 'Sentry environment tag for the web app (production | staging | development)',
+        description: 'Sentry environment tag for the web app (production | staging)',
         descriptionEs:
-            'Tag de entorno en Sentry para la web (production | staging | development) — separa eventos prod y staging cuando ambos corren con MODE=production.',
+            'Tag de entorno en Sentry para la web (production | staging) — separa eventos prod y staging cuando ambos corren con MODE=production.',
         type: 'string',
         required: false,
         secret: false,
@@ -501,10 +501,9 @@ export const CLIENT_ADMIN_ENV_VARS = [
     },
     {
         name: 'VITE_SENTRY_ENVIRONMENT',
-        description:
-            'Sentry environment tag for the admin dashboard (production | staging | development)',
+        description: 'Sentry environment tag for the admin dashboard (production | staging)',
         descriptionEs:
-            'Tag de entorno en Sentry para el admin (production | staging | development) — separa eventos prod y staging cuando ambos corren con MODE=production.',
+            'Tag de entorno en Sentry para el admin (production | staging) — separa eventos prod y staging cuando ambos corren con MODE=production.',
         type: 'string',
         required: false,
         secret: false,
