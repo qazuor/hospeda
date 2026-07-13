@@ -238,7 +238,8 @@
                 "photos": "Fotos",
                 "photosDescription": "Faça upload de fotos do seu imóvel para atrair mais hóspedes",
                 "externalReputation": "Reputação externa",
-                "featuredToggle": "[PT] Destacado"
+                "featuredToggle": "[PT] Destacado",
+                "calendar": "Calendário"
             },
             "sectionNav": {
                 "ariaLabel": "Navegação de seções do formulário"
@@ -380,6 +381,42 @@
                 "label": "[PT] Destacar mi alojamiento",
                 "hint": "[PT] Cuando está activo, tu alojamiento aparece con prioridad en los listados y búsquedas.",
                 "toggleError": "[PT] No se pudo actualizar el destacado. Intentá de nuevo."
+            },
+            "calendar": {
+                "title": "Calendário de ocupação",
+                "description": "Marque os dias em que seu imóvel está ocupado. Essas datas não aparecerão como disponíveis nas buscas.",
+                "loading": "Carregando calendário...",
+                "loadError": "Não conseguimos carregar o calendário. Tente novamente.",
+                "prevMonth": "Mês anterior",
+                "nextMonth": "Próximo mês",
+                "statusFree": "Livre",
+                "statusOccupied": "Ocupado",
+                "rangeHint": "Clique em outro dia para completar o intervalo, ou clique novamente no mesmo dia para selecionar só essa data.",
+                "selectionCount_one": "{{count}} dia selecionado",
+                "selectionCount_other": "{{count}} dias selecionados",
+                "noteLabel": "Nota (opcional)",
+                "notePlaceholder": "Ex: reservado fora da plataforma",
+                "blockAction": "Bloquear",
+                "blockingAction": "Bloqueando...",
+                "unblockAction": "Liberar",
+                "unblockingAction": "Liberando...",
+                "cancelSelection": "Cancelar seleção",
+                "applyError": "Não conseguimos atualizar o calendário. Tente novamente.",
+                "emptyMonth": "Nenhum dia bloqueado este mês",
+                "legend": {
+                    "title": "Legenda",
+                    "free": "Livre",
+                    "manual": "Bloqueado manualmente",
+                    "google": "Sincronizado — Google Calendar",
+                    "airbnb": "Sincronizado — Airbnb",
+                    "booking": "Sincronizado — Booking.com"
+                },
+                "source": {
+                    "manual": "Manual",
+                    "google": "Google Calendar",
+                    "airbnb": "Airbnb",
+                    "booking": "Booking.com"
+                }
             }
         },
         "empty": {
