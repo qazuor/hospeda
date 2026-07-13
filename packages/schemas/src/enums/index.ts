@@ -11,6 +11,9 @@ export * from './auth-provider.enum.js';
 export * from './auth-provider.schema.js';
 export * from './billing-interval.enum.js';
 export * from './billing-interval.schema.js';
+// Calendar sync enums (HOS-157 Phase 2)
+export * from './calendar-sync-status.enum.js';
+export * from './calendar-sync-status.schema.js';
 export * from './client-type.enum.js';
 export * from './client-type.schema.js';
 // Commerce enums (SPEC-239)
