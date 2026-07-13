@@ -6,6 +6,8 @@ import {
 } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/index.js';
+import { PointOfInterestDestinationRelationEnum } from '../../enums/point-of-interest-destination-relation.enum.js';
+import { PointOfInterestDestinationRelationEnumSchema } from '../../enums/point-of-interest-destination-relation.schema.js';
 import { PointOfInterestTypeEnumSchema } from '../../enums/point-of-interest-type.schema.js';
 import { applyOpenApiMetadata, type OpenApiSchemaMetadata } from '../../utils/openapi.utils.js';
 import { PointOfInterestSchema } from './point-of-interest.schema.js';
@@ -128,12 +130,21 @@ export const PointOfInterestListWithCountsResponseSchema = PaginationResultSchem
 // ============================================================================
 
 /**
- * Schema for getting points of interest by destination
+ * Schema for getting points of interest by destination.
+ *
+ * `relation` (HOS-140) is an optional 3-value filter — `'PRIMARY'` (default,
+ * POIs physically in the destination), `'NEARBY'` (cross-referenced from a
+ * different destination), or `'ALL'` (both). Omitting it preserves the
+ * pre-HOS-140 default behavior (PRIMARY-only), a behavior-preserving no-op
+ * for every row seeded before this spec shipped.
  */
 export const PointsOfInterestByDestinationSchema = z.object({
     destinationId: z.string().uuid(),
     page: z.number().int().min(1).default(1),
-    pageSize: z.number().int().min(1).max(100).default(10)
+    pageSize: z.number().int().min(1).max(100).default(10),
+    relation: z
+        .union([PointOfInterestDestinationRelationEnumSchema, z.literal('ALL')])
+        .default(PointOfInterestDestinationRelationEnum.PRIMARY)
 });
 
 /**

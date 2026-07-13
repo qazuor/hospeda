@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { DestinationIdSchema, PointOfInterestIdSchema } from '../../common/id.schema.js';
+import { PointOfInterestDestinationRelationEnum } from '../../enums/point-of-interest-destination-relation.enum.js';
+import { PointOfInterestDestinationRelationEnumSchema } from '../../enums/point-of-interest-destination-relation.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 import { PointOfInterestSchema } from './point-of-interest.schema.js';
 
@@ -101,11 +103,18 @@ export const PointOfInterestViewOutputSchema = z.object({
  */
 
 /**
- * Schema for adding a point of interest to a destination (many-to-many, HOS-113 OQ-1)
+ * Schema for adding a point of interest to a destination (many-to-many, HOS-113 OQ-1).
+ *
+ * `relation` (HOS-140) is optional and defaults to `PRIMARY`, preserving the
+ * behavior of every call site written before this field existed — an
+ * omitted value creates a row identical to pre-HOS-140 behavior.
  */
 export const PointOfInterestAddToDestinationInputSchema = z.object({
     destinationId: DestinationIdSchema,
-    pointOfInterestId: PointOfInterestIdSchema
+    pointOfInterestId: PointOfInterestIdSchema,
+    relation: PointOfInterestDestinationRelationEnumSchema.default(
+        PointOfInterestDestinationRelationEnum.PRIMARY
+    )
 });
 
 /**
