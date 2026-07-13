@@ -68,13 +68,23 @@ Slug/category/type derivation is pure; the auto-geocode marker date is pinned
 pretty-printed with a trailing newline. A warm-cache re-run is byte-identical
 and makes zero network calls.
 
-## Geocoding reality (see report.json)
+## Geocoding: two-tier cascade (see report.json)
 
-Nominatim resolves only a minority of the 717 coordinate-less rows at
-high/medium confidence — the CSV addresses are largely vague Spanish
-descriptions ("Zona rural de Colón", bare town names), not geocodable street
-addresses, and small local landmarks are not in OSM. AC-4's 90% target is a
-data-quality ceiling, not a provider limitation; the rest import with `null`
-coordinates per NG-5 + OQ-4 and are listed in the report. The committed cache
-lets the unresolved rows be retried with a different provider later without
-re-geocoding the resolved ones.
+Coordinate coverage is **893/914 (97.7%)** via a cascade:
+
+1. **Nominatim (OSM)** — primary, address-based query. Free. Resolves the rows
+   with real street addresses (~99 of the coordinate-less set) plus the 197 that
+   already had coordinates in the CSV.
+2. **Google Places** (`places:searchText`) — fallback, tried BY NAME only for
+   rows Nominatim leaves unresolved (`<name>, <destinationName>, Entre Ríos,
+   Argentina`), with a province guard that rejects a right-name/wrong-province
+   homonym. Resolves the small local landmarks OSM lacks (597 rows). Enabled
+   only when `HOSPEDA_GOOGLE_PLACES_API_KEY` is present; a hard `maxRequests`
+   cap + a separate committed cache keep the one-time cost bounded (~$20) and
+   re-runs at $0.
+
+Only **21 genuinely point-less rows** remain `null` (bike circuits, sandbanks,
+wetlands, route junctions) — correctly, since they have no single coordinate
+(NG-5 + OQ-4). Every geocoded row is `verified: false` + carries the
+auto-geocode marker (G-5), since these are best-effort coordinates pending human
+verification (some Google matches are a nearby proxy for a barrio/circuit).
