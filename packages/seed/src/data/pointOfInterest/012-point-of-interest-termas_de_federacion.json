@@ -6,6 +6,46 @@
     "long": -57.9114,
     "type": "OTHER",
     "description": "Parque acuático termal de aguas cálidas en la ciudad de Federación",
+    "nameI18n": {
+        "es": "Termas de Federación",
+        "en": "Federación Hot Springs",
+        "pt": "Termas de Federación"
+    },
+    "descriptionI18n": {
+        "es": "Parque acuático termal de aguas cálidas en la ciudad de Federación",
+        "en": "Parque acuático termal de aguas cálidas en la ciudad de Federación",
+        "pt": "Parque acuático termal de aguas cálidas en la ciudad de Federación"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        },
+        "description": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        }
+    },
     "icon": "hot_tub",
     "isBuiltin": true,
     "isFeatured": true,

@@ -6,6 +6,46 @@
     "long": -58.2375,
     "type": "MONUMENT",
     "description": "Basílica histórica que alberga los restos del General Justo José de Urquiza",
+    "nameI18n": {
+        "es": "Basílica de la Inmaculada Concepción",
+        "en": "Basilica of the Immaculate Conception",
+        "pt": "Basílica da Imaculada Conceição"
+    },
+    "descriptionI18n": {
+        "es": "Basílica histórica que alberga los restos del General Justo José de Urquiza",
+        "en": "Basílica histórica que alberga los restos del General Justo José de Urquiza",
+        "pt": "Basílica histórica que alberga los restos del General Justo José de Urquiza"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        },
+        "description": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        }
+    },
     "icon": "church",
     "isBuiltin": true,
     "isFeatured": true,

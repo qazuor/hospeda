@@ -6,6 +6,46 @@
     "long": -58.2591,
     "type": "STADIUM",
     "description": "Autódromo de Concepción del Uruguay, sede de competencias de turismo carretera y motociclismo",
+    "nameI18n": {
+        "es": "Autódromo de Concepción del Uruguay",
+        "en": "Concepción del Uruguay Racetrack",
+        "pt": "Autódromo de Concepción del Uruguay"
+    },
+    "descriptionI18n": {
+        "es": "Autódromo de Concepción del Uruguay, sede de competencias de turismo carretera y motociclismo",
+        "en": "Autódromo de Concepción del Uruguay, sede de competencias de turismo carretera y motociclismo",
+        "pt": "Autódromo de Concepción del Uruguay, sede de competencias de turismo carretera y motociclismo"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        },
+        "description": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        }
+    },
     "icon": "stadium",
     "isBuiltin": true,
     "isFeatured": true,

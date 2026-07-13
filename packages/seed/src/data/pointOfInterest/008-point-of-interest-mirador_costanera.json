@@ -6,6 +6,46 @@
     "long": -58.22,
     "type": "VIEWPOINT",
     "description": "Mirador panorámico sobre el río Uruguay a lo largo de la costanera",
+    "nameI18n": {
+        "es": "Mirador de la Costanera",
+        "en": "Costanera Viewpoint",
+        "pt": "Mirante da Costanera"
+    },
+    "descriptionI18n": {
+        "es": "Mirador panorámico sobre el río Uruguay a lo largo de la costanera",
+        "en": "Mirador panorámico sobre el río Uruguay a lo largo de la costanera",
+        "pt": "Mirador panorámico sobre el río Uruguay a lo largo de la costanera"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        },
+        "description": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        }
+    },
     "icon": "visibility",
     "isBuiltin": true,
     "isFeatured": false,
