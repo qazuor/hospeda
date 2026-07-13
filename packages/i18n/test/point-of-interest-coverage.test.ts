@@ -1,14 +1,18 @@
 /**
- * i18n coverage test for Points of Interest (HOS-113 T-030, R-6, AC-7).
+ * i18n coverage test for Points of Interest (HOS-113 T-030, R-6, AC-7;
+ * updated for HOS-138).
  *
- * POIs carry NO `name` column (OQ-2) — display names resolve via
- * `destinations.poiNames.<slug>` and landmark-type labels via
- * `destinations.poiTypeLabels.<TYPE>`, both keyed by the exact seed
- * slug / enum value. This suite reads the REAL seeded POI fixtures
+ * HOS-138 moved POI display names OUT of the i18n files (the legacy
+ * `destinations.poiNames.<slug>` keys were removed) and INTO admin-editable
+ * multilang content: every seeded POI fixture now ships a non-empty
+ * `nameI18n` (and `descriptionI18n`) `{es,en,pt}` object. Landmark-type
+ * labels still resolve via `destinations.poiTypeLabels.<TYPE>` (unchanged —
+ * spec §6.6). This suite reads the REAL seeded POI fixtures
  * (`packages/seed/src/data/pointOfInterest/*.json`, via the real manifest)
- * and asserts every one has a non-empty i18n entry in ALL THREE locales —
- * it must fail loudly if a future seed addition forgets its i18n string
- * (the exact HOS-111 T-009 silent-slug-mismatch class of bug).
+ * and asserts every one carries non-empty multilang name/description content
+ * in ALL THREE locales, plus full `poiTypeLabels` coverage — it must fail
+ * loudly if a future seed addition forgets its multilang content (the exact
+ * HOS-111 T-009 silent-mismatch class of bug).
  *
  * NOTE ON IMPORT STYLE: this file deliberately uses static ES module
  * imports for every JSON fixture instead of `node:fs.readFileSync`.
@@ -55,10 +59,18 @@ const ALL_POI_TYPES = [
     'OTHER'
 ] as const;
 
+interface LocalizedText {
+    es?: string;
+    en?: string;
+    pt?: string;
+}
+
 interface PointOfInterestFixture {
     id: string;
     slug: string;
     type: string;
+    nameI18n?: LocalizedText;
+    descriptionI18n?: LocalizedText;
 }
 
 /**
@@ -84,10 +96,12 @@ const IMPORTED_FIXTURES_BY_FILENAME: Record<string, PointOfInterestFixture> = {
 const manifestFiles: string[] =
     (pointOfInterestManifest as Record<string, string[]>).pointsOfInterest ?? [];
 
+const LOCALE_CODES = ['es', 'en', 'pt'] as const;
+
 const LOCALES = [
-    { code: 'es', poiNames: destinationEs.poiNames, poiTypeLabels: destinationEs.poiTypeLabels },
-    { code: 'en', poiNames: destinationEn.poiNames, poiTypeLabels: destinationEn.poiTypeLabels },
-    { code: 'pt', poiNames: destinationPt.poiNames, poiTypeLabels: destinationPt.poiTypeLabels }
+    { code: 'es', poiTypeLabels: destinationEs.poiTypeLabels },
+    { code: 'en', poiTypeLabels: destinationEn.poiTypeLabels },
+    { code: 'pt', poiTypeLabels: destinationPt.poiTypeLabels }
 ] as const;
 
 describe('Points of Interest i18n coverage (HOS-113 T-030, AC-7)', () => {
@@ -104,17 +118,28 @@ describe('Points of Interest i18n coverage (HOS-113 T-030, AC-7)', () => {
         .map((file) => IMPORTED_FIXTURES_BY_FILENAME[file])
         .filter((fixture): fixture is PointOfInterestFixture => Boolean(fixture));
 
-    describe('poiNames.<slug> coverage', () => {
-        for (const locale of LOCALES) {
-            it(`every seeded POI slug should have a non-empty destinations.poiNames.<slug> entry in "${locale.code}"`, () => {
+    describe('nameI18n / descriptionI18n multilang coverage (HOS-138)', () => {
+        for (const code of LOCALE_CODES) {
+            it(`every seeded POI should have a non-empty nameI18n."${code}" entry`, () => {
                 const missing: string[] = [];
                 for (const poi of seededPois) {
-                    const value = (locale.poiNames as Record<string, string>)[poi.slug];
+                    const value = poi.nameI18n?.[code];
                     if (!value || value.trim() === '') {
                         missing.push(poi.slug);
                     }
                 }
-                expect(missing, `Missing/empty poiNames.<slug> in "${locale.code}"`).toEqual([]);
+                expect(missing, `Missing/empty nameI18n."${code}"`).toEqual([]);
+            });
+
+            it(`every seeded POI should have a non-empty descriptionI18n."${code}" entry`, () => {
+                const missing: string[] = [];
+                for (const poi of seededPois) {
+                    const value = poi.descriptionI18n?.[code];
+                    if (!value || value.trim() === '') {
+                        missing.push(poi.slug);
+                    }
+                }
+                expect(missing, `Missing/empty descriptionI18n."${code}"`).toEqual([]);
             });
         }
     });

@@ -21,11 +21,11 @@ import { rDestinationPointOfInterest } from './r_destination_point_of_interest.d
  *
  * HOS-138 (POI v2): the model moved from HOS-113's closed, seed-only,
  * i18n-by-slug catalog to admin-editable multilang content. Display names now
- * resolve from `nameI18n` (SPEC-212 `I18nText`), falling back to the legacy
- * `@repo/i18n` `destinations.poiNames.<slug>` lookup for rows not yet migrated
- * (see spec §6.1). Coordinates (`lat`/`long`) are nullable — a coordinate-less
- * POI is valid, not an error (§6.2). `type` is deprecated-transitional pending
- * the HOS-139 category model.
+ * resolve from `nameI18n` (SPEC-212 `I18nText`) as the single source — the
+ * legacy `@repo/i18n` `destinations.poiNames.<slug>` keys were removed in
+ * HOS-138 (see spec §6.1). Coordinates (`lat`/`long`) are nullable — a
+ * coordinate-less POI is valid, not an error (§6.2). `type` is
+ * deprecated-transitional pending the HOS-139 category model.
  */
 export const pointsOfInterest = pgTable(
     'points_of_interest',

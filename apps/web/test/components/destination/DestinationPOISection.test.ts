@@ -28,12 +28,12 @@ describe('DestinationPOISection.astro', () => {
         );
     });
 
-    it('resolves POI display names via translatePoiName (nameI18n-first, i18n-by-slug fallback — HOS-138)', () => {
+    it('resolves POI display names via translatePoiName (nameI18n-first, humanized-slug fallback — HOS-138)', () => {
         expect(sectionSrc).toContain(
             "import { translatePoiName, translatePoiTypeLabel } from '@/lib/poi-labels';"
         );
         expect(sectionSrc).toContain(
-            'translatePoiName({ t, slug: poi.slug, nameI18n: poi.nameI18n, locale })'
+            'translatePoiName({ slug: poi.slug, nameI18n: poi.nameI18n, locale })'
         );
     });
 

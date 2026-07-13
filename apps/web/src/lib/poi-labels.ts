@@ -6,13 +6,12 @@
  *
  * HOS-113 shipped POIs with NO `name` column — their display name was
  * resolved via `@repo/i18n` keyed by `slug` (`destinations.poiNames.<slug>`),
- * mirroring `translateAmenityName` in `catalog-names.ts`. HOS-138 adds a
- * nullable `nameI18n` (SPEC-212 `I18nText`) column on top of that: when a POI
- * carries non-null `nameI18n`, it takes priority over the i18n-by-slug
- * lookup (`resolveI18nText(nameI18n, locale)`); when it's null (a POI not yet
- * migrated to multilang content), the legacy i18n-by-slug lookup is used as
- * the fallback — see spec HOS-138 §6.1/§6.4. This keeps the resolution order
- * additive and non-breaking for any POI without `nameI18n` content yet.
+ * mirroring `translateAmenityName` in `catalog-names.ts`. HOS-138 replaced
+ * that with a nullable `nameI18n` (SPEC-212 `I18nText`) column as the single
+ * source of POI display names (`resolveI18nText(nameI18n, locale)`) and
+ * removed the legacy `destinations.poiNames.<slug>` i18n keys entirely — see
+ * spec HOS-138 §6.1/§6.4. A POI without `nameI18n` degrades to a humanized
+ * slug (never crashes).
  *
  * The `type` enum value resolves via `destinations.poiTypeLabels.<TYPE>`
  * (T-029's seeded i18n strings, covered by the i18n coverage guard test in
@@ -44,43 +43,42 @@ function humanizeKey(key: string): string {
 }
 
 /**
- * Translates a point-of-interest's display name, preferring its
- * admin-editable multilang content (HOS-138 `nameI18n`) when present and
- * falling back to the legacy i18n-by-slug lookup, then to a humanized slug,
- * when it is not (R-6 mitigation — a POI shipped without any translated
- * content must still render something readable, not a raw slug or a
- * `[MISSING: ...]` placeholder).
+ * Translates a point-of-interest's display name from its admin-editable
+ * multilang content (HOS-138 `nameI18n`), falling back to a humanized slug
+ * when the content is absent (R-6 mitigation — a POI shipped without
+ * multilang content must still render something readable, not a raw slug).
+ *
+ * The legacy `destinations.poiNames.<slug>` i18n-by-slug lookup was removed in
+ * HOS-138: `nameI18n` is now the single source of POI display names (every
+ * seeded POI ships it, enforced by the i18n coverage guard test; the 914-POI
+ * import writes it directly). A POI reaching this function with a null
+ * `nameI18n` (e.g. during the deploy window before its data-migration runs)
+ * degrades to a humanized slug rather than a stale i18n-file lookup.
  *
  * Resolution order:
  *  1. `resolveI18nText(nameI18n, locale)` when `nameI18n` is non-null.
- *  2. `destinations.poiNames.<slug>` (legacy i18n-by-slug lookup).
- *  3. A humanized version of `slug` (last resort, never crashes).
+ *  2. A humanized version of `slug` (last resort, never crashes).
  *
- * @param params.t - Active locale translator (`createTranslations().t`)
- * @param params.slug - The POI's `slug` (also its legacy i18n key)
- * @param params.nameI18n - The POI's multilang name content, if migrated
- *   (HOS-138); `null`/`undefined` for POIs not yet carrying multilang content
+ * @param params.slug - The POI's `slug`, used for the humanized fallback
+ * @param params.nameI18n - The POI's multilang name content (HOS-138);
+ *   `null`/`undefined` for a POI not yet carrying multilang content
  * @param params.locale - The active locale, required to resolve `nameI18n`
- *   (ignored when `nameI18n` is not provided)
  * @returns The localized POI display name, or a humanized fallback
  */
 export function translatePoiName({
-    t,
     slug,
     nameI18n,
     locale
 }: {
-    readonly t: Translate;
     readonly slug: string;
     readonly nameI18n?: I18nText | null;
     readonly locale?: string;
 }): string {
     if (nameI18n && locale) {
-        return resolveI18nText(nameI18n, locale);
+        return resolveI18nText(nameI18n, locale) || humanizeKey(slug);
     }
 
-    const translated = t(`destinations.poiNames.${slug}`);
-    return translated.startsWith('[MISSING:') ? humanizeKey(slug) : translated;
+    return humanizeKey(slug);
 }
 
 /**

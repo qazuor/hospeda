@@ -9,10 +9,10 @@
  * though its displayWeight-then-alphabetical sort + card shape informed this
  * one.
  *
- * Each card shows: a type-derived icon, the display name (HOS-138 prefers
- * admin-editable multilang `nameI18n` content when present, falling back to
- * the legacy i18n-by-slug lookup — `destinations.poiNames.<slug>` — for POIs
- * not yet migrated, see `poi-labels.ts`), a translated type label
+ * Each card shows: a type-derived icon, the display name (HOS-138 resolves
+ * admin-editable multilang `nameI18n` content, degrading to a humanized slug
+ * when absent — the legacy `destinations.poiNames.<slug>` i18n keys were
+ * removed in HOS-138, see `poi-labels.ts`), a translated type label
  * (`destinations.poiTypeLabels.<TYPE>`), and an optional 2-line description
  * (same multilang-first/legacy-fallback order via `descriptionI18n` /
  * `description`). Ordered featured-first, then by `displayWeight`
@@ -54,7 +54,7 @@ if (!pointsOfInterest || pointsOfInterest.length === 0) return;
 const sorted = [...pointsOfInterest]
 	.map((poi) => ({
 		...poi,
-		displayName: translatePoiName({ t, slug: poi.slug, nameI18n: poi.nameI18n, locale }),
+		displayName: translatePoiName({ slug: poi.slug, nameI18n: poi.nameI18n, locale }),
 		resolvedDescription: resolveI18nText(poi.descriptionI18n, locale) || poi.description
 	}))
 	.sort((a, b) => {

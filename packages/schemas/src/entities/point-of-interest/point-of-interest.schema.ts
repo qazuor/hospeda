@@ -14,11 +14,11 @@ import { PointOfInterestTypeEnumSchema } from '../../enums/point-of-interest-typ
  * HOS-113 OQ-1).
  *
  * HOS-138 (POI v2): display names/descriptions moved to admin-editable
- * multilang content (`nameI18n`/`descriptionI18n`, SPEC-212 `I18nText`),
- * with the legacy `@repo/i18n` `destinations.poiNames.<slug>` lookup kept as
- * fallback for rows not yet migrated (spec §6.1). Coordinates (`lat`/`long`)
- * are nullable — a coordinate-less POI is valid (§6.2). `type` is
- * deprecated-transitional pending the HOS-139 category model.
+ * multilang content (`nameI18n`/`descriptionI18n`, SPEC-212 `I18nText`) as the
+ * single source — the legacy `@repo/i18n` `destinations.poiNames.<slug>` keys
+ * were removed in HOS-138 (spec §6.1). Coordinates (`lat`/`long`) are nullable
+ * — a coordinate-less POI is valid (§6.2). `type` is deprecated-transitional
+ * pending the HOS-139 category model.
  */
 export const PointOfInterestSchema = z.object({
     // Base fields
@@ -30,10 +30,12 @@ export const PointOfInterestSchema = z.object({
     // Point of interest-specific fields
 
     /**
-     * The i18n key used to resolve the POI's display name via `@repo/i18n`
-     * (`destinations.poiNames.<slug>`). Always provided by seed — there is
-     * NO `name` column (HOS-113 OQ-2). Regex allows underscores, mirroring
-     * the SPEC-266 amenity/feature slug discipline.
+     * Stable identifier for the POI (also the source of the humanized-slug
+     * fallback for a display name when `nameI18n` is absent). There is NO
+     * `name` column (HOS-113 OQ-2); display names come from `nameI18n`
+     * (HOS-138 removed the legacy `destinations.poiNames.<slug>` i18n keys).
+     * Regex allows underscores, mirroring the SPEC-266 amenity/feature slug
+     * discipline.
      */
     slug: z
         .string({
