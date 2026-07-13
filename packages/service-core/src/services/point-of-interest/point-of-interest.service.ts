@@ -59,6 +59,21 @@ import {
 } from './point-of-interest.permissions';
 
 /**
+ * Upper bound for a single destination's POI-relation lookup in
+ * {@link PointOfInterestService.resolveDestinationIdFilter}, and for the
+ * per-page destination-count aggregation in
+ * {@link PointOfInterestService.searchForList}. The base model caps
+ * `pageSize` at `MAX_PAGE_SIZE` (200), so this pulls the full relation set
+ * (not the default page of 20) and keeps the `destinationId` id-filter and
+ * the `destinationCount` totals complete. A single destination realistically
+ * never has this many POIs; and for the `searchForList` count aggregation the
+ * worst case is `pageSize` (capped at 100 by the search schema) times the
+ * average destinations-per-POI, so 200 covers it unless a POI maps to more
+ * than ~2 destinations on average — not a real-world case for this catalog.
+ */
+const DESTINATION_RELATIONS_PAGE_SIZE = 200;
+
+/**
  * Service for managing points of interest (HOS-113). Implements business
  * logic, permissions, and hooks for PointOfInterest entities, mirroring
  * `AttractionService`'s core CRUD shape. Coordinates read + destination
@@ -529,7 +544,10 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         if (!destinationId) {
             return { empty: false, additionalConditions: [] };
         }
-        const { items: relations } = await this.relatedModel.findAll({ destinationId });
+        const { items: relations } = await this.relatedModel.findAll(
+            { destinationId },
+            { page: 1, pageSize: DESTINATION_RELATIONS_PAGE_SIZE }
+        );
         if (relations.length === 0) {
             return { empty: true, additionalConditions: [] };
         }
@@ -542,7 +560,7 @@ export class PointOfInterestService extends BaseCrudRelatedService<
     protected async _executeSearch(
         params: PointOfInterestSearchInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<PointOfInterest>> {
         const where = this.buildSearchWhere(params);
         const { empty, additionalConditions } = await this.resolveDestinationIdFilter(
@@ -551,7 +569,20 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         if (empty) {
             return { items: [], total: 0 };
         }
-        const { items, total } = await this.model.findAll(where, undefined, additionalConditions);
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params
+        // (SPEC-088) and re-publishes them via ctx.pagination. Forward them
+        // explicitly so the model uses the caller-provided page/pageSize
+        // instead of falling back to its default of 20.
+        const { items, total } = await this.model.findAll(
+            where,
+            {
+                page: ctx.pagination?.page ?? 1,
+                pageSize: ctx.pagination?.pageSize ?? 10,
+                sortBy: ctx.pagination?.sortBy,
+                sortOrder: ctx.pagination?.sortOrder
+            },
+            additionalConditions
+        );
         return { items, total };
     }
 
@@ -622,10 +653,14 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         // Get all POI IDs from the current page
         const poiIds = items.map((item) => item.id);
 
-        // Fetch all relations for these POIs in a single query
-        const { items: allRelations } = await this.relatedModel.findAll({
-            pointOfInterestId: poiIds
-        });
+        // Fetch all relations for these POIs in a single query. Request the
+        // full relation page (not the model's default of 20) so the
+        // destinationCount aggregation is not silently undercounted when the
+        // current page's POIs collectively map to more than 20 relation rows.
+        const { items: allRelations } = await this.relatedModel.findAll(
+            { pointOfInterestId: poiIds },
+            { page: 1, pageSize: DESTINATION_RELATIONS_PAGE_SIZE }
+        );
 
         // Build a map of POI ID to count
         const countMap = new Map<string, number>();
