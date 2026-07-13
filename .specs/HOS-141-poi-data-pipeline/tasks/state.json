@@ -590,7 +590,7 @@
             "id": "T-018",
             "title": "Full 717-row geocode run + OQ-2 spot-check + handoff to HOS-142 — AC-4",
             "description": "Execute the full 717-row geocode run (warms the committed cache), verify AC-4 (>=90% resolve high/medium; unresolved listed by slug, never zeroed/centroid-defaulted). Manual OQ-2 spot-check of ~30 rows across destinationTiers to confirm first-listed primary-category is sound. Hand the staged output/ directory + report to HOS-142. Tests: AC-4 threshold assertion over the real run's report.json.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-014", "T-015", "T-017"],
             "blocks": [],
@@ -612,8 +612,8 @@
             "phase": "testing",
             "qualityGate": {
                 "lint": null,
-                "typecheck": null,
-                "tests": null
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
@@ -625,8 +625,8 @@
     "summary": {
         "total": 18,
         "pending": 0,
-        "inProgress": 1,
-        "completed": 17,
+        "inProgress": 0,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 2.6
     }
