@@ -96,6 +96,35 @@ describe('google-calendar-client', () => {
         expect(result.nextPageToken).toBe('page-2');
     });
 
+    it('should forward the timeZone param when provided', async () => {
+        // Arrange
+        mockFetch.mockResolvedValue(jsonResponse({ items: [] }));
+
+        // Act
+        await listEvents({
+            accessToken: 'ya29.token',
+            calendarId: 'primary',
+            syncToken: 's',
+            timeZone: 'America/Argentina/Buenos_Aires'
+        });
+
+        // Assert
+        const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
+        expect(new URL(url).searchParams.get('timeZone')).toBe('America/Argentina/Buenos_Aires');
+    });
+
+    it('should NOT send a timeZone param when omitted', async () => {
+        // Arrange
+        mockFetch.mockResolvedValue(jsonResponse({ items: [] }));
+
+        // Act
+        await listEvents({ accessToken: 'ya29.token', calendarId: 'primary', timeMin: 'x' });
+
+        // Assert
+        const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
+        expect(new URL(url).searchParams.get('timeZone')).toBeNull();
+    });
+
     it('should URL-encode a non-primary calendar id and forward the pageToken', async () => {
         // Arrange
         mockFetch.mockResolvedValue(jsonResponse({ items: [] }));

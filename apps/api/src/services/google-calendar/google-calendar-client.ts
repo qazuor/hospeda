@@ -90,6 +90,14 @@ export interface ListEventsInput {
     readonly pageToken?: string;
     /** Page size (default {@link DEFAULT_MAX_RESULTS}). */
     readonly maxResults?: number;
+    /**
+     * IANA timezone the response's `dateTime` values should be formatted in
+     * (Calendar API `timeZone` param). Google normalizes every timed event to
+     * this zone server-side, so the caller's date extraction is deterministic
+     * regardless of the calendar's own default zone. All-day `date` values are
+     * unaffected. When omitted, Google uses the calendar's default zone.
+     */
+    readonly timeZone?: string;
 }
 
 /**
@@ -192,6 +200,11 @@ const buildQuery = (input: ListEventsInput): URLSearchParams => {
     }
     if (input.pageToken !== undefined) {
         query.set('pageToken', input.pageToken);
+    }
+    if (input.timeZone !== undefined) {
+        // Google formats every returned dateTime in this zone, making the
+        // caller's date extraction deterministic across calendar zones.
+        query.set('timeZone', input.timeZone);
     }
     return query;
 };

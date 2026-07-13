@@ -228,6 +228,10 @@ describe('google-calendar-sync.service', () => {
                     lastErrorMessage: null
                 })
             );
+            // Timed events are normalized to the AR market zone by Google.
+            expect(mockListEvents.mock.calls[0]?.[0]).toMatchObject({
+                timeZone: 'America/Argentina/Buenos_Aires'
+            });
             // Incremental → no orphan scan.
             expect(mockFindBySource).not.toHaveBeenCalled();
             expect(result).toMatchObject({

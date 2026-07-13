@@ -15,9 +15,11 @@
  *   is already EXCLUSIVE — so a Jul-10→Jul-12 all-day event blocks Jul-10 and
  *   Jul-11, leaving the checkout day (Jul-12) free. This matches the hotel
  *   "checkout day is free" semantics the occupancy search filter uses.
- * - Timed events expose `start.dateTime` / `end.dateTime` (RFC3339 with the
- *   event's own offset); the wall-clock date is the `YYYY-MM-DD` prefix, and
- *   the end date is likewise treated as an EXCLUSIVE checkout day.
+ * - Timed events expose `start.dateTime` / `end.dateTime` (RFC3339). The
+ *   Calendar API is asked to return these normalized to {@link SYNC_RESPONSE_TIMEZONE}
+ *   (the AR market zone), so the wall-clock date is deterministically the
+ *   `YYYY-MM-DD` prefix regardless of the calendar's own zone; the end date is
+ *   likewise treated as an EXCLUSIVE checkout day.
  *
  * The half-open range naturally implements the spec's "events ≥1 day →
  * occupancy" rule: a same-day timed event has `startDate == endDate`, yielding
@@ -63,6 +65,19 @@ import { getValidGoogleToken } from './google-token.service.js';
 /** The provider value for every Google Calendar row. */
 const PROVIDER = OccupancySourceEnum.GOOGLE_CALENDAR;
 
+/**
+ * IANA timezone requested from the Calendar API so every timed event's
+ * `dateTime` is returned normalized to the Argentine market zone. This makes
+ * the date a timed event maps to DETERMINISTIC (the `YYYY-MM-DD` prefix is
+ * always the AR wall-clock date), regardless of the connected calendar's own
+ * default zone. All-day events carry pure `date` values and are unaffected.
+ *
+ * Hardcoded because the platform targets the AR market (Litoral) and
+ * accommodations carry no per-property timezone. Revisit (env var or a
+ * per-accommodation zone) only if non-AR accommodations are onboarded.
+ */
+const SYNC_RESPONSE_TIMEZONE = 'America/Argentina/Buenos_Aires';
+
 /** Milliseconds in a day, for half-open date enumeration. */
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -103,7 +118,8 @@ export type CalendarSyncResult =
 /**
  * Extracts the wall-clock `YYYY-MM-DD` date from an event start/end marker.
  * All-day markers expose `date` directly; timed markers expose `dateTime`
- * whose `YYYY-MM-DD` prefix is the local date in the event's own offset.
+ * whose `YYYY-MM-DD` prefix is the date in {@link SYNC_RESPONSE_TIMEZONE}
+ * (Google normalizes timed events to that zone at the API layer).
  *
  * @param marker - The event start or end marker, if present.
  * @returns The `YYYY-MM-DD` date, or `undefined` when the marker is absent/unusable.
@@ -192,6 +208,7 @@ const fetchAllPages = async (params: {
         const page = await listEvents({
             accessToken,
             calendarId,
+            timeZone: SYNC_RESPONSE_TIMEZONE,
             ...(syncToken === undefined ? {} : { syncToken }),
             ...(timeMin === undefined ? {} : { timeMin }),
             ...(pageToken === undefined ? {} : { pageToken })
