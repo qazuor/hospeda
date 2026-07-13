@@ -43,6 +43,23 @@ const ConnectGoogleResponseSchema = z.object({
 });
 
 /**
+ * Optional same-origin relative path to return the browser to after the OAuth
+ * callback completes (e.g. the editor page). Constrained to a safe relative
+ * path — must start with a single `/` and must NOT be protocol-relative (`//`)
+ * or contain a scheme — so it can never be abused as an open redirect.
+ */
+const SafeReturnToSchema = z
+    .string()
+    .max(512)
+    .refine((value) => value.startsWith('/') && !value.startsWith('//') && !value.includes('://'), {
+        message: 'returnTo must be a same-origin relative path'
+    });
+
+const ConnectGoogleBodySchema = z.object({
+    returnTo: SafeReturnToSchema.optional()
+});
+
+/**
  * POST /api/v1/protected/accommodations/:id/calendar-sync/connect-google
  *
  * Returns the Google OAuth authorization URL the web app should send the host
@@ -61,10 +78,16 @@ export const protectedCalendarConnectGoogleRoute = createProtectedRoute({
     requestParams: {
         id: AccommodationIdSchema
     },
+    requestBody: ConnectGoogleBodySchema,
     responseSchema: ConnectGoogleResponseSchema,
-    handler: async (ctx: Context, params: Record<string, unknown>) => {
+    handler: async (
+        ctx: Context,
+        params: Record<string, unknown>,
+        body: Record<string, unknown>
+    ) => {
         const actor = getActorFromContext(ctx);
         const accommodationId = params.id as string;
+        const returnTo = (body as { returnTo?: string }).returnTo;
 
         // Ownership + MANAGE (throws ServiceError NOT_FOUND / FORBIDDEN).
         await assertOccupancyManageAccess({ actor, accommodationId });
@@ -75,7 +98,11 @@ export const protectedCalendarConnectGoogleRoute = createProtectedRoute({
             });
         }
 
-        const state = generateCalendarOAuthState({ accommodationId, userId: actor.id });
+        const state = generateCalendarOAuthState({
+            accommodationId,
+            userId: actor.id,
+            ...(returnTo === undefined ? {} : { returnTo })
+        });
 
         const authorizeUrl = new URL(GOOGLE_AUTHORIZATION_URL);
         authorizeUrl.searchParams.set('client_id', env.HOSPEDA_GOOGLE_CALENDAR_CLIENT_ID);

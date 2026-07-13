@@ -34,6 +34,12 @@ interface PendingCalendarOAuthState {
     readonly accommodationId: string;
     /** The user id that initiated the connect flow (re-verified on callback). */
     readonly userId: string;
+    /**
+     * Same-origin relative path to return the browser to after the callback
+     * completes (e.g. the editor page). Validated safe at the connect route.
+     * Optional — the callback falls back to the site root when absent.
+     */
+    readonly returnTo?: string;
     /** Epoch ms the state was generated at. */
     readonly createdAt: number;
 }
@@ -42,6 +48,7 @@ interface PendingCalendarOAuthState {
 export interface ConsumedCalendarOAuthState {
     readonly accommodationId: string;
     readonly userId: string;
+    readonly returnTo?: string;
 }
 
 /**
@@ -74,12 +81,14 @@ const sweepExpiredStates = (): void => {
 export const generateCalendarOAuthState = (params: {
     accommodationId: string;
     userId: string;
+    returnTo?: string;
 }): string => {
     sweepExpiredStates();
     const token = randomBytes(32).toString('hex');
     pendingStates.set(token, {
         accommodationId: params.accommodationId,
         userId: params.userId,
+        ...(params.returnTo === undefined ? {} : { returnTo: params.returnTo }),
         createdAt: Date.now()
     });
     return token;
@@ -102,5 +111,9 @@ export const validateAndConsumeCalendarOAuthState = (
         return null;
     }
     pendingStates.delete(token);
-    return { accommodationId: entry.accommodationId, userId: entry.userId };
+    return {
+        accommodationId: entry.accommodationId,
+        userId: entry.userId,
+        ...(entry.returnTo === undefined ? {} : { returnTo: entry.returnTo })
+    };
 };

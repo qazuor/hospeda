@@ -50,6 +50,25 @@ describe('calendar-oauth-state', () => {
         expect(validateAndConsumeCalendarOAuthState('never-issued')).toBeNull();
     });
 
+    it('round-trips an optional returnTo path', () => {
+        // Arrange
+        const state = generateCalendarOAuthState({
+            accommodationId: 'acc-1',
+            userId: 'user-1',
+            returnTo: '/es/mi-cuenta/propiedades/acc-1/editar/'
+        });
+
+        // Act
+        const consumed = validateAndConsumeCalendarOAuthState(state);
+
+        // Assert
+        expect(consumed).toEqual({
+            accommodationId: 'acc-1',
+            userId: 'user-1',
+            returnTo: '/es/mi-cuenta/propiedades/acc-1/editar/'
+        });
+    });
+
     it('expires a state after the 5-minute TTL', () => {
         // Arrange
         const state = generateCalendarOAuthState({ accommodationId: 'acc-1', userId: 'user-1' });

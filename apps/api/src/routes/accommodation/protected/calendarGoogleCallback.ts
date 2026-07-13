@@ -42,16 +42,33 @@ const CallbackDocsSchema = z.object({
 });
 
 /**
- * Builds the web-app redirect URL the host lands on after the OAuth dance.
- * The web editor (Layer 5) reads the `calendarSync` + `accommodationId` query
- * flags to show a success/error toast on the calendar section.
+ * Whether a `returnTo` is a safe same-origin relative path (defense-in-depth —
+ * it was already validated at the connect route, re-checked here so a bad value
+ * can never produce an off-site redirect).
  */
-const buildWebRedirect = (result: 'connected' | 'error', accommodationId?: string): string => {
+const isSafeReturnTo = (returnTo: string): boolean =>
+    returnTo.startsWith('/') && !returnTo.startsWith('//') && !returnTo.includes('://');
+
+/**
+ * Builds the web-app redirect URL the host lands on after the OAuth dance.
+ * Returns them to `returnTo` (the editor page they started from) when present
+ * and safe, else the site root. The web editor (Layer 5) reads the
+ * `calendarSync` + `accommodationId` query flags to show a success/error toast
+ * on the calendar section.
+ */
+const buildWebRedirect = (params: {
+    result: 'connected' | 'error';
+    accommodationId?: string;
+    returnTo?: string;
+}): string => {
     const base = env.HOSPEDA_SITE_URL ?? '';
-    const url = new URL(base.length > 0 ? base : 'https://hospeda.com.ar');
-    url.searchParams.set('calendarSync', result);
-    if (accommodationId !== undefined) {
-        url.searchParams.set('accommodationId', accommodationId);
+    const origin = base.length > 0 ? base : 'https://hospeda.com.ar';
+    const path =
+        params.returnTo !== undefined && isSafeReturnTo(params.returnTo) ? params.returnTo : '/';
+    const url = new URL(path, origin);
+    url.searchParams.set('calendarSync', params.result);
+    if (params.accommodationId !== undefined) {
+        url.searchParams.set('accommodationId', params.accommodationId);
     }
     return url.toString();
 };
@@ -85,7 +102,7 @@ export const protectedCalendarGoogleCallbackRoute = createProtectedRoute({
         // The user denied consent (or Google returned an error) — bounce back
         // with an error flag rather than treating it as a hard failure.
         if (oauthError || !state || !code) {
-            return ctx.redirect(buildWebRedirect('error'), 302);
+            return ctx.redirect(buildWebRedirect({ result: 'error' }), 302);
         }
 
         const consumed = validateAndConsumeCalendarOAuthState(state);
@@ -124,9 +141,23 @@ export const protectedCalendarGoogleCallbackRoute = createProtectedRoute({
         } catch {
             // Never leak token-exchange internals to the browser; bounce with a
             // generic error flag. No partial credential was persisted.
-            return ctx.redirect(buildWebRedirect('error', consumed.accommodationId), 302);
+            return ctx.redirect(
+                buildWebRedirect({
+                    result: 'error',
+                    accommodationId: consumed.accommodationId,
+                    ...(consumed.returnTo === undefined ? {} : { returnTo: consumed.returnTo })
+                }),
+                302
+            );
         }
 
-        return ctx.redirect(buildWebRedirect('connected', consumed.accommodationId), 302);
+        return ctx.redirect(
+            buildWebRedirect({
+                result: 'connected',
+                accommodationId: consumed.accommodationId,
+                ...(consumed.returnTo === undefined ? {} : { returnTo: consumed.returnTo })
+            }),
+            302
+        );
     }
 });
