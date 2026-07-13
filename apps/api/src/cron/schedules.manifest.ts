@@ -131,6 +131,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Purge old cron run history (60-day success / 180-day failure retention).'
     },
     {
+        name: 'calendar-sync-google',
+        displayName: 'Sync de Google Calendar',
+        category: 'content',
+        schedule: '0 */6 * * *',
+        description:
+            'Sync occupancy dates from every active Google Calendar connection (HOS-157 Phase 2).'
+    },
+    {
         name: 'dunning',
         displayName: 'Reintentos de cobro',
         category: 'billing',
