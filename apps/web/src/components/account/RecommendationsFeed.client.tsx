@@ -11,8 +11,10 @@
  *    shows a retry action (same pattern as `SearchHistoryList.client.tsx`).
  *  - **Entitlement required** — a 403 response (best-effort: the exact
  *    entitlement-gate error contract is not finalized as of T-011; the API
- *    route itself, T-008, has not shipped yet). No retry action, since a
- *    retry cannot change the user's plan.
+ *    route itself, T-008, has not shipped yet). Renders the same rich
+ *    plan-gate block as `AlertsList.client.tsx` / `ExclusiveDealsList.client.tsx`
+ *    (title + Plus/VIP explanation + "Ver planes" CTA — BETA-168), not a
+ *    retry action, since a retry cannot change the user's plan.
  *  - **Cold-start** — `isColdStart === true`. The feed IS populated (with a
  *    popular/featured fallback per spec §5.5); a banner is rendered above the
  *    normal grid, not an empty state.
@@ -236,6 +238,10 @@ export function RecommendationsFeed({ locale, apiUrl }: RecommendationsFeedProps
         'No pudimos cargar tus recomendaciones'
     );
 
+    // Same upgrade destination as AlertsList / ExclusiveDealsList (BETA-168):
+    // never introduce a new routing mechanism for the "Ver planes" CTA.
+    const upgradeHref = buildUrl({ locale, path: 'suscriptores/planes' });
+
     const fetchFeed = useCallback(async () => {
         if (!isMountedRef.current) return;
         setLoading(true);
@@ -301,17 +307,32 @@ export function RecommendationsFeed({ locale, apiUrl }: RecommendationsFeedProps
         );
     }
 
-    // ── Entitlement-required state ────────────────────────────────────────────
+    // ── Entitlement-required (plan-gate) state ────────────────────────────────
+    // Same rich gate pattern as AlertsList / ExclusiveDealsList (BETA-168):
+    // section title + Plus/VIP explanation + "Ver planes" CTA, instead of the
+    // old bare one-line message.
 
     if (entitlementRequired) {
         return (
-            <div className={styles.entitlementWrap}>
-                <p>
+            <div
+                className={styles.upgradeWrap}
+                aria-live="polite"
+            >
+                <p className={styles.upgradeTitle}>
+                    {t('account.recommendations.upgrade.title', 'Sugerencias para vos')}
+                </p>
+                <p className={styles.upgradeMessage}>
                     {t(
-                        'account.recommendations.entitlementRequired',
-                        'Esta función está disponible para suscriptores Plus y VIP.'
+                        'account.recommendations.upgrade.message',
+                        'Las sugerencias personalizadas están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.'
                     )}
                 </p>
+                <a
+                    href={upgradeHref}
+                    className={styles.upgradeCta}
+                >
+                    {t('account.recommendations.upgrade.cta', 'Ver planes')}
+                </a>
             </div>
         );
     }

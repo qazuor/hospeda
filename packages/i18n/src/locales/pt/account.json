@@ -913,6 +913,10 @@
             "title": "Nenhuma recomendação por enquanto",
             "body": "Volte mais tarde ou explore todo o nosso catálogo de acomodações."
         },
-        "entitlementRequired": "Esta função não está disponível para sua conta."
+        "upgrade": {
+            "title": "Sugestões para você",
+            "message": "As sugestões personalizadas estão disponíveis nos planos Plus e VIP. Atualize seu plano para acessar.",
+            "cta": "Ver planos"
+        }
     }
 }
