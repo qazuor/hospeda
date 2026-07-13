@@ -26,6 +26,7 @@ import {
     AccommodationCreateDraftHttpSchema,
     type AccommodationCreateInput,
     AccommodationCreateInputSchema,
+    AccommodationExtraInfoRequiredForPublishSchema,
     type AccommodationFaq,
     type AccommodationFaqAddInput,
     AccommodationFaqAddInputSchema,
@@ -1574,23 +1575,27 @@ export class AccommodationService extends BaseCrudService<
      *  1. Fetch the accommodation. Authorize: actor must be the owner OR hold
      *     `ACCOMMODATION_UPDATE_ANY`.
      *  2. If already `ACTIVE`, return it idempotently.
-     *  3. Resolve the owner. If the owner is billing-exempt (ADMIN/SUPER_ADMIN/
+     *  3. Capacity-completeness guard (HOS-152): validate `extraInfo` against
+     *     `AccommodationExtraInfoRequiredForPublishSchema`. If `capacity`/
+     *     `minNights`/`bedrooms`/`bathrooms` are missing, reject with
+     *     `VALIDATION_ERROR` before touching billing or the owner at all.
+     *  4. Resolve the owner. If the owner is billing-exempt (ADMIN/SUPER_ADMIN/
      *     CLIENT_MANAGER), skip the eligibility check entirely and just flip
      *     lifecycleState to ACTIVE.
-     *  4. Otherwise (regular HOST), ask the billing layer for the owner's
+     *  5. Otherwise (regular HOST), ask the billing layer for the owner's
      *     publish eligibility (`first_publish` / `has_active_sub` /
      *     `subscription_required`).
-     *  5. `subscription_required` -> reject with FORBIDDEN.
-     *  6. `first_publish` -> call `startTrial` OUTSIDE any transaction (timeout
+     *  6. `subscription_required` -> reject with FORBIDDEN.
+     *  7. `first_publish` -> call `startTrial` OUTSIDE any transaction (timeout
      *     is enforced by the caller-supplied implementation). On failure,
      *     return `SERVICE_UNAVAILABLE` with no DB writes.
-     *  7. Open a short transaction:
+     *  8. Open a short transaction:
      *      - update accommodation lifecycleState to ACTIVE
-     *  8. If the transaction throws AFTER `startTrial` succeeded, compensate
+     *  9. If the transaction throws AFTER `startTrial` succeeded, compensate
      *     by calling `cancelTrial(subscriptionId)`. If the cancel itself fails,
      *     log a CRITICAL inconsistency warning for manual reconciliation.
-     *  9. Schedule revalidation as a best-effort side effect (never rolls back
-     *     the publish on revalidation errors).
+     *  10. Schedule revalidation as a best-effort side effect (never rolls back
+     *      the publish on revalidation errors).
      *
      * @param actor - The user (or admin) performing the publish.
      * @param id - The accommodation ID to publish.
@@ -1604,8 +1609,8 @@ export class AccommodationService extends BaseCrudService<
      *   NOT auto-promote it. When omitted/`false`, publish promotes a `PRIVATE`
      *   onboarding draft to `PUBLIC` (see the visibility note inside the method).
      * @returns The updated `Accommodation` on success, or a `ServiceError` on
-     *   any failure with codes: `NOT_FOUND`, `FORBIDDEN`, `CONFIGURATION_ERROR`,
-     *   `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR`.
+     *   any failure with codes: `NOT_FOUND`, `FORBIDDEN`, `VALIDATION_ERROR`,
+     *   `CONFIGURATION_ERROR`, `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR`.
      */
     public async publish(
         actor: Actor,
@@ -1640,6 +1645,32 @@ export class AccommodationService extends BaseCrudService<
 
                 if (accommodation.lifecycleState === LifecycleStatusEnum.ACTIVE) {
                     return accommodation;
+                }
+
+                // Capacity completeness guard (HOS-152): `extraInfo` is intentionally
+                // relaxed on the read/write schemas so a DRAFT can be fetched/PATCHed
+                // while the host is still filling in capacity data (see
+                // `AccommodationExtraInfoSchema`'s docblock). Publishing is the one
+                // place completeness MUST be enforced — a listing without capacity/
+                // minNights/bedrooms/bathrooms must never go live. This guard covers
+                // every path that reaches `publish()`, including `update()`'s
+                // ACTIVE-transition dispatch (see the override above). It does NOT
+                // cover a direct `create({ lifecycleState: 'ACTIVE' })` on the admin
+                // API: `create()` never dispatches through `publish()` (unlike
+                // `update()`), and the admin create route instantiates this service
+                // without `publishDeps`, so `POST /api/v1/admin/accommodations` can
+                // insert an ACTIVE listing with incomplete/absent capacity data,
+                // bypassing this check entirely. That gap is pre-existing,
+                // direct-API-only (unreachable from the admin create UI), and
+                // tracked as a follow-up (HOS-153) for the admin create() bypass.
+                const extraInfoCheck = AccommodationExtraInfoRequiredForPublishSchema.safeParse(
+                    accommodation.extraInfo ?? {}
+                );
+                if (!extraInfoCheck.success) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'Cannot publish accommodation: capacity details (capacity, minNights, bedrooms, bathrooms) are incomplete'
+                    );
                 }
 
                 const owner = await this._userModel.findById(accommodation.ownerId, execCtx?.tx);
