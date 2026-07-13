@@ -777,6 +777,25 @@ export class AccommodationService extends BaseCrudService<
             }
         }
 
+        // HOS-153: an accommodation may only be created directly in ACTIVE state with
+        // complete capacity. `publish()` enforces this for DRAFT/INACTIVE -> ACTIVE
+        // transitions, but a direct `create({ lifecycleState: ACTIVE })` — reachable via
+        // `POST /api/v1/admin/accommodations`, whose route takes the domain input straight
+        // through without going through `publish()` — would otherwise bypass the guard.
+        // Re-check here so the "ACTIVE => complete capacity" invariant holds on every
+        // create path (mirrors the publish() capacity guard).
+        if (data.lifecycleState === LifecycleStatusEnum.ACTIVE) {
+            const capacityCheck = AccommodationExtraInfoRequiredForPublishSchema.safeParse(
+                data.extraInfo ?? {}
+            );
+            if (!capacityCheck.success) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Cannot create an ACTIVE accommodation: capacity details (capacity, minNights, bedrooms, bathrooms) are incomplete'
+                );
+            }
+        }
+
         await this._assertDestinationIsCity(data.destinationId);
 
         // SPEC-172: capture junction sync inputs in hookState.
@@ -1654,15 +1673,11 @@ export class AccommodationService extends BaseCrudService<
                 // place completeness MUST be enforced — a listing without capacity/
                 // minNights/bedrooms/bathrooms must never go live. This guard covers
                 // every path that reaches `publish()`, including `update()`'s
-                // ACTIVE-transition dispatch (see the override above). It does NOT
-                // cover a direct `create({ lifecycleState: 'ACTIVE' })` on the admin
-                // API: `create()` never dispatches through `publish()` (unlike
-                // `update()`), and the admin create route instantiates this service
-                // without `publishDeps`, so `POST /api/v1/admin/accommodations` can
-                // insert an ACTIVE listing with incomplete/absent capacity data,
-                // bypassing this check entirely. That gap is pre-existing,
-                // direct-API-only (unreachable from the admin create UI), and
-                // tracked as a follow-up (HOS-153) for the admin create() bypass.
+                // ACTIVE-transition dispatch (see the override above). A direct
+                // `create({ lifecycleState: 'ACTIVE' })` (reachable via
+                // `POST /api/v1/admin/accommodations`) does NOT reach `publish()`, so
+                // the same completeness check is mirrored in `_beforeCreate` (HOS-153) —
+                // an ACTIVE create with incomplete capacity is rejected there before insert.
                 const extraInfoCheck = AccommodationExtraInfoRequiredForPublishSchema.safeParse(
                     accommodation.extraInfo ?? {}
                 );

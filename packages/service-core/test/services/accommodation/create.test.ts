@@ -1,5 +1,10 @@
 import type { AccommodationModel } from '@repo/db';
-import { DestinationTypeEnum, ModerationStatusEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    DestinationTypeEnum,
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -265,5 +270,52 @@ describe('AccommodationService.create', () => {
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
         expect(result.data).toBeUndefined();
+    });
+
+    // HOS-153: a direct create with lifecycleState ACTIVE must not bypass the
+    // publish-time capacity-completeness invariant.
+    describe('capacity completeness for a direct ACTIVE create (HOS-153)', () => {
+        it('rejects an ACTIVE create with incomplete extraInfo', async () => {
+            const actor = createAdminActor();
+            const input = createMockAccommodationCreateInput({
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
+                // capacity present but minNights/bedrooms/bathrooms missing
+                extraInfo: { capacity: 4 } as never
+            });
+
+            const result = await service.create(actor, input);
+
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(result.data).toBeUndefined();
+            expect(model.create).not.toHaveBeenCalled();
+        });
+
+        it('allows an ACTIVE create when extraInfo is complete', async () => {
+            const actor = createAdminActor();
+            const input = createMockAccommodationCreateInput({
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
+                extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 }
+            });
+            (model.create as Mock).mockResolvedValue({ ...input, id: 'mock-id' });
+
+            const result = await service.create(actor, input);
+
+            expect(result.error).toBeUndefined();
+            expect(model.create).toHaveBeenCalled();
+        });
+
+        it('allows a DRAFT create with incomplete extraInfo (no guard on drafts)', async () => {
+            const actor = createAdminActor();
+            const input = createMockAccommodationCreateInput({
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                extraInfo: { capacity: 4 } as never
+            });
+            (model.create as Mock).mockResolvedValue({ ...input, id: 'mock-id' });
+
+            const result = await service.create(actor, input);
+
+            expect(result.error).toBeUndefined();
+            expect(model.create).toHaveBeenCalled();
+        });
     });
 });
