@@ -146,6 +146,49 @@ describe('runPipeline (e2e machinery)', () => {
         );
     });
 
+    it('falls back to the second-tier geocoder only when the primary is unresolved', async () => {
+        // Arrange — primary always misses; fallback resolves
+        const rows = [makeRow({ id: 'colon__plaza', lat: '', lng: '' })];
+        const primary: Geocoder = { resolve: vi.fn(async () => null) };
+        const fallback: Geocoder = { resolve: vi.fn(async () => HIT) };
+
+        // Act
+        const { fixtures, stats } = await runPipeline({
+            rows,
+            geocoder: primary,
+            fallbackGeocoder: fallback,
+            realDestinationSlugs,
+            realCategorySlugs
+        });
+
+        // Assert
+        expect(primary.resolve).toHaveBeenCalledTimes(1);
+        expect(fallback.resolve).toHaveBeenCalledTimes(1);
+        expect(fixtures[0]?.lat).toBe(-31.4);
+        expect(stats.geocode.resolvedHigh).toBe(1);
+        expect(stats.geocode.resolvedByFallback).toBe(1);
+    });
+
+    it('does NOT call the fallback when the primary already resolves', async () => {
+        // Arrange
+        const rows = [makeRow({ id: 'colon__plaza', lat: '', lng: '' })];
+        const primary: Geocoder = { resolve: vi.fn(async () => HIT) };
+        const fallback: Geocoder = { resolve: vi.fn(async () => HIT) };
+
+        // Act
+        const { stats } = await runPipeline({
+            rows,
+            geocoder: primary,
+            fallbackGeocoder: fallback,
+            realDestinationSlugs,
+            realCategorySlugs
+        });
+
+        // Assert
+        expect(fallback.resolve).not.toHaveBeenCalled();
+        expect(stats.geocode.resolvedByFallback).toBe(0);
+    });
+
     it('is idempotent: a warm-cache re-run is byte-identical and makes zero network calls (AC-7)', async () => {
         // Arrange
         const rows = [makeRow({ id: 'colon__plaza', lat: '', lng: '' })];

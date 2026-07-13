@@ -13,6 +13,7 @@ const STATS: PipelineStats = {
         alreadyHadCoords: 197,
         resolvedHigh: 500,
         resolvedMedium: 150,
+        resolvedByFallback: 480,
         rejectedLowConfidence: 30,
         unresolved: 37,
         unresolvedSlugs: ['a', 'b']
@@ -42,6 +43,7 @@ describe('geocodeAttempts + geocodeSuccessRate', () => {
                 alreadyHadCoords: 10,
                 resolvedHigh: 0,
                 resolvedMedium: 0,
+                resolvedByFallback: 0,
                 rejectedLowConfidence: 0,
                 unresolved: 0,
                 unresolvedSlugs: []

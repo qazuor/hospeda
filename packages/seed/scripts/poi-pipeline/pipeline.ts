@@ -43,6 +43,12 @@ export interface PipelineResult {
 export async function runPipeline(params: {
     readonly rows: readonly RawCsvRow[];
     readonly geocoder: Geocoder;
+    /**
+     * Optional second-tier geocoder (Google Places) tried, with a name-based
+     * query, ONLY for rows the primary geocoder leaves unresolved. Absent =
+     * primary-only (no paid calls).
+     */
+    readonly fallbackGeocoder?: Geocoder;
     readonly realDestinationSlugs?: ReadonlySet<string>;
     readonly realCategorySlugs?: ReadonlySet<string>;
     readonly geocodeIsoDate?: string;
@@ -50,6 +56,7 @@ export async function runPipeline(params: {
     const {
         rows,
         geocoder,
+        fallbackGeocoder,
         realDestinationSlugs = loadRealDestinationSlugs(),
         realCategorySlugs = loadRealCategorySlugs(),
         geocodeIsoDate = GEOCODE_BATCH_DATE
@@ -64,6 +71,7 @@ export async function runPipeline(params: {
     let alreadyHadCoords = 0;
     let resolvedHigh = 0;
     let resolvedMedium = 0;
+    let resolvedByFallback = 0;
     let rejectedLowConfidence = 0;
     let unresolved = 0;
     const unresolvedSlugs: string[] = [];
@@ -83,9 +91,22 @@ export async function runPipeline(params: {
         if (hadCoords) {
             alreadyHadCoords += 1;
         } else {
-            const query = `${s.row.address.trim()}${REGIONAL_QUALIFIER}`;
-            const hit = await geocoder.resolve(query);
-            const outcome = resolveConfidence(hit);
+            // Primary tier: Nominatim, address-based query.
+            const primaryQuery = `${s.row.address.trim()}${REGIONAL_QUALIFIER}`;
+            let outcome = resolveConfidence(await geocoder.resolve(primaryQuery));
+            let fromFallback = false;
+
+            // Second tier: Google Places, name-based query — only when the
+            // primary left it unresolved (keeps paid calls to the minimum).
+            if (outcome.result === null && fallbackGeocoder !== undefined) {
+                const fallbackQuery = `${s.row.name.trim()}, ${s.row.destinationName.trim()}, Entre Ríos, Argentina`;
+                const fbOutcome = resolveConfidence(await fallbackGeocoder.resolve(fallbackQuery));
+                if (fbOutcome.result !== null) {
+                    outcome = fbOutcome;
+                    fromFallback = true;
+                }
+            }
+
             geocoded = outcome.result;
             if (outcome.tier === 'high') {
                 resolvedHigh += 1;
@@ -97,6 +118,9 @@ export async function runPipeline(params: {
             } else {
                 unresolved += 1;
                 unresolvedSlugs.push(s.slug);
+            }
+            if (fromFallback) {
+                resolvedByFallback += 1;
             }
         }
 
@@ -123,6 +147,7 @@ export async function runPipeline(params: {
             alreadyHadCoords,
             resolvedHigh,
             resolvedMedium,
+            resolvedByFallback,
             rejectedLowConfidence,
             unresolved,
             unresolvedSlugs

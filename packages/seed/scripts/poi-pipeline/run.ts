@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 import { createCachedGeocoder, fileCacheIO } from './cache.js';
 import { writePoiFixtures } from './emit.js';
 import { createNominatimGeocoder } from './geocoder.js';
+import { createGooglePlacesGeocoder } from './google-places.js';
 import { loadCsv } from './loader.js';
 import { runPipeline } from './pipeline.js';
 import { writeRelations } from './relations.js';
@@ -46,6 +47,16 @@ export const OUTPUT_DIR = path.resolve(__dirname, 'output');
 
 /** Committed geocode cache path (§6.3.3) — warm re-runs make zero network calls. */
 export const CACHE_PATH = path.resolve(__dirname, 'geocode-cache.json');
+
+/** Committed Google Places cache path — separate file so a re-run costs $0. */
+export const GOOGLE_CACHE_PATH = path.resolve(__dirname, 'google-places-cache.json');
+
+/**
+ * Hard cap on live Google Places calls per run (belt; the Google Cloud Console
+ * quota is the server-side suspenders). The batch is ~618, so 750 leaves head-
+ * room without risking a runaway bill.
+ */
+const GOOGLE_MAX_REQUESTS = 750;
 
 /** Nominatim User-Agent (required by its ToS). */
 const USER_AGENT = 'hospeda-poi-pipeline/1.0 (+https://github.com/qazuor/hospeda; HOS-141)';
@@ -115,13 +126,33 @@ async function main(args: PipelineArgs): Promise<void> {
         io: fileCacheIO(CACHE_PATH)
     });
 
+    // Google Places fallback is enabled only when the API key is present in the
+    // environment — no key means Nominatim-only and zero paid calls.
+    const placesKey = process.env.HOSPEDA_GOOGLE_PLACES_API_KEY?.trim();
+    const fallbackGeocoder = placesKey
+        ? createCachedGeocoder({
+              geocoder: createGooglePlacesGeocoder({
+                  apiKey: placesKey,
+                  maxRequests: GOOGLE_MAX_REQUESTS
+              }),
+              io: fileCacheIO(GOOGLE_CACHE_PATH)
+          })
+        : undefined;
+    console.log(
+        fallbackGeocoder
+            ? '[poi-pipeline] Google Places fallback ENABLED (key present).'
+            : '[poi-pipeline] Google Places fallback DISABLED (no HOSPEDA_GOOGLE_PLACES_API_KEY). Nominatim only.'
+    );
+
     console.log('[poi-pipeline] Running pipeline (geocoding coordinate-less rows)...');
-    const { fixtures, relations, stats } = await runPipeline({ rows, geocoder });
+    const { fixtures, relations, stats } = await runPipeline({ rows, geocoder, fallbackGeocoder });
 
     if (args.dryRun) {
         console.log('[poi-pipeline] DRY RUN — not writing output. Report:\n');
         console.log(buildReport(stats).markdown);
-        console.log(`[poi-pipeline] Live provider calls this run: ${geocoder.networkCalls}`);
+        console.log(
+            `[poi-pipeline] Live provider calls this run: Nominatim ${geocoder.networkCalls}, Google Places ${fallbackGeocoder?.networkCalls ?? 0}`
+        );
         return;
     }
 

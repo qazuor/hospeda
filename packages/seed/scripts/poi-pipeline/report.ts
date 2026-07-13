@@ -17,6 +17,8 @@ export interface GeocodeStats {
     readonly resolvedHigh: number;
     /** Coordinate-less rows resolved at medium confidence. */
     readonly resolvedMedium: number;
+    /** Of the resolved rows, how many came from the Google Places fallback. */
+    readonly resolvedByFallback: number;
     /** Coordinate-less rows whose only match was rejected as low confidence. */
     readonly rejectedLowConfidence: number;
     /** Coordinate-less rows the provider could not match at all. */
@@ -87,6 +89,7 @@ export function buildReport(stats: PipelineStats): { json: string; markdown: str
 - Already had coordinates: **${g.alreadyHadCoords}**
 - Resolved (high): **${g.resolvedHigh}**
 - Resolved (medium): **${g.resolvedMedium}**
+- ...of which via Google Places fallback: **${g.resolvedByFallback}**
 - Rejected (low confidence): **${g.rejectedLowConfidence}**
 - Unresolved: **${g.unresolved}**
 - High/medium resolution rate: **${ratePct}%** of ${geocodeAttempts(g)} attempted
