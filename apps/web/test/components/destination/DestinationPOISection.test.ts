@@ -28,11 +28,20 @@ describe('DestinationPOISection.astro', () => {
         );
     });
 
-    it('resolves POI display names via translatePoiName (i18n by slug, no `name` column)', () => {
+    it('resolves POI display names via translatePoiName (nameI18n-first, humanized-slug fallback — HOS-138)', () => {
         expect(sectionSrc).toContain(
             "import { translatePoiName, translatePoiTypeLabel } from '@/lib/poi-labels';"
         );
-        expect(sectionSrc).toContain('translatePoiName({ t, slug: poi.slug })');
+        expect(sectionSrc).toContain(
+            'translatePoiName({ slug: poi.slug, nameI18n: poi.nameI18n, locale })'
+        );
+    });
+
+    it('resolves POI descriptions via resolveI18nText (descriptionI18n-first, legacy description fallback — HOS-138)', () => {
+        expect(sectionSrc).toContain("import { resolveI18nText } from '@/lib/resolve-i18n-text';");
+        expect(sectionSrc).toContain(
+            'resolveI18nText(poi.descriptionI18n, locale) || poi.description'
+        );
     });
 
     it('resolves the type label via translatePoiTypeLabel', () => {
@@ -55,8 +64,8 @@ describe('DestinationPOISection.astro', () => {
         expect(sectionSrc).toContain('a.displayName.localeCompare(b.displayName)');
     });
 
-    it('renders the optional description only when present', () => {
-        expect(sectionSrc).toContain('{poi.description && (');
+    it('renders the optional (resolved) description only when present', () => {
+        expect(sectionSrc).toContain('{poi.resolvedDescription && (');
     });
 
     it('uses the destinations.detailPage.pointsOfInterestTitle i18n key for the section heading', () => {

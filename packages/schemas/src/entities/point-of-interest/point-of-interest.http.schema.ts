@@ -150,7 +150,12 @@ export const httpToDomainPointOfInterestCreate = (
         isFeatured: httpData.isFeatured,
         isBuiltin: httpData.isBuiltin,
         displayWeight: httpData.displayWeight,
-        lifecycleState: LifecycleStatusEnum.ACTIVE
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        // HOS-138: the HTTP create surface stays HOS-113-minimal (v2 content /
+        // curation fields are not admin-CRUD-exposed yet — NG-5). A POI created
+        // through this path starts unverified with no dedicated page.
+        hasOwnPage: false,
+        verified: false
     };
 };
 

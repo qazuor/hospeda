@@ -22,6 +22,8 @@ describe('PointOfInterest Normalizers', () => {
             isFeatured: true,
             isBuiltin: false,
             displayWeight: 50,
+            hasOwnPage: false,
+            verified: false,
             lifecycleState: 'ACTIVE' as any,
             adminInfo: { favorite: true, notes: 'test' },
             extraField: 'should be ignored'

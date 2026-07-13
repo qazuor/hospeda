@@ -6,6 +6,46 @@
     "long": -58.233,
     "type": "PARK",
     "description": "Parque urbano tradicional con espacios verdes y arboledas centenarias",
+    "nameI18n": {
+        "es": "Parque Unzué",
+        "en": "Unzué Park",
+        "pt": "Parque Unzué"
+    },
+    "descriptionI18n": {
+        "es": "Parque urbano tradicional con espacios verdes y arboledas centenarias",
+        "en": "Parque urbano tradicional con espacios verdes y arboledas centenarias",
+        "pt": "Parque urbano tradicional con espacios verdes y arboledas centenarias"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        },
+        "description": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        }
+    },
     "icon": "park",
     "isBuiltin": true,
     "isFeatured": false,

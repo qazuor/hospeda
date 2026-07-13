@@ -206,7 +206,7 @@ merged via PR #2268):
   `manifest-required.json` `pointsOfInterest` list. A prior data migration,
   `packages/seed/src/data-migrations/0009-hos-113-points-of-interest.ts`, is
   the reference for how a POI-touching data migration is structured; this
-  spec's data migration is the next sequential module (`0010-*`).
+  spec's data migration is the next sequential module (`0011-*`).
 - **Migration numbering**: current structural migration head in the working
   tree is `packages/db/src/migrations/0051_dapper_nick_fury.sql`; this spec's
   `db:generate` output lands as `0052_*`.
@@ -473,7 +473,7 @@ dual-write rule"):
    these as manually-curated, not AI-translated, since they were copied
    verbatim from existing curated content — see NG-6 for the future
    AI-translate follow-up).
-2. **Data migration**: `packages/seed/src/data-migrations/0010-hos-138-poi-v2-model-core.ts`
+2. **Data migration**: `packages/seed/src/data-migrations/0011-hos-138-poi-v2-model-core.ts`
    applies the identical `nameI18n`/`descriptionI18n`/`translationMeta` values
    to the 12 already-seeded rows on any live environment (staging today,
    eventually prod), by `slug` lookup, idempotent (skips a POI whose
@@ -587,7 +587,7 @@ Suggested phasing (for Task Master task generation):
    `destination.model.ts`), each with its own regression test (AC-3/AC-4).
 4. **Web display-path update**: `poi-labels.ts` + `DestinationPOISection.astro`
    per §6.1's resolution order, verified against AC-8's no-op requirement.
-5. **Seed dual-write**: fixture edits + `0010-hos-138-poi-v2-model-core.ts`
+5. **Seed dual-write**: fixture edits + `0011-hos-138-poi-v2-model-core.ts`
    data migration + verification against both a fresh DB and a
    pre-HOS-138-shaped seeded DB.
 6. **Quality gate**: `pnpm typecheck`, full `@repo/db`/`@repo/schemas`/

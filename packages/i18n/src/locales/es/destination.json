@@ -1,18 +1,4 @@
 {
-    "poiNames": {
-        "autodromo_concepcion_del_uruguay": "Autódromo de Concepción del Uruguay",
-        "playa_banco_pelay": "Playa Banco Pelay",
-        "palacio_san_jose": "Palacio San José",
-        "basilica_inmaculada_concepcion": "Basílica de la Inmaculada Concepción",
-        "parque_unzue": "Parque Unzué",
-        "isla_del_puerto": "Isla del Puerto",
-        "plaza_francisco_ramirez": "Plaza Francisco Ramírez",
-        "mirador_costanera": "Mirador de la Costanera",
-        "complejo_termal_concordia": "Complejo Termal de Concordia",
-        "balneario_itape": "Balneario Itapé",
-        "parque_nacional_el_palmar": "Parque Nacional El Palmar",
-        "termas_de_federacion": "Termas de Federación"
-    },
     "poiTypeLabels": {
         "BEACH": "Playa",
         "STADIUM": "Estadio/Autódromo",

@@ -200,4 +200,52 @@ describe('resolvePoiToCoordinates (HOS-113 T-032)', () => {
             expect(result).toEqual({ found: false });
         });
     });
+
+    // HOS-138 (AC-3): coordinates are nullable. A coordinate-less POI must never
+    // let a `null` reach the geo-SQL numeric path — it degrades to { found: false }.
+    describe('does not resolve a coordinate-less POI (HOS-138 AC-3)', () => {
+        it('returns { found: false } when lat is null', async () => {
+            const poi: PointOfInterest = PointOfInterestFactoryBuilder.create({
+                lat: null,
+                long: -58.2372
+            });
+            const getById = vi.fn().mockResolvedValue({ data: poi });
+            const service = createPoiServiceMock({ getById });
+
+            const result = await resolvePoiToCoordinates({ poiId: poi.id }, actor, service);
+
+            expect(result).toEqual({ found: false });
+        });
+
+        it('returns { found: false } when long is null', async () => {
+            const poi: PointOfInterest = PointOfInterestFactoryBuilder.create({
+                lat: -32.4825,
+                long: null
+            });
+            const getById = vi.fn().mockResolvedValue({ data: poi });
+            const service = createPoiServiceMock({ getById });
+
+            const result = await resolvePoiToCoordinates({ poiId: poi.id }, actor, service);
+
+            expect(result).toEqual({ found: false });
+        });
+
+        it('returns { found: false } when both lat and long are null (by slug)', async () => {
+            const poi: PointOfInterest = PointOfInterestFactoryBuilder.create({
+                slug: 'no-coords-poi',
+                lat: null,
+                long: null
+            });
+            const getBySlug = vi.fn().mockResolvedValue({ data: poi });
+            const service = createPoiServiceMock({ getBySlug });
+
+            const result = await resolvePoiToCoordinates(
+                { poiSlug: 'no-coords-poi' },
+                actor,
+                service
+            );
+
+            expect(result).toEqual({ found: false });
+        });
+    });
 });

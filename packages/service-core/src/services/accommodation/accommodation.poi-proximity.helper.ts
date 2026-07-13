@@ -112,6 +112,15 @@ export async function resolvePoiToCoordinates(
         return { found: false };
     }
 
+    // HOS-138: `lat`/`long` are nullable (78% of the POI v2 dataset has no
+    // coordinates yet). A coordinate-less POI cannot center a proximity search —
+    // treat it exactly like an unmatched/inactive POI (`{ found: false }`, which
+    // the accommodation service turns into a 404) rather than letting a `null`
+    // reach `buildWithinRadiusClause`'s numeric SQL path (spec §6.2, R-1).
+    if (result.data.lat === null || result.data.long === null) {
+        return { found: false };
+    }
+
     return {
         found: true,
         lat: result.data.lat,

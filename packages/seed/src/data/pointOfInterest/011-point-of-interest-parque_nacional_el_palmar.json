@@ -6,6 +6,46 @@
     "long": -58.2833,
     "type": "PARK",
     "description": "Parque nacional famoso por sus palmares de yatay centenarios",
+    "nameI18n": {
+        "es": "Parque Nacional El Palmar",
+        "en": "El Palmar National Park",
+        "pt": "Parque Nacional El Palmar"
+    },
+    "descriptionI18n": {
+        "es": "Parque nacional famoso por sus palmares de yatay centenarios",
+        "en": "Parque nacional famoso por sus palmares de yatay centenarios",
+        "pt": "Parque nacional famoso por sus palmares de yatay centenarios"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        },
+        "description": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        }
+    },
     "icon": "park",
     "isBuiltin": true,
     "isFeatured": true,

@@ -21,6 +21,9 @@ export class PointOfInterestFactoryBuilder {
             isBuiltin: false,
             isFeatured: false,
             displayWeight: 50,
+            // HOS-138: POI v2 fields with defaults.
+            hasOwnPage: false,
+            verified: false,
             createdAt: new Date(),
             updatedAt: new Date(),
             createdById: getMockId('user') as UserIdType,
