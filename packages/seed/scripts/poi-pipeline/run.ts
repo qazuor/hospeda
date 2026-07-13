@@ -162,7 +162,9 @@ async function main(args: PipelineArgs): Promise<void> {
     console.log(
         `[poi-pipeline] Wrote ${written} fixtures + destination-relations.json + report to ${OUTPUT_DIR}`
     );
-    console.log(`[poi-pipeline] Live provider calls this run: ${geocoder.networkCalls}`);
+    console.log(
+        `[poi-pipeline] Live provider calls this run: Nominatim ${geocoder.networkCalls}, Google Places ${fallbackGeocoder?.networkCalls ?? 0}`
+    );
 }
 
 /**
