@@ -62,13 +62,18 @@ export interface PublicOccupancyEntry {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-const accommodationModel = new AccommodationModel();
-
 /**
  * Fetches an accommodation by id, throwing `NOT_FOUND` when missing or
  * soft-deleted. Mirrors the guard in `setAccommodationFeaturedToggle`.
+ *
+ * The model is instantiated inside the function (not at module scope) so that
+ * importing this module — e.g. via the service-core barrel — never touches the
+ * `@repo/db` `AccommodationModel` export at load time. A top-level
+ * `new AccommodationModel()` breaks collection of any test that partially mocks
+ * `@repo/db` without that export. Matches `accommodation.featured-toggle.ts`.
  */
 async function getAccommodationOrThrow(accommodationId: string): Promise<Accommodation> {
+    const accommodationModel = new AccommodationModel();
     const accommodation = await accommodationModel.findById(accommodationId);
     if (!accommodation || accommodation.deletedAt !== null) {
         throw new ServiceError(
