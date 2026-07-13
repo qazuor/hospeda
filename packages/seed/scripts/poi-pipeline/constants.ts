@@ -31,6 +31,14 @@ export const DESTINATION_SLUG_FIXUPS: Readonly<Record<string, string>> = {
 export const REGIONAL_QUALIFIER = ', Entre Rios, Argentina';
 
 /**
+ * Pinned ISO date stamped into every auto-geocode marker for a batch run. It
+ * MUST be a fixed constant (not `new Date()`) so re-running the pipeline
+ * produces byte-identical output (AC-7 idempotency). Bump it only for a
+ * deliberate re-geocode batch.
+ */
+export const GEOCODE_BATCH_DATE = '2026-07-13';
+
+/**
  * Substring stamped into (and searchable within) the `notes` of any POI whose
  * coordinates were derived by the pipeline's geocoder rather than
  * cartographically verified. A future human-verification pass can find these

@@ -52,6 +52,31 @@ export interface SluggedRow extends ReconciledRow {
 }
 
 /**
+ * Counts the distinct bare POI slugs claimed by more than one destination
+ * (i.e. the collisions that get destination-prefixed). For the run report.
+ *
+ * @param params.rows - The reconciled rows.
+ * @returns The number of distinct colliding bare slugs.
+ */
+export function countCollidingSlugs(params: { readonly rows: readonly ReconciledRow[] }): number {
+    const { rows } = params;
+    const destinationsByBare = new Map<string, Set<string>>();
+    for (const r of rows) {
+        const bare = toSnakeCase(extractPoiSegment(r.row.id));
+        const set = destinationsByBare.get(bare) ?? new Set<string>();
+        set.add(r.destinationSlug);
+        destinationsByBare.set(bare, set);
+    }
+    let colliding = 0;
+    for (const dests of destinationsByBare.values()) {
+        if (dests.size > 1) {
+            colliding += 1;
+        }
+    }
+    return colliding;
+}
+
+/**
  * Computes the final POI slug for every row, resolving cross-destination
  * collisions by destination-prefixing, and asserts global uniqueness (G-3).
  *

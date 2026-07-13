@@ -1,27 +1,32 @@
 #!/usr/bin/env tsx
 /**
- * HOS-141 T-001 — POI data-cleaning pipeline CLI scaffold.
+ * HOS-141 — POI data-cleaning pipeline CLI.
  *
- * Standalone dev script that will eventually turn the consolidated POI CSV
- * export into staged, validated seed-ready fixtures. It intentionally lives
- * outside `src/` so the `@repo/seed` runtime can never accidentally import
- * it (HOS-141 spec NG-1/NG-4). This first cut only wires up argument
- * parsing — CSV parsing, geocoding, and fixture emission are added by later
- * HOS-141 tasks.
+ * Standalone dev script that turns the consolidated POI CSV export into a
+ * staged, validated, seed-ready dataset (JSON fixtures + destination-relations
+ * + a report). It intentionally lives outside `src/` so the `@repo/seed`
+ * runtime can never accidentally import it (HOS-141 spec NG-1/NG-4).
  *
  * Usage:
  *   pnpm --filter @repo/seed exec tsx scripts/poi-pipeline/run.ts \
  *     [--dry-run] [--limit=<N>] [--input=<path>]
  *
- *   `--dry-run`:       print the resolved options and exit without writing
- *                      anything (default: `false`).
- *   `--limit=<N>`:     cap processing to the first N input rows. Must be a
- *                      positive integer. Omit to process every row.
+ *   `--dry-run`:       geocode + transform but DO NOT write fixtures; print the
+ *                      report to stdout (validate match rate cheaply first).
+ *   `--limit=<N>`:     process only the first N input rows (for a dry-run
+ *                      sample). Must be a positive integer.
  *   `--input=<path>`:  absolute path to the source CSV. Defaults to
  *                      {@link DEFAULT_INPUT_PATH}.
  */
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createCachedGeocoder, fileCacheIO } from './cache.js';
+import { writePoiFixtures } from './emit.js';
+import { createNominatimGeocoder } from './geocoder.js';
+import { loadCsv } from './loader.js';
+import { runPipeline } from './pipeline.js';
+import { writeRelations } from './relations.js';
+import { buildReport, writeReport } from './report.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,18 +38,17 @@ const __dirname = path.dirname(__filename);
 export const DEFAULT_INPUT_PATH = '/home/qazuor/Downloads/POIS/Hospeda-POIs-Consolidado.csv';
 
 /**
- * Absolute path to the pipeline's staged output directory.
- *
- * This is scratch space for the pipeline's own intermediate and final
- * artifacts (cleaned CSV, validation reports, etc.). It MUST NEVER be the
- * real seed data folder (`packages/seed/src/data/pointOfInterest/`) — see
- * HOS-141 spec §6.4 — output only ever lands here until a human reviews and
- * manually promotes the result into the seed data folder.
- *
- * Nothing is written here yet; this constant is a placeholder for later
- * HOS-141 tasks.
+ * Absolute path to the pipeline's staged output directory (§6.4). Never the
+ * real seed data folder — output only ever lands here until a human reviews
+ * and HOS-142 promotes it into `packages/seed/src/data/pointOfInterest/`.
  */
 export const OUTPUT_DIR = path.resolve(__dirname, 'output');
+
+/** Committed geocode cache path (§6.3.3) — warm re-runs make zero network calls. */
+export const CACHE_PATH = path.resolve(__dirname, 'geocode-cache.json');
+
+/** Nominatim User-Agent (required by its ToS). */
+const USER_AGENT = 'hospeda-poi-pipeline/1.0 (+https://github.com/qazuor/hospeda; HOS-141)';
 
 /**
  * Parsed CLI options for a POI pipeline run.
@@ -62,10 +66,8 @@ export interface PipelineArgs {
  * Parses the `--limit=<N>` flag's value out of raw argv tokens.
  *
  * @param argv - Raw argv tokens (see {@link parseArgs}).
- * @returns The parsed positive integer, or `undefined` when the flag is
- *   absent.
- * @throws {Error} If the flag is present with a value that is not a
- *   positive integer.
+ * @returns The parsed positive integer, or `undefined` when the flag is absent.
+ * @throws {Error} If present with a value that is not a positive integer.
  */
 function parseLimitArg(argv: readonly string[]): number | undefined {
     const limitArg = argv.find((arg) => arg.startsWith('--limit='));
@@ -83,56 +85,66 @@ function parseLimitArg(argv: readonly string[]): number | undefined {
 /**
  * Parses raw CLI argv tokens into typed {@link PipelineArgs}.
  *
- * Follows the same `--flag` / `--key=value` conventions used elsewhere in
- * `@repo/seed`'s CLIs (see `src/cli.ts`'s `parseGroupFlag`): boolean flags
- * are checked with `argv.includes(...)`, valued flags are `--key=value`
- * pairs extracted with `startsWith`/`slice`.
- *
- * @param argv - Raw argv tokens, already sliced past the node/script path
- *   (i.e. `process.argv.slice(2)`).
+ * @param argv - Raw argv tokens, already sliced past the node/script path.
  * @returns The parsed, defaulted pipeline options.
- * @throws {Error} If `--limit` is present with a value that is not a
- *   positive integer.
- *
- * @example
- * ```ts
- * parseArgs([])                     // { dryRun: false, input: DEFAULT_INPUT_PATH }
- * parseArgs(['--dry-run'])          // { dryRun: true, input: DEFAULT_INPUT_PATH }
- * parseArgs(['--limit=20'])         // { dryRun: false, limit: 20, input: DEFAULT_INPUT_PATH }
- * parseArgs(['--input=/tmp/x.csv']) // { dryRun: false, input: '/tmp/x.csv' }
- * ```
+ * @throws {Error} If `--limit` is present with a non-positive-integer value.
  */
 export function parseArgs(argv: readonly string[]): PipelineArgs {
     const dryRun = argv.includes('--dry-run');
     const limit = parseLimitArg(argv);
-
     const inputArg = argv.find((arg) => arg.startsWith('--input='));
     const input = inputArg ? inputArg.slice('--input='.length) : DEFAULT_INPUT_PATH;
-
     return limit === undefined ? { dryRun, input } : { dryRun, limit, input };
 }
 
 /**
- * Placeholder pipeline entrypoint.
+ * Runs the pipeline end to end against a real CSV + a cached Nominatim
+ * geocoder, writing the staged output unless `--dry-run`.
  *
- * Currently only resolves and logs the CLI options; later HOS-141 tasks
- * extend this with CSV parsing, geocoding, and staged-output emission.
+ * @param args - The parsed CLI options.
  */
-function main(): void {
-    const options = parseArgs(process.argv.slice(2));
-    console.log('[poi-pipeline] Resolved options:', options);
-    console.log(`[poi-pipeline] Staged output directory (unused so far): ${OUTPUT_DIR}`);
+async function main(args: PipelineArgs): Promise<void> {
+    // Only assert the full 914-row count on an unlimited, non-dry-run pass.
+    const expectedRows = args.limit === undefined ? 914 : undefined;
+    const allRows = loadCsv({ path: args.input, expectedRows });
+    const rows = args.limit === undefined ? allRows : allRows.slice(0, args.limit);
+    console.log(`[poi-pipeline] Loaded ${rows.length} row(s) from ${args.input}`);
+
+    const geocoder = createCachedGeocoder({
+        geocoder: createNominatimGeocoder({ userAgent: USER_AGENT }),
+        io: fileCacheIO(CACHE_PATH)
+    });
+
+    console.log('[poi-pipeline] Running pipeline (geocoding coordinate-less rows)...');
+    const { fixtures, relations, stats } = await runPipeline({ rows, geocoder });
+
+    if (args.dryRun) {
+        console.log('[poi-pipeline] DRY RUN — not writing output. Report:\n');
+        console.log(buildReport(stats).markdown);
+        console.log(`[poi-pipeline] Live provider calls this run: ${geocoder.networkCalls}`);
+        return;
+    }
+
+    const written = writePoiFixtures({ fixtures, outputDir: OUTPUT_DIR });
+    writeRelations({ relations, outputDir: OUTPUT_DIR });
+    writeReport({ stats, outputDir: OUTPUT_DIR });
+    console.log(
+        `[poi-pipeline] Wrote ${written} fixtures + destination-relations.json + report to ${OUTPUT_DIR}`
+    );
+    console.log(`[poi-pipeline] Live provider calls this run: ${geocoder.networkCalls}`);
 }
 
 /**
- * True when this module is being executed as a CLI entry point (not
- * imported as a library), so unit tests can safely import {@link parseArgs}
- * without triggering {@link main}'s side effects.
+ * True when this module is executed as a CLI entry point (not imported), so
+ * tests can import {@link parseArgs} without triggering {@link main}.
  */
 const IS_CLI_ENTRY = process.argv[1]
     ? path.resolve(process.argv[1]) === path.resolve(__filename)
     : false;
 
 if (IS_CLI_ENTRY) {
-    main();
+    main(parseArgs(process.argv.slice(2))).catch((error) => {
+        console.error('[poi-pipeline] FAILED:', error instanceof Error ? error.message : error);
+        process.exit(1);
+    });
 }
