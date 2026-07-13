@@ -203,7 +203,10 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
 
         // Fill in the remaining fields (location, capacity, price) via the
         // owner-scoped protected PATCH, mirroring what the web editor form
-        // submits before "Publicar".
+        // submits before "Publicar". `bedrooms`/`bathrooms` are added here
+        // (HOS-152) so the draft clears AccommodationService.publish()'s
+        // capacity-completeness guard, which now rejects DRAFT -> ACTIVE
+        // unless extraInfo has capacity/minNights/bedrooms/bathrooms all set.
         const fillResponse = await page.request.patch(
             `${API_URL}/api/v1/protected/accommodations/${result.accommodationId}`,
             {
@@ -212,6 +215,8 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
                     longitude: -58.234,
                     address: 'Calle Falsa 123',
                     maxGuests: 4,
+                    bedrooms: 2,
+                    bathrooms: 1,
                     basePrice: 10000,
                     currency: 'ARS'
                 },
@@ -221,6 +226,13 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         expect(fillResponse.ok(), `field PATCH must succeed (got ${fillResponse.status()})`).toBe(
             true
         );
+
+        // `minNights` is not settable by a host (no flat field on the protected
+        // update schema, not in the web editor), so it is defaulted to 1 server-side
+        // at draft creation (`httpToDomainAccommodationCreateDraft`, HOS-152).
+        // Together with capacity/bedrooms/bathrooms from the PATCH above, the draft
+        // now satisfies the publish capacity-completeness guard — no test-only SQL
+        // workaround needed.
 
         // The publish POST is what transitions DRAFT → ACTIVE and creates
         // the trial subscription (HOS-110 dedicated endpoint — the protected
