@@ -21,6 +21,7 @@ import { buildUrl } from '@/lib/urls';
 import { eventsApi, toEventCardProps } from '@/lib/api';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import type { EventCardData } from '@/lib/api/transforms';
+import { requestHasSessionCookie } from '@/lib/middleware-helpers';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
 import EventCardFeatured from '@/components/shared/cards/EventCardFeatured.astro';
@@ -38,9 +39,29 @@ const { locale } = Astro.props;
 
 const { t } = createTranslations(locale);
 
-// Forwarded to the event cards so the FavoriteButton picks the toggle-favorite
-// flow instead of the guest auth-required popover when the user is logged in.
-const isAuthenticated = Boolean(Astro.locals.user);
+// Forwarded to the event cards so FavoriteButton picks the toggle-favorite
+// flow instead of the guest auth-required popover.
+//
+// This section runs as a `server:defer` Server Island, and middleware no
+// longer parses the session for Server Island requests (see
+// `middleware.ts` Step 2 — that unconditional parse fired an extra
+// `get-session` call on EVERY page view site-wide via the mobile menu
+// island, flooding the API's `auth` rate-limit bucket). `Astro.locals.user`
+// is therefore never reliably populated here, so we cannot call
+// `parseSessionUser` / `get-session` in this island either — that would
+// reintroduce the exact flood the fix removed.
+//
+// Instead we use the cheap, synchronous `requestHasSessionCookie` check:
+// does the request carry a Better Auth session cookie at all? No network
+// call, no session validation. A visitor with an EXPIRED session cookie
+// still tests positive here and triggers one bulk check below that 401s
+// (graceful fallback to per-card client hydration) — a rare, self-correcting
+// case, and still just 1 request, not N. Far better than either the N+1
+// (every FavoriteButton doing its own `checkStatus` on mount) or a
+// `get-session` call (the flood this section used to cause).
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const hasSessionCookie = requestHasSessionCookie(cookieHeader ?? null);
+const isAuthenticated = hasSessionCookie;
 
 // Fetch from API - empty array if unavailable
 let eventItems: EventCardData[] = [];
@@ -54,16 +75,19 @@ try {
 }
 
 // --- Bulk favorite pre-check (eliminates N+1 per card on mount) -----------
-// NextEventsSection uses server:defer (SSR at request time), so Astro.locals
-// is available. One /check-bulk call resolves favorite state for all cards
-// before the island renders — mirrors the alojamientos pattern.
+// Only runs when the session cookie is present (see hasSessionCookie above).
+// One /check-bulk call resolves favorite state for all cards before the
+// island renders — mirrors the alojamientos pattern. Guests skip this
+// entirely: resolvedEventItems is a straight alias, cards render guest
+// state, and FavoriteButton shows the guest popover on click.
 type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
 let eventFavoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
-if (isAuthenticated && eventItems.length > 0) {
+if (hasSessionCookie && eventItems.length > 0) {
   try {
     const bulkResult = await userBookmarksApi.checkBulk({
       entityType: 'EVENT',
-      entityIds: eventItems.map((e) => e.id)
+      entityIds: eventItems.map((e) => e.id),
+      cookieHeader
     });
     if (bulkResult.ok) {
       eventFavoriteChecks = bulkResult.data.checks;

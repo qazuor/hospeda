@@ -11,7 +11,7 @@ import { resolve } from 'node:path';
 import { RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 
-import { ACCOUNT_DISCOVERY_DOORS, type DiscoveryDoor } from '../../src/config/navigation';
+import { ACCOUNT_DISCOVERY_DOORS, type DiscoveryDoor } from '../../src/config/discovery-doors';
 import { isDoorVisible, isVisibleByRole } from '../../src/lib/nav-gating';
 
 const source = readFileSync(resolve(__dirname, '../../src/layouts/AccountLayout.astro'), 'utf8');
@@ -26,10 +26,10 @@ function visibleDoorsForRole(role: string | null): readonly DiscoveryDoor[] {
 describe('AccountLayout — discovery-door wiring (HOS-131 §6.2/§6.3)', () => {
     it('renders doors from the single-source config via ACCOUNT_DISCOVERY_DOORS + isDoorVisible', () => {
         expect(source).toContain(
-            "import { ACCOUNT_DISCOVERY_DOORS, getNavForSurface } from '@/config/navigation';"
+            "import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';"
         );
         expect(source).toContain(
-            "import { isDoorVisible, isVisibleByRole } from '@/lib/nav-gating';"
+            "import { isDoorVisible, isVisibleByRole, resolveDoorLabelKey } from '@/lib/nav-gating';"
         );
         expect(source).toContain(
             'isDoorVisible({ door, visibility: (node) => isVisibleByRole(node, userRole) })'
@@ -59,6 +59,16 @@ describe('AccountLayout — discovery-door wiring (HOS-131 §6.2/§6.3)', () => 
         expect(source).toContain('const isActiveDoor = doorSectionKey === activeSection;');
         expect(source).toContain("{ 'account-nav__door-link--active': isActiveDoor }");
         expect(source).toContain("aria-current={isActiveDoor ? 'page' : undefined}");
+    });
+
+    it('renders the door CTA label via resolveDoorLabelKey (HOS-134 stateful label), not a bare t(door.i18nKey)', () => {
+        expect(source).toContain(
+            "import { isDoorVisible, isVisibleByRole, resolveDoorLabelKey } from '@/lib/nav-gating';"
+        );
+        expect(source).toContain('resolveDoorLabelKey({');
+        expect(source).toContain('door,');
+        expect(source).toContain('visibility: (node) => isVisibleByRole(node, userRole),');
+        expect(source).not.toContain('{t(door.i18nKey)}');
     });
 });
 

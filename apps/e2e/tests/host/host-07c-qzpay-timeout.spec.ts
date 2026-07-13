@@ -12,7 +12,7 @@
  *
  * What this validates:
  *  1. With `failNext({operation: 'startTrial', errorCode: 'TIMEOUT'})` armed,
- *     the publish PATCH returns a 5xx (typically 503).
+ *     the publish POST returns a 5xx (typically 503).
  *  2. The recorded calls log includes a failed `startTrial` call.
  *  3. DB invariants: the accommodation remains DRAFT and no
  *     `billing_subscriptions` row was created — there are no half-completed
@@ -40,7 +40,7 @@ test.describe('HOST-07c: QZPay startTrial timeout @p0 @host @billing @resilience
         userId = null;
     });
 
-    test('startTrial timeout: PATCH returns 5xx, accommodation stays DRAFT, no sub row', async ({
+    test('startTrial timeout: publish returns 5xx, accommodation stays DRAFT, no sub row', async ({
         page
     }) => {
         const qzpayControl = createQZPayTestControl(API_URL);
@@ -78,10 +78,13 @@ test.describe('HOST-07c: QZPay startTrial timeout @p0 @host @billing @resilience
         });
 
         // ── Publish: expect 5xx ────────────────────────────────────────────
-        const publishResponse = await page.request.patch(
-            `${API_URL}/api/v1/admin/accommodations/${accommodation.id}`,
+        // Owner-scoped protected publish endpoint (POST .../publish) — the
+        // same route the web editor's "Publicar" button calls, and the only
+        // route that carries a `lifecycleState` transition (the protected
+        // PATCH/PUT schema has no such field, HOS-110).
+        const publishResponse = await page.request.post(
+            `${API_URL}/api/v1/protected/accommodations/${accommodation.id}/publish`,
             {
-                data: { lifecycleState: 'ACTIVE' },
                 headers: { cookie: host.sessionCookie }
             }
         );

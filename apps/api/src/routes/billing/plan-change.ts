@@ -70,6 +70,11 @@ function mapUpgradeErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
             return new HTTPException(422, { message: err.message });
         case 'MISSING_INIT_POINT':
             return new HTTPException(500, { message: err.message });
+        // HOS-151 Bug C: MP returned a 2xx preapproval with no provider id; the
+        // just-created row was cancelled fail-closed. Upstream-provider failure,
+        // retryable — 502, aligned with start-paid's mapper.
+        case 'MISSING_PROVIDER_SUBSCRIPTION_ID':
+            return new HTTPException(502, { message: err.message });
         default:
             return new HTTPException(500, { message: err.message });
     }

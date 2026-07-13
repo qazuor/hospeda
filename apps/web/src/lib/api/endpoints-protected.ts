@@ -9,6 +9,8 @@ import type {
     AccommodationComparisonResponse,
     AccommodationImportAsyncStartResponse,
     AccommodationImportResponse,
+    AccommodationImportStatusQuery,
+    AccommodationImportStatusResponse,
     AccommodationReviewListItem,
     DestinationReviewListItem,
     DowngradePreview,
@@ -16,6 +18,7 @@ import type {
     PlanChangeResponse,
     PriceAlertResponse,
     ReactivateSubscriptionResponse,
+    SubscriptionStatusResponse,
     UserBookmark,
     UserCancelSubscriptionResponse,
     UserProtected,
@@ -134,6 +137,11 @@ export const userBookmarksApi = {
     checkBulk(body: {
         readonly entityType: BookmarkEntityType;
         readonly entityIds: readonly string[];
+        /**
+         * SSR-only: raw `Cookie` header forwarded to the API so the request
+         * carries the user's session. Browser callers should omit this.
+         */
+        readonly cookieHeader?: string;
     }): Promise<
         ApiResult<{
             readonly checks: Readonly<
@@ -144,9 +152,11 @@ export const userBookmarksApi = {
             >;
         }>
     > {
+        const { cookieHeader, ...rest } = body;
         return apiClient.postProtected({
             path: `${PROTECTED}/user-bookmarks/check-bulk`,
-            body
+            body: rest,
+            cookieHeader
         });
     },
 
@@ -689,6 +699,16 @@ export const billingApi = {
     }): Promise<
         ApiResult<{
             readonly checkoutUrl: string;
+            /**
+             * HOS-151 Bug A: the UUID of the locally-created subscription row.
+             * PlanPurchaseButton persists this in sessionStorage before
+             * redirecting to MercadoPago so the checkout success page can poll
+             * `GET /billing/subscriptions/:localId/status` on return (a recurring
+             * preapproval redirect never carries a `collection_status`, so the
+             * page has no other way to know the local sub id). Always present in
+             * the `/start-paid` response body.
+             */
+            readonly localSubscriptionId: string;
             // 'trial' (HOS-110): the plan's no-card trial was granted instead of a
             // paid checkout — no MercadoPago redirect, same as 'comp'. Type-only
             // widening; PlanPurchaseButton's unconditional redirect already handles
@@ -719,6 +739,35 @@ export const billingApi = {
             // double-click case; the middleware covers the network-level retry
             // case (slow network → user reloads, etc.).
             headers: { 'X-Idempotency-Key': crypto.randomUUID() }
+        });
+    },
+
+    /**
+     * Poll the status of a locally-created subscription (HOS-151 Bug A).
+     *
+     * Used by the checkout success page after the user returns from a
+     * MercadoPago recurring preapproval: that redirect carries no
+     * `collection_status`, so the page reads the `localSubscriptionId` it
+     * stashed in sessionStorage before redirecting and polls this endpoint
+     * (~every 2s) until the subscription flips to `active` (or a timeout is
+     * reached).
+     *
+     * @param params.localId - The local subscription UUID returned by `createCheckout`.
+     * @returns The subscription's current status plus `mpSubscriptionId` / `activatedAt`.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.getSubscriptionStatus({ localId });
+     * if (result.ok && result.data.status === 'active') { ... }
+     * ```
+     */
+    getSubscriptionStatus({
+        localId
+    }: {
+        readonly localId: string;
+    }): Promise<ApiResult<SubscriptionStatusResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing/subscriptions/${localId}/status`
         });
     },
 
@@ -2706,6 +2755,42 @@ export const accommodationsImportApi = {
         return apiClient.postProtected({
             path: `${PROTECTED}/accommodations/import-from-url`,
             body
+        });
+    },
+
+    /**
+     * Poll the status of an async accommodation import run started by the
+     * `202` branch of {@link accommodationsImportApi.importFromUrl}.
+     *
+     * The pipeline is stateless server-side — the client echoes back the exact
+     * run handle (`runId`, `datasetId`, `source`, `startedAt`, `url`) it
+     * received on the `202` response on every poll (HOS-50 / SPEC-277 R3).
+     *
+     * @param query - The run handle to echo back to the status endpoint.
+     * @returns `{ settled: false }` while the run is still in flight, or
+     *   `{ settled: true, draft }` / `{ settled: true, failureCode }` once
+     *   the run reaches a terminal state, or an API error.
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationsImportApi.getStatus(runHandle);
+     * if (result.ok && result.data.settled) {
+     *   // handle result.data.draft / result.data.failureCode
+     * }
+     * ```
+     */
+    getStatus(
+        query: AccommodationImportStatusQuery
+    ): Promise<ApiResult<AccommodationImportStatusResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/import-from-url/status`,
+            params: {
+                runId: query.runId,
+                datasetId: query.datasetId,
+                source: query.source,
+                startedAt: query.startedAt,
+                url: query.url
+            }
         });
     }
 };

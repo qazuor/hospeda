@@ -29,8 +29,8 @@
  * for the `streamText` reply step. It MUST NOT be confused with the slot-extraction
  * system prompt (`DEFAULT_PROMPTS['search']`) — that prompt instructs the model to
  * output JSON, which is wrong for a natural-language reply. The reply prompt is
- * supplied directly as the `system` message (caller-wins policy in the engine)
- * so the JSON-extraction prompt is never used for the reply path.
+ * supplied directly as the engine's `system` option (caller-wins policy) so the
+ * JSON-extraction prompt is never used for the reply path.
  *
  * @module apps/api/routes/ai/protected/search-chat.prompt
  */
@@ -231,17 +231,37 @@ export function buildSearchReplySystemPrompt({
 }
 
 /**
- * Assembles the `AiMessage[]` array for the `streamText` reply call (T-006).
+ * Result of {@link buildSearchReplyMessages}: the assembled `system` content
+ * plus the ordered conversation `messages`.
+ *
+ * `messages` never contains a `role: 'system'` entry — all system-level
+ * instructions (the base reply prompt and any active "IMPORTANT —" conflict
+ * notes) are concatenated into the single `system` string instead, per the
+ * engine's native system-option channel (see module docs).
+ */
+export interface SearchReplyMessagesResult {
+    /** Combined system content: base reply prompt + any active conflict notes. */
+    readonly system: string;
+    /** Conversation turns only (history + filters context note + new user message). */
+    readonly messages: AiMessage[];
+}
+
+/**
+ * Assembles the `system` content and `AiMessage[]` conversation array for the
+ * `streamText` reply call (T-006).
  *
  * Mirrors `toEngineMessages` in `chat.ts`:
- * - Prepends the reply system prompt as `{ role: 'system', content: systemPrompt }`.
- * - Appends the bounded recent conversation history (roles: user/assistant).
- * - Appends an assistant-context note carrying the extracted filters so the
- *   reply can reference what was searched without the model hallucinating.
- * - Appends the new user message as the final `user` turn.
+ * - Combines the reply system prompt with any active "IMPORTANT —" conflict
+ *   notes into a single `system` string (joined by blank lines), returned
+ *   SEPARATELY from `messages` — the engine's `system` option takes a single
+ *   string, not an array.
+ * - `messages` carries only real conversation turns: the bounded recent
+ *   conversation history (roles: user/assistant), an assistant-context note
+ *   carrying the extracted filters, and the new user message last.
  *
- * The system message is the first element so the engine's caller-wins policy
- * picks it up and IGNORES `DEFAULT_PROMPTS['search']` (the JSON extractor).
+ * The caller passes `system` to `aiService.streamText({ system, messages })`
+ * so the engine's caller-wins policy picks it up and IGNORES
+ * `DEFAULT_PROMPTS['search']` (the JSON extractor).
  *
  * @param params - Receive-object.
  * @param params.systemPrompt - The reply system prompt from
@@ -254,9 +274,10 @@ export function buildSearchReplySystemPrompt({
  * @param params.attractionLocationConflict - HOS-111 T-016: present only when
  *   the turn asked for both a location and an attraction that share no
  *   destination (or the attraction matched nothing). When present, a note is
- *   injected instructing the model to explain there are ZERO results because
- *   no destination combines the two, and to suggest loosening a filter — so the
- *   reply names the conflict instead of a generic empty-state acknowledgment.
+ *   appended to `system` instructing the model to explain there are ZERO
+ *   results because no destination combines the two, and to suggest loosening
+ *   a filter — so the reply names the conflict instead of a generic
+ *   empty-state acknowledgment.
  * @param params.poiLocationConflict - HOS-113 review H-1/M-1: present only
  *   when the turn's `poiSlugs` mention could not be resolved this turn (a
  *   `no-match`, or a non-fatal resolution failure that still carried a raw
@@ -264,9 +285,11 @@ export function buildSearchReplySystemPrompt({
  *   `attractionLocationConflict` this does NOT mean zero results — the
  *   accommodation search still ran, just without the proximity narrowing —
  *   so this ONLY (a) scrubs the unresolved `poiSlugs` out of the serialized
- *   `extractedFilters` context and (b) injects a corrective note so the
- *   reply never claims a proximity search happened around that landmark.
- * @returns An ordered `AiMessage[]` ready for `aiService.streamText({ messages })`.
+ *   `extractedFilters` context and (b) appends a corrective note to `system`
+ *   so the reply never claims a proximity search happened around that
+ *   landmark.
+ * @returns {@link SearchReplyMessagesResult} ready for
+ *   `aiService.streamText({ system, messages })`.
  */
 export function buildSearchReplyMessages({
     systemPrompt,
@@ -282,7 +305,7 @@ export function buildSearchReplyMessages({
     readonly extractedFilters: SearchIntentEntities;
     readonly attractionLocationConflict?: AttractionLocationConflict;
     readonly poiLocationConflict?: PoiLocationConflict;
-}): AiMessage[] {
+}): SearchReplyMessagesResult {
     const recentHistory = history.slice(-CONVERSATION_HISTORY_LIMIT);
 
     // HOS-113 review H-1/M-1: when the POI mention could not be honored this
@@ -302,13 +325,12 @@ export function buildSearchReplyMessages({
         ? `Extracted search filters: ${JSON.stringify(effectiveFilters)}`
         : 'No specific search filters were extracted (broad or unclear query).';
 
-    const messages: AiMessage[] = [
-        { role: 'system', content: systemPrompt },
-        ...recentHistory.map((m) => ({ role: m.role, content: m.content })),
-        // Inject filters as an assistant context note so the model can cite what
-        // was searched without the user having to repeat it.
-        { role: 'assistant', content: filtersContext }
-    ];
+    // Base reply prompt, plus any active "IMPORTANT —" conflict notes,
+    // concatenated into the single `system` string (the engine's `system`
+    // option takes one string, not an array — see module docs). Order
+    // mirrors the previous mid-array placement: base prompt first, then the
+    // attraction conflict, then the POI conflict.
+    const systemParts: string[] = [systemPrompt];
 
     // HOS-111 T-016: on an attraction/location conflict, tell the model the
     // search returned ZERO results and why, so it explains the conflict rather
@@ -319,15 +341,13 @@ export function buildSearchReplyMessages({
                 ? 'the requested location'
                 : `the requested location (${attractionLocationConflict.locationLabel})`;
         const attractionPhrase = attractionLocationConflict.attractionSlugs.join(', ');
-        messages.push({
-            role: 'system',
-            content:
-                `IMPORTANT — NO RESULTS: there is NO destination that combines ${locationPhrase} ` +
+        systemParts.push(
+            `IMPORTANT — NO RESULTS: there is NO destination that combines ${locationPhrase} ` +
                 `with the requested attraction (${attractionPhrase}). The search returned ZERO ` +
                 'accommodations. Briefly and warmly explain that no destination matches both, name ' +
                 'the conflict, and suggest loosening one filter (e.g. dropping the location or the ' +
                 'attraction). Do NOT invent results or destinations.'
-        });
+        );
     }
 
     // HOS-113 review H-1/M-1: on a POI mention that could not be honored
@@ -342,18 +362,25 @@ export function buildSearchReplyMessages({
             poiLocationConflict.locationLabel === undefined
                 ? ''
                 : ` near the requested location (${poiLocationConflict.locationLabel})`;
-        messages.push({
-            role: 'system',
-            content:
-                `IMPORTANT — LANDMARK NOT APPLIED: the user mentioned a specific point of interest ` +
+        systemParts.push(
+            `IMPORTANT — LANDMARK NOT APPLIED: the user mentioned a specific point of interest ` +
                 `(${poiPhrase}) but it could NOT be resolved${locationPhrase} — the search proceeded ` +
                 'WITHOUT centering or narrowing on that landmark. Do NOT say the search is near, ' +
                 'centered on, or narrowed around that landmark, and do NOT invent a reason why. If ' +
                 'relevant, you may briefly note that the specific landmark could not be found.'
-        });
+        );
     }
+
+    const system = systemParts.join('\n\n');
+
+    const messages: AiMessage[] = [
+        ...recentHistory.map((m) => ({ role: m.role, content: m.content })),
+        // Inject filters as an assistant context note so the model can cite what
+        // was searched without the user having to repeat it.
+        { role: 'assistant', content: filtersContext }
+    ];
 
     messages.push({ role: 'user', content: message });
 
-    return messages;
+    return { system, messages };
 }

@@ -1,16 +1,29 @@
 ---
 /**
  * @file suscriptores/checkout/success.astro
- * @description MercadoPago return page for approved payment state.
- * No auth required — MP may redirect without an active session.
- * Reads URL query params to determine collection_status and shows
- * appropriate confirmation or verification message.
+ * @description MercadoPago return page for the paid-checkout success flow.
+ * No auth required for the render itself — MP may redirect without an active
+ * session — but the polling island calls a protected endpoint.
+ *
+ * Two paths (HOS-151 Bug A):
+ * - IMMEDIATE: an annual Checkout-Pro redirect carries `?collection_status=approved`,
+ *   and a no-card trial / comp grant carries `?effect=trial|comp` (appended by
+ *   PlanPurchaseButton). These resolve to the success state on the first render
+ *   with zero polling.
+ * - POLLED: a recurring MercadoPago preapproval redirect carries NEITHER, so the
+ *   local subscription may still be flipping from `pending_provider` to `active`
+ *   via the webhook / polling-fallback cron. The `CheckoutStatusPoller` island
+ *   reads the `localSubscriptionId` stashed in sessionStorage before the redirect
+ *   and polls `GET /billing/subscriptions/:localId/status` until it activates or
+ *   a ~90s timeout is reached. Before this fix the page hung on
+ *   "Verificando estado del pago..." forever for every paid conversion.
  *
  * @route /{lang}/suscriptores/checkout/success/
  * @rendering SSR (no prerender — query params must be read server-side)
  */
 
 import CheckoutResult from '@/components/billing/CheckoutResult.astro';
+import { CheckoutStatusPoller } from '@/components/billing/CheckoutStatusPoller.client';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -25,41 +38,33 @@ const collectionStatus = Astro.url.searchParams.get('collection_status');
 // HOS-110 F1: PlanPurchaseButton appends `?effect=trial` (or `?effect=comp`)
 // to this in-app success sentinel URL when the granted effect has NO
 // MercadoPago preapproval to verify (see StartPaidSubscriptionResponse
-// `appliedEffect`). Without this signal there is no `collection_status`
-// on the URL at all, so the page fell through to the "verifying payment"
-// variant — wrong for a no-card trial, since there is no payment in
-// flight to confirm.
+// `appliedEffect`). Those resolve immediately with no payment in flight.
 const effectParam = Astro.url.searchParams.get('effect');
 const isTrial = effectParam === 'trial';
 const isComp = effectParam === 'comp';
-const isApproved = collectionStatus === 'approved' || isTrial || isComp;
 
-// HOS-110 W1: PlanPurchaseButton appends `?promoIgnored=1` to this in-app
-// success sentinel URL when the server discarded a discount code in favor
-// of a granted no-card trial (see subscription-checkout.service.ts
-// `promoCodeIgnored`). Surface a note so the user knows the code was not
-// applied instead of silently losing it.
+// IMMEDIATE success: an approved annual Checkout-Pro charge, or a no-card
+// trial / comp grant. Anything else is a recurring preapproval return that the
+// polling island resolves (HOS-151 Bug A).
+const isImmediateSuccess = collectionStatus === 'approved' || isTrial || isComp;
+
+// HOS-110 W1: PlanPurchaseButton appends `?promoIgnored=1` when the server
+// discarded a discount code in favor of a granted no-card trial. Only ever
+// present on the immediate (trial) path.
 const promoIgnored = Astro.url.searchParams.get('promoIgnored') === '1';
 
 const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
 
 const title = isTrial
 	? t('billing.checkout.success.trialTitle', '¡Tu prueba gratis arrancó!')
-	: isApproved
-		? t('billing.checkout.success.title', '¡Tu suscripción está activa!')
-		: t('billing.checkout.success.verifyingStatus', 'Verificando estado del pago...');
+	: t('billing.checkout.success.title', '¡Tu suscripción está activa!');
 
 const body = isTrial
 	? t(
 			'billing.checkout.success.trialSubtitle',
 			'Ya podés empezar a usar tu plan. No te cobramos nada: tu prueba gratuita está activa y no registramos ninguna tarjeta.'
 		)
-	: isApproved
-		? t('billing.checkout.success.subtitle', 'Tu pago fue aprobado correctamente')
-		: t(
-				'billing.checkout.success.verifyingSubtitle',
-				'Estamos confirmando tu pago. Esto puede tardar unos instantes.'
-			);
+	: t('billing.checkout.success.subtitle', 'Tu pago fue aprobado correctamente');
 
 const promoIgnoredNote = promoIgnored
 	? t(
@@ -74,14 +79,20 @@ const promoIgnoredNote = promoIgnored
 	title={t('billing.checkout.success.pageTitle', 'Pago aprobado — Hospeda')}
 	description={t('billing.checkout.success.subtitle', 'Tu pago fue aprobado correctamente')}
 >
-	<CheckoutResult
-		variant={isApproved ? 'success' : 'pending'}
-		title={title}
-		body={body}
-		{...(promoIgnoredNote ? { note: promoIgnoredNote } : {})}
-		primaryCta={{
-			href: miCuentaUrl,
-			label: t('billing.checkout.success.cta', 'Ir a mi cuenta'),
-		}}
-	/>
+	{
+		isImmediateSuccess ? (
+			<CheckoutResult
+				variant="success"
+				title={title}
+				body={body}
+				{...(promoIgnoredNote ? { note: promoIgnoredNote } : {})}
+				primaryCta={{
+					href: miCuentaUrl,
+					label: t('billing.checkout.success.cta', 'Ir a mi cuenta'),
+				}}
+			/>
+		) : (
+			<CheckoutStatusPoller client:load locale={locale} miCuentaUrl={miCuentaUrl} />
+		)
+	}
 </MarketingLayout>

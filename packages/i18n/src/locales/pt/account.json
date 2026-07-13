@@ -98,9 +98,14 @@
                     "description": "Publique seu alojamento no Hospeda e alcance milhares de viajantes que buscam se hospedar na região.",
                     "cta": "Publique seu alojamento"
                 },
-                "commerce": {
-                    "title": "Gastronomia e comércio",
-                    "description": "Conte-nos sobre o seu negócio e entraremos em contato para somá-lo ao Hospeda.",
+                "gastronomy": {
+                    "title": "Gastronomia",
+                    "description": "Some seu restaurante, bar ou café ao Hospeda: conte-nos sobre o seu negócio e entraremos em contato para publicá-lo.",
+                    "cta": "Conte-nos e entraremos em contato"
+                },
+                "experience": {
+                    "title": "Experiências",
+                    "description": "Você oferece passeios, atividades ou experiências para viajantes? Conte-nos e entraremos em contato para somá-las ao Hospeda.",
                     "cta": "Conte-nos e entraremos em contato"
                 }
             }
@@ -111,12 +116,21 @@
             "subtitle": "Seja parceiro do Hospeda: destaque sua marca ou seus serviços para milhares de viajantes e anfitriões.",
             "options": {
                 "sponsor": {
-                    "title": "Patrocinador",
-                    "description": "Destaque sua marca no Hospeda com conteúdo patrocinado e presença em eventos e publicações."
+                    "title": "Patrocinador de conteúdo",
+                    "description": "Destaque sua marca com conteúdo patrocinado: apareça em publicações e eventos do Hospeda."
+                },
+                "partner": {
+                    "title": "Parceiro",
+                    "description": "Mostre sua marca em um espaço publicitário de destaque na home do Hospeda."
                 },
                 "serviceProvider": {
                     "title": "Prestador de serviços",
                     "description": "Some-se ao diretório de fornecedores locais que os anfitriões recomendam aos seus hóspedes."
+                },
+                "editor": {
+                    "title": "Editor",
+                    "description": "Quer escrever publicações e cadastrar eventos no Hospeda? Candidate-se como editor de conteúdo.",
+                    "cta": "Candidate-se como editor"
                 }
             }
         },

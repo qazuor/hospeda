@@ -347,6 +347,33 @@ describe('GenerateTextRequestSchema', () => {
         });
         expect(result.success).toBe(false);
     });
+
+    it('accepts an optional `system` field alongside `messages`', () => {
+        const result = GenerateTextRequestSchema.safeParse({
+            ...validBase,
+            system: 'You are a friendly assistant.',
+            messages: [{ role: 'user', content: 'hola' }]
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('accepts an optional `system` field alongside `prompt`', () => {
+        const result = GenerateTextRequestSchema.safeParse({
+            ...validBase,
+            system: 'You are a friendly assistant.',
+            prompt: 'hola'
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects an empty `system` string', () => {
+        const result = GenerateTextRequestSchema.safeParse({
+            ...validBase,
+            system: '',
+            prompt: 'hola'
+        });
+        expect(result.success).toBe(false);
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -461,6 +488,24 @@ describe('StreamTextRequestSchema', () => {
             ...validBase,
             prompt: 'Valid',
             stream: true // unknown key
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('accepts an optional `system` field alongside `messages`', () => {
+        const result = StreamTextRequestSchema.safeParse({
+            ...validBase,
+            system: 'You are a friendly assistant.',
+            messages: [{ role: 'user', content: 'hola' }]
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects an empty `system` string', () => {
+        const result = StreamTextRequestSchema.safeParse({
+            ...validBase,
+            system: '',
+            prompt: 'hola'
         });
         expect(result.success).toBe(false);
     });

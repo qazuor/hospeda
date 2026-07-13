@@ -28,21 +28,28 @@ const accommodationService = new AccommodationService(
  * PUT /api/v1/admin/accommodations/:id
  * Update accommodation - Admin endpoint
  *
- * Permission model (SPEC-143 Finding #14):
- * - Route requires only admin-panel access (ACCESS_PANEL_ADMIN or ACCESS_API_ADMIN
- *   via `createAdminRoute`'s level check). HOST users have ACCESS_PANEL_ADMIN
- *   and reach this endpoint when editing their own accommodations from the
- *   admin UI ("publicar" onboarding redirects HOSTs here).
- * - Entity-specific permission is enforced at the SERVICE layer:
+ * Permission model:
+ * - Route requires admin-panel access (ACCESS_PANEL_ADMIN or ACCESS_API_ADMIN
+ *   via `createAdminRoute`'s level check). Only staff roles
+ *   (SUPER_ADMIN / ADMIN / EDITOR / CLIENT_MANAGER) hold that permission, so
+ *   this endpoint is admin-only. HOST / COMMERCE_OWNER do NOT reach it: they
+ *   self-manage their own accommodations from the web app
+ *   (`/mi-cuenta/propiedades/`) via the owner-scoped `/api/v1/protected/*`
+ *   routes, which enforce ownership without any admin permission.
+ * - Entity-specific permission is still enforced at the SERVICE layer:
  *   `accommodationService.update` calls `checkCanUpdate(actor, entity)` which
  *   accepts `ACCOMMODATION_UPDATE_ANY` OR (`ACCOMMODATION_UPDATE_OWN` AND
- *   actor is the entity owner).
- * - Previously this route required `[ACCOMMODATION_UPDATE_ANY]` at the route
- *   layer, which blocked HOSTs with only UPDATE_OWN with a generic
- *   "Insufficient admin permissions" error before the service could decide.
- *   Deferring to the service-layer check unblocks the HOST onboarding flow
- *   without weakening security — the service still throws FORBIDDEN if the
- *   actor has neither permission.
+ *   actor is the entity owner). This service-layer check is kept as
+ *   defense-in-depth even though the route-layer gate already restricts
+ *   callers to staff — the service still throws FORBIDDEN if the actor has
+ *   neither permission.
+ *
+ * Historical note (SPEC-143 Finding #14): this route once deferred the
+ * entity-specific check to the service layer specifically to let HOSTs edit
+ * their own listings here, back when the "publicar" onboarding redirected
+ * HOSTs into the admin UI and HOST carried ACCESS_PANEL_ADMIN. Both of those
+ * are gone (HOS-152): the grant was removed and onboarding now keeps hosts on
+ * the web, so this route no longer serves any HOST flow.
  */
 export const adminUpdateAccommodationRoute = createAdminRoute({
     method: 'put',

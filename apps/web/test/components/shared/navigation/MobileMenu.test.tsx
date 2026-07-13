@@ -9,7 +9,7 @@
  */
 
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MobileMenu } from '../../../../src/components/shared/navigation/MobileMenu.client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
@@ -108,10 +108,12 @@ const DEFAULT_PROPS = {
     currentPath: '/es/',
     logoSrc: '/logo.svg',
     homeHref: '/es/',
-    user: {
+    initialUser: {
+        id: 'u1',
         name: 'Ana García',
         email: 'ana@example.com'
-    }
+    },
+    initialRole: null as string | null
 };
 
 function renderMenu(overrides: Partial<typeof DEFAULT_PROPS> = {}) {
@@ -143,6 +145,25 @@ describe('MobileMenu — sign-out loading state (SPEC-228 T-022)', () => {
     beforeEach(() => {
         mockSignOut.mockClear();
         vi.stubGlobal('location', { reload: vi.fn() });
+        // Seed a fresh, authenticated cache matching DEFAULT_PROPS.initialUser
+        // so useAccountPermissions' SSR-reconciling effect trusts it without
+        // a network round-trip — these tests aren't exercising auth
+        // resolution, just the sign-out UI.
+        sessionStorage.setItem(
+            'authMeSnapshot',
+            JSON.stringify({
+                isAuthenticated: true,
+                user: DEFAULT_PROPS.initialUser,
+                permissions: [],
+                role: null,
+                cachedAt: Date.now()
+            })
+        );
+        global.fetch = vi.fn() as unknown as typeof fetch;
+    });
+
+    afterEach(() => {
+        sessionStorage.clear();
     });
 
     it('renders the sign-out button with the correct idle label', () => {

@@ -569,8 +569,11 @@ describe('AccommodationService.createForOnboarding', () => {
             expect(result.error).toBeUndefined();
             expect(result.data?.status).toBe('created');
             const payload = (accommodationModel.create as Mock).mock.calls[0]?.[0];
+            // extraInfo always carries the server-side minNights: 1 default (HOS-152),
+            // even with no host-provided capacity fields. The other capacity fields
+            // stay absent until the host fills them in the web editor.
+            expect(payload.extraInfo).toEqual({ minNights: 1 });
             // These optional JSONB fields are absent when not provided
-            expect(payload.extraInfo).toBeUndefined();
             expect(payload.location).toBeUndefined();
             expect(payload.price).toBeUndefined();
             expect(payload.contactInfo).toBeUndefined();

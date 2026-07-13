@@ -14,7 +14,7 @@
  * What this validates:
  *  1. `startTrial` succeeds; the next QZPay operation in the flow is forced
  *     to fail.
- *  2. The publish PATCH returns 5xx.
+ *  2. The publish POST returns 5xx.
  *  3. The recorded calls include `cancelTrial` — the compensation called
  *     in response to the post-trial failure.
  *  4. DB invariants: the accommodation remains DRAFT and no
@@ -88,10 +88,13 @@ test.describe('HOST-07d: post-trial compensation @p0 @host @billing @resilience'
         });
 
         // ── Publish: expect 5xx ────────────────────────────────────────────
-        const publishResponse = await page.request.patch(
-            `${API_URL}/api/v1/admin/accommodations/${accommodation.id}`,
+        // Owner-scoped protected publish endpoint (POST .../publish) — the
+        // same route the web editor's "Publicar" button calls, and the only
+        // route that carries a `lifecycleState` transition (the protected
+        // PATCH/PUT schema has no such field, HOS-110).
+        const publishResponse = await page.request.post(
+            `${API_URL}/api/v1/protected/accommodations/${accommodation.id}/publish`,
             {
-                data: { lifecycleState: 'ACTIVE' },
                 headers: { cookie: host.sessionCookie }
             }
         );

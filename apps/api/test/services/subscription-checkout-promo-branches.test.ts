@@ -500,7 +500,13 @@ describe('monthly discount branch — FAIL-CLOSED', () => {
         expect(cancel).toHaveBeenCalledWith('sub-1');
     });
 
-    it('FAIL-CLOSED: no mp preapproval id → sub cancelled, MISSING_INIT_POINT', async () => {
+    // HOS-151 Bug C: the shared `createPaidSubscription` helper now rejects a
+    // provider response with no subscription id BEFORE the discount branch runs,
+    // throwing the more specific `MISSING_PROVIDER_SUBSCRIPTION_ID` (was the
+    // overloaded `MISSING_INIT_POINT` the discount branch previously used). The
+    // just-created row is still cancelled fail-closed and the discount is never
+    // applied.
+    it('FAIL-CLOSED: no mp preapproval id → sub cancelled, MISSING_PROVIDER_SUBSCRIPTION_ID', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'discount',
             promoCodeId: 'pc-1',
@@ -537,7 +543,7 @@ describe('monthly discount branch — FAIL-CLOSED', () => {
         } catch (e) {
             thrown = e;
         }
-        expect((thrown as SubscriptionCheckoutError).code).toBe('MISSING_INIT_POINT');
+        expect((thrown as SubscriptionCheckoutError).code).toBe('MISSING_PROVIDER_SUBSCRIPTION_ID');
         expect(cancel).toHaveBeenCalledWith('sub-1');
         expect(applySignupDiscountToMonthlyMock).not.toHaveBeenCalled();
     });

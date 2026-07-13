@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
-import { AccommodationSchema } from '../../../src/entities/accommodation/accommodation.schema.js';
+import {
+    AccommodationExtraInfoRequiredForPublishSchema,
+    AccommodationExtraInfoSchema,
+    AccommodationSchema
+} from '../../../src/entities/accommodation/accommodation.schema.js';
 import {
     createAccommodationEdgeCases,
     createComplexAccommodation,
@@ -478,6 +482,58 @@ describe('AccommodationSchema', () => {
                 );
                 expect(issue).toBeDefined();
             }
+        });
+    });
+
+    describe('extraInfo — DRAFT tolerance vs. publish completeness (HOS-152)', () => {
+        it('AccommodationExtraInfoSchema accepts a partial object (only capacity)', () => {
+            const result = AccommodationExtraInfoSchema.safeParse({ capacity: 4 });
+            expect(result.success).toBe(true);
+        });
+
+        it('AccommodationExtraInfoSchema accepts an empty object (brand-new draft)', () => {
+            const result = AccommodationExtraInfoSchema.safeParse({});
+            expect(result.success).toBe(true);
+        });
+
+        it('AccommodationSchema accepts an accommodation whose extraInfo is missing bedrooms/bathrooms/minNights', () => {
+            const validData = createValidAccommodation();
+            const data = { ...validData, extraInfo: { capacity: 4 } };
+
+            const result = AccommodationSchema.safeParse(data);
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.extraInfo?.capacity).toBe(4);
+                expect(result.data.extraInfo?.bedrooms).toBeUndefined();
+                expect(result.data.extraInfo?.bathrooms).toBeUndefined();
+                expect(result.data.extraInfo?.minNights).toBeUndefined();
+            }
+        });
+
+        it('AccommodationExtraInfoRequiredForPublishSchema rejects the same partial object', () => {
+            const result = AccommodationExtraInfoRequiredForPublishSchema.safeParse({
+                capacity: 4
+            });
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                const missingPaths = result.error.issues.map((issue) => issue.path[0]);
+                expect(missingPaths).toEqual(
+                    expect.arrayContaining(['minNights', 'bedrooms', 'bathrooms'])
+                );
+            }
+        });
+
+        it('AccommodationExtraInfoRequiredForPublishSchema accepts a complete object', () => {
+            const result = AccommodationExtraInfoRequiredForPublishSchema.safeParse({
+                capacity: 4,
+                minNights: 1,
+                bedrooms: 2,
+                bathrooms: 1
+            });
+
+            expect(result.success).toBe(true);
         });
     });
 

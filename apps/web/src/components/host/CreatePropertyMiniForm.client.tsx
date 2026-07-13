@@ -230,8 +230,8 @@ export function CreatePropertyMiniForm({
     locale,
     apiUrl,
     adminUrl,
-    accountPropertiesUrl: _accountPropertiesUrl,
-    canAccessAdminPanel: _canAccessAdminPanel
+    accountPropertiesUrl,
+    canAccessAdminPanel
 }: CreatePropertyMiniFormProps) {
     const { t } = createTranslations(locale);
 
@@ -750,9 +750,10 @@ export function CreatePropertyMiniForm({
             // to HOST atomically with the draft creation (an existing host is
             // left unchanged). Better Auth's cookie cache may still carry the
             // pre-promotion `role=USER` for up to 5 minutes, so we force a
-            // session refresh from the DB before redirecting to the admin.
-            // Otherwise the admin guard would read the stale cookie and bounce
-            // the host to `/auth/forbidden?reason=host-missing-permission`.
+            // session refresh from the DB before redirecting — regardless of
+            // which destination below is used — so the web (and, when
+            // applicable, the admin guard) recognizes the freshly-promoted
+            // HOST instead of reading a stale `role=USER` cookie.
             await refreshSessionFromDatabase(apiUrl);
 
             if (!data.accommodationId) {
@@ -764,7 +765,14 @@ export function CreatePropertyMiniForm({
                 );
                 return;
             }
-            window.location.href = `${adminBase}/accommodations/${data.accommodationId}/edit`;
+
+            // Destination depends on canAccessAdminPanel (see the module
+            // docstring's "Post-submit redirect rules"): plain HOST/
+            // COMMERCE_OWNER users do not have `access.panelAdmin`, so sending
+            // them to the admin panel would bounce them to `/auth/forbidden`.
+            window.location.href = canAccessAdminPanel
+                ? `${adminBase}/accommodations/${data.accommodationId}/edit`
+                : accountPropertiesUrl;
         } catch {
             setSubmitError(
                 t(

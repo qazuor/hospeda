@@ -71,6 +71,15 @@ export const PERMISSION_ROLE_MAP: Partial<Record<PermissionEnum, ReadonlySet<Rol
         RoleEnum.COMMERCE_OWNER,
         RoleEnum.ADMIN,
         RoleEnum.SUPER_ADMIN
+    ]),
+    // Editors + admins hold POST_CREATE; hosts/tourists/commerce-owners do
+    // not. This is the editor discovery-door "acquired" signal (HOS-134
+    // §5.3/§5.4) — it drives both the "Ya lo tenés" state on the aliados hub
+    // and the stateful partner-door label.
+    [PermissionEnum.POST_CREATE]: new Set<RoleEnum>([
+        RoleEnum.EDITOR,
+        RoleEnum.ADMIN,
+        RoleEnum.SUPER_ADMIN
     ])
 };
 
@@ -197,4 +206,45 @@ export function isDoorVisible({
     return door.options.some(
         (option) => resolveDoorOptionState({ option, visibility }) !== 'acquired'
     );
+}
+
+/**
+ * Structural shape for a discovery door, as needed by
+ * {@link resolveDoorLabelKey}. Kept local for the same circular-dependency
+ * reason as {@link DoorGatingOption} above.
+ */
+export interface DoorLabelNode {
+    /** i18n key for the door's default (non-stateful) label. */
+    readonly i18nKey: string;
+    /** i18n key for the stateful label, shown once ≥1 option is acquired. */
+    readonly statefulI18nKey?: string;
+    readonly options: readonly DoorGatingOption[];
+}
+
+/**
+ * Resolves which i18n key to render for a discovery door's CTA/title label
+ * (HOS-134 §5.4): the stateful variant ("Sumá otra alianza") once the door
+ * declares `statefulI18nKey` AND at least one of its options resolves to
+ * `'acquired'`; the base `i18nKey` otherwise. A door with no
+ * `statefulI18nKey` (e.g. the listing door) always resolves to `i18nKey` —
+ * this is a no-op for it.
+ *
+ * @param params - `{ door, visibility }` (RO-RO). `visibility` is the same
+ *   surface-appropriate predicate passed to `resolveDoorOptionState`.
+ * @returns The i18n key to resolve via `t()` for the door's label.
+ */
+export function resolveDoorLabelKey({
+    door,
+    visibility
+}: {
+    readonly door: DoorLabelNode;
+    readonly visibility: (node: GatedNavNode) => boolean;
+}): string {
+    if (!door.statefulI18nKey) {
+        return door.i18nKey;
+    }
+    const hasAcquiredOption = door.options.some(
+        (option) => resolveDoorOptionState({ option, visibility }) === 'acquired'
+    );
+    return hasAcquiredOption ? door.statefulI18nKey : door.i18nKey;
 }

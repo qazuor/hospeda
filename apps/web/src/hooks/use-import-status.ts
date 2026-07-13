@@ -20,6 +20,7 @@ import type {
     ImportFailureCode
 } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { accommodationsImportApi } from '@/lib/api/endpoints-protected';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,22 +46,11 @@ export interface UseImportStatusResult {
     readonly error: string | null;
 }
 
-/** Raw shape of the status endpoint response body. */
-interface StatusApiResponse {
-    readonly success: boolean;
-    readonly data: {
-        readonly settled: boolean;
-        readonly draft?: AccommodationImportResponse;
-        readonly failureCode?: ImportFailureCode;
-    };
-}
-
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 const POLL_INTERVAL_MS = 5_000;
-const STATUS_PATH = '/api/v1/protected/accommodations/import-from-url/status';
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -103,45 +93,39 @@ export function useImportStatus(
     }, []);
 
     /**
-     * Performs a single fetch of the status endpoint for the given run handle.
-     * Returns `{ ok: false }` on a hard 4xx/5xx (polling should stop), or
-     * `{ ok: true, settled }` on success. Transient network errors (throw)
-     * resolve to `{ ok: true }` — stay silent, retry on the next tick.
+     * Performs a single poll of the status endpoint for the given run handle,
+     * via {@link accommodationsImportApi.getStatus} (the shared `apiClient` —
+     * NEVER a direct `fetch()`, which would resolve a root-relative path
+     * against the web app's own origin instead of the API host).
+     *
+     * Returns `{ ok: false }` on a hard 4xx/5xx from the endpoint (polling
+     * should stop), or `{ ok: true, settled }` on success. Transient failures
+     * — network errors and client-side timeouts, surfaced by `apiClient` as
+     * `error.status === 0` / `408` — resolve to `{ ok: true }` and stay
+     * silent, retrying on the next tick.
      */
     const fetchStatus = useCallback(
         async (handle: ImportRunHandle): Promise<{ ok: boolean; settled?: boolean }> => {
-            try {
-                const params = new URLSearchParams({
-                    runId: handle.runId,
-                    datasetId: handle.datasetId,
-                    source: handle.source,
-                    startedAt: handle.startedAt,
-                    url: handle.url
-                });
-                const res = await fetch(`${STATUS_PATH}?${params.toString()}`, {
-                    credentials: 'include'
-                });
+            const result = await accommodationsImportApi.getStatus(handle);
 
-                if (!res.ok) {
-                    setError('status_endpoint_error');
-                    return { ok: false };
+            if (!result.ok) {
+                if (result.error.status === 0 || result.error.status === 408) {
+                    // Transient network error / timeout — stay silent, retry on next tick.
+                    return { ok: true };
                 }
-
-                const body = (await res.json()) as StatusApiResponse;
-                const responseData = body.data;
-
-                setSettled(responseData.settled);
-                if (responseData.settled) {
-                    setDraft(responseData.draft ?? null);
-                    setFailureCode(responseData.failureCode ?? null);
-                }
-                setError(null);
-
-                return { ok: true, settled: responseData.settled };
-            } catch {
-                // Transient network error — stay silent, retry on next tick.
-                return { ok: true };
+                setError('status_endpoint_error');
+                return { ok: false };
             }
+
+            const { data } = result;
+            setSettled(data.settled);
+            if (data.settled) {
+                setDraft(data.draft ?? null);
+                setFailureCode(data.failureCode ?? null);
+            }
+            setError(null);
+
+            return { ok: true, settled: data.settled };
         },
         []
     );

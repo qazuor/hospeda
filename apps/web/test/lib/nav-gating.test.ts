@@ -10,6 +10,7 @@ import {
     isVisibleByPermissions,
     isVisibleByRole,
     PERMISSION_ROLE_MAP,
+    resolveDoorLabelKey,
     resolveDoorOptionState
 } from '../../src/lib/nav-gating';
 
@@ -33,6 +34,16 @@ describe('PERMISSION_ROLE_MAP', () => {
         expect(
             PERMISSION_ROLE_MAP[PermissionEnum.ACCOMMODATION_CREATE]?.has(RoleEnum.COMMERCE_OWNER)
         ).toBe(false);
+    });
+
+    it('grants POST_CREATE to EDITOR (and platform staff), but not HOST or COMMERCE_OWNER (HOS-134 editor door signal)', () => {
+        const mapped = PERMISSION_ROLE_MAP[PermissionEnum.POST_CREATE];
+        expect(mapped).toBeDefined();
+        expect(mapped?.has(RoleEnum.EDITOR)).toBe(true);
+        expect(mapped?.has(RoleEnum.ADMIN)).toBe(true);
+        expect(mapped?.has(RoleEnum.SUPER_ADMIN)).toBe(true);
+        expect(mapped?.has(RoleEnum.HOST)).toBe(false);
+        expect(mapped?.has(RoleEnum.COMMERCE_OWNER)).toBe(false);
     });
 });
 
@@ -196,5 +207,43 @@ describe('isDoorVisible (HOS-131 §6.3 door lifecycle)', () => {
                 visibility: byPermissions(['some.unrelated.permission'])
             })
         ).toBe(true);
+    });
+});
+
+describe('resolveDoorLabelKey (HOS-134 §5.4 stateful partner-door label)', () => {
+    const byRole =
+        (role: string | null) => (node: { readonly requiredPermission?: PermissionEnum }) =>
+            isVisibleByRole(node, role);
+
+    const statefulDoor = {
+        i18nKey: 'account.doors.partner.title',
+        statefulI18nKey: 'account.doors.partner.titleStateful',
+        options: [
+            { id: 'sponsor', comingSoon: true },
+            { id: 'editor', acquiredPermission: PermissionEnum.POST_CREATE }
+        ]
+    };
+
+    const statelessDoor = {
+        i18nKey: 'account.doors.publish.title',
+        options: [{ id: 'accommodation', acquiredPermission: PermissionEnum.ACCOMMODATION_CREATE }]
+    };
+
+    it('returns the base i18nKey when no option resolves to acquired', () => {
+        expect(resolveDoorLabelKey({ door: statefulDoor, visibility: byRole(RoleEnum.USER) })).toBe(
+            'account.doors.partner.title'
+        );
+    });
+
+    it('returns the stateful i18nKey once at least one option resolves to acquired', () => {
+        expect(
+            resolveDoorLabelKey({ door: statefulDoor, visibility: byRole(RoleEnum.EDITOR) })
+        ).toBe('account.doors.partner.titleStateful');
+    });
+
+    it('returns the base i18nKey when the door declares no statefulI18nKey, even with an acquired option', () => {
+        expect(
+            resolveDoorLabelKey({ door: statelessDoor, visibility: byRole(RoleEnum.HOST) })
+        ).toBe('account.doors.publish.title');
     });
 });

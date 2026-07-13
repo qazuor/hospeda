@@ -1,6 +1,12 @@
 /**
  * @file plan-properties.test.ts
  * @description Tests for the plan/tier PostHog person-property sync.
+ *
+ * The endpoint fetch + cache moved to the shared `@/lib/entitlements-cache`
+ * module (HOS follow-up "unify entitlements client caches" — see
+ * `entitlements-cache.test.ts` for the cross-consumer dedup regression
+ * test). These tests exercise `syncPlanPersonProperties` through that shared
+ * module rather than mocking `fetch` with a hardcoded URL/header shape.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,18 +20,25 @@ import {
     __resetPlanPropertiesSyncedForTests,
     syncPlanPersonProperties
 } from '@/lib/analytics/plan-properties';
+import { clearEntitlementsCache } from '@/lib/entitlements-cache';
 
-const API = 'https://api.test';
+// The `apiUrl` param is unused by `syncPlanPersonProperties` now (the shared
+// cache module resolves the API base URL internally via `getApiUrl()`), but
+// the parameter is kept for call-site backward compatibility — pass a
+// deliberately wrong value to prove it has no effect.
+const IGNORED_API_URL = 'https://ignored.test';
 
 describe('syncPlanPersonProperties', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         setPersonPropertiesMock.mockClear();
         __resetPlanPropertiesSyncedForTests();
+        clearEntitlementsCache();
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
+        clearEntitlementsCache();
     });
 
     it('sets plan + plan_status from the entitlements endpoint', async () => {
@@ -34,11 +47,12 @@ describe('syncPlanPersonProperties', () => {
             json: async () => ({ data: { plan: { slug: 'host-pro', status: 'active' } } })
         }) as unknown as typeof fetch;
 
-        await syncPlanPersonProperties({ apiUrl: API });
+        await syncPlanPersonProperties({ apiUrl: IGNORED_API_URL });
 
-        expect(global.fetch).toHaveBeenCalledWith(`${API}/api/v1/protected/users/me/entitlements`, {
-            credentials: 'include'
-        });
+        expect(global.fetch).toHaveBeenCalledWith(
+            'http://localhost:3001/api/v1/protected/users/me/entitlements',
+            expect.objectContaining({ credentials: 'include' })
+        );
         expect(setPersonPropertiesMock).toHaveBeenCalledWith({
             plan: 'host-pro',
             plan_status: 'active'
@@ -51,7 +65,7 @@ describe('syncPlanPersonProperties', () => {
             json: async () => ({ data: { plan: null } })
         }) as unknown as typeof fetch;
 
-        await syncPlanPersonProperties({ apiUrl: API });
+        await syncPlanPersonProperties({ apiUrl: IGNORED_API_URL });
 
         expect(setPersonPropertiesMock).toHaveBeenCalledWith({
             plan: 'free',
@@ -60,9 +74,13 @@ describe('syncPlanPersonProperties', () => {
     });
 
     it('does not set properties and allows retry when the request is not ok (e.g. 401)', async () => {
-        global.fetch = vi.fn().mockResolvedValue({ ok: false }) as unknown as typeof fetch;
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: false,
+            status: 401,
+            json: async () => ({ error: { message: 'Unauthorized' } })
+        }) as unknown as typeof fetch;
 
-        await syncPlanPersonProperties({ apiUrl: API });
+        await syncPlanPersonProperties({ apiUrl: IGNORED_API_URL });
         expect(setPersonPropertiesMock).not.toHaveBeenCalled();
 
         // A subsequent call retries (guard was released on failure).
@@ -70,7 +88,7 @@ describe('syncPlanPersonProperties', () => {
             ok: true,
             json: async () => ({ data: { plan: { slug: 'host-pro', status: 'active' } } })
         }) as unknown as typeof fetch;
-        await syncPlanPersonProperties({ apiUrl: API });
+        await syncPlanPersonProperties({ apiUrl: IGNORED_API_URL });
         expect(setPersonPropertiesMock).toHaveBeenCalledOnce();
     });
 
@@ -81,8 +99,8 @@ describe('syncPlanPersonProperties', () => {
         });
         global.fetch = fetchMock as unknown as typeof fetch;
 
-        await syncPlanPersonProperties({ apiUrl: API });
-        await syncPlanPersonProperties({ apiUrl: API });
+        await syncPlanPersonProperties({ apiUrl: IGNORED_API_URL });
+        await syncPlanPersonProperties({ apiUrl: IGNORED_API_URL });
 
         expect(fetchMock).toHaveBeenCalledOnce();
     });
@@ -92,7 +110,9 @@ describe('syncPlanPersonProperties', () => {
             .fn()
             .mockRejectedValue(new Error('network down')) as unknown as typeof fetch;
 
-        await expect(syncPlanPersonProperties({ apiUrl: API })).resolves.toBeUndefined();
+        await expect(
+            syncPlanPersonProperties({ apiUrl: IGNORED_API_URL })
+        ).resolves.toBeUndefined();
         expect(setPersonPropertiesMock).not.toHaveBeenCalled();
     });
 });

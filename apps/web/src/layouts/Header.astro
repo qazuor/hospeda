@@ -13,6 +13,9 @@
  * `Astro.locals.user`, which is only populated on routes whose middleware
  * parses the session (protected, auth, optional-session). UserMenu refines
  * the hint on hydration, so the same Header works on SSR and SSG pages alike.
+ * `MobileMenuIsland` (mounted below, no longer `server:defer` — see its file
+ * doc) is given the SAME `Astro.locals.user`-derived hint
+ * (`initialUserMenuUser`/`serverUser.role`) and refines it the same way.
  *
  * The standalone language/theme controls and the settings dropdown stay
  * hidden when `<html data-user-authenticated="true">` so authenticated
@@ -22,13 +25,14 @@
 import { getImage, Image } from "astro:assets";
 import { BuildingIcon, HamburgerIcon } from "@repo/icons";
 import MobileMenuIsland from "@/components/shared/navigation/MobileMenuIsland.astro";
-// Side-effect import of the mobile menu's CSS module. The menu lives inside
-// a server:defer island, and ClientRouter occasionally re-renders the island
-// after a back navigation without re-injecting the module's stylesheet —
-// leaving the menu's raw markup pushed into page flow on the home. Importing
-// the module here (a component that ships on every page) forces Astro/Vite
-// to include the CSS in every page's <head>, so the styles are always
-// present regardless of how the island is hydrated.
+// Side-effect import of the mobile menu's CSS module. ClientRouter has
+// occasionally re-rendered the mobile menu island after a back navigation
+// without re-injecting the module's stylesheet — leaving the menu's raw
+// markup pushed into page flow on the home. Importing the module here (a
+// component that ships on every page) forces Astro/Vite to include the CSS
+// in every page's <head>, so the styles are always present regardless of
+// how the island is hydrated. Kept defensively even though MobileMenuIsland
+// no longer runs as a separate server:defer request (see its file doc).
 import "@/components/shared/navigation/MobileMenu.module.css";
 import { UserMenu } from "@/components/shared/navigation/UserMenu.client";
 import { SettingsDropdown } from "@/components/shared/navigation/SettingsDropdown.client";
@@ -113,10 +117,10 @@ const adminPanelUrl = getAdminUrl();
  * was removed) — which works — but the nav CTA is visually confusing for them.
  *
  * Checks HOST and all higher privileged roles (ADMIN, CLIENT_MANAGER,
- * SUPER_ADMIN). MobileMenuIsland.astro only checks HOST because its concern is
- * CTA destination, not CTA visibility. On SSG pages where middleware does not
- * parse the session, `serverUser` is null and the CTA is shown — the correct
- * default for guests.
+ * SUPER_ADMIN). `MobileMenu.client.tsx`'s CTA only checks HOST because its
+ * concern is CTA destination, not CTA visibility. On SSG pages where
+ * middleware does not parse the session, `serverUser` is null and the CTA
+ * is shown — the correct default for guests.
  */
 const isAlreadyHost = serverUser?.role === 'HOST' || serverUser?.role === 'ADMIN' ||
     serverUser?.role === 'CLIENT_MANAGER' || serverUser?.role === 'SUPER_ADMIN';
@@ -231,12 +235,14 @@ const isAlreadyHost = serverUser?.role === 'HOST' || serverUser?.role === 'ADMIN
 </header>
 
 <MobileMenuIsland
-    server:defer
     locale={locale}
     navItems={mobileNavItems}
     currentPath={Astro.url.pathname}
     logoSrc={mobileLogoSrc}
     homeHref={buildUrl({ locale, path: "/" })}
+    initialUser={initialUserMenuUser}
+    initialRole={serverUser?.role ?? null}
+    adminPanelUrl={adminPanelUrl}
 />
 
 <style>

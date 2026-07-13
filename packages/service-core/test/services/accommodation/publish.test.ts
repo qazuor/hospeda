@@ -483,6 +483,92 @@ describe('AccommodationService.publish', () => {
             expect(deps.cancelTrial).toHaveBeenCalledWith('qzpay-sub-001');
         });
     });
+
+    // ── Capacity completeness guard (HOS-152) ───────────────────────────────
+    //
+    // `extraInfo` is intentionally relaxed on the read/write schemas so a
+    // host-onboarding DRAFT can be fetched/PATCHed while capacity data is
+    // still incomplete (see `AccommodationExtraInfoSchema`'s docblock in
+    // `@repo/schemas`). Publishing is the one place completeness MUST be
+    // enforced: a listing without capacity/minNights/bedrooms/bathrooms must
+    // never go live. These tests pin that guard.
+    describe('capacity completeness (extraInfo, HOS-152)', () => {
+        it('rejects publish with VALIDATION_ERROR when extraInfo is entirely absent', async () => {
+            const deps = createPublishDeps();
+            const service = buildService(accommodationModel, userModel, deps);
+            const accommodation = createMockAccommodation({
+                id: 'acc-incomplete-001',
+                ownerId: 'host-incomplete-001',
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                extraInfo: undefined
+            });
+            (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+            asMock(userModel.findById as Mock).mockResolvedValue({
+                id: 'host-incomplete-001',
+                role: RoleEnum.HOST
+            });
+
+            const actor = createHostActor({ id: 'host-incomplete-001' });
+            const result = await service.publish(actor, 'acc-incomplete-001');
+
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(accommodationModel.update).not.toHaveBeenCalled();
+            expect(deps.checkEligibility).not.toHaveBeenCalled();
+            expect(deps.startTrial).not.toHaveBeenCalled();
+        });
+
+        it('rejects publish with VALIDATION_ERROR when extraInfo has only a partial capacity field (repro: PATCH with only maxGuests)', async () => {
+            const deps = createPublishDeps();
+            const service = buildService(accommodationModel, userModel, deps);
+            const accommodation = createMockAccommodation({
+                id: 'acc-incomplete-002',
+                ownerId: 'host-incomplete-002',
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                // Mirrors the exact live repro: a draft PATCHed with only
+                // `maxGuests` ends up with `capacity` set but `minNights` /
+                // `bedrooms` / `bathrooms` undefined.
+                extraInfo: { capacity: 4 }
+            });
+            (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+            asMock(userModel.findById as Mock).mockResolvedValue({
+                id: 'host-incomplete-002',
+                role: RoleEnum.HOST
+            });
+
+            const actor = createHostActor({ id: 'host-incomplete-002' });
+            const result = await service.publish(actor, 'acc-incomplete-002');
+
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(accommodationModel.update).not.toHaveBeenCalled();
+            expect(deps.startTrial).not.toHaveBeenCalled();
+        });
+
+        it('publishes successfully when extraInfo has all four required fields', async () => {
+            const deps = createPublishDeps();
+            const service = buildService(accommodationModel, userModel, deps);
+            const accommodation = createMockAccommodation({
+                id: 'acc-complete-001',
+                ownerId: 'host-complete-001',
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 }
+            });
+            (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+            asMock(userModel.findById as Mock).mockResolvedValue({
+                id: 'host-complete-001',
+                role: RoleEnum.HOST
+            });
+            (accommodationModel.update as Mock).mockResolvedValue({
+                ...accommodation,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
+
+            const actor = createHostActor({ id: 'host-complete-001' });
+            const result = await service.publish(actor, 'acc-complete-001');
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+        });
+    });
 });
 
 /**

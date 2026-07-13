@@ -24,6 +24,7 @@ import {
     isServerIslandRoute,
     isSetPasswordRoute,
     isStaticAssetRoute,
+    requestHasSessionCookie,
     resolveSentryReportUri
 } from '../../src/lib/middleware-helpers';
 
@@ -112,6 +113,43 @@ describe('isStaticAssetRoute', () => {
 
     it('should return false for regular pages', () => {
         expect(isStaticAssetRoute({ path: '/es/alojamientos/' })).toBe(false);
+    });
+});
+
+describe('requestHasSessionCookie', () => {
+    it('returns true when the plain (dev) session cookie is present', () => {
+        expect(requestHasSessionCookie('better-auth.session_token=abc123')).toBe(true);
+    });
+
+    it('returns true when the __Secure-prefixed (production) session cookie is present', () => {
+        expect(requestHasSessionCookie('__Secure-better-auth.session_token=abc123')).toBe(true);
+    });
+
+    it('returns true when the session cookie is present alongside other cookies', () => {
+        expect(
+            requestHasSessionCookie('theme=dark; better-auth.session_token=abc123; locale=es')
+        ).toBe(true);
+    });
+
+    it('returns false when only unrelated cookies are present', () => {
+        expect(requestHasSessionCookie('theme=dark; locale=es')).toBe(false);
+    });
+
+    it('returns false for an empty cookie header', () => {
+        expect(requestHasSessionCookie('')).toBe(false);
+    });
+
+    it('returns false for a null cookie header', () => {
+        expect(requestHasSessionCookie(null)).toBe(false);
+    });
+
+    it('does not false-positive on a cookie name that merely contains the substring', () => {
+        // e.g. a hypothetical "not-better-auth.session_token" or a value
+        // containing the string must NOT match — only an exact cookie name.
+        expect(requestHasSessionCookie('foo-better-auth.session_token=abc123')).toBe(false);
+        expect(requestHasSessionCookie('other=better-auth.session_token-lookalike-value')).toBe(
+            false
+        );
     });
 });
 

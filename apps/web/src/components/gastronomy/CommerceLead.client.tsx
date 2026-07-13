@@ -1,10 +1,12 @@
 /**
  * @file CommerceLead.client.tsx
- * @description Pre-onboarding commerce lead form island for gastronomy listings.
+ * @description Pre-onboarding commerce lead form island for gastronomy and
+ * experience listings (HOS-134).
  *
  * Collects the minimum data needed to evaluate a new commerce applicant.
- * Submits to POST /api/v1/public/commerce/leads with `domain: 'gastronomy'`
- * hardcoded. Includes a honeypot `_hp` field for spam rejection.
+ * Submits to POST /api/v1/public/commerce/leads with the `domain` prop
+ * (`'gastronomy'` or `'experience'`, defaults to `'gastronomy'`). Includes a
+ * honeypot `_hp` field for spam rejection.
  *
  * Rate-limit (429) and generic API errors surface friendly i18n messages.
  *
@@ -37,6 +39,8 @@ export interface CommerceLeadProps {
     readonly locale: SupportedLocale;
     /** Optional list of destination options for the city/destination select. */
     readonly destinations?: ReadonlyArray<DestinationOption>;
+    /** Commerce domain the lead applies to. Defaults to `'gastronomy'`. */
+    readonly domain?: 'gastronomy' | 'experience';
 }
 
 type LeadFields = Omit<CommerceLeadCreateInput, 'domain'> & {
@@ -77,17 +81,26 @@ function extractFieldErrors(error: import('zod').ZodError): FieldErrors {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 /**
- * CommerceLead — public gastronomy pre-onboarding lead form island.
+ * CommerceLead — public gastronomy/experience pre-onboarding lead form island.
  *
- * Validation: CommerceLeadCreateInputSchema (Zod), domain hardcoded to 'gastronomy'.
+ * Validation: CommerceLeadCreateInputSchema (Zod), domain from the `domain` prop.
  * Submission: POST /api/v1/public/commerce/leads.
  * Success: replaces form with a confirmation message.
  * 429: shows rateLimited i18n message.
  *
  * @param props - Component props (see {@link CommerceLeadProps})
  */
-export function CommerceLead({ locale, destinations = [] }: CommerceLeadProps) {
+export function CommerceLead({
+    locale,
+    destinations = [],
+    domain = 'gastronomy'
+}: CommerceLeadProps) {
     const { t } = createTranslations(locale);
+
+    // Domain-aware accessible name so the form's accessible name matches the
+    // page's visible heading (the experience page renders `commerce.lead.experience.title`).
+    const formTitleKey =
+        domain === 'experience' ? 'commerce.lead.experience.title' : 'commerce.lead.title';
 
     const [fields, setFields] = useState<LeadFields>(INITIAL_FIELDS);
     const [errors, setErrors] = useState<FieldErrors>({});
@@ -110,9 +123,9 @@ export function CommerceLead({ locale, destinations = [] }: CommerceLeadProps) {
         e.preventDefault();
         setFormError(null);
 
-        // Build the payload — domain is always 'gastronomy'.
+        // Build the payload — domain comes from the `domain` prop.
         const payload: CommerceLeadCreateInput & { _hp: string } = {
-            domain: 'gastronomy',
+            domain,
             businessName: fields.businessName,
             contactName: fields.contactName,
             email: fields.email,
@@ -208,7 +221,7 @@ export function CommerceLead({ locale, destinations = [] }: CommerceLeadProps) {
             className={styles.form}
             onSubmit={(e) => void handleSubmit(e)}
             noValidate
-            aria-label={t('commerce.lead.title', 'Sumá tu negocio')}
+            aria-label={t(formTitleKey, 'Sumá tu negocio')}
         >
             {/* Honeypot — hidden from users, visible to bots */}
             <div

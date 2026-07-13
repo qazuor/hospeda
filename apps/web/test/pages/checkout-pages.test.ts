@@ -93,12 +93,16 @@ describe('SPEC-143 T-143-44 — checkout return pages (D1, D2, D3, index)', () =
             expect(successSrc).toContain("Astro.url.searchParams.get('collection_status')");
         });
 
-        it("branches on collectionStatus === 'approved' to pick the variant", () => {
+        it('branches immediate success vs the polling island (HOS-151 Bug A)', () => {
             expect(successSrc).toContain("collectionStatus === 'approved'");
-            // The CheckoutResult variant is approved → 'success', anything
-            // else → 'pending'. Pin both branches so a regression to
-            // a single-variant render fails this test.
-            expect(successSrc).toContain("variant={isApproved ? 'success' : 'pending'}");
+            // Immediate path (annual approved / trial / comp) → static
+            // CheckoutResult success; the recurring-preapproval path → the
+            // CheckoutStatusPoller island that polls the status endpoint. Pin
+            // both so a regression to the old single one-shot render (which hung
+            // on "Verificando..." forever) fails this test.
+            expect(successSrc).toContain('isImmediateSuccess');
+            expect(successSrc).toContain('variant="success"');
+            expect(successSrc).toMatch(/<CheckoutStatusPoller\s+client:load/);
         });
 
         it('routes the primary CTA to /mi-cuenta via buildUrl with the page locale', () => {

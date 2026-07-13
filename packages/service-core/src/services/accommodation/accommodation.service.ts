@@ -26,6 +26,7 @@ import {
     AccommodationCreateDraftHttpSchema,
     type AccommodationCreateInput,
     AccommodationCreateInputSchema,
+    AccommodationExtraInfoRequiredForPublishSchema,
     type AccommodationFaq,
     type AccommodationFaqAddInput,
     AccommodationFaqAddInputSchema,
@@ -776,6 +777,25 @@ export class AccommodationService extends BaseCrudService<
             }
         }
 
+        // HOS-153: an accommodation may only be created directly in ACTIVE state with
+        // complete capacity. `publish()` enforces this for DRAFT/INACTIVE -> ACTIVE
+        // transitions, but a direct `create({ lifecycleState: ACTIVE })` — reachable via
+        // `POST /api/v1/admin/accommodations`, whose route takes the domain input straight
+        // through without going through `publish()` — would otherwise bypass the guard.
+        // Re-check here so the "ACTIVE => complete capacity" invariant holds on every
+        // create path (mirrors the publish() capacity guard).
+        if (data.lifecycleState === LifecycleStatusEnum.ACTIVE) {
+            const capacityCheck = AccommodationExtraInfoRequiredForPublishSchema.safeParse(
+                data.extraInfo ?? {}
+            );
+            if (!capacityCheck.success) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Cannot create an ACTIVE accommodation: capacity details (capacity, minNights, bedrooms, bathrooms) are incomplete'
+                );
+            }
+        }
+
         await this._assertDestinationIsCity(data.destinationId);
 
         // SPEC-172: capture junction sync inputs in hookState.
@@ -1187,15 +1207,18 @@ export class AccommodationService extends BaseCrudService<
      * - `created`  - no privileged role, no active draft. A fresh DRAFT is inserted
      *   with `ownerId = actor.id`, `lifecycleState = DRAFT`, `lastWarnedAt = null`,
      *   and the owner is atomically promoted USER -> HOST in the same transaction.
-     *   The promotion is required so the owner can access the admin panel
-     *   (`ACCESS_PANEL_ADMIN` is granted to HOST). The trial subscription is NOT
-     *   created here — it is deferred to the first publish (see `publish()`).
+     *   The promotion is required so the owner gains the HOST role's permissions
+     *   (manage their own accommodations, upload media, etc.) — NOT for admin
+     *   panel access, which HOST does not have (`ACCESS_PANEL_ADMIN` is
+     *   staff-only; see HOS-152). The trial subscription is NOT created here —
+     *   it is deferred to the first publish (see `publish()`).
      *
      * - `resumed`  - a non-deleted DRAFT already exists for this owner. The existing
      *   row is returned and the caller resumes onboarding on it. This is the
      *   idempotency guarantee: at most one active DRAFT per USER at any given time.
      *   Defensively re-promotes a `USER` who somehow has an active DRAFT (legacy
-     *   data) so the admin-access invariant is restored.
+     *   data) so the HOST-permissions invariant is restored (again, not related
+     *   to admin panel access).
      *
      * Slug generation and destination validation reuse the same `_beforeCreate` hook
      * as the generic create flow, so the resulting row is structurally identical to
@@ -1238,7 +1261,9 @@ export class AccommodationService extends BaseCrudService<
                 if (existingDraft) {
                     // Defense-in-depth: legacy data may have a USER who owns
                     // an active DRAFT but was never promoted. Re-promote so
-                    // the admin panel access gate is satisfied. No-op when the
+                    // the owner has the HOST role's permissions (manage own
+                    // accommodations, upload media, etc.) — not for admin
+                    // panel access, which HOST does not have. No-op when the
                     // user is already HOST (most common path on resume).
                     if (user && user.role === RoleEnum.USER) {
                         await this._userModel.update(
@@ -1267,9 +1292,11 @@ export class AccommodationService extends BaseCrudService<
                 // (SPEC-258 B-API fix)
                 //
                 // Promoting at draft creation (rather than at first publish) is
-                // required so the owner can access the admin panel right away
-                // (`ACCESS_PANEL_ADMIN` is granted to HOST). The trial subscription
-                // is still deferred to the first publish — see `publish()`.
+                // required so the owner gains the HOST role's permissions right
+                // away (manage own accommodations, upload media, etc.) — NOT for
+                // admin panel access, which HOST does not have. The trial
+                // subscription is still deferred to the first publish — see
+                // `publish()`.
                 const result = await withServiceTransaction(
                     async (txCtx) => {
                         // Run _beforeCreate inside the tx so that hookState mutations
@@ -1557,32 +1584,37 @@ export class AccommodationService extends BaseCrudService<
      * first time.
      *
      * Role promotion (USER -> HOST) is NOT done here — it happens earlier, at
-     * draft creation time in `createForOnboarding`, so the owner can access the
-     * admin panel to complete the listing. By the time `publish` runs, the
-     * owner is already HOST (or higher).
+     * draft creation time in `createForOnboarding`, so the owner has the HOST
+     * role's permissions (manage own accommodations, upload media, etc.) to
+     * complete the listing — not for admin panel access, which HOST does not
+     * have. By the time `publish` runs, the owner is already HOST (or higher).
      *
      * Flow (Option C "external first, then short tx" pattern):
      *
      *  1. Fetch the accommodation. Authorize: actor must be the owner OR hold
      *     `ACCOMMODATION_UPDATE_ANY`.
      *  2. If already `ACTIVE`, return it idempotently.
-     *  3. Resolve the owner. If the owner is billing-exempt (ADMIN/SUPER_ADMIN/
+     *  3. Capacity-completeness guard (HOS-152): validate `extraInfo` against
+     *     `AccommodationExtraInfoRequiredForPublishSchema`. If `capacity`/
+     *     `minNights`/`bedrooms`/`bathrooms` are missing, reject with
+     *     `VALIDATION_ERROR` before touching billing or the owner at all.
+     *  4. Resolve the owner. If the owner is billing-exempt (ADMIN/SUPER_ADMIN/
      *     CLIENT_MANAGER), skip the eligibility check entirely and just flip
      *     lifecycleState to ACTIVE.
-     *  4. Otherwise (regular HOST), ask the billing layer for the owner's
+     *  5. Otherwise (regular HOST), ask the billing layer for the owner's
      *     publish eligibility (`first_publish` / `has_active_sub` /
      *     `subscription_required`).
-     *  5. `subscription_required` -> reject with FORBIDDEN.
-     *  6. `first_publish` -> call `startTrial` OUTSIDE any transaction (timeout
+     *  6. `subscription_required` -> reject with FORBIDDEN.
+     *  7. `first_publish` -> call `startTrial` OUTSIDE any transaction (timeout
      *     is enforced by the caller-supplied implementation). On failure,
      *     return `SERVICE_UNAVAILABLE` with no DB writes.
-     *  7. Open a short transaction:
+     *  8. Open a short transaction:
      *      - update accommodation lifecycleState to ACTIVE
-     *  8. If the transaction throws AFTER `startTrial` succeeded, compensate
+     *  9. If the transaction throws AFTER `startTrial` succeeded, compensate
      *     by calling `cancelTrial(subscriptionId)`. If the cancel itself fails,
      *     log a CRITICAL inconsistency warning for manual reconciliation.
-     *  9. Schedule revalidation as a best-effort side effect (never rolls back
-     *     the publish on revalidation errors).
+     *  10. Schedule revalidation as a best-effort side effect (never rolls back
+     *      the publish on revalidation errors).
      *
      * @param actor - The user (or admin) performing the publish.
      * @param id - The accommodation ID to publish.
@@ -1596,8 +1628,8 @@ export class AccommodationService extends BaseCrudService<
      *   NOT auto-promote it. When omitted/`false`, publish promotes a `PRIVATE`
      *   onboarding draft to `PUBLIC` (see the visibility note inside the method).
      * @returns The updated `Accommodation` on success, or a `ServiceError` on
-     *   any failure with codes: `NOT_FOUND`, `FORBIDDEN`, `CONFIGURATION_ERROR`,
-     *   `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR`.
+     *   any failure with codes: `NOT_FOUND`, `FORBIDDEN`, `VALIDATION_ERROR`,
+     *   `CONFIGURATION_ERROR`, `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR`.
      */
     public async publish(
         actor: Actor,
@@ -1632,6 +1664,28 @@ export class AccommodationService extends BaseCrudService<
 
                 if (accommodation.lifecycleState === LifecycleStatusEnum.ACTIVE) {
                     return accommodation;
+                }
+
+                // Capacity completeness guard (HOS-152): `extraInfo` is intentionally
+                // relaxed on the read/write schemas so a DRAFT can be fetched/PATCHed
+                // while the host is still filling in capacity data (see
+                // `AccommodationExtraInfoSchema`'s docblock). Publishing is the one
+                // place completeness MUST be enforced — a listing without capacity/
+                // minNights/bedrooms/bathrooms must never go live. This guard covers
+                // every path that reaches `publish()`, including `update()`'s
+                // ACTIVE-transition dispatch (see the override above). A direct
+                // `create({ lifecycleState: 'ACTIVE' })` (reachable via
+                // `POST /api/v1/admin/accommodations`) does NOT reach `publish()`, so
+                // the same completeness check is mirrored in `_beforeCreate` (HOS-153) —
+                // an ACTIVE create with incomplete capacity is rejected there before insert.
+                const extraInfoCheck = AccommodationExtraInfoRequiredForPublishSchema.safeParse(
+                    accommodation.extraInfo ?? {}
+                );
+                if (!extraInfoCheck.success) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'Cannot publish accommodation: capacity details (capacity, minNights, bedrooms, bathrooms) are incomplete'
+                    );
                 }
 
                 const owner = await this._userModel.findById(accommodation.ownerId, execCtx?.tx);

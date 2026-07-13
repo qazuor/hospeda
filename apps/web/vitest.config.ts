@@ -22,6 +22,11 @@ export default defineConfig({
                 __dirname,
                 'test/stubs/astro-transitions-client.ts'
             ),
+            // Real virtual module provided by Astro's vite plugins at
+            // build/dev time — stubbed so `src/middleware.ts` can be
+            // imported and its `onRequest` exercised directly in tests
+            // (see `test/middleware.test.ts`).
+            'astro:middleware': resolve(__dirname, 'test/stubs/astro-middleware.ts'),
             '@': resolve(__dirname, 'src'),
             '@repo/config': resolve(rootDir, 'packages/config/src'),
             '@repo/icons': resolve(rootDir, 'packages/icons/src'),

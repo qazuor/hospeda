@@ -22,6 +22,9 @@ export type ErrorLogLevel = 'error' | 'warn' | 'info';
  *   deindex signal), not a fault → `info`.
  * - `FORBIDDEN` (403) is a permission denial that doubles as a probing signal,
  *   so it stays slightly louder → `warn`.
+ * - `ENTITLEMENT_REQUIRED` (403) and `LIMIT_REACHED` (403) are routine
+ *   plan-gating denials (a free/lower-tier plan hitting a `gate*`/`require*`
+ *   middleware) — same class and severity as `FORBIDDEN` → `warn`.
  *
  * Every other code (INTERNAL_ERROR, DATABASE/PROVIDER failures, VALIDATION_ERROR,
  * etc.) keeps `error` — those are real faults worth a stack trace.
@@ -36,6 +39,8 @@ export const resolveErrorLogLevel = (code: ServiceErrorCode | undefined): ErrorL
         case ServiceErrorCode.GONE:
             return 'info';
         case ServiceErrorCode.FORBIDDEN:
+        case ServiceErrorCode.ENTITLEMENT_REQUIRED:
+        case ServiceErrorCode.LIMIT_REACHED:
             return 'warn';
         default:
             return 'error';

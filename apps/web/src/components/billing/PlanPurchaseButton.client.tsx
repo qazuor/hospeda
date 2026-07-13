@@ -17,6 +17,7 @@ import type { JSX } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { billingApi, userApi } from '../../lib/api/endpoints-protected';
 import { useSession } from '../../lib/auth-client';
+import { storePendingCheckoutSubId } from '../../lib/billing/checkout-pending';
 import type { SupportedLocale } from '../../lib/i18n';
 import { createTranslations } from '../../lib/i18n';
 import { buildUrl } from '../../lib/urls';
@@ -725,6 +726,13 @@ export function PlanPurchaseButton({
             let target = result.data.checkoutUrl;
             if (result.data.appliedEffect === 'trial' || result.data.appliedEffect === 'comp') {
                 target = appendQueryParam(target, 'effect', result.data.appliedEffect);
+            } else {
+                // HOS-151 Bug A: a real MercadoPago redirect (plain paid or a
+                // `discount` preapproval). The recurring-preapproval return
+                // carries no `collection_status`, so stash the local sub id for
+                // the success page to poll on return. Skipped for trial/comp,
+                // which resolve instantly on the in-app sentinel page.
+                storePendingCheckoutSubId(result.data.localSubscriptionId);
             }
             if (result.data.promoCodeIgnored) {
                 target = appendQueryParam(target, 'promoIgnored', '1');

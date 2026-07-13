@@ -31,7 +31,9 @@ describe('mi-cuenta/aliados/index.astro (HOS-131 "Sumate como aliado" hub)', () 
     });
 
     it('looks up the "partner" door from ACCOUNT_DISCOVERY_DOORS, not a hardcoded object', () => {
-        expect(source).toContain("import { ACCOUNT_DISCOVERY_DOORS } from '@/config/navigation';");
+        expect(source).toContain(
+            "import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';"
+        );
         expect(source).toContain("candidate.id === 'partner'");
     });
 
@@ -40,17 +42,22 @@ describe('mi-cuenta/aliados/index.astro (HOS-131 "Sumate como aliado" hub)', () 
         expect(source).toContain("path: 'mi-cuenta' }");
     });
 
-    it('resolves title/description from the door config via i18n, not hardcoded strings', () => {
-        expect(source).toContain('t(door.i18nKey)');
+    it('resolves the title via resolveDoorLabelKey (HOS-134 stateful label), and the subtitle via i18n, never hardcoded strings', () => {
+        expect(source).toContain(
+            "import { isVisibleByRole, resolveDoorLabelKey } from '@/lib/nav-gating';"
+        );
+        expect(source).toContain('resolveDoorLabelKey({');
+        expect(source).toContain('const title = t(labelKey);');
         expect(source).toContain('t(door.subtitleI18nKey)');
     });
 
-    it('renders the shared DiscoveryDoorHub component, forwarding locale/door/role', () => {
+    it('renders the shared DiscoveryDoorHub component, forwarding locale/door/role/adminUrl (HOS-134)', () => {
         expect(source).toContain(
             "import DiscoveryDoorHub from '@/components/account/DiscoveryDoorHub.astro';"
         );
+        expect(source).toContain("import { getAdminUrl } from '@/lib/env';");
         expect(source).toContain(
-            '<DiscoveryDoorHub locale={locale} door={door} role={user.role} />'
+            '<DiscoveryDoorHub locale={locale} door={door} role={user.role} adminUrl={getAdminUrl()} />'
         );
     });
 

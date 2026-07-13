@@ -9,6 +9,14 @@
  * request on mount when `initialIsFavorited === undefined`. The fix passes a
  * pre-resolved value from a single SSR-side /check-bulk call.
  *
+ * Also guards against a second, separate bug: `checkBulk` did not forward the
+ * SSR `Cookie` header (unlike its sibling `checkStatus`), so every one of
+ * these SSR calls silently ran as an anonymous request — the API saw
+ * `actorRole: guest` for genuinely logged-in users and returned 401
+ * (production incident). Every SSR call site below must read
+ * `Astro.request.headers.get('cookie')` and forward it as `cookieHeader` on
+ * the `checkBulk` call, exactly like `checkStatus` already does.
+ *
  * Pattern reference: `apps/web/src/pages/[lang]/alojamientos/index.astro`
  */
 
@@ -26,7 +34,36 @@ function readSrc(relPath: string): string {
 // Helper: common assertions extracted so every describe block stays DRY
 // ---------------------------------------------------------------------------
 
-function assertBulkCheckPattern(src: string, ctx: string): void {
+/**
+ * Regression guard for the production incident: `checkBulk` did not forward
+ * the SSR `Cookie` header (unlike its sibling `checkStatus`), so every SSR
+ * call site ran as an anonymous request — the API saw `actorRole: guest` for
+ * genuinely logged-in users and returned 401. Split out from
+ * {@link assertBulkCheckPattern} so it can also cover call sites that don't
+ * (yet) follow the full webLogger-fallback pattern.
+ */
+function assertCookieForwarding(src: string, ctx: string): void {
+    it(`[${ctx}] reads the SSR cookie header from Astro.request`, () => {
+        // Server-to-server SSR fetch has no cookie jar — `credentials:
+        // 'include'` only forwards cookies in the browser.
+        expect(src).toContain("Astro.request.headers.get('cookie')");
+    });
+
+    it(`[${ctx}] forwards cookieHeader on the checkBulk call (so removing it re-breaks this test)`, () => {
+        const checkBulkIdx = src.indexOf('checkBulk');
+        const cookieHeaderDeclIdx = src.indexOf("Astro.request.headers.get('cookie')");
+        // The cookie header must be read before the checkBulk call site...
+        expect(cookieHeaderDeclIdx).toBeGreaterThan(-1);
+        expect(cookieHeaderDeclIdx).toBeLessThan(checkBulkIdx);
+        // ...and the checkBulk call block itself must reference cookieHeader
+        // (the call closes at the first `});` after the checkBulk() open).
+        const callBlockEnd = src.indexOf('});', checkBulkIdx);
+        const callBlock = src.slice(checkBulkIdx, callBlockEnd);
+        expect(callBlock).toContain('cookieHeader');
+    });
+}
+
+function assertBulkCheckPattern(src: string, ctx: string, guardVar = 'isAuthenticated'): void {
     it(`[${ctx}] imports userBookmarksApi from endpoints-protected`, () => {
         expect(src).toContain("from '@/lib/api/endpoints-protected'");
         expect(src).toContain('userBookmarksApi');
@@ -40,18 +77,20 @@ function assertBulkCheckPattern(src: string, ctx: string): void {
         expect(src).toContain('checkBulk');
     });
 
-    it(`[${ctx}] guards checkBulk with isAuthenticated`, () => {
-        expect(src).toContain('isAuthenticated');
-        // The bulk call must be inside an auth guard
+    it(`[${ctx}] guards checkBulk with ${guardVar}`, () => {
+        expect(src).toContain(guardVar);
+        // The bulk call must be inside a guard
         const checkBulkIdx = src.indexOf('checkBulk');
-        const isAuthIdx = src.indexOf('isAuthenticated');
-        // isAuthenticated appears before checkBulk (it guards the call)
-        expect(isAuthIdx).toBeLessThan(checkBulkIdx);
+        const guardIdx = src.indexOf(guardVar);
+        // The guard variable appears before checkBulk (it gates the call)
+        expect(guardIdx).toBeLessThan(checkBulkIdx);
     });
 
     it(`[${ctx}] has a warn fallback on bulk-check failure`, () => {
         expect(src).toContain('webLogger.warn');
     });
+
+    assertCookieForwarding(src, ctx);
 }
 
 // ---------------------------------------------------------------------------
@@ -98,6 +137,77 @@ describe('pages/[lang]/destinos/index.astro — destination bulk check', () => {
     it('passes initialBookmarkId to DestinationCard', () => {
         expect(src).toContain('initialBookmarkId=');
     });
+});
+
+// ---------------------------------------------------------------------------
+// alojamientos/index.astro — accommodation listing page
+// ---------------------------------------------------------------------------
+
+describe('pages/[lang]/alojamientos/index.astro — accommodation bulk check', () => {
+    const src = readSrc('pages/[lang]/alojamientos/index.astro');
+
+    assertBulkCheckPattern(src, 'alojamientos/index');
+
+    it('calls checkBulk with entityType ACCOMMODATION', () => {
+        expect(src).toContain("entityType: 'ACCOMMODATION'");
+    });
+});
+
+// ---------------------------------------------------------------------------
+// experiencias/index.astro — experience listing page
+// ---------------------------------------------------------------------------
+
+describe('pages/[lang]/experiencias/index.astro — experience bulk check', () => {
+    const src = readSrc('pages/[lang]/experiencias/index.astro');
+
+    // NOTE: unlike the other listing pages, this one does not (yet) use
+    // webLogger on bulk-check failure, so it can't use the full
+    // assertBulkCheckPattern helper — only the cookie-forwarding regression
+    // guard applies here. Adding the webLogger fallback is out of scope for
+    // this fix.
+    it('imports userBookmarksApi from endpoints-protected', () => {
+        expect(src).toContain("from '@/lib/api/endpoints-protected'");
+        expect(src).toContain('userBookmarksApi');
+    });
+
+    it('calls checkBulk with entityType EXPERIENCE', () => {
+        expect(src).toContain("entityType: 'EXPERIENCE'");
+    });
+
+    it('guards checkBulk with isAuthenticated', () => {
+        const checkBulkIdx = src.indexOf('checkBulk');
+        const isAuthIdx = src.indexOf('isAuthenticated');
+        expect(isAuthIdx).toBeLessThan(checkBulkIdx);
+    });
+
+    assertCookieForwarding(src, 'experiencias/index');
+});
+
+// ---------------------------------------------------------------------------
+// gastronomia/index.astro — gastronomy listing page
+// ---------------------------------------------------------------------------
+
+describe('pages/[lang]/gastronomia/index.astro — gastronomy bulk check', () => {
+    const src = readSrc('pages/[lang]/gastronomia/index.astro');
+
+    // NOTE: same as experiencias/index.astro — no webLogger fallback (out of
+    // scope for this fix), so only the cookie-forwarding guard applies.
+    it('imports userBookmarksApi from endpoints-protected', () => {
+        expect(src).toContain("from '@/lib/api/endpoints-protected'");
+        expect(src).toContain('userBookmarksApi');
+    });
+
+    it('calls checkBulk with entityType GASTRONOMY', () => {
+        expect(src).toContain("entityType: 'GASTRONOMY'");
+    });
+
+    it('guards checkBulk with isAuthenticated', () => {
+        const checkBulkIdx = src.indexOf('checkBulk');
+        const isAuthIdx = src.indexOf('isAuthenticated');
+        expect(isAuthIdx).toBeLessThan(checkBulkIdx);
+    });
+
+    assertCookieForwarding(src, 'gastronomia/index');
 });
 
 // ---------------------------------------------------------------------------
@@ -173,25 +283,86 @@ describe('pages/[lang]/destinos/[slug]/eventos/index.astro — event bulk check'
 
 // ---------------------------------------------------------------------------
 // NextEventsSection.astro — homepage server:defer events bento
+//
+// HOS fix (get-session flood, follow-up): this section's `isAuthenticated`
+// used to come from `Astro.locals.user`, populated only because middleware
+// unconditionally parsed the session for every `/_server-islands/*` request —
+// the same mechanism that made the mobile-menu island flood the API's `auth`
+// rate-limit bucket (it ran on EVERY page view). That middleware behavior was
+// removed, so `Astro.locals.user` is no longer reliable here, and this
+// section cannot call `parseSessionUser`/`get-session` either (that would
+// reintroduce the flood). Instead it uses `requestHasSessionCookie` — a
+// cheap, synchronous presence check on the raw `Cookie` header, no network
+// call — to gate a single SSR bulk favorite pre-check (`checkBulk`), exactly
+// like the other listing pages. Guests (no session cookie) skip the bulk
+// check entirely and render guest-state cards.
 // ---------------------------------------------------------------------------
 
-describe('components/sections/NextEventsSection.astro — event bulk check', () => {
+describe('components/sections/NextEventsSection.astro — cookie-gated SSR bulk check', () => {
     const src = readSrc('components/sections/NextEventsSection.astro');
 
-    assertBulkCheckPattern(src, 'NextEventsSection');
+    it('does NOT read Astro.locals.user (unreliable for server:defer requests post-fix)', () => {
+        // The prose comment explaining the fix legitimately mentions the
+        // literal string — assert on the actual read expression instead.
+        expect(src).not.toContain('Boolean(Astro.locals.user)');
+        expect(src).not.toMatch(/=\s*Astro\.locals\.user/);
+    });
+
+    it('does NOT call parseSessionUser / get-session (would reintroduce the flood)', () => {
+        // Check the actual call/endpoint patterns, not prose — the file's own
+        // explanatory comment legitimately mentions these terms.
+        expect(src).not.toContain('parseSessionUser(');
+        expect(src).not.toContain('/api/auth/get-session');
+    });
+
+    it('imports requestHasSessionCookie from middleware-helpers', () => {
+        expect(src).toContain("from '@/lib/middleware-helpers'");
+        expect(src).toContain('requestHasSessionCookie');
+    });
+
+    it('derives hasSessionCookie from the raw Cookie header (no network call)', () => {
+        const hasSessionCookieIdx = src.indexOf('hasSessionCookie');
+        const cookieReadIdx = src.indexOf("Astro.request.headers.get('cookie')");
+        expect(hasSessionCookieIdx).toBeGreaterThan(-1);
+        expect(cookieReadIdx).toBeGreaterThan(-1);
+        expect(cookieReadIdx).toBeLessThan(
+            src.indexOf('checkBulk') > -1 ? src.indexOf('checkBulk') : Infinity
+        );
+    });
+
+    it('derives isAuthenticated from hasSessionCookie (not hardcoded true)', () => {
+        expect(src).not.toContain('const isAuthenticated = true;');
+        expect(src).toContain('const isAuthenticated = hasSessionCookie;');
+    });
+
+    assertBulkCheckPattern(src, 'NextEventsSection', 'hasSessionCookie');
 
     it('calls checkBulk with entityType EVENT', () => {
         expect(src).toContain("entityType: 'EVENT'");
     });
 
-    it('creates resolvedEventItems', () => {
-        expect(src).toContain('resolvedEventItems');
+    it('runs the bulk check only when hasSessionCookie is true', () => {
+        // Nearest `if (` before the checkBulk call is its guard condition.
+        const checkBulkIdx = src.indexOf('checkBulk');
+        const guardIdx = src.lastIndexOf('if (', checkBulkIdx);
+        expect(guardIdx).toBeGreaterThan(-1);
+        const guardCondition = src.slice(guardIdx, src.indexOf(')', guardIdx));
+        expect(guardCondition).toContain('hasSessionCookie');
+    });
+
+    it('creates resolvedEventItems with injected favorite state (not a straight alias)', () => {
+        expect(src).not.toContain('const resolvedEventItems: EventCardData[] = eventItems;');
+        expect(src).toContain('isFavorited: entry.isBookmarked');
+        expect(src).toContain('favoriteBookmarkId: entry.bookmarkId');
     });
 
     it('splits resolvedEventItems into bento grid zones', () => {
-        // featuredEvent and topEvents derive from resolvedEventItems
         expect(src).toContain('resolvedEventItems.find(');
         expect(src).toContain('resolvedEventItems.filter(');
+    });
+
+    it('still forwards isAuthenticated to every event card', () => {
+        expect(src).toContain('isAuthenticated={isAuthenticated}');
     });
 });
 
@@ -226,6 +397,22 @@ describe('pages/[lang]/destinos/[...path].astro — event card + nearby bulk che
 
     it('passes nearbyDestFavoriteChecks to DestinationNearbySection', () => {
         expect(src).toContain('favoriteChecks={nearbyDestFavoriteChecks}');
+    });
+
+    it('reads the SSR cookie header from Astro.request', () => {
+        expect(src).toContain("Astro.request.headers.get('cookie')");
+    });
+
+    it('forwards cookieHeader on BOTH checkBulk calls (event preview + nearby destinations)', () => {
+        // This page has two independent checkBulk call sites sharing one
+        // hoisted `cookieHeader` const — every call block must reference it,
+        // not just the first, so a partial regression (only one call site
+        // losing the forward) still fails this test.
+        const checkBulkBlocks = [...src.matchAll(/checkBulk\(\{[\s\S]*?\}\);/g)];
+        expect(checkBulkBlocks.length).toBe(2);
+        for (const block of checkBulkBlocks) {
+            expect(block[0]).toContain('cookieHeader');
+        }
     });
 });
 
