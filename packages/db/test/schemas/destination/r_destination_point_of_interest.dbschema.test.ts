@@ -1,19 +1,23 @@
 /**
  * HOS-113 T-004 — `r_destination_point_of_interest` join table schema tests.
+ * Extended for HOS-140 (the `relation` column).
  *
  * Verifies the Drizzle schema definition for the destination-to-POI join
  * table (M2M, HOS-113 OQ-1):
- *   (1) Exactly 2 columns exist (`destination_id`, `point_of_interest_id`).
- *   (2) Both columns are NOT NULL.
- *   (3) Both columns carry FK references with CASCADE on delete.
- *   (4) A composite primary key exists covering both columns.
+ *   (1) Exactly 3 columns exist (`destination_id`, `point_of_interest_id`,
+ *       `relation` — HOS-140).
+ *   (2) All three columns are NOT NULL.
+ *   (3) The two ID columns carry FK references with CASCADE on delete.
+ *   (4) A composite primary key exists covering ONLY the two ID columns
+ *       (HOS-140 §6.1 — `relation` is deliberately outside the PK).
  *   (5) A composite index and a reverse point_of_interest_id index exist.
+ *   (6) `relation` defaults to `'PRIMARY'` and is not part of the PK/indexes.
  *
  * These are in-process schema tests — they do NOT require a running
  * PostgreSQL instance. They inspect Drizzle column/table metadata via
  * `getTableConfig`.
  *
- * Reference: HOS-113 spec.md §6.1, §9 AC-1.
+ * Reference: HOS-113 spec.md §6.1, §9 AC-1; HOS-140 spec.md §6.1, §7.1.
  */
 import { getTableConfig } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
@@ -40,12 +44,13 @@ describe('r_destination_point_of_interest table meta', () => {
         expect(name).toBe('r_destination_point_of_interest');
     });
 
-    it('has exactly 2 columns', () => {
+    it('has exactly 3 columns (HOS-140 adds relation)', () => {
         const { columns } = getTableConfig(rDestinationPointOfInterest);
-        expect(columns).toHaveLength(2);
+        expect(columns).toHaveLength(3);
         const sqlNames = columns.map((c) => c.name);
         expect(sqlNames).toContain('destination_id');
         expect(sqlNames).toContain('point_of_interest_id');
+        expect(sqlNames).toContain('relation');
     });
 });
 
@@ -62,6 +67,13 @@ describe('r_destination_point_of_interest column constraints', () => {
         const config = getColumnConfig('point_of_interest_id');
         expect(config).toBeDefined();
         expect(config?.notNull).toBe(true);
+    });
+
+    it('relation is NOT NULL and defaults to PRIMARY (HOS-140)', () => {
+        const config = getColumnConfig('relation');
+        expect(config).toBeDefined();
+        expect(config?.notNull).toBe(true);
+        expect(config?.default).toBe('PRIMARY');
     });
 });
 
@@ -134,7 +146,7 @@ describe('r_destination_point_of_interest indexes', () => {
 // ─── Type inference ──────────────────────────────────────────────────────────
 
 describe('r_destination_point_of_interest type inference', () => {
-    it('InsertRDestinationPointOfInterest requires exactly destinationId and pointOfInterestId', () => {
+    it('InsertRDestinationPointOfInterest requires only destinationId and pointOfInterestId (relation is default-optional, HOS-140)', () => {
         const minimal: InsertRDestinationPointOfInterest = {
             destinationId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
             pointOfInterestId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
@@ -144,12 +156,23 @@ describe('r_destination_point_of_interest type inference', () => {
         expect(minimal.pointOfInterestId).toBeDefined();
     });
 
-    it('SelectRDestinationPointOfInterest has destinationId and pointOfInterestId properties', () => {
+    it('InsertRDestinationPointOfInterest accepts an explicit relation value', () => {
+        const withRelation: InsertRDestinationPointOfInterest = {
+            destinationId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+            pointOfInterestId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+            relation: 'NEARBY'
+        };
+
+        expect(withRelation.relation).toBe('NEARBY');
+    });
+
+    it('SelectRDestinationPointOfInterest has destinationId, pointOfInterestId, and relation properties', () => {
         const _typeCheck = (_row: SelectRDestinationPointOfInterest): void => {
             const _destinationId: string = _row.destinationId;
             const _pointOfInterestId: string = _row.pointOfInterestId;
+            const _relation: 'PRIMARY' | 'NEARBY' = _row.relation;
 
-            void [_destinationId, _pointOfInterestId];
+            void [_destinationId, _pointOfInterestId, _relation];
         };
 
         expect(typeof _typeCheck).toBe('function');
@@ -161,5 +184,6 @@ describe('r_destination_point_of_interest type inference', () => {
 
         expect(sqlNames.has('destination_id')).toBe(true);
         expect(sqlNames.has('point_of_interest_id')).toBe(true);
+        expect(sqlNames.has('relation')).toBe(true);
     });
 });

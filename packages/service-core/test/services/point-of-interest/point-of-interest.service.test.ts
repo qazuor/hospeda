@@ -251,8 +251,14 @@ describe('PointOfInterestService', () => {
                 expect(result.error).toBeUndefined();
                 expect(result.data?.items).toHaveLength(2);
 
-                // The relation lookup was resolved via the join table.
-                expect(relatedModel.findAll).toHaveBeenCalledWith({ destinationId });
+                // The relation lookup was resolved via the join table. HOS-140:
+                // `resolveDestinationIdFilter` defaults to a PRIMARY-only
+                // constraint — a behavior-preserving no-op for every row that
+                // existed before this spec shipped.
+                expect(relatedModel.findAll).toHaveBeenCalledWith({
+                    destinationId,
+                    relation: 'PRIMARY'
+                });
 
                 // `where` reaching model.findAll must NOT carry `destinationId` —
                 // that column does not exist on `points_of_interest`.

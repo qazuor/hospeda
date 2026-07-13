@@ -1,5 +1,7 @@
+import { PointOfInterestDestinationRelationEnum } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { index, pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
+import { PointOfInterestDestinationRelationPgEnum } from '../enums.dbschema.ts';
 import { destinations } from './destination.dbschema.ts';
 import { pointsOfInterest } from './point-of-interest.dbschema.ts';
 
@@ -8,6 +10,12 @@ import { pointsOfInterest } from './point-of-interest.dbschema.ts';
  * coordinates live on the POI row (a single physical point); this table
  * lets a regional/border landmark surface from several destinations.
  * Mirrors `r_destination_attraction`.
+ *
+ * `relation` (HOS-140) distinguishes a POI physically located in the
+ * destination (`PRIMARY`, the default) from a POI merely cross-referenced
+ * from a different destination's page (`NEARBY`). It is a plain column
+ * outside the composite PK — see HOS-140 spec §6.1 for why the PK stays
+ * `(destinationId, pointOfInterestId)` unchanged.
  */
 export const rDestinationPointOfInterest = pgTable(
     'r_destination_point_of_interest',
@@ -17,7 +25,10 @@ export const rDestinationPointOfInterest = pgTable(
             .references(() => destinations.id, { onDelete: 'cascade' }),
         pointOfInterestId: uuid('point_of_interest_id')
             .notNull()
-            .references(() => pointsOfInterest.id, { onDelete: 'cascade' })
+            .references(() => pointsOfInterest.id, { onDelete: 'cascade' }),
+        relation: PointOfInterestDestinationRelationPgEnum('relation')
+            .notNull()
+            .default(PointOfInterestDestinationRelationEnum.PRIMARY)
     },
     (table) => ({
         pk: primaryKey({ columns: [table.destinationId, table.pointOfInterestId] }),
