@@ -80,7 +80,7 @@
             "id": "T-004",
             "title": "Destination reconciliation (stage 2, fail-loud) — G-4",
             "description": "Map each row's destinationSlug through DESTINATION_SLUG_FIXUPS, then validate the reconciled slug against the real seeded destination set (the 22 fixtures in packages/seed/src/data/destination/001-022). Any slug not in the fixup table AND not a real fixture slug ABORTS the run with a clear error listing offending rows (never silently drop, R-5). Tests: pueblo-liebig->liebig, villa-paranacito->paranacito, 20 direct matches pass, an injected unknown slug aborts.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-005", "T-013"],
@@ -91,18 +91,18 @@
             ],
             "tags": ["core", "reconciliation"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-13T08:22:00.000Z",
+                "completed": "2026-07-13T08:25:00.000Z"
             }
         },
         {
             "id": "T-005",
             "title": "Slug computation + dedup (stage 3) — G-3, OQ-1 underscore",
             "description": "For each row take the POI-slug segment (right of '__' in id), convert to snake_case with underscores (OQ-1: underscore, matching the 12 shipped fixtures). Detect cross-destination collisions across all 914; colliding bare slugs become <reconciledDestinationSlug>_<poiSlug> (using the reconciled slug from T-004, so pueblo-liebig prefixes with liebig). Non-colliding 868 stay bare. Assert ZERO duplicate slugs in the output set. Tests: municipalidad (16 dests) all get prefixed + unique, terminal-omnibus (13) likewise, a non-collider stays bare, global zero-dup assertion.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004"],
             "blocks": ["T-012"],
@@ -119,18 +119,18 @@
             ],
             "tags": ["core", "dedup"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-13T08:25:00.000Z",
+                "completed": "2026-07-13T08:28:00.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Geocoder abstraction + Nominatim provider (stage 5a) — OQ-3",
             "description": "resolveCoordinates(address): Promise<GeocodeResult | null>, provider-agnostic interface with a Nominatim (OSM) implementation (OQ-3 chosen). Fixed >=1000ms delay between requests (Nominatim usage policy), retry-with-backoff on 429/5xx, a hard total-run-time cap so a stalled network can't hang. Attach a proper User-Agent per Nominatim ToS. Tests: mock HTTP client, assert >=1000ms spacing between calls, backoff on 429, run-time cap trips, null on no-match.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-007", "T-008"],
@@ -144,62 +144,62 @@
             ],
             "tags": ["core", "geocoding"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-13T08:33:00.000Z",
+                "completed": "2026-07-13T08:38:00.000Z"
             }
         },
         {
             "id": "T-007",
             "title": "Confidence tiering (stage 5b) — G-1 / §6.3.1",
             "description": "Map a Nominatim result's own match-quality signals (importance/type/class) to high/medium/low/unresolved. Only high/medium are written to lat/long; low is treated as unresolved (left null, listed in report) — a wrong coordinate is worse than a missing one. Tests: tier boundary cases, low->unresolved, a high-importance landmark -> high.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-006"],
             "blocks": ["T-017"],
             "subtasks": [
-                { "title": "importance/type -> tier mapping", "completed": false },
-                { "title": "low -> unresolved rejection", "completed": false },
-                { "title": "Tier boundary tests", "completed": false }
+                { "title": "importance/type -> tier mapping", "completed": true },
+                { "title": "low -> unresolved rejection", "completed": true },
+                { "title": "Tier boundary tests", "completed": true }
             ],
             "tags": ["core", "geocoding"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-13T08:38:00.000Z",
+                "completed": "2026-07-13T08:41:00.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Geocode cache (stage 5c) — G-6 idempotency",
             "description": "Flat JSON cache file ({ [addressKey]: GeocodeResult }, addressKey = exact string sent to the geocoder incl. REGIONAL_QUALIFIER), stored in the pipeline's working dir (NOT @repo/seed runtime path) and committed to the repo. Read-before-network, write-after-resolve. A warm cache re-run makes ZERO network calls. Tests: cache hit returns without hitting the mock client, cache miss writes the entry, warm re-run = 0 network calls (AC-7 basis).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006"],
             "blocks": ["T-017"],
             "subtasks": [
-                { "title": "JSON cache read/write keyed by exact address", "completed": false },
-                { "title": "Wire cache in front of resolveCoordinates", "completed": false },
-                { "title": "Tests: hit/miss + zero-network warm re-run", "completed": false }
+                { "title": "JSON cache read/write keyed by exact address", "completed": true },
+                { "title": "Wire cache in front of resolveCoordinates", "completed": true },
+                { "title": "Tests: hit/miss + zero-network warm re-run", "completed": true }
             ],
             "tags": ["core", "geocoding", "idempotency"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-13T08:41:00.000Z",
+                "completed": "2026-07-13T08:44:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Category normalization + CATEGORY_SLUG_MAP (stage 4) — G-2, OQ-2",
-            "description": "Build the 40-entry CATEGORY_SLUG_MAP (source UPPER_SNAKE -> HOS-139 canonical slug) covering every value in the verified distribution. Split categorySlugs on ';', trim, order-preserved; map each; first entry -> isPrimary:true (OQ-2 first-listed). A source value with no map entry ABORTS (map must be exhaustive over the 40). RHS is PROVISIONAL against HOS-139's documented category list until HOS-139 merges (re-verified in T-014). Tests: 40/40 coverage assert, order preservation, multiplicity kept, unmapped source aborts.",
-            "status": "pending",
+            "description": "HOS-139 MERGED into this branch: the 40 seeded poi_category slugs ARE the CSV's 40 UPPER_SNAKE categorySlugs lowercased (historic_site, recreation, ...), so normalization is `value.trim().toLowerCase()` — NOT an arbitrary hand-map. Split categorySlugs on ';', trim, order-preserved; lowercase each; first entry -> isPrimary:true (OQ-2). Validate every normalized slug is a member of the real poiCategory fixture set (load packages/seed/src/data/poiCategory/*.json); a source value that does not resolve to a real slug ABORTS. Tests: 40/40 coverage vs real fixtures, order preservation, multiplicity kept, unmapped/unknown source aborts.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-011", "T-012", "T-014"],
@@ -210,11 +210,11 @@
             ],
             "tags": ["core", "categories"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-13T08:45:00.000Z",
+                "completed": "2026-07-13T08:47:00.000Z"
             }
         },
         {
@@ -244,8 +244,7 @@
         },
         {
             "id": "T-011",
-            "title": "type-derivation table (primary category -> PointOfInterestTypeEnum)",
-            "description": "Map each POI's primary (post-normalization) category to one of the 9 PointOfInterestTypeEnum values (BEACH/STADIUM/PARK/MUSEUM/PLAZA/MONUMENT/VIEWPOINT/NATURAL/OTHER) via a fixed table (transient deprecated 'type' column, HOS-138). Needs HOS-139's final category slugs. Tests: every primary category maps to a valid enum value, unmapped primary -> OTHER (or abort, per contract).",
+            "description": "REUSE HOS-139's deriveTypeFromCategorySlug(slug) from @repo/schemas (poi-category-type-mapping.ts) — it is exactly this table (9 direct mappings, catch-all -> OTHER, total function, never throws). Do NOT rebuild it. The pipeline imports it and derives type = deriveTypeFromCategorySlug(primaryCategorySlug). Tests: a mapped primary (e.g. beach->BEACH) and an unmapped primary (e.g. winery->OTHER) via the imported function.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-009", "T-010"],
@@ -309,8 +308,8 @@
         },
         {
             "id": "T-014",
-            "title": "Verify CATEGORY_SLUG_MAP RHS vs HOS-139 seeded slugs — AC-3 (BLOCKED on HOS-139)",
-            "description": "Once HOS-139 merges, cross-check every CATEGORY_SLUG_MAP right-hand-side value against the real seeded poi_categories.slug set; a test asserts membership (AC-3). Until HOS-139 lands, the test asserts against the mapping HOS-139's spec documents and is re-run on merge. EXTERNALLY BLOCKED: HOS-139 is In Progress in parallel, not yet merged.",
+            "title": "Verify normalized category slugs vs HOS-139 seeded slugs — AC-3",
+            "description": "HOS-139 now merged into this branch: cross-check that every normalized category slug the pipeline can emit is a member of the real seeded poi_category slug set (packages/seed/src/data/poiCategory/*.json, 40 slugs); a test asserts membership (AC-3). No longer externally blocked. Note: caveat that #2295 is still open upstream — if its slug set changes before staging merge, re-verify.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-009"],
@@ -418,9 +417,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 15,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.6
     }
