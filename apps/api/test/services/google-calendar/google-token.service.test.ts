@@ -64,6 +64,7 @@ const buildCredential = (overrides?: Partial<GoogleCredential>): GoogleCredentia
     externalCalendarId: 'primary',
     syncToken: null,
     isActive: true,
+    createdById: 'host-1',
     ...overrides
 });
 

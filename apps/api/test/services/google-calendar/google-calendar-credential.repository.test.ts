@@ -101,7 +101,8 @@ describe('google-calendar-credential.repository', () => {
                 tokenExpiresAt: expiresAt,
                 externalCalendarId: 'primary',
                 syncToken: 'sync-token-abc',
-                isActive: true
+                isActive: true,
+                createdById: 'host-1'
             });
 
             // Act
@@ -114,7 +115,8 @@ describe('google-calendar-credential.repository', () => {
                 expiresAt,
                 externalCalendarId: 'primary',
                 syncToken: 'sync-token-abc',
-                isActive: true
+                isActive: true,
+                createdById: 'host-1'
             });
         });
 

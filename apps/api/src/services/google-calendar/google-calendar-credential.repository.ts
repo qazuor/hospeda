@@ -60,6 +60,8 @@ export interface GoogleCredential {
     readonly syncToken: string | null;
     /** Whether this connection is currently active. */
     readonly isActive: boolean;
+    /** The host (or system actor) that created this connection — used to attribute sync-written occupancy rows. */
+    readonly createdById: string;
 }
 
 /**
@@ -157,7 +159,8 @@ export async function getGoogleCredential(params: {
         expiresAt: row.tokenExpiresAt ?? null,
         externalCalendarId: row.externalCalendarId ?? null,
         syncToken: row.syncToken ?? null,
-        isActive: row.isActive
+        isActive: row.isActive,
+        createdById: row.createdById
     };
 }
 
