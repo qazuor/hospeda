@@ -2061,6 +2061,9 @@
         "permissionEffect": {
             "invalid": "El efecto del permiso no es válido"
         },
+        "pointOfInterestDestinationRelation": {
+            "invalid": "La relación entre el punto de interés y el destino no es válida"
+        },
         "pointOfInterestType": {
             "invalid": "El point of interest type no es válido"
         },
