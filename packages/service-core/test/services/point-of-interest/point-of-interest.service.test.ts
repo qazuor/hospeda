@@ -73,6 +73,8 @@ describe('PointOfInterestService', () => {
             isFeatured: false,
             isBuiltin: true,
             displayWeight: 50,
+            hasOwnPage: false,
+            verified: false,
             lifecycleState: LifecycleStatusEnum.ACTIVE
         };
 
