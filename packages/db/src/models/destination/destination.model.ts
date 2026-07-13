@@ -2,6 +2,7 @@ import type {
     Destination,
     DestinationType,
     DestinationWithAttractionNames,
+    I18nText,
     PointOfInterestTypeEnum
 } from '@repo/schemas';
 import {
@@ -503,11 +504,16 @@ export class DestinationModel extends BaseModelImpl<Destination> {
             Array<{
                 readonly id: string;
                 readonly slug: string;
-                readonly lat: number;
-                readonly long: number;
+                // HOS-138: nullable coordinates — a coordinate-less POI still
+                // renders in the list; it just has no map pin (spec §6.2/§6.4).
+                readonly lat: number | null;
+                readonly long: number | null;
                 readonly type: PointOfInterestTypeEnum;
+                readonly nameI18n: I18nText | null;
                 readonly description: string | null;
+                readonly descriptionI18n: I18nText | null;
                 readonly icon: string | null;
+                readonly hasOwnPage: boolean;
                 readonly isFeatured: boolean;
                 readonly isBuiltin: boolean;
                 readonly displayWeight: number;
@@ -525,8 +531,11 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                     lat: pointsOfInterest.lat,
                     long: pointsOfInterest.long,
                     type: pointsOfInterest.type,
+                    nameI18n: pointsOfInterest.nameI18n,
                     description: pointsOfInterest.description,
+                    descriptionI18n: pointsOfInterest.descriptionI18n,
                     icon: pointsOfInterest.icon,
+                    hasOwnPage: pointsOfInterest.hasOwnPage,
                     isFeatured: pointsOfInterest.isFeatured,
                     isBuiltin: pointsOfInterest.isBuiltin,
                     displayWeight: pointsOfInterest.displayWeight
@@ -544,11 +553,14 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                 Array<{
                     readonly id: string;
                     readonly slug: string;
-                    readonly lat: number;
-                    readonly long: number;
+                    readonly lat: number | null;
+                    readonly long: number | null;
                     readonly type: PointOfInterestTypeEnum;
+                    readonly nameI18n: I18nText | null;
                     readonly description: string | null;
+                    readonly descriptionI18n: I18nText | null;
                     readonly icon: string | null;
+                    readonly hasOwnPage: boolean;
                     readonly isFeatured: boolean;
                     readonly isBuiltin: boolean;
                     readonly displayWeight: number;
@@ -562,8 +574,11 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                     lat: row.lat,
                     long: row.long,
                     type: row.type as PointOfInterestTypeEnum,
+                    nameI18n: row.nameI18n,
                     description: row.description,
+                    descriptionI18n: row.descriptionI18n,
                     icon: row.icon,
+                    hasOwnPage: row.hasOwnPage,
                     isFeatured: row.isFeatured,
                     isBuiltin: row.isBuiltin,
                     displayWeight: row.displayWeight

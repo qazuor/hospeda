@@ -56,6 +56,18 @@ describe('generateSlug (AccommodationService)', () => {
         findOneMock.mockRejectedValue(new Error('DB error'));
         await expect(generateSlug('hotel', 'Error Name')).rejects.toThrow('DB error');
     });
+
+    // BETA-172 regression: a long onboarding-imported name must never produce
+    // a slug exceeding AccommodationSchema.slug.max(50).
+    it('truncates the generated slug to 50 chars for a long imported name', async () => {
+        findOneMock.mockResolvedValue(null);
+        const slug = await generateSlug(
+            'hotel',
+            'A Very Long Accommodation Name Imported From An External Onboarding Source'
+        );
+        expect(slug.length).toBeLessThanOrEqual(50);
+        expect(slug.endsWith('-')).toBe(false);
+    });
 });
 
 // ---------------------------------------------------------------------------

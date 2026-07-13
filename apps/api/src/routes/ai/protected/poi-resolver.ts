@@ -192,6 +192,20 @@ export async function resolvePoiConstraint({
         }
         const { lat, long } = poiResult.data;
 
+        // HOS-138: `lat`/`long` are nullable (78% of the POI v2 dataset has no
+        // coordinates yet). A coordinate-less primary POI cannot center a
+        // proximity search — degrade to a skipped constraint (`{ kind: 'none' }`),
+        // consistent with every other non-fatal failure path here, rather than
+        // forwarding a `null` into the `constrain` variant's numeric coordinates
+        // (spec §6.2, R-1).
+        if (lat === null || long === null) {
+            apiLogger.warn(
+                { poiSlugs, primarySlug },
+                'search-chat: primary poi has no coordinates (non-fatal, constraint skipped)'
+            );
+            return { kind: 'none' };
+        }
+
         const destinationResult =
             await pointOfInterestService.getDestinationIdsByPointOfInterestSlugs(actor, {
                 slugs: [...poiSlugs]

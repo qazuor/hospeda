@@ -913,6 +913,10 @@
             "title": "No recommendations right now",
             "body": "Check back later or browse our full accommodation catalog."
         },
-        "entitlementRequired": "This feature isn't available for your account."
+        "upgrade": {
+            "title": "Suggestions for you",
+            "message": "Personalized suggestions are available on the Plus and VIP plans. Upgrade your plan to access them.",
+            "cta": "View plans"
+        }
     }
 }

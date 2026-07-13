@@ -53,7 +53,9 @@ describe('HOS-101: standalone data-migrate CLI initializes the DB', () => {
             const combined = `${stdout}\n${stderr}`;
 
             expect(combined).not.toContain('Database not initialized');
-            expect(code).toBe(0);
+            // Surface the CLI's own output when it exits non-zero so a CI-only
+            // failure is diagnosable instead of a bare "expected 1 to be 0".
+            expect(code, `CLI exited ${code}. Output:\n${combined}`).toBe(0);
         }
     );
 
@@ -62,11 +64,17 @@ describe('HOS-101: standalone data-migrate CLI initializes the DB', () => {
         async () => {
             const first = await runCli(['--data-migrate']);
             expect(`${first.stdout}\n${first.stderr}`).not.toContain('Database not initialized');
-            expect(first.code).toBe(0);
+            expect(
+                first.code,
+                `CLI exited ${first.code}. Output:\n${first.stdout}\n${first.stderr}`
+            ).toBe(0);
 
             // Second run is a no-op via the seed_migrations ledger.
             const second = await runCli(['--data-migrate']);
-            expect(second.code).toBe(0);
+            expect(
+                second.code,
+                `CLI (2nd run) exited ${second.code}. Output:\n${second.stdout}\n${second.stderr}`
+            ).toBe(0);
         }
     );
 });

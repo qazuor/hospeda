@@ -29,7 +29,7 @@
     },
     "monthlyOnly": "Monthly plan only",
     "owner": {
-        "title": "Plans for owners — Hospeda",
+        "title": "Plans for owners",
         "description": "Publish your accommodation with the plan that best fits your business.",
         "tagline": "Plans and pricing",
         "heading": "Plans for owners",
@@ -39,7 +39,7 @@
         "cardsHeading": "Owner plan comparison"
     },
     "tourist": {
-        "title": "Plans for travelers — Hospeda",
+        "title": "Plans for travelers",
         "description": "Subscribe and enjoy exclusive benefits on your trips around the litoral region.",
         "tagline": "Plans and pricing",
         "heading": "Plans for travelers",
@@ -55,12 +55,12 @@
         "teaserText": "Compare every feature, benefit and limit side by side.",
         "owner": {
             "heading": "Detailed owner plan comparison",
-            "title": "Owner plan comparison — Hospeda",
+            "title": "Owner plan comparison",
             "description": "Compare all features, benefits and limits of each owner plan."
         },
         "tourist": {
             "heading": "Detailed traveler plan comparison",
-            "title": "Traveler plan comparison — Hospeda",
+            "title": "Traveler plan comparison",
             "description": "Compare all features, benefits and limits of each traveler plan."
         }
     }

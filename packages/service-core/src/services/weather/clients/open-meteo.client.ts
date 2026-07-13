@@ -3,7 +3,22 @@ import { mapWmoCodeToCondition } from '../wmo-codes.js';
 import type { OpenMeteoClientConfig, OpenMeteoCoordinates, OpenMeteoFetchResult } from './types.js';
 
 const DEFAULT_BASE_URL = 'https://api.open-meteo.com';
-const DEFAULT_TIMEOUT_MS = 10000;
+const DEFAULT_TIMEOUT_MS = 15000;
+const DEFAULT_MAX_RETRIES = 2;
+const DEFAULT_RETRY_BACKOFF_MS = 500;
+
+/**
+ * Outcome of a single Open-Meteo attempt. `retryable` marks failures that a
+ * subsequent attempt might recover (transient: request timeout/abort, network
+ * error, HTTP 429, HTTP 5xx). Non-transient failures (HTTP 4xx other than 429,
+ * empty payload, schema validation) are terminal and never retried.
+ */
+interface OpenMeteoAttemptResult extends OpenMeteoFetchResult {
+    retryable: boolean;
+}
+
+/** Resolves after `ms` milliseconds. */
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Number of daily forecast days requested (Open-Meteo free maximum).
@@ -61,29 +76,60 @@ interface OpenMeteoForecastRaw {
 export class OpenMeteoClient {
     private readonly baseUrl: string;
     private readonly timeoutMs: number;
+    private readonly maxRetries: number;
+    private readonly retryBackoffMs: number;
 
     constructor(config: OpenMeteoClientConfig = {}) {
         this.baseUrl = config.baseUrl ?? DEFAULT_BASE_URL;
         this.timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+        this.maxRetries = config.maxRetries ?? DEFAULT_MAX_RETRIES;
+        this.retryBackoffMs = config.retryBackoffMs ?? DEFAULT_RETRY_BACKOFF_MS;
     }
 
     /**
-     * Fetches current conditions + 16-day daily forecast for one coordinate.
+     * Fetches current conditions + 16-day daily forecast for one coordinate,
+     * retrying transient failures with exponential backoff.
+     *
+     * A transient failure (request timeout/abort, network error, HTTP 429, HTTP
+     * 5xx) is retried up to {@link OpenMeteoClientConfig.maxRetries} times — this
+     * is what tolerates the intermittent event-loop-starvation timeouts the cron
+     * hits when the API process is under load (HOS-154). Terminal failures (HTTP
+     * 4xx other than 429, empty payload, schema validation) return immediately.
      *
      * @param coordinates - Latitude/longitude to fetch.
-     * @returns A {@link OpenMeteoFetchResult}; `weather` is `null` on any error.
+     * @returns A {@link OpenMeteoFetchResult}; `weather` is `null` on any error,
+     *   carrying the last attempt's error message.
      */
     async fetchForecast(coordinates: OpenMeteoCoordinates): Promise<OpenMeteoFetchResult> {
-        const fetchedAt = new Date();
         const url = this.buildUrl(coordinates);
+        let last: OpenMeteoAttemptResult = await this.fetchForecastOnce(url);
+
+        for (
+            let attempt = 0;
+            last.weather === null && last.retryable && attempt < this.maxRetries;
+            attempt += 1
+        ) {
+            await sleep(this.retryBackoffMs * 2 ** attempt);
+            last = await this.fetchForecastOnce(url);
+        }
+
+        return { weather: last.weather, error: last.error, fetchedAt: last.fetchedAt };
+    }
+
+    /** A single Open-Meteo attempt. Classifies failures as retryable or terminal. */
+    private async fetchForecastOnce(url: string): Promise<OpenMeteoAttemptResult> {
+        const fetchedAt = new Date();
 
         try {
             const response = await this.fetchWithTimeout(url);
             if (!response.ok) {
+                // 429 (rate limit) and 5xx (server) are transient; other 4xx are terminal.
+                const retryable = response.status === 429 || response.status >= 500;
                 return {
                     weather: null,
                     error: `Open-Meteo responded ${response.status} ${response.statusText}`,
-                    fetchedAt
+                    fetchedAt,
+                    retryable
                 };
             }
 
@@ -92,7 +138,12 @@ export class OpenMeteoClient {
             // partial response): mapping it would fabricate plausible 0°C / unknown
             // data. Treat it as a failure so the cron keeps the last good cache.
             if (!raw.current || !raw.daily?.time || raw.daily.time.length === 0) {
-                return { weather: null, error: 'Open-Meteo returned an empty payload', fetchedAt };
+                return {
+                    weather: null,
+                    error: 'Open-Meteo returned an empty payload',
+                    fetchedAt,
+                    retryable: false
+                };
             }
             const weather = this.mapResponse(raw, fetchedAt);
             const parsed = DestinationWeatherCacheSchema.safeParse(weather);
@@ -100,14 +151,21 @@ export class OpenMeteoClient {
                 return {
                     weather: null,
                     error: `Open-Meteo payload failed validation: ${parsed.error.message}`,
-                    fetchedAt
+                    fetchedAt,
+                    retryable: false
                 };
             }
 
-            return { weather: parsed.data, fetchedAt };
+            return { weather: parsed.data, fetchedAt, retryable: false };
         } catch (error) {
+            // fetch() rejects on network error or on abort (our timeout) — both transient.
             const message = error instanceof Error ? error.message : 'unknown error';
-            return { weather: null, error: `Open-Meteo request failed: ${message}`, fetchedAt };
+            return {
+                weather: null,
+                error: `Open-Meteo request failed: ${message}`,
+                fetchedAt,
+                retryable: true
+            };
         }
     }
 

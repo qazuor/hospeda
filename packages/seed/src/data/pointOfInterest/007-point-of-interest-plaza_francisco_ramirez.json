@@ -6,6 +6,46 @@
     "long": -58.238,
     "type": "PLAZA",
     "description": "Plaza principal e histórica del centro de la ciudad",
+    "nameI18n": {
+        "es": "Plaza Francisco Ramírez",
+        "en": "Francisco Ramírez Square",
+        "pt": "Praça Francisco Ramírez"
+    },
+    "descriptionI18n": {
+        "es": "Plaza principal e histórica del centro de la ciudad",
+        "en": "Plaza principal e histórica del centro de la ciudad",
+        "pt": "Plaza principal e histórica del centro de la ciudad"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        },
+        "description": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        }
+    },
     "icon": "location_city",
     "isBuiltin": true,
     "isFeatured": true,

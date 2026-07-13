@@ -233,6 +233,49 @@ describe('resolvePoiConstraint', () => {
         expect(getDestinationIdsByPointOfInterestSlugsMock).not.toHaveBeenCalled();
     });
 
+    it('degrades to { kind: "none" } (non-fatal) and logs a warning when the primary POI has null coordinates (HOS-138 AC-4)', async () => {
+        getBySlugMock.mockResolvedValue({
+            data: {
+                id: 'poi-no-coords',
+                slug: 'municipalidad_concordia',
+                lat: null,
+                long: null
+            }
+        });
+
+        const result = await resolvePoiConstraint({
+            actor,
+            poiSlugs: ['municipalidad_concordia'],
+            currentDestinationIds: undefined
+        });
+
+        expect(result).toEqual({ kind: 'none' });
+        expect(mockApiLogger.warn).toHaveBeenCalled();
+        // The constraint is skipped BEFORE the destination lookup runs — a
+        // coordinate-less POI can never reach the numeric proximity path.
+        expect(getDestinationIdsByPointOfInterestSlugsMock).not.toHaveBeenCalled();
+    });
+
+    it('degrades to { kind: "none" } when only long is null (partial coordinates, HOS-138 AC-4)', async () => {
+        getBySlugMock.mockResolvedValue({
+            data: {
+                id: 'poi-partial-coords',
+                slug: 'terminal_omnibus_colon',
+                lat: -32.22,
+                long: null
+            }
+        });
+
+        const result = await resolvePoiConstraint({
+            actor,
+            poiSlugs: ['terminal_omnibus_colon'],
+            currentDestinationIds: undefined
+        });
+
+        expect(result).toEqual({ kind: 'none' });
+        expect(getDestinationIdsByPointOfInterestSlugsMock).not.toHaveBeenCalled();
+    });
+
     it('degrades to { kind: "none" } (non-fatal) and logs a warning when the destination-lookup service errors', async () => {
         getBySlugMock.mockResolvedValue(AUTODROMO_POI);
         getDestinationIdsByPointOfInterestSlugsMock.mockResolvedValue({

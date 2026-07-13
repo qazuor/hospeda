@@ -196,14 +196,14 @@
             "timeoutTitle": "Está demorando mais que o normal",
             "timeoutSubtitle": "Seu pagamento pode ainda estar sendo processado. Verifique sua conta em alguns minutos para confirmar sua assinatura.",
             "cta": "Ir para minha conta",
-            "pageTitle": "Pagamento aprovado — Hospeda",
+            "pageTitle": "Pagamento aprovado",
             "promoIgnoredNote": "Seu código de desconto não foi aplicado porque você ativou o período de teste grátis."
         },
         "pending": {
             "title": "Seu pagamento está sendo processado",
             "body": "Pode levar até 24 horas para confirmar. Vamos te avisar por email quando for aprovado.",
             "cta": "Verificar status",
-            "pageTitle": "Pagamento em processamento — Hospeda"
+            "pageTitle": "Pagamento em processamento"
         },
         "failure": {
             "title": "Não foi possível processar o pagamento",
@@ -214,7 +214,7 @@
             "reasonInvalidData": "Dados do cartão inválidos",
             "retryCta": "Tentar novamente",
             "supportCta": "Falar com o suporte",
-            "pageTitle": "Pagamento recusado — Hospeda"
+            "pageTitle": "Pagamento recusado"
         },
         "button": {
             "cta": "Contratar",

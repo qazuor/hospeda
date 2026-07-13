@@ -6,6 +6,8 @@
  * 2. Handle Server Island requests (skip locale enforcement; no session
  *    parse — see the Step 2 block below for why)
  * 3. Enforce trailing slash (301 redirect before Astro resolves the route)
+ * 3.1. Legacy URL aliases (e.g. `/mi-cuenta/messages` -> `/mi-cuenta/consultas`,
+ *      `/blog` -> `/publicaciones`) redirect before locale/route resolution
  * 4. Extract and validate locale from URL path; redirect invalid locales to default
  * 5. Set validated locale in context.locals
  * 6. Parse session only for routes that need it (protected + auth)
@@ -112,6 +114,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
         const tail = legacyMessagesMatch[2] ?? '/';
         const search = context.url.search;
         return context.redirect(`/${localeSegment}/mi-cuenta/consultas${tail}${search}`, 308);
+    }
+
+    // Step 3.2 (BETA-162): Legacy/natural URL alias — the blog lives at
+    // `/{locale}/publicaciones/` but `/{locale}/blog` is the URL a user or
+    // search engine would naturally type/guess. It 404'd with no redirect.
+    // Permanent 301 (not 308, per BETA-162) since this is a one-way SEO/UX
+    // alias, not a deep-link-preserving rename like the messages case above.
+    const legacyBlogMatch = path.match(/^\/(es|en|pt)\/blog(\/.*)?$/);
+    if (legacyBlogMatch) {
+        const localeSegment = legacyBlogMatch[1];
+        const tail = legacyBlogMatch[2] ?? '/';
+        const search = context.url.search;
+        return context.redirect(`/${localeSegment}/publicaciones${tail}${search}`, 301);
     }
 
     // Step 4: Extract and validate locale from the URL path.

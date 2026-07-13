@@ -6,6 +6,46 @@
     "long": -58.115,
     "type": "BEACH",
     "description": "Balneario sobre el río Uruguay cercano a la ciudad de Colón",
+    "nameI18n": {
+        "es": "Balneario Itapé",
+        "en": "Itapé Beach Resort",
+        "pt": "Balneário Itapé"
+    },
+    "descriptionI18n": {
+        "es": "Balneario sobre el río Uruguay cercano a la ciudad de Colón",
+        "en": "Balneario sobre el río Uruguay cercano a la ciudad de Colón",
+        "pt": "Balneario sobre el río Uruguay cercano a la ciudad de Colón"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        },
+        "description": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        }
+    },
     "icon": "beach_access",
     "isBuiltin": true,
     "isFeatured": false,
