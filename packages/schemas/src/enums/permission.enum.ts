@@ -118,6 +118,8 @@ export enum PermissionEnum {
     ACCOMMODATION_IA_SUGGESTIONS_VIEW = 'accommodation.iaSuggestions.view', // Allows viewing AI suggestions for accommodations.
     ACCOMMODATION_IA_CONTENT_APPROVE = 'accommodation.iaContent.approve', // Allows approving AI-generated content for accommodations.
     ACCOMMODATION_SLUG_MANAGE = 'accommodation.slug.manage', // Allows managing accommodation slugs.
+    ACCOMMODATION_OCCUPANCY_MANAGE = 'accommodation.occupancy.manage', // HOS-43: Allows managing (create/toggle/delete) an accommodation's occupancy calendar.
+    ACCOMMODATION_OCCUPANCY_VIEW = 'accommodation.occupancy.view', // HOS-43: Allows viewing an accommodation's occupancy calendar.
 
     // ACCOMMODATION: Granular section permissions
     ACCOMMODATION_BASIC_INFO_EDIT = 'accommodation.basicInfo.edit', // Allows editing basic accommodation information
