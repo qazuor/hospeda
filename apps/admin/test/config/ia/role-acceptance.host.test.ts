@@ -82,8 +82,14 @@ const HOST_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.OWNER_PROMOTION_RESTORE_OWN,
     PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_OWN,
     // ACCESS: Basic access
+    // NOTE (HOS-152): ACCESS_PANEL_ADMIN was REMOVED from HOST's real grant —
+    // HOST/COMMERCE_OWNER must never reach the admin panel (see
+    // packages/seed/src/required/rolePermissions.seed.ts). A real HOST is
+    // bounced by apps/admin/src/lib/authed-guard.ts before any of this nav
+    // config ever renders; this array still mirrors HOST's real grant for the
+    // nav-config-engine tests below, which exercise `hasSidebarAccessibleItem`
+    // in isolation (independent of the auth-guard gate).
     PermissionEnum.DASHBOARD_BASE_VIEW,
-    PermissionEnum.ACCESS_PANEL_ADMIN,
     PermissionEnum.ACCESS_API_PUBLIC,
     // MEDIA
     PermissionEnum.MEDIA_UPLOAD,
@@ -218,7 +224,7 @@ describe(`AC-10 — ${RoleEnum.HOST} role navigation`, () => {
 
     // ── Visible sections for HOST's real permissions ─────────────────────────
 
-    it('inicio sidebar is accessible for HOST (has ACCESS_PANEL_ADMIN)', () => {
+    it('inicio sidebar still occupies the sidebar for HOST despite lacking ACCESS_PANEL_ADMIN (HOS-152)', () => {
         // Arrange
         const sidebar = validatedConfig.sidebars.inicioSidebar;
 
@@ -228,7 +234,13 @@ describe(`AC-10 — ${RoleEnum.HOST} role navigation`, () => {
             userPermissions: HOST_PERMISSIONS
         });
 
-        // Assert — HOST has ACCESS_PANEL_ADMIN, which gates both inicio items
+        // Assert — both inicio items are gated by ACCESS_PANEL_ADMIN, which HOST no
+        // longer has (HOS-152). They still count as "accessible" here because
+        // neither item sets `onMissing: 'hide'` (default is 'disable'), so a
+        // disabled item still occupies the sidebar per hasSidebarAccessibleItem's
+        // contract — this only describes the nav-config engine's own semantics,
+        // NOT whether a real HOST can reach this sidebar at all: a real HOST never
+        // renders it, being bounced by apps/admin/src/lib/authed-guard.ts first.
         expect(accessible).toBe(true);
     });
 

@@ -83,8 +83,15 @@ test.describe('HOST-04: paid plan cancellation, grace, expiration @p0 @host @bil
         });
 
         // ── 1. Active state: write succeeds ────────────────────────────────
+        // Owner-scoped protected PUT — the same route the web editor calls.
+        // The paywall/grace behaviour is enforced inside
+        // `AccommodationService.update()`'s subscription eligibility gate
+        // (SPEC-217), independent of the route tier, so this asserts the real
+        // billing behaviour rather than the admin-panel-access 403 the old
+        // admin-route call would now return for ANY host regardless of
+        // subscription state (HOS-152).
         const activeWrite = await page.request.put(
-            `${API_URL}/api/v1/admin/accommodations/${accommodation.id}`,
+            `${API_URL}/api/v1/protected/accommodations/${accommodation.id}`,
             {
                 data: { name: 'Edited while active' },
                 headers: { cookie: host.sessionCookie }
@@ -108,7 +115,7 @@ test.describe('HOST-04: paid plan cancellation, grace, expiration @p0 @host @bil
 
         // Grace period: read still succeeds.
         const graceRead = await page.request.get(
-            `${API_URL}/api/v1/admin/accommodations/${accommodation.id}`,
+            `${API_URL}/api/v1/protected/accommodations/${accommodation.id}`,
             { headers: { cookie: host.sessionCookie } }
         );
         expect(graceRead.ok(), `read must succeed during grace (got ${graceRead.status()})`).toBe(
@@ -117,7 +124,7 @@ test.describe('HOST-04: paid plan cancellation, grace, expiration @p0 @host @bil
 
         // Grace period: write also succeeds because the period is paid through.
         const graceWrite = await page.request.put(
-            `${API_URL}/api/v1/admin/accommodations/${accommodation.id}`,
+            `${API_URL}/api/v1/protected/accommodations/${accommodation.id}`,
             {
                 data: { name: 'Edited during grace' },
                 headers: { cookie: host.sessionCookie }
@@ -133,7 +140,7 @@ test.describe('HOST-04: paid plan cancellation, grace, expiration @p0 @host @bil
 
         // Read still succeeds — read-only mode is not auth failure.
         const expiredRead = await page.request.get(
-            `${API_URL}/api/v1/admin/accommodations/${accommodation.id}`,
+            `${API_URL}/api/v1/protected/accommodations/${accommodation.id}`,
             { headers: { cookie: host.sessionCookie } }
         );
         expect(
@@ -143,7 +150,7 @@ test.describe('HOST-04: paid plan cancellation, grace, expiration @p0 @host @bil
 
         // Write now blocked with paywall code.
         const expiredWrite = await page.request.put(
-            `${API_URL}/api/v1/admin/accommodations/${accommodation.id}`,
+            `${API_URL}/api/v1/protected/accommodations/${accommodation.id}`,
             {
                 data: { name: 'Should be blocked after expiration' },
                 headers: { cookie: host.sessionCookie }

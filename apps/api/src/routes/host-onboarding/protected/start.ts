@@ -7,8 +7,8 @@
  * `ACCOMMODATION_CREATE` permission. It encodes two terminal states the
  * caller can hit:
  *
- *  - `created`     - a fresh DRAFT was inserted and the user can resume on
- *                    the admin panel to fill in the rest. When the actor is
+ *  - `created`     - a fresh DRAFT was inserted and the user can fill in the
+ *                    rest from the web self-service editor. When the actor is
  *                    already HOST (or higher) the role promotion is a no-op
  *                    but the DRAFT is still created so their input is not lost.
  *  - `resumed`     - the user already had an active DRAFT; reuse that one.
@@ -26,6 +26,7 @@ import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
+import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { enforceAccommodationLimit } from '../../../middlewares/limit-enforcement';
 import { BillingCustomerSyncService } from '../../../services/billing-customer-sync';
 import { getActorFromContext } from '../../../utils/actor';
@@ -108,6 +109,15 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
                         { userId: actor.id, customerId },
                         'host-onboarding/start: billing customer ensured'
                     );
+                    // This same request ran the global entitlementMiddleware BEFORE
+                    // the handler promoted the actor USER -> HOST, so the entitlement
+                    // cache (keyed by customerId, 5-min TTL) now holds the pre-promotion
+                    // tourist-free set — which lacks EDIT_ACCOMMODATION_INFO. Without
+                    // invalidation, the host's very next request (e.g. editing their
+                    // fresh DRAFT via PATCH /protected/accommodations/:id) would read the
+                    // stale set and 403 for up to 5 minutes. Drop the cache so the next
+                    // load resolves the owner-basico HOST fallback. (HOS-152)
+                    clearEntitlementCache(customerId);
                 }
             } catch (billingError) {
                 // Should never reach here (throwOnError: false), but guard anyway.

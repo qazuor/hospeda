@@ -224,6 +224,8 @@
             "publishError": "Could not publish. Please try again.",
             "publishSubscriptionRequiredMessage": "You already used your free 14-day trial. Subscribe to a plan to publish this property.",
             "publishSubscriptionRequiredCta": "View plans",
+            "publishIncompleteCapacityMessage": "Capacity details (guests, bedrooms, or bathrooms) are missing. Complete them in the editor before publishing.",
+            "publishIncompleteCapacityCta": "Complete in editor",
             "priceOnRequest": "Price on request"
         },
         "editor": {

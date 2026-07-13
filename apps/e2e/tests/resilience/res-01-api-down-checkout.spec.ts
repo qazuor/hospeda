@@ -78,10 +78,13 @@ test.describe('RES-01: API down during checkout → retry, no duplicates @p0 @re
         });
 
         // ── 1. First publish fails 5xx, no subscription row created ───────
-        const firstAttempt = await page.request.patch(
-            `${API_URL}/api/v1/admin/accommodations/${accommodation.id}`,
+        // Owner-scoped protected publish endpoint (POST .../publish) — the
+        // same route the web editor's "Publicar" button calls, and the only
+        // route that carries a `lifecycleState` transition (the protected
+        // PATCH/PUT schema has no such field, HOS-110).
+        const firstAttempt = await page.request.post(
+            `${API_URL}/api/v1/protected/accommodations/${accommodation.id}/publish`,
             {
-                data: { lifecycleState: 'ACTIVE' },
                 headers: { cookie: host.sessionCookie }
             }
         );
@@ -102,10 +105,9 @@ test.describe('RES-01: API down during checkout → retry, no duplicates @p0 @re
         ).toBe(0);
 
         // ── 2. Retry: failNext queue is now empty → call succeeds ─────────
-        const retry = await page.request.patch(
-            `${API_URL}/api/v1/admin/accommodations/${accommodation.id}`,
+        const retry = await page.request.post(
+            `${API_URL}/api/v1/protected/accommodations/${accommodation.id}/publish`,
             {
-                data: { lifecycleState: 'ACTIVE' },
                 headers: { cookie: host.sessionCookie }
             }
         );

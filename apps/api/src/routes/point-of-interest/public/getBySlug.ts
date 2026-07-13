@@ -17,9 +17,10 @@ const pointOfInterestService = new PointOfInterestService({ logger: apiLogger })
  * Get point of interest by slug - Public endpoint
  *
  * The slug regex allows underscores (unlike `attraction`'s hyphen-only
- * pattern) — POI slugs are the `@repo/i18n` key (`destinations.poiNames.<slug>`,
- * HOS-113 OQ-2) and mirror the amenity/feature underscore convention
- * (SPEC-266), matching `PointOfInterestSchema.shape.slug` exactly.
+ * pattern) — POIs carry no `name` column (HOS-113 OQ-2; display names come
+ * from `nameI18n` since HOS-138) and the slug mirrors the amenity/feature
+ * underscore convention (SPEC-266), matching
+ * `PointOfInterestSchema.shape.slug` exactly.
  */
 export const publicGetPointOfInterestBySlugRoute = createPublicRoute({
     method: 'get',

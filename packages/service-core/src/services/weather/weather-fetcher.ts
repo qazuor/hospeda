@@ -19,7 +19,7 @@ export interface WeatherFetchSummary {
     /** Destinations whose cache was successfully refreshed (0 in dry-run). */
     updated: number;
     /** Per-destination failures; the run continues past each. */
-    errors: ReadonlyArray<{ destinationId: string; error: string }>;
+    errors: ReadonlyArray<{ destinationId: string; slug: string; error: string }>;
 }
 
 const PAGE_SIZE = 200;
@@ -97,12 +97,16 @@ export class WeatherFetcher {
         results: DestinationFetchResult[],
         input: { dryRun: boolean; tx?: DrizzleClient }
     ): Promise<WeatherFetchSummary> {
-        const errors: Array<{ destinationId: string; error: string }> = [];
+        const errors: Array<{ destinationId: string; slug: string; error: string }> = [];
         let updated = 0;
 
         for (const { destination, weather, error } of results) {
             if (!weather) {
-                errors.push({ destinationId: destination.id, error: error ?? 'unknown error' });
+                errors.push({
+                    destinationId: destination.id,
+                    slug: destination.slug,
+                    error: error ?? 'unknown error'
+                });
                 continue;
             }
 

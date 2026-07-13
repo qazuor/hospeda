@@ -269,6 +269,79 @@ describe('PointOfInterestSchema', () => {
         });
     });
 
+    describe('POI v2 fields (HOS-138, AC-2)', () => {
+        const baseData = createMinimalPointOfInterest;
+
+        it('should accept null lat and null long (nullable coordinates)', () => {
+            expect(() =>
+                PointOfInterestSchema.parse({ ...baseData(), lat: null, long: null })
+            ).not.toThrow();
+
+            const result = PointOfInterestSchema.parse({ ...baseData(), lat: null, long: null });
+            expect(result.lat).toBeNull();
+            expect(result.long).toBeNull();
+        });
+
+        it('should still validate lat/long bounds when a coordinate IS provided', () => {
+            expect(() => PointOfInterestSchema.parse({ ...baseData(), lat: 91, long: 0 })).toThrow(
+                ZodError
+            );
+        });
+
+        it('should accept nameI18n / descriptionI18n as I18nText objects', () => {
+            const data = {
+                ...baseData(),
+                nameI18n: { es: 'Palacio San José', en: 'San José Palace', pt: 'Palácio San José' },
+                descriptionI18n: { es: 'Museo', en: 'Museum', pt: 'Museu' }
+            };
+            const result = PointOfInterestSchema.parse(data);
+            expect(result.nameI18n?.en).toBe('San José Palace');
+            expect(result.descriptionI18n?.pt).toBe('Museu');
+        });
+
+        it('should accept translationMeta metadata', () => {
+            const data = {
+                ...baseData(),
+                translationMeta: {
+                    name: {
+                        es: { autoTranslated: false, translatedAt: '2026-07-12T00:00:00.000Z' }
+                    }
+                }
+            };
+            expect(() => PointOfInterestSchema.parse(data)).not.toThrow();
+        });
+
+        it('should accept address, keywords, hasOwnPage, and curation fields', () => {
+            const data = {
+                ...baseData(),
+                address: 'Ruta 39 km 128',
+                keywords: ['museo', 'historia', 'urquiza'],
+                hasOwnPage: true,
+                verified: true,
+                verifiedAt: new Date('2026-07-12T00:00:00.000Z'),
+                source: 'chatgpt-dataset-2026-07',
+                notes: 'Curated by ops'
+            };
+            const result = PointOfInterestSchema.parse(data);
+            expect(result.address).toBe('Ruta 39 km 128');
+            expect(result.keywords).toEqual(['museo', 'historia', 'urquiza']);
+            expect(result.hasOwnPage).toBe(true);
+            expect(result.verified).toBe(true);
+            expect(result.source).toBe('chatgpt-dataset-2026-07');
+        });
+
+        it('should default hasOwnPage and verified to false when omitted', () => {
+            const result = PointOfInterestSchema.parse(baseData());
+            expect(result.hasOwnPage).toBe(false);
+            expect(result.verified).toBe(false);
+        });
+
+        it('should reject more than 30 keywords', () => {
+            const data = { ...baseData(), keywords: Array.from({ length: 31 }, (_, i) => `k${i}`) };
+            expect(() => PointOfInterestSchema.parse(data)).toThrow(ZodError);
+        });
+    });
+
     describe('Schema Composition', () => {
         it('should include all base field schemas', () => {
             const validData = createValidPointOfInterest();

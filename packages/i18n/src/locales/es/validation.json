@@ -3009,6 +3009,11 @@
         }
     },
     "pointOfInterest": {
+        "address": {
+            "required": "La dirección es obligatoria",
+            "min": "La dirección debe tener al menos {{min}} caracteres",
+            "max": "La dirección no puede superar los {{max}} caracteres"
+        },
         "bulkAdd": {
             "pointOfInterestIds": {
                 "max": "El point of interest ids no puede superar los {{max}} caracteres",
@@ -3037,6 +3042,13 @@
             "min": "El ícono debe tener al menos {{min}} caracteres",
             "required": "El ícono es obligatorio"
         },
+        "keywords": {
+            "item": {
+                "min": "Cada palabra clave debe tener al menos {{min}} caracteres",
+                "max": "Cada palabra clave no puede superar los {{max}} caracteres"
+            },
+            "max": "No se pueden superar las {{max}} palabras clave"
+        },
         "lat": {
             "max": "El lat no puede superar los {{max}} caracteres",
             "min": "El lat debe tener al menos {{min}} caracteres",
@@ -3053,6 +3065,9 @@
             "min": "El long debe tener al menos {{min}} caracteres",
             "required": "El long es obligatorio"
         },
+        "notes": {
+            "max": "Las notas no pueden superar los {{max}} caracteres"
+        },
         "relation": {
             "notes": {
                 "max": "El notas no puede superar los {{max}} caracteres"
@@ -3067,6 +3082,9 @@
             "min": "El slug debe tener al menos {{min}} caracteres",
             "pattern": "El formato del slug no es válido",
             "required": "El slug es obligatorio"
+        },
+        "source": {
+            "max": "La fuente no puede superar los {{max}} caracteres"
         }
     },
     "positive": "El valor debe ser un número positivo",

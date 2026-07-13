@@ -793,28 +793,23 @@ export const httpToDomainAccommodationCreateDraft = (
           }
         : {}),
 
-    // --- Optional: capacity (→ extraInfo JSONB) ---
-    // Only emits the `extraInfo` block when at least one capacity field is present.
-    // The draft is intentionally partial — the host completes the full listing from
-    // the admin panel. AccommodationCreateInput.extraInfo expects the FULL ExtraInfo
-    // shape (capacity/minNights/bedrooms/bathrooms required), but for a DRAFT we
-    // only persist whatever the import provided. The cast is safe because the DB
-    // column is JSONB (any valid JSON) and the service normalises partial extraInfo
-    // at read time. See also the `extraInfo: AccommodationExtraInfoSchema.partial().nullish()`
-    // pattern on `AccommodationUpdateInputSchema` (SPEC-229).
-    ...(httpData.maxGuests !== undefined ||
-    httpData.bedrooms !== undefined ||
-    httpData.bathrooms !== undefined ||
-    httpData.beds !== undefined
-        ? {
-              extraInfo: {
-                  ...(httpData.maxGuests === undefined ? {} : { capacity: httpData.maxGuests }),
-                  ...(httpData.bedrooms === undefined ? {} : { bedrooms: httpData.bedrooms }),
-                  ...(httpData.bathrooms === undefined ? {} : { bathrooms: httpData.bathrooms }),
-                  ...(httpData.beds === undefined ? {} : { beds: httpData.beds })
-              } as AccommodationCreateInput['extraInfo']
-          }
-        : {}),
+    // --- capacity (→ extraInfo JSONB) ---
+    // ALWAYS emitted, with a server-side `minNights: 1` default. `minNights` is not
+    // exposed on the host-facing write path (neither the HTTP schema nor the web
+    // editor lets a host set it), yet the publish-time capacity guard requires it —
+    // so without this default a self-service draft could never be published (HOS-152).
+    // This mirrors the full-create HTTP mapping, which also force-defaults minNights.
+    // The remaining capacity fields (capacity/bedrooms/bathrooms/beds) stay partial:
+    // the host completes them from the web self-service editor, and the publish guard
+    // enforces their presence at DRAFT → ACTIVE. The cast is safe because the DB column
+    // is JSONB and the read schema now accepts a partial extraInfo (HOS-152).
+    extraInfo: {
+        minNights: 1,
+        ...(httpData.maxGuests === undefined ? {} : { capacity: httpData.maxGuests }),
+        ...(httpData.bedrooms === undefined ? {} : { bedrooms: httpData.bedrooms }),
+        ...(httpData.bathrooms === undefined ? {} : { bathrooms: httpData.bathrooms }),
+        ...(httpData.beds === undefined ? {} : { beds: httpData.beds })
+    } as AccommodationCreateInput['extraInfo'],
 
     // --- Optional: amenity junction sync (SPEC-172 / SPEC-258) ---
     // Pass amenityIds through to the domain input so _beforeCreate captures them

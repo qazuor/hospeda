@@ -6,6 +6,46 @@
     "long": -58.21,
     "type": "BEACH",
     "description": "Extenso banco de arena sobre el río Uruguay, popular balneario natural de la zona",
+    "nameI18n": {
+        "es": "Playa Banco Pelay",
+        "en": "Banco Pelay Beach",
+        "pt": "Praia Banco Pelay"
+    },
+    "descriptionI18n": {
+        "es": "Extenso banco de arena sobre el río Uruguay, popular balneario natural de la zona",
+        "en": "Extenso banco de arena sobre el río Uruguay, popular balneario natural de la zona",
+        "pt": "Extenso banco de arena sobre el río Uruguay, popular balneario natural de la zona"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        },
+        "description": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        }
+    },
     "icon": "beach_access",
     "isBuiltin": true,
     "isFeatured": true,

@@ -224,6 +224,8 @@
             "publishError": "No se pudo publicar. Intentá de nuevo.",
             "publishSubscriptionRequiredMessage": "Ya usaste tu prueba gratis de 14 días. Suscribite a un plan para publicar esta propiedad.",
             "publishSubscriptionRequiredCta": "Ver planes",
+            "publishIncompleteCapacityMessage": "Faltan datos de capacidad (huéspedes, habitaciones o baños). Completalos en el editor antes de publicar.",
+            "publishIncompleteCapacityCta": "Completar en el editor",
             "priceOnRequest": "Precio a consultar"
         },
         "editor": {

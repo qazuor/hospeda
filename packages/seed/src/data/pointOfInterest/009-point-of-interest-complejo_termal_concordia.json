@@ -6,6 +6,46 @@
     "long": -58.0209,
     "type": "OTHER",
     "description": "Parque termal con piscinas de aguas mineromedicinales en la ciudad de Concordia",
+    "nameI18n": {
+        "es": "Complejo Termal de Concordia",
+        "en": "Concordia Thermal Complex",
+        "pt": "Complexo Termal de Concordia"
+    },
+    "descriptionI18n": {
+        "es": "Parque termal con piscinas de aguas mineromedicinales en la ciudad de Concordia",
+        "en": "Parque termal con piscinas de aguas mineromedicinales en la ciudad de Concordia",
+        "pt": "Parque termal con piscinas de aguas mineromedicinales en la ciudad de Concordia"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        },
+        "description": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-12T00:00:00.000Z"
+            }
+        }
+    },
     "icon": "hot_tub",
     "isBuiltin": true,
     "isFeatured": true,

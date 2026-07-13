@@ -91,15 +91,22 @@ type CronTransactionResult =
 /**
  * Destination weather fetch cron job definition.
  *
- * Schedule: Every 12 hours (0 *\/12 * * *)
+ * Schedule: 06:00 and 18:00 UTC (03:00 / 15:00 ART).
  * Purpose: Keep cached destination weather current without per-request external calls.
+ *
+ * HOS-154: moved off the previous `0 *\/12 * * *` (00:00/12:00 UTC = 21:00/09:00
+ * ART) — the 21:00 ART tick landed on a traffic peak, and the extra event-loop
+ * pressure was tripping the per-request Open-Meteo timeout for a subset of
+ * destinations every run. 06:00/18:00 UTC lands on lower-traffic windows. The
+ * job timeout is also raised to 3 min to leave headroom for the client's
+ * per-destination retries.
  */
 export const destinationWeatherFetchJob: CronJobDefinition = {
     name: 'destination-weather-fetch',
     description: 'Refresh cached Open-Meteo weather for published destinations with coordinates',
-    schedule: '0 */12 * * *', // Every 12 hours
+    schedule: '0 6,18 * * *', // 06:00 & 18:00 UTC (03:00 / 15:00 ART) — off-peak (HOS-154)
     enabled: true,
-    timeoutMs: 120000, // 2 minute timeout
+    timeoutMs: 180000, // 3 minute timeout — headroom for per-destination retries (HOS-154)
 
     handler: async (ctx) => {
         const { logger, startedAt, dryRun } = ctx;
@@ -141,6 +148,16 @@ export const destinationWeatherFetchJob: CronJobDefinition = {
                     dryRun,
                     durationMs
                 });
+
+                // HOS-154: surface WHICH destinations failed and why, not just the
+                // count. Without this the soft-failure was indiagnosable from logs.
+                if (summary.errors.length > 0) {
+                    logger.warn('Destination weather fetch had per-destination failures', {
+                        failedCount: summary.errors.length,
+                        processed: summary.processed,
+                        failures: summary.errors.map((e) => `${e.slug}: ${e.error}`)
+                    });
+                }
 
                 return {
                     skipped: false,

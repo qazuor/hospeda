@@ -392,26 +392,41 @@ export async function getAnyCityDestinationId(): Promise<string> {
  * Creates a DRAFT accommodation owned by `ownerId` directly via SQL.
  * Use when a test needs an accommodation but doesn't want to drive the
  * full host-onboarding UI flow.
+ *
+ * `extraInfo` defaults to a COMPLETE capacity payload (`capacity`, `minNights`,
+ * `bedrooms`, `bathrooms` all present) so accommodations created through this
+ * helper clear `AccommodationService.publish()`'s capacity-completeness guard
+ * (HOS-152) and reach the behaviour the calling spec actually targets
+ * (subscription-required, qzpay-timeout, tx-compensation, api-down) instead
+ * of failing earlier with a capacity `VALIDATION_ERROR`. Pass `extraInfo: {}`
+ * (or a partial object) explicitly to test the incomplete-capacity path.
  */
 export async function createAccommodation(options: {
     readonly ownerId: string;
     readonly destinationId?: string;
     readonly slugPrefix?: string;
     readonly lifecycleState?: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+    readonly extraInfo?: Record<string, unknown>;
 }): Promise<CreatedAccommodation> {
     const destinationId = options.destinationId ?? (await getAnyCityDestinationId());
     const slug = `${options.slugPrefix ?? 'e2e-acc'}-${Date.now().toString(36)}-${randomToken(2)}`;
     const lifecycleState = options.lifecycleState ?? 'DRAFT';
+    const extraInfo = options.extraInfo ?? {
+        capacity: 4,
+        minNights: 1,
+        bedrooms: 2,
+        bathrooms: 1
+    };
     const rows = await execSQL<{ id: string }>(
         `INSERT INTO accommodations (
              slug, name, summary, description, type,
              owner_id, destination_id, lifecycle_state,
-             visibility, moderation_state, is_featured,
+             visibility, moderation_state, is_featured, extra_info,
              created_at, updated_at
          ) VALUES (
              $1, $2, $3, $4, $5::accommodation_type_enum,
              $6, $7, $8::lifecycle_status_enum,
-             'PUBLIC'::visibility_enum, 'APPROVED'::moderation_status_enum, false,
+             'PUBLIC'::visibility_enum, 'APPROVED'::moderation_status_enum, false, $9::jsonb,
              NOW(), NOW()
          ) RETURNING id`,
         [
@@ -422,7 +437,8 @@ export async function createAccommodation(options: {
             'HOUSE',
             options.ownerId,
             destinationId,
-            lifecycleState
+            lifecycleState,
+            JSON.stringify(extraInfo)
         ]
     );
     const id = rows[0]?.id;

@@ -116,6 +116,17 @@ export const createMockAccommodation = (overrides: Partial<Accommodation> = {}):
     price: basePrice,
     tags: [],
 
+    // Capacity data (HOS-152): complete by default so tests exercising the
+    // publish flow's completeness guard (AccommodationExtraInfoRequiredForPublishSchema)
+    // pass without every call site having to opt in. Tests covering an
+    // incomplete/DRAFT extraInfo override this explicitly.
+    extraInfo: {
+        capacity: 4,
+        minNights: 1,
+        bedrooms: 2,
+        bathrooms: 1
+    },
+
     ...overrides
 });
 
@@ -162,7 +173,17 @@ export const createMockAccommodationCreateInput = (
 
         // Optional fields
         price: basePrice,
-        tags: []
+        tags: [],
+
+        // Complete capacity by default: the base input is ACTIVE, and the publish
+        // capacity guard (HOS-152/HOS-153) rejects an ACTIVE create with incomplete
+        // extraInfo. Tests exercising the incomplete/DRAFT path override this.
+        extraInfo: {
+            capacity: 4,
+            minNights: 1,
+            bedrooms: 2,
+            bathrooms: 1
+        }
     };
 
     return {
