@@ -13,16 +13,26 @@
             "blockedBy": [],
             "blocks": ["T-002", "T-010"],
             "subtasks": [
-                { "title": "Create poi-pipeline/ dir outside src/", "completed": false },
+                {
+                    "title": "Create poi-pipeline/ dir outside src/",
+                    "completed": false
+                },
                 {
                     "title": "run.ts CLI arg parsing (--dry-run/--limit/--input)",
                     "completed": false
                 },
-                { "title": "Arg-parser unit test", "completed": false }
+                {
+                    "title": "Arg-parser unit test",
+                    "completed": false
+                }
             ],
             "tags": ["setup", "cli"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": "2026-07-13T04:40:00.000Z",
@@ -38,16 +48,26 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-003", "T-006", "T-009"],
             "subtasks": [
-                { "title": "RawCsvRow + GeocodeResult + ConfidenceTier types", "completed": false },
+                {
+                    "title": "RawCsvRow + GeocodeResult + ConfidenceTier types",
+                    "completed": false
+                },
                 {
                     "title": "DESTINATION_SLUG_FIXUPS + REGIONAL_QUALIFIER + AUTO_GEOCODE_MARKER consts",
                     "completed": false
                 },
-                { "title": "Constants smoke test", "completed": false }
+                {
+                    "title": "Constants smoke test",
+                    "completed": false
+                }
             ],
             "tags": ["setup", "types"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": "2026-07-13T05:00:00.000Z",
@@ -63,13 +83,26 @@
             "blockedBy": ["T-002"],
             "blocks": ["T-004", "T-009"],
             "subtasks": [
-                { "title": "CSV parse with BOM + quoted-field handling", "completed": false },
-                { "title": "Semicolon multi-value splitting helper", "completed": false },
-                { "title": "Loader unit tests + 914-count assert", "completed": false }
+                {
+                    "title": "CSV parse with BOM + quoted-field handling",
+                    "completed": false
+                },
+                {
+                    "title": "Semicolon multi-value splitting helper",
+                    "completed": false
+                },
+                {
+                    "title": "Loader unit tests + 914-count assert",
+                    "completed": false
+                }
             ],
             "tags": ["core", "loader"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": "2026-07-13T05:15:00.000Z",
@@ -85,13 +118,26 @@
             "blockedBy": ["T-003"],
             "blocks": ["T-005", "T-013"],
             "subtasks": [
-                { "title": "Load real destination fixture slug set", "completed": false },
-                { "title": "Reconcile + fail-loud on unmapped", "completed": false },
-                { "title": "Tests: 2 fixups, direct matches, abort on unknown", "completed": false }
+                {
+                    "title": "Load real destination fixture slug set",
+                    "completed": false
+                },
+                {
+                    "title": "Reconcile + fail-loud on unmapped",
+                    "completed": false
+                },
+                {
+                    "title": "Tests: 2 fixups, direct matches, abort on unknown",
+                    "completed": false
+                }
             ],
             "tags": ["core", "reconciliation"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": "2026-07-13T08:22:00.000Z",
@@ -107,7 +153,10 @@
             "blockedBy": ["T-003", "T-004"],
             "blocks": ["T-012"],
             "subtasks": [
-                { "title": "POI segment extraction + snake_case (underscore)", "completed": false },
+                {
+                    "title": "POI segment extraction + snake_case (underscore)",
+                    "completed": false
+                },
                 {
                     "title": "Cross-destination collision detection + prefixing",
                     "completed": false
@@ -119,7 +168,11 @@
             ],
             "tags": ["core", "dedup"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": "2026-07-13T08:25:00.000Z",
@@ -135,16 +188,26 @@
             "blockedBy": ["T-002"],
             "blocks": ["T-007", "T-008"],
             "subtasks": [
-                { "title": "Provider-agnostic resolveCoordinates interface", "completed": false },
+                {
+                    "title": "Provider-agnostic resolveCoordinates interface",
+                    "completed": false
+                },
                 {
                     "title": "Nominatim impl + User-Agent + rate limit + backoff + run cap",
                     "completed": false
                 },
-                { "title": "Tests: spacing, backoff, cap, no-match", "completed": false }
+                {
+                    "title": "Tests: spacing, backoff, cap, no-match",
+                    "completed": false
+                }
             ],
             "tags": ["core", "geocoding"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": "2026-07-13T08:33:00.000Z",
@@ -160,13 +223,26 @@
             "blockedBy": ["T-006"],
             "blocks": ["T-017"],
             "subtasks": [
-                { "title": "importance/type -> tier mapping", "completed": true },
-                { "title": "low -> unresolved rejection", "completed": true },
-                { "title": "Tier boundary tests", "completed": true }
+                {
+                    "title": "importance/type -> tier mapping",
+                    "completed": true
+                },
+                {
+                    "title": "low -> unresolved rejection",
+                    "completed": true
+                },
+                {
+                    "title": "Tier boundary tests",
+                    "completed": true
+                }
             ],
             "tags": ["core", "geocoding"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": "2026-07-13T08:38:00.000Z",
@@ -182,13 +258,26 @@
             "blockedBy": ["T-006"],
             "blocks": ["T-017"],
             "subtasks": [
-                { "title": "JSON cache read/write keyed by exact address", "completed": true },
-                { "title": "Wire cache in front of resolveCoordinates", "completed": true },
-                { "title": "Tests: hit/miss + zero-network warm re-run", "completed": true }
+                {
+                    "title": "JSON cache read/write keyed by exact address",
+                    "completed": true
+                },
+                {
+                    "title": "Wire cache in front of resolveCoordinates",
+                    "completed": true
+                },
+                {
+                    "title": "Tests: hit/miss + zero-network warm re-run",
+                    "completed": true
+                }
             ],
             "tags": ["core", "geocoding", "idempotency"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": "2026-07-13T08:41:00.000Z",
@@ -204,13 +293,26 @@
             "blockedBy": ["T-003"],
             "blocks": ["T-011", "T-012", "T-014"],
             "subtasks": [
-                { "title": "CATEGORY_SLUG_MAP 40 entries (RHS provisional)", "completed": false },
-                { "title": "Split/trim/map + first-listed isPrimary", "completed": false },
-                { "title": "Tests: 40/40 coverage + order + abort on unmapped", "completed": false }
+                {
+                    "title": "CATEGORY_SLUG_MAP 40 entries (RHS provisional)",
+                    "completed": false
+                },
+                {
+                    "title": "Split/trim/map + first-listed isPrimary",
+                    "completed": false
+                },
+                {
+                    "title": "Tests: 40/40 coverage + order + abort on unmapped",
+                    "completed": false
+                }
             ],
             "tags": ["core", "categories"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": "2026-07-13T08:45:00.000Z",
@@ -221,7 +323,7 @@
             "id": "T-010",
             "title": "Re-freeze output contract vs MERGED HOS-138 schema",
             "description": "The spec §7 example lists fields (address, keywords, hasOwnPage, verified, verifiedAt, source, notes, categories) that the actual shipped fixture 001-*.json does NOT carry — verify the real merged points_of_interest v2 column set (packages/db schema + point-of-interest.schema.ts) and the real fixture shape, then document the TRUE target output shape for T-012. No emit yet, just the corrected contract doc in poi-pipeline/OUTPUT-CONTRACT.md. Tests: n/a (documentation task).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-011", "T-012"],
@@ -230,12 +332,22 @@
                     "title": "Inspect real points_of_interest v2 columns + schema",
                     "completed": false
                 },
-                { "title": "Reconcile vs spec §7 discrepancy", "completed": false },
-                { "title": "Write OUTPUT-CONTRACT.md", "completed": false }
+                {
+                    "title": "Reconcile vs spec §7 discrepancy",
+                    "completed": false
+                },
+                {
+                    "title": "Write OUTPUT-CONTRACT.md",
+                    "completed": false
+                }
             ],
             "tags": ["integration", "contract"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": null,
@@ -245,17 +357,27 @@
         {
             "id": "T-011",
             "description": "REUSE HOS-139's deriveTypeFromCategorySlug(slug) from @repo/schemas (poi-category-type-mapping.ts) — it is exactly this table (9 direct mappings, catch-all -> OTHER, total function, never throws). Do NOT rebuild it. The pipeline imports it and derives type = deriveTypeFromCategorySlug(primaryCategorySlug). Tests: a mapped primary (e.g. beach->BEACH) and an unmapped primary (e.g. winery->OTHER) via the imported function.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009", "T-010"],
             "blocks": ["T-012"],
             "subtasks": [
-                { "title": "primaryCategory -> enum table", "completed": false },
-                { "title": "Tests: coverage + fallback", "completed": false }
+                {
+                    "title": "primaryCategory -> enum table",
+                    "completed": false
+                },
+                {
+                    "title": "Tests: coverage + fallback",
+                    "completed": false
+                }
             ],
             "tags": ["integration", "type-derivation"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": null,
@@ -266,18 +388,31 @@
             "id": "T-012",
             "title": "Final per-POI JSON emit (stages 6-8) — G-5, G-7",
             "description": "Assemble one JSON file per POI in the re-frozen fixture shape (T-010): slug (T-005), lat/long (geocode or null, OQ-4), type (T-011), categories:[{slug,isPrimary}] (T-009), nameI18n.es from CSV name (en/pt null, no invented translations), descriptionI18n likewise, displayWeight from priority (HIGH/MEDIUM/LOW->100/50/10), isFeatured from priority (HIGH->true), address/keywords passthrough. Provenance (G-5): verified/verifiedAt/source/notes carried UNMODIFIED for already-verified rows; geocoded rows force verified:false + append AUTO_GEOCODE_MARKER to notes. Write to staged output/ (not live seed folder, §6.4). Tests AC-5 (verified:true implies input verified), AC-6 (marker present on geocoded, byte-identical provenance on verified rows).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005", "T-009", "T-010", "T-011"],
             "blocks": ["T-013", "T-016"],
             "subtasks": [
-                { "title": "Assemble fixture-shape object per row", "completed": false },
-                { "title": "Provenance carry + auto-geocode marker (G-5)", "completed": false },
-                { "title": "Write staged output + AC-5/AC-6 tests", "completed": false }
+                {
+                    "title": "Assemble fixture-shape object per row",
+                    "completed": false
+                },
+                {
+                    "title": "Provenance carry + auto-geocode marker (G-5)",
+                    "completed": false
+                },
+                {
+                    "title": "Write staged output + AC-5/AC-6 tests",
+                    "completed": false
+                }
             ],
             "tags": ["integration", "emit"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": null,
@@ -288,18 +423,31 @@
             "id": "T-013",
             "title": "destination-relations.json emit (PRIMARY + NEARBY)",
             "description": "Emit destination-relations.json: PRIMARY row for every POI (all 914 relation=PRIMARY in raw data), plus NEARBY rows derived from nearbyDestinationSlugs (331 rows carry it), each resolved through the SAME destination reconciliation as T-004. Tests: PRIMARY count === 914, NEARBY rows only for the 331, every destinationSlug in output is a reconciled/real slug.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004", "T-012"],
             "blocks": ["T-015"],
             "subtasks": [
-                { "title": "PRIMARY relation per POI", "completed": false },
-                { "title": "NEARBY from nearbyDestinationSlugs (reconciled)", "completed": false },
-                { "title": "Tests: counts + reconciled slugs", "completed": false }
+                {
+                    "title": "PRIMARY relation per POI",
+                    "completed": false
+                },
+                {
+                    "title": "NEARBY from nearbyDestinationSlugs (reconciled)",
+                    "completed": false
+                },
+                {
+                    "title": "Tests: counts + reconciled slugs",
+                    "completed": false
+                }
             ],
             "tags": ["integration", "relations"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": null,
@@ -310,17 +458,27 @@
             "id": "T-014",
             "title": "Verify normalized category slugs vs HOS-139 seeded slugs — AC-3",
             "description": "HOS-139 now merged into this branch: cross-check that every normalized category slug the pipeline can emit is a member of the real seeded poi_category slug set (packages/seed/src/data/poiCategory/*.json, 40 slugs); a test asserts membership (AC-3). No longer externally blocked. Note: caveat that #2295 is still open upstream — if its slug set changes before staging merge, re-verify.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": ["T-018"],
             "subtasks": [
-                { "title": "Load HOS-139 seeded poi_categories slugs", "completed": false },
-                { "title": "AC-3 membership test (map RHS subset of catalog)", "completed": false }
+                {
+                    "title": "Load HOS-139 seeded poi_categories slugs",
+                    "completed": false
+                },
+                {
+                    "title": "AC-3 membership test (map RHS subset of catalog)",
+                    "completed": false
+                }
             ],
             "tags": ["integration", "categories", "blocked-hos-139"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": null,
@@ -331,17 +489,27 @@
             "id": "T-015",
             "title": "End-to-end pipeline + idempotency tests (inline fixture) — AC-2/AC-7",
             "description": "Full-machinery test wiring load->reconcile->dedup->normalize->emit against a SMALL INLINE fixture (a handful of synthetic rows exercising quoting, a fixup, a slug collision, a multi-category row), with a mocked geocoder: AC-2 zero duplicate slugs across output, AC-7 byte-identical output on a second run with a warm cache and zero geocoder calls. These prove the machinery in CI without the real CSV. The real-number ACs (AC-1 exactly 914 files, AC-4 >=90% geocoded, AC-8 report totals consistency) are enforced at RUNTIME by the pipeline (fail-loud) and validated operationally from the T-018 run's report.json — NOT committed CI tests over the real file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012", "T-013", "T-016"],
             "blocks": ["T-018"],
             "subtasks": [
-                { "title": "E2E run harness (warm cache) ", "completed": false },
-                { "title": "AC-1/AC-2/AC-7/AC-8 assertions", "completed": false }
+                {
+                    "title": "E2E run harness (warm cache) ",
+                    "completed": false
+                },
+                {
+                    "title": "AC-1/AC-2/AC-7/AC-8 assertions",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "e2e"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": null,
@@ -352,18 +520,31 @@
             "id": "T-016",
             "title": "Report generation (report.md + report.json) — G-6",
             "description": "Emit report.md (human) + report.json (machine): total rows in/out, geocode stats (resolvedHigh, resolvedMedium, rejectedLowConfidence, unresolved with unresolved slugs listed), category-map coverage (40/40 expected), slug-collision count resolved (46 expected), destination mismatches resolved (2 expected), and any hard-fail. Tests: report totals satisfy AC-8 (resolvedHigh+resolvedMedium+rejectedLowConfidence+unresolved===717).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": ["T-015"],
             "subtasks": [
-                { "title": "Aggregate stats from pipeline result", "completed": false },
-                { "title": "Render report.md + report.json", "completed": false },
-                { "title": "AC-8 consistency test", "completed": false }
+                {
+                    "title": "Aggregate stats from pipeline result",
+                    "completed": false
+                },
+                {
+                    "title": "Render report.md + report.json",
+                    "completed": false
+                },
+                {
+                    "title": "AC-8 consistency test",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "report"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": null,
@@ -374,18 +555,31 @@
             "id": "T-017",
             "title": "Nominatim dry-run (~20 rows) to validate match-rate — §12",
             "description": "Run the geocoder against a ~20-row sample (real network, rate-limited) BEFORE committing to the full 717-row run, to validate Nominatim's match-rate for this address set. If the high/medium rate is too low, document it and escalate the Mapbox fallback (OQ-3) to the owner. Document the outcome in poi-pipeline/DRY-RUN.md. Tests: n/a (operational validation), but the sample selection helper is unit-tested.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007", "T-008"],
             "blocks": ["T-018"],
             "subtasks": [
-                { "title": "20-row stratified sample selection", "completed": false },
-                { "title": "Run + measure high/medium rate", "completed": false },
-                { "title": "DRY-RUN.md + fallback decision", "completed": false }
+                {
+                    "title": "20-row stratified sample selection",
+                    "completed": false
+                },
+                {
+                    "title": "Run + measure high/medium rate",
+                    "completed": false
+                },
+                {
+                    "title": "DRY-RUN.md + fallback decision",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "geocoding", "dry-run"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": null,
@@ -396,18 +590,31 @@
             "id": "T-018",
             "title": "Full 717-row geocode run + OQ-2 spot-check + handoff to HOS-142 — AC-4",
             "description": "Execute the full 717-row geocode run (warms the committed cache), verify AC-4 (>=90% resolve high/medium; unresolved listed by slug, never zeroed/centroid-defaulted). Manual OQ-2 spot-check of ~30 rows across destinationTiers to confirm first-listed primary-category is sound. Hand the staged output/ directory + report to HOS-142. Tests: AC-4 threshold assertion over the real run's report.json.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-014", "T-015", "T-017"],
             "blocks": [],
             "subtasks": [
-                { "title": "Full 717-row run + cache warm + commit cache", "completed": false },
-                { "title": "AC-4 >=90% assertion", "completed": false },
-                { "title": "OQ-2 ~30-row spot-check + HOS-142 handoff", "completed": false }
+                {
+                    "title": "Full 717-row run + cache warm + commit cache",
+                    "completed": false
+                },
+                {
+                    "title": "AC-4 >=90% assertion",
+                    "completed": false
+                },
+                {
+                    "title": "OQ-2 ~30-row spot-check + HOS-142 handoff",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "handoff"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-13T05:00:00.000Z",
                 "started": null,
@@ -417,9 +624,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 9,
-        "inProgress": 0,
-        "completed": 9,
+        "pending": 0,
+        "inProgress": 1,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 2.6
     }
