@@ -29,7 +29,7 @@
     },
     "monthlyOnly": "Solo plan mensual",
     "owner": {
-        "title": "Planes para propietarios — Hospeda",
+        "title": "Planes para propietarios",
         "description": "Publicá tu alojamiento con el plan que mejor se adapte a tu negocio.",
         "tagline": "Planes y precios",
         "heading": "Planes para propietarios",
@@ -39,7 +39,7 @@
         "cardsHeading": "Comparativa de planes para propietarios"
     },
     "tourist": {
-        "title": "Planes para turistas — Hospeda",
+        "title": "Planes para turistas",
         "description": "Suscribite y disfrutá de beneficios exclusivos en tus viajes por el litoral.",
         "tagline": "Planes y precios",
         "heading": "Planes para turistas",
@@ -55,12 +55,12 @@
         "teaserText": "Compará todas las funciones, beneficios y límites lado a lado.",
         "owner": {
             "heading": "Comparativa detallada de planes para propietarios",
-            "title": "Comparativa de planes para propietarios — Hospeda",
+            "title": "Comparativa de planes para propietarios",
             "description": "Compará todas las funciones, beneficios y límites de cada plan para propietarios."
         },
         "tourist": {
             "heading": "Comparativa detallada de planes para turistas",
-            "title": "Comparativa de planes para turistas — Hospeda",
+            "title": "Comparativa de planes para turistas",
             "description": "Compará todas las funciones, beneficios y límites de cada plan para turistas."
         }
     }

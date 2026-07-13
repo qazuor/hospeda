@@ -35,4 +35,36 @@ describe('pickLocalizedSeo', () => {
     it('treats an empty stored override as absent', () => {
         expect(pickLocalizedSeo({ stored: '', fallback: 'Cabaña', locale: 'es' })).toBe('Cabaña');
     });
+
+    // BETA-163: stored titles authored with a "... en {city}" template can end
+    // up with a dangling preposition when the city was empty/undefined.
+    it('strips a dangling trailing "en" left by an empty interpolated city', () => {
+        expect(
+            pickLocalizedSeo({
+                stored: 'Cabaña del Río - Alojamiento a 300m del río Uruguay en',
+                fallback: 'Cabaña del Río',
+                locale: 'es'
+            })
+        ).toBe('Cabaña del Río - Alojamiento a 300m del río Uruguay');
+    });
+
+    it('keeps a stored title that already ends with a real city intact', () => {
+        expect(
+            pickLocalizedSeo({
+                stored: 'Cabaña del Río - Alojamiento a 300m del río Uruguay en Colón',
+                fallback: 'Cabaña del Río',
+                locale: 'es'
+            })
+        ).toBe('Cabaña del Río - Alojamiento a 300m del río Uruguay en Colón');
+    });
+
+    it('does not strip "en" when it is not the trailing word', () => {
+        expect(
+            pickLocalizedSeo({
+                stored: 'Encantada casa en el bosque',
+                fallback: 'Encantada casa',
+                locale: 'es'
+            })
+        ).toBe('Encantada casa en el bosque');
+    });
 });
