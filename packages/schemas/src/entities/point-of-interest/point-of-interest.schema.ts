@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
+import { I18nTextSchema, TranslationMetaSchema } from '../../common/i18n.schema.js';
 import { PointOfInterestIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { PointOfInterestTypeEnumSchema } from '../../enums/point-of-interest-type.schema.js';
@@ -8,12 +9,16 @@ import { PointOfInterestTypeEnumSchema } from '../../enums/point-of-interest-typ
 /**
  * Point Of Interest Schema - Main entity schema for points of interest (POIs)
  *
- * Represents a coordinate-bearing landmark (HOS-113) associated with one or
- * more destinations via the `r_destination_point_of_interest` join table
- * (many-to-many — HOS-113 OQ-1). Unlike `attractions`, POIs carry **no
- * `name` column** (HOS-113 OQ-2): display names resolve via `@repo/i18n`
- * keyed by `slug` (`destinations.poiNames.<slug>`), mirroring the
- * amenities/features i18n-by-slug pattern (SPEC-266).
+ * Represents a landmark (HOS-113) associated with one or more destinations
+ * via the `r_destination_point_of_interest` join table (many-to-many —
+ * HOS-113 OQ-1).
+ *
+ * HOS-138 (POI v2): display names/descriptions moved to admin-editable
+ * multilang content (`nameI18n`/`descriptionI18n`, SPEC-212 `I18nText`),
+ * with the legacy `@repo/i18n` `destinations.poiNames.<slug>` lookup kept as
+ * fallback for rows not yet migrated (spec §6.1). Coordinates (`lat`/`long`)
+ * are nullable — a coordinate-less POI is valid (§6.2). `type` is
+ * deprecated-transitional pending the HOS-139 category model.
  */
 export const PointOfInterestSchema = z.object({
     // Base fields
@@ -43,25 +48,39 @@ export const PointOfInterestSchema = z.object({
     /**
      * Latitude in decimal degrees (WGS84). Plain numeric field — no
      * string/JSONB coordinate baggage (HOS-113 R-3), matching the
-     * `double precision` DB column.
+     * `double precision` DB column. HOS-138: nullable — 78% of the v2 dataset
+     * has no coordinates yet (spec §6.2). Consumers must treat null as "no
+     * coordinate, not an error".
      */
     lat: z
         .number({ message: 'zodError.pointOfInterest.lat.required' })
         .min(-90, { message: 'zodError.pointOfInterest.lat.min' })
-        .max(90, { message: 'zodError.pointOfInterest.lat.max' }),
+        .max(90, { message: 'zodError.pointOfInterest.lat.max' })
+        .nullable(),
 
     /**
      * Longitude in decimal degrees (WGS84). Plain numeric field, key named
-     * `long` for consistency with `@repo/db`'s `geo.ts` helpers.
+     * `long` for consistency with `@repo/db`'s `geo.ts` helpers. HOS-138:
+     * nullable (see `lat`).
      */
     long: z
         .number({ message: 'zodError.pointOfInterest.long.required' })
         .min(-180, { message: 'zodError.pointOfInterest.long.min' })
-        .max(180, { message: 'zodError.pointOfInterest.long.max' }),
+        .max(180, { message: 'zodError.pointOfInterest.long.max' })
+        .nullable(),
 
-    /** Closed landmark taxonomy (HOS-113 OQ-3). */
+    /**
+     * @deprecated HOS-138 marks `type` deprecated-transitional. The source of
+     * truth for a POI's category moves to the M2M category model in HOS-139;
+     * this field stays fully functional until every consumer migrates. Do not
+     * build new logic on `type` — use the category relation once HOS-139 lands.
+     */
     type: PointOfInterestTypeEnumSchema,
 
+    /**
+     * Legacy plain-text description. HOS-138: superseded by `descriptionI18n`
+     * where present (spec §6.1); kept as the pre-migration fallback.
+     */
     description: z
         .string({
             message: 'zodError.pointOfInterest.description.required'
@@ -69,6 +88,50 @@ export const PointOfInterestSchema = z.object({
         .min(10, { message: 'zodError.pointOfInterest.description.min' })
         .max(500, { message: 'zodError.pointOfInterest.description.max' })
         .nullish(),
+
+    // HOS-138 / SPEC-212: I18nText multilang content. Mirrors `destinations`
+    // (destination.schema.ts:69-77). Nullish: DB columns are nullable jsonb.
+    nameI18n: I18nTextSchema.nullish(),
+    descriptionI18n: I18nTextSchema.nullish(),
+
+    /**
+     * Per-field, per-locale translation curation metadata (SPEC-212).
+     * Internal: exposed on admin responses only, never on public payloads.
+     */
+    translationMeta: TranslationMetaSchema.nullish(),
+
+    /** HOS-138: free-text street address as provided by the dataset. */
+    address: z
+        .string({ message: 'zodError.pointOfInterest.address.required' })
+        .min(3, { message: 'zodError.pointOfInterest.address.min' })
+        .max(300, { message: 'zodError.pointOfInterest.address.max' })
+        .nullish(),
+
+    /** HOS-138: search keywords, feeds the future AI-search allowlist. */
+    keywords: z
+        .array(
+            z
+                .string()
+                .min(1, { message: 'zodError.pointOfInterest.keywords.item.min' })
+                .max(50, { message: 'zodError.pointOfInterest.keywords.item.max' })
+        )
+        .max(30, { message: 'zodError.pointOfInterest.keywords.max' })
+        .nullish(),
+
+    /** HOS-138: marks POIs that get a dedicated detail page (future feature). */
+    hasOwnPage: z.boolean().default(false),
+
+    /** HOS-138: editorial curation — verified flag (indexed DB column). */
+    verified: z.boolean().default(false),
+
+    /** HOS-138: timestamp the POI was last verified by a curator. */
+    verifiedAt: z.date().nullish(),
+
+    /** HOS-138: free-text provenance label, e.g. `"chatgpt-dataset-2026-07"`. */
+    source: z.string().max(200, { message: 'zodError.pointOfInterest.source.max' }).nullish(),
+
+    /** HOS-138: free-text curator notes. */
+    notes: z.string().max(1000, { message: 'zodError.pointOfInterest.notes.max' }).nullish(),
 
     icon: z
         .string({
@@ -100,8 +163,11 @@ export const PointOfInterestSummarySchema = PointOfInterestSchema.pick({
     lat: true,
     long: true,
     type: true,
+    nameI18n: true,
     description: true,
+    descriptionI18n: true,
     icon: true,
+    hasOwnPage: true,
     isFeatured: true,
     isBuiltin: true,
     displayWeight: true
@@ -117,6 +183,7 @@ export const PointOfInterestMiniSchema = PointOfInterestSchema.pick({
     lat: true,
     long: true,
     type: true,
+    nameI18n: true,
     icon: true
 });
 
