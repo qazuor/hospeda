@@ -24,7 +24,7 @@
         "seed:required": "tsx --tsconfig ./tsconfig.json ./src/seeds/required.seed.ts",
         "seed:example": "tsx --tsconfig ./tsconfig.json ./src/seeds/example.seed.ts",
         "seed:test-users": "tsx --tsconfig ./tsconfig.json ./src/cli.ts --test-users",
-        "typecheck": "tsc --noEmit",
+        "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.poi-pipeline.json",
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest --passWithNoTests",
         "test:coverage": "vitest run --coverage --passWithNoTests",
