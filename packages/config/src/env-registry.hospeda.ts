@@ -1402,9 +1402,10 @@ export const HOSPEDA_ENV_VARS = [
         description: 'Sentry environment tag (production | staging)',
         descriptionEs:
             'Tag de entorno en Sentry (production | staging) — separa eventos prod y staging cuando ambos corren con NODE_ENV=production.',
-        type: 'string',
+        type: 'enum',
         required: false,
         secret: false,
+        enumValues: ['production', 'staging'],
         exampleValue: 'staging',
         apps: ['api'],
         category: 'monitoring',

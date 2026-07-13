@@ -1264,11 +1264,15 @@
     },
     {
       "name": "HOSPEDA_SENTRY_ENVIRONMENT",
-      "description": "Sentry environment tag (production | staging | development)",
-      "descriptionEs": "Tag de entorno en Sentry (production | staging | development) — separa eventos prod y staging cuando ambos corren con NODE_ENV=production.",
-      "type": "string",
+      "description": "Sentry environment tag (production | staging)",
+      "descriptionEs": "Tag de entorno en Sentry (production | staging) — separa eventos prod y staging cuando ambos corren con NODE_ENV=production.",
+      "type": "enum",
       "required": false,
       "secret": false,
+      "enumValues": [
+        "production",
+        "staging"
+      ],
       "exampleValue": "staging",
       "apps": [
         "api"
@@ -3364,11 +3368,15 @@
     },
     {
       "name": "PUBLIC_SENTRY_ENVIRONMENT",
-      "description": "Sentry environment tag for the web app (production | staging | development)",
-      "descriptionEs": "Tag de entorno en Sentry para la web (production | staging | development) — separa eventos prod y staging cuando ambos corren con MODE=production.",
-      "type": "string",
+      "description": "Sentry environment tag for the web app (production | staging)",
+      "descriptionEs": "Tag de entorno en Sentry para la web (production | staging) — separa eventos prod y staging cuando ambos corren con MODE=production.",
+      "type": "enum",
       "required": false,
       "secret": false,
+      "enumValues": [
+        "production",
+        "staging"
+      ],
       "exampleValue": "staging",
       "apps": [
         "web"
@@ -3754,11 +3762,15 @@
     },
     {
       "name": "VITE_SENTRY_ENVIRONMENT",
-      "description": "Sentry environment tag for the admin dashboard (production | staging | development)",
-      "descriptionEs": "Tag de entorno en Sentry para el admin (production | staging | development) — separa eventos prod y staging cuando ambos corren con MODE=production.",
-      "type": "string",
+      "description": "Sentry environment tag for the admin dashboard (production | staging)",
+      "descriptionEs": "Tag de entorno en Sentry para el admin (production | staging) — separa eventos prod y staging cuando ambos corren con MODE=production.",
+      "type": "enum",
       "required": false,
       "secret": false,
+      "enumValues": [
+        "production",
+        "staging"
+      ],
       "exampleValue": "staging",
       "apps": [
         "admin"
@@ -4261,6 +4273,12 @@
         "max": 20
       }
     },
+    "HOSPEDA_SENTRY_ENVIRONMENT": {
+      "enumValues": [
+        "production",
+        "staging"
+      ]
+    },
     "HOSPEDA_MEDIA_MAX_FILE_SIZE_MB": {
       "numeric": {
         "min": 0
@@ -4321,11 +4339,23 @@
         "max": 9007199254740991
       }
     },
+    "PUBLIC_SENTRY_ENVIRONMENT": {
+      "enumValues": [
+        "production",
+        "staging"
+      ]
+    },
     "PUBLIC_SENTRY_TRACES_SAMPLE_RATE": {
       "numeric": {
         "min": 0,
         "max": 1
       }
+    },
+    "VITE_SENTRY_ENVIRONMENT": {
+      "enumValues": [
+        "production",
+        "staging"
+      ]
     },
     "VITE_DEBUG_LAZY_SECTIONS": {
       "boolean": true
