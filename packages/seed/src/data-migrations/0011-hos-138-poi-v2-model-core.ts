@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0010-hos-138-poi-v2-model-core
+ * Data migration: 0011-hos-138-poi-v2-model-core
  *
  * Dual-write counterpart (HOS-25) for HOS-138 (POI v2 core data model). The
  * structural migration `0052_*.sql` adds the `nameI18n` / `descriptionI18n` /
@@ -35,7 +35,7 @@ import { loadJsonFiles } from '../utils/loadJsonFile.js';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0010-hos-138-poi-v2-model-core',
+    name: '0011-hos-138-poi-v2-model-core',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];

@@ -1,18 +1,18 @@
 /**
  * @fileoverview
- * Unit tests for the `0010-hos-138-poi-v2-model-core` data migration, using
+ * Unit tests for the `0011-hos-138-poi-v2-model-core` data migration, using
  * fully mocked `ctx.models.*` model CLASSES (no real database) — the same
  * "mock the ctx, no real DB" style as the `0009-hos-113-points-of-interest`
  * test. Fixture data is loaded FOR REAL from `src/data/pointOfInterest/*.json`,
  * so a drift between a fixture's `nameI18n`/`descriptionI18n` content and this
  * test surfaces as a real failure instead of passing against a stale copy.
  *
- * @module test/data-migrations/0010-hos-138-poi-v2-model-core
+ * @module test/data-migrations/0011-hos-138-poi-v2-model-core
  */
 import { RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
-import * as poiV2Migration from '../../src/data-migrations/0010-hos-138-poi-v2-model-core.js';
+import * as poiV2Migration from '../../src/data-migrations/0011-hos-138-poi-v2-model-core.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
 const STUB_ACTOR: Actor = {
@@ -80,7 +80,7 @@ function buildCtx(store: Map<string, PoiRow>): SeedMigrationCtx {
     } as unknown as SeedMigrationCtx;
 }
 
-describe('0010-hos-138-poi-v2-model-core', () => {
+describe('0011-hos-138-poi-v2-model-core', () => {
     it('backfills nameI18n/descriptionI18n/translationMeta on all 12 pre-migration POIs', async () => {
         // Arrange
         const store = seedPreMigrationStore();
