@@ -9,6 +9,7 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { validateWebEnv } from './src/env.ts';
 import { ALLOWED_REMOTE_HOSTS } from './src/lib/media.ts';
 import { buildSitemapAlternateLinks, isExcludedSitemapPage } from './src/lib/seo-config.ts';
+import { resolveSourcemapSetting } from './src/lib/sourcemap-config.ts';
 
 const rootDir = resolve(new URL('.', import.meta.url).pathname, '../../');
 const appDir = resolve(new URL('.', import.meta.url).pathname);
@@ -276,14 +277,11 @@ export default defineConfig({
             )
         },
         build: {
-            // BETA-66: source maps hardening. Explicitly opt into 'hidden'
-            // source maps (generated on disk for Sentry's upload step, but
-            // NOT referenced via a `//# sourceMappingURL=` comment in the
-            // shipped bundle, so browsers never fetch them) instead of
-            // relying on @sentry/astro's implicit fallback for an unset
-            // setting. Matches the admin app's Vite `build.sourcemap`
-            // config (apps/admin/vite.config.ts).
-            sourcemap: 'hidden'
+            // BETA-66: source maps hardening. See resolveSourcemapSetting()
+            // for the gating rationale (tested in
+            // test/lib/sourcemap-config.test.ts). Matches the admin app's
+            // Vite `build.sourcemap` config (apps/admin/vite.config.ts).
+            sourcemap: resolveSourcemapSetting({ authToken: process.env.SENTRY_AUTH_TOKEN })
         }
     }
 });
