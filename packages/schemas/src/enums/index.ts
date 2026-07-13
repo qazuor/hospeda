@@ -87,6 +87,8 @@ export * from './payment-status.schema.js';
 export * from './permission.enum.js';
 export * from './permission.schema.js';
 export * from './permission-effect.enum.js';
+// POI category ⇄ legacy type mapping (HOS-139)
+export * from './poi-category-type-mapping.js';
 // Point of Interest enums (HOS-113)
 export * from './point-of-interest-type.enum.js';
 export * from './point-of-interest-type.schema.js';
