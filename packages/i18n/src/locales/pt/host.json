@@ -224,6 +224,8 @@
             "publishError": "Não foi possível publicar. Tente novamente.",
             "publishSubscriptionRequiredMessage": "Você já usou seu período de avaliação gratuito de 14 dias. Assine um plano para publicar este imóvel.",
             "publishSubscriptionRequiredCta": "Ver planos",
+            "publishIncompleteCapacityMessage": "Faltam dados de capacidade (hóspedes, quartos ou banheiros). Complete-os no editor antes de publicar.",
+            "publishIncompleteCapacityCta": "Completar no editor",
             "priceOnRequest": "Preço a consultar"
         },
         "editor": {
