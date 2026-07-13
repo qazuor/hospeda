@@ -74,9 +74,9 @@ describe('Destination Weather Fetch Cron Job', () => {
     });
 
     describe('Job Configuration', () => {
-        it('has the expected configuration (12h schedule)', () => {
+        it('has the expected configuration (twice-daily off-peak schedule)', () => {
             expect(destinationWeatherFetchJob.name).toBe('destination-weather-fetch');
-            expect(destinationWeatherFetchJob.schedule).toBe('0 */12 * * *');
+            expect(destinationWeatherFetchJob.schedule).toBe('0 6,18 * * *');
             expect(destinationWeatherFetchJob.enabled).toBe(true);
             expect(typeof destinationWeatherFetchJob.handler).toBe('function');
         });
@@ -118,7 +118,7 @@ describe('Destination Weather Fetch Cron Job', () => {
             mockPersist.mockResolvedValue({
                 processed: 2,
                 updated: 1,
-                errors: [{ destinationId: 'a', error: 'timeout' }]
+                errors: [{ destinationId: 'a', slug: 'dest-a', error: 'timeout' }]
             });
 
             const result = await destinationWeatherFetchJob.handler(mockContext);

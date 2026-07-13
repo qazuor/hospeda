@@ -1,0 +1,29 @@
+{
+    "$schema": "../../schemas/poi-category.schema.json",
+    "id": "007-poi-category-services",
+    "slug": "services",
+    "nameI18n": {
+        "es": "Servicios",
+        "en": "Services",
+        "pt": "Serviços"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            }
+        }
+    },
+    "icon": "miscellaneous_services",
+    "displayWeight": 28,
+    "lifecycleState": "ACTIVE"
+}

@@ -19,6 +19,8 @@ import { seedExchangeRates } from './exchangeRates.seed.js';
 import { seedFeatures } from './features.seed.js';
 import { seedInternalTags } from './internalTags.seed.js';
 import { seedPartnerPlan } from './partnerPlan.seed.js';
+import { seedPoiCategories } from './poiCategories.seed.js';
+import { seedPoiCategoryBackfill } from './poiCategoryBackfill.seed.js';
 import { seedPointsOfInterest } from './pointsOfInterest.seed.js';
 import { seedPostTags } from './postTags.seed.js';
 import { seedRevalidationConfig } from './revalidationConfig.seed.js';
@@ -70,7 +72,9 @@ import { seedUsers } from './users.seed.js';
  * // 7. Amenities
  * // 8. Features
  * // 9. Attractions
- * // 9.1 Points of interest (HOS-113)
+ * // 9.1 POI categories catalog (HOS-139)
+ * // 9.2 Points of interest (HOS-113)
+ * // 9.3 POI category backfill for the 12 existing POIs (HOS-139)
  * // 10. Destinations with attractions + points of interest
  * // 11. Sponsorship levels
  * // 12. Sponsorship packages
@@ -131,11 +135,23 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
         // 6. Load attractions (before destinations to have ID mapping)
         await seedAttractions(context);
 
+        // 6.05 Load the POI category catalog (HOS-139) — a standalone catalog,
+        //      independent of points of interest or destinations. Must run
+        //      before the backfill step below (6.2), and before points of
+        //      interest for a stable, predictable ordering, though the two
+        //      seeds have no direct dependency on each other.
+        await seedPoiCategories(context);
+
         // 6.1 Load points of interest (HOS-113) — before destinations, same
         //     reason as attractions: the destination↔POI relationship seed
         //     step (run as part of seedDestinations below) needs the POI
         //     seed-id → real-id mapping already populated.
         await seedPointsOfInterest(context);
+
+        // 6.2 Backfill primary categories for the 12 existing POIs (HOS-139
+        //     spec §6.3/§7.4). Must run AFTER both 6.05 (categories exist)
+        //     and 6.1 (POIs exist) — resolves both by `slug`.
+        await seedPoiCategoryBackfill(context);
 
         // 7. Load destinations (uses ID mapping for attraction + POI relationships)
         await seedDestinations(context);

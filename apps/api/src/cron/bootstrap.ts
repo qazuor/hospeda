@@ -174,7 +174,11 @@ export const startCronScheduler = async (): Promise<void> => {
                                         schedule: scheduleExpression,
                                         durationMs: Date.now() - startTime,
                                         errors: result.errors,
-                                        processed: result.processed
+                                        processed: result.processed,
+                                        // HOS-154: attach the job's own details (e.g. per-destination
+                                        // errorDetails) so a soft-failure names WHAT failed, not just
+                                        // a count. Job details never carry PII.
+                                        ...(result.details ? { details: result.details } : {})
                                     }
                                 }
                             }

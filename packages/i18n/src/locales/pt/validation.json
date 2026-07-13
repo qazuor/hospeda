@@ -166,20 +166,6 @@
             }
         }
     },
-    "featureFlag": {
-        "description": {
-            "max": "A descrição não pode exceder {{max}} caracteres",
-            "min": "A descrição deve ter pelo menos {{min}} caracteres"
-        },
-        "key": {
-            "invalidPattern": "O formato da chave é inválido",
-            "max": "A chave não pode exceder {{max}} caracteres",
-            "min": "A chave deve ter pelo menos {{min}} caracteres"
-        },
-        "reason": {
-            "max": "O motivo não pode exceder {{max}} caracteres"
-        }
-    },
     "accommodationAmenity": {
         "additionalCostPercent": {
             "max": "[PT] El additional cost percent no puede superar los {{max}} caracteres",
@@ -2680,6 +2666,20 @@
             "required": "[PT] El applicable verticals es obligatorio"
         }
     },
+    "featureFlag": {
+        "description": {
+            "max": "A descrição não pode exceder {{max}} caracteres",
+            "min": "A descrição deve ter pelo menos {{min}} caracteres"
+        },
+        "key": {
+            "invalidPattern": "O formato da chave é inválido",
+            "max": "A chave não pode exceder {{max}} caracteres",
+            "min": "A chave deve ter pelo menos {{min}} caracteres"
+        },
+        "reason": {
+            "max": "O motivo não pode exceder {{max}} caracteres"
+        }
+    },
     "field": {
         "custom": "[PT] Error de validación personalizado",
         "invalidArguments": "[PT] Argumentos inválidos",
@@ -3006,6 +3006,25 @@
         "version": {
             "format": "[PT] El formato de la versión no es válido",
             "required": "[PT] La versión es obligatoria"
+        }
+    },
+    "poiCategory": {
+        "displayWeight": {
+            "int": "[PT] El peso de visualización debe ser un número entero",
+            "max": "[PT] El peso de visualización no puede superar los {{max}} caracteres",
+            "min": "[PT] El peso de visualización debe tener al menos {{min}} caracteres",
+            "required": "[PT] El peso de visualización es obligatorio"
+        },
+        "icon": {
+            "max": "[PT] El ícono no puede superar los {{max}} caracteres",
+            "min": "[PT] El ícono debe tener al menos {{min}} caracteres",
+            "required": "[PT] El ícono es obligatorio"
+        },
+        "slug": {
+            "max": "[PT] El slug no puede superar los {{max}} caracteres",
+            "min": "[PT] El slug debe tener al menos {{min}} caracteres",
+            "pattern": "[PT] El formato del slug no es válido",
+            "required": "[PT] El slug es obligatorio"
         }
     },
     "pointOfInterest": {

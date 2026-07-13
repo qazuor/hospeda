@@ -38,7 +38,8 @@ const ENTITY_FOLDER_MAP: Record<string, string> = {
     gastronomies: 'gastronomy',
     gastronomyFaqs: 'gastronomy/faqs',
     gastronomyReviews: 'gastronomy/reviews',
-    pointsOfInterest: 'pointOfInterest'
+    pointsOfInterest: 'pointOfInterest',
+    poiCategories: 'poiCategory'
 };
 
 /**

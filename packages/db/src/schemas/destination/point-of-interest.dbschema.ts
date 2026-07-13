@@ -14,6 +14,7 @@ import {
 import { LifecycleStatusPgEnum, PointOfInterestTypePgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { rDestinationPointOfInterest } from './r_destination_point_of_interest.dbschema.ts';
+import { rPoiCategory } from './r_poi_category.dbschema.ts';
 
 /**
  * Points of interest — landmarks associated with one or more destinations
@@ -91,7 +92,8 @@ export const pointsOfInterest = pgTable(
 );
 
 export const pointsOfInterestRelations = relations(pointsOfInterest, ({ many }) => ({
-    destinations: many(rDestinationPointOfInterest)
+    destinations: many(rDestinationPointOfInterest),
+    categories: many(rPoiCategory)
 }));
 
 export type InsertPointOfInterest = typeof pointsOfInterest.$inferInsert;
