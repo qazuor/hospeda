@@ -211,7 +211,7 @@ export function writePoiFixtures(params: {
     for (const fixture of sorted) {
         io.writeFile(
             join(outputDir, `${fixture.slug}.json`),
-            `${JSON.stringify(fixture, null, 2)}\n`
+            `${JSON.stringify(fixture, null, 4)}\n`
         );
     }
     return sorted.length;

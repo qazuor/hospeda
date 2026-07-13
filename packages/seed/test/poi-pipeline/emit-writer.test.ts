@@ -68,6 +68,6 @@ describe('writePoiFixtures', () => {
         // Assert
         const contents = io.files.get('/out/x.json') ?? '';
         expect(contents.endsWith('}\n')).toBe(true);
-        expect(contents).toContain('\n  "slug": "x"');
+        expect(contents).toContain('\n    "slug": "x"');
     });
 });

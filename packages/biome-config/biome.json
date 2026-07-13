@@ -26,6 +26,8 @@
             "!**/config/generated",
             "!**/.remember",
             "!**/test/**/fixtures",
+            "!**/scripts/poi-pipeline/output",
+            "!**/scripts/poi-pipeline/geocode-cache.json",
             "!**/*.svg"
         ]
     },

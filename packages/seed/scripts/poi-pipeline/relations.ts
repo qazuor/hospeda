@@ -93,6 +93,6 @@ export function writeRelations(params: {
     );
     writeFileFn(
         join(outputDir, 'destination-relations.json'),
-        `${JSON.stringify(sorted, null, 2)}\n`
+        `${JSON.stringify(sorted, null, 4)}\n`
     );
 }

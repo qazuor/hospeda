@@ -72,7 +72,7 @@ export function buildReport(stats: PipelineStats): { json: string; markdown: str
     const rate = geocodeSuccessRate(g);
     const ratePct = (rate * 100).toFixed(1);
 
-    const json = `${JSON.stringify(stats, null, 2)}\n`;
+    const json = `${JSON.stringify(stats, null, 4)}\n`;
 
     const markdown = `# POI data pipeline report
 

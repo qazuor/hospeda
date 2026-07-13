@@ -66,7 +66,7 @@ export function createCachedGeocoder(params: {
 
     const persist = (): void => {
         const asObject: CacheData = Object.fromEntries(cache);
-        io.write(`${JSON.stringify(asObject, null, 2)}\n`);
+        io.write(`${JSON.stringify(asObject, null, 4)}\n`);
     };
 
     const wrapper: CachedGeocoder = {
