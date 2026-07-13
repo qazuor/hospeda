@@ -24,6 +24,7 @@ import {
     type PointOfInterestAddToDestinationInput,
     PointOfInterestAddToDestinationInputSchema,
     PointOfInterestCreateInputSchema,
+    PointOfInterestDestinationRelationEnum,
     type PointOfInterestListWithCountsResponse,
     type PointOfInterestRemoveFromDestinationInput,
     PointOfInterestRemoveFromDestinationInputSchema,
@@ -227,7 +228,11 @@ export class PointOfInterestService extends BaseCrudRelatedService<
             ctx,
             execute: async (validatedParams, actor) => {
                 await this._canAddPointOfInterestToDestination(actor);
-                const { destinationId, pointOfInterestId } = validatedParams;
+                const {
+                    destinationId,
+                    pointOfInterestId,
+                    relation: relationKind
+                } = validatedParams;
 
                 // Run all existence checks in parallel for better performance
                 const [pointOfInterest, destination, existing] = await Promise.all([
@@ -255,10 +260,12 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                     );
                 }
 
-                // Create the relation
+                // Create the relation (HOS-140: relationKind defaults to
+                // PRIMARY in the Zod schema when omitted)
                 const relation = await this.relatedModel.create({
                     destinationId: destinationId as DestinationIdType,
-                    pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                    pointOfInterestId: pointOfInterestId as PointOfInterestIdType,
+                    relation: relationKind
                 });
 
                 // If the model returns just an id or number, fetch the full relation
@@ -359,6 +366,11 @@ export class PointOfInterestService extends BaseCrudRelatedService<
     /**
      * Lists all points of interest for a destination.
      * Optimized to use parallel queries instead of sequential ones.
+     *
+     * HOS-140 AC-4: each returned entry carries its own `relation`
+     * (`PRIMARY`/`NEARBY`), mirroring `DestinationModel.getPointsOfInterestMap`'s
+     * per-row `relation` — otherwise a caller requesting `relation: 'ALL'`
+     * would have no way to distinguish which entries are PRIMARY vs NEARBY.
      * @param actor - The actor performing the action
      * @param params - The params containing the destination ID
      * @param ctx - Optional service context carrying transaction and hookState.
@@ -367,7 +379,13 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         actor: Actor,
         params: PointsOfInterestByDestinationInput,
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<{ pointsOfInterest: PointOfInterest[] }>> {
+    ): Promise<
+        ServiceOutput<{
+            pointsOfInterest: Array<
+                PointOfInterest & { relation: PointOfInterestDestinationRelationEnum }
+            >;
+        }>
+    > {
         return this.runWithLoggingAndValidation({
             methodName: 'getPointsOfInterestForDestination',
             input: { ...params, actor },
@@ -375,14 +393,20 @@ export class PointOfInterestService extends BaseCrudRelatedService<
             ctx,
             execute: async (validatedParams, actor) => {
                 await this._canList(actor);
-                const { destinationId } = validatedParams;
+                const { destinationId, relation } = validatedParams;
 
-                // Run existence check and data fetch in parallel
+                // Run existence check and data fetch in parallel. HOS-140:
+                // default 'PRIMARY' is behavior-preserving for every row
+                // that existed before this spec; 'ALL' drops the filter
+                // entirely, 'NEARBY' is the explicit opt-in.
                 const [destination, relationsResult] = await Promise.all([
                     this.destinationModel.findOne({
                         id: destinationId as DestinationIdType
                     }),
-                    this.relatedModel.findAll({ destinationId })
+                    this.relatedModel.findAll({
+                        destinationId,
+                        ...(relation !== 'ALL' && { relation })
+                    })
                 ]);
 
                 if (!destination) {
@@ -400,9 +424,27 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                     (r: DestinationPointOfInterestRelation) => r.pointOfInterestId
                 );
 
+                // HOS-140 AC-4: map each POI id to its relation kind. The PK
+                // on `r_destination_point_of_interest` (destinationId,
+                // pointOfInterestId) guarantees exactly one row — and thus
+                // exactly one relation — per POI id for this destination.
+                const relationByPoiId = new Map<string, PointOfInterestDestinationRelationEnum>();
+                for (const r of relations) {
+                    relationByPoiId.set(
+                        r.pointOfInterestId as string,
+                        r.relation as PointOfInterestDestinationRelationEnum
+                    );
+                }
+
                 // Fetch all points of interest in one query, sorted by displayWeight DESC
                 const { items: pointsOfInterest } = await this.model.findAll({ id: poiIds });
-                const sorted = [...pointsOfInterest].sort(
+                const withRelation = pointsOfInterest.map((poi) => ({
+                    ...poi,
+                    relation:
+                        relationByPoiId.get(poi.id as string) ??
+                        PointOfInterestDestinationRelationEnum.PRIMARY
+                }));
+                const sorted = withRelation.sort(
                     (a, b) => (b.displayWeight ?? 50) - (a.displayWeight ?? 50)
                 );
                 return { pointsOfInterest: sorted };
@@ -414,6 +456,19 @@ export class PointOfInterestService extends BaseCrudRelatedService<
      * Lists all destinations for a given point of interest (HOS-113 OQ-1 —
      * M2M, so a POI may legitimately map to more than one destination).
      * Optimized to use parallel queries instead of sequential ones.
+     *
+     * HOS-140 relation-awareness decision: deliberately left relation-blind
+     * (returns destinations for BOTH `PRIMARY` and `NEARBY` rows). Unlike
+     * {@link getPointsOfInterestForDestination} (where surfacing a NEARBY
+     * row would silently make a POI look like it belongs to a destination it
+     * doesn't), the reverse question — "which destinations reference this
+     * POI at all" — is symmetric: a `NEARBY` row IS a real, intentional
+     * cross-reference, so excluding it here would hide a legitimate
+     * association rather than prevent an incorrect one. No known caller
+     * needs relation-blind vs relation-aware behavior distinguished yet; if
+     * one does, add an opt-in `relation` param mirroring
+     * {@link getPointsOfInterestForDestination}'s 3-value contract rather
+     * than changing this method's default.
      * @param actor - The actor performing the action
      * @param params - The params containing the point of interest ID
      * @param ctx - Optional service context carrying transaction and hookState.
@@ -546,6 +601,10 @@ export class PointOfInterestService extends BaseCrudRelatedService<
      *
      * @param destinationId - The destination id filter from search params,
      *   if any.
+     * @param relation - The relation-kind constraint applied to the join
+     *   lookup (HOS-140). Defaults to `'PRIMARY'` — searching "POIs in
+     *   destination X" must NOT surface a landmark that is merely nearby X
+     *   unless explicitly asked for.
      * @returns `{ empty: true }` when `destinationId` was provided but maps
      *   to zero points of interest (callers MUST short-circuit to an empty
      *   result rather than falling through to an unfiltered query).
@@ -555,12 +614,16 @@ export class PointOfInterestService extends BaseCrudRelatedService<
      *   the plain `where` object.
      */
     private async resolveDestinationIdFilter(
-        destinationId: string | undefined
+        destinationId: string | undefined,
+        relation: 'PRIMARY' | 'NEARBY' | 'ALL' = 'PRIMARY'
     ): Promise<{ empty: boolean; additionalConditions: SQL[] }> {
         if (!destinationId) {
             return { empty: false, additionalConditions: [] };
         }
-        const { items: relations } = await this.relatedModel.findAll({ destinationId });
+        const { items: relations } = await this.relatedModel.findAll({
+            destinationId,
+            ...(relation !== 'ALL' && { relation })
+        });
         if (relations.length === 0) {
             return { empty: true, additionalConditions: [] };
         }
