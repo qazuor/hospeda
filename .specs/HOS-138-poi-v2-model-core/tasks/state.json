@@ -1,0 +1,495 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-138",
+    "title": "POI v2 model — core (multilang content, nullable coordinates, curation columns)",
+    "created": "2026-07-12T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add POI v2 columns + nullable lat/long to dbschema",
+            "description": "In packages/db/src/schemas/destination/point-of-interest.dbschema.ts: drop NOT NULL on lat/long (doublePrecision nullable); add nameI18n (jsonb null, $type<I18nText>()), descriptionI18n (jsonb null, $type<I18nText>()), translationMeta (jsonb null default {}, $type<TranslationMeta>()); address (text null), keywords (text[].array() null), hasOwnPage (boolean notNull default false); curation cols verified (boolean notNull default false), verifiedAt (timestamptz null), source (text null), notes (text null). Add pointsOfInterest_verified_idx on verified. Add @deprecated JSDoc on the type column pointing at HOS-139 (§6.6). Mirror destinations' plain+I18n co-existence (destination.dbschema.ts:54-62). Tests: none at this layer (covered by migration + schema tasks).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003", "T-010"],
+            "subtasks": [
+                {
+                    "title": "Drop NOT NULL on lat/long",
+                    "completed": true
+                },
+                {
+                    "title": "Add nameI18n/descriptionI18n/translationMeta jsonb cols",
+                    "completed": true
+                },
+                {
+                    "title": "Add address/keywords/hasOwnPage cols",
+                    "completed": true
+                },
+                {
+                    "title": "Add verified/verifiedAt/source/notes curation cols",
+                    "completed": true
+                },
+                {
+                    "title": "Add verified index",
+                    "completed": true
+                },
+                {
+                    "title": "@deprecated JSDoc on type col → HOS-139",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-12T00:00:00.000Z",
+                "started": "2026-07-12T20:16:00.000Z",
+                "completed": "2026-07-12T20:16:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Generate structural migration 0052 + verify drift guard",
+            "description": "Run pnpm db:generate to emit 0052_*.sql: ALTER COLUMN lat/long DROP NOT NULL + ADD COLUMN for every new col in §7.1 + create verified index. No USING conversion needed. Confirm the db:generate drift guard passes with no further diff (AC-1). Do NOT hand-edit the SQL beyond what generate produces. Tests: drift guard (CI) is the verification.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "pnpm db:generate → 0052_*.sql",
+                    "completed": true
+                },
+                {
+                    "title": "Verify no residual drift diff",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "migration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-12T00:00:00.000Z",
+                "started": "2026-07-12T20:16:00.000Z",
+                "completed": "2026-07-12T20:16:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Extend PointOfInterestSchema with v2 fields (Zod)",
+            "description": "In packages/schemas/src/entities/point-of-interest/point-of-interest.schema.ts (§7.3): add .nullable() to bounded lat/long z.number(); add nameI18n: I18nTextSchema.nullish(), descriptionI18n: I18nTextSchema.nullish(), translationMeta: TranslationMetaSchema.nullish() (mirror destination.schema.ts:69-77 verbatim); address: z.string().min(3).max(300).nullish(); keywords: z.array(z.string().min(1).max(50)).max(30).nullish(); hasOwnPage: z.boolean().default(false); verified: z.boolean().default(false); verifiedAt: z.date().nullish(); source: z.string().max(200).nullish(); notes: z.string().max(1000).nullish(). Add @deprecated JSDoc on the type field (unchanged shape). Reuse I18nTextSchema/TranslationMetaSchema from common/i18n.schema.ts. Tests: covered by T-004.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-005", "T-006", "T-007", "T-008", "T-010"],
+            "subtasks": [
+                {
+                    "title": "lat/long → .nullable()",
+                    "completed": true
+                },
+                {
+                    "title": "nameI18n/descriptionI18n/translationMeta nullish fields",
+                    "completed": true
+                },
+                {
+                    "title": "address/keywords/hasOwnPage fields",
+                    "completed": true
+                },
+                {
+                    "title": "verified/verifiedAt/source/notes fields",
+                    "completed": true
+                },
+                {
+                    "title": "@deprecated JSDoc on type field",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "zod"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-12T00:00:00.000Z",
+                "started": "2026-07-12T20:16:00.000Z",
+                "completed": "2026-07-12T20:16:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Update summary/mini projections + schema tests",
+            "description": "Extend PointOfInterestSummarySchema/PointOfInterestMiniSchema .pick() projections: summary adds nameI18n + descriptionI18n + hasOwnPage; mini adds nameI18n (§7.3). Confirm CreateInput/UpdateInput crud schemas propagate the new fields automatically via .omit()/stripShapeDefaults (no manual shape change). Tests: unit tests asserting PointOfInterestSchema.safeParse accepts {lat:null,long:null} and every new field (AC-2); historic fixture compatibility tests in test/fixtures/historic/ still pass unmodified.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Extend Summary/Mini pick projections",
+                    "completed": true
+                },
+                {
+                    "title": "Verify crud input schemas propagate",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests: null coords + new fields parse",
+                    "completed": true
+                },
+                {
+                    "title": "Historic fixture safeParse still passes",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "testing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-12T00:00:00.000Z",
+                "started": "2026-07-12T20:16:00.000Z",
+                "completed": "2026-07-12T20:16:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Null-guard resolvePoiToCoordinates + regression test",
+            "description": "packages/service-core/src/services/accommodation/accommodation.poi-proximity.helper.ts:115-120: when resolved POI has lat===null||long===null, return { found: false } (same treatment as soft-deleted/non-ACTIVE at lines 111-113) so no null reaches buildWithinRadiusClause's numeric SQL. Tests (AC-3): regression test mocks a POI service response with null coordinates and asserts { found: false }; assert no numeric value reaches geo-SQL helpers.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add null-coord guard → { found: false }",
+                    "completed": true
+                },
+                {
+                    "title": "Regression test with null-coord mock",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "testing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-12T00:00:00.000Z",
+                "started": "2026-07-12T20:16:00.000Z",
+                "completed": "2026-07-12T20:16:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Null-guard resolvePoiConstraint + regression test",
+            "description": "apps/api/src/routes/ai/protected/poi-resolver.ts:193,224-226: when poiResult.data.lat===null||long===null, degrade to { kind: 'none' } (constraint skipped) instead of destructuring into the constrain variant — mirrors existing non-fatal-degrade paths. Tests (AC-4): dedicated regression test for the null-coordinate primary POI match returning { kind: 'none' }.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add null-coord degrade → { kind: 'none' }",
+                    "completed": true
+                },
+                {
+                    "title": "Regression test for null-coord constraint",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "testing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-12T00:00:00.000Z",
+                "started": "2026-07-12T20:16:00.000Z",
+                "completed": "2026-07-12T20:16:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Widen getPointsOfInterestMap lat/long to number|null + hydrate i18n",
+            "description": "packages/db/src/models/destination/destination.model.ts:497-582 (getPointsOfInterestMap): type returned map entries' lat/long as number|null (lines 506-507,546-547), select without null-guard crashing; also select nameI18n/descriptionI18n/hasOwnPage for the destination-detail hydration path so the web section can prefer multilang content (§6.4). Tests (AC-5): does not throw on a row with null coordinates; compiles under number|null typing.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Type lat/long map entries as number|null",
+                    "completed": true
+                },
+                {
+                    "title": "Select nameI18n/descriptionI18n/hasOwnPage",
+                    "completed": true
+                },
+                {
+                    "title": "Test: no throw on null-coord row",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "model", "testing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-12T00:00:00.000Z",
+                "started": "2026-07-12T20:16:00.000Z",
+                "completed": "2026-07-12T20:16:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Make translatePoiName nameI18n-aware (poi-labels.ts)",
+            "description": "apps/web/src/lib/poi-labels.ts:44-72: translatePoiName gains a nameI18n-aware parameter — prefer resolveI18nText(nameI18n, locale) (from apps/web/src/lib/resolve-i18n-text.ts) when non-null, fall back to the existing i18n-by-slug destinations.poiNames.<slug> lookup when null (§6.1). Keep the humanized-slug last-resort fallback (never crash). Tests: unit test both branches (nameI18n present → resolved; null → slug lookup).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Add nameI18n-preferred resolution branch",
+                    "completed": true
+                },
+                {
+                    "title": "Preserve i18n-by-slug + humanized fallback",
+                    "completed": true
+                },
+                {
+                    "title": "Unit test both branches",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "i18n", "testing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-12T00:00:00.000Z",
+                "started": "2026-07-12T20:16:00.000Z",
+                "completed": "2026-07-12T20:16:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Wire DestinationPOISection.astro to i18n resolution (no-op visual)",
+            "description": "apps/web/src/components/destination/DestinationPOISection.astro:44-56,76: resolve display name via the updated poi-labels.ts helper and description via resolveI18nText(descriptionI18n, locale) ?? poi.description, instead of calling translatePoiName / rendering poi.description directly (§6.4). MUST be visually a no-op for the existing 12 POIs (AC-8). Tests: manual smoke visiting the 6 seeded destination detail pages (AC-8) — assert unchanged display name/description.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-008"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Resolve name via updated helper",
+                    "completed": true
+                },
+                {
+                    "title": "Resolve description via descriptionI18n ?? plain",
+                    "completed": true
+                },
+                {
+                    "title": "Manual no-op smoke on 6 destination pages",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "astro"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-12T00:00:00.000Z",
+                "started": "2026-07-12T20:16:00.000Z",
+                "completed": "2026-07-12T20:16:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Seed baseline: add i18n content to 12 POI fixtures",
+            "description": "packages/seed/src/data/pointOfInterest/00N-*.json (12 fixtures): each gains nameI18n (all three locales set to the POI's current destinations.poiNames.<slug> es entry from @repo/i18n; en/pt = same es placeholder per NG-6) and descriptionI18n (from the existing plain description field in each fixture). translationMeta seeded as { name: { es: {autoTranslated:false, translatedAt:<seed ISO>} }, description: {...} }. Confirm normalizePointOfInterestSeedItem in pointsOfInterest.seed.ts accepts the new fields. Tests: seed factory parse of updated fixtures.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-003"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Add nameI18n to 12 fixtures (es from i18n key)",
+                    "completed": true
+                },
+                {
+                    "title": "Add descriptionI18n from plain description",
+                    "completed": true
+                },
+                {
+                    "title": "Add translationMeta autoTranslated:false",
+                    "completed": true
+                },
+                {
+                    "title": "Verify seed normalizer accepts fields",
+                    "completed": true
+                }
+            ],
+            "tags": ["seed", "fixtures"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-12T00:00:00.000Z",
+                "started": "2026-07-12T20:16:00.000Z",
+                "completed": "2026-07-12T20:16:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Data migration 0010-hos-138-poi-v2-model-core",
+            "description": "packages/seed/src/data-migrations/0010-hos-138-poi-v2-model-core.ts (next sequential after 0009): apply identical nameI18n/descriptionI18n/translationMeta values to the 12 already-seeded rows on live envs, by slug lookup, idempotent (skip a POI whose nameI18n is already non-null). Mirror structure of 0009-hos-113-points-of-interest.ts. Ledgered in seed_migrations. Tests: idempotency (re-run skips), and applies to a pre-HOS-138-shaped row.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Create 0010 module mirroring 0009",
+                    "completed": true
+                },
+                {
+                    "title": "By-slug apply of i18n values",
+                    "completed": true
+                },
+                {
+                    "title": "Idempotent skip when nameI18n non-null",
+                    "completed": true
+                },
+                {
+                    "title": "Test idempotency + apply",
+                    "completed": true
+                }
+            ],
+            "tags": ["seed", "data-migration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-12T00:00:00.000Z",
+                "started": "2026-07-12T20:16:00.000Z",
+                "completed": "2026-07-12T20:16:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Verify dual-write convergence (fresh + live path)",
+            "description": "AC-6: confirm the 12 POIs carry non-null nameI18n/descriptionI18n after pnpm db:fresh-dev (baseline path) AND after pnpm db:seed:migrate against a staging-shaped pre-existing DB (data-migration path) — both converge to identical content. Verify check-seed-dual-write.sh passes (pointOfInterest glob already tracked). Tests: this task IS the verification (both seed paths).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-011"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Fresh DB path: db:fresh-dev populates i18n",
+                    "completed": false
+                },
+                {
+                    "title": "Live path: db:seed:migrate on pre-shaped DB",
+                    "completed": false
+                },
+                {
+                    "title": "check-seed-dual-write.sh green",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "verification"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-12T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Quality gate + AC-8 no-op smoke",
+            "description": "AC-7/AC-8: run pnpm typecheck and the relevant test suites (@repo/db, @repo/schemas, @repo/service-core, apps/api, apps/web), confirm ≥90% coverage on the new null-guard branches, run check-seed-dual-write.sh, and perform the manual AC-8 smoke (pnpm dev, visit each of the 6 seeded destination detail pages that render POIs, confirm zero visual/content regression on the POI section). Resource-care: scope suites, run sequentially (per user prefs).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-005", "T-006", "T-009", "T-012"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "typecheck + scoped test suites green",
+                    "completed": false
+                },
+                {
+                    "title": "≥90% coverage on null-guard branches",
+                    "completed": false
+                },
+                {
+                    "title": "check-seed-dual-write.sh green",
+                    "completed": false
+                },
+                {
+                    "title": "Manual AC-8 no-op smoke on 6 pages",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "quality-gate"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-12T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 13,
+        "pending": 2,
+        "inProgress": 0,
+        "completed": 11,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}
