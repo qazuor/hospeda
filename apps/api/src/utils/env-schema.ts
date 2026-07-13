@@ -651,6 +651,12 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_MERCADOLIBRE_CLIENT_SECRET: z.string().optional(),
     /** MercadoLibre OAuth redirect URI registered on the ML app (HOS-45 OAuth refresh flow) */
     HOSPEDA_MERCADOLIBRE_REDIRECT_URI: z.string().optional(),
+    /** Google OAuth app client ID for the Google Calendar occupancy sync (HOS-157 Phase 2). Optional: required only in environments where the Google Calendar sync tier is enabled. */
+    HOSPEDA_GOOGLE_CALENDAR_CLIENT_ID: z.string().optional(),
+    /** Google OAuth app client secret for the Google Calendar occupancy sync (HOS-157 Phase 2) */
+    HOSPEDA_GOOGLE_CALENDAR_CLIENT_SECRET: z.string().optional(),
+    /** Google OAuth redirect URI registered on the Google Calendar sync OAuth client (HOS-157 Phase 2) */
+    HOSPEDA_GOOGLE_CALENDAR_REDIRECT_URI: z.string().optional(),
     /**
      * AES-256-GCM master key for the OAuth credentials vault (HOS-45). Provider-agnostic
      * name (NOT ML-specific) because the encrypted credentials table is designed to extend

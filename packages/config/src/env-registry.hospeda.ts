@@ -1884,6 +1884,63 @@ export const HOSPEDA_ENV_VARS = [
             'MercadoLibre Developers → "Mis aplicaciones" → seleccioná la app → campo "Redirect URI". Tiene que coincidir exactamente (protocolo, host, path) con lo registrado ahí para que la app acepte pedidos de autorización. Usá el host de API específico del entorno (staging vs prod).'
     },
     {
+        name: 'HOSPEDA_GOOGLE_CALENDAR_CLIENT_ID',
+        description:
+            'Google OAuth app client ID for the Google Calendar occupancy sync (HOS-157 Phase 2). Used together with HOSPEDA_GOOGLE_CALENDAR_CLIENT_SECRET to exchange authorization codes and refresh tokens against the Google OAuth API. SEPARATE from any Google login client — this client only requests the read-only Calendar scope. Optional until the Google Calendar sync tier is enabled in an environment.',
+        descriptionEs:
+            'Client ID de la app OAuth de Google para la sincronización de ocupación con Google Calendar (HOS-157 Fase 2). Se usa junto con HOSPEDA_GOOGLE_CALENDAR_CLIENT_SECRET para intercambiar authorization codes y refresh tokens contra la API OAuth de Google. SEPARADO de cualquier client de login con Google: este client solo pide el scope de solo-lectura de Calendar. Opcional hasta que el tier de sync de Google Calendar esté habilitado en un entorno.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: '',
+        exampleValue: '1234567890-abcdefg.apps.googleusercontent.com',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://console.cloud.google.com/apis/credentials',
+        howToObtain:
+            'Google Cloud Console → APIs & Services → Credentials → "Create Credentials" → "OAuth client ID" → application type "Web application". Enable the "Google Calendar API" under "Enabled APIs & services". Copy the generated "Client ID". Use a DEDICATED client for calendar sync, distinct from the login client.',
+        howToObtainEs:
+            'Google Cloud Console → APIs & Services → Credentials → "Create Credentials" → "OAuth client ID" → tipo de aplicación "Web application". Habilitá la "Google Calendar API" en "Enabled APIs & services". Copiá el "Client ID" generado. Usá un client DEDICADO para el sync de calendario, distinto del client de login.'
+    },
+    {
+        name: 'HOSPEDA_GOOGLE_CALENDAR_CLIENT_SECRET',
+        description:
+            'Google OAuth app client secret for the Google Calendar occupancy sync (HOS-157 Phase 2). Paired with HOSPEDA_GOOGLE_CALENDAR_CLIENT_ID to authenticate token-exchange and refresh-token requests. Never expose to the client.',
+        descriptionEs:
+            'Client secret de la app OAuth de Google para la sincronización de ocupación con Google Calendar (HOS-157 Fase 2). Se combina con HOSPEDA_GOOGLE_CALENDAR_CLIENT_ID para autenticar los pedidos de intercambio de token y de refresh. Nunca exponer al cliente.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'your-google-calendar-oauth-client-secret',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://console.cloud.google.com/apis/credentials',
+        howToObtain:
+            'Google Cloud Console → APIs & Services → Credentials → select the calendar-sync OAuth client → copy the "Client secret". Rotate it if it leaks; keep it out of source control.',
+        howToObtainEs:
+            'Google Cloud Console → APIs & Services → Credentials → seleccioná el client OAuth de sync de calendario → copiá el "Client secret". Rotalo si se filtra; nunca lo commitees.'
+    },
+    {
+        name: 'HOSPEDA_GOOGLE_CALENDAR_REDIRECT_URI',
+        description:
+            'OAuth redirect URI registered on the Google Calendar sync OAuth client (HOS-157), used as the callback target after the host authorizes calendar access. Must exactly match one of the "Authorized redirect URIs" configured on the OAuth client in Google Cloud Console. The accommodation being connected is carried in the OAuth `state` parameter, not the URI, so this is a single fixed path per environment.',
+        descriptionEs:
+            'URI de redirect OAuth registrada en el client OAuth de sync de Google Calendar (HOS-157), usada como destino del callback luego de que el host autoriza el acceso al calendario. Debe coincidir exactamente con una de las "Authorized redirect URIs" configuradas en el client OAuth en Google Cloud Console. El alojamiento que se está conectando viaja en el parámetro `state` de OAuth, no en la URI, así que es un único path fijo por entorno.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: '',
+        exampleValue:
+            'https://api.hospeda.com.ar/api/v1/protected/accommodations/calendar-sync/google/callback',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://console.cloud.google.com/apis/credentials',
+        howToObtain:
+            'Google Cloud Console → APIs & Services → Credentials → select the calendar-sync OAuth client → "Authorized redirect URIs" → add the environment-specific API callback URL. Must match exactly (protocol, host, path). Use the environment-specific API host (staging vs prod).',
+        howToObtainEs:
+            'Google Cloud Console → APIs & Services → Credentials → seleccioná el client OAuth de sync de calendario → "Authorized redirect URIs" → agregá la URL de callback de la API específica del entorno. Tiene que coincidir exactamente (protocolo, host, path). Usá el host de API específico del entorno (staging vs prod).'
+    },
+    {
         name: 'HOSPEDA_IMPORT_FETCH_TIMEOUT_MS',
         description:
             'Timeout in milliseconds for the safeExternalFetch utility used in accommodation import adapters. Requests that exceed this limit are aborted.',
