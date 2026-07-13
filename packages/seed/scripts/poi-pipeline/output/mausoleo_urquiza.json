@@ -1,0 +1,50 @@
+{
+    "slug": "mausoleo_urquiza",
+    "lat": null,
+    "long": null,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Mausoleo que conserva los restos de Justo José de Urquiza dentro de la Basílica de la Inmaculada Concepción.",
+    "nameI18n": {
+        "es": "Mausoleo Histórico Nacional del General Urquiza",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Mausoleo que conserva los restos de Justo José de Urquiza dentro de la Basílica de la Inmaculada Concepción.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Basílica de la Inmaculada Concepción, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "mausoleo urquiza",
+        "justo jose de urquiza",
+        "basílica",
+        "historia nacional",
+        "sepulcro"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/concepcion-del-uruguay-tendra-su-noche-de-los-museos",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "religious_site",
+            "isPrimary": false
+        }
+    ]
+}

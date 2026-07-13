@@ -1,0 +1,54 @@
+{
+    "slug": "paseo_poetas",
+    "lat": -32.3008178,
+    "long": -59.138887,
+    "type": "PARK",
+    "icon": null,
+    "description": "Paseo urbano dedicado a escritores y expresiones literarias, incluido en el circuito oficial de parques y plazas.",
+    "nameI18n": {
+        "es": "Paseo de los Poetas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paseo urbano dedicado a escritores y expresiones literarias, incluido en el circuito oficial de parques y plazas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "paseo de los poetas",
+        "literatura",
+        "arte urbano",
+        "parque",
+        "circuito cultural"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

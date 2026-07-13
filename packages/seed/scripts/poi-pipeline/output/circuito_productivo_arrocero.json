@@ -1,0 +1,55 @@
+{
+    "slug": "circuito_productivo_arrocero",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido educativo para conocer la historia y las etapas de producción del arroz, incluyendo Museo del Arroz, cooperativa y molinos modernos.",
+    "nameI18n": {
+        "es": "Circuito Productivo Arrocero",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido educativo para conocer la historia y las etapas de producción del arroz, incluyendo Museo del Arroz, cooperativa y molinos modernos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Salvador y área industrial, Entre Ríos",
+    "keywords": [
+        "circuito productivo",
+        "produccion de arroz",
+        "molinos arroceros",
+        "harina de arroz",
+        "snacks",
+        "gin de arroz"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/gobierno/turismo/",
+    "notes": "Circuito oficial del programa de turismo educativo. Requiere reserva y falta digitalizar el trazado.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        }
+    ]
+}

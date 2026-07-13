@@ -1,0 +1,59 @@
+{
+    "slug": "granja_bengochea",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Emprendimiento familiar con actividades de granja, panificación, senderos de monte nativo y observación de animales.",
+    "nameI18n": {
+        "es": "Granja de la Familia Bengochea",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Emprendimiento familiar con actividades de granja, panificación, senderos de monte nativo y observación de animales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de Villaguay, Entre Ríos",
+    "keywords": [
+        "granja bengochea",
+        "granja educativa",
+        "panificacion",
+        "animales",
+        "monte nativo",
+        "turismo rural"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://es.wikipedia.org/wiki/Villaguay",
+    "notes": "Oferta turística documentada. Falta validar condiciones actuales de visita y coordenadas.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        }
+    ]
+}

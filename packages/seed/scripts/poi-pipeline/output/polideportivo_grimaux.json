@@ -1,0 +1,54 @@
+{
+    "slug": "polideportivo_grimaux",
+    "lat": -32.30518,
+    "long": -59.14381,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Complejo deportivo y parque urbano utilizado para entrenamiento, recreación y actividades municipales.",
+    "nameI18n": {
+        "es": "Parque Deportivo Jorge Mario Grimaux",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Complejo deportivo y parque urbano utilizado para entrenamiento, recreación y actividades municipales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "España, Parodi, Colón y Panizza, Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "jorge mario grimaux",
+        "polideportivo",
+        "deportes",
+        "parque deportivo",
+        "rosario del tala"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf; https://mapcarta.com/es/W576470062",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

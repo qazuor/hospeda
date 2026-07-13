@@ -1,0 +1,50 @@
+{
+    "slug": "paranacito_oficina_turismo",
+    "lat": -33.71637,
+    "long": -58.65914,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Punto oficial de información sobre actividades, prestadores, alojamientos, eventos y condiciones del delta.",
+    "nameI18n": {
+        "es": "Oficina de Turismo de Villa Paranacito",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Punto oficial de información sobre actividades, prestadores, alojamientos, eventos y condiciones del delta.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Entre Ríos, Villa Paranacito, Entre Ríos",
+    "keywords": [
+        "oficina de turismo",
+        "informacion turistica",
+        "guias locales",
+        "mapas",
+        "eventos"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://www.villaparanacito.gob.ar/turismo; https://mapcarta.com/es/N3849356752",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "services",
+            "isPrimary": true
+        },
+        {
+            "slug": "government",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "feria_artesanos",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Feria periódica de producción artesanal y local, habitualmente instalada en el entorno de la Estación y el Paseo de la Vía.",
+    "nameI18n": {
+        "es": "Feria de Artesanos y Manualistas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Feria periódica de producción artesanal y local, habitualmente instalada en el entorno de la Estación y el Paseo de la Vía.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Predio ferroviario de Chajarí, Entre Ríos",
+    "keywords": [
+        "feria artesanos chajari",
+        "manualistas",
+        "productos locales",
+        "paseo de la via",
+        "estacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://chajari.gob.ar/event/vivi-la-experiencia-de-chajari-en-el-fin-de-semana-largo/; https://termaschajari.tur.ar/arco-de-entrada/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "fair",
+            "isPrimary": true
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "plazoleta_pioneros",
+    "lat": null,
+    "long": null,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Paseo conmemorativo dedicado a los primeros pobladores, inmigrantes y familias vinculadas con la formación de la colonia.",
+    "nameI18n": {
+        "es": "Plazoleta de los Pioneros",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paseo conmemorativo dedicado a los primeros pobladores, inmigrantes y familias vinculadas con la formación de la colonia.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Malarín, San Salvador, Entre Ríos",
+    "keywords": [
+        "plazoleta pioneros",
+        "primeros pobladores",
+        "inmigrantes",
+        "colonia",
+        "avenida malarin"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/",
+    "notes": "Existencia confirmada en el inventario municipal. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

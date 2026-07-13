@@ -1,0 +1,54 @@
+{
+    "slug": "urdinarrain_plaza_urquiza",
+    "lat": null,
+    "long": null,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plaza céntrica próxima a la parroquia y a la terminal, utilizada como espacio cívico y recreativo.",
+    "nameI18n": {
+        "es": "Plaza Urquiza",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plaza céntrica próxima a la parroquia y a la terminal, utilizada como espacio cívico y recreativo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urdinarrain, Entre Ríos",
+    "keywords": [
+        "plaza urquiza urdinarrain",
+        "plaza central",
+        "parroquia",
+        "terminal",
+        "espacio verde"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N2590702312",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

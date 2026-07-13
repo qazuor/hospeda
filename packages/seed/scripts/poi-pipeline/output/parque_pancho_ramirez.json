@@ -1,0 +1,53 @@
+{
+    "slug": "parque_pancho_ramirez",
+    "lat": -31.6247717,
+    "long": -58.5051869,
+    "type": "PARK",
+    "icon": null,
+    "description": "Parque urbano dedicado al caudillo entrerriano Francisco Ramírez y destinado al uso recreativo de vecinos y visitantes.",
+    "nameI18n": {
+        "es": "Parque Pancho Ramírez",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Parque urbano dedicado al caudillo entrerriano Francisco Ramírez y destinado al uso recreativo de vecinos y visitantes.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Salvador, Entre Ríos",
+    "keywords": [
+        "parque pancho ramirez",
+        "francisco ramirez",
+        "caudillo entrerriano",
+        "parque"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/",
+    "notes": "Nombre y vigencia confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

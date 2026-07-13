@@ -1,0 +1,50 @@
+{
+    "slug": "predio_ferial_vinedos_moulins",
+    "lat": -31.3972539,
+    "long": -58.0173305,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Predio de eventos que alberga el Corsódromo y actividades culturales, feriales y recreativas de gran convocatoria.",
+    "nameI18n": {
+        "es": "Predio Ferial Viñedos Moulins",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Predio de eventos que alberga el Corsódromo y actividades culturales, feriales y recreativas de gran convocatoria.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Concordia, Entre Ríos",
+    "keywords": [
+        "predio vinedos moulins",
+        "predio ferial",
+        "corsodromo",
+        "eventos",
+        "carnaval"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.unoentrerios.com.ar/la-provincia/destacan-aspectos-organizativos-del-carnaval-concordia-n10224889.html; https://www.concordia.gob.ar/carnaval",
+    "notes": "Nombre y uso confirmados. Falta delimitar el predio como polígono. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "fair",
+            "isPrimary": true
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

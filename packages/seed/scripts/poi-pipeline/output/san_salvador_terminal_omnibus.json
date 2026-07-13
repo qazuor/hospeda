@@ -1,0 +1,46 @@
+{
+    "slug": "san_salvador_terminal_omnibus",
+    "lat": -31.62437,
+    "long": -58.50621,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Principal terminal terrestre de pasajeros de la ciudad, conectada con destinos provinciales y nacionales.",
+    "nameI18n": {
+        "es": "Terminal de Ómnibus de San Salvador",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Principal terminal terrestre de pasajeros de la ciudad, conectada con destinos provinciales y nacionales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Bulevar Villaguay, San Salvador, Entre Ríos",
+    "keywords": [
+        "terminal san salvador",
+        "terminal de omnibus",
+        "micros",
+        "colectivos",
+        "bulevar villaguay"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://sansalvadorer.gob.ar/ciudad/; https://mapcarta.com/es/W447505173",
+    "notes": "Función, ubicación y coordenadas contrastadas.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "transport",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "playa_las_palmeras",
+    "lat": null,
+    "long": null,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Sector de playa del extremo sudeste de la ciudad, rodeado por espacios verdes y utilizado para recreación y actividades náuticas.",
+    "nameI18n": {
+        "es": "Playa Las Palmeras",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sector de playa del extremo sudeste de la ciudad, rodeado por espacios verdes y utilizado para recreación y actividades náuticas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Río de los Pájaros, Federación, Entre Ríos",
+    "keywords": [
+        "playa las palmeras",
+        "rio de los pajaros",
+        "lago",
+        "deportes nauticos",
+        "familia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/nuestras-playas/; https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
+    "notes": "Ubicación general confirmada en el plano turístico. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

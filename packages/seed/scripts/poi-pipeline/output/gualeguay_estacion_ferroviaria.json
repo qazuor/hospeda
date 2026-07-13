@@ -1,0 +1,54 @@
+{
+    "slug": "gualeguay_estacion_ferroviaria",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Estación histórica vinculada con el primer ferrocarril provincial y con el desarrollo comercial de Gualeguay y Puerto Ruiz.",
+    "nameI18n": {
+        "es": "Estación Ferroviaria Gualeguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Estación histórica vinculada con el primer ferrocarril provincial y con el desarrollo comercial de Gualeguay y Puerto Ruiz.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Predio ferroviario de Gualeguay, Entre Ríos",
+    "keywords": [
+        "estacion gualeguay",
+        "ferrocarril",
+        "tren",
+        "puerto ruiz",
+        "patrimonio ferroviario"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://es.wikipedia.org/wiki/Ferrocarril_Primer_Entrerriano; https://turismo.gualeguay.gob.ar/contenido-detalle.php?id=162",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        }
+    ]
+}

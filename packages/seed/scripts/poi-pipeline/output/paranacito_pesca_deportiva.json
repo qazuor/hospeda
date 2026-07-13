@@ -1,0 +1,54 @@
+{
+    "slug": "paranacito_pesca_deportiva",
+    "lat": null,
+    "long": null,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Salidas de pesca embarcada con guías locales en ríos y arroyos del delta.",
+    "nameI18n": {
+        "es": "Circuito de Pesca Deportiva",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Salidas de pesca embarcada con guías locales en ríos y arroyos del delta.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Cursos de agua de Villa Paranacito, Entre Ríos",
+    "keywords": [
+        "pesca deportiva",
+        "pesca embarcada",
+        "guias de pesca",
+        "pejerrey",
+        "delta"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.villaparanacito.gob.ar/turismo/actividades",
+    "notes": "Oferta oficial vigente. Falta relevar bajadas, permisos y circuitos por temporada.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "costa_ciencia",
+    "lat": null,
+    "long": null,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Espacio interactivo de la Costanera dedicado a física, tecnología y ciencia mediante experiencias participativas para familias y escuelas.",
+    "nameI18n": {
+        "es": "Museo Interactivo Costa Ciencia",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio interactivo de la Costanera dedicado a física, tecnología y ciencia mediante experiencias participativas para familias y escuelas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Costanera de Concordia, Entre Ríos",
+    "keywords": [
+        "costa ciencia",
+        "museo interactivo",
+        "fisica",
+        "tecnologia",
+        "familia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/museos",
+    "notes": "Existencia y temática confirmadas. Falta dirección y geocodificación.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

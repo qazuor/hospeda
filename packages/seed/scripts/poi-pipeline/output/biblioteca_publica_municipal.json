@@ -1,0 +1,50 @@
+{
+    "slug": "biblioteca_publica_municipal",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Biblioteca municipal y espacio cultural comunitario que ofrece consulta bibliográfica, actividades educativas y propuestas abiertas a la localidad.",
+    "nameI18n": {
+        "es": "Biblioteca Pública Municipal de Caseros",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Biblioteca municipal y espacio cultural comunitario que ofrece consulta bibliográfica, actividades educativas y propuestas abiertas a la localidad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Calle 15 N.º 310, entre Calle 6 y Calle 8, Caseros, Entre Ríos",
+    "keywords": [
+        "biblioteca municipal",
+        "libros",
+        "cultura",
+        "lectura",
+        "caseros"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/cultura/conabip/biblioteca-publica-municipal-de-caseros",
+    "notes": "Nombre y dirección confirmados; falta geocodificar la entrada principal.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

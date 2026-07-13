@@ -1,0 +1,58 @@
+{
+    "slug": "parque_san_carlos",
+    "lat": null,
+    "long": null,
+    "type": "PARK",
+    "icon": null,
+    "description": "Área protegida municipal de 98 hectáreas con selva en galería, lomadas, costa del río Uruguay, senderos y patrimonio histórico.",
+    "nameI18n": {
+        "es": "Parque San Carlos",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Área protegida municipal de 98 hectáreas con selva en galería, lomadas, costa del río Uruguay, senderos y patrimonio histórico.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque Rivadavia, Concordia, Entre Ríos",
+    "keywords": [
+        "parque san carlos",
+        "reserva natural",
+        "senderos",
+        "selva en galeria",
+        "rio uruguay"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/parque-san-carlos",
+    "notes": "Área protegida y servicios turísticos confirmados. Falta definir centroide o acceso principal.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "reserve",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        }
+    ]
+}

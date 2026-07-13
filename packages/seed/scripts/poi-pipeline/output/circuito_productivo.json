@@ -1,0 +1,55 @@
+{
+    "slug": "circuito_productivo",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido por productores locales de miel, alfajores, dulces, licores, quesos y otros productos regionales.",
+    "nameI18n": {
+        "es": "Circuito Productivo Federaense",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido por productores locales de miel, alfajores, dulces, licores, quesos y otros productos regionales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Federación y Antigua Ciudad, Entre Ríos",
+    "keywords": [
+        "circuito productivo federacion",
+        "miel",
+        "alfajores",
+        "dulces regionales",
+        "licores",
+        "productos locales"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/otros-atractivos/; https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
+    "notes": "Circuito y tipos de productores confirmados. Falta digitalizar recorrido y validar visitas actuales.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "slug": "villa_elisa_plaza_san_martin",
+    "lat": null,
+    "long": null,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Espacio público céntrico conectado con la avenida Urquiza, utilizado para recreación, circulación peatonal y actividades comunitarias.",
+    "nameI18n": {
+        "es": "Plaza San Martín",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio público céntrico conectado con la avenida Urquiza, utilizado para recreación, circulación peatonal y actividades comunitarias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de Villa Elisa, Entre Ríos",
+    "keywords": [
+        "plaza san martin",
+        "plaza",
+        "centro",
+        "espacio verde",
+        "villa elisa"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://villaelisa.gov.ar/se-construyen-rampas-en-las-plazas-urquiza-y-san-martin/",
+    "notes": "Nombre y vigencia confirmados por la Municipalidad. Falta dirección y coordenadas exactas.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

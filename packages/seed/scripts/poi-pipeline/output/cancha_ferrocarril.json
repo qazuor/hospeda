@@ -1,0 +1,50 @@
+{
+    "slug": "cancha_ferrocarril",
+    "lat": null,
+    "long": null,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Espacio deportivo dentro del predio ferroviario, utilizado para torneos, actividades recreativas y encuentros comunitarios.",
+    "nameI18n": {
+        "es": "Cancha del Ferrocarril",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio deportivo dentro del predio ferroviario, utilizado para torneos, actividades recreativas y encuentros comunitarios.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Predio del Ferrocarril, Ubajay, Entre Ríos",
+    "keywords": [
+        "cancha del ferrocarril",
+        "torneo de las empresas",
+        "futbol",
+        "deportes",
+        "predio ferroviario"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://ubajay.gob.ar/comienzan-los-trabajos-de-mejora-en-la-cancha-del-ferrocarril-para-una-nueva-edicion-del-torneo-de-las-empresas/",
+    "notes": "Uso deportivo y vigencia confirmados en junio de 2026. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

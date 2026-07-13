@@ -1,0 +1,54 @@
+{
+    "slug": "vagon_historico",
+    "lat": null,
+    "long": null,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Vagón declarado Monumento Histórico Provincial que recuerda la labor ferroviaria y la importancia conjunta del puerto y el tren.",
+    "nameI18n": {
+        "es": "Vagón Histórico",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Vagón declarado Monumento Histórico Provincial que recuerda la labor ferroviaria y la importancia conjunta del puerto y el tren.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Calle Almirante Brown, antigua entrada de Ibicuy, Entre Ríos",
+    "keywords": [
+        "vagon historico",
+        "monumento historico provincial",
+        "ferrocarril",
+        "trabajadores ferroviarios",
+        "almirante brown"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://ibicuy.gob.ar/?q=content%2Fque-visitar",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        }
+    ]
+}

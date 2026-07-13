@@ -1,0 +1,54 @@
+{
+    "slug": "parque_liquidambar",
+    "lat": null,
+    "long": null,
+    "type": "PARK",
+    "icon": null,
+    "description": "Parque urbano del acceso al aeropuerto con juegos, espacios saludables y vegetación de liquidámbar.",
+    "nameI18n": {
+        "es": "Parque Liquidámbar",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Parque urbano del acceso al aeropuerto con juegos, espacios saludables y vegetación de liquidámbar.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Monseñor Rösch, acceso al Aeropuerto, Concordia, Entre Ríos",
+    "keywords": [
+        "parque liquidambar",
+        "monseñor rosch",
+        "juegos",
+        "espacio saludable",
+        "aeropuerto"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/noticias/secretar%C3%ADa-de-comunicaci%C3%B3n-y-desarrollo-cultural/un-domingo-diferente-en-el-parque; https://www.concordia.gob.ar/noticias/gesti%C3%B3n/se-inauguraron-nuevos-juegos-y-espacios-saludables-en-el-parque-liquidambar",
+    "notes": "Ubicación por avenida y equipamiento confirmados. Falta geocodificar y verificar accesibilidad tras las obras aeroportuarias.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        }
+    ]
+}

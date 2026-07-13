@@ -1,0 +1,54 @@
+{
+    "slug": "colonia_ensanche_sauce",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Localidad rural que depende parcialmente del municipio de Santa Ana y forma parte de su paisaje productivo y comunitario.",
+    "nameI18n": {
+        "es": "Colonia Ensanche Sauce",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Localidad rural que depende parcialmente del municipio de Santa Ana y forma parte de su paisaje productivo y comunitario.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Colonia Ensanche Sauce, Entre Ríos",
+    "keywords": [
+        "colonia ensanche sauce",
+        "colonia rural",
+        "citricultura",
+        "comunidad",
+        "santa ana"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/19202584; https://es.wikipedia.org/wiki/Colonia_Ensanche_Sauce",
+    "notes": "Localidad incluida en el municipio. Falta definir punto central representativo y servicios.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

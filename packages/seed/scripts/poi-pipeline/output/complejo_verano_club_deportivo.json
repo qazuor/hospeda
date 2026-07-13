@@ -1,0 +1,54 @@
+{
+    "slug": "complejo_verano_club_deportivo",
+    "lat": null,
+    "long": null,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Complejo con piscina semiolímpica, piletones infantiles, quinchos, parrillas, camping, tenis y pádel.",
+    "nameI18n": {
+        "es": "Complejo de Verano Club Deportivo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Complejo con piscina semiolímpica, piletones infantiles, quinchos, parrillas, camping, tenis y pádel.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Club Deportivo Urdinarrain, Entre Ríos",
+    "keywords": [
+        "club deportivo urdinarrain",
+        "pileta semiolimpica",
+        "tenis",
+        "padel",
+        "camping"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://urdinarrain.tur.ar/que-hacer/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "campground",
+            "isPrimary": false
+        }
+    ]
+}

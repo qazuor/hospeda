@@ -1,0 +1,59 @@
+{
+    "slug": "centro_interpretacion_audiovisual",
+    "lat": null,
+    "long": null,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Espacio municipal que presenta la historia, la identidad y el patrimonio industrial de Pueblo Liebig mediante relatos, imágenes y materiales audiovisuales.",
+    "nameI18n": {
+        "es": "Centro de Interpretación Audiovisual y Oficina de Turismo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio municipal que presenta la historia, la identidad y el patrimonio industrial de Pueblo Liebig mediante relatos, imágenes y materiales audiovisuales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Eric Evans 149, Pueblo Liebig, Entre Ríos",
+    "keywords": [
+        "centro de interpretacion",
+        "museo liebig",
+        "oficina de turismo",
+        "historia",
+        "audiovisual",
+        "eric evans"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://puebloliebig.gob.ar/noticias/visita-al-centro-de-interpretacion-audiovisual/; https://www.facebook.com/TurismoVillaElisa/videos/376085384365923/",
+    "notes": "Nombre, función y dirección confirmados. Falta geocodificar la entrada principal.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

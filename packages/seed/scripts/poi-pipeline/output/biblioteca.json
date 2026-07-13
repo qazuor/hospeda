@@ -1,0 +1,50 @@
+{
+    "slug": "biblioteca",
+    "lat": -32.44572,
+    "long": -58.43404,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Biblioteca de la localidad y espacio de consulta, lectura y actividades educativas y culturales para la comunidad.",
+    "nameI18n": {
+        "es": "Biblioteca San Justo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Biblioteca de la localidad y espacio de consulta, lectura y actividades educativas y culturales para la comunidad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Justo, Entre Ríos",
+    "keywords": [
+        "biblioteca san justo",
+        "libros",
+        "lectura",
+        "cultura",
+        "educacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W880315621",
+    "notes": "Ubicación contrastada con OpenStreetMap. Domicilio postal exacto pendiente.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "saladero_santa_candida",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Conjunto histórico asociado con uno de los mayores saladeros del siglo XIX y con la actividad portuaria de Urquiza.",
+    "nameI18n": {
+        "es": "Patrimonio Industrial del Saladero Santa Cándida",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Conjunto histórico asociado con uno de los mayores saladeros del siglo XIX y con la actividad portuaria de Urquiza.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Palacio Santa Cándida, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "saladero santa candida",
+        "patrimonio industrial",
+        "urquiza",
+        "comercio fluvial",
+        "siglo xix"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://institutodecultura.cudes.org.ar/articulo/santa-candida-el-majestuoso-palacio-de-1847-que-atesora-su-capitulo-en-la-historia-argentina-y-aun-conserva-su-esplendor-por-leandro-vesco/",
+    "notes": "Conjunto privado; falta inventariar sectores accesibles.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "port",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

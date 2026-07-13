@@ -1,0 +1,54 @@
+{
+    "slug": "centro_comercial_12_abril",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Principal corredor comercial y gastronómico de Colón, con tiendas, cafeterías, restaurantes y servicios en el centro urbano.",
+    "nameI18n": {
+        "es": "Centro Comercial de Calle 12 de Abril",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Principal corredor comercial y gastronómico de Colón, con tiendas, cafeterías, restaurantes y servicios en el centro urbano.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Calle 12 de Abril, Colón, Entre Ríos",
+    "keywords": [
+        "12 de abril",
+        "centro comercial",
+        "compras",
+        "gastronomia",
+        "centro"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://colon.gov.ar/bus-turistico-y-caminatas-a-la-reserva-norte-dos-propuestas-guiadas-para-conocer-nuestra-ciudad/",
+    "notes": "El corredor está incluido en el circuito turístico oficial. Debe definirse un punto central representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "shopping",
+            "isPrimary": true
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "solar_del_este",
+    "lat": null,
+    "long": null,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Balneario y complejo recreativo del sector este, con playa y servicios de temporada.",
+    "nameI18n": {
+        "es": "Solar del Este",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Balneario y complejo recreativo del sector este, con playa y servicios de temporada.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ituzaingó al Este, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "solar del este",
+        "balneario",
+        "playa",
+        "ituzaingo",
+        "verano"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/playas",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

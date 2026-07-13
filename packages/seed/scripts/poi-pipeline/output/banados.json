@@ -1,0 +1,50 @@
+{
+    "slug": "banados",
+    "lat": null,
+    "long": null,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Extensos ambientes inundables que sostienen gran biodiversidad de aves acuáticas, anfibios y vegetación típica del delta.",
+    "nameI18n": {
+        "es": "Bañados de Ceibas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Extensos ambientes inundables que sostienen gran biodiversidad de aves acuáticas, anfibios y vegetación típica del delta.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de Ceibas, Entre Ríos",
+    "keywords": [
+        "bañados de ceibas",
+        "humedal",
+        "aves acuaticas",
+        "delta",
+        "paisaje inundable"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/ceibas; https://www.lanacion.com.ar/revista-lugares/meca-internacional-el-pueblo-que-convoca-gente-del-mundo-entero-para-ver-y-fotografiar-aves-nid03082025/",
+    "notes": "Ambiente natural regional; requiere polígonos y accesos diferenciados.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        }
+    ]
+}

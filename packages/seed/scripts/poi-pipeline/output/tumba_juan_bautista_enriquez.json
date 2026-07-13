@@ -1,0 +1,50 @@
+{
+    "slug": "tumba_juan_bautista_enriquez",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sepulcro declarado Tumba Histórica Provincial dentro del cementerio local.",
+    "nameI18n": {
+        "es": "Tumba Histórica de Juan Bautista Enríquez",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sepulcro declarado Tumba Histórica Provincial dentro del cementerio local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Cementerio Histórico de Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "juan bautista enriquez",
+        "tumba historica provincial",
+        "cementerio",
+        "memoria",
+        "patrimonio funerario"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "slug": "restaurante_el_palmar",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Restaurante ubicado en el área de servicios, con platos regionales, pescados y productos elaborados con el fruto de la palmera yatay.",
+    "nameI18n": {
+        "es": "Restaurante El Palmar",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Restaurante ubicado en el área de servicios, con platos regionales, pescados y productos elaborados con el fruto de la palmera yatay.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Área de servicios del Parque Nacional El Palmar, Ubajay, Entre Ríos",
+    "keywords": [
+        "restaurante el palmar",
+        "gastronomia regional",
+        "yatay",
+        "pescado",
+        "comida entrerriana"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/servicios",
+    "notes": "Servicio vigente confirmado por Parques Nacionales. Falta geocodificar el edificio.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "gastronomy",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

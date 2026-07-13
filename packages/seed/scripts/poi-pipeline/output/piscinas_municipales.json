@@ -1,0 +1,50 @@
+{
+    "slug": "piscinas_municipales",
+    "lat": null,
+    "long": null,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Piscinas recreativas integradas al predio del balneario y utilizadas durante la temporada estival.",
+    "nameI18n": {
+        "es": "Piscinas Municipales del Balneario",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Piscinas recreativas integradas al predio del balneario y utilizadas durante la temporada estival.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque Balneario Municipal, Villaguay, Entre Ríos",
+    "keywords": [
+        "piscinas municipales",
+        "pileta",
+        "balneario",
+        "verano",
+        "natacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://www.villaguay.gob.ar/app/noticias/controles_de_salud_gratuitos_y_actividades_para_el_desarrollo_y_la_integracion_",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

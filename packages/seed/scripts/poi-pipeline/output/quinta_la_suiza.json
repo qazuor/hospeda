@@ -1,0 +1,55 @@
+{
+    "slug": "quinta_la_suiza",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Emprendimiento productivo familiar con nuez pecán, higos, cítricos, apicultura, visitas guiadas y venta de productos.",
+    "nameI18n": {
+        "es": "Quinta La Suiza",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Emprendimiento productivo familiar con nuez pecán, higos, cítricos, apicultura, visitas guiadas y venta de productos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de Villaguay, Entre Ríos",
+    "keywords": [
+        "quinta la suiza",
+        "nuez pecan",
+        "higos",
+        "citricos",
+        "miel",
+        "turismo productivo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://es.wikipedia.org/wiki/Villaguay",
+    "notes": "Oferta productiva documentada. Falta validar visitas actuales y geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        }
+    ]
+}

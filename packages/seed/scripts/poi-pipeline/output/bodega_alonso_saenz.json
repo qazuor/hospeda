@@ -1,0 +1,55 @@
+{
+    "slug": "bodega_alonso_saenz",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Bodega familiar con viñedos de Tannat, Merlot, Pinot Noir y Sauvignon Blanc, abierta a visitas y experiencias vinculadas con la producción de vinos.",
+    "nameI18n": {
+        "es": "Bodega Alonso Sáenz",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Bodega familiar con viñedos de Tannat, Merlot, Pinot Noir y Sauvignon Blanc, abierta a visitas y experiencias vinculadas con la producción de vinos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ruta Provincial 23 km 28, zona de Arroyo Barú, Entre Ríos",
+    "keywords": [
+        "bodega alonso saenz",
+        "vino entrerriano",
+        "viñedo",
+        "tannat",
+        "merlot",
+        "arroyo baru"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://villaelisa.tur.ar/atractivos/",
+    "notes": "Actividad, varietales y dirección vial confirmados. Falta geocodificar y definir asociación territorial futura.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "winery",
+            "isPrimary": true
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        }
+    ]
+}

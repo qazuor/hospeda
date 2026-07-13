@@ -1,0 +1,54 @@
+{
+    "slug": "vinedo_la_dominga",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Emprendimiento familiar fundado en 2019 e integrado al Camino del Vino Entrerriano, con enfoque artesanal y sustentable.",
+    "nameI18n": {
+        "es": "Viñedo La Dominga",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Emprendimiento familiar fundado en 2019 e integrado al Camino del Vino Entrerriano, con enfoque artesanal y sustentable.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Julio Irazusta y Marcelo T. de Alvear, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "viñedo la dominga",
+        "vino artesanal",
+        "camino del vino",
+        "sustentable",
+        "gualeguaychu"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/detalle?id=431; https://gualeguaychu.tur.ar/caminodelvino",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "winery",
+            "isPrimary": true
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        }
+    ]
+}

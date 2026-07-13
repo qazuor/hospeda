@@ -1,0 +1,54 @@
+{
+    "slug": "cine_teatro_odeon",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Edificio teatral y cinematográfico histórico protegido por el catálogo patrimonial municipal.",
+    "nameI18n": {
+        "es": "Cine Teatro Odeón",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Edificio teatral y cinematográfico histórico protegido por el catálogo patrimonial municipal.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Entre Ríos 567, Concordia, Entre Ríos",
+    "keywords": [
+        "cine teatro odeon",
+        "teatro odeon",
+        "cine historico",
+        "entre rios 567",
+        "patrimonio"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/mapas/cine-teatro-ode%C3%B3n; https://egob.concordia.gob.ar/servicios/digesto.do?idNormativa=987&opcion=idNormativa",
+    "notes": "Dirección y protección patrimonial confirmadas. Falta geocodificar y validar programación actual.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "theater",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        }
+    ]
+}

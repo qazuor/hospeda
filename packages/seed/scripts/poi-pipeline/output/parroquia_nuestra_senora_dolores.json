@@ -1,0 +1,51 @@
+{
+    "slug": "parroquia_nuestra_senora_dolores",
+    "lat": -32.44557,
+    "long": -58.43399,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Templo mandado construir en 1887 por Dolores Costa de Urquiza. Es uno de los edificios históricos mejor preservados de San Justo y un testimonio del origen de la colonia agrícola.",
+    "nameI18n": {
+        "es": "Parroquia Nuestra Señora de los Dolores",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Templo mandado construir en 1887 por Dolores Costa de Urquiza. Es uno de los edificios históricos mejor preservados de San Justo y un testimonio del origen de la colonia agrícola.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Justo, Entre Ríos",
+    "keywords": [
+        "nuestra señora de los dolores",
+        "parroquia",
+        "dolores costa",
+        "urquiza",
+        "iglesia",
+        "historia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://www.entrerios.tur.ar/localidades-1/san-justo; https://mapcarta.com/",
+    "notes": "Relevancia histórica confirmada por Turismo Entre Ríos y ubicación contrastada con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

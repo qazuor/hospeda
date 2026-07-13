@@ -1,0 +1,55 @@
+{
+    "slug": "termas_san_jose",
+    "lat": -32.19195,
+    "long": -58.16311,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Complejo termal y parque acuático con piscinas de distintas temperaturas, sectores recreativos y servicios orientados al descanso y al turismo familiar.",
+    "nameI18n": {
+        "es": "Termas San José",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Complejo termal y parque acuático con piscinas de distintas temperaturas, sectores recreativos y servicios orientados al descanso y al turismo familiar.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona termal y balnearia de San José, Entre Ríos",
+    "keywords": [
+        "termas san jose",
+        "aguas termales",
+        "parque acuatico",
+        "piscinas",
+        "relax",
+        "familia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W202761730; https://sanjose.gob.ar/el-verano-mas-largo-de-entre-rios-se-vive-en-san-jose/",
+    "notes": "Coordenadas contrastadas con OpenStreetMap; vigencia turística confirmada por el municipio en 2026.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "thermal_complex",
+            "isPrimary": true
+        },
+        {
+            "slug": "wellness",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

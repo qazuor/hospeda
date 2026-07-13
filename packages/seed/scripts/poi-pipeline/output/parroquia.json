@@ -1,0 +1,50 @@
+{
+    "slug": "parroquia",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Principal templo católico del pueblo, originado a partir de la comisión pro templo formada por vecinos en 1930.",
+    "nameI18n": {
+        "es": "Parroquia de Ubajay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Principal templo católico del pueblo, originado a partir de la comisión pro templo formada por vecinos en 1930.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ubajay, Entre Ríos",
+    "keywords": [
+        "parroquia ubajay",
+        "iglesia",
+        "templo",
+        "1930",
+        "religion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://ubajay.gob.ar/turismo/",
+    "notes": "Historia institucional confirmada por el municipio. Falta denominación completa, dirección y coordenadas.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

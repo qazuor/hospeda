@@ -1,0 +1,50 @@
+{
+    "slug": "nuevo_salon_arte",
+    "lat": -32.4851849,
+    "long": -58.2320232,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Galería y atelier dedicado a exposiciones, producción artística y actividades culturales.",
+    "nameI18n": {
+        "es": "Atelier Nuevo Salón de Arte",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Galería y atelier dedicado a exposiciones, producción artística y actividades culturales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "nuevo salon de arte",
+        "atelier",
+        "galeria",
+        "artistas",
+        "exposiciones"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://es.wikipedia.org/wiki/Concepci%C3%B3n_del_Uruguay",
+    "notes": "Espacio cultural documentado; falta validar sede y actividad actual. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "art",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        }
+    ]
+}

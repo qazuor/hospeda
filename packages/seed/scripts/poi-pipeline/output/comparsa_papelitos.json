@@ -1,0 +1,50 @@
+{
+    "slug": "comparsa_papelitos",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Comparsa histórica del Carnaval del País vinculada con el Club Juventud Unida.",
+    "nameI18n": {
+        "es": "Comparsa Papelitos",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Comparsa histórica del Carnaval del País vinculada con el Club Juventud Unida.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Tala 680, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "comparsa papelitos",
+        "carnaval",
+        "tala 680",
+        "juventud unida",
+        "batucada"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/carnaval",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

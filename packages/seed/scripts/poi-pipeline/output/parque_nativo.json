@@ -1,0 +1,54 @@
+{
+    "slug": "parque_nativo",
+    "lat": -31.6247717,
+    "long": -58.5051869,
+    "type": "PARK",
+    "icon": null,
+    "description": "Espacio verde dedicado a la vegetación y al paisaje nativo regional, utilizado para paseo, recreación y educación ambiental.",
+    "nameI18n": {
+        "es": "Parque Nativo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio verde dedicado a la vegetación y al paisaje nativo regional, utilizado para paseo, recreación y educación ambiental.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Salvador, Entre Ríos",
+    "keywords": [
+        "parque nativo",
+        "flora nativa",
+        "naturaleza",
+        "educacion ambiental",
+        "parque"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/",
+    "notes": "Nombre y uso general confirmados. Falta geocodificar y documentar especies. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

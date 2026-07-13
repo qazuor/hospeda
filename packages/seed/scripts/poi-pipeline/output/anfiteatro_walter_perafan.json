@@ -1,0 +1,54 @@
+{
+    "slug": "anfiteatro_walter_perafan",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Anfiteatro al aire libre del Parque Mitre utilizado para espectáculos, festivales y actividades culturales frente a la Costanera.",
+    "nameI18n": {
+        "es": "Anfiteatro Walter Perafán",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Anfiteatro al aire libre del Parque Mitre utilizado para espectáculos, festivales y actividades culturales frente a la Costanera.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque Mitre, Concordia, Entre Ríos",
+    "keywords": [
+        "anfiteatro walter perafan",
+        "parque mitre",
+        "espectaculos",
+        "festival",
+        "costanera"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/noticias/costanera/un-fin-de-semana-con-mucha-actividad-en-la-costanera-de-concordia",
+    "notes": "Nombre y ubicación general confirmados. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "theater",
+            "isPrimary": true
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        }
+    ]
+}

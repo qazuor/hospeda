@@ -1,0 +1,50 @@
+{
+    "slug": "club_nautico_colon",
+    "lat": null,
+    "long": null,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Institución náutica vinculada con actividades deportivas, navegación, regatas y propuestas recreativas sobre el río Uruguay.",
+    "nameI18n": {
+        "es": "Club Náutico Colón",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Institución náutica vinculada con actividades deportivas, navegación, regatas y propuestas recreativas sobre el río Uruguay.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona costera de Colón, Entre Ríos",
+    "keywords": [
+        "club nautico colon",
+        "nautica",
+        "regatas",
+        "rio uruguay",
+        "deportes"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://colon.gov.ar/se-puso-en-marcha-verano-colon-para-lanzar-la-temporada-junto-a-prestadores-y-fuerzas-de-seguridad/",
+    "notes": "Existencia y actividad confirmadas por la Municipalidad. Falta validar dirección y coordenadas.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "port",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "circuito_historico_guiado",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido guiado por el casco histórico que integra el complejo fabril, los barrios obreros, los chalets, La Manga y otros elementos del patrimonio industrial.",
+    "nameI18n": {
+        "es": "Circuito Histórico Peatonal de Pueblo Liebig",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido guiado por el casco histórico que integra el complejo fabril, los barrios obreros, los chalets, La Manga y otros elementos del patrimonio industrial.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Inicio en el Centro de Interpretación Audiovisual, Pueblo Liebig, Entre Ríos",
+    "keywords": [
+        "visita guiada pueblo liebig",
+        "circuito historico",
+        "recorrido peatonal",
+        "patrimonio industrial",
+        "casco historico"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.colonturismo.tur.ar/directorio/visitas-guiadas-por-el-pueblo-liebig/; https://www.entrerios.tur.ar/localidades-1/pueblo-liebig",
+    "notes": "Recorrido turístico vigente confirmado en 2026. Debe definirse la coordenada del punto de inicio.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        }
+    ]
+}

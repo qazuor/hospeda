@@ -1,0 +1,54 @@
+{
+    "slug": "puente_mendez_casariego",
+    "lat": null,
+    "long": null,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Puente que conecta la ciudad con Parque Unzué y el sector oriental del río, además de ser uno de los puntos visuales más reconocibles del paseo costero.",
+    "nameI18n": {
+        "es": "Puente Carlos Méndez Casariego",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Puente que conecta la ciudad con Parque Unzué y el sector oriental del río, además de ser uno de los puntos visuales más reconocibles del paseo costero.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Costanera y acceso a Parque Unzué, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "puente mendez casariego",
+        "puente gualeguaychu",
+        "parque unzue",
+        "costanera",
+        "rio"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/gualeguaych%C3%BA; https://gualeguaychu.tur.ar/",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        }
+    ]
+}

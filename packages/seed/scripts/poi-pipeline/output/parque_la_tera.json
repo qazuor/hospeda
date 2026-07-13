@@ -1,0 +1,54 @@
+{
+    "slug": "parque_la_tera",
+    "lat": null,
+    "long": null,
+    "type": "PARK",
+    "icon": null,
+    "description": "Amplio espacio verde de la casa museo, utilizado para actividades familiares, juegos educativos, recorridos y encuentros culturales.",
+    "nameI18n": {
+        "es": "Parque de La Tera",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Amplio espacio verde de la casa museo, utilizado para actividades familiares, juegos educativos, recorridos y encuentros culturales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Casa Museo La Tera, Larroque, Entre Ríos",
+    "keywords": [
+        "parque la tera",
+        "juegos educativos",
+        "familias",
+        "espacio verde",
+        "maria esther de miguel"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.larroque.gob.ar/noticia/1645/la_propuesta_en_el_museo_la_tera_para_aprender_crear_y_divertirse",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "museum",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "gualeguaychu_centro_convenciones",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio destinado a congresos, exposiciones, jornadas, ferias y encuentros de turismo de reuniones.",
+    "nameI18n": {
+        "es": "Centro de Convenciones Gualeguaychú",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio destinado a congresos, exposiciones, jornadas, ferias y encuentros de turismo de reuniones.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Estrada 1080, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "centro convenciones gualeguaychu",
+        "estrada 1080",
+        "congresos",
+        "eventos",
+        "ferias"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/turismodereuniones",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        },
+        {
+            "slug": "fair",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,58 @@
+{
+    "slug": "concordia_costanera",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Paseo ribereño sobre el río Uruguay con espacios verdes, gastronomía, sectores deportivos, playas y vistas hacia la ciudad uruguaya de Salto.",
+    "nameI18n": {
+        "es": "Costanera de Concordia",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paseo ribereño sobre el río Uruguay con espacios verdes, gastronomía, sectores deportivos, playas y vistas hacia la ciudad uruguaya de Salto.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Costanera, Concordia, Entre Ríos",
+    "keywords": [
+        "costanera concordia",
+        "rio uruguay",
+        "paseo ribereño",
+        "gastronomia",
+        "atardecer"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/costanera",
+    "notes": "Paseo turístico oficial. Falta definir un punto central representativo o geometría lineal.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "waterfront",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        }
+    ]
+}

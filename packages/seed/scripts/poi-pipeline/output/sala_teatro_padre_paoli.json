@@ -1,0 +1,54 @@
+{
+    "slug": "sala_teatro_padre_paoli",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sala teatral municipal y principal escenario del Festival de Teatro Larroque, actos, charlas y producciones culturales.",
+    "nameI18n": {
+        "es": "Sala de Teatro Padre Alberto Paoli",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sala teatral municipal y principal escenario del Festival de Teatro Larroque, actos, charlas y producciones culturales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque de la Estación Intendente Fabio A. Larrosa, Larroque, Entre Ríos",
+    "keywords": [
+        "sala padre alberto paoli",
+        "teatro larroque",
+        "festival de teatro",
+        "cultura",
+        "parque estacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.larroque.gob.ar/noticia/2608/se_llevo_a_cabo_exitosamente_el_vi_festival_de_teatro_larroque; https://www.larroque.gob.ar/; https://www.instagram.com/areacultura.larroque/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "theater",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

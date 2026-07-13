@@ -1,0 +1,46 @@
+{
+    "slug": "instituto_san_jose_obrero",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Institución educativa agrotécnica vinculada con la formación rural y productiva de la comunidad de San Justo.",
+    "nameI18n": {
+        "es": "Instituto San José Obrero Agrotécnica",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Institución educativa agrotécnica vinculada con la formación rural y productiva de la comunidad de San Justo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Justo, Entre Ríos",
+    "keywords": [
+        "san jose obrero",
+        "agrotecnica",
+        "educacion rural",
+        "instituto",
+        "san justo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 10,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N9066937279",
+    "notes": "La institución aparece cartografiada; falta verificar domicilio y coordenadas exactas.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "education",
+            "isPrimary": true
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

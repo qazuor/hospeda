@@ -1,0 +1,54 @@
+{
+    "slug": "granja_san_anton",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio rural y recreativo ubicado sobre el acceso Eva Perón, vinculado con actividades familiares y contacto con animales.",
+    "nameI18n": {
+        "es": "Granja San Antón",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio rural y recreativo ubicado sobre el acceso Eva Perón, vinculado con actividades familiares y contacto con animales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Acceso Eva Perón, Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "granja san anton",
+        "granja educativa",
+        "familia",
+        "animales",
+        "acceso eva peron"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=que-hacer",
+    "notes": "Prestador listado oficialmente. Falta validar modalidad actual de visita y coordenadas.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "termas_punta_viracho",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Complejo termal junto al lago con piscinas y una playa de piedras, abierto durante todo el año.",
+    "nameI18n": {
+        "es": "Termas de Punta Viracho",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Complejo termal junto al lago con piscinas y una playa de piedras, abierto durante todo el año.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Perilago de Salto Grande, Concordia, Entre Ríos",
+    "keywords": [
+        "termas punta viracho",
+        "playa de piedras",
+        "lago",
+        "piscinas termales",
+        "relax"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/termas/termas-de-punta-viracho; https://www.concordia.gob.ar/mapas/termas-de-punta-viracho",
+    "notes": "Servicios y ubicación general confirmados. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "thermal_complex",
+            "isPrimary": true
+        },
+        {
+            "slug": "wellness",
+            "isPrimary": false
+        },
+        {
+            "slug": "beach",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "slug": "monumento_la_lata",
+    "lat": null,
+    "long": null,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Monumento relacionado con la identidad industrial y la producción de carne envasada que dio reconocimiento internacional a Pueblo Liebig.",
+    "nameI18n": {
+        "es": "Monumento a La Lata",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Monumento relacionado con la identidad industrial y la producción de carne envasada que dio reconocimiento internacional a Pueblo Liebig.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Pueblo Liebig, Entre Ríos",
+    "keywords": [
+        "monumento a la lata",
+        "carne envasada",
+        "corned beef",
+        "industria carnica",
+        "identidad liebig"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://puebloliebig.gob.ar/category/noticias/page/19/",
+    "notes": "Existencia y uso como lugar de homenajes confirmados por la Municipalidad. Falta geocodificar y documentar autor y fecha de inauguración.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

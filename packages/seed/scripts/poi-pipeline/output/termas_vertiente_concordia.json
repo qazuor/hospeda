@@ -1,0 +1,54 @@
+{
+    "slug": "termas_vertiente_concordia",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Complejo termal con circuito hídrico y servicios de bienestar, ubicado en el acceso norte de la ciudad.",
+    "nameI18n": {
+        "es": "Termas Vertiente de la Concordia",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Complejo termal con circuito hídrico y servicios de bienestar, ubicado en el acceso norte de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Acceso norte de Concordia, Entre Ríos",
+    "keywords": [
+        "vertiente de la concordia",
+        "termas concordia",
+        "circuito hidrico",
+        "spa",
+        "aguas termales"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/termas/termas-de-concordia",
+    "notes": "Denominación y servicios confirmados. Falta dirección y geocodificación exacta.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "thermal_complex",
+            "isPrimary": true
+        },
+        {
+            "slug": "wellness",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

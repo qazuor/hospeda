@@ -1,0 +1,54 @@
+{
+    "slug": "laberinto_rincon_sol",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Parque familiar con laberinto de ligustrina, minigolf, juegos infantiles y figuras de dinosaurios.",
+    "nameI18n": {
+        "es": "Laberinto Rincón del Sol",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Parque familiar con laberinto de ligustrina, minigolf, juegos infantiles y figuras de dinosaurios.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Río de los Pájaros y Las Magnolias, Federación, Entre Ríos",
+    "keywords": [
+        "laberinto rincon del sol",
+        "minigolf",
+        "dinosaurios",
+        "juegos infantiles",
+        "familia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/otros-atractivos/",
+    "notes": "Servicios y dirección confirmados. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "recreation",
+            "isPrimary": true
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "pulperia_colonia_caseros",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio de productos regionales, artesanías y gastronomía ubicado sobre el acceso al Palacio San José.",
+    "nameI18n": {
+        "es": "Pulpería Colonia Caseros",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio de productos regionales, artesanías y gastronomía ubicado sobre el acceso al Palacio San José.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Acceso al Palacio San José, Caseros, Entre Ríos",
+    "keywords": [
+        "pulperia colonia caseros",
+        "productos regionales",
+        "artesanias",
+        "palacio san jose",
+        "gastronomia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://caseros.gob.ar/turismo-y-cultura/",
+    "notes": "Emprendimiento privado. Conviene validar horarios y reservas.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "gastronomy",
+            "isPrimary": true
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "corso_gualeguay",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Carnaval de verano con comparsas, carrozas, batucadas, pasistas y fuerte participación comunitaria.",
+    "nameI18n": {
+        "es": "Corso de Gualeguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Carnaval de verano con comparsas, carrozas, batucadas, pasistas y fuerte participación comunitaria.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Corsódromo de Gualeguay, Entre Ríos",
+    "keywords": [
+        "corso gualeguay",
+        "carnaval gualeguay",
+        "comparsas",
+        "carrozas",
+        "batucadas"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://corso.gualeguay.gob.ar/; https://www.entrerios.tur.ar/localidades-1/gualeguay",
+    "notes": "Evento confirmado; comparte ubicación general con el Corsódromo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "entertainment",
+            "isPrimary": true
+        },
+        {
+            "slug": "fair",
+            "isPrimary": false
+        },
+        {
+            "slug": "nightlife",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

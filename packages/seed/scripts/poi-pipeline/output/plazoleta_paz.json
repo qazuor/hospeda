@@ -1,0 +1,49 @@
+{
+    "slug": "plazoleta_paz",
+    "lat": null,
+    "long": null,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Paseo urbano dedicado a la convivencia y la paz, integrado al sistema de plazoletas temáticas de avenida Malarín.",
+    "nameI18n": {
+        "es": "Plazoleta de la Paz",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paseo urbano dedicado a la convivencia y la paz, integrado al sistema de plazoletas temáticas de avenida Malarín.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Malarín, San Salvador, Entre Ríos",
+    "keywords": [
+        "plazoleta de la paz",
+        "paz",
+        "avenida malarin",
+        "paseo urbano"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 10,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/",
+    "notes": "Existencia confirmada por la Municipalidad. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        }
+    ]
+}

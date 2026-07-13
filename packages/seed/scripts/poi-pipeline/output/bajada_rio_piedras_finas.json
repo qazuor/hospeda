@@ -1,0 +1,50 @@
+{
+    "slug": "bajada_rio_piedras_finas",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Acceso rural al agua utilizado como punto de observación y conexión con el paisaje del lago.",
+    "nameI18n": {
+        "es": "Bajada al Río de Piedras Finas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Acceso rural al agua utilizado como punto de observación y conexión con el paisaje del lago.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona de Piedras Finas, Santa Ana, Entre Ríos",
+    "keywords": [
+        "bajada al rio",
+        "piedras finas",
+        "lago",
+        "acceso al agua",
+        "mirador"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W706820034; https://mapcarta.com/es/N8949729120",
+    "notes": "Ubicación relativa confirmada. Falta geocodificar y validar acceso público.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "waterfront",
+            "isPrimary": true
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

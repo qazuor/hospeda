@@ -1,0 +1,54 @@
+{
+    "slug": "museo_malvinas_zona_darwin",
+    "lat": null,
+    "long": null,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo dedicado a preservar la memoria de la Guerra del Atlántico Sur mediante objetos, documentos y testimonios vinculados con veteranos y combatientes.",
+    "nameI18n": {
+        "es": "Museo de Malvinas Zona Darwin",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo dedicado a preservar la memoria de la Guerra del Atlántico Sur mediante objetos, documentos y testimonios vinculados con veteranos y combatientes.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Combatientes de Malvinas 188, Colón, Entre Ríos",
+    "keywords": [
+        "museo malvinas",
+        "zona darwin",
+        "veteranos",
+        "guerra de malvinas",
+        "memoria"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.colonturismo.tur.ar/directorio/museomalvinas-zonadarwin/",
+    "notes": "Existencia y domicilio confirmados por Turismo Colón. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

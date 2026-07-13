@@ -1,0 +1,50 @@
+{
+    "slug": "mesa_giratoria_holt",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Mesa giratoria metálica conservada dentro del conjunto ferroviario y utilizada históricamente para maniobras de locomotoras.",
+    "nameI18n": {
+        "es": "Mesa Giratoria de Estación Holt",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Mesa giratoria metálica conservada dentro del conjunto ferroviario y utilizada históricamente para maniobras de locomotoras.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Estación Holt, Ibicuy, Entre Ríos",
+    "keywords": [
+        "mesa giratoria",
+        "estacion holt",
+        "locomotoras",
+        "patrimonio ferroviario",
+        "ferrocarril"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://ibicuy.gob.ar/?q=content%2Fque-visitar",
+    "notes": "Elemento interno del complejo ferroviario. Falta geocodificar dentro del predio y confirmar acceso.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "slug": "predio_fiesta_nacional_artesania",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sector utilizado para la Fiesta Nacional de la Artesanía, con exposiciones, espectáculos, actividades culturales y deportivas de gran convocatoria.",
+    "nameI18n": {
+        "es": "Predio de la Fiesta Nacional de la Artesanía",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sector utilizado para la Fiesta Nacional de la Artesanía, con exposiciones, espectáculos, actividades culturales y deportivas de gran convocatoria.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Entorno del Parque Quirós, Colón, Entre Ríos",
+    "keywords": [
+        "fiesta nacional de la artesania",
+        "predio artesania",
+        "festival",
+        "feria",
+        "espectaculos"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://colon.gov.ar/los-deportes-seran-protagonistas-en-la-40-fiesta-nacional-de-la-artesania/",
+    "notes": "Uso y localización general confirmados; falta definir el acceso principal del predio.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "fair",
+            "isPrimary": true
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "museo_artes_visuales",
+    "lat": null,
+    "long": null,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo municipal con obras pictóricas y escultóricas, exposiciones y un mural cerámico de Benito Quinquela Martín en su fachada.",
+    "nameI18n": {
+        "es": "Museo de Artes Visuales",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo municipal con obras pictóricas y escultóricas, exposiciones y un mural cerámico de Benito Quinquela Martín en su fachada.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urquiza 638, Concordia, Entre Ríos",
+    "keywords": [
+        "museo artes visuales",
+        "quinquela martin",
+        "arte",
+        "pintura",
+        "escultura"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/museos/museo-de-artes-visuales; https://egob.concordia.gob.ar/servicios/digesto.do?idNormativa=987&opcion=idNormativa",
+    "notes": "Dirección y patrimonio artístico confirmados. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

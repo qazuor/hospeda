@@ -1,0 +1,59 @@
+{
+    "slug": "parque_nacional_el_palmar",
+    "lat": null,
+    "long": null,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Área protegida de más de 8.200 hectáreas que conserva palmares de Butia yatay, pastizales, selva en galería, humedales y patrimonio histórico y arqueológico.",
+    "nameI18n": {
+        "es": "Parque Nacional El Palmar",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Área protegida de más de 8.200 hectáreas que conserva palmares de Butia yatay, pastizales, selva en galería, humedales y patrimonio histórico y arqueológico.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ruta Nacional 14 km 198, Ubajay, Entre Ríos",
+    "keywords": [
+        "parque nacional el palmar",
+        "palmeras yatay",
+        "reserva natural",
+        "aves",
+        "senderismo",
+        "ramsar"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar",
+    "notes": "Destino natural principal de Ubajay. Falta definir una coordenada representativa oficial para el parque completo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "reserve",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

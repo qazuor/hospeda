@@ -1,0 +1,46 @@
+{
+    "slug": "ubajay_terminal_omnibus",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Terminal de transporte terrestre de pasajeros y punto de llegada para quienes visitan Ubajay y el Parque Nacional El Palmar.",
+    "nameI18n": {
+        "es": "Terminal de Ómnibus de Ubajay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Terminal de transporte terrestre de pasajeros y punto de llegada para quienes visitan Ubajay y el Parque Nacional El Palmar.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ceibal 162, Ubajay, Entre Ríos",
+    "keywords": [
+        "terminal ubajay",
+        "terminal de omnibus",
+        "colectivos",
+        "micros",
+        "transporte"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/horarios-como-llegar",
+    "notes": "Dirección y teléfono confirmados por Parques Nacionales. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "transport",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

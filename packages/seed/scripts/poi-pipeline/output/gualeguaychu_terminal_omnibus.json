@@ -1,0 +1,46 @@
+{
+    "slug": "gualeguaychu_terminal_omnibus",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Principal terminal terrestre de pasajeros con conexiones regionales y nacionales.",
+    "nameI18n": {
+        "es": "Terminal de Ómnibus de Gualeguaychú",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Principal terminal terrestre de pasajeros con conexiones regionales y nacionales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Boulevard Pedro Jurado y General Artigas, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "terminal gualeguaychu",
+        "terminal de omnibus",
+        "micros",
+        "colectivos",
+        "artigas"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.centraldepasajes.com.ar/pasaje-micro/terminal-de-gualeguaychu.html; https://gualeguaychu.gov.ar/transportepublico/",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "transport",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

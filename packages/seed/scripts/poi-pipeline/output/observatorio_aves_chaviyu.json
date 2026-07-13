@@ -1,0 +1,54 @@
+{
+    "slug": "observatorio_aves_chaviyu",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Observatorio integrado a la pasarela de la reserva, preparado para contemplar aves sin alterar su comportamiento.",
+    "nameI18n": {
+        "es": "Observatorio de Aves de Chaviyú",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Observatorio integrado a la pasarela de la reserva, preparado para contemplar aves sin alterar su comportamiento.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Reserva Natural Chaviyú, Federación, Entre Ríos",
+    "keywords": [
+        "observatorio de aves",
+        "chaviyu",
+        "avistaje",
+        "fauna",
+        "reserva natural"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/otros-atractivos/",
+    "notes": "Existencia y finalidad confirmadas. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "birdwatching",
+            "isPrimary": true
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        },
+        {
+            "slug": "reserve",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "slug": "rosario_del_tala_oficina_turismo",
+    "lat": -32.3008178,
+    "long": -59.138887,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Punto municipal de información sobre atractivos, actividades, prestadores, alojamiento y agenda local.",
+    "nameI18n": {
+        "es": "Oficina de Turismo de Rosario del Tala",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Punto municipal de información sobre atractivos, actividades, prestadores, alojamiento y agenda local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "oficina turismo rosario del tala",
+        "informacion turistica",
+        "mapas",
+        "prestadores",
+        "agenda"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=areas-noticias%2Fturismo; https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf; https://www.entrerios.tur.ar/localidades-1/rosario-del-tala",
+    "notes": "Servicio oficial confirmado. Falta validar dirección exacta y horarios vigentes. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "services",
+            "isPrimary": true
+        },
+        {
+            "slug": "government",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

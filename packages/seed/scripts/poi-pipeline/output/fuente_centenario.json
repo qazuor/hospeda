@@ -1,0 +1,50 @@
+{
+    "slug": "fuente_centenario",
+    "lat": null,
+    "long": null,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Fuente de fabricación francesa donada para el centenario de la Revolución de Mayo y ubicada en Plaza Libertad.",
+    "nameI18n": {
+        "es": "Fuente del Centenario",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Fuente de fabricación francesa donada para el centenario de la Revolución de Mayo y ubicada en Plaza Libertad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Plaza Libertad, Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "fuente del centenario",
+        "fuente francesa",
+        "revolucion de mayo",
+        "plaza libertad",
+        "arte urbano"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

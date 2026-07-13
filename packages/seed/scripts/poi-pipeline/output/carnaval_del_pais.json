@@ -1,0 +1,54 @@
+{
+    "slug": "carnaval_del_pais",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espectáculo de carnaval a cielo abierto con comparsas, carrozas, batucadas, pasistas y producción artística comunitaria.",
+    "nameI18n": {
+        "es": "Carnaval del País",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espectáculo de carnaval a cielo abierto con comparsas, carrozas, batucadas, pasistas y producción artística comunitaria.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Corsódromo José Luis Gestro, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "carnaval del pais",
+        "carnaval gualeguaychu",
+        "comparsas",
+        "carrozas",
+        "batucadas"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/carnaval; https://gualeguaychu.gov.ar/agenda/25900-carnaval-del-pais%3A-fin-de-semana-largo-de-carnaval",
+    "notes": "Evento confirmado; comparte ubicación general con el Corsódromo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "entertainment",
+            "isPrimary": true
+        },
+        {
+            "slug": "fair",
+            "isPrimary": false
+        },
+        {
+            "slug": "nightlife",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

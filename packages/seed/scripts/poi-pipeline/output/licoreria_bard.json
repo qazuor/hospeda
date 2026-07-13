@@ -1,0 +1,54 @@
+{
+    "slug": "licoreria_bard",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Emprendimiento tradicional de la ciudad vinculado con la elaboración de licores y con más de un siglo de historia productiva familiar.",
+    "nameI18n": {
+        "es": "Licorería Bard Hermanos",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Emprendimiento tradicional de la ciudad vinculado con la elaboración de licores y con más de un siglo de historia productiva familiar.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San José, Entre Ríos",
+    "keywords": [
+        "licoreria bard",
+        "bard hermanos",
+        "licores",
+        "produccion local",
+        "historia familiar"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sanjose.gob.ar/san-jose-se-posiciona-como-uno-de-los-destinos-preferidos-de-la-provincia-de-entre-rios-para-disfrutar-del-ocio-y-descanso-sobre-la-orilla-del-rio-uruguay/; https://sanjose.gob.ar/nos-sumamos-a-la-noche-de-los-museos-entrerrianos/",
+    "notes": "Historia y relevancia turística confirmadas; falta dirección, condiciones de visita y coordenadas.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "gastronomy",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        }
+    ]
+}

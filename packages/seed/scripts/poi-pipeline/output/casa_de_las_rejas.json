@@ -1,0 +1,54 @@
+{
+    "slug": "casa_de_las_rejas",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Residencia histórica de 1913 reconocida por sus rejas ornamentales vinculadas con Cesáreo Bernaldo de Quirós.",
+    "nameI18n": {
+        "es": "Palacio Costa-Quirós - Casa de las Rejas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Residencia histórica de 1913 reconocida por sus rejas ornamentales vinculadas con Cesáreo Bernaldo de Quirós.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "1.º de Mayo y Monte Caseros, Gualeguay, Entre Ríos",
+    "keywords": [
+        "casa de las rejas",
+        "palacio costa quiros",
+        "cesareo bernaldo de quiros",
+        "1913",
+        "arquitectura"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/gualeguay; https://www.clarin.com/viajes/gualeguay-historia-naturaleza-carnaval-sur-entrerriano_0_mb81nYp6A.html; https://www.instagram.com/p/Cp8HgV8up9a/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        }
+    ]
+}

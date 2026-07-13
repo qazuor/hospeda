@@ -1,0 +1,55 @@
+{
+    "slug": "hogar_igualar",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Centro de ayuda al discapacitado con producción de mermeladas, conservas, carpintería, reciclado y vivero.",
+    "nameI18n": {
+        "es": "Hogar Igualar",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Centro de ayuda al discapacitado con producción de mermeladas, conservas, carpintería, reciclado y vivero.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urdinarrain, Entre Ríos",
+    "keywords": [
+        "hogar igualar",
+        "mermeladas",
+        "conservas",
+        "carpinteria",
+        "vivero",
+        "inclusion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://urdinarrain.tur.ar/que-hacer/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "community_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

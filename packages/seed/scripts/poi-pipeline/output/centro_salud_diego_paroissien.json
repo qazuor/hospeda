@@ -1,0 +1,46 @@
+{
+    "slug": "centro_salud_diego_paroissien",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Centro público de atención primaria y guardia médica de referencia para residentes y visitantes de Ubajay.",
+    "nameI18n": {
+        "es": "Centro de Salud Dr. Diego Paroissien",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Centro público de atención primaria y guardia médica de referencia para residentes y visitantes de Ubajay.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Pasaje de los Peregrinos y Las Acacias, Ubajay, Entre Ríos",
+    "keywords": [
+        "centro de salud ubajay",
+        "diego paroissien",
+        "guardia medica",
+        "salud",
+        "emergencias"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://ubajay.gob.ar/category/salud/; https://www.welcomeargentina.com/ubajay/c48671.html",
+    "notes": "Nombre, servicio y dirección confirmados. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

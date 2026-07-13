@@ -1,0 +1,54 @@
+{
+    "slug": "senderos_rincon_hondo",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorridos de naturaleza entre monte ribereño, miradores naturales y áreas de observación de aves.",
+    "nameI18n": {
+        "es": "Senderos de Rincón Hondo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorridos de naturaleza entre monte ribereño, miradores naturales y áreas de observación de aves.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Área Natural Rincón Hondo, Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "senderos rincon hondo",
+        "caminata",
+        "monte nativo",
+        "miradores",
+        "aves"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://www.rosariodeltala.gob.ar/?q=areas-noticias%2Fturismo",
+    "notes": "Falta digitalizar trazados, dificultad y condiciones de acceso.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "hiking",
+            "isPrimary": true
+        },
+        {
+            "slug": "reserve",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        }
+    ]
+}

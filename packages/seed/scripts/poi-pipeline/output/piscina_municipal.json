@@ -1,0 +1,50 @@
+{
+    "slug": "piscina_municipal",
+    "lat": null,
+    "long": null,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Piscina recreativa del complejo Costa Paranacito, utilizada durante la temporada estival.",
+    "nameI18n": {
+        "es": "Piscina Municipal del Balneario",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Piscina recreativa del complejo Costa Paranacito, utilizada durante la temporada estival.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Balneario Municipal Costa Paranacito, Entre Ríos",
+    "keywords": [
+        "piscina municipal",
+        "pileta",
+        "balneario costa paranacito",
+        "verano",
+        "familia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://es.wikipedia.org/wiki/Villa_Paranacito; https://www.airedesantafe.com.ar/turismo/un-destino-natural-dentro-la-provincia-rios-que-invita-descansar-frente-al-rio-n538446",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

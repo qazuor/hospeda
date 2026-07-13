@@ -1,0 +1,50 @@
+{
+    "slug": "teatro_auditorium",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sala teatral y cultural ubicada en el centro histórico, utilizada para espectáculos, presentaciones y actividades artísticas.",
+    "nameI18n": {
+        "es": "Teatro Auditorium",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sala teatral y cultural ubicada en el centro histórico, utilizada para espectáculos, presentaciones y actividades artísticas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Entorno de la Catedral, Concordia, Entre Ríos",
+    "keywords": [
+        "teatro auditorium concordia",
+        "teatro",
+        "espectaculos",
+        "cultura",
+        "centro"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W621698511",
+    "notes": "Existencia y ubicación relativa confirmadas. Falta dirección y geocodificación.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "theater",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        }
+    ]
+}

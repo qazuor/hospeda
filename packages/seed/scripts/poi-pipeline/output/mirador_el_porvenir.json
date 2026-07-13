@@ -1,0 +1,54 @@
+{
+    "slug": "mirador_el_porvenir",
+    "lat": null,
+    "long": null,
+    "type": "VIEWPOINT",
+    "icon": null,
+    "description": "Mirador ubicado en la lomada de la Estancia El Porvenir, con vistas del paisaje urbano y rural que rodea a Villa Elisa.",
+    "nameI18n": {
+        "es": "Mirador de la Estancia El Porvenir",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Mirador ubicado en la lomada de la Estancia El Porvenir, con vistas del paisaje urbano y rural que rodea a Villa Elisa.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Estancia Museo El Porvenir, Villa Elisa, Entre Ríos",
+    "keywords": [
+        "mirador el porvenir",
+        "vista panoramica",
+        "lomada",
+        "museo",
+        "paisaje"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://villaelisa.tur.ar/atractivos/",
+    "notes": "El ascenso al mirador forma parte de los servicios oficiales del museo. Falta geocodificar el punto.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "viewpoint",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

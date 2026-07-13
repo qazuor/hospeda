@@ -1,0 +1,54 @@
+{
+    "slug": "santa_ana_plaza_san_martin",
+    "lat": null,
+    "long": null,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plaza principal y núcleo cívico de la localidad, próxima al municipio, la comisaría y espacios culturales.",
+    "nameI18n": {
+        "es": "Plaza San Martín",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plaza principal y núcleo cívico de la localidad, próxima al municipio, la comisaría y espacios culturales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de Santa Ana, Entre Ríos",
+    "keywords": [
+        "plaza san martin santa ana",
+        "plaza principal",
+        "centro civico",
+        "parque",
+        "municipalidad"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/19202584; https://mapcarta.com/es/N2612018372",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

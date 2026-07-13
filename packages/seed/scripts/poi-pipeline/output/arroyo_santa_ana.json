@@ -1,0 +1,50 @@
+{
+    "slug": "arroyo_santa_ana",
+    "lat": null,
+    "long": null,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Curso de agua del entorno local que complementa el sistema hidrográfico del lago y los paisajes rurales.",
+    "nameI18n": {
+        "es": "Arroyo Santa Ana",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Curso de agua del entorno local que complementa el sistema hidrográfico del lago y los paisajes rurales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ejido de Santa Ana, Entre Ríos",
+    "keywords": [
+        "arroyo santa ana",
+        "hidrografia",
+        "naturaleza",
+        "aves",
+        "zona rural"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.santaana.gob.ar/home/ciudad/",
+    "notes": "Curso de agua; requiere geometría lineal y accesos diferenciados.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        }
+    ]
+}

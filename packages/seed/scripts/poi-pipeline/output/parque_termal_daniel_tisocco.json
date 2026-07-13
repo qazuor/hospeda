@@ -1,0 +1,55 @@
+{
+    "slug": "parque_termal_daniel_tisocco",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Complejo termal municipal con piscinas de distintas temperaturas, sectores cubiertos y al aire libre, hidromasajes, espacios verdes, servicios recreativos y propuestas de bienestar.",
+    "nameI18n": {
+        "es": "Parque Termal Daniel Pedro Tisocco",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Complejo termal municipal con piscinas de distintas temperaturas, sectores cubiertos y al aire libre, hidromasajes, espacios verdes, servicios recreativos y propuestas de bienestar.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Padre Gallay y colectora de la Autovía Nacional 14, Chajarí, Entre Ríos",
+    "keywords": [
+        "termas chajari",
+        "parque termal",
+        "daniel tisocco",
+        "aguas termales",
+        "piscinas",
+        "bienestar"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://termaschajari.tur.ar/; https://termaschajari.tur.ar/institucional/; https://termaschajari.tur.ar/termas/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "thermal_complex",
+            "isPrimary": true
+        },
+        {
+            "slug": "wellness",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

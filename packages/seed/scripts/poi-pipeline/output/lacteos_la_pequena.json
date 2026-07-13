@@ -1,0 +1,55 @@
+{
+    "slug": "lacteos_la_pequena",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Tambo y fábrica familiar de quesos y dulce de leche, reconocido por su dulce de leche repostero premiado a nivel nacional.",
+    "nameI18n": {
+        "es": "Lácteos La Pequeña",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Tambo y fábrica familiar de quesos y dulce de leche, reconocido por su dulce de leche repostero premiado a nivel nacional.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de Urdinarrain, Entre Ríos",
+    "keywords": [
+        "la pequeña urdinarrain",
+        "dulce de leche",
+        "quesos",
+        "tambo",
+        "lacteos",
+        "visita guiada"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://urdinarrain.tur.ar/que-hacer/; https://www.argentina.gob.ar/jefatura/turismo/best-tourism-villages-argentina/urdinarrain-entre-rios; https://www.lanacion.com.ar/revista-lugares/urdinarrain-el-pueblo-de-entre-rios-ideal-para-recorrer-en-bici-y-probar-un-dulce-de-leche-premiado-nid18072024/",
+    "notes": "Visitas guiadas y degustaciones confirmadas. Falta geocodificar y validar modalidad de reserva.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "gastronomy",
+            "isPrimary": true
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

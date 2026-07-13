@@ -1,0 +1,54 @@
+{
+    "slug": "cementerio_viejo",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Cementerio histórico con esculturas, sarcófagos y monumentos funerarios protegidos como patrimonio cultural.",
+    "nameI18n": {
+        "es": "Cementerio Viejo de Concordia",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Cementerio histórico con esculturas, sarcófagos y monumentos funerarios protegidos como patrimonio cultural.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Humberto Primo entre Ramírez y Sargento Cabral, Concordia, Entre Ríos",
+    "keywords": [
+        "cementerio viejo concordia",
+        "arte funerario",
+        "sarcófagos",
+        "esculturas",
+        "necroturismo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://egob.concordia.gob.ar/servicios/digesto.do?idNormativa=987&opcion=idNormativa",
+    "notes": "Ubicación por calles y valor patrimonial confirmados. Falta geocodificar el acceso.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,49 @@
+{
+    "slug": "gualeguay_plaza_san_martin",
+    "lat": null,
+    "long": null,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plaza urbana cercana al Museo Ambrosetti y a la Parroquia San José, utilizada para recreación y actividades comunitarias.",
+    "nameI18n": {
+        "es": "Plaza San Martín",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plaza urbana cercana al Museo Ambrosetti y a la Parroquia San José, utilizada para recreación y actividades comunitarias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de Gualeguay, Entre Ríos",
+    "keywords": [
+        "plaza san martin gualeguay",
+        "plaza",
+        "museo ambrosetti",
+        "parroquia san jose"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N9098632081; https://mapcarta.com/es/N5492517259",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

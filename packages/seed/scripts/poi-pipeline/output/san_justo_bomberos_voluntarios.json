@@ -1,0 +1,46 @@
+{
+    "slug": "san_justo_bomberos_voluntarios",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Servicio comunitario de respuesta ante incendios, accidentes y emergencias rurales.",
+    "nameI18n": {
+        "es": "Bomberos Voluntarios de San Justo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Servicio comunitario de respuesta ante incendios, accidentes y emergencias rurales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Justo, Entre Ríos",
+    "keywords": [
+        "bomberos voluntarios san justo",
+        "emergencias",
+        "incendios",
+        "servicio comunitario",
+        "rescate"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.facebook.com/municipalidadsanjustoentrerios/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "services",
+            "isPrimary": true
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

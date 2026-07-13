@@ -1,0 +1,54 @@
+{
+    "slug": "playita",
+    "lat": null,
+    "long": null,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Pequeño sector de playa urbana próximo al muelle, la terminal y el centro de la localidad.",
+    "nameI18n": {
+        "es": "Playita",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Pequeño sector de playa urbana próximo al muelle, la terminal y el centro de la localidad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Costa urbana de Villa Paranacito, Entre Ríos",
+    "keywords": [
+        "playita villa paranacito",
+        "playa urbana",
+        "rio",
+        "centro",
+        "verano"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/19200450; https://mapcarta.com/es/N4172031837",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

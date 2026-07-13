@@ -1,0 +1,46 @@
+{
+    "slug": "hogar_padre_artemio",
+    "lat": -33.71423,
+    "long": -58.65928,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Instalación de asistencia social accesible, integrada a la red comunitaria del casco urbano.",
+    "nameI18n": {
+        "es": "Hogar Padre Artemio",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Instalación de asistencia social accesible, integrada a la red comunitaria del casco urbano.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ángel Buratti, Villa Paranacito, Entre Ríos",
+    "keywords": [
+        "hogar padre artemio",
+        "asistencia social",
+        "accesibilidad",
+        "angel buratti",
+        "comunidad"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/N5189660750",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "community_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

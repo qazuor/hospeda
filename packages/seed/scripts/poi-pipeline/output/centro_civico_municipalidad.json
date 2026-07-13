@@ -1,0 +1,50 @@
+{
+    "slug": "centro_civico_municipalidad",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Conjunto institucional donde funcionan dependencias municipales y servicios públicos, y punto de referencia para información y trámites locales.",
+    "nameI18n": {
+        "es": "Centro Cívico y Municipalidad de Pueblo Liebig",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Conjunto institucional donde funcionan dependencias municipales y servicios públicos, y punto de referencia para información y trámites locales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro Cívico, Pueblo Liebig, Entre Ríos",
+    "keywords": [
+        "municipalidad pueblo liebig",
+        "centro civico",
+        "tramites",
+        "informacion publica",
+        "gobierno"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://puebloliebig.gob.ar/; https://www.turismoentrerios.com/liebig/lugares.htm",
+    "notes": "Existencia confirmada. Falta dirección postal exacta y geocodificación.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

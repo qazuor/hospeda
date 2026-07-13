@@ -1,0 +1,50 @@
+{
+    "slug": "cepida",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Productor apícola de la Antigua Ciudad incluido en la propuesta turística de mieles y derivados.",
+    "nameI18n": {
+        "es": "Cépida",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Productor apícola de la Antigua Ciudad incluido en la propuesta turística de mieles y derivados.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Antigua Ciudad de Federación, Entre Ríos",
+    "keywords": [
+        "cepida federacion",
+        "miel",
+        "apicultura",
+        "productos regionales",
+        "antigua ciudad"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/otros-atractivos/",
+    "notes": "Actividad incluida en el circuito productivo oficial. Falta validar visita y geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "gastronomy",
+            "isPrimary": true
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

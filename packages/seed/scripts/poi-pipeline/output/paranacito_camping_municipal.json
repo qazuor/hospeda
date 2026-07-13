@@ -1,0 +1,54 @@
+{
+    "slug": "paranacito_camping_municipal",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Área de camping integrada al balneario, con arboleda, sanitarios, parrillas, quinchos y servicios estivales.",
+    "nameI18n": {
+        "es": "Camping Municipal Costa Paranacito",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Área de camping integrada al balneario, con arboleda, sanitarios, parrillas, quinchos y servicios estivales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Balneario Municipal Costa Paranacito, Entre Ríos",
+    "keywords": [
+        "camping villa paranacito",
+        "quinchos",
+        "parrillas",
+        "sanitarios",
+        "balneario"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://es.wikipedia.org/wiki/Villa_Paranacito; https://www.airedesantafe.com.ar/turismo/un-destino-natural-dentro-la-provincia-rios-que-invita-descansar-frente-al-rio-n538446",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "campground",
+            "isPrimary": true
+        },
+        {
+            "slug": "beach",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

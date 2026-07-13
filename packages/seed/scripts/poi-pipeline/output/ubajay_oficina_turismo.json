@@ -1,0 +1,50 @@
+{
+    "slug": "ubajay_oficina_turismo",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Punto oficial de información sobre El Palmar, alojamiento, senderos, actividades y servicios turísticos de Ubajay.",
+    "nameI18n": {
+        "es": "Oficina de Turismo de Ubajay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Punto oficial de información sobre El Palmar, alojamiento, senderos, actividades y servicios turísticos de Ubajay.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Las Acacias 185, Ubajay, Entre Ríos",
+    "keywords": [
+        "oficina turismo ubajay",
+        "informacion turistica",
+        "el palmar",
+        "alojamientos",
+        "senderos"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/alojamiento",
+    "notes": "Dirección y función confirmadas por Parques Nacionales. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "services",
+            "isPrimary": true
+        },
+        {
+            "slug": "government",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

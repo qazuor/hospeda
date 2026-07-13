@@ -1,0 +1,54 @@
+{
+    "slug": "chimeneas_frigorifico",
+    "lat": null,
+    "long": null,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Chimeneas industriales que forman parte del perfil histórico del complejo fabril y fueron durante décadas un símbolo visible de la actividad productiva del pueblo.",
+    "nameI18n": {
+        "es": "Chimeneas del Frigorífico Liebig",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Chimeneas industriales que forman parte del perfil histórico del complejo fabril y fueron durante décadas un símbolo visible de la actividad productiva del pueblo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Complejo Industrial del Frigorífico Liebig, Pueblo Liebig, Entre Ríos",
+    "keywords": [
+        "chimeneas liebig",
+        "chimeneas frigorifico",
+        "patrimonio industrial",
+        "fabrica",
+        "fotografia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/capital-humano/cultura/monumentos/pueblo-liebig",
+    "notes": "Elementos patrimoniales documentados. Falta definir punto fotográfico y condiciones de acceso.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "casco_estancia_el_palmar",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Conjunto de edificios, galpones y jardines que conserva testimonios de la vida rural y productiva de la antigua estancia.",
+    "nameI18n": {
+        "es": "Casco Histórico de la Estancia El Palmar",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Conjunto de edificios, galpones y jardines que conserva testimonios de la vida rural y productiva de la antigua estancia.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Área de servicios del Parque Nacional El Palmar, Ubajay, Entre Ríos",
+    "keywords": [
+        "casco estancia",
+        "estancia el palmar",
+        "edificios historicos",
+        "jardines",
+        "urquiza"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
+    "notes": "Existencia y valor patrimonial confirmados. Falta geocodificar el conjunto.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

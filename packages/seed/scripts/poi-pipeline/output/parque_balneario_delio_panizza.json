@@ -1,0 +1,58 @@
+{
+    "slug": "parque_balneario_delio_panizza",
+    "lat": null,
+    "long": null,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Balneario municipal sobre el río Gualeguay, con playa, sombra, servicios recreativos y sectores para disfrutar el verano.",
+    "nameI18n": {
+        "es": "Parque Balneario Municipal Dr. Delio Panizza",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Balneario municipal sobre el río Gualeguay, con playa, sombra, servicios recreativos y sectores para disfrutar el verano.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ribera del río Gualeguay, Gualeguay, Entre Ríos",
+    "keywords": [
+        "balneario municipal gualeguay",
+        "delio panizza",
+        "playa",
+        "rio gualeguay",
+        "verano"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.instagram.com/reel/DTEJm4JD1zj/; https://www.argentinaviajera.com.ar/entrerios/gualeguay.html",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

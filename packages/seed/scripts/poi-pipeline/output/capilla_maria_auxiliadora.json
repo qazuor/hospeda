@@ -1,0 +1,50 @@
+{
+    "slug": "capilla_maria_auxiliadora",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Capilla católica incluida entre los espacios religiosos y patrimoniales visitables de Larroque.",
+    "nameI18n": {
+        "es": "Capilla María Auxiliadora",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Capilla católica incluida entre los espacios religiosos y patrimoniales visitables de Larroque.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Larroque, Entre Ríos",
+    "keywords": [
+        "capilla maria auxiliadora",
+        "capilla",
+        "religion",
+        "patrimonio religioso",
+        "larroque"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.turismoentrerios.com/larroque/sitios.htm",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

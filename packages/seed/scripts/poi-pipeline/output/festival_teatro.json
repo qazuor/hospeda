@@ -1,0 +1,54 @@
+{
+    "slug": "festival_teatro",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Festival escénico con obras, talleres, invitados y actividades distribuidas entre la Sala Padre Alberto Paoli y otros espacios culturales.",
+    "nameI18n": {
+        "es": "Festival de Teatro Larroque",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Festival escénico con obras, talleres, invitados y actividades distribuidas entre la Sala Padre Alberto Paoli y otros espacios culturales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Sala de Teatro Padre Alberto Paoli y Parque de la Estación, Larroque, Entre Ríos",
+    "keywords": [
+        "festival de teatro larroque",
+        "teatro",
+        "obras",
+        "talleres",
+        "padre paoli"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.larroque.gob.ar/noticia/2608/se_llevo_a_cabo_exitosamente_el_vi_festival_de_teatro_larroque",
+    "notes": "Evento recurrente confirmado. La programación y fechas varían en cada edición.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "entertainment",
+            "isPrimary": true
+        },
+        {
+            "slug": "fair",
+            "isPrimary": false
+        },
+        {
+            "slug": "theater",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

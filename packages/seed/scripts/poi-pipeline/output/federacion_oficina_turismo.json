@@ -1,0 +1,50 @@
+{
+    "slug": "federacion_oficina_turismo",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Punto oficial de información turística sobre termas, playas, actividades, alojamiento, gastronomía y agenda del destino.",
+    "nameI18n": {
+        "es": "Secretaría de Turismo de Federación",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Punto oficial de información turística sobre termas, playas, actividades, alojamiento, gastronomía y agenda del destino.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida San Martín y Las Hortensias, Federación, Entre Ríos",
+    "keywords": [
+        "turismo federacion",
+        "oficina de turismo",
+        "informacion turistica",
+        "mapas",
+        "agenda"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/otros-atractivos/; https://mapcarta.com/es/W762738652",
+    "notes": "Dirección y ubicación relativa confirmadas. Falta recuperar coordenadas exactas del acceso.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "services",
+            "isPrimary": true
+        },
+        {
+            "slug": "government",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

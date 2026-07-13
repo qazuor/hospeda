@@ -1,0 +1,46 @@
+{
+    "slug": "gruta_san_cayetano",
+    "lat": -32.463,
+    "long": -58.4785,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Pequeño espacio religioso integrado al paseo urbano de Caseros y asociado con las expresiones de fe y devoción popular de la comunidad.",
+    "nameI18n": {
+        "es": "Gruta de San Cayetano",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Pequeño espacio religioso integrado al paseo urbano de Caseros y asociado con las expresiones de fe y devoción popular de la comunidad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Área urbana de Caseros, Entre Ríos",
+    "keywords": [
+        "san cayetano",
+        "gruta",
+        "religion",
+        "devocion",
+        "caseros"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 10,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://tn.com.ar/turismo/2023/11/28/escapadas-el-pueblo-que-tiene-un-palacio-y-una-parroquia-historica/",
+    "notes": "Existencia verificada en fuente periodística; ubicación puntual pendiente de validación.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        }
+    ]
+}

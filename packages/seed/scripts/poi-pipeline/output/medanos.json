@@ -1,0 +1,54 @@
+{
+    "slug": "medanos",
+    "lat": null,
+    "long": null,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Formaciones de arena que explican el origen guaraní del nombre Ibicuy y forman parte de su paisaje e identidad productiva.",
+    "nameI18n": {
+        "es": "Médanos de Ibicuy",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Formaciones de arena que explican el origen guaraní del nombre Ibicuy y forman parte de su paisaje e identidad productiva.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Entorno de Ibicuy, Entre Ríos",
+    "keywords": [
+        "medanos ibicuy",
+        "arena",
+        "toponimia guarani",
+        "paisaje",
+        "actividad extractiva"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/ibicuy",
+    "notes": "Formaciones distribuidas en el territorio. Falta identificar sectores públicos y no afectados por explotación.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        }
+    ]
+}

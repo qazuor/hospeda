@@ -1,0 +1,50 @@
+{
+    "slug": "templete_virgen_lujan",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Pequeño espacio religioso incluido en el circuito urbano y asociado con la devoción local.",
+    "nameI18n": {
+        "es": "Templete de la Virgen de Luján",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Pequeño espacio religioso incluido en el circuito urbano y asociado con la devoción local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Caseros, Entre Ríos",
+    "keywords": [
+        "templete virgen de lujan",
+        "devocion",
+        "religion",
+        "monumento",
+        "caseros"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://caseros.gob.ar/turismo-y-cultura/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

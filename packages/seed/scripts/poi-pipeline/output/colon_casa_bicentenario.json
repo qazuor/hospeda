@@ -1,0 +1,50 @@
+{
+    "slug": "colon_casa_bicentenario",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sala cultural municipal utilizada para teatro, música, exposiciones, talleres y espectáculos de alcance local y nacional.",
+    "nameI18n": {
+        "es": "Casa del Bicentenario",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sala cultural municipal utilizada para teatro, música, exposiciones, talleres y espectáculos de alcance local y nacional.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Boulevard Gaillard 179, Colón, Entre Ríos",
+    "keywords": [
+        "casa del bicentenario",
+        "teatro",
+        "musica",
+        "cultura",
+        "espectaculos"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://colon.gov.ar/la-casa-del-bicentenario-de-colon-se-prepara-para-una-noche-de-jazz-internacional/",
+    "notes": "Institución y domicilio confirmados en publicaciones municipales. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "theater",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        }
+    ]
+}

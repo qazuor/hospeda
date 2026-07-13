@@ -1,0 +1,54 @@
+{
+    "slug": "san_salvador_parque_ferrocarril",
+    "lat": null,
+    "long": null,
+    "type": "PARK",
+    "icon": null,
+    "description": "Espacio verde vinculado con el predio ferroviario, utilizado para paseo, recreación y actividades comunitarias.",
+    "nameI18n": {
+        "es": "Parque Ferrocarril",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio verde vinculado con el predio ferroviario, utilizado para paseo, recreación y actividades comunitarias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Entorno de la Estación Ferroviaria, San Salvador, Entre Ríos",
+    "keywords": [
+        "parque ferrocarril",
+        "predio ferroviario",
+        "estacion",
+        "parque",
+        "paseo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/; https://mapcarta.com/es/N1039998131",
+    "notes": "Existencia y ubicación relativa confirmadas. Falta delimitar el polígono.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

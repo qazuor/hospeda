@@ -1,0 +1,54 @@
+{
+    "slug": "plazoleta_carlos_gardel",
+    "lat": null,
+    "long": null,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Espacio urbano dedicado al cantor Carlos Gardel e integrado al circuito de monumentos de la ciudad.",
+    "nameI18n": {
+        "es": "Plazoleta Carlos Gardel",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio urbano dedicado al cantor Carlos Gardel e integrado al circuito de monumentos de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urdinarrain, Entre Ríos",
+    "keywords": [
+        "plazoleta carlos gardel",
+        "gardel",
+        "monumento",
+        "tango",
+        "arte urbano"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N5688670076",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        }
+    ]
+}

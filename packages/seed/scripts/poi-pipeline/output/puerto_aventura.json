@@ -1,0 +1,54 @@
+{
+    "slug": "puerto_aventura",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Prestador de paseos náuticos y actividades acuáticas para recorrer el lago Salto Grande durante todo el año.",
+    "nameI18n": {
+        "es": "Puerto Aventura",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Prestador de paseos náuticos y actividades acuáticas para recorrer el lago Salto Grande durante todo el año.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona portuaria de Federación, Entre Ríos",
+    "keywords": [
+        "puerto aventura federacion",
+        "paseos nauticos",
+        "lago salto grande",
+        "kayak",
+        "lancha"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/otros-atractivos/; https://mapcarta.com/es/W762738652",
+    "notes": "Actividad y ubicación relativa al municipio y puerto confirmadas. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "port",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

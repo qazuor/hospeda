@@ -1,0 +1,54 @@
+{
+    "slug": "paseo_cruz",
+    "lat": null,
+    "long": null,
+    "type": "PARK",
+    "icon": null,
+    "description": "Espacio público que integra la Cruz de los Ingleses con áreas de descanso y un recorrido de interpretación de la historia local.",
+    "nameI18n": {
+        "es": "Paseo de la Cruz",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio público que integra la Cruz de los Ingleses con áreas de descanso y un recorrido de interpretación de la historia local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Entorno de la Cruz de los Ingleses, Ibicuy, Entre Ríos",
+    "keywords": [
+        "paseo de la cruz",
+        "cruz de los ingleses",
+        "historia",
+        "espacio publico",
+        "paseo urbano"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://ibicuy.gob.ar/?q=content%2Fque-visitar",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

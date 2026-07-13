@@ -1,0 +1,54 @@
+{
+    "slug": "san_salvador_museo_estacion",
+    "lat": -31.62915,
+    "long": -58.50377,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo ferroviario inaugurado en 2010 dentro de la estación, con tres salas dedicadas a reconstruir la historia del paso del tren por San Salvador.",
+    "nameI18n": {
+        "es": "Museo de la Estación",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo ferroviario inaugurado en 2010 dentro de la estación, con tres salas dedicadas a reconstruir la historia del paso del tren por San Salvador.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Estación Ferroviaria San Salvador, Entre Ríos",
+    "keywords": [
+        "museo de la estacion",
+        "museo ferroviario",
+        "historia del tren",
+        "ferrocarril",
+        "tres salas"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://sansalvadorer.gob.ar/gobierno/turismo/; https://mapcarta.com/es/N1039998131",
+    "notes": "Funciona dentro del edificio de la estación; comparte coordenadas con ella.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

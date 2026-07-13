@@ -1,0 +1,54 @@
+{
+    "slug": "museo_pablo_lorentz",
+    "lat": null,
+    "long": null,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo del Colegio del Uruguay con colecciones de historia natural y valor educativo e institucional.",
+    "nameI18n": {
+        "es": "Museo de Historia Natural Pablo Lorentz",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo del Colegio del Uruguay con colecciones de historia natural y valor educativo e institucional.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Colegio del Uruguay Justo José de Urquiza, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "pablo lorentz",
+        "historia natural",
+        "colegio del uruguay",
+        "colecciones cientificas",
+        "museo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/concepcion-del-uruguay-tendra-su-noche-de-los-museos",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "monumento_principito",
+    "lat": null,
+    "long": null,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Monumento dedicado a la obra de Antoine de Saint-Exupéry y a su vínculo con el Castillo San Carlos.",
+    "nameI18n": {
+        "es": "Monumento El Principito y su Asteroide",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Monumento dedicado a la obra de Antoine de Saint-Exupéry y a su vínculo con el Castillo San Carlos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque San Carlos, Concordia, Entre Ríos",
+    "keywords": [
+        "el principito y su asteroide",
+        "monumento el principito",
+        "saint exupery",
+        "parque san carlos",
+        "literatura"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/noticias/castillo-san-carlos/celebramos-el-vi-aniversario-de-la-puesta-en-valor-del-castillo; https://www.concordia.gob.ar/noticias/parque-san-carlos/nuevos-carteles-en-san-carlos",
+    "notes": "Existencia y denominación confirmadas. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

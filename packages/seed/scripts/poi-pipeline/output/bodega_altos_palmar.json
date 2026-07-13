@@ -1,0 +1,55 @@
+{
+    "slug": "bodega_altos_palmar",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Bodega boutique familiar rodeada de viñedos y palmares de yatay, con producción de distintas variedades y visitas turísticas.",
+    "nameI18n": {
+        "es": "Bodega Altos del Palmar",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Bodega boutique familiar rodeada de viñedos y palmares de yatay, con producción de distintas variedades y visitas turísticas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de Ubajay, Entre Ríos",
+    "keywords": [
+        "bodega altos del palmar",
+        "vino",
+        "viñedos",
+        "palmeras yatay",
+        "enoturismo",
+        "bodega boutique"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
+    "notes": "Actividad, historia y variedades confirmadas por Parques Nacionales. Falta dirección y coordenadas.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "winery",
+            "isPrimary": true
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        }
+    ]
+}

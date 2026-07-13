@@ -1,0 +1,54 @@
+{
+    "slug": "barrio_obrero_la_hilera",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sector de viviendas obreras dispuesto en una extensa hilera, representativo del urbanismo industrial y de la organización social impulsada por la compañía.",
+    "nameI18n": {
+        "es": "Barrio Obrero La Hilera",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sector de viviendas obreras dispuesto en una extensa hilera, representativo del urbanismo industrial y de la organización social impulsada por la compañía.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Casco histórico de Pueblo Liebig, Entre Ríos",
+    "keywords": [
+        "la hilera",
+        "barrio obrero",
+        "viviendas obreras",
+        "arquitectura industrial",
+        "casco historico"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/capital-humano/cultura/monumentos/pueblo-liebig",
+    "notes": "Conjunto urbano documentado como parte del patrimonio nacional. Falta delimitar el polígono o punto central.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "slug": "monumento_republica_manos",
+    "lat": null,
+    "long": null,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Monumento urbano de gran escala asociado con la identidad republicana y el acceso a La Histórica.",
+    "nameI18n": {
+        "es": "Monumento a la República - Las Manos",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Monumento urbano de gran escala asociado con la identidad republicana y el acceso a La Histórica.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Acceso a Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "monumento a la republica",
+        "las manos",
+        "acceso ciudad",
+        "arte urbano",
+        "identidad"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://palacio-santa-candida.entre-rios-hoteles.com/es/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

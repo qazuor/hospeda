@@ -1,0 +1,58 @@
+{
+    "slug": "concordia_lago_salto_grande",
+    "lat": null,
+    "long": null,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Embalse binacional formado por la represa de Salto Grande, con playas, pesca, navegación y deportes acuáticos.",
+    "nameI18n": {
+        "es": "Lago de Salto Grande",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Embalse binacional formado por la represa de Salto Grande, con playas, pesca, navegación y deportes acuáticos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Perilago de Salto Grande, Concordia, Entre Ríos",
+    "keywords": [
+        "lago salto grande",
+        "embalse",
+        "deportes nauticos",
+        "pesca",
+        "perilago"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/lago-salto-grande; https://www.entrerios.tur.ar/localidades-1/concordia",
+    "notes": "Atractivo regional oficial. Debe definirse un punto representativo o polígono.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        }
+    ]
+}

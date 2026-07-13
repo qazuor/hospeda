@@ -1,0 +1,54 @@
+{
+    "slug": "molino_astegar",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Antiguo edificio industrial del corredor ferroviario, actualmente vinculado con la Cooperativa Apícola del Tala.",
+    "nameI18n": {
+        "es": "Molino ASTEGAR",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Antiguo edificio industrial del corredor ferroviario, actualmente vinculado con la Cooperativa Apícola del Tala.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Corredor ferroviario de Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "molino astegar",
+        "cooperativa apicola",
+        "miel",
+        "patrimonio industrial",
+        "ferrocarril"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir",
+    "notes": "Edificio y uso general confirmados. Falta geocodificar y validar atención al público.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

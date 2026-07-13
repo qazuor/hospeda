@@ -1,0 +1,54 @@
+{
+    "slug": "viejo_expreso",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido guiado en tren turístico por la nueva y la vieja Federación, con interpretación histórica y paisajística.",
+    "nameI18n": {
+        "es": "Tren Turístico Viejo Expreso",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido guiado en tren turístico por la nueva y la vieja Federación, con interpretación histórica y paisajística.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Salida habitual en esquina del Parque Termal, Federación, Entre Ríos",
+    "keywords": [
+        "viejo expreso",
+        "tren turistico",
+        "city tour",
+        "vieja federacion",
+        "recorrido guiado"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/otros-atractivos/",
+    "notes": "Servicio y punto habitual de salida confirmados. Falta geocodificar y validar horarios actuales.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

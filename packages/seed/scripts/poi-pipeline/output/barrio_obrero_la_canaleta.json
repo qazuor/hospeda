@@ -1,0 +1,54 @@
+{
+    "slug": "barrio_obrero_la_canaleta",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Conjunto de viviendas obreras formado por dos tiras paralelas y calles de servicio, con zaguanes y arcos característicos de la arquitectura local.",
+    "nameI18n": {
+        "es": "Barrio Obrero La Canaleta",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Conjunto de viviendas obreras formado por dos tiras paralelas y calles de servicio, con zaguanes y arcos característicos de la arquitectura local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Casco histórico de Pueblo Liebig, Entre Ríos",
+    "keywords": [
+        "la canaleta",
+        "barrio obrero",
+        "zaguanes",
+        "viviendas obreras",
+        "arquitectura inglesa"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/capital-humano/cultura/monumentos/pueblo-liebig",
+    "notes": "Conjunto urbano documentado como parte del patrimonio nacional. Falta delimitar ubicación precisa.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

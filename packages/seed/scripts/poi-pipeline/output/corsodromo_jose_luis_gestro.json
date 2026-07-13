@@ -1,0 +1,54 @@
+{
+    "slug": "corsodromo_jose_luis_gestro",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Escenario del Carnaval del País y de otras celebraciones populares, con pista de desfile, tribunas y talleres vinculados con las comparsas.",
+    "nameI18n": {
+        "es": "Corsódromo José Luis Gestro",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Escenario del Carnaval del País y de otras celebraciones populares, con pista de desfile, tribunas y talleres vinculados con las comparsas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Maestra Piccini 1100, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "corsodromo jose luis gestro",
+        "carnaval del pais",
+        "comparsas",
+        "desfile",
+        "maestra piccini"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/carnaval; https://www.entrerios.tur.ar/event-details/el-carnaval-del-pais-2025-03-03-19-00",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "entertainment",
+            "isPrimary": true
+        },
+        {
+            "slug": "fair",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "nightlife",
+            "isPrimary": false
+        }
+    ]
+}

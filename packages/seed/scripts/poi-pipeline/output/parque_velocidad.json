@@ -1,0 +1,50 @@
+{
+    "slug": "parque_velocidad",
+    "lat": null,
+    "long": null,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Kartódromo del sector norte de la ciudad, utilizado para competencias, entrenamientos y actividades de automovilismo.",
+    "nameI18n": {
+        "es": "Parque de la Velocidad",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Kartódromo del sector norte de la ciudad, utilizado para competencias, entrenamientos y actividades de automovilismo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Sector norte de Villaguay, Entre Ríos",
+    "keywords": [
+        "parque de la velocidad",
+        "kartodromo villaguay",
+        "karting",
+        "automovilismo",
+        "competencias"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://es.wikipedia.org/wiki/Villaguay",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

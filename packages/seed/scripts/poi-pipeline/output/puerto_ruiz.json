@@ -1,0 +1,54 @@
+{
+    "slug": "puerto_ruiz",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Localidad portuaria histórica sobre el río Gualeguay, vinculada con saladeros, navegación, ferrocarril y gastronomía ribereña.",
+    "nameI18n": {
+        "es": "Puerto Ruiz",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Localidad portuaria histórica sobre el río Gualeguay, vinculada con saladeros, navegación, ferrocarril y gastronomía ribereña.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Puerto Ruiz, municipio de Gualeguay, Entre Ríos",
+    "keywords": [
+        "puerto ruiz",
+        "puerto historico",
+        "rio gualeguay",
+        "saladeros",
+        "ferrocarril"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://es.wikipedia.org/wiki/Puerto_Ruiz; https://www.facebook.com/municipalidaddegualeguay/videos/836069999500317/",
+    "notes": "Localidad y sector portuario confirmados. Falta definir punto central y accesos visitables.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "port",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

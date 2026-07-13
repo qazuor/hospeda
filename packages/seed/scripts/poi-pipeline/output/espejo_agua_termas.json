@@ -1,0 +1,54 @@
+{
+    "slug": "espejo_agua_termas",
+    "lat": null,
+    "long": null,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Sector paisajístico y recreativo del parque termal, integrado al recorrido hacia la reserva natural.",
+    "nameI18n": {
+        "es": "Espejo de Agua de Termas Chajarí",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sector paisajístico y recreativo del parque termal, integrado al recorrido hacia la reserva natural.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque Termal Daniel Pedro Tisocco, Chajarí, Entre Ríos",
+    "keywords": [
+        "espejo de agua",
+        "termas chajari",
+        "paisaje",
+        "paseo",
+        "naturaleza"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://termaschajari.tur.ar/reserva-natural/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

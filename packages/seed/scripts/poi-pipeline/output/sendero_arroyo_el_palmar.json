@@ -1,0 +1,54 @@
+{
+    "slug": "sendero_arroyo_el_palmar",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sendero de 350 metros que desciende desde el mirador hasta la costa del arroyo atravesando un área abierta con vistas panorámicas.",
+    "nameI18n": {
+        "es": "Sendero Arroyo El Palmar",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sendero de 350 metros que desciende desde el mirador hasta la costa del arroyo atravesando un área abierta con vistas panorámicas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Mirador del arroyo El Palmar, Parque Nacional El Palmar, Entre Ríos",
+    "keywords": [
+        "sendero arroyo el palmar",
+        "costa del arroyo",
+        "mirador",
+        "caminata corta",
+        "paisaje"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
+    "notes": "Nombre, longitud y recorrido confirmados. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "hiking",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        }
+    ]
+}

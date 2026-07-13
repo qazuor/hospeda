@@ -1,0 +1,54 @@
+{
+    "slug": "carnavales",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Celebración estival con las comparsas Mi Ilusión y Mayita, música, vestuario y desfiles familiares.",
+    "nameI18n": {
+        "es": "Carnavales de Caseros",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Celebración estival con las comparsas Mi Ilusión y Mayita, música, vestuario y desfiles familiares.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Corsódromo de Caseros, calles 10 y 17, Entre Ríos",
+    "keywords": [
+        "carnavales de caseros",
+        "mi ilusion",
+        "mayita",
+        "comparsas",
+        "verano"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://caseros.gob.ar/vuelven-los-carnavales-de-caseros/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "entertainment",
+            "isPrimary": true
+        },
+        {
+            "slug": "fair",
+            "isPrimary": false
+        },
+        {
+            "slug": "nightlife",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

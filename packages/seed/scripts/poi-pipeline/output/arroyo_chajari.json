@@ -1,0 +1,50 @@
+{
+    "slug": "arroyo_chajari",
+    "lat": null,
+    "long": null,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Curso de agua que forma parte del paisaje y de la organización territorial de la ciudad y su entorno rural.",
+    "nameI18n": {
+        "es": "Arroyo Chajarí",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Curso de agua que forma parte del paisaje y de la organización territorial de la ciudad y su entorno rural.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ejido de Chajarí, Entre Ríos",
+    "keywords": [
+        "arroyo chajari",
+        "arroyo del chaja",
+        "naturaleza",
+        "paisaje",
+        "ejido"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf; https://chajari.gob.ar/ubicacion/",
+    "notes": "Curso de agua; requiere geometría lineal, no un único punto definitivo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

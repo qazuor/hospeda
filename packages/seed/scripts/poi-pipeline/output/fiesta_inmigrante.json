@@ -1,0 +1,54 @@
+{
+    "slug": "fiesta_inmigrante",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Celebración de las colectividades y de la diversidad cultural que dio forma a la identidad de Urdinarrain.",
+    "nameI18n": {
+        "es": "Fiesta del Inmigrante",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Celebración de las colectividades y de la diversidad cultural que dio forma a la identidad de Urdinarrain.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urdinarrain, Entre Ríos",
+    "keywords": [
+        "fiesta del inmigrante",
+        "colectividades",
+        "alemanes",
+        "italianos",
+        "gastronomia tradicional"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://urdinarrain.tur.ar/que-hacer/; https://urdinarrain.tur.ar/la-ciudad/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "fair",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        }
+    ]
+}

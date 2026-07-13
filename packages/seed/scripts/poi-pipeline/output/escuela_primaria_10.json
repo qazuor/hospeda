@@ -1,0 +1,45 @@
+{
+    "slug": "escuela_primaria_10",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Institución educativa primaria y referencia comunitaria del casco urbano.",
+    "nameI18n": {
+        "es": "Escuela Primaria N.º 10 Esteban Echeverría",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Institución educativa primaria y referencia comunitaria del casco urbano.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Santa Ana, Entre Ríos",
+    "keywords": [
+        "escuela esteban echeverria",
+        "escuela primaria 10",
+        "educacion",
+        "comunidad"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N5539089594; https://mapcarta.com/es/W704414820",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "education",
+            "isPrimary": true
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

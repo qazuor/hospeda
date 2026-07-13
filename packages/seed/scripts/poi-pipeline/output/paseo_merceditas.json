@@ -1,0 +1,49 @@
+{
+    "slug": "paseo_merceditas",
+    "lat": -30.9856574,
+    "long": -57.9194395,
+    "type": "PARK",
+    "icon": null,
+    "description": "Paseo urbano incorporado a la red de espacios verdes y recorridos peatonales de Federación.",
+    "nameI18n": {
+        "es": "Paseo Merceditas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paseo urbano incorporado a la red de espacios verdes y recorridos peatonales de Federación.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Federación, Entre Ríos",
+    "keywords": [
+        "paseo merceditas",
+        "paseo urbano",
+        "espacio verde",
+        "federacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 10,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
+    "notes": "Nombre confirmado en el plano turístico. Falta geocodificar y documentar su temática. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

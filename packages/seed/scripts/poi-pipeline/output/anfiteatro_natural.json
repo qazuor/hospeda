@@ -1,0 +1,50 @@
+{
+    "slug": "anfiteatro_natural",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sector recreativo al aire libre ubicado en el complejo termal y balneario, utilizado para encuentros, espectáculos y actividades comunitarias.",
+    "nameI18n": {
+        "es": "Anfiteatro Natural",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sector recreativo al aire libre ubicado en el complejo termal y balneario, utilizado para encuentros, espectáculos y actividades comunitarias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona termal y balnearia de San José, Entre Ríos",
+    "keywords": [
+        "anfiteatro natural",
+        "espectaculos",
+        "eventos",
+        "termas san jose",
+        "balneario"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W202761730",
+    "notes": "Existencia cartográfica confirmada; falta recuperar coordenadas exactas.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "entertainment",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

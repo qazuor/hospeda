@@ -1,0 +1,54 @@
+{
+    "slug": "plaza_general_san_martin",
+    "lat": null,
+    "long": null,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plaza principal del pueblo, con el busto del General San Martín y uso habitual para actos cívicos, celebraciones y actividades comunitarias.",
+    "nameI18n": {
+        "es": "Plaza General San Martín",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plaza principal del pueblo, con el busto del General San Martín y uso habitual para actos cívicos, celebraciones y actividades comunitarias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de Pueblo Liebig, Entre Ríos",
+    "keywords": [
+        "plaza general san martin",
+        "busto san martin",
+        "plaza principal",
+        "actos civicos",
+        "centro"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://puebloliebig.gob.ar/noticias/homenaje-al-general-jose-de-san-martin-en-pueblo-liebig/",
+    "notes": "Nombre, monumento y uso actual confirmados. Falta geocodificar el centro de la plaza.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,46 @@
+{
+    "slug": "villa_elisa_hospital_san_roque",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Hospital público de referencia de Villa Elisa, con servicios sanitarios y atención para la ciudad y localidades cercanas.",
+    "nameI18n": {
+        "es": "Hospital San Roque María Aguer de Francou",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Hospital público de referencia de Villa Elisa, con servicios sanitarios y atención para la ciudad y localidades cercanas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Mitre 2039, Villa Elisa, Entre Ríos",
+    "keywords": [
+        "hospital san roque",
+        "maria aguer de francou",
+        "hospital",
+        "guardia",
+        "salud"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://villaelisa.gov.ar/?eventDisplay=list&post_type=tribe_venue&tribe_venue=hospital-san-roque-maria-aguer-de-francou; https://villaelisa.gov.ar/reconocimiento-para-el-hospital-san-roque/",
+    "notes": "Nombre, dirección y vigencia confirmados por la Municipalidad. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

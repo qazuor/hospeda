@@ -1,0 +1,50 @@
+{
+    "slug": "paseo_del_sol",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Feria de manualidades y artesanías con propuestas de madera, vidrio, marroquinería, tejidos, piedras, bijouterie y arte decorativo.",
+    "nameI18n": {
+        "es": "Paseo del Sol",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Feria de manualidades y artesanías con propuestas de madera, vidrio, marroquinería, tejidos, piedras, bijouterie y arte decorativo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Tucumán y Juan José Paso, Colón, Entre Ríos",
+    "keywords": [
+        "paseo del sol",
+        "feria",
+        "manualidades",
+        "artesanias",
+        "compras"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.colonturismo.tur.ar/directorio/paseo-del-sol/; https://colon.gov.ar/turismo-difunde-el-calendario-de-eventos-para-el-mes-de-julio/",
+    "notes": "Nombre, actividad y cruce de calles confirmados. Falta geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "fair",
+            "isPrimary": true
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

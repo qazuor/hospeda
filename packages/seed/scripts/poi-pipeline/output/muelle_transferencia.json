@@ -1,0 +1,54 @@
+{
+    "slug": "muelle_transferencia",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Antiguo muelle del sistema ferroportuario que permitió transferir vagones mediante ferry y dio impulso al crecimiento de Ibicuy.",
+    "nameI18n": {
+        "es": "Muelle de Transferencia",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Antiguo muelle del sistema ferroportuario que permitió transferir vagones mediante ferry y dio impulso al crecimiento de Ibicuy.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Paseo costero de Puerto Ibicuy, Entre Ríos",
+    "keywords": [
+        "muelle de transferencia",
+        "ferrobarco",
+        "puerto ibicuy",
+        "vagones",
+        "patrimonio portuario"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://ibicuy.gob.ar/?q=content%2Fque-visitar; https://www.entrerios.tur.ar/localidades-1/ibicuy",
+    "notes": "Estructura histórica confirmada. Falta geocodificar el punto de observación seguro.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "port",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        }
+    ]
+}

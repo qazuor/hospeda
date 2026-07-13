@@ -1,0 +1,46 @@
+{
+    "slug": "san_justo_comisaria",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Dependencia policial de referencia para seguridad pública y emergencias.",
+    "nameI18n": {
+        "es": "Comisaría de San Justo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Dependencia policial de referencia para seguridad pública y emergencias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Justo, Entre Ríos",
+    "keywords": [
+        "comisaria san justo",
+        "policia",
+        "seguridad",
+        "emergencias",
+        "servicios"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.facebook.com/municipalidadsanjustoentrerios/; https://mapcarta.com/es/19203230",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

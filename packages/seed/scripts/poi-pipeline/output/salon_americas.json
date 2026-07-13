@@ -1,0 +1,49 @@
+{
+    "slug": "salon_americas",
+    "lat": -31.3972539,
+    "long": -58.0173305,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio para eventos y actividades sociales situado en el entorno del corredor de convenciones y el predio ferial.",
+    "nameI18n": {
+        "es": "Salón de las Américas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio para eventos y actividades sociales situado en el entorno del corredor de convenciones y el predio ferial.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Concordia, Entre Ríos",
+    "keywords": [
+        "salon de las americas",
+        "eventos",
+        "centro de convenciones",
+        "salon social"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W686355182",
+    "notes": "Existencia y función confirmadas en cartografía abierta. Falta dirección y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

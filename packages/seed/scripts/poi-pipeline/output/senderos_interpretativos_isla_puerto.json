@@ -1,0 +1,54 @@
+{
+    "slug": "senderos_interpretativos_isla_puerto",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Red de senderos guiados para conocer los humedales, la vegetación ribereña y la biodiversidad de la reserva.",
+    "nameI18n": {
+        "es": "Senderos Interpretativos de la Isla del Puerto",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Red de senderos guiados para conocer los humedales, la vegetación ribereña y la biodiversidad de la reserva.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Reserva Isla del Puerto, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "senderos isla del puerto",
+        "caminata guiada",
+        "humedal",
+        "flora",
+        "fauna"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://isladelpuerto.cdeluruguay.gob.ar/; https://isladelpuerto.cdeluruguay.gob.ar/novedades/",
+    "notes": "Falta digitalizar recorridos, dificultad y puntos de ingreso.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "hiking",
+            "isPrimary": true
+        },
+        {
+            "slug": "reserve",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        }
+    ]
+}

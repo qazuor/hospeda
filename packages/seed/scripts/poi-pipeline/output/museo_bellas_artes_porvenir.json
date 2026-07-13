@@ -1,0 +1,54 @@
+{
+    "slug": "museo_bellas_artes_porvenir",
+    "lat": null,
+    "long": null,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Espacio artístico integrado a la biblioteca popular, con patrimonio plástico, exposiciones y actividades culturales.",
+    "nameI18n": {
+        "es": "Museo de Bellas Artes de la Biblioteca El Porvenir",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio artístico integrado a la biblioteca popular, con patrimonio plástico, exposiciones y actividades culturales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Biblioteca Popular El Porvenir, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "museo bellas artes",
+        "el porvenir",
+        "pintura",
+        "exposiciones",
+        "arte"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/concepcion-del-uruguay-tendra-su-noche-de-los-museos",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

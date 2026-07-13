@@ -1,0 +1,54 @@
+{
+    "slug": "santa_ana_costanera",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Paseo costero frente al lago con espacios verdes, circulación peatonal, iluminación y vistas panorámicas.",
+    "nameI18n": {
+        "es": "Costanera de Santa Ana",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paseo costero frente al lago con espacios verdes, circulación peatonal, iluminación y vistas panorámicas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Borde del lago Salto Grande, Santa Ana, Entre Ríos",
+    "keywords": [
+        "costanera santa ana",
+        "paseo costero",
+        "lago",
+        "atardecer",
+        "caminata"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.santaana.gob.ar/home/2024/09/24/santa-ana-turistica-2/; https://www.entrerios.tur.ar/localidades-1/santa-ana",
+    "notes": "Paseo lineal. Conviene modelarlo como geometría.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "waterfront",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

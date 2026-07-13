@@ -1,0 +1,54 @@
+{
+    "slug": "centro_cultural_atahualpa_yupanqui",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Centro cultural instalado en el antiguo Mercado de Abasto de 1880, con colecciones históricas y actividades artísticas y comunitarias.",
+    "nameI18n": {
+        "es": "Centro Cultural Atahualpa Yupanqui",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Centro cultural instalado en el antiguo Mercado de Abasto de 1880, con colecciones históricas y actividades artísticas y comunitarias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Antiguo Mercado de Abasto, Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "atahualpa yupanqui",
+        "mercado de abasto",
+        "centro cultural",
+        "1880",
+        "colecciones historicas"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "museum",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        }
+    ]
+}
