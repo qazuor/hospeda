@@ -544,6 +544,60 @@ describe('DestinationModel.getPointsOfInterestMap', () => {
         ]);
     });
 
+    it('does not throw and preserves null lat/long for a coordinate-less POI (HOS-138 AC-5)', async () => {
+        // Arrange — HOS-138 made lat/long nullable; a coordinate-less POI still
+        // appears in the map (list card renders, just no map pin). Also carries
+        // the new i18n/hasOwnPage fields the destination-detail hydration needs.
+        const rows = [
+            {
+                destinationId: 'dest-1',
+                id: 'poi-no-coords',
+                slug: 'municipalidad-concordia',
+                lat: null,
+                long: null,
+                type: 'LANDMARK',
+                nameI18n: { es: 'Municipalidad', en: 'City Hall', pt: 'Prefeitura' },
+                description: null,
+                descriptionI18n: null,
+                icon: null,
+                hasOwnPage: false,
+                isFeatured: false,
+                isBuiltin: true,
+                displayWeight: 50
+            }
+        ];
+        const { selectMock } = buildSelectChain(rows);
+        getDbMock.mockReturnValue({ select: selectMock });
+
+        // Act
+        const result = await model.getPointsOfInterestMap(['dest-1']);
+
+        // Assert — no throw, null coordinates preserved as null.
+        const entry = result.get('dest-1')?.[0];
+        expect(entry?.lat).toBeNull();
+        expect(entry?.long).toBeNull();
+        expect(entry?.nameI18n).toEqual({ es: 'Municipalidad', en: 'City Hall', pt: 'Prefeitura' });
+        expect(entry?.hasOwnPage).toBe(false);
+    });
+
+    it('projects nameI18n/descriptionI18n/hasOwnPage into the select() call (HOS-138)', async () => {
+        // Arrange — the destination-detail hydration path needs these v2 fields.
+        const { selectMock } = buildSelectChain([]);
+        getDbMock.mockReturnValue({ select: selectMock });
+
+        // Act
+        await model.getPointsOfInterestMap(['dest-1']);
+
+        // Assert
+        expect(selectMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                nameI18n: expect.anything(),
+                descriptionI18n: expect.anything(),
+                hasOwnPage: expect.anything()
+            })
+        );
+    });
+
     it('projects description/isFeatured/isBuiltin into the select() call itself (HOS-113 review fix)', async () => {
         // Arrange — asserts the query projection, not just the mapped output,
         // so a regression that drops these columns from `.select({...})` is
