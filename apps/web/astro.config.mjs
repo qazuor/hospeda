@@ -138,7 +138,15 @@ export default defineConfig({
                   sentry({
                       org: 'qazuor',
                       project: 'hospeda-web',
-                      authToken: process.env.SENTRY_AUTH_TOKEN
+                      authToken: process.env.SENTRY_AUTH_TOKEN,
+                      // BETA-66: delete the generated `.map` files from the
+                      // output directory once they have been uploaded to
+                      // Sentry, so they never ship to the client/CDN. Paired
+                      // with the explicit `vite.build.sourcemap: 'hidden'`
+                      // below (parity with the admin app's Vite config).
+                      sourcemaps: {
+                          filesToDeleteAfterUpload: ['**/*.map']
+                      }
                   })
               ]
             : []),
@@ -266,6 +274,16 @@ export default defineConfig({
                     process.env.PUBLIC_SENTRY_RELEASE ||
                     ''
             )
+        },
+        build: {
+            // BETA-66: source maps hardening. Explicitly opt into 'hidden'
+            // source maps (generated on disk for Sentry's upload step, but
+            // NOT referenced via a `//# sourceMappingURL=` comment in the
+            // shipped bundle, so browsers never fetch them) instead of
+            // relying on @sentry/astro's implicit fallback for an unset
+            // setting. Matches the admin app's Vite `build.sourcemap`
+            // config (apps/admin/vite.config.ts).
+            sourcemap: 'hidden'
         }
     }
 });

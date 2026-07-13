@@ -218,8 +218,14 @@ export default defineConfig({
             ? [
                   sentryVitePlugin({
                       org: 'qazuor',
-                      project: 'hospeda-admin',
-                      authToken: process.env.SENTRY_AUTH_TOKEN
+                      project: process.env.VITE_SENTRY_PROJECT || 'hospeda-admin',
+                      authToken: process.env.SENTRY_AUTH_TOKEN,
+                      // BETA-66: delete the generated `.map` files from the
+                      // output directory once they have been uploaded to
+                      // Sentry, so they never ship to the client/CDN.
+                      sourcemaps: {
+                          filesToDeleteAfterUpload: ['**/*.map']
+                      }
                   })
               ]
             : []),
