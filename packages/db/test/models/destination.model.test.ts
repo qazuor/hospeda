@@ -729,4 +729,93 @@ describe('DestinationModel.getPointsOfInterestMap', () => {
 
         spy.mockRestore();
     });
+
+    // ========================================================================
+    // HOS-140: 3-value `relation` filter contract (AC-5)
+    // ========================================================================
+    describe('relation filter (HOS-140)', () => {
+        it('AC-6: defaults to PRIMARY and applies a relation `where` condition when relation is omitted', async () => {
+            const { selectMock, whereMock } = buildSelectChain([]);
+            getDbMock.mockReturnValue({ select: selectMock });
+
+            await model.getPointsOfInterestMap(['dest-1']);
+
+            // and(...) wraps the conditions into a single SQL expression, so we
+            // can only assert the `where` clause was invoked (the relation
+            // constraint's presence is exercised end-to-end by the AC-2/AC-6
+            // integration tests against real seeded data).
+            expect(whereMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('projects relation into the select() call', async () => {
+            const { selectMock } = buildSelectChain([]);
+            getDbMock.mockReturnValue({ select: selectMock });
+
+            await model.getPointsOfInterestMap(['dest-1']);
+
+            expect(selectMock).toHaveBeenCalledWith(
+                expect.objectContaining({ relation: expect.anything() })
+            );
+        });
+
+        it('AC-5: includes relation on every returned row, mixing PRIMARY and NEARBY when relation: ALL', async () => {
+            const rows = [
+                {
+                    destinationId: 'dest-1',
+                    id: 'poi-primary',
+                    slug: 'poi-primary',
+                    lat: -32.0,
+                    long: -58.0,
+                    type: 'PLAZA',
+                    icon: null,
+                    displayWeight: 80,
+                    relation: 'PRIMARY'
+                },
+                {
+                    destinationId: 'dest-1',
+                    id: 'poi-nearby',
+                    slug: 'poi-nearby',
+                    lat: -32.1,
+                    long: -58.1,
+                    type: 'PLAZA',
+                    icon: null,
+                    displayWeight: 50,
+                    relation: 'NEARBY'
+                }
+            ];
+            const { selectMock } = buildSelectChain(rows);
+            getDbMock.mockReturnValue({ select: selectMock });
+
+            const result = await model.getPointsOfInterestMap(['dest-1'], undefined, 'ALL');
+
+            const entries = result.get('dest-1') ?? [];
+            expect(entries).toHaveLength(2);
+            expect(entries.find((e) => e.id === 'poi-primary')?.relation).toBe('PRIMARY');
+            expect(entries.find((e) => e.id === 'poi-nearby')?.relation).toBe('NEARBY');
+        });
+
+        it('AC-5: relation: NEARBY yields only NEARBY rows', async () => {
+            const rows = [
+                {
+                    destinationId: 'dest-1',
+                    id: 'poi-nearby',
+                    slug: 'poi-nearby',
+                    lat: -32.1,
+                    long: -58.1,
+                    type: 'PLAZA',
+                    icon: null,
+                    displayWeight: 50,
+                    relation: 'NEARBY'
+                }
+            ];
+            const { selectMock } = buildSelectChain(rows);
+            getDbMock.mockReturnValue({ select: selectMock });
+
+            const result = await model.getPointsOfInterestMap(['dest-1'], undefined, 'NEARBY');
+
+            const entries = result.get('dest-1') ?? [];
+            expect(entries).toHaveLength(1);
+            expect(entries[0]?.relation).toBe('NEARBY');
+        });
+    });
 });

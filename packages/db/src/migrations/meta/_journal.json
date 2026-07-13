@@ -386,6 +386,13 @@
             "when": 1783933663073,
             "tag": "0054_hos139_poi_category_permissions",
             "breakpoints": true
+        },
+        {
+            "idx": 55,
+            "version": "7",
+            "when": 1783945738142,
+            "tag": "0055_ordinary_arachne",
+            "breakpoints": true
         }
     ]
 }
