@@ -722,15 +722,23 @@ NEVER `git revert` and force-push to `main` to "undo" a deploy. The CI/CD model 
 
 **Fix**:
 
-1. Set `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` in Vercel project env vars (Production scope, build phase).
-2. Redeploy. The Astro Sentry integration (`@sentry/astro`) auto-uploads source maps when the token is present, per `astro.config.mjs`:
+1. Set `SENTRY_AUTH_TOKEN` as a **Coolify build-time arg** (not a runtime env var) on `hospeda-web-prod`/`hospeda-web-staging`. Org (`qazuor`) and project (`hospeda-web`) are hardcoded in `astro.config.mjs`, not read from env vars.
+2. Redeploy. The Astro Sentry integration (`@sentry/astro`) auto-uploads source maps when the token is present, per `astro.config.mjs` (BETA-66):
 
    ```js
-   sourceMapsUploadOptions: {
-     enabled: Boolean(process.env.SENTRY_AUTH_TOKEN)
-   }
+   ...(process.env.SENTRY_AUTH_TOKEN
+     ? [
+         sentry({
+           org: 'qazuor',
+           project: 'hospeda-web',
+           authToken: process.env.SENTRY_AUTH_TOKEN,
+           sourcemaps: { filesToDeleteAfterUpload: ['**/*.map'] }
+         })
+       ]
+     : [])
    ```
 
+   The `vite.build.sourcemap: 'hidden'` setting (also in `astro.config.mjs`) generates the `.map` files on disk without a `//# sourceMappingURL=` reference in the shipped bundle; `sourcemaps.filesToDeleteAfterUpload` then deletes them from the build output once Sentry has ingested them, so they never reach the CDN.
 3. Confirm in Sentry: Settings -> Source Maps. The latest release should show uploaded artifacts.
 
 ### Workspace Dependency Not Resolved

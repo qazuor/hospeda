@@ -370,9 +370,9 @@ HOSPEDA_CRON_SECRET          (all 6 background jobs)
 HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN   (billing)
 HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET (webhook verification)
 HOSPEDA_RESEND_API_KEY       (transactional email)
-HOSPEDA_SENTRY_DSN           (error monitoring — set in Vercel, not GitHub)
-PUBLIC_SENTRY_DSN            (web client monitoring — set in Vercel)
-VITE_SENTRY_DSN              (admin client monitoring — set in Vercel)
+HOSPEDA_SENTRY_DSN           (error monitoring — set in Coolify, not GitHub)
+PUBLIC_SENTRY_DSN            (web client monitoring — set in Coolify)
+VITE_SENTRY_DSN              (admin client monitoring — set in Coolify, also a Docker build-arg)
 ```
 
 ---
@@ -675,7 +675,7 @@ This section walks through every external service that requires API keys for Hos
 
 1. **Account creation.** Free **Developer** plan includes 5K events/month. The **Team** plan ($26/mo) is needed for source map uploads and longer retention.
 2. **What to create.**
-    - One **organization** (typically `hospeda`).
+    - One **organization** (`qazuor`).
     - Three **projects**, one per app:
         - `hospeda-api` → platform: **Node.js**.
         - `hospeda-web` → platform: **Astro** (or **JavaScript/Browser**).
@@ -689,9 +689,9 @@ This section walks through every external service that requires API keys for Hos
     These are the minimum scopes for `@sentry/cli` to upload source maps and create releases.
 5. **Env vars produced.**
     - API: `HOSPEDA_SENTRY_DSN`, `HOSPEDA_SENTRY_RELEASE`, `HOSPEDA_SENTRY_PROJECT=hospeda-api`.
-    - Web: `PUBLIC_SENTRY_DSN`, `PUBLIC_SENTRY_RELEASE`, plus build-time `SENTRY_AUTH_TOKEN`, `SENTRY_ORG=hospeda`, `SENTRY_PROJECT=hospeda-web`.
+    - Web: `PUBLIC_SENTRY_DSN`, `PUBLIC_SENTRY_RELEASE`, plus the build-time-only `SENTRY_AUTH_TOKEN` (org/project are hardcoded as `qazuor`/`hospeda-web` in `apps/web/astro.config.mjs`, not read from `SENTRY_ORG`/`SENTRY_PROJECT` env vars).
     - Admin: `VITE_SENTRY_DSN`, `VITE_SENTRY_RELEASE`, `VITE_SENTRY_PROJECT=hospeda-admin`.
-6. **Release configuration.** Set the release identifier to the Vercel commit SHA: `HOSPEDA_SENTRY_RELEASE=$VERCEL_GIT_COMMIT_SHA`. The build process uploads source maps tagged with this release.
+6. **Release configuration.** Hospeda deploys via Coolify (Docker), not Vercel. The release identifier is derived from `HOSPEDA_COMMIT_SHA`/`HOSPEDA_GIT_SHA` (set as a Coolify build-arg, mirroring the deploying commit SHA) and falls back to `PUBLIC_SENTRY_RELEASE`/`VITE_SENTRY_RELEASE` per app. The build process uploads source maps tagged with this release, gated on `SENTRY_AUTH_TOKEN` being present at build time (see BETA-66).
 7. **Verification.**
 
     ```bash
