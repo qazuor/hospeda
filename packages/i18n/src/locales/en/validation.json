@@ -166,20 +166,6 @@
             }
         }
     },
-    "featureFlag": {
-        "description": {
-            "max": "Description cannot exceed {{max}} characters",
-            "min": "Description must be at least {{min}} characters"
-        },
-        "key": {
-            "invalidPattern": "Key format is invalid",
-            "max": "Key cannot exceed {{max}} characters",
-            "min": "Key must be at least {{min}} characters"
-        },
-        "reason": {
-            "max": "Reason cannot exceed {{max}} characters"
-        }
-    },
     "accommodationAmenity": {
         "additionalCostPercent": {
             "max": "[EN] El additional cost percent no puede superar los {{max}} caracteres",
@@ -2680,6 +2666,20 @@
             "required": "[EN] El applicable verticals es obligatorio"
         }
     },
+    "featureFlag": {
+        "description": {
+            "max": "Description cannot exceed {{max}} characters",
+            "min": "Description must be at least {{min}} characters"
+        },
+        "key": {
+            "invalidPattern": "Key format is invalid",
+            "max": "Key cannot exceed {{max}} characters",
+            "min": "Key must be at least {{min}} characters"
+        },
+        "reason": {
+            "max": "Reason cannot exceed {{max}} characters"
+        }
+    },
     "field": {
         "custom": "[EN] Error de validación personalizado",
         "invalidArguments": "[EN] Argumentos inválidos",
@@ -3006,6 +3006,25 @@
         "version": {
             "format": "[EN] El formato de la versión no es válido",
             "required": "[EN] La versión es obligatoria"
+        }
+    },
+    "poiCategory": {
+        "displayWeight": {
+            "int": "[EN] El peso de visualización debe ser un número entero",
+            "max": "[EN] El peso de visualización no puede superar los {{max}} caracteres",
+            "min": "[EN] El peso de visualización debe tener al menos {{min}} caracteres",
+            "required": "[EN] El peso de visualización es obligatorio"
+        },
+        "icon": {
+            "max": "[EN] El ícono no puede superar los {{max}} caracteres",
+            "min": "[EN] El ícono debe tener al menos {{min}} caracteres",
+            "required": "[EN] El ícono es obligatorio"
+        },
+        "slug": {
+            "max": "[EN] El slug no puede superar los {{max}} caracteres",
+            "min": "[EN] El slug debe tener al menos {{min}} caracteres",
+            "pattern": "[EN] El formato del slug no es válido",
+            "required": "[EN] El slug es obligatorio"
         }
     },
     "pointOfInterest": {

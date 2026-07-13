@@ -3008,6 +3008,25 @@
             "required": "La versión es obligatoria"
         }
     },
+    "poiCategory": {
+        "displayWeight": {
+            "int": "El peso de visualización debe ser un número entero",
+            "max": "El peso de visualización no puede superar los {{max}} caracteres",
+            "min": "El peso de visualización debe tener al menos {{min}} caracteres",
+            "required": "El peso de visualización es obligatorio"
+        },
+        "icon": {
+            "max": "El ícono no puede superar los {{max}} caracteres",
+            "min": "El ícono debe tener al menos {{min}} caracteres",
+            "required": "El ícono es obligatorio"
+        },
+        "slug": {
+            "max": "El slug no puede superar los {{max}} caracteres",
+            "min": "El slug debe tener al menos {{min}} caracteres",
+            "pattern": "El formato del slug no es válido",
+            "required": "El slug es obligatorio"
+        }
+    },
     "pointOfInterest": {
         "address": {
             "required": "La dirección es obligatoria",

@@ -1,8 +1,10 @@
 import {
     DestinationModel,
+    PoiCategoryModel,
     PointOfInterestModel,
     pointsOfInterest,
-    RDestinationPointOfInterestModel
+    RDestinationPointOfInterestModel,
+    RPoiCategoryModel
 } from '@repo/db';
 import type {
     CountResponse,
@@ -10,6 +12,7 @@ import type {
     DestinationIdType,
     DestinationPointOfInterestRelation,
     PointOfInterest,
+    PointOfInterestCategoryRelation,
     PointOfInterestIdType
 } from '@repo/schemas';
 import {
@@ -59,6 +62,16 @@ import {
 } from './point-of-interest.permissions';
 
 /**
+ * Upper bound for the `categoryId`/`categorySlug` filter's candidate-POI
+ * lookup in {@link PointOfInterestService.resolveCategoryIdFilter} (mirrors
+ * `PointOfInterestCategoryService`'s `POI_CATEGORY_RELATIONS_PAGE_SIZE`
+ * precedent). Without an explicit `pageSize`, `findAll` defaults to
+ * `DEFAULT_PAGE_SIZE` (20), silently truncating the candidate id list once
+ * more than 20 POIs share a category (HOS-139 judgment-day INFO).
+ */
+const POI_CATEGORY_RELATIONS_PAGE_SIZE = 200;
+
+/**
  * Service for managing points of interest (HOS-113). Implements business
  * logic, permissions, and hooks for PointOfInterest entities, mirroring
  * `AttractionService`'s core CRUD shape. Coordinates read + destination
@@ -98,6 +111,20 @@ export class PointOfInterestService extends BaseCrudRelatedService<
     }
 
     protected readonly destinationModel: DestinationModel;
+    /**
+     * Category catalog model, used to resolve `categorySlug` search filters
+     * to a `categoryId` (HOS-139 spec §6.5/§7.2). Injectable for tests,
+     * mirroring `destinationModel`'s optional-constructor-param shape.
+     */
+    protected readonly categoryModel: PoiCategoryModel;
+    /**
+     * `r_poi_category` join model, used to resolve the `categoryId`/
+     * `categorySlug` search filter to an `id IN (...)` condition (HOS-139
+     * spec §6.5) — mirrors `relatedModel`'s (`r_destination_point_of_interest`)
+     * role for the `destinationId` filter, but is a SEPARATE model since a
+     * POI's category relation is unrelated to its destination relation.
+     */
+    protected readonly categoryRelatedModel: RPoiCategoryModel;
     protected normalizers: CrudNormalizersFromSchemas<
         typeof PointOfInterestCreateInputSchema,
         typeof PointOfInterestUpdateInputSchema,
@@ -113,11 +140,15 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         ctx: ServiceConfig,
         model?: PointOfInterestModel,
         relatedModel?: RDestinationPointOfInterestModel,
-        destinationModel?: DestinationModel
+        destinationModel?: DestinationModel,
+        categoryModel?: PoiCategoryModel,
+        categoryRelatedModel?: RPoiCategoryModel
     ) {
         super(ctx, PointOfInterestService.ENTITY_NAME, relatedModel);
         this.model = model ?? new PointOfInterestModel();
         this.destinationModel = destinationModel ?? new DestinationModel();
+        this.categoryModel = categoryModel ?? new PoiCategoryModel();
+        this.categoryRelatedModel = categoryRelatedModel ?? new RPoiCategoryModel();
     }
 
     protected _canCreate(actor: Actor): void {
@@ -539,15 +570,100 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         return { empty: false, additionalConditions: [inArray(pointsOfInterest.id, poiIds)] };
     }
 
+    /**
+     * Resolves a `categoryId`/`categorySlug` search filter to an
+     * `id IN (...)` additional SQL condition, via the `r_poi_category` join
+     * table (HOS-139 spec §6.5 — the new category taxonomy is M2M, resolved
+     * through the join, alongside — not replacing — the legacy `type` plain
+     * column filter in {@link buildSearchWhere}).
+     *
+     * Mirrors {@link resolveDestinationIdFilter}'s shape exactly, with one
+     * addition: `categorySlug` is resolved to a `categoryId` first (via
+     * {@link categoryModel}) when `categoryId` itself was not provided.
+     *
+     * @param categoryId - The category id filter from search params, if any.
+     * @param categorySlug - The category slug filter from search params, if
+     *   any. Ignored when `categoryId` is also provided (id wins).
+     * @returns `{ empty: true }` when a category filter was provided but
+     *   maps to zero points of interest (or an unmatched `categorySlug`) —
+     *   callers MUST short-circuit to an empty result. `{ empty: false,
+     *   additionalConditions: [] }` when no category filter was requested.
+     *   `{ empty: false, additionalConditions: [SQL] }` otherwise.
+     */
+    private async resolveCategoryIdFilter(
+        categoryId: string | undefined,
+        categorySlug: string | undefined
+    ): Promise<{ empty: boolean; additionalConditions: SQL[] }> {
+        if (!categoryId && !categorySlug) {
+            return { empty: false, additionalConditions: [] };
+        }
+
+        let resolvedCategoryId = categoryId;
+        if (!resolvedCategoryId && categorySlug) {
+            const category = await this.categoryModel.findOne({ slug: categorySlug });
+            if (!category) {
+                return { empty: true, additionalConditions: [] };
+            }
+            resolvedCategoryId = category.id;
+        }
+
+        const { items: relations } = await this.categoryRelatedModel.findAll(
+            { categoryId: resolvedCategoryId },
+            { pageSize: POI_CATEGORY_RELATIONS_PAGE_SIZE }
+        );
+        if (relations.length === 0) {
+            return { empty: true, additionalConditions: [] };
+        }
+        const poiIds = relations.map(
+            (r: PointOfInterestCategoryRelation) => r.pointOfInterestId as string
+        );
+        return { empty: false, additionalConditions: [inArray(pointsOfInterest.id, poiIds)] };
+    }
+
+    /**
+     * Resolves BOTH the `destinationId` and `categoryId`/`categorySlug`
+     * join-table filters in parallel and merges them into a single
+     * `additionalConditions` array (AND-combined by the caller's
+     * `model.findAll`/`count`, so a POI must satisfy every provided
+     * relation filter simultaneously).
+     *
+     * @param params - The `destinationId`/`categoryId`/`categorySlug`
+     *   filters from search params.
+     * @returns `{ empty: true }` when ANY relation filter resolved to zero
+     *   matches — callers MUST short-circuit to an empty result.
+     */
+    private async resolveRelationFilters(params: {
+        destinationId: string | undefined;
+        categoryId: string | undefined;
+        categorySlug: string | undefined;
+    }): Promise<{ empty: boolean; additionalConditions: SQL[] }> {
+        const [destinationResult, categoryResult] = await Promise.all([
+            this.resolveDestinationIdFilter(params.destinationId),
+            this.resolveCategoryIdFilter(params.categoryId, params.categorySlug)
+        ]);
+        if (destinationResult.empty || categoryResult.empty) {
+            return { empty: true, additionalConditions: [] };
+        }
+        return {
+            empty: false,
+            additionalConditions: [
+                ...destinationResult.additionalConditions,
+                ...categoryResult.additionalConditions
+            ]
+        };
+    }
+
     protected async _executeSearch(
         params: PointOfInterestSearchInput,
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<PaginatedListOutput<PointOfInterest>> {
         const where = this.buildSearchWhere(params);
-        const { empty, additionalConditions } = await this.resolveDestinationIdFilter(
-            params.destinationId
-        );
+        const { empty, additionalConditions } = await this.resolveRelationFilters({
+            destinationId: params.destinationId,
+            categoryId: params.categoryId,
+            categorySlug: params.categorySlug
+        });
         if (empty) {
             return { items: [], total: 0 };
         }
@@ -561,9 +677,11 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         _ctx: ServiceContext
     ): Promise<CountResponse> {
         const where = this.buildSearchWhere(params);
-        const { empty, additionalConditions } = await this.resolveDestinationIdFilter(
-            params.destinationId
-        );
+        const { empty, additionalConditions } = await this.resolveRelationFilters({
+            destinationId: params.destinationId,
+            categoryId: params.categoryId,
+            categorySlug: params.categorySlug
+        });
         if (empty) {
             return { count: 0 };
         }
@@ -589,9 +707,11 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         const pageSize = params.pageSize ?? 10;
 
         const where = this.buildSearchWhere(params);
-        const { empty, additionalConditions } = await this.resolveDestinationIdFilter(
-            params.destinationId
-        );
+        const { empty, additionalConditions } = await this.resolveRelationFilters({
+            destinationId: params.destinationId,
+            categoryId: params.categoryId,
+            categorySlug: params.categorySlug
+        });
 
         const buildEmptyPage = (total: number) => ({
             data: [],

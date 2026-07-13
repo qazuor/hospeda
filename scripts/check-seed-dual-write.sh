@@ -36,6 +36,7 @@
 #      packages/seed/src/data/sponsorshipPackage/**
 #      packages/seed/src/data/postTag/**
 #      packages/seed/src/data/pointOfInterest/**
+#      packages/seed/src/data/poiCategory/**
 #      packages/seed/src/data/user/required/**
 #
 #    `packages/seed/src/data/tag/` is a MIXED folder: `internalTags.seed.ts`
@@ -132,6 +133,7 @@ REQUIRED_DATA_DIR_PATTERNS=(
     '^packages/seed/src/data/sponsorshipPackage/'
     '^packages/seed/src/data/postTag/'
     '^packages/seed/src/data/pointOfInterest/'
+    '^packages/seed/src/data/poiCategory/'
     '^packages/seed/src/data/user/required/'
 )
 

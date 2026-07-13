@@ -39,7 +39,13 @@ export const PointOfInterestFiltersSchema = z.object({
     lifecycleState: LifecycleStatusEnumSchema.optional(),
 
     // Destination relation filter (M2M via join table, HOS-113 OQ-1)
-    destinationId: z.string().uuid().optional()
+    destinationId: z.string().uuid().optional(),
+
+    // Category relation filters (M2M via r_poi_category join table, HOS-139
+    // spec §6.5/§7.2 — additive, resolved through the join, not a plain
+    // column, alongside (not replacing) the legacy `type` filter above).
+    categoryId: z.string().uuid().optional(),
+    categorySlug: z.string().optional()
 });
 
 // ============================================================================
@@ -56,7 +62,12 @@ export const PointOfInterestSearchSchema = BaseSearchSchema.extend({
     isFeatured: z.boolean().optional(),
     isBuiltin: z.boolean().optional(),
     lifecycleState: LifecycleStatusEnumSchema.optional(),
-    destinationId: z.string().uuid().optional()
+    destinationId: z.string().uuid().optional(),
+
+    // Category relation filters (M2M via r_poi_category join table, HOS-139
+    // spec §6.5/§7.2 — additive, alongside the legacy `type` filter above).
+    categoryId: z.string().uuid().optional(),
+    categorySlug: z.string().optional()
 });
 
 // ============================================================================

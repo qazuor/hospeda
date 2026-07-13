@@ -1,0 +1,29 @@
+{
+    "$schema": "../../schemas/poi-category.schema.json",
+    "id": "016-poi-category-industrial_heritage",
+    "slug": "industrial_heritage",
+    "nameI18n": {
+        "es": "Patrimonio industrial",
+        "en": "Industrial heritage",
+        "pt": "Patrimônio industrial"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            }
+        }
+    },
+    "icon": "factory",
+    "displayWeight": 22,
+    "lifecycleState": "ACTIVE"
+}
