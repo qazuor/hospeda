@@ -9,8 +9,20 @@ import type { DestinationWeatherCacheInput } from '@repo/schemas';
 export interface OpenMeteoClientConfig {
     /** Base URL of the Open-Meteo forecast API. Defaults to the public endpoint. */
     baseUrl?: string;
-    /** Per-request timeout in milliseconds. Defaults to 10000. */
+    /** Per-request timeout in milliseconds. Defaults to 15000. */
     timeoutMs?: number;
+    /**
+     * Number of RETRIES (in addition to the first attempt) for transient
+     * failures — request timeout/abort, network error, HTTP 429, and HTTP 5xx.
+     * Non-transient failures (HTTP 4xx other than 429, empty payload, schema
+     * validation) are never retried. Defaults to 2 (3 attempts total).
+     */
+    maxRetries?: number;
+    /**
+     * Base backoff in milliseconds between retries, grown exponentially
+     * (`retryBackoffMs * 2^attempt`). Defaults to 500.
+     */
+    retryBackoffMs?: number;
 }
 
 /**
