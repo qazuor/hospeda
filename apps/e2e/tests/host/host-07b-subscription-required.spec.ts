@@ -11,9 +11,8 @@
  *   - One DRAFT accommodation owned by the host.
  *
  * What this validates:
- *  1. PATCH /api/v1/admin/accommodations/:id with `lifecycleState: 'ACTIVE'`
- *     is rejected with 402/403 (paywall) when the host has no active
- *     subscription.
+ *  1. POST /api/v1/protected/accommodations/:id/publish is rejected with
+ *     402/403 (paywall) when the host has no active subscription.
  *  2. The error response identifies the subscription gate (code or message
  *     mentioning subscription/paywall), giving the UI enough to render a
  *     localized CTA.
@@ -45,7 +44,7 @@ test.describe('HOST-07b: subscription_required on republish @p0 @host @billing @
         userId = null;
     });
 
-    test('cancelled+expired host: PATCH ACTIVE rejected, accommodation stays DRAFT', async ({
+    test('cancelled+expired host: publish rejected, accommodation stays DRAFT', async ({
         page
     }) => {
         // Paywall here is enforced by the date-aware publish gate (checkEligibility
@@ -90,11 +89,17 @@ test.describe('HOST-07b: subscription_required on republish @p0 @host @billing @
             slugPrefix: 'host-07b-acc'
         });
 
-        // ── 1. PATCH ACTIVE rejected with 402/403 ─────────────────────────
-        const publishResponse = await page.request.patch(
-            `${API_URL}/api/v1/admin/accommodations/${accommodation.id}`,
+        // ── 1. Publish rejected with 402/403 ──────────────────────────────
+        // Owner-scoped protected publish endpoint (POST .../publish) — the
+        // same route the web editor's "Publicar" button calls. The paywall
+        // is enforced inside `AccommodationService.publish()`'s subscription
+        // eligibility gate (SPEC-217), independent of the route tier, so this
+        // asserts the real billing behaviour rather than the admin-panel-access
+        // 403 the old admin-route PATCH would now return for ANY host
+        // regardless of subscription state (HOS-152).
+        const publishResponse = await page.request.post(
+            `${API_URL}/api/v1/protected/accommodations/${accommodation.id}/publish`,
             {
-                data: { lifecycleState: 'ACTIVE' },
                 headers: { cookie: host.sessionCookie }
             }
         );

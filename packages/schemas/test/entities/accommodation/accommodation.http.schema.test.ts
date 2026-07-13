@@ -12,6 +12,7 @@ import {
     AccommodationSearchHttpSchema,
     AccommodationUpdateHttpSchema,
     httpToDomainAccommodationCreate,
+    httpToDomainAccommodationCreateDraft,
     httpToDomainAccommodationSearch,
     httpToDomainAccommodationUpdate
 } from '../../../src/entities/accommodation/accommodation.http.schema.js';
@@ -672,6 +673,36 @@ describe('httpToDomainAccommodationUpdate — partial extraInfo (SPEC-229)', () 
     it('leaves extraInfo undefined when no capacity field is sent', () => {
         const result = httpToDomainAccommodationUpdate({ name: 'Hotel' });
         expect(result.extraInfo).toBeUndefined();
+    });
+});
+
+describe('httpToDomainAccommodationCreateDraft — extraInfo minNights default (HOS-152)', () => {
+    const baseDraft = {
+        name: 'Draft Hotel',
+        summary: 'A short summary for the onboarding draft.',
+        type: AccommodationTypeEnum.HOUSE,
+        destinationId: 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e'
+    };
+    const ownerId = 'c3d4e5f6-a7b8-4c9d-ae1f-2a3b4c5d6e7f';
+
+    it('always emits extraInfo with minNights: 1 even when no capacity field is sent', () => {
+        // `minNights` is not settable by a host, so the draft defaults it to 1
+        // server-side; without this the publish capacity guard is unsatisfiable.
+        const result = httpToDomainAccommodationCreateDraft(baseDraft, ownerId);
+        expect(result.extraInfo).toEqual({ minNights: 1 });
+    });
+
+    it('keeps minNights: 1 and adds the present capacity fields', () => {
+        const result = httpToDomainAccommodationCreateDraft(
+            { ...baseDraft, maxGuests: 4, bedrooms: 2, bathrooms: 1 },
+            ownerId
+        );
+        expect(result.extraInfo).toEqual({
+            minNights: 1,
+            capacity: 4,
+            bedrooms: 2,
+            bathrooms: 1
+        });
     });
 });
 

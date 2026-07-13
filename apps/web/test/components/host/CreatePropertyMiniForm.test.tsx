@@ -359,6 +359,51 @@ describe('CreatePropertyMiniForm — post-submit redirect', () => {
             expect(window.location.href).toBe('http://localhost:3000/accommodations/abc-123/edit');
         });
     });
+
+    it('redirects to accountPropertiesUrl (NOT the admin panel) when canAccessAdminPanel is false (HOS-152 regression)', async () => {
+        // Regression guard: HOST/COMMERCE_OWNER users do not have
+        // `access.panelAdmin` (HOS-152). A previous bug had this component
+        // destructure `canAccessAdminPanel`/`accountPropertiesUrl` as unused
+        // (underscore-prefixed) props and always redirect to the admin edit
+        // page regardless of the actor's access, sending non-staff owners
+        // into the admin panel where they could still navigate around.
+        vi.stubGlobal(
+            'fetch',
+            vi
+                .fn()
+                .mockResolvedValueOnce(
+                    buildFetchResponse({
+                        ok: true,
+                        body: {
+                            data: {
+                                status: 'created',
+                                accommodationId: 'abc-123',
+                                accommodationSlug: 'mi-alojamiento'
+                            }
+                        }
+                    })
+                )
+                .mockResolvedValueOnce(buildFetchResponse({ ok: true, body: {} }))
+        );
+
+        const user = userEvent.setup();
+        render(
+            <CreatePropertyMiniForm
+                {...DEFAULT_PROPS}
+                canAccessAdminPanel={false}
+            />
+        );
+
+        await fillAllFields(user);
+
+        await act(async () => {
+            await user.click(getSubmitButton());
+        });
+
+        await waitFor(() => {
+            expect(window.location.href).toBe('/es/mi-cuenta/propiedades/');
+        });
+    });
 });
 
 // ---------------------------------------------------------------------------

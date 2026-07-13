@@ -28,26 +28,73 @@ import { AccommodationRatingSchema } from './subtypes/accommodation.rating.schem
  *
  * Extracted as a named schema (single source of truth) so the update path can
  * derive a deep-partial variant via `.partial()` for partial PATCH semantics
- * (SPEC-229) while the full entity keeps the required-field contract.
+ * (SPEC-229).
+ *
+ * `capacity`/`minNights`/`bedrooms`/`bathrooms` are OPTIONAL here (HOS-152 fix).
+ * A host-onboarding DRAFT (`AccommodationService.createForOnboarding`) is
+ * legitimately created with a PARTIAL (or entirely absent) `extraInfo` — the
+ * onboarding form lets the host fill in capacity data incrementally across
+ * multiple PATCHes, and `httpToDomainAccommodationCreateDraft` /
+ * `httpToDomainAccommodationUpdate` only ever emit the subset of fields the
+ * host actually provided (SPEC-229 partial-merge semantics). Requiring all
+ * four fields here made the READ schemas (`AccommodationProtectedSchema`,
+ * `AccommodationAdminSchema`, both derived from this schema) reject any DRAFT
+ * with incomplete capacity data, 500-ing every `GET`/`PATCH` on a
+ * freshly-onboarded listing. This mirrors the same read-vs-write relaxation
+ * already applied to `description` in the access schemas (SPEC-143 Finding
+ * #9): the read contract must tolerate what the DB legitimately contains;
+ * completeness is enforced at PUBLISH time instead, via
+ * {@link AccommodationExtraInfoRequiredForPublishSchema}.
  */
 export const AccommodationExtraInfoSchema = z.object({
-    capacity: z.number().int({
-        message: 'zodError.accommodation.extraInfo.capacity.required'
-    }),
-    minNights: z.number().int({
-        message: 'zodError.accommodation.extraInfo.minNights.required'
-    }),
+    capacity: z
+        .number()
+        .int({
+            message: 'zodError.accommodation.extraInfo.capacity.required'
+        })
+        .optional(),
+    minNights: z
+        .number()
+        .int({
+            message: 'zodError.accommodation.extraInfo.minNights.required'
+        })
+        .optional(),
     maxNights: z.number().int().optional(),
-    bedrooms: z.number().int({
-        message: 'zodError.accommodation.extraInfo.bedrooms.required'
-    }),
+    bedrooms: z
+        .number()
+        .int({
+            message: 'zodError.accommodation.extraInfo.bedrooms.required'
+        })
+        .optional(),
     beds: z.number().int().optional(),
-    bathrooms: z.number().int({
-        message: 'zodError.accommodation.extraInfo.bathrooms.required'
-    }),
+    bathrooms: z
+        .number()
+        .int({
+            message: 'zodError.accommodation.extraInfo.bathrooms.required'
+        })
+        .optional(),
     smokingAllowed: z.boolean().optional(),
     extraInfo: z.array(z.string()).optional()
 });
+
+/**
+ * Strict variant of {@link AccommodationExtraInfoSchema} requiring
+ * `capacity`/`minNights`/`bedrooms`/`bathrooms` — the four fields a DRAFT may
+ * legitimately omit on read/write, but which MUST be present before an
+ * accommodation can be published (DRAFT/INACTIVE -> ACTIVE).
+ *
+ * Used exclusively by `AccommodationService.publish()`'s completeness guard
+ * (HOS-152). Never used on the read or draft-write paths — those stay
+ * relaxed via `AccommodationExtraInfoSchema` above.
+ */
+export const AccommodationExtraInfoRequiredForPublishSchema = AccommodationExtraInfoSchema.required(
+    {
+        capacity: true,
+        minNights: true,
+        bedrooms: true,
+        bathrooms: true
+    }
+);
 
 /**
  * Accommodation Schema - Main Entity Schema

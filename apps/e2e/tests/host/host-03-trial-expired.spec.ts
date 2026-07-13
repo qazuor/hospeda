@@ -28,7 +28,7 @@ import {
 import { execSQL, forceTrialExpired, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
-const ADMIN_URL = process.env.HOSPEDA_E2E_ADMIN_URL ?? 'http://localhost:3000';
+const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 
 test.describe('HOST-03: trial expired blocks writes @p0 @host @billing', () => {
@@ -83,30 +83,41 @@ test.describe('HOST-03: trial expired blocks writes @p0 @host @billing', () => {
             slugPrefix: 'host-03-acc'
         });
 
-        // ── 1. Set session cookie on admin domain ──────────────────────────
+        // ── 1. Set session cookie on web domain ─────────────────────────────
         await page.context().addCookies(
             host.sessionCookie.split('; ').map((c) => {
                 const [name, ...rest] = c.split('=');
                 return {
                     name: (name ?? '').trim(),
                     value: rest.join('='),
-                    url: ADMIN_URL
+                    url: WEB_URL
                 };
             })
         );
 
         // ── 2. UI: read flows succeed ──────────────────────────────────────
-        await page.goto(`${ADMIN_URL}/accommodations`, { waitUntil: 'domcontentloaded' });
+        // HOST no longer holds ACCESS_PANEL_ADMIN (HOS-152): the admin panel
+        // now redirects any HOST session straight to /auth/forbidden
+        // (decideAuthedGuard, apps/admin/src/lib/authed-guard.ts), regardless
+        // of trial state. Real hosts read their own listings from the web
+        // self-service pages instead.
+        await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`, { waitUntil: 'domcontentloaded' });
         expect(page.url()).not.toContain('/auth/');
 
-        await page.goto(`${ADMIN_URL}/accommodations/${accommodation.id}`, {
+        await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/${accommodation.id}/editar`, {
             waitUntil: 'domcontentloaded'
         });
         expect(page.url()).not.toContain('/auth/');
 
         // ── 3. API: write blocked with 402/403 ─────────────────────────────
+        // Owner-scoped protected PUT — the same route the web editor calls.
+        // The paywall is enforced inside `AccommodationService.update()`'s
+        // subscription eligibility gate (SPEC-217), independent of the route
+        // tier, so this asserts the real billing behaviour rather than the
+        // admin-panel-access 403 the old admin-route call would now return
+        // for ANY host regardless of trial state (HOS-152).
         const writeResponse = await page.request.put(
-            `${API_URL}/api/v1/admin/accommodations/${accommodation.id}`,
+            `${API_URL}/api/v1/protected/accommodations/${accommodation.id}`,
             {
                 data: { name: 'Modified during trial expired' },
                 headers: { cookie: host.sessionCookie }
@@ -119,7 +130,7 @@ test.describe('HOST-03: trial expired blocks writes @p0 @host @billing', () => {
 
         // ── 4. API: read still works ───────────────────────────────────────
         const readResponse = await page.request.get(
-            `${API_URL}/api/v1/admin/accommodations/${accommodation.id}`,
+            `${API_URL}/api/v1/protected/accommodations/${accommodation.id}`,
             { headers: { cookie: host.sessionCookie } }
         );
         expect(

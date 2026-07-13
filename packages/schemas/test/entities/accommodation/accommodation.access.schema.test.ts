@@ -187,3 +187,62 @@ describe('socialNetworks in access schemas', () => {
         }
     });
 });
+
+// ---------------------------------------------------------------------------
+// extraInfo tolerance for incomplete DRAFT data (HOS-152)
+// ---------------------------------------------------------------------------
+//
+// A host-onboarding DRAFT can legitimately have a PARTIAL (or entirely
+// absent) `extraInfo` — the onboarding form lets the host fill in capacity
+// data incrementally across multiple PATCHes. Before the fix, `extraInfo`
+// required `capacity`/`minNights`/`bedrooms`/`bathrooms`, so GET/PATCH on
+// such a draft 500'd with "Response payload does not match declared schema".
+// Completeness is now enforced only at publish time
+// (`AccommodationExtraInfoRequiredForPublishSchema`, exercised in
+// `packages/service-core/test/services/accommodation/publish.test.ts`).
+
+const draftEntityPayload = {
+    ...entityPayload,
+    lifecycleState: 'DRAFT' as const,
+    visibility: 'PRIVATE' as const
+};
+
+describe('AccommodationProtectedSchema — extraInfo tolerance for DRAFT data (HOS-152)', () => {
+    it('accepts extraInfo missing minNights/bedrooms/bathrooms (only capacity provided)', () => {
+        const payload = { ...draftEntityPayload, extraInfo: { capacity: 4 } };
+        const result = AccommodationProtectedSchema.safeParse(payload);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.extraInfo?.capacity).toBe(4);
+            expect(result.data.extraInfo?.minNights).toBeUndefined();
+            expect(result.data.extraInfo?.bedrooms).toBeUndefined();
+            expect(result.data.extraInfo?.bathrooms).toBeUndefined();
+        }
+    });
+
+    it('accepts an entirely absent extraInfo (brand-new draft)', () => {
+        const payload = { ...draftEntityPayload, extraInfo: undefined };
+        const result = AccommodationProtectedSchema.safeParse(payload);
+        expect(result.success).toBe(true);
+    });
+});
+
+describe('AccommodationAdminSchema — extraInfo tolerance for DRAFT data (HOS-152)', () => {
+    it('accepts extraInfo missing minNights/bedrooms/bathrooms (only capacity provided)', () => {
+        const payload = { ...draftEntityPayload, extraInfo: { capacity: 4 } };
+        const result = AccommodationAdminSchema.safeParse(payload);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.extraInfo?.capacity).toBe(4);
+            expect(result.data.extraInfo?.minNights).toBeUndefined();
+            expect(result.data.extraInfo?.bedrooms).toBeUndefined();
+            expect(result.data.extraInfo?.bathrooms).toBeUndefined();
+        }
+    });
+
+    it('accepts an entirely absent extraInfo (brand-new draft)', () => {
+        const payload = { ...draftEntityPayload, extraInfo: undefined };
+        const result = AccommodationAdminSchema.safeParse(payload);
+        expect(result.success).toBe(true);
+    });
+});

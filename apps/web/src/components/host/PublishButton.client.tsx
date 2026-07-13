@@ -22,7 +22,13 @@
  *               failure is specifically `403 subscription_required` (the
  *               owner already consumed their one-per-life trial and has no
  *               active plan), a dedicated banner is shown instead, linking
- *               to the plans page rather than suggesting a retry.
+ *               to the plans page rather than suggesting a retry. When the
+ *               failure is `400` (the capacity-completeness guard —
+ *               HOS-152 — rejecting publish because `capacity`/`minNights`/
+ *               `bedrooms`/`bathrooms` are incomplete), a dedicated banner
+ *               links to the editor instead of the generic "try again",
+ *               since retrying without completing those fields will fail
+ *               identically every time.
  *  6. No (cancel) → returns to step 1.
  *
  * Mirrors UnpublishButton.client.tsx / DeleteButton.client.tsx (same
@@ -44,6 +50,8 @@
  *   errorText={t('host.properties.card.publishError', '...')}
  *   subscriptionRequiredMessage={t('host.properties.card.publishSubscriptionRequiredMessage', '...')}
  *   subscriptionRequiredCta={t('host.properties.card.publishSubscriptionRequiredCta', 'Ver planes')}
+ *   incompleteCapacityMessage={t('host.properties.card.publishIncompleteCapacityMessage', '...')}
+ *   incompleteCapacityCta={t('host.properties.card.publishIncompleteCapacityCta', 'Completar en el editor')}
  * />
  * ```
  */
@@ -59,7 +67,13 @@ import styles from './PublishButton.module.css';
 // ---------------------------------------------------------------------------
 
 /** State machine for the publish button. */
-type PublishState = 'idle' | 'confirming' | 'pending' | 'error' | 'subscriptionRequired';
+type PublishState =
+    | 'idle'
+    | 'confirming'
+    | 'pending'
+    | 'error'
+    | 'subscriptionRequired'
+    | 'incompleteCapacity';
 
 /**
  * Props for the PublishButton component.
@@ -89,6 +103,15 @@ export interface PublishButtonProps {
     readonly subscriptionRequiredMessage: string;
     /** Label for the link to the plans page in that same case (already-translated). */
     readonly subscriptionRequiredCta: string;
+    /**
+     * Message shown when publish fails because the accommodation's capacity
+     * details are incomplete (`400` from the capacity-completeness guard —
+     * HOS-152 — missing `capacity`/`minNights`/`bedrooms`/`bathrooms`,
+     * already-translated).
+     */
+    readonly incompleteCapacityMessage: string;
+    /** Label for the link to the editor in that same case (already-translated). */
+    readonly incompleteCapacityCta: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -114,7 +137,9 @@ export function PublishButton({
     confirmNo,
     errorText,
     subscriptionRequiredMessage,
-    subscriptionRequiredCta
+    subscriptionRequiredCta,
+    incompleteCapacityMessage,
+    incompleteCapacityCta
 }: PublishButtonProps): JSX.Element {
     const [state, setState] = useState<PublishState>('idle');
     const [apiError, setApiError] = useState<string | null>(null);
@@ -144,6 +169,18 @@ export function PublishButton({
             // showing a generic "try again" message — retrying is pointless.
             if (result.error.status === 403 && result.error.message === 'subscription_required') {
                 setState('subscriptionRequired');
+                return;
+            }
+            // HOS-152: the capacity-completeness guard rejects publish with a
+            // 400 `VALIDATION_ERROR` (`AccommodationService.publish()` throws
+            // `ServiceError(VALIDATION_ERROR, ...)`) when extraInfo is missing
+            // capacity/minNights/bedrooms/bathrooms. Matching on the error
+            // code (not bare status) keeps this from mislabeling some future,
+            // different 400 on `/publish` as "incomplete capacity" — retrying
+            // without fixing the accommodation's data would fail identically,
+            // so route the host to the editor instead of a generic "try again".
+            if (result.error.status === 400 && result.error.code === 'VALIDATION_ERROR') {
+                setState('incompleteCapacity');
                 return;
             }
             setApiError(errorText);
@@ -214,6 +251,45 @@ export function PublishButton({
                     className={`${styles.action} ${styles.primary}`}
                 >
                     {subscriptionRequiredCta}
+                </a>
+            </span>
+        );
+    }
+
+    // ── Incomplete capacity (HOS-152) ────────────────────────────────────
+    // Publish failed because extraInfo is missing capacity/minNights/
+    // bedrooms/bathrooms. Show a banner pointing to the editor instead of a
+    // retryable error — the same shape doomed to fail again unmodified.
+    if (state === 'incompleteCapacity') {
+        const editUrl = buildUrl({
+            locale,
+            path: `mi-cuenta/propiedades/${accommodationId}/editar`
+        });
+        return (
+            <span
+                role="alert"
+                style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '6px',
+                    alignItems: 'center',
+                    width: '100%'
+                }}
+            >
+                <span
+                    style={{
+                        fontSize: '0.8125rem',
+                        color: 'var(--core-foreground)',
+                        width: '100%'
+                    }}
+                >
+                    {incompleteCapacityMessage}
+                </span>
+                <a
+                    href={editUrl}
+                    className={`${styles.action} ${styles.primary}`}
+                >
+                    {incompleteCapacityCta}
                 </a>
             </span>
         );

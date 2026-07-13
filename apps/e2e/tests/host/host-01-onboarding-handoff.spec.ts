@@ -48,7 +48,6 @@ import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 void _unusedCreateConversation;
 
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
-const ADMIN_URL = process.env.HOSPEDA_E2E_ADMIN_URL ?? 'http://localhost:3000';
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 
 test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @billing @cross-app', () => {
@@ -166,58 +165,88 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         expect(subsAfter.length).toBe(0);
 
         // ───────────────────────────────────────────────────────────────────
-        // Admin leg: route guard accepts HOST → publicar
+        // Web leg: self-service editor accepts HOST → publicar
         // ───────────────────────────────────────────────────────────────────
+        //
+        // HOST no longer holds ACCESS_PANEL_ADMIN (HOS-152): the admin panel
+        // now 403s any HOST session unconditionally, regardless of onboarding
+        // state. Real hosts self-manage their own accommodations from the web
+        // app (`/mi-cuenta/propiedades/:id/editar`) via the owner-scoped
+        // `/api/v1/protected/*` routes, which enforce ownership without any
+        // admin permission — that is the actual flow this test must exercise.
 
         // Better Auth caches the session in `better-auth.session_data` (Max-Age=300s).
         // After `startHostOnboarding` promotes USER → HOST in the DB, the existing
         // session still reflects `role=USER` from the cache. Sign in again to mint
-        // a fresh session that includes the HOST role and its permissions
-        // (including `access.panelAdmin` needed for the admin endpoint below).
+        // a fresh session that includes the HOST role and its permissions.
         const hostSessionCookie = await refreshSession(user, { apiBaseUrl: API_URL });
 
-        // Set the session cookie on the admin domain. Since web and admin
-        // share Better Auth (same HOSPEDA_BETTER_AUTH_URL), the cookie
-        // value is reusable across origins in the local E2E setup.
+        // Set the session cookie on the web domain.
         await page.context().addCookies(
             hostSessionCookie.split('; ').map((c) => {
                 const [name, ...rest] = c.split('=');
                 return {
                     name: (name ?? '').trim(),
                     value: rest.join('='),
-                    url: ADMIN_URL
+                    url: WEB_URL
                 };
             })
         );
 
-        await page.goto(`${ADMIN_URL}/accommodations/${result.accommodationId}/edit`, {
+        await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/${result.accommodationId}/editar`, {
             waitUntil: 'domcontentloaded'
         });
 
-        // Step 9 of spec: admin guard must accept HOST, no /auth/forbidden
-        expect(page.url()).not.toContain('/auth/forbidden');
+        // Step 9 of spec: the freshly-promoted HOST must land on the
+        // self-service editor, not get bounced to the login screen.
+        expect(page.url()).not.toContain('/auth/');
 
-        // The publish PATCH is what transitions DRAFT → ACTIVE and creates
-        // the trial subscription. Drive via API to avoid coupling the test
-        // to the admin form's exact UI selectors.
-        const publishResponse = await page.request.patch(
-            `${API_URL}/api/v1/admin/accommodations/${result.accommodationId}`,
+        // Fill in the remaining fields (location, capacity, price) via the
+        // owner-scoped protected PATCH, mirroring what the web editor form
+        // submits before "Publicar". `bedrooms`/`bathrooms` are added here
+        // (HOS-152) so the draft clears AccommodationService.publish()'s
+        // capacity-completeness guard, which now rejects DRAFT -> ACTIVE
+        // unless extraInfo has capacity/minNights/bedrooms/bathrooms all set.
+        const fillResponse = await page.request.patch(
+            `${API_URL}/api/v1/protected/accommodations/${result.accommodationId}`,
             {
                 data: {
-                    lifecycleState: 'ACTIVE',
-                    location: {
-                        coords: { lat: -32.484, lng: -58.234 },
-                        addressLine1: 'Calle Falsa 123'
-                    },
-                    capacity: { maxGuests: 4 },
-                    price: { base: 10000, currency: 'ARS' }
+                    latitude: -32.484,
+                    longitude: -58.234,
+                    address: 'Calle Falsa 123',
+                    maxGuests: 4,
+                    bedrooms: 2,
+                    bathrooms: 1,
+                    basePrice: 10000,
+                    currency: 'ARS'
                 },
+                headers: { cookie: hostSessionCookie }
+            }
+        );
+        expect(fillResponse.ok(), `field PATCH must succeed (got ${fillResponse.status()})`).toBe(
+            true
+        );
+
+        // `minNights` is not settable by a host (no flat field on the protected
+        // update schema, not in the web editor), so it is defaulted to 1 server-side
+        // at draft creation (`httpToDomainAccommodationCreateDraft`, HOS-152).
+        // Together with capacity/bedrooms/bathrooms from the PATCH above, the draft
+        // now satisfies the publish capacity-completeness guard — no test-only SQL
+        // workaround needed.
+
+        // The publish POST is what transitions DRAFT → ACTIVE and creates
+        // the trial subscription (HOS-110 dedicated endpoint — the protected
+        // PATCH schema has no `lifecycleState` field, so publishing goes
+        // through the dedicated endpoint instead of the generic update).
+        const publishResponse = await page.request.post(
+            `${API_URL}/api/v1/protected/accommodations/${result.accommodationId}/publish`,
+            {
                 headers: { cookie: hostSessionCookie }
             }
         );
         expect(
             publishResponse.ok(),
-            `publish PATCH must succeed (got ${publishResponse.status()})`
+            `publish POST must succeed (got ${publishResponse.status()})`
         ).toBe(true);
 
         // Step 13 of spec: ACTIVE state + trialing subscription + role unchanged
