@@ -1,10 +1,13 @@
 /**
- * App-level route registration test for points of interest (HOS-113 T-022).
+ * App-level route registration test for points of interest (HOS-113 T-022,
+ * updated for HOS-143).
  *
  * Asserts the public route is actually mounted at
  * `/api/v1/public/points-of-interest` on the real app instance and returns
- * the expected paginated envelope shape, and that no protected/admin tier
- * is mounted (NG-5 — seed-only catalog in Phase 1).
+ * the expected paginated envelope shape. HOS-143 mounted the admin CRUD tier
+ * (superseding HOS-113 NG-5's "seed-only, no admin tier" assumption), so this
+ * also asserts `/api/v1/admin/points-of-interest` now exists (reaches the
+ * auth gate instead of 404). The protected tier remains unmounted.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app.js';
@@ -33,12 +36,13 @@ describe('Route registration: points of interest (HOS-113 T-022)', () => {
         expect(body.data).toHaveProperty('pagination');
     });
 
-    it('should NOT mount an admin tier (no /api/v1/admin/points-of-interest — NG-5)', async () => {
+    it('should mount an admin tier (GET /api/v1/admin/points-of-interest reaches auth gate, not 404 — HOS-143)', async () => {
         const res = await app.request('/api/v1/admin/points-of-interest', {
             method: 'GET',
             headers: { 'user-agent': 'vitest', accept: 'application/json' }
         });
-        expect(res.status).toBe(404);
+        expect(res.status).not.toBe(404);
+        expect([401, 403]).toContain(res.status);
     });
 
     it('should NOT mount a protected tier (no /api/v1/protected/points-of-interest — NG-5)', async () => {
