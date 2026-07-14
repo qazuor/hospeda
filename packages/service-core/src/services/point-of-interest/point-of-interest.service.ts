@@ -1,4 +1,5 @@
 import {
+    buildSearchCondition,
     DestinationModel,
     PoiCategoryModel,
     PointOfInterestModel,
@@ -719,7 +720,7 @@ export class PointOfInterestService extends BaseCrudRelatedService<
     protected async _executeSearch(
         params: PointOfInterestSearchInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<PointOfInterest>> {
         const where = this.buildSearchWhere(params);
         const { empty, additionalConditions } = await this.resolveRelationFilters({
@@ -730,7 +731,41 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         if (empty) {
             return { items: [], total: 0 };
         }
-        const { items, total } = await this.model.findAll(where, undefined, additionalConditions);
+
+        // HOS-142 G-6 bug fix: `BaseCrudRead.search` strips
+        // `page`/`pageSize`/`sortBy`/`sortOrder` from `params` before this hook
+        // runs (SPEC-088) and republishes them via `ctx.pagination` — this hook
+        // was silently ignoring that context and always calling
+        // `model.findAll(where, undefined, ...)`, which fell back to the
+        // model's own default page/pageSize and never sorted. Forward them
+        // explicitly, mirroring `AttractionService._executeSearch`, so the
+        // public list endpoint actually honors caller-provided pagination and
+        // `sortBy`/`sortOrder` (needed for the POI-picker autocomplete's
+        // "featured/high-priority first" ordering, e.g. `sortBy=displayWeight`).
+        //
+        // Also builds the free-text `q` condition here: the base `list()` path
+        // does this generically via `getSearchableColumns()` +
+        // `buildSearchCondition`, but `search()` requires each subclass to opt
+        // in, and this one never did — `q` was accepted by the HTTP schema but
+        // silently discarded. Matches against `slug`/`description` (the same
+        // columns `getSearchableColumns()` already declares for `list()`).
+        const searchCondition = params.q
+            ? buildSearchCondition(params.q, this.getSearchableColumns(), pointsOfInterest)
+            : undefined;
+        const combinedConditions = searchCondition
+            ? [...additionalConditions, searchCondition]
+            : additionalConditions;
+
+        const { items, total } = await this.model.findAll(
+            where,
+            {
+                page: ctx.pagination?.page ?? 1,
+                pageSize: ctx.pagination?.pageSize ?? 10,
+                sortBy: ctx.pagination?.sortBy,
+                sortOrder: ctx.pagination?.sortOrder
+            },
+            combinedConditions
+        );
         return { items, total };
     }
 
