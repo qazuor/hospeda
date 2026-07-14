@@ -1,0 +1,54 @@
+{
+    "slug": "san_jose_museo_historico_regional",
+    "lat": -32.212656599999995,
+    "long": -58.219954400000006,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo dedicado a la historia de una de las primeras colonias agrícolas del país, sus inmigrantes, su vida cotidiana y su desarrollo productivo.",
+    "nameI18n": {
+        "es": "Museo Histórico Regional de la Colonia San José",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo dedicado a la historia de una de las primeras colonias agrícolas del país, sus inmigrantes, su vida cotidiana y su desarrollo productivo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San José, Entre Ríos",
+    "keywords": [
+        "museo historico regional",
+        "colonia san jose",
+        "inmigrantes",
+        "historia local",
+        "colonizacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sanjose.gob.ar/inicio-el-ciclo-de-charlas-la-colonia-cuenta/; https://mapcarta.com/es/28447862",
+    "notes": "Institución y ubicación urbana confirmadas; falta geocodificar el acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

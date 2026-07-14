@@ -1,0 +1,55 @@
+{
+    "slug": "parque_acuatico",
+    "lat": -30.9774426,
+    "long": -57.93159929999999,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Parque recreativo con río lento de 600 metros, piscina de olas, toboganes de gran altura, plaza náutica, juegos de agua y servicios familiares.",
+    "nameI18n": {
+        "es": "Parque Acuático Federación",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Parque recreativo con río lento de 600 metros, piscina de olas, toboganes de gran altura, plaza náutica, juegos de agua y servicios familiares.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Complejo Termal Federación, Entre Ríos",
+    "keywords": [
+        "parque acuatico federacion",
+        "rio lento",
+        "piscina de olas",
+        "toboganes",
+        "plaza nautica",
+        "familia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/parque-acuatico1/",
+    "notes": "Características y funcionamiento confirmados. Falta geocodificar el acceso específico al parque acuático. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "recreation",
+            "isPrimary": true
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        },
+        {
+            "slug": "thermal_complex",
+            "isPrimary": false
+        }
+    ]
+}

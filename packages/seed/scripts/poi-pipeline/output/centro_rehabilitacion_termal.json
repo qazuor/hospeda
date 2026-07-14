@@ -1,0 +1,50 @@
+{
+    "slug": "centro_rehabilitacion_termal",
+    "lat": -31.852811100000004,
+    "long": -59.0256106,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Centro sanitario asociado al entorno termal y al Hospital Santa Rosa, orientado a tratamientos y recuperación funcional.",
+    "nameI18n": {
+        "es": "Centro de Rehabilitación de Villaguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Centro sanitario asociado al entorno termal y al Hospital Santa Rosa, orientado a tratamientos y recuperación funcional.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Predio sanitario y termal del norte de Villaguay, Entre Ríos",
+    "keywords": [
+        "centro rehabilitacion villaguay",
+        "kinesiologia",
+        "rehabilitacion",
+        "termas",
+        "salud"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.termasdevillaguay.com/; https://mapcarta.com/es/W307479015",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "wellness",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

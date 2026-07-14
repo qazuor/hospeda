@@ -1,0 +1,50 @@
+{
+    "slug": "canchas_tejo_ferrocarril",
+    "lat": -32.4655336,
+    "long": -58.480033999999996,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Instalaciones deportivas públicas utilizadas para torneos municipales y recreación.",
+    "nameI18n": {
+        "es": "Canchas de Tejo del Parque del Ferrocarril",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Instalaciones deportivas públicas utilizadas para torneos municipales y recreación.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque del Ferrocarril, Caseros, Entre Ríos",
+    "keywords": [
+        "canchas de tejo",
+        "parque ferrocarril",
+        "torneo municipal",
+        "deportes",
+        "adultos mayores"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://caseros.gob.ar/en-octubre-llega-un-nuevo-torneo-municipal-de-tejo/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        }
+    ]
+}

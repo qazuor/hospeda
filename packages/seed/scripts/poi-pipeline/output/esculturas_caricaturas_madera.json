@@ -1,0 +1,50 @@
+{
+    "slug": "esculturas_caricaturas_madera",
+    "lat": -32.21581,
+    "long": -58.13535,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Conjunto escultórico al aire libre ubicado en el paseo portuario y cercano a la Oficina de Turismo y la Plazoleta Cristóbal Colón.",
+    "nameI18n": {
+        "es": "Esculturas de Caricaturas en Madera",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Conjunto escultórico al aire libre ubicado en el paseo portuario y cercano a la Oficina de Turismo y la Plazoleta Cristóbal Colón.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Paseo portuario de Colón, Entre Ríos",
+    "keywords": [
+        "esculturas de madera",
+        "caricaturas",
+        "arte urbano",
+        "puerto",
+        "paseo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/N5691208621",
+    "notes": "Coordenadas contrastadas con OpenStreetMap mediante Mapcarta.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "art",
+            "isPrimary": true
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

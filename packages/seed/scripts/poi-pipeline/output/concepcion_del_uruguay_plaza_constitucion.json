@@ -1,0 +1,49 @@
+{
+    "slug": "concepcion_del_uruguay_plaza_constitucion",
+    "lat": -32.49054,
+    "long": -58.22972,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Espacio verde tradicional conocido popularmente como Plaza Columna, ubicado cerca del barrio Puerto Viejo y del casco histórico.",
+    "nameI18n": {
+        "es": "Plaza Constitución",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio verde tradicional conocido popularmente como Plaza Columna, ubicado cerca del barrio Puerto Viejo y del casco histórico.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Entre 25 de Agosto, Artusi, Leguizamón y Suipacha, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "plaza constitucion",
+        "plaza columna",
+        "parque",
+        "puerto viejo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

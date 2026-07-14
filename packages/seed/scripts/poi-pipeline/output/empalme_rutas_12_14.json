@@ -1,0 +1,50 @@
+{
+    "slug": "empalme_rutas_12_14",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Nodo vial estratégico donde la Ruta Nacional 12 continúa hacia el oeste y comienza la Ruta Nacional 14 hacia el corredor del Uruguay.",
+    "nameI18n": {
+        "es": "Empalme de las Rutas Nacionales 12 y 14",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Nodo vial estratégico donde la Ruta Nacional 12 continúa hacia el oeste y comienza la Ruta Nacional 14 hacia el corredor del Uruguay.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Cruce de RN 12 y RN 14, Ceibas, Entre Ríos",
+    "keywords": [
+        "empalme rutas 12 y 14",
+        "ruta nacional 12",
+        "ruta nacional 14",
+        "nodo vial",
+        "acceso entre rios"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/ceibas; https://www.lanacion.com.ar/revista-lugares/meca-internacional-el-pueblo-que-convoca-gente-del-mundo-entero-para-ver-y-fotografiar-aves-nid03082025/; https://es.wikipedia.org/wiki/Ceibas",
+    "notes": "Intersección vial extensa. Falta definir punto representativo seguro.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "transport",
+            "isPrimary": true
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

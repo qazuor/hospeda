@@ -1,0 +1,54 @@
+{
+    "slug": "club_regatas",
+    "lat": -31.399398599999998,
+    "long": -57.998421099999995,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Institución deportiva histórica vinculada con remo, navegación y actividades recreativas sobre el río Uruguay.",
+    "nameI18n": {
+        "es": "Club Regatas Concordia",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Institución deportiva histórica vinculada con remo, navegación y actividades recreativas sobre el río Uruguay.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Costa del río Uruguay, Concordia, Entre Ríos",
+    "keywords": [
+        "club regatas concordia",
+        "remo",
+        "nautica",
+        "rio uruguay",
+        "deportes"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://egob.concordia.gob.ar/servicios/digesto.do?idNormativa=987&opcion=idNormativa",
+    "notes": "Institución incluida en el catálogo patrimonial municipal. Falta dirección y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "port",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

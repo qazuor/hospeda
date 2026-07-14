@@ -1,0 +1,54 @@
+{
+    "slug": "fiesta_patronal_dolores",
+    "lat": -32.445524,
+    "long": -58.4341248,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Celebración religiosa y comunitaria vinculada con la histórica parroquia y las tradiciones locales.",
+    "nameI18n": {
+        "es": "Fiesta Patronal Nuestra Señora de los Dolores",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Celebración religiosa y comunitaria vinculada con la histórica parroquia y las tradiciones locales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parroquia Nuestra Señora de los Dolores, San Justo, Entre Ríos",
+    "keywords": [
+        "fiesta patronal",
+        "nuestra señora de los dolores",
+        "procesion",
+        "religion",
+        "tradicion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.facebook.com/municipalidadsanjustoentrerios/",
+    "notes": "Calendario y actividades deben actualizarse cada año. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "fair",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

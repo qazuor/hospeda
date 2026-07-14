@@ -1,0 +1,54 @@
+{
+    "slug": "circuito_avistaje_aves",
+    "lat": -33.4912493,
+    "long": -58.6798977,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido guiado por caminos rurales, bañados, pajonales y montes donde se observan aves residentes y migratorias.",
+    "nameI18n": {
+        "es": "Circuito de Avistaje de Aves de Ceibas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido guiado por caminos rurales, bañados, pajonales y montes donde se observan aves residentes y migratorias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Caminos rurales de Ceibas, Entre Ríos",
+    "keywords": [
+        "circuito de aves",
+        "birdwatching ceibas",
+        "aves migratorias",
+        "caminos rurales",
+        "guias de aves"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/ceibas; https://www.lanacion.com.ar/revista-lugares/meca-internacional-el-pueblo-que-convoca-gente-del-mundo-entero-para-ver-y-fotografiar-aves-nid03082025/",
+    "notes": "Circuito variable según clima, guía y estado de caminos. Falta digitalizar recorridos habilitados. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        }
+    ]
+}

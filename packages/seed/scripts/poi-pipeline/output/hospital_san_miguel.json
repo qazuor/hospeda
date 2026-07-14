@@ -1,0 +1,47 @@
+{
+    "slug": "hospital_san_miguel",
+    "lat": -31.62619,
+    "long": -58.49788,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Hospital público provincial con internación general y servicios sanitarios de referencia para San Salvador y su departamento.",
+    "nameI18n": {
+        "es": "Hospital San Miguel",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Hospital público provincial con internación general y servicios sanitarios de referencia para San Salvador y su departamento.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Tulio González, San Salvador, Entre Ríos",
+    "keywords": [
+        "hospital san miguel",
+        "hospital",
+        "guardia",
+        "internacion",
+        "emergencias",
+        "salud"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://hsm-ss.ar/; https://mapcarta.com/es/W448499240",
+    "notes": "Nombre, función, dirección y coordenadas contrastados.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

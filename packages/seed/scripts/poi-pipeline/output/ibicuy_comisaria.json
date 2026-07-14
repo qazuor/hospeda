@@ -1,0 +1,46 @@
+{
+    "slug": "ibicuy_comisaria",
+    "lat": -33.74252,
+    "long": -59.15867,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Dependencia de la Policía de Entre Ríos y referencia de seguridad pública para residentes y visitantes.",
+    "nameI18n": {
+        "es": "Comisaría de Ibicuy",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Dependencia de la Policía de Entre Ríos y referencia de seguridad pública para residentes y visitantes.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Manuel Belgrano 846, Ibicuy, Entre Ríos",
+    "keywords": [
+        "comisaria ibicuy",
+        "policia entre rios",
+        "seguridad",
+        "emergencias",
+        "manuel belgrano"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/N4369878179",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

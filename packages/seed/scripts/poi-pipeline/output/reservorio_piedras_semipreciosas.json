@@ -1,0 +1,50 @@
+{
+    "slug": "reservorio_piedras_semipreciosas",
+    "lat": -32.2182804,
+    "long": -58.1356171,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio de exposición y venta de artesanías en piedras semipreciosas, con contenido educativo sobre minerales y sus características.",
+    "nameI18n": {
+        "es": "Reservorio de Piedras Semipreciosas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio de exposición y venta de artesanías en piedras semipreciosas, con contenido educativo sobre minerales y sus características.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Colón, Entre Ríos",
+    "keywords": [
+        "piedras semipreciosas",
+        "minerales",
+        "artesanias",
+        "exposicion",
+        "compras"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.colonturismo.tur.ar/directorio/reservorio-de-piedras-semipreciosas/",
+    "notes": "Actividad confirmada por Turismo Colón. Falta validar dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "slug": "poblarte",
+    "lat": -30.98625,
+    "long": -57.91985,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Centro artístico y cultural ubicado cerca del Museo de los Asentamientos y los paseos históricos del centro.",
+    "nameI18n": {
+        "es": "Poblarte",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Centro artístico y cultural ubicado cerca del Museo de los Asentamientos y los paseos históricos del centro.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Federación, Entre Ríos",
+    "keywords": [
+        "poblarte",
+        "centro artistico",
+        "arte",
+        "cultura",
+        "federacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/N10082753555",
+    "notes": "Coordenadas y tipo de establecimiento contrastados con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,58 @@
+{
+    "slug": "represa_salto_grande",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Obra hidroeléctrica binacional sobre el río Uruguay, vinculada con la generación de energía, la integración argentino-uruguaya y la formación del lago.",
+    "nameI18n": {
+        "es": "Represa Hidroeléctrica Salto Grande",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Obra hidroeléctrica binacional sobre el río Uruguay, vinculada con la generación de energía, la integración argentino-uruguaya y la formación del lago.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Complejo Hidroeléctrico Salto Grande, Concordia, Entre Ríos",
+    "keywords": [
+        "represa salto grande",
+        "hidroelectrica",
+        "energia",
+        "argentina uruguay",
+        "visita guiada"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/represa-salto-grande; https://www.concordia.gob.ar/mapas/represa-de-salto-grande",
+    "notes": "Existencia y relevancia confirmadas. Falta geocodificar el punto de visita habilitado.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": true
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        }
+    ]
+}

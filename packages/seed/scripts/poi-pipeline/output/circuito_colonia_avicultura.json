@@ -1,0 +1,54 @@
+{
+    "slug": "circuito_colonia_avicultura",
+    "lat": -32.4447526,
+    "long": -58.432994699999995,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido interpretativo por el museo, la producción avícola, la inmigración y el patrimonio social de San Justo.",
+    "nameI18n": {
+        "es": "Circuito Histórico de la Colonia y la Avicultura",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido interpretativo por el museo, la producción avícola, la inmigración y el patrimonio social de San Justo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Casco urbano y zona productiva de San Justo, Entre Ríos",
+    "keywords": [
+        "circuito colonia avicultura",
+        "museo",
+        "inmigracion",
+        "produccion avicola",
+        "historia local"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://munisanjusto.gob.ar/noticias?tag=Turismo; https://www.facebook.com/p/Museo-de-la-Colonia-y-la-Avicultura-100064459251934/",
+    "notes": "Circuito temático propuesto a partir de activos existentes. Falta digitalizar paradas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "museum",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

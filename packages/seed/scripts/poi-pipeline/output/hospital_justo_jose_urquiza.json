@@ -1,0 +1,46 @@
+{
+    "slug": "hospital_justo_jose_urquiza",
+    "lat": -32.48144,
+    "long": -58.261,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Principal hospital público de referencia de Concepción del Uruguay y del departamento Uruguay, con atención general y servicios de emergencia.",
+    "nameI18n": {
+        "es": "Hospital Justo José de Urquiza",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Principal hospital público de referencia de Concepción del Uruguay y del departamento Uruguay, con atención general y servicios de emergencia.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Lorenzo Sartorio 2130, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "hospital urquiza",
+        "hospital",
+        "guardia",
+        "emergencias",
+        "salud"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

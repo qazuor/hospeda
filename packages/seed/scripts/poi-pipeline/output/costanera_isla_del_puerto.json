@@ -1,0 +1,54 @@
+{
+    "slug": "costanera_isla_del_puerto",
+    "lat": -32.481852,
+    "long": -58.211324,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Paseo costero con espacios verdes, senderos, miradores y vistas panorámicas del río Uruguay y del perfil urbano de la ciudad.",
+    "nameI18n": {
+        "es": "Costanera de la Isla del Puerto",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paseo costero con espacios verdes, senderos, miradores y vistas panorámicas del río Uruguay y del perfil urbano de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Costanera de la Isla del Puerto, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "costanera",
+        "isla del puerto",
+        "rio uruguay",
+        "paseo",
+        "mirador"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "waterfront",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

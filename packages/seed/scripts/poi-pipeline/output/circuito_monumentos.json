@@ -1,0 +1,54 @@
+{
+    "slug": "circuito_monumentos",
+    "lat": -32.6849274,
+    "long": -58.8916416,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido por trece esculturas, plazoletas e intervenciones urbanas distribuidas en la ciudad.",
+    "nameI18n": {
+        "es": "Circuito Turístico de Monumentos",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido por trece esculturas, plazoletas e intervenciones urbanas distribuidas en la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urdinarrain, Entre Ríos",
+    "keywords": [
+        "circuito monumentos",
+        "esculturas",
+        "plazoletas",
+        "arte urbano",
+        "trece monumentos"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://urdinarrain.tur.ar/que-hacer/",
+    "notes": "Circuito oficial confirmado. Falta inventariar y geocodificar los trece monumentos. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        }
+    ]
+}

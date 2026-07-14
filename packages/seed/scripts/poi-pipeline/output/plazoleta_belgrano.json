@@ -1,0 +1,49 @@
+{
+    "slug": "plazoleta_belgrano",
+    "lat": -31.6262743,
+    "long": -58.5097835,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Espacio público de avenida Malarín dedicado al general Manuel Belgrano y a la memoria cívica nacional.",
+    "nameI18n": {
+        "es": "Plazoleta Manuel Belgrano",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio público de avenida Malarín dedicado al general Manuel Belgrano y a la memoria cívica nacional.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Malarín, San Salvador, Entre Ríos",
+    "keywords": [
+        "plazoleta belgrano",
+        "manuel belgrano",
+        "bandera",
+        "avenida malarin"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/",
+    "notes": "Existencia confirmada en el inventario municipal de paseos. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        }
+    ]
+}

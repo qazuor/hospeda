@@ -1,0 +1,50 @@
+{
+    "slug": "casa_catequesis",
+    "lat": -32.46208,
+    "long": -58.47838,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Centro comunitario católico ubicado junto a la Parroquia San Miguel Arcángel, utilizado para actividades religiosas, educativas y comunitarias.",
+    "nameI18n": {
+        "es": "Casa de Catequesis",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Centro comunitario católico ubicado junto a la Parroquia San Miguel Arcángel, utilizado para actividades religiosas, educativas y comunitarias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Caseros, Entre Ríos",
+    "keywords": [
+        "casa de catequesis",
+        "centro comunitario",
+        "parroquia",
+        "religion",
+        "caseros"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 10,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/N4102574363",
+    "notes": "Ubicación y tipo de establecimiento contrastados con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "community_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "religious_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

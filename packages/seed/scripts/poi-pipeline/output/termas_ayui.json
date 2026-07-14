@@ -1,0 +1,54 @@
+{
+    "slug": "termas_ayui",
+    "lat": -31.2555835,
+    "long": -57.956172599999995,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Complejo termal del perilago de Salto Grande con piscinas, parque acuático y entorno natural.",
+    "nameI18n": {
+        "es": "Termas del Ayuí",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Complejo termal del perilago de Salto Grande con piscinas, parque acuático y entorno natural.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Camino al Lago de Salto Grande, Concordia, Entre Ríos",
+    "keywords": [
+        "termas del ayui",
+        "aguas termales",
+        "piscinas",
+        "lago salto grande",
+        "relax"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/termas/termas-del-ayu%C3%AD; https://www.concordia.gob.ar/mapas/termas-del-ayui",
+    "notes": "Complejo vigente y ubicación general confirmados. Falta geocodificar el acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "thermal_complex",
+            "isPrimary": true
+        },
+        {
+            "slug": "wellness",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

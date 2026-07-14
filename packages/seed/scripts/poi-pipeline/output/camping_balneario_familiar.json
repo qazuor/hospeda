@@ -1,0 +1,58 @@
+{
+    "slug": "camping_balneario_familiar",
+    "lat": -31.5390248,
+    "long": -58.0077056,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio recreativo local para pasar el día, acampar y disfrutar de actividades familiares en un entorno natural.",
+    "nameI18n": {
+        "es": "Camping y Balneario Familiar de Ubajay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio recreativo local para pasar el día, acampar y disfrutar de actividades familiares en un entorno natural.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ubajay, Entre Ríos",
+    "keywords": [
+        "camping ubajay",
+        "balneario familiar",
+        "acampe",
+        "familia",
+        "naturaleza"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
+    "notes": "Existencia y horario general confirmados por Parques Nacionales. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "campground",
+            "isPrimary": true
+        },
+        {
+            "slug": "beach",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        }
+    ]
+}

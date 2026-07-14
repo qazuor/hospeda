@@ -1,0 +1,54 @@
+{
+    "slug": "locomotora_la_solis",
+    "lat": -33.1483158,
+    "long": -59.3276817,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Locomotora histórica del Ferrocarril Primer Entrerriano, protagonista del viaje inaugural de 1866 y conservada frente a la estación.",
+    "nameI18n": {
+        "es": "Locomotora La Solís",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Locomotora histórica del Ferrocarril Primer Entrerriano, protagonista del viaje inaugural de 1866 y conservada frente a la estación.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida El Primer Entrerriano, frente a la estación Gualeguay, Entre Ríos",
+    "keywords": [
+        "locomotora la solis",
+        "ferrocarril primer entrerriano",
+        "1866",
+        "locomotora a vapor",
+        "monumento"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://es.wikipedia.org/wiki/Ferrocarril_Primer_Entrerriano; https://www.argentinaviajera.com.ar/entrerios/gualeguay.html",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        }
+    ]
+}

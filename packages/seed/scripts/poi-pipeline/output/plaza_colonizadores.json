@@ -1,0 +1,54 @@
+{
+    "slug": "plaza_colonizadores",
+    "lat": -32.2163338,
+    "long": -58.138137099999994,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Espacio verde del entorno portuario dedicado a la memoria de quienes participaron en la formación y desarrollo de la colonia.",
+    "nameI18n": {
+        "es": "Plaza de los Colonizadores",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio verde del entorno portuario dedicado a la memoria de quienes participaron en la formación y desarrollo de la colonia.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona portuaria de Colón, Entre Ríos",
+    "keywords": [
+        "plaza de los colonizadores",
+        "colonizadores",
+        "puerto",
+        "historia",
+        "plaza"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N1560698900",
+    "notes": "Existencia confirmada en OpenStreetMap. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

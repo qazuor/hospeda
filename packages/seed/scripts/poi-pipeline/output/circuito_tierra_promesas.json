@@ -1,0 +1,54 @@
+{
+    "slug": "circuito_tierra_promesas",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Circuito regional que integra antiguas colonias de la Jewish Colonization Association alrededor de San Salvador, General Campos, Ubajay y Concordia.",
+    "nameI18n": {
+        "es": "Circuito Tierra de Promesas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Circuito regional que integra antiguas colonias de la Jewish Colonization Association alrededor de San Salvador, General Campos, Ubajay y Concordia.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Punto de referencia en San Salvador, Entre Ríos",
+    "keywords": [
+        "tierra de promesas",
+        "colonias judias",
+        "jewish colonization association",
+        "turismo cultural",
+        "inmigracion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/gobierno/turismo/",
+    "notes": "Circuito regional vigente confirmado por Turismo San Salvador. Falta digitalizar trazado y paradas.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "religious_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

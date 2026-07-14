@@ -1,0 +1,55 @@
+{
+    "slug": "complejo_cultural_la_estacion",
+    "lat": -32.68487,
+    "long": -58.89157,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Predio cultural y recreativo de siete hectáreas alrededor de la antigua estación, con museos, artesanos, sala de conferencias, plazas y espacios deportivos.",
+    "nameI18n": {
+        "es": "Complejo Cultural La Estación",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Predio cultural y recreativo de siete hectáreas alrededor de la antigua estación, con museos, artesanos, sala de conferencias, plazas y espacios deportivos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Predio ferroviario central, Urdinarrain, Entre Ríos",
+    "keywords": [
+        "complejo la estacion",
+        "predio ferroviario",
+        "museos",
+        "parque",
+        "cultura",
+        "urdinarrain"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://urdinarrain.tur.ar/que-hacer/; https://mapcarta.com/es/W253100181",
+    "notes": "Extensión y componentes confirmados por Turismo Urdinarrain; coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

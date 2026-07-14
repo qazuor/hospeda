@@ -1,0 +1,54 @@
+{
+    "slug": "arroyo_san_cipriano",
+    "lat": -32.4460836,
+    "long": -58.3916875,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Curso de agua asociado al balneario, el camping, la pesca y los paisajes naturales del entorno rural.",
+    "nameI18n": {
+        "es": "Arroyo San Cipriano",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Curso de agua asociado al balneario, el camping, la pesca y los paisajes naturales del entorno rural.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de San Justo, Entre Ríos",
+    "keywords": [
+        "arroyo san cipriano",
+        "balneario",
+        "pesca",
+        "naturaleza",
+        "zona rural"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.turismoentrerios.com/sanjusto/",
+    "notes": "Curso de agua; requiere geometría lineal y accesos diferenciados. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

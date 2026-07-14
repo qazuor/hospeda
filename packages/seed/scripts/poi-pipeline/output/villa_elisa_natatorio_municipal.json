@@ -1,0 +1,50 @@
+{
+    "slug": "villa_elisa_natatorio_municipal",
+    "lat": -32.1631324,
+    "long": -58.4004902,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Instalación deportiva municipal destinada a natación, actividades acuáticas, recreación y propuestas de temporada.",
+    "nameI18n": {
+        "es": "Natatorio Municipal de Villa Elisa",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Instalación deportiva municipal destinada a natación, actividades acuáticas, recreación y propuestas de temporada.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Villa Elisa, Entre Ríos",
+    "keywords": [
+        "natatorio municipal",
+        "pileta",
+        "natacion",
+        "deportes acuaticos",
+        "villa elisa"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N3283143494",
+    "notes": "Existencia y ubicación relativa confirmadas con OpenStreetMap. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

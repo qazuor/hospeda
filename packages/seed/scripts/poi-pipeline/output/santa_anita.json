@@ -1,0 +1,49 @@
+{
+    "slug": "santa_anita",
+    "lat": -32.1757845,
+    "long": -58.7861762,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Predio natural privado con especies autóctonas, reconocido históricamente como lugar de interés local.",
+    "nameI18n": {
+        "es": "Santa Anita",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Predio natural privado con especies autóctonas, reconocido históricamente como lugar de interés local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de Larroque, Entre Ríos",
+    "keywords": [
+        "santa anita larroque",
+        "especies autoctonas",
+        "naturaleza",
+        "predio privado"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 10,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes",
+    "notes": "La fuente municipal lo identifica como propiedad privada y en desuso. No debe promocionarse como visita abierta. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

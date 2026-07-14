@@ -1,0 +1,46 @@
+{
+    "slug": "san_salvador_municipalidad",
+    "lat": -31.62563,
+    "long": -58.50558,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sede administrativa municipal y punto de referencia para trámites, información pública y servicios locales.",
+    "nameI18n": {
+        "es": "Municipalidad de San Salvador",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sede administrativa municipal y punto de referencia para trámites, información pública y servicios locales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urquiza y San Martín, San Salvador, Entre Ríos",
+    "keywords": [
+        "municipalidad san salvador",
+        "municipio",
+        "tramites",
+        "urquiza y san martin",
+        "informacion publica"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://sansalvadorer.gob.ar/; https://mapcarta.com/es/W448504132",
+    "notes": "Dirección y coordenadas contrastadas con fuente municipal y OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

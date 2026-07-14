@@ -1,0 +1,58 @@
+{
+    "slug": "plazoleta_centenario",
+    "lat": -31.6241547,
+    "long": -58.504942099999994,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Paseo de avenida Malarín que reúne el Mural del Centenario y las letras corpóreas con el nombre de San Salvador, una de las postales habituales de la ciudad.",
+    "nameI18n": {
+        "es": "Plazoleta del Centenario",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paseo de avenida Malarín que reúne el Mural del Centenario y las letras corpóreas con el nombre de San Salvador, una de las postales habituales de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Malarín, San Salvador, Entre Ríos",
+    "keywords": [
+        "plazoleta del centenario",
+        "mural del centenario",
+        "letras san salvador",
+        "avenida malarin",
+        "foto"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/",
+    "notes": "Nombre, avenida y elementos confirmados por la Municipalidad. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        }
+    ]
+}

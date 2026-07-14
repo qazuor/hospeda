@@ -1,0 +1,54 @@
+{
+    "slug": "circuito_museos_bici",
+    "lat": -33.0328106,
+    "long": -59.014476099999996,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido cultural que conecta el Museo de la Estación con la Casa Museo La Tera mediante un paseo urbano en bicicleta.",
+    "nameI18n": {
+        "es": "Circuito de los Museos en Bicicleta",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido cultural que conecta el Museo de la Estación con la Casa Museo La Tera mediante un paseo urbano en bicicleta.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Entre Estación Larroque y Casa Museo La Tera, Larroque, Entre Ríos",
+    "keywords": [
+        "circuito museos",
+        "bicicleta",
+        "la tera",
+        "museo estacion",
+        "cicloturismo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.larroque.gob.ar/noticia/1995/la_rica_historia_de_larroque_y_la_conexion_de_sus_museos",
+    "notes": "Circuito municipal confirmado. Falta digitalizar el trazado. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "museum",
+            "isPrimary": false
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

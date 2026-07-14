@@ -1,0 +1,54 @@
+{
+    "slug": "federacion_playa_grande",
+    "lat": -30.984963699999998,
+    "long": -57.913264999999996,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Amplio sector de playa urbana sobre el lago Salto Grande, próximo a áreas verdes y servicios recreativos.",
+    "nameI18n": {
+        "es": "Playa Grande",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Amplio sector de playa urbana sobre el lago Salto Grande, próximo a áreas verdes y servicios recreativos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Los Pinos, Federación, Entre Ríos",
+    "keywords": [
+        "playa grande federacion",
+        "lago salto grande",
+        "arena",
+        "verano",
+        "balneario"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/nuestras-playas/; https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
+    "notes": "Nombre y ubicación general confirmados. Falta geocodificar el acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}
