@@ -549,6 +549,7 @@
             "planCardLabel": "Detalhes do plano atual",
             "statusLabel": "Status",
             "nextBillingLabel": "Próxima cobrança",
+            "accessUntilLabel": "Acesso até",
             "paymentMethodLabel": "Método de pagamento",
             "paymentMercadoPago": "MercadoPago",
             "noBillingDate": "Sem data de faturamento disponível",
@@ -574,10 +575,15 @@
                 "active": "Ativa",
                 "trial": "Teste",
                 "cancelled": "Cancelada",
+                "cancelling": "Cancelamento agendado",
                 "expired": "Expirada",
                 "past_due": "Vencida",
                 "pending": "Pendente",
                 "paused": "Pausada"
+            },
+            "cancelScheduled": {
+                "title": "Assinatura cancelada",
+                "body": "Nenhuma cobrança adicional será feita. Você mantém acesso ao seu plano até {date}."
             },
             "pauseModal": {
                 "title": "Pausar assinatura",
@@ -816,7 +822,8 @@
         "errorFetch": "Não foi possível carregar o histórico de buscas",
         "empty": {
             "title": "Sem buscas salvas",
-            "body": "Suas buscas aparecerão aqui quando você tiver um plano Plus ou VIP ativo."
+            "body": "Você ainda não tem buscas salvas.",
+            "upsellBody": "Suas buscas aparecerão aqui quando você tiver um plano Plus ou VIP ativo."
         },
         "clearAll": "Limpar tudo",
         "clearAllInline": "Sim, limpar tudo",
