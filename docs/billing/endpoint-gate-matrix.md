@@ -830,6 +830,8 @@
 | `DELETE /api/v1/admin/points-of-interest/{id}/destinations/{destinationId}` | `point-of-interest/admin/destinations.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143) |
 | `GET /api/v1/admin/points-of-interest/{id}/categories` | `point-of-interest/admin/categories.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143). Permission: POINT_OF_INTEREST_VIEW |
 | `PUT /api/v1/admin/points-of-interest/{id}/categories` | `point-of-interest/admin/categories.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143). Permission: POI_CATEGORY_UPDATE (documented deviation from the nominal POINT_OF_INTEREST_UPDATE — see the route's deviation comment) |
+| **POI-CATEGORY — ADMIN** | | | | | |
+| `GET /api/v1/admin/poi-categories` | `poi-category/admin/list.ts` | none | - | n/a | POI-category catalog admin route — no billing entitlement gate; permission-gated only (HOS-144 NG-1, closing an HOS-143 gap). Permission: POI_CATEGORY_VIEW |
 
 ---
 
