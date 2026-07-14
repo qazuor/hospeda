@@ -29,9 +29,11 @@ import {
     buildSetPasswordRedirect,
     extractLocaleFromPath,
     generateCspNonce,
+    IMAGE_ENDPOINT_CACHE_CONTROL,
     isAdminBypassUser,
     isAuthRoute,
     isChangePasswordRoute,
+    isImageEndpointRoute,
     isProfileCompletionRequiredSessionOptionalRoute,
     isProfileCompletionRoute,
     isProtectedRoute,
@@ -71,6 +73,17 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
     // Step 1: Skip static assets and API routes — no middleware processing needed.
     if (isStaticAssetRoute({ path })) {
+        // The on-demand image endpoint (`/_image`) is a dynamic route, so the
+        // @astrojs/node adapter's automatic long-cache header (physical
+        // dist/client/_astro/* files only) never reaches it — every request
+        // would re-run a Sharp transform and be re-fetched. Give it an explicit
+        // immutable cache so the LCP hero is cached by the browser/CDN
+        // (HOS-160 lever C). All other static routes pass through untouched.
+        if (isImageEndpointRoute({ path })) {
+            const response = await next();
+            response.headers.set('Cache-Control', IMAGE_ENDPOINT_CACHE_CONTROL);
+            return response;
+        }
         return next();
     }
 
