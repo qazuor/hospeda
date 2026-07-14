@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "881-point-of-interest-ubajay_centro_cultural",
+    "slug": "ubajay_centro_cultural",
+    "lat": -31.7919719,
+    "long": -58.31529930000001,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio municipal utilizado para talleres, danza, actividades artísticas y los Juegos Culturales Entrerrianos.",
+    "nameI18n": {
+        "es": "Centro Cultural de Ubajay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio municipal utilizado para talleres, danza, actividades artísticas y los Juegos Culturales Entrerrianos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ubajay, Entre Ríos",
+    "keywords": ["centro cultural ubajay", "talleres", "danza", "juegos culturales", "arte"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://ubajay.gob.ar/tag/cultura/",
+    "notes": "Uso cultural vigente confirmado. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        }
+    ]
+}

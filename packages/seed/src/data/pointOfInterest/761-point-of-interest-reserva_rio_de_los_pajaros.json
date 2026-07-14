@@ -1,0 +1,61 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "761-point-of-interest-reserva_rio_de_los_pajaros",
+    "slug": "reserva_rio_de_los_pajaros",
+    "lat": -32.2035449,
+    "long": -58.1508033,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Área natural protegida de usos múltiples con humedales, pastizales y bosque ribereño, apta para senderismo, observación de fauna y educación ambiental.",
+    "nameI18n": {
+        "es": "Reserva Natural Río de los Pájaros",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Área natural protegida de usos múltiples con humedales, pastizales y bosque ribereño, apta para senderismo, observación de fauna y educación ambiental.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Acceso por Costanera Norte y arroyo Artalaz, Colón, Entre Ríos",
+    "keywords": [
+        "rio de los pajaros",
+        "reserva natural",
+        "humedal",
+        "aves",
+        "senderismo",
+        "artalaz"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.colonturismo.tur.ar/directorio/parque-rio-de-los-pajaros/",
+    "notes": "Existencia y usos confirmados por Turismo Colón. Falta definir el punto del acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "reserve",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

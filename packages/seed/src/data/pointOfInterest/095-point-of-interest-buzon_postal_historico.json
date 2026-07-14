@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "095-point-of-interest-buzon_postal_historico",
+    "slug": "buzon_postal_historico",
+    "lat": -31.624177,
+    "long": -58.501865499999994,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Buzón patrimonial conservado sobre el recorrido de calle San Martín como testimonio de los antiguos servicios postales de la ciudad.",
+    "nameI18n": {
+        "es": "Buzón Postal Histórico",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Buzón patrimonial conservado sobre el recorrido de calle San Martín como testimonio de los antiguos servicios postales de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Calle San Martín, San Salvador, Entre Ríos",
+    "keywords": ["buzon postal historico", "correo", "calle san martin", "patrimonio urbano"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/",
+    "notes": "Elemento incluido por el municipio en el eje histórico. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

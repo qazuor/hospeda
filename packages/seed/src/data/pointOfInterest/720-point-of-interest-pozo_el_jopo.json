@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "720-point-of-interest-pozo_el_jopo",
+    "slug": "pozo_el_jopo",
+    "lat": -32.2947176,
+    "long": -59.0819353,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Sector del río alcanzado mediante salidas guiadas de stand up paddle desde Playa Grande.",
+    "nameI18n": {
+        "es": "Pozo El Jopo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sector del río alcanzado mediante salidas guiadas de stand up paddle desde Playa Grande.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Río Gualeguay, Rosario del Tala, Entre Ríos",
+    "keywords": ["pozo el jopo", "stand up paddle", "rio gualeguay", "sup", "excursion nautica"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=que-hacer",
+    "notes": "Punto fluvial confirmado por el circuito oficial. Falta geocodificar y validar condiciones de navegación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

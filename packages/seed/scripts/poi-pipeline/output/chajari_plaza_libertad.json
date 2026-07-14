@@ -1,0 +1,54 @@
+{
+    "slug": "chajari_plaza_libertad",
+    "lat": -30.7471148,
+    "long": -57.97446559999999,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plaza histórica vinculada con el antiguo nombre Villa Libertad y con el segundo núcleo de crecimiento urbano de Chajarí.",
+    "nameI18n": {
+        "es": "Plaza Libertad",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plaza histórica vinculada con el antiguo nombre Villa Libertad y con el segundo núcleo de crecimiento urbano de Chajarí.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Casco histórico de Chajarí, Entre Ríos",
+    "keywords": [
+        "plaza libertad",
+        "villa libertad",
+        "casco historico",
+        "plaza",
+        "historia urbana"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://chajari.gob.ar/historia/; https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

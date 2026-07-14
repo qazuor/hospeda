@@ -1,0 +1,54 @@
+{
+    "slug": "balneario_isla_del_puerto",
+    "lat": -32.48388,
+    "long": -58.20393,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Playa fluvial de acceso terrestre ubicada sobre el río Uruguay, con sectores recreativos y servicios durante la temporada.",
+    "nameI18n": {
+        "es": "Balneario Isla del Puerto",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Playa fluvial de acceso terrestre ubicada sobre el río Uruguay, con sectores recreativos y servicios durante la temporada.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Extremo este de la Costanera de la Isla del Puerto, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "isla del puerto",
+        "playa",
+        "balneario",
+        "rio",
+        "familia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

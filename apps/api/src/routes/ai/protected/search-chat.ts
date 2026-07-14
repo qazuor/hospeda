@@ -57,6 +57,13 @@
  * review H-1/M-1) so the assistant never narrates a proximity search that
  * didn't actually run — see the Step 7.7 comment below.
  *
+ * HOS-142 §6.6/G-7 extended `poiSlugs` with a server-side lexical fallback:
+ * `matchPoiTerms` (the same curated+generated `POI_ALLOWLIST` used to build
+ * the prompt's embedded subset) runs directly against the raw user message,
+ * so a landmark whose slug wasn't in the (deliberately small) prompt-embedded
+ * subset can still be resolved — see the Step 7.7 comment below for the
+ * dedup/precedence details.
+ *
  * @module apps/api/routes/ai/protected/search-chat
  */
 
@@ -96,6 +103,7 @@ import {
     type StreamTextChunk
 } from '../../../utils/streaming-route-factory.js';
 import { resolveAttractionConstraint } from './attraction-resolver.js';
+import { matchPoiTerms } from './poi-allowlist.js';
 import { resolvePoiConstraint } from './poi-resolver.js';
 import { persistSearchChatTurn } from './search-chat.persistence.js';
 import {
@@ -646,8 +654,25 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         // scrubs the raw slug out of the filters context and injects a
         // corrective system note — see `buildSearchReplyMessages` and
         // `poi-resolver.ts`'s module doc for the full rationale.
+        //
+        // HOS-142 §6.6/G-7 server-side lexical fallback: `POI_ALLOWLIST` now
+        // covers ~661 featured/high-priority POIs, but only a small curated +
+        // featured subset is embedded in the LLM prompt (see
+        // `buildAllowlistLines` in `search-chat.prompt.ts`) to keep prompt
+        // size bounded — so the model may never even see the other POIs'
+        // slugs to emit. `matchPoiTerms` runs the SAME allowlist directly
+        // against the raw user message here, server-side, independent of
+        // what the model extracted — a landmark mention that the model
+        // missed (because its slug wasn't in the embedded subset, or the
+        // model just didn't extract it) is still resolved. The two sources
+        // are deduplicated into a single `poiSlugs` set that flows into
+        // `resolvePoiConstraint` exactly as before; `matchPoiTerms` never
+        // invents a slug outside `POI_ALLOWLIST` (R-4), so this adds recall,
+        // not hallucination risk.
         // -----------------------------------------------------------------------
-        const poiSlugs = validatedEntities.poiSlugs ?? [];
+        const rawPoiSlugs = validatedEntities.poiSlugs ?? [];
+        const lexicalPoiSlugs = matchPoiTerms(message, locale);
+        const poiSlugs = Array.from(new Set([...rawPoiSlugs, ...lexicalPoiSlugs]));
         const singularDestinationIdForPoi =
             typeof params.destinationId === 'string' ? params.destinationId : undefined;
         const currentDestinationIdsForPoi: string[] | undefined =

@@ -40,6 +40,7 @@ import {
     PermissionCategoryEnum,
     PermissionEffectEnum,
     PermissionEnum,
+    PointOfInterestDestinationRelationEnum,
     PointOfInterestTypeEnum,
     PostCategoryEnum,
     PreferredContactEnum,
@@ -141,6 +142,16 @@ export const PermissionCategoryPgEnum = pgEnum(
 export const PointOfInterestTypePgEnum = pgEnum(
     'point_of_interest_type_enum',
     enumToTuple(PointOfInterestTypeEnum)
+);
+
+/**
+ * PostgreSQL enum for the point-of-interest ⇄ destination relation kind (HOS-140).
+ * Values: PRIMARY (POI is physically in the destination), NEARBY (cross-referenced
+ * from a different destination's page).
+ */
+export const PointOfInterestDestinationRelationPgEnum = pgEnum(
+    'point_of_interest_destination_relation_enum',
+    enumToTuple(PointOfInterestDestinationRelationEnum)
 );
 
 export const PostCategoryPgEnum = pgEnum('post_category_enum', enumToTuple(PostCategoryEnum));

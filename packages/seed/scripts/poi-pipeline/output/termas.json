@@ -1,0 +1,55 @@
+{
+    "slug": "termas",
+    "lat": -31.85116,
+    "long": -59.0251,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Complejo termal de perfil terapéutico con aguas mineralizadas, piscinas, hidromasajes, tratamientos corporales, rehabilitación y propuestas de bienestar.",
+    "nameI18n": {
+        "es": "Termas Villaguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Complejo termal de perfil terapéutico con aguas mineralizadas, piscinas, hidromasajes, tratamientos corporales, rehabilitación y propuestas de bienestar.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Extremo norte de avenida San Martín, Villaguay, Entre Ríos",
+    "keywords": [
+        "termas villaguay",
+        "aguas termales",
+        "hidromasaje",
+        "tratamientos",
+        "bienestar",
+        "rehabilitacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://www.termasdevillaguay.com/; https://www.entrerios.tur.ar/localidades-1/villaguay; https://mapcarta.com/es/W191264633",
+    "notes": "Actividad vigente confirmada; coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "thermal_complex",
+            "isPrimary": true
+        },
+        {
+            "slug": "wellness",
+            "isPrimary": false
+        },
+        {
+            "slug": "health",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

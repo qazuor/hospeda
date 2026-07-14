@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "285-point-of-interest-corsodromo_atanasio_bonfiglio",
+    "slug": "corsodromo_atanasio_bonfiglio",
+    "lat": -31.38085,
+    "long": -58.01718,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Escenario principal del Carnaval de Concordia, con una manga de desfile y tribunas para uno de los eventos más convocantes de la ciudad.",
+    "nameI18n": {
+        "es": "Corsódromo Atanasio Bonfiglio",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Escenario principal del Carnaval de Concordia, con una manga de desfile y tribunas para uno de los eventos más convocantes de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Predio Ferial Viñedos Moulins, Concordia, Entre Ríos",
+    "keywords": [
+        "corsodromo atanasio bonfiglio",
+        "carnaval concordia",
+        "comparsas",
+        "desfile",
+        "viñedos moulins"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/carnaval; https://mapcarta.com/es/W224803420",
+    "notes": "Coordenadas contrastadas con OpenStreetMap; vigencia confirmada por el sitio oficial del Carnaval.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "entertainment",
+            "isPrimary": true
+        },
+        {
+            "slug": "fair",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "nightlife",
+            "isPrimary": false
+        }
+    ]
+}

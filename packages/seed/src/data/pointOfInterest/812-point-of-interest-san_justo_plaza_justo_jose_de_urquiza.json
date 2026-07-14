@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "812-point-of-interest-san_justo_plaza_justo_jose_de_urquiza",
+    "slug": "san_justo_plaza_justo_jose_de_urquiza",
+    "lat": -32.44647,
+    "long": -58.43596,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Principal espacio público de San Justo, utilizado como punto de encuentro comunitario y sede de actos, celebraciones y propuestas culturales.",
+    "nameI18n": {
+        "es": "Plaza Justo José de Urquiza",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Principal espacio público de San Justo, utilizado como punto de encuentro comunitario y sede de actos, celebraciones y propuestas culturales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de San Justo, Entre Ríos",
+    "keywords": ["plaza urquiza", "plaza principal", "san justo", "centro", "espacio verde"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.instagram.com/munisanjusto/",
+    "notes": "Nombre y uso verificados mediante comunicación municipal. Coordenadas pendientes de contraste final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

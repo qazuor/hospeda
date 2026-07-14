@@ -1,0 +1,50 @@
+{
+    "slug": "letras_corporeas",
+    "lat": -30.900007199999997,
+    "long": -57.924197299999996,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Instalación fotográfica con el nombre de la localidad ubicada en el paseo costero del camping municipal.",
+    "nameI18n": {
+        "es": "Letras Corpóreas Santa Ana",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Instalación fotográfica con el nombre de la localidad ubicada en el paseo costero del camping municipal.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Camping Municipal de Santa Ana, Entre Ríos",
+    "keywords": [
+        "letras santa ana",
+        "foto",
+        "monumento",
+        "costanera",
+        "camping municipal"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.santaana.gob.ar/home/2024/08/09/instalacion-letras-corporeas/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        }
+    ]
+}

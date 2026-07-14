@@ -1,0 +1,50 @@
+{
+    "slug": "encuentro_acordeon",
+    "lat": -32.614809699999995,
+    "long": -60.14904430000001,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Encuentro musical dedicado al acordeón y a repertorios vinculados con las tradiciones inmigrantes y regionales.",
+    "nameI18n": {
+        "es": "Encuentro del Acordeón",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Encuentro musical dedicado al acordeón y a repertorios vinculados con las tradiciones inmigrantes y regionales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urdinarrain, Entre Ríos",
+    "keywords": [
+        "encuentro del acordeon",
+        "acordeon",
+        "musica regional",
+        "inmigrantes",
+        "festival"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://urdinarrain.tur.ar/que-hacer/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "entertainment",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "fair",
+            "isPrimary": false
+        }
+    ]
+}

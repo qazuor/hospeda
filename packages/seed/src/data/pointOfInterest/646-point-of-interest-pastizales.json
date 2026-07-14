@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "646-point-of-interest-pastizales",
+    "slug": "pastizales",
+    "lat": -33.4987683,
+    "long": -58.809814499999995,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Ambientes abiertos y pajonales que albergan especies especializadas y son uno de los principales escenarios del avistaje local.",
+    "nameI18n": {
+        "es": "Pastizales de Ceibas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Ambientes abiertos y pajonales que albergan especies especializadas y son uno de los principales escenarios del avistaje local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de Ceibas, Entre Ríos",
+    "keywords": ["pastizales ceibas", "pajonal", "aves de pastizal", "naturaleza", "fotografia"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/ceibas; https://www.lanacion.com.ar/revista-lugares/meca-internacional-el-pueblo-que-convoca-gente-del-mundo-entero-para-ver-y-fotografiar-aves-nid03082025/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "paseo_perilago",
+    "lat": -30.9100085,
+    "long": -57.9232891,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido escénico por la costa y los sectores Playa 52, La Muela y Piedras Finas, con vistas del lago y paisaje productivo.",
+    "nameI18n": {
+        "es": "Paseo del Perilago",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido escénico por la costa y los sectores Playa 52, La Muela y Piedras Finas, con vistas del lago y paisaje productivo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Perilago de Santa Ana, Entre Ríos",
+    "keywords": [
+        "paseo perilago",
+        "playa 52",
+        "la muela",
+        "piedras finas",
+        "lago salto grande"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.santaana.gob.ar/home/ciudad/; https://www.entrerios.tur.ar/localidades-1/santa-ana; https://mapcarta.com/es/19202584",
+    "notes": "Recorrido conceptual confirmado por la continuidad territorial. Falta digitalizar tramos y accesos públicos. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        }
+    ]
+}

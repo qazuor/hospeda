@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "152-point-of-interest-caseros_plaza_justo_jose_de_urquiza",
+    "slug": "caseros_plaza_justo_jose_de_urquiza",
+    "lat": -32.46268,
+    "long": -58.47819,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plaza principal y centro geográfico de Caseros. Es el paseo público más representativo de la localidad y sede habitual de actos cívicos, celebraciones comunitarias y actividades culturales.",
+    "nameI18n": {
+        "es": "Plaza Capitán General Justo José de Urquiza",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plaza principal y centro geográfico de Caseros. Es el paseo público más representativo de la localidad y sede habitual de actos cívicos, celebraciones comunitarias y actividades culturales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Calle 15 entre Calle 4 y Calle 6, Caseros, Entre Ríos",
+    "keywords": ["plaza urquiza", "plaza principal", "centro de caseros", "paseo", "espacio verde"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://disfruteentrerios.com.ar/localidad/56-caseros/noticias/174-caseros_historia_viva_cultural_y_espacios_verdes",
+    "notes": "Existencia y función verificadas. Coordenadas pendientes de contraste cartográfico final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

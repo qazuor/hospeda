@@ -824,6 +824,22 @@
 | `DELETE /api/v1/admin/partners/{id}` | `partners/admin/delete.ts` | none | - | n/a | Admin soft-delete; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
 | `POST /api/v1/admin/partners/{id}/send-link` | `partners/admin/send-link.ts` | none | - | n/a | Admin action; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
 | `POST /api/v1/admin/partners/{id}/manual-payment` | `partners/admin/manual-payment.ts` | none | - | n/a | Admin action; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| **POINT-OF-INTEREST — ADMIN** | | | | | |
+| `GET /api/v1/admin/points-of-interest` | `point-of-interest/admin/list.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143) |
+| `POST /api/v1/admin/points-of-interest` | `point-of-interest/admin/create.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143) |
+| `GET /api/v1/admin/points-of-interest/{id}` | `point-of-interest/admin/getById.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143) |
+| `PUT /api/v1/admin/points-of-interest/{id}` | `point-of-interest/admin/update.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143) |
+| `PATCH /api/v1/admin/points-of-interest/{id}` | `point-of-interest/admin/patch.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143) |
+| `DELETE /api/v1/admin/points-of-interest/{id}` | `point-of-interest/admin/delete.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143) |
+| `DELETE /api/v1/admin/points-of-interest/{id}/hard` | `point-of-interest/admin/hardDelete.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143) |
+| `POST /api/v1/admin/points-of-interest/{id}/restore` | `point-of-interest/admin/restore.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143) |
+| `POST /api/v1/admin/points-of-interest/batch` | `point-of-interest/admin/batch.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143) |
+| `GET /api/v1/admin/points-of-interest/{id}/destinations` | `point-of-interest/admin/destinations.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143) |
+| `POST /api/v1/admin/points-of-interest/{id}/destinations` | `point-of-interest/admin/destinations.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143) |
+| `PATCH /api/v1/admin/points-of-interest/{id}/destinations/{destinationId}` | `point-of-interest/admin/destinations.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143) |
+| `DELETE /api/v1/admin/points-of-interest/{id}/destinations/{destinationId}` | `point-of-interest/admin/destinations.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143) |
+| `GET /api/v1/admin/points-of-interest/{id}/categories` | `point-of-interest/admin/categories.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143). Permission: POINT_OF_INTEREST_VIEW |
+| `PUT /api/v1/admin/points-of-interest/{id}/categories` | `point-of-interest/admin/categories.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143). Permission: POI_CATEGORY_UPDATE (documented deviation from the nominal POINT_OF_INTEREST_UPDATE — see the route's deviation comment) |
 
 ---
 

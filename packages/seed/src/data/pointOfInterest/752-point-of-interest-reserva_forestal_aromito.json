@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "752-point-of-interest-reserva_forestal_aromito",
+    "slug": "reserva_forestal_aromito",
+    "lat": -30.986393800000002,
+    "long": -57.91229130000001,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Espacio forestal y recreativo ubicado junto a Playa Grande, destinado al contacto con la naturaleza y al descanso.",
+    "nameI18n": {
+        "es": "Reserva Forestal El Aromito",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio forestal y recreativo ubicado junto a Playa Grande, destinado al contacto con la naturaleza y al descanso.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Los Pinos, Federación, Entre Ríos",
+    "keywords": ["reserva el aromito", "reserva forestal", "playa grande", "bosque", "naturaleza"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
+    "notes": "Nombre y ubicación relativa confirmados en el plano turístico. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "reserve",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

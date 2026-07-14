@@ -242,6 +242,19 @@ describe('SearchHistoryList', () => {
             });
         });
 
+        it('does NOT show the Plus/VIP upsell copy for an already-entitled user with zero saved searches (BETA-167)', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce(makeEmptyListResponse());
+            renderComponent();
+            await waitFor(() => {
+                expect(
+                    screen.getByText(/todavía no tenés búsquedas guardadas/i)
+                ).toBeInTheDocument();
+            });
+            expect(
+                screen.queryByText(/tus búsquedas aparecerán acá cuando tengas un plan/i)
+            ).not.toBeInTheDocument();
+        });
+
         it('does NOT render the list when empty', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce(makeEmptyListResponse());
             renderComponent();
@@ -274,12 +287,12 @@ describe('SearchHistoryList', () => {
             expect(screen.queryByRole('alert')).not.toBeInTheDocument();
         });
 
-        it('shows an upgrade CTA linking to the plans page', async () => {
+        it('shows an upgrade CTA linking to the tourist plans page (BETA-174)', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce(makeEntitlementRequiredResponse());
             renderComponent();
             await waitFor(() => {
                 const link = screen.getByRole('link', { name: /ver planes/i });
-                expect(link).toHaveAttribute('href', '/es/suscriptores/planes/');
+                expect(link).toHaveAttribute('href', '/es/suscriptores/turistas/');
             });
         });
     });

@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "705-point-of-interest-plazoleta_cristobal_colon",
+    "slug": "plazoleta_cristobal_colon",
+    "lat": -32.21643,
+    "long": -58.13482,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plazoleta situada en el entorno portuario, cercana a la oficina de turismo y a distintos elementos escultóricos del paseo costero.",
+    "nameI18n": {
+        "es": "Plazoleta Cristóbal Colón",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plazoleta situada en el entorno portuario, cercana a la oficina de turismo y a distintos elementos escultóricos del paseo costero.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona portuaria de Colón, Entre Ríos",
+    "keywords": ["plazoleta cristobal colon", "puerto", "costanera", "plaza", "monumento"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W342360981",
+    "notes": "Coordenadas contrastadas con OpenStreetMap mediante Mapcarta.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

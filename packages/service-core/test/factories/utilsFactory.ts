@@ -17,6 +17,7 @@ export type IdTypes =
     | 'amenity'
     | 'attraction'
     | 'pointOfInterest'
+    | 'poiCategory'
     | 'destination'
     | 'destinationReview'
     | 'post'

@@ -1,0 +1,46 @@
+{
+    "slug": "ceibas_comisaria",
+    "lat": -33.50009,
+    "long": -58.79967,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Dependencia de la Policía de Entre Ríos y referencia de seguridad pública para la localidad y el corredor vial.",
+    "nameI18n": {
+        "es": "Comisaría Ceibas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Dependencia de la Policía de Entre Ríos y referencia de seguridad pública para la localidad y el corredor vial.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ceibas, Entre Ríos",
+    "keywords": [
+        "comisaria ceibas",
+        "policia entre rios",
+        "seguridad",
+        "emergencias",
+        "ruta"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/N5002299928",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

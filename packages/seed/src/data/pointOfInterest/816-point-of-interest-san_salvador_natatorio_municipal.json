@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "816-point-of-interest-san_salvador_natatorio_municipal",
+    "slug": "san_salvador_natatorio_municipal",
+    "lat": -31.623757,
+    "long": -58.5062863,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Piscina pública municipal integrada al área recreativa del parque central y utilizada para actividades acuáticas y propuestas de verano.",
+    "nameI18n": {
+        "es": "Natatorio Municipal",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Piscina pública municipal integrada al área recreativa del parque central y utilizada para actividades acuáticas y propuestas de verano.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Entorno del Parque Eva Perón, San Salvador, Entre Ríos",
+    "keywords": ["natatorio municipal", "pileta", "natacion", "verano", "parque eva peron"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/trabajos-de-mejoras-en-el-parque-eva-peron/; https://mapcarta.com/es/W447505174",
+    "notes": "Existencia y ubicación relativa confirmadas. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

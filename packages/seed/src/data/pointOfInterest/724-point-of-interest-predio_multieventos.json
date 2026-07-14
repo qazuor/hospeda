@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "724-point-of-interest-predio_multieventos",
+    "slug": "predio_multieventos",
+    "lat": -32.4727,
+    "long": -58.24952,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Predio utilizado para el carnaval local, festivales, espectáculos, ferias y actividades deportivas o culturales de gran convocatoria.",
+    "nameI18n": {
+        "es": "Predio Multieventos",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Predio utilizado para el carnaval local, festivales, espectáculos, ferias y actividades deportivas o culturales de gran convocatoria.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Boulevard Los Constituyentes y Estrada, Concepción del Uruguay, Entre Ríos",
+    "keywords": ["predio multieventos", "carnaval", "corsodromo", "festival", "eventos"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "entertainment",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "fair",
+            "isPrimary": false
+        }
+    ]
+}

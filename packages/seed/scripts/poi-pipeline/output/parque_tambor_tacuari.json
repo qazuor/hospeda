@@ -1,0 +1,54 @@
+{
+    "slug": "parque_tambor_tacuari",
+    "lat": -30.7603828,
+    "long": -57.9852672,
+    "type": "PARK",
+    "icon": null,
+    "description": "Parque urbano dedicado a la memoria del Tambor de Tacuarí, utilizado para paseo y recreación.",
+    "nameI18n": {
+        "es": "Parque Tambor de Tacuarí",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Parque urbano dedicado a la memoria del Tambor de Tacuarí, utilizado para paseo y recreación.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Chajarí, Entre Ríos",
+    "keywords": [
+        "parque tambor de tacuari",
+        "tacuari",
+        "parque",
+        "historia",
+        "monumento"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf; https://termaschajari.tur.ar/arco-de-entrada/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

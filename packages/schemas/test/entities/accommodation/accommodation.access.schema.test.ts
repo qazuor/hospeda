@@ -227,6 +227,53 @@ describe('AccommodationProtectedSchema — extraInfo tolerance for DRAFT data (H
     });
 });
 
+// ---------------------------------------------------------------------------
+// slug tolerance for long onboarding-generated slugs (BETA-172)
+// ---------------------------------------------------------------------------
+//
+// Before the fix, `AccommodationService.generateSlug` could produce slugs
+// longer than the write schema's `max(50)` for accommodations onboarded via
+// `/publicar` with a long imported name. Once persisted, that slug value
+// failed to parse against the read schemas (`path=[slug] code=too_big`),
+// causing "Mis propiedades" to 500. The root cause is now fixed at
+// generation time (slug is truncated to 50 chars), but the read schemas
+// must still tolerate any slug already persisted before the fix.
+
+describe('AccommodationProtectedSchema / AccommodationAdminSchema — slug tolerance (BETA-172)', () => {
+    const longSlugPayload = {
+        ...entityPayload,
+        slug: 'a-very-long-slug-that-exceeds-the-fifty-character-limit-abc'
+    };
+
+    it('the fixture slug is longer than the write schema max(50), confirming the regression scenario', () => {
+        expect(longSlugPayload.slug.length).toBeGreaterThan(50);
+    });
+
+    it('AccommodationProtectedSchema accepts a 60-char slug', () => {
+        const result = AccommodationProtectedSchema.safeParse(longSlugPayload);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.slug).toBe(longSlugPayload.slug);
+        }
+    });
+
+    it('AccommodationAdminSchema accepts a 60-char slug', () => {
+        const result = AccommodationAdminSchema.safeParse(longSlugPayload);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.slug).toBe(longSlugPayload.slug);
+        }
+    });
+
+    it('AccommodationPublicSchema accepts a 60-char slug', () => {
+        const result = AccommodationPublicSchema.safeParse(longSlugPayload);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.slug).toBe(longSlugPayload.slug);
+        }
+    });
+});
+
 describe('AccommodationAdminSchema — extraInfo tolerance for DRAFT data (HOS-152)', () => {
     it('accepts extraInfo missing minNights/bedrooms/bathrooms (only capacity provided)', () => {
         const payload = { ...draftEntityPayload, extraInfo: { capacity: 4 } };

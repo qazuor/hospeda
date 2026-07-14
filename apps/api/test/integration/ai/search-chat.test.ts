@@ -505,6 +505,10 @@ import { type PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actorMiddleware } from '../../../src/middlewares/actor';
 import { createErrorHandler } from '../../../src/middlewares/response';
+import {
+    POI_ALLOWLIST,
+    PROMPT_FEATURED_POI_SLUGS
+} from '../../../src/routes/ai/protected/poi-allowlist';
 import { protectedAiSearchChatRoute } from '../../../src/routes/ai/protected/search-chat';
 import type { AppBindings, AppMiddleware } from '../../../src/types';
 
@@ -3111,6 +3115,161 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
 
             const doneFrames = frames.filter((f) => f.event === 'done');
             expect(doneFrames).toHaveLength(1);
+        });
+    });
+
+    // =========================================================================
+    // HOS-142 Phase 4b — server-side matchPoiTerms lexical fallback
+    //
+    // The LLM prompt only embeds a small curated + top-featured POI subset
+    // (`PROMPT_FEATURED_POI_SLUGS`, ~52 slugs — see poi-allowlist.ts and
+    // search-chat.prompt.ts's buildAllowlistLines) to keep prompt size
+    // bounded, even though `POI_ALLOWLIST` itself covers ~661 featured
+    // landmarks (HOS-142 §6.6/G-7). This suite proves the OTHER ~600+
+    // generated-allowlist POIs — whose slugs the model never even sees in
+    // its prompt — are still resolvable: `search-chat.ts`'s handler runs
+    // `matchPoiTerms` directly against the raw user message and unions the
+    // result with whatever `entities.poiSlugs` the model extracted, so
+    // coverage no longer depends solely on the model recognizing a slug it
+    // was never shown.
+    // =========================================================================
+
+    describe('HOS-142 Phase 4b — server-side matchPoiTerms lexical fallback', () => {
+        /**
+         * "aeroclub villaguay" is a real HOS-142-generated allowlist term
+         * (`poi-allowlist.generated.json`, derived from the seeded POI's
+         * `keywords`) mapping to `aeroclub_escuela_vuelo` — a POI that is
+         * deliberately NOT part of `PROMPT_FEATURED_POI_SLUGS` (the small
+         * embedded subset), so the LLM prompt never advertises this slug to
+         * the model. Coordinates match
+         * `packages/seed/src/data/pointOfInterest/016-point-of-interest-aeroclub_escuela_vuelo.json`.
+         */
+        const NON_EMBEDDED_POI_SLUG = 'aeroclub_escuela_vuelo';
+        const NON_EMBEDDED_POI_LAT = -31.857325999999997;
+        const NON_EMBEDDED_POI_LONG = -59.0735289;
+
+        it('the fixture assumption holds: NON_EMBEDDED_POI_SLUG is allowlisted but NOT in the prompt-embedded subset', () => {
+            // Guards the rest of this suite against silent drift (e.g. this
+            // POI later getting promoted into the embedded subset, or aging
+            // out of POI_ALLOWLIST) — if this assumption ever breaks, this
+            // assertion fails loudly here instead of the fallback tests below
+            // silently passing for the wrong reason.
+            expect(POI_ALLOWLIST.es?.['aeroclub villaguay']).toEqual([NON_EMBEDDED_POI_SLUG]);
+            expect(PROMPT_FEATURED_POI_SLUGS).not.toContain(NON_EMBEDDED_POI_SLUG);
+        });
+
+        it('resolves a landmark mention end-to-end purely via the raw-message lexical match, when the model extracts nothing', async () => {
+            // Arrange: the model extracts NO poiSlugs at all — simulating a
+            // provider that never saw this slug in its (deliberately small)
+            // embedded prompt subset, or one that simply missed the mention.
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.7, entities: {} },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-aeroclub-villaguay',
+                    slug: NON_EMBEDDED_POI_SLUG,
+                    lat: NON_EMBEDDED_POI_LAT,
+                    long: NON_EMBEDDED_POI_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID] }
+            };
+
+            // Act: the raw message literally contains the allowlisted term.
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [
+                        { role: 'user', content: 'quiero algo cerca del aeroclub villaguay' }
+                    ],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            expect(filtersFrame).toBeDefined();
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                poiSlugs?: string[];
+            };
+
+            // The resolver was invoked with the LEXICALLY matched slug even
+            // though `entities.poiSlugs` was empty — proof the fallback runs
+            // independent of the model's own extraction.
+            expect(poiGetBySlugCalls).toEqual([{ slug: NON_EMBEDDED_POI_SLUG }]);
+            expect(payload.poiSlugs).toEqual([NON_EMBEDDED_POI_SLUG]);
+            expect(payload.params.latitude).toBe(NON_EMBEDDED_POI_LAT);
+            expect(payload.params.longitude).toBe(NON_EMBEDDED_POI_LONG);
+            expect(payload.params.destinationIds).toEqual([CONCEPCION_DEL_URUGUAY_UUID]);
+
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+        });
+
+        it('unions a model-extracted slug with a different lexically-matched slug from the same message, deduplicated', async () => {
+            // Arrange: the model extracts the curated autódromo slug (which
+            // IS in the embedded prompt subset), while the raw message ALSO
+            // mentions the non-embedded aeroclub landmark by name — both
+            // must reach the resolver as a single deduplicated set.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.8,
+                    entities: { poiSlugs: [AUTODROMO_POI_SLUG] }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // resolvePoiConstraint resolves coordinates for the PRIMARY
+            // (first) slug only — model-extracted slugs come first in the
+            // union, so the primary here is still the autódromo.
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID] }
+            };
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [
+                        {
+                            role: 'user',
+                            content: 'cerca del autódromo, o también del aeroclub villaguay'
+                        }
+                    ],
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+
+            // A single primary-coordinate lookup (the model-extracted slug),
+            // but the destination-intersect call receives BOTH slugs.
+            expect(poiGetBySlugCalls).toEqual([{ slug: AUTODROMO_POI_SLUG }]);
+            expect(poiDestinationIdsCalls).toHaveLength(1);
+            expect(poiDestinationIdsCalls[0]?.slugs).toEqual(
+                expect.arrayContaining([AUTODROMO_POI_SLUG, NON_EMBEDDED_POI_SLUG])
+            );
+            expect(poiDestinationIdsCalls[0]?.slugs).toHaveLength(2);
         });
     });
 });

@@ -1,0 +1,50 @@
+{
+    "slug": "club_social_deportivo",
+    "lat": -32.446297099999995,
+    "long": -58.4414523,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Institución deportiva y comunitaria utilizada para entrenamientos, torneos y encuentros sociales.",
+    "nameI18n": {
+        "es": "Club Social y Deportivo San Justo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Institución deportiva y comunitaria utilizada para entrenamientos, torneos y encuentros sociales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Justo, Entre Ríos",
+    "keywords": [
+        "club san justo",
+        "deportes",
+        "club social",
+        "torneos",
+        "comunidad"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.facebook.com/municipalidadsanjustoentrerios/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

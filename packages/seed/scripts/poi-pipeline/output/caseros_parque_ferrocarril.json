@@ -1,0 +1,55 @@
+{
+    "slug": "caseros_parque_ferrocarril",
+    "lat": -32.46535,
+    "long": -58.48097,
+    "type": "PARK",
+    "icon": null,
+    "description": "Espacio público desarrollado alrededor de la antigua estación de Caseros. Reúne patrimonio ferroviario, áreas verdes y sectores utilizados para ferias y actividades comunitarias.",
+    "nameI18n": {
+        "es": "Predio del Ferrocarril",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio público desarrollado alrededor de la antigua estación de Caseros. Reúne patrimonio ferroviario, áreas verdes y sectores utilizados para ferias y actividades comunitarias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Predio ferroviario de Caseros, Entre Ríos",
+    "keywords": [
+        "parque del ferrocarril",
+        "predio ferroviario",
+        "estacion",
+        "parque",
+        "tren",
+        "paseo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/N1040020047",
+    "notes": "Comparte ubicación general con la estación y el museo; el predio completo abarca una superficie mayor.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "297-point-of-interest-delta_entrerriano",
+    "slug": "delta_entrerriano",
+    "lat": -33.7076593,
+    "long": -58.6671298,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Paisaje de islas, riachos, canales, albardones y humedales que define la identidad natural y cultural del destino.",
+    "nameI18n": {
+        "es": "Delta Entrerriano",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paisaje de islas, riachos, canales, albardones y humedales que define la identidad natural y cultural del destino.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Municipio de Villa Paranacito, Entre Ríos",
+    "keywords": ["delta entrerriano", "islas", "riachos", "canales", "humedales", "paisaje isleño"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/villa-paranacito; https://www.villaparanacito.gob.ar/turismo",
+    "notes": "Área regional extensa. Requiere polígonos, corredores y accesos públicos verificados. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "reserve",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

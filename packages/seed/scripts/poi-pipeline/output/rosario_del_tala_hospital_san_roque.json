@@ -1,0 +1,46 @@
+{
+    "slug": "rosario_del_tala_hospital_san_roque",
+    "lat": -32.30985,
+    "long": -59.14566,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Hospital público provincial con internación general y servicios sanitarios para la ciudad y el departamento.",
+    "nameI18n": {
+        "es": "Hospital San Roque",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Hospital público provincial con internación general y servicios sanitarios para la ciudad y el departamento.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Doctor E. Rozados 475, Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "hospital san roque",
+        "hospital rosario del tala",
+        "guardia",
+        "emergencias",
+        "doctor rozados"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W355830480; https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

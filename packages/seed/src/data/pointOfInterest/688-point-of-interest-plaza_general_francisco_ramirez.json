@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "688-point-of-interest-plaza_general_francisco_ramirez",
+    "slug": "plaza_general_francisco_ramirez",
+    "lat": -32.484562,
+    "long": -58.232117,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plaza principal de Concepción del Uruguay y centro del casco histórico. Fue escenario del Pronunciamiento de Urquiza de 1851 y está rodeada por edificios patrimoniales.",
+    "nameI18n": {
+        "es": "Plaza General Francisco Ramírez",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plaza principal de Concepción del Uruguay y centro del casco histórico. Fue escenario del Pronunciamiento de Urquiza de 1851 y está rodeada por edificios patrimoniales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Entre Galarza, Urquiza, San Martín y 3 de Febrero, Concepción del Uruguay, Entre Ríos",
+    "keywords": ["plaza ramirez", "centro", "casco historico", "urquiza", "pronunciamiento"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        }
+    ]
+}

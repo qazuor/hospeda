@@ -196,14 +196,14 @@
             "timeoutTitle": "This is taking longer than usual",
             "timeoutSubtitle": "Your payment may still be processing. Check your account in a few minutes to confirm your subscription.",
             "cta": "Go to my account",
-            "pageTitle": "Payment approved — Hospeda",
+            "pageTitle": "Payment approved",
             "promoIgnoredNote": "Your discount code was not applied because you started your free trial instead."
         },
         "pending": {
             "title": "Your payment is being processed",
             "body": "It may take up to 24 hours to confirm. We'll email you when it clears.",
             "cta": "Check status",
-            "pageTitle": "Payment processing — Hospeda"
+            "pageTitle": "Payment processing"
         },
         "failure": {
             "title": "Your payment could not be processed",
@@ -214,7 +214,7 @@
             "reasonInvalidData": "Invalid card details",
             "retryCta": "Try again",
             "supportCta": "Contact support",
-            "pageTitle": "Payment rejected — Hospeda"
+            "pageTitle": "Payment rejected"
         },
         "button": {
             "cta": "Subscribe",

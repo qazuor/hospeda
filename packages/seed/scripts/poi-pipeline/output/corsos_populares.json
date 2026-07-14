@@ -1,0 +1,54 @@
+{
+    "slug": "corsos_populares",
+    "lat": -32.4796598,
+    "long": -58.2402889,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Celebración de carnaval con agrupaciones, música, baile y participación comunitaria.",
+    "nameI18n": {
+        "es": "Corsos Populares de Urdinarrain",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Celebración de carnaval con agrupaciones, música, baile y participación comunitaria.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urdinarrain, Entre Ríos",
+    "keywords": [
+        "corsos populares",
+        "carnaval urdinarrain",
+        "murgas",
+        "baile",
+        "verano"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://urdinarrain.tur.ar/que-hacer/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "entertainment",
+            "isPrimary": true
+        },
+        {
+            "slug": "fair",
+            "isPrimary": false
+        },
+        {
+            "slug": "nightlife",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

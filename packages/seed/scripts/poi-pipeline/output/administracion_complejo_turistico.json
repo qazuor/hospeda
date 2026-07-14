@@ -1,0 +1,46 @@
+{
+    "slug": "administracion_complejo_turistico",
+    "lat": -32.2196514,
+    "long": -58.192319999999995,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Punto de información y administración del sector termal y balneario, útil para orientación, servicios y consultas de visitantes.",
+    "nameI18n": {
+        "es": "Administración del Complejo Turístico",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Punto de información y administración del sector termal y balneario, útil para orientación, servicios y consultas de visitantes.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona termal y balnearia de San José, Entre Ríos",
+    "keywords": [
+        "administracion termas",
+        "informacion turistica",
+        "balneario",
+        "servicios",
+        "turismo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W202761730",
+    "notes": "La oficina aparece cartografiada junto a Termas San José; falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "services",
+            "isPrimary": true
+        },
+        {
+            "slug": "government",
+            "isPrimary": false
+        }
+    ]
+}

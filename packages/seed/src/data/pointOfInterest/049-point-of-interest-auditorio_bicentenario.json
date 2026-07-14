@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "049-point-of-interest-auditorio_bicentenario",
+    "slug": "auditorio_bicentenario",
+    "lat": -30.985996499999995,
+    "long": -57.91788510000001,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sala cultural y de convenciones utilizada para danza, espectáculos, actos y encuentros de alcance local y regional.",
+    "nameI18n": {
+        "es": "Auditorio Ciudad de Federación",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sala cultural y de convenciones utilizada para danza, espectáculos, actos y encuentros de alcance local y regional.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de Federación, Entre Ríos",
+    "keywords": [
+        "auditorio ciudad de federacion",
+        "auditorio bicentenario",
+        "danza",
+        "espectaculos",
+        "convenciones"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.gob.ar/areas-noticias/secretaria-turismo; https://mapcarta.com/es/W1101824521",
+    "notes": "Actividad vigente y ubicación relativa confirmadas. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "theater",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

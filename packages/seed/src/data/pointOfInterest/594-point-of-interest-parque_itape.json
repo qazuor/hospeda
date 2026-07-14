@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "594-point-of-interest-parque_itape",
+    "slug": "parque_itape",
+    "lat": -32.49906,
+    "long": -58.22276,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Parque y balneario municipal situado en el histórico barrio Puerto Viejo, junto a la Defensa Sur y al acceso a la Isla del Puerto.",
+    "nameI18n": {
+        "es": "Parque Itapé",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Parque y balneario municipal situado en el histórico barrio Puerto Viejo, junto a la Defensa Sur y al acceso a la Isla del Puerto.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Costanera Sur y acceso a la Isla del Puerto, Concepción del Uruguay, Entre Ríos",
+    "keywords": ["itape", "balneario", "parque", "puerto viejo", "playa"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "plazoleta_pueblos_originarios",
+    "lat": -31.6247717,
+    "long": -58.5051869,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Espacio público dedicado a la memoria y reconocimiento de los pueblos originarios, ubicado en el sistema de paseos urbanos de la ciudad.",
+    "nameI18n": {
+        "es": "Plazoleta de los Pueblos Originarios",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio público dedicado a la memoria y reconocimiento de los pueblos originarios, ubicado en el sistema de paseos urbanos de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Salvador, Entre Ríos",
+    "keywords": [
+        "pueblos originarios",
+        "plazoleta",
+        "memoria",
+        "culturas originarias",
+        "san salvador"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/; https://mapcarta.com/es/W448499240",
+    "notes": "Existencia confirmada por el municipio y cartografía abierta. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

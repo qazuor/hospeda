@@ -1,0 +1,50 @@
+{
+    "slug": "sendero_yatay",
+    "lat": -31.8770725,
+    "long": -58.2634837,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sendero de 500 metros que atraviesa un bosque denso de palmeras y conduce al mirador La Glorieta.",
+    "nameI18n": {
+        "es": "Sendero Yatay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sendero de 500 metros que atraviesa un bosque denso de palmeras y conduce al mirador La Glorieta.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque Nacional El Palmar, Entre Ríos",
+    "keywords": [
+        "sendero yatay",
+        "palmeras yatay",
+        "bosque de palmeras",
+        "la glorieta",
+        "caminata"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
+    "notes": "Nombre y longitud confirmados. Falta geocodificar el punto de inicio. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "hiking",
+            "isPrimary": true
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        }
+    ]
+}

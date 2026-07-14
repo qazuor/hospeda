@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "669-point-of-interest-playa_norte",
+    "slug": "playa_norte",
+    "lat": -32.9681716,
+    "long": -58.520841000000004,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Balneario y camping situado junto al arroyo Gualeyán, con sectores de recreación y acampe.",
+    "nameI18n": {
+        "es": "Playa Norte",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Balneario y camping situado junto al arroyo Gualeyán, con sectores de recreación y acampe.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ruta Provincial 20 y arroyo Gualeyán, Gualeguaychú, Entre Ríos",
+    "keywords": ["playa norte", "arroyo gualeyan", "camping", "ruta 20", "balneario"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/playas",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "campground",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

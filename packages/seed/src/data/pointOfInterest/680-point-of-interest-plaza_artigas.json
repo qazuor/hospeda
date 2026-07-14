@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "680-point-of-interest-plaza_artigas",
+    "slug": "plaza_artigas",
+    "lat": -32.225255,
+    "long": -58.14202249999999,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Espacio verde del centro urbano situado cerca de la parroquia, la Municipalidad y otros edificios institucionales de Colón.",
+    "nameI18n": {
+        "es": "Plaza Artigas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio verde del centro urbano situado cerca de la parroquia, la Municipalidad y otros edificios institucionales de Colón.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro cívico de Colón, Entre Ríos",
+    "keywords": ["plaza artigas", "centro civico", "plaza", "parque", "colon"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W334797623",
+    "notes": "Existencia confirmada en OpenStreetMap; falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

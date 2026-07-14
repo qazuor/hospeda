@@ -1,0 +1,50 @@
+{
+    "slug": "skate_park",
+    "lat": -31.815889199999997,
+    "long": -59.0215336,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Parque de más de una hectárea con circuitos para skate, BMX y acrobacias, ubicado cerca del Centro de Convenciones.",
+    "nameI18n": {
+        "es": "Skate Park Villaguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Parque de más de una hectárea con circuitos para skate, BMX y acrobacias, ubicado cerca del Centro de Convenciones.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Raúl Alfonsín, Villaguay, Entre Ríos",
+    "keywords": [
+        "skate park villaguay",
+        "bmx",
+        "skate",
+        "acrobacias",
+        "raul alfonsin"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://es.wikipedia.org/wiki/Villaguay",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

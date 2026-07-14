@@ -1,0 +1,50 @@
+{
+    "slug": "concepcion_del_uruguay_cementerio_israelita",
+    "lat": -32.4851849,
+    "long": -58.2320232,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio histórico y cultural asociado con la comunidad judía local y su memoria funeraria.",
+    "nameI18n": {
+        "es": "Cementerio Israelita de Concepción del Uruguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio histórico y cultural asociado con la comunidad judía local y su memoria funeraria.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "cementerio israelita",
+        "comunidad judia",
+        "memoria",
+        "patrimonio funerario",
+        "historia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.unoentrerios.com.ar/el-cementerio-concepcion-del-uruguay-es-patrimonio-historico-artistico-y-simbolico-n2658359.html",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "religious_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        }
+    ]
+}

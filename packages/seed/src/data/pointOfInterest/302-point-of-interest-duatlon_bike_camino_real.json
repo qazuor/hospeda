@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "302-point-of-interest-duatlon_bike_camino_real",
+    "slug": "duatlon_bike_camino_real",
+    "lat": null,
+    "long": null,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Competencia deportiva por caminos rurales vinculados con el corredor histórico y natural de San Justo.",
+    "nameI18n": {
+        "es": "Duatlón Bike del Camino Real",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Competencia deportiva por caminos rurales vinculados con el corredor histórico y natural de San Justo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Camino Real, San Justo, Entre Ríos",
+    "keywords": ["duatlon bike", "camino real", "ciclismo", "running", "san justo"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://munisanjusto.gob.ar/noticias/del-camino-real-duatlon-bike-2024-04-08t00-00-00-000z-se-vi?tag=Turismo",
+    "notes": "Evento recurrente; falta digitalizar circuito y calendario.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "fair",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,46 @@
+{
+    "slug": "hospital_san_benjamin",
+    "lat": -32.22476,
+    "long": -58.13648,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Hospital público de referencia de Colón, con guardia, internación y especialidades médicas para la ciudad y el área circundante.",
+    "nameI18n": {
+        "es": "Hospital San Benjamín",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Hospital público de referencia de Colón, con guardia, internación y especialidades médicas para la ciudad y el área circundante.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Esteva Berga 235, Colón, Entre Ríos",
+    "keywords": [
+        "hospital san benjamin",
+        "hospital",
+        "guardia",
+        "emergencias",
+        "salud"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W334797606",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

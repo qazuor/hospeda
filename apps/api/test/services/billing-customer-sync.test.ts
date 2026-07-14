@@ -171,6 +171,35 @@ describe('BillingCustomerSyncService', () => {
             });
         });
 
+        it('should sanitize a plus-addressed email before calling billing.customers.create (BETA-164)', async () => {
+            // Arrange
+            vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(null);
+            vi.mocked(mockBilling.customers!.create).mockResolvedValue({
+                ...mockCustomer,
+                id: 'cus_new',
+                email: 'qazuor.turista@gmail.com'
+            });
+
+            // Act
+            const result = await service.ensureCustomerExists({
+                userId: 'user_789',
+                email: 'qazuor+turista@gmail.com',
+                name: 'Plus User'
+            });
+
+            // Assert — MP-safe email reaches the create call, not the raw one
+            expect(result).toBe('cus_new');
+            expect(mockBilling.customers!.create).toHaveBeenCalledWith({
+                externalId: 'user_789',
+                email: 'qazuor.turista@gmail.com',
+                name: 'Plus User',
+                metadata: {
+                    source: 'better-auth',
+                    createdBy: 'billing-customer-sync-service'
+                }
+            });
+        });
+
         it('should handle race condition on concurrent create (duplicate key)', async () => {
             // Arrange
             const duplicateError = new Error('duplicate key value violates unique constraint');
@@ -325,6 +354,33 @@ describe('BillingCustomerSyncService', () => {
                 email: 'updated@example.com',
                 name: 'Test User',
                 metadata: {
+                    lastSyncedAt: expect.any(String)
+                }
+            });
+        });
+
+        it('should sanitize a plus-addressed email before calling billing.customers.update (BETA-164)', async () => {
+            // Arrange
+            vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(mockCustomer);
+            vi.mocked(mockBilling.customers!.update).mockResolvedValue({
+                ...mockCustomer,
+                email: 'qazuor.turista@gmail.com'
+            });
+
+            // Act
+            const result = await service.syncCustomerData({
+                userId: 'user_123',
+                email: 'qazuor+turista@gmail.com',
+                name: 'Test User'
+            });
+
+            // Assert — MP-safe email reaches the update call, not the raw one
+            expect(result).toBe('cus_123');
+            expect(mockBilling.customers!.update).toHaveBeenCalledWith('cus_123', {
+                email: 'qazuor.turista@gmail.com',
+                name: 'Test User',
+                metadata: {
+                    ...mockCustomer.metadata,
                     lastSyncedAt: expect.any(String)
                 }
             });

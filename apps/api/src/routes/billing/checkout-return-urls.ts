@@ -81,9 +81,18 @@ export function buildPaymentMethodReturnUrl(locale: ReturnUrlLocale): string {
  * Webhook destination for the MP preapproval. We pass the application-wide
  * URL explicitly so MercadoPago always reaches this API, even when a
  * legacy app-wide URL exists in the MP dashboard.
+ *
+ * MUST carry the `?source_news=webhooks` marker (HOS-159): the webhook router
+ * middleware (`routes/webhooks/mercadopago/router.ts`, `V2_SOURCE_NEWS_MARKER`)
+ * DROPS any delivery lacking it as a "legacy IPN duplicate". Without the marker
+ * here, every subscription webhook MP posts to this `notification_url`
+ * (`subscription_preapproval.*`, `subscription_authorized_payment.*`) was
+ * silently dropped — no `billing_webhook_events`, no `billing_payments`, and
+ * activation fell back entirely to the polling cron. MP appends its own params
+ * with `&`, so the final URL is `.../mercadopago?source_news=webhooks&data.id=...`.
  */
 export function buildNotificationUrl(): string {
-    return `${env.HOSPEDA_API_URL}/api/v1/webhooks/mercadopago`;
+    return `${env.HOSPEDA_API_URL}/api/v1/webhooks/mercadopago?source_news=webhooks`;
 }
 
 /**

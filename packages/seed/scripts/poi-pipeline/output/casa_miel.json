@@ -1,0 +1,50 @@
+{
+    "slug": "casa_miel",
+    "lat": -31.013119900000003,
+    "long": -57.944008399999994,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Punto de producción y venta de mieles y derivados ubicado sobre la ruta de acceso a Federación.",
+    "nameI18n": {
+        "es": "La Casa de la Miel",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Punto de producción y venta de mieles y derivados ubicado sobre la ruta de acceso a Federación.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ruta de acceso a Federación, Entre Ríos",
+    "keywords": [
+        "casa de la miel",
+        "miel federacion",
+        "apicultura",
+        "ruta de acceso",
+        "productos regionales"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/otros-atractivos/",
+    "notes": "Actividad y ubicación general confirmadas. Falta dirección y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "gastronomy",
+            "isPrimary": true
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

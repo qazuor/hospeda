@@ -9,6 +9,35 @@ import type { SupportedLocale } from './i18n';
 const SEO_SOURCE_LOCALE: SupportedLocale = 'es';
 
 /**
+ * Preposition (per locale) used to introduce a trailing city/location in an
+ * authored SEO title (e.g. "... cerca del río {preposition} {city}"). Stored
+ * overrides are always authored in `SEO_SOURCE_LOCALE`, so only that entry is
+ * ever consulted today, but the map documents intent per locale rather than
+ * hardcoding the Spanish word inline (BETA-163).
+ */
+const TRAILING_LOCATION_PREPOSITION: Record<SupportedLocale, string> = {
+    es: 'en',
+    en: 'in',
+    pt: 'em'
+};
+
+/**
+ * Strips a dangling trailing preposition left over when a stored SEO title
+ * was authored with a "... {preposition} {city}" template and the city ended
+ * up empty/undefined (BETA-163: e.g. "... río Uruguay en" instead of
+ * "... río Uruguay en Colón"). Only removes the preposition when it is the
+ * very last word, so unrelated content is left untouched.
+ *
+ * @param title - Stored SEO title text (source-locale).
+ * @returns The title with any dangling trailing preposition removed.
+ */
+function stripDanglingLocationPreposition(title: string): string {
+    const preposition = TRAILING_LOCATION_PREPOSITION[SEO_SOURCE_LOCALE];
+    const danglingPrepositionPattern = new RegExp(`\\s+${preposition}$`, 'i');
+    return title.replace(danglingPrepositionPattern, '').trimEnd();
+}
+
+/**
  * Picks a stored SEO override (title or description) only when rendering the
  * source locale, falling back to a localized value otherwise.
  *
@@ -33,5 +62,8 @@ export function pickLocalizedSeo({
     readonly fallback: string;
     readonly locale: SupportedLocale;
 }): string {
-    return locale === SEO_SOURCE_LOCALE && stored ? stored : fallback;
+    if (locale === SEO_SOURCE_LOCALE && stored) {
+        return stripDanglingLocationPreposition(stored);
+    }
+    return fallback;
 }

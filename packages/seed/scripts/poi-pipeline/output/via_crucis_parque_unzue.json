@@ -1,0 +1,54 @@
+{
+    "slug": "via_crucis_parque_unzue",
+    "lat": -33.0119481,
+    "long": -58.4868457,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido religioso y cultural con quince estaciones distribuidas en el entorno natural de Parque Unzué.",
+    "nameI18n": {
+        "es": "Vía Crucis de Parque Unzué",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido religioso y cultural con quince estaciones distribuidas en el entorno natural de Parque Unzué.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque Unzué, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "via crucis gualeguaychu",
+        "parque unzue",
+        "estaciones",
+        "semana santa",
+        "procesion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/recordis/429-turismo-religioso",
+    "notes": "Recorrido con quince estaciones. Falta digitalizar la geometría. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        }
+    ]
+}

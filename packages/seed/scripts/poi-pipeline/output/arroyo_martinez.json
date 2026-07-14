@@ -1,0 +1,50 @@
+{
+    "slug": "arroyo_martinez",
+    "lat": -33.7146367,
+    "long": -58.658338099999995,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Curso fluvial y localidad isleña situada a pocos kilómetros de la desembocadura sobre el río Uruguay.",
+    "nameI18n": {
+        "es": "Arroyo Martínez",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Curso fluvial y localidad isleña situada a pocos kilómetros de la desembocadura sobre el río Uruguay.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Arroyo Martínez, Villa Paranacito, Entre Ríos",
+    "keywords": [
+        "arroyo martinez",
+        "localidad isleña",
+        "rio uruguay",
+        "delta",
+        "paisaje rural"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/37670096",
+    "notes": "Curso de agua; requiere geometría lineal. La localidad de Arroyo Martínez se registra por separado con coordenadas verificadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

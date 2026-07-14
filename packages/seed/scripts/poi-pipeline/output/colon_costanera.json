@@ -1,0 +1,54 @@
+{
+    "slug": "colon_costanera",
+    "lat": -32.2186972,
+    "long": -58.132971399999995,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Paseo ribereño que conecta playas, puerto, parques, miradores, espacios gastronómicos y sectores recreativos frente al río Uruguay.",
+    "nameI18n": {
+        "es": "Costanera de Colón",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paseo ribereño que conecta playas, puerto, parques, miradores, espacios gastronómicos y sectores recreativos frente al río Uruguay.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Costanera, Colón, Entre Ríos",
+    "keywords": [
+        "costanera colon",
+        "rio uruguay",
+        "paseo",
+        "mirador",
+        "playas"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://colon.gov.ar/bus-turistico-y-caminatas-a-la-reserva-norte-dos-propuestas-guiadas-para-conocer-nuestra-ciudad/",
+    "notes": "Paseo confirmado en el circuito turístico oficial. Debe definirse un punto central representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "waterfront",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

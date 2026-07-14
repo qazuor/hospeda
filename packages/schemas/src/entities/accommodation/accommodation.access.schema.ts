@@ -70,6 +70,16 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     extraInfo: true
 }).extend({
     /**
+     * Slug — relaxed on the read side so accommodations whose slug was
+     * generated before the BETA-172 truncation fix (onboarding drafts with a
+     * long imported name) can still be fetched without tripping the write
+     * schema's `max(50)` constraint. See SPEC-143 Finding #9: read schemas
+     * must tolerate what the DB legitimately contains; the write path is
+     * where the max(50) gate is meaningful (and where the root-cause fix —
+     * truncating at generation time — lives).
+     */
+    slug: z.string().max(120, { message: 'zodError.accommodation.slug.max' }),
+    /**
      * Rich-text (markdown) variant of the description for entitled hosts.
      * Must survive serialization so the web client can switch between rich
      * and plain rendering (FR-3b / FR-4 in SPEC-187). The entitlement-by-omission
@@ -228,6 +238,16 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     updatedAt: true
 }).extend({
     /**
+     * Slug — relaxed on the read side so accommodations whose slug was
+     * generated before the BETA-172 truncation fix (onboarding drafts with a
+     * long imported name) can still be fetched without tripping the write
+     * schema's `max(50)` constraint. See SPEC-143 Finding #9: read schemas
+     * must tolerate what the DB legitimately contains; the write path is
+     * where the max(50) gate is meaningful (and where the root-cause fix —
+     * truncating at generation time — lives).
+     */
+    slug: z.string().max(120, { message: 'zodError.accommodation.slug.max' }),
+    /**
      * Description — relaxed on the read side so DRAFT accommodations with
      * short descriptions (legacy data, or drafts created via the onboarding
      * "publicar" flow where description is initially placeholder-filled) can
@@ -266,6 +286,15 @@ export type AccommodationProtected = z.infer<typeof AccommodationProtectedSchema
  * This is essentially the full schema.
  */
 export const AccommodationAdminSchema = AccommodationSchema.extend({
+    /**
+     * Slug — relaxed on the read side so accommodations whose slug was
+     * generated before the BETA-172 truncation fix (onboarding drafts with a
+     * long imported name) can still be fetched by the admin panel without
+     * tripping the write schema's `max(50)` constraint. See SPEC-143
+     * Finding #9: read schemas must tolerate what the DB legitimately
+     * contains; the write path is where the max(50) gate is meaningful.
+     */
+    slug: z.string().max(120, { message: 'zodError.accommodation.slug.max' }),
     /**
      * Description — relaxed on the read side so DRAFT accommodations with
      * short descriptions (legacy data, or drafts created via the onboarding

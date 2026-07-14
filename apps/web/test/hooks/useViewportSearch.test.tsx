@@ -89,6 +89,39 @@ describe('useViewportSearch', () => {
         await waitFor(() => expect(result.current.items.map((i) => i.id)).toEqual(['b', 'c']));
     });
 
+    it('forwards extraParams (active filters) alongside the bbox on every refetch (BETA-166)', async () => {
+        // Regression: the map view refetches on every moveend/zoomend
+        // (including the initial FitBoundsOnce mount), and previously sent
+        // ONLY the bbox + pageSize — silently dropping the active listing
+        // filters (types, minGuests, etc.) a few hundred ms after load.
+        accommodationsListMock.mockReset();
+        transformMock.mockReset();
+        accommodationsListMock.mockResolvedValue({
+            ok: true,
+            data: { items: [] }
+        });
+
+        const extraParams = { types: 'CABIN', minGuests: 4 };
+        const { result } = renderHook(() =>
+            useViewportSearch({ initialItems, debounceMs: 10, extraParams })
+        );
+
+        act(() => {
+            result.current.onBoundsChange(bbox);
+        });
+
+        await waitFor(() => expect(accommodationsListMock).toHaveBeenCalledTimes(1));
+        const callArgs = accommodationsListMock.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(callArgs).toMatchObject({
+            types: 'CABIN',
+            minGuests: 4,
+            bboxNorth: 0,
+            bboxSouth: -1,
+            bboxEast: 1,
+            bboxWest: -1
+        });
+    });
+
     it('keeps current items when API returns ok=false', async () => {
         accommodationsListMock.mockReset();
         transformMock.mockReset();

@@ -1,0 +1,58 @@
+{
+    "slug": "tren_historico",
+    "lat": -32.160054099999996,
+    "long": -58.414089000000004,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Paseo turístico ferroviario que parte desde la estación y recorre la campiña entrerriana utilizando material y elementos vinculados con la historia del ferrocarril.",
+    "nameI18n": {
+        "es": "Tren Histórico de Villa Elisa",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paseo turístico ferroviario que parte desde la estación y recorre la campiña entrerriana utilizando material y elementos vinculados con la historia del ferrocarril.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Estación Ferroviaria, Centenario 2200, Villa Elisa, Entre Ríos",
+    "keywords": [
+        "tren historico",
+        "paseo en tren",
+        "ferrocarril",
+        "campiña entrerriana",
+        "familia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://villaelisa.gov.ar/evento/tren-historico/2026-04-02/; https://villaelisa.gov.ar/local/estacion-ferroviaria-villa-elisa/",
+    "notes": "Actividad vigente en 2026 y punto de partida confirmados. Comparte ubicación general con la estación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

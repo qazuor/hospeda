@@ -1,0 +1,46 @@
+{
+    "slug": "federacion_terminal_omnibus",
+    "lat": -30.98119,
+    "long": -57.92373,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Principal terminal terrestre de pasajeros, con conexiones regionales y nacionales.",
+    "nameI18n": {
+        "es": "Terminal de Ómnibus de Federación",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Principal terminal terrestre de pasajeros, con conexiones regionales y nacionales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Federación, Entre Ríos",
+    "keywords": [
+        "terminal federacion",
+        "terminal de omnibus",
+        "colectivos",
+        "micros",
+        "transporte"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W294603462; https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "transport",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

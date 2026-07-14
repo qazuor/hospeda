@@ -1,0 +1,54 @@
+{
+    "slug": "capilla_la_concepcion",
+    "lat": -32.4851849,
+    "long": -58.2320232,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sitio histórico y religioso relacionado con los antiguos cementerios y con los primeros habitantes de la ciudad.",
+    "nameI18n": {
+        "es": "Capilla La Concepción y Monumento a los Primeros Pobladores",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sitio histórico y religioso relacionado con los antiguos cementerios y con los primeros habitantes de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "capilla la concepcion",
+        "primeros pobladores",
+        "cementerio viejo",
+        "historia",
+        "monumento"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/concepcion-del-uruguay-tendra-su-noche-de-los-museos",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

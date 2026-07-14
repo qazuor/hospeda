@@ -1,0 +1,59 @@
+{
+    "slug": "la_angelica",
+    "lat": -31.263435700000002,
+    "long": -57.99161839999999,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Establecimiento rural histórico con experiencias de día de campo, gastronomía, granja educativa, senderismo, cabalgatas y observación de aves.",
+    "nameI18n": {
+        "es": "Establecimiento La Angélica",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Establecimiento rural histórico con experiencias de día de campo, gastronomía, granja educativa, senderismo, cabalgatas y observación de aves.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de Concordia, Entre Ríos",
+    "keywords": [
+        "la angelica concordia",
+        "dia de campo",
+        "granja educativa",
+        "cabalgatas",
+        "senderismo",
+        "aves"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/node/11943; https://www.concordia.gob.ar/turismo/agenda/d%C3%ADa-de-campo-en-la-ang%C3%A9lica-15",
+    "notes": "Actividad y propuesta actual confirmadas. Falta dirección exacta y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        }
+    ]
+}

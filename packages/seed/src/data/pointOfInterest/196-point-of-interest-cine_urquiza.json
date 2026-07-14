@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "196-point-of-interest-cine_urquiza",
+    "slug": "cine_urquiza",
+    "lat": -32.2125617,
+    "long": -58.21792800000001,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sala cinematográfica y punto cultural del centro urbano, vinculada con la oferta recreativa y patrimonial de San José.",
+    "nameI18n": {
+        "es": "Cine Urquiza",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sala cinematográfica y punto cultural del centro urbano, vinculada con la oferta recreativa y patrimonial de San José.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de San José, Entre Ríos",
+    "keywords": ["cine urquiza", "cine", "peliculas", "cultura", "entretenimiento"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N2482952274",
+    "notes": "Existencia cartográfica confirmada; falta validar estado operativo, dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "entertainment",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "theater",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "slug": "club_santa_rosa",
+    "lat": -32.20486,
+    "long": -58.21862,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Institución deportiva con estadio, utilizada para entrenamientos, competencias y actividades sociales de la comunidad.",
+    "nameI18n": {
+        "es": "Club Santa Rosa",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Institución deportiva con estadio, utilizada para entrenamientos, competencias y actividades sociales de la comunidad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San José, Entre Ríos",
+    "keywords": [
+        "club santa rosa",
+        "estadio",
+        "futbol",
+        "deportes",
+        "san jose"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W321217449",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

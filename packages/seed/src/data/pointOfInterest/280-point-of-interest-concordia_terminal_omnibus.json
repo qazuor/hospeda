@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "280-point-of-interest-concordia_terminal_omnibus",
+    "slug": "concordia_terminal_omnibus",
+    "lat": -31.38495,
+    "long": -58.01242,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Principal terminal de transporte terrestre de pasajeros, con servicios regionales y nacionales y un mural cerámico patrimonial.",
+    "nameI18n": {
+        "es": "Terminal de Ómnibus Hipólito Yrigoyen",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Principal terminal de transporte terrestre de pasajeros, con servicios regionales y nacionales y un mural cerámico patrimonial.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Gerardo Yoya 77, Concordia, Entre Ríos",
+    "keywords": [
+        "terminal concordia",
+        "terminal hipolito yrigoyen",
+        "micros",
+        "colectivos",
+        "mural carnaval"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/node/12309; https://mapcarta.com/es/W526915283",
+    "notes": "Dirección y coordenadas contrastadas; el mural de la terminal está protegido por ordenanza patrimonial.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "transport",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        }
+    ]
+}

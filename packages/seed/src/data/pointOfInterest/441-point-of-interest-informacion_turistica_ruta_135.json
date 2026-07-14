@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "441-point-of-interest-informacion_turistica_ruta_135",
+    "slug": "informacion_turistica_ruta_135",
+    "lat": -32.2157078,
+    "long": -58.13650620000001,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Punto de orientación para visitantes ubicado en el acceso oeste de Colón, cercano a la bodega y al velódromo.",
+    "nameI18n": {
+        "es": "Puesto de Información Turística de Ruta 135",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Punto de orientación para visitantes ubicado en el acceso oeste de Colón, cercano a la bodega y al velódromo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ruta Nacional 135, acceso a Colón, Entre Ríos",
+    "keywords": ["informacion turistica", "ruta 135", "acceso colon", "turismo", "mapas"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W904795075",
+    "notes": "La oficina aparece cartografiada como Información Turística. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "services",
+            "isPrimary": true
+        },
+        {
+            "slug": "government",
+            "isPrimary": false
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        }
+    ]
+}

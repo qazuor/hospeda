@@ -1,0 +1,54 @@
+{
+    "slug": "barrio_chalets",
+    "lat": -32.1583183,
+    "long": -58.1976352,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sector residencial originalmente destinado al personal jerárquico, con viviendas amplias, jardines, galerías y un trazado de marcada influencia británica.",
+    "nameI18n": {
+        "es": "Barrio de los Chalets",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sector residencial originalmente destinado al personal jerárquico, con viviendas amplias, jardines, galerías y un trazado de marcada influencia británica.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Casco histórico de Pueblo Liebig, Entre Ríos",
+    "keywords": [
+        "barrio chalets",
+        "barrio ingles",
+        "personal jerarquico",
+        "arquitectura britanica",
+        "jardines"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/capital-humano/cultura/monumentos/pueblo-liebig; https://www.entrerios.tur.ar/localidades-1/pueblo-liebig",
+    "notes": "Conjunto patrimonial confirmado. Falta delimitar el punto central del recorrido. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

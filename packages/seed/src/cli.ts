@@ -415,6 +415,7 @@ if (IS_CLI_ENTRY) {
         required: args.includes('--required'),
         example: args.includes('--example'),
         testUsers: args.includes('--test-users'),
+        pointOfInterestCatalog: args.includes('--poi-catalog'),
         reset: args.includes('--reset'),
         migrate: args.includes('--migrate'),
         rollbackOnError: args.includes('--rollbackOnError'),

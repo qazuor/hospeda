@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "153-point-of-interest-casino_colon",
+    "slug": "casino_colon",
+    "lat": -32.2209511,
+    "long": -58.136291799999995,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio de entretenimiento nocturno situado en la zona costera y próximo al corredor turístico central y a Piedras Coloradas.",
+    "nameI18n": {
+        "es": "Casino Colón",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio de entretenimiento nocturno situado en la zona costera y próximo al corredor turístico central y a Piedras Coloradas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona costera de Colón, Entre Ríos",
+    "keywords": ["casino colon", "casino", "entretenimiento", "vida nocturna", "juegos"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.colonturismo.tur.ar/directorio/camping-club-piedras-coloradas/",
+    "notes": "La cercanía y funcionamiento del casino se mencionan en el directorio oficial. Falta confirmar denominación comercial, domicilio y coordenadas actuales. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "casino",
+            "isPrimary": true
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "nightlife",
+            "isPrimary": false
+        }
+    ]
+}

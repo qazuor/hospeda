@@ -1,0 +1,50 @@
+{
+    "slug": "antigua_estacion_ferrocarril",
+    "lat": -32.1392634,
+    "long": -58.266468399999994,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Estación ferroviaria histórica del ramal Concordia–Concepción del Uruguay, vinculada con el transporte regional y el desarrollo del pueblo industrial.",
+    "nameI18n": {
+        "es": "Antigua Estación Liebig",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Estación ferroviaria histórica del ramal Concordia–Concepción del Uruguay, vinculada con el transporte regional y el desarrollo del pueblo industrial.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Pueblo Liebig, Entre Ríos",
+    "keywords": [
+        "estacion liebig",
+        "ferrocarril",
+        "tren",
+        "ramal concordia concepcion",
+        "patrimonio ferroviario"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://es.wikipedia.org/wiki/Estaci%C3%B3n_Liebig",
+    "notes": "Existencia histórica confirmada. Falta verificar estado actual, acceso y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "concordia_centro_convenciones",
+    "lat": -31.38368,
+    "long": -58.01792,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Centro de reuniones y eventos con capacidad para congresos, exposiciones, ferias y encuentros de alcance regional y nacional.",
+    "nameI18n": {
+        "es": "Centro de Convenciones Concordia",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Centro de reuniones y eventos con capacidad para congresos, exposiciones, ferias y encuentros de alcance regional y nacional.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Boulevard San Lorenzo Oeste 150, Concordia, Entre Ríos",
+    "keywords": [
+        "centro de convenciones concordia",
+        "congresos",
+        "eventos",
+        "ferias",
+        "turismo de reuniones"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://www.concordia.gob.ar/turismo/centro-de-convenciones; https://mapcarta.com/es/W622178553",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        },
+        {
+            "slug": "fair",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "041-point-of-interest-arroyo_nancay",
+    "slug": "arroyo_nancay",
+    "lat": -33.3935695,
+    "long": -58.7272261,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Curso de agua y corredor natural rodeado por humedales, montes y caminos rurales utilizados para observación de aves.",
+    "nameI18n": {
+        "es": "Arroyo Ñancay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Curso de agua y corredor natural rodeado por humedales, montes y caminos rurales utilizados para observación de aves.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural al noreste de Ceibas, Entre Ríos",
+    "keywords": ["arroyo ñancay", "humedales", "caminos rurales", "aves", "monte nativo"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.lanacion.com.ar/revista-lugares/meca-internacional-el-pueblo-que-convoca-gente-del-mundo-entero-para-ver-y-fotografiar-aves-nid03082025/",
+    "notes": "Curso de agua; requiere geometría lineal y puntos de acceso seguros. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

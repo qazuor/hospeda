@@ -1,0 +1,50 @@
+{
+    "slug": "ceibas_centro_integrador_comunitario",
+    "lat": -33.5009586,
+    "long": -58.8057645,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio comunitario destinado a actividades sociales, atención y programas de integración local.",
+    "nameI18n": {
+        "es": "Centro Integrador Comunitario",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio comunitario destinado a actividades sociales, atención y programas de integración local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ceibas, Entre Ríos",
+    "keywords": [
+        "centro integrador comunitario",
+        "cic ceibas",
+        "comunidad",
+        "programas sociales",
+        "atencion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N11132368105",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "community_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

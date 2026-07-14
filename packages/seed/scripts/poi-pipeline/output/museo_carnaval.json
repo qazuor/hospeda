@@ -1,0 +1,54 @@
+{
+    "slug": "museo_carnaval",
+    "lat": -33.0192278,
+    "long": -58.521626999999995,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo dedicado a la historia de las comparsas, los talleres, las carrozas, la música y la identidad carnavalera.",
+    "nameI18n": {
+        "es": "Museo del Carnaval",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo dedicado a la historia de las comparsas, los talleres, las carrozas, la música y la identidad carnavalera.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Estrada y Rocamora, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "museo del carnaval",
+        "comparsa",
+        "carrozas",
+        "batucada",
+        "estrada y rocamora"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/cultura; https://www.entrerios.tur.ar/localidades-1/gualeguaych%C3%BA",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

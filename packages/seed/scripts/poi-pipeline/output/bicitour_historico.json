@@ -1,0 +1,54 @@
+{
+    "slug": "bicitour_historico",
+    "lat": -32.301356399999996,
+    "long": -59.1389941,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido autoguiado en bicicleta que conecta patrimonio, plazas, edificios históricos y espacios culturales.",
+    "nameI18n": {
+        "es": "Bicitour Histórico de Rosario del Tala",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido autoguiado en bicicleta que conecta patrimonio, plazas, edificios históricos y espacios culturales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Casco urbano de Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "bicitour rosario del tala",
+        "cicloturismo",
+        "patrimonio",
+        "circuito historico",
+        "bicicleta"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=que-hacer; https://www.rosariodeltala.gob.ar/?q=areas-noticias%2Fturismo",
+    "notes": "Circuito oficial confirmado. Falta digitalizar trazado y paradas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

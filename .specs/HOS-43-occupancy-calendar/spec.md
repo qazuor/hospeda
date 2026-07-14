@@ -231,8 +231,8 @@ evita que el sync pise ocupaciones MANUAL (solo agrega/borra las suyas por `exte
 | T-272-12 | Google OAuth **separado** (calendar.readonly) + connect/callback + token storage | 2 | **POTENTE** |
 | T-272-13 | Google Calendar sync service (incremental syncToken) + cron `calendar-sync-google` | 2 | **POTENTE** |
 | T-272-14 | Web: Google connect/disconnect UI (gate `CAN_SYNC_EXTERNAL_CALENDAR`) | 2 | BÁSICO |
-| T-272-15 | iCal parser (lib nueva `node-ical`/`ical.js`) + adapter Airbnb/Booking | 3 | **POTENTE** |
-| T-272-16 | iCal sync service + cron `calendar-sync-ical` + Web connect UI | 3 | **POTENTE** |
+| T-272-15 | iCal parser (`node-ical`, decidido §14.2) + adapter Airbnb/Booking/Otro + enum `OTHER` | 3 | **POTENTE** |
+| T-272-16 | iCal sync service (reusa `replaceFutureSyncOccupancy`) + cron `calendar-sync-ical` + panel multi-conexión (§14) | 3 | **POTENTE** |
 | T-272-17 | Tests: sync services + cron + timezone (iCal UTC → date AR) | 2+3 | **POTENTE** |
 
 ### 12. Acceptance Criteria
@@ -270,6 +270,80 @@ evita que el sync pise ocupaciones MANUAL (solo agrega/borra las suyas por `exte
 | Timezone (iCal UTC, host -03) | Normalizar a `date` sin hora; documentar; test de borde medianoche. |
 | OAuth token expiry (Phase 2) | Refresh token flow + re-auth prompt; tokens encriptados. |
 | Tipo `date` nuevo en el codebase | Drizzle lo soporta nativo; documentar la convención para futuras fechas-sin-hora. |
+
+### 14. Phase 3 detailed design — iCal import (HOS-162)
+
+> Tracking: **HOS-162** (hijo de HOS-43, hermano de HOS-157). Refinado 2026-07-14 con
+> 2 decisiones owner. **Secuencia:** la implementación arranca **después** de que Phase 1
+> (HOS-43) y Phase 2 (HOS-157) mergeen a `staging`; Phase 3 se apoya (stacked) sobre
+> Phase 2 porque reusa su tabla, su reconcile y su panel. Fase 1 = solo esta spec, sin
+> worktree.
+
+Phase 3 importa (solo lectura, **nunca escribe** a la plataforma origen) los calendarios
+de reservas externos vía **iCal** hacia la misma tabla `accommodation_occupancy`, con
+`source` propio por plataforma.
+
+#### 14.1 Proveedores y alcance (decisión owner)
+
+- **Airbnb + Booking (con nombre) + un genérico "otro iCal"** para cualquier plataforma
+  (VRBO, Expedia, PMS propio, etc.).
+- Requiere **agregar `OTHER` a `occupancy_source_enum`** (`ALTER TYPE ADD VALUE`,
+  precedente `0029`). Se llama `OTHER` y no `ICAL` porque Airbnb/Booking **también** son
+  iCal — `OTHER` = "otra plataforma vía iCal".
+- El genérico "otro" = **un solo feed por alojamiento en v1** (mantiene el
+  `UNIQUE(accommodation_id, provider)` intacto, sin columna de label). N feeds genéricos
+  simultáneos (VRBO + Expedia + PMS a la vez) quedan **diferidos** — abrir un follow-up si
+  se pide (necesitaría relajar el unique + una columna de label).
+
+#### 14.2 Parser (decisión owner)
+
+- Librería **`node-ical`** (dependencia nueva; sign-off final al implementar). Los feeds de
+  Airbnb/Booking son bloques `VEVENT` simples con `DTSTART`/`DTEND` all-day (`VALUE=DATE`),
+  una reserva = un evento, sin `RRULE` complejo — `ical.js`/RFC5545 completo es overkill.
+- `VEVENT` → rango **half-open `[start, end)`**: `DTEND` es **exclusivo**, así que el día
+  de check-out queda libre — **exactamente la misma semántica que Phase 2** (all-day
+  `end.date` exclusivo).
+
+#### 14.3 Reconcile y storage (reusa Phase 2, sin migración de datos)
+
+- **Reconcile:** reusa `AccommodationOccupancyModel.replaceFutureSyncOccupancy`
+  **verbatim** — ya es `source`-scoped (un DELETE + batch INSERT por source, sin tocar
+  MANUAL ni las demás sources). Phase 2 (judgment-day, commit `30f9d861b`) **descartó el
+  syncToken incremental** a favor de fetch de ventana completa cada 6h; el iCal **es feed
+  completo por naturaleza**, así que encaja sin cambios.
+- **Storage:** reusa las columnas encriptadas ya existentes en
+  `accommodation_calendar_sync`. La URL iCal privada de Airbnb/Booking **es un secreto de
+  capacidad** (cualquiera con la URL ve el calendario de reservas) → se encripta en
+  `access_token_ciphertext`/`_iv`/`_auth_tag`. `refresh_token_*` y `sync_token` quedan
+  `null`; `provider` = `AIRBNB` / `BOOKING` / `OTHER`. **Sin migración de storage** — el
+  único cambio de DB es el valor `OTHER` del enum.
+
+#### 14.4 Ruta, cron y gate
+
+- `POST .../calendar/connect-ical` (ya listada en §6): valida/prueba el feed al conectar
+  (fetch + parse de sanity), guarda la URL encriptada, marca `lastSyncStatus=PENDING`.
+  Gate: `CAN_SYNC_EXTERNAL_CALENDAR` + ownership inline + `ACCOMMODATION_OCCUPANCY_MANAGE`
+  (mismo modelo que connect-google). Filas nuevas en `endpoint-gate-matrix`.
+- Cron `calendar-sync-ical` `0 */6 * * *` (§10, patrón de 3 pasos R9).
+- Timezone: iCal (UTC o all-day) → `date` AR; **test de borde de medianoche** obligatorio.
+- Feed roto/expirado → `lastSyncStatus=ERROR` + `lastErrorMessage` + **notificación al
+  host** (paquete `@repo/notifications`), sin tumbar el cron para los demás.
+
+#### 14.5 Web — refactor del panel (Google-only → multi-conexión)
+
+`CalendarSyncPanel` hoy asume **un** proveedor (Google OAuth: connect/status/sync/disconnect).
+Phase 3 lo convierte en **multi-conexión**: una fila Google (botón OAuth) + filas Airbnb /
+Booking / Otro (input de URL `.ics` + connect/disconnect/sync por proveedor). Es un
+refactor de UI real, no un add-on trivial — dimensionarlo como tal en la atomización.
+
+#### 14.6 Dependencia de entorno heredada (HOS-43)
+
+Phase 3 gatea con `ACCOMMODATION_OCCUPANCY_MANAGE`, igual que Phase 1/2. Ese permiso se
+otorga **solo en el baseline** `rolePermissions.seed.ts` y **no tiene data-migration**, así
+que en DBs vivas ya seedeadas (staging/prod) el HOST no lo tiene → 403. Es un gap de
+**HOS-43** (Phase 1), no de Phase 3, pero **bloquea** el connect-ical igual que bloquea el
+connect-google: debe resolverse en HOS-43 con una seed data-migration antes de que
+cualquier fase de sync externo funcione en prod.
 
 ---
 

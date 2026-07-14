@@ -1,0 +1,54 @@
+{
+    "slug": "capilla_central_metodista",
+    "lat": -32.33932,
+    "long": -59.18808,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Capilla histórica vinculada con las primeras familias valdenses y metodistas de la zona rural.",
+    "nameI18n": {
+        "es": "Templo Capilla Central Metodista",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Capilla histórica vinculada con las primeras familias valdenses y metodistas de la zona rural.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ejido rural de Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "capilla central metodista",
+        "valdenses",
+        "1919",
+        "iglesia rural",
+        "patrimonio religioso"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://mapcarta.com/es/W361716098",
+    "notes": "Historia confirmada por el municipio; coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

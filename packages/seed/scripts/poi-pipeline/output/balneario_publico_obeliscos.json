@@ -1,0 +1,54 @@
+{
+    "slug": "balneario_publico_obeliscos",
+    "lat": -33.011127,
+    "long": -58.5050914,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Playa pública urbana ubicada en el paseo de la Costanera, cercana a los puestos de información turística.",
+    "nameI18n": {
+        "es": "Balneario Público Costanera Obeliscos",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Playa pública urbana ubicada en el paseo de la Costanera, cercana a los puestos de información turística.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Costanera y Obeliscos, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "balneario publico",
+        "costanera obeliscos",
+        "playa urbana",
+        "rio",
+        "turismo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/playas",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

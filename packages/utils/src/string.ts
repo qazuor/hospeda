@@ -73,32 +73,66 @@ export function toSlug(str: string, options?: SlugifyOptions): string {
 }
 
 /**
+ * Truncates a slug down to `maxLength` characters, then strips any trailing
+ * hyphen left dangling by the cut (e.g. `'foo-bar-'` -> `'foo-bar'`) so the
+ * result never ends in a stray separator.
+ *
+ * @param slug - Slug to truncate.
+ * @param maxLength - Maximum allowed length. Values <= 0 yield an empty string.
+ * @returns The truncated slug, without a trailing hyphen.
+ */
+function truncateSlugToMaxLength(slug: string, maxLength: number): string {
+    if (maxLength <= 0) return '';
+    if (slug.length <= maxLength) return slug;
+    return slug.slice(0, maxLength).replace(/-+$/, '');
+}
+
+/**
  * Generates a unique slug from a string by checking for its existence.
  * If the initial slug exists, it appends a numeric suffix until a unique slug is found.
  *
  * @param initialString - The string to be converted into a slug.
  * @param checkExists - An async function that takes a slug string and returns `true` if it exists, `false` otherwise.
+ * @param maxLength - Optional maximum length for the resulting slug. When provided, the
+ * returned slug (including any `-N` uniqueness suffix) never exceeds this length, and any
+ * trailing hyphen left by truncation is stripped. When omitted, behavior is unchanged
+ * (no length limit is applied) — this keeps the function backward-compatible for every
+ * existing caller that does not pass it.
  * @returns A promise that resolves to a unique slug string.
  * @example
  * const uniqueSlug = await createUniqueSlug('My Post', async (slug) => {
  *   return !!(await db.post.findUnique({ where: { slug } }));
  * });
+ * @example
+ * // Cap the result at 50 chars (e.g. to match a DB column's max length constraint)
+ * const uniqueSlug = await createUniqueSlug(
+ *   'A Very Long Accommodation Name That Exceeds The Column Limit',
+ *   async (slug) => !!(await db.accommodation.findUnique({ where: { slug } })),
+ *   50
+ * );
  */
 export async function createUniqueSlug(
     initialString: string,
-    checkExists: (slug: string) => Promise<boolean>
+    checkExists: (slug: string) => Promise<boolean>,
+    maxLength?: number
 ): Promise<string> {
     if (!initialString) {
         // Return a random string or handle as an error, depending on requirements
         return randomString(12);
     }
 
-    const baseSlug = toSlug(initialString);
+    const rawSlug = toSlug(initialString);
+    const baseSlug =
+        maxLength === undefined ? rawSlug : truncateSlugToMaxLength(rawSlug, maxLength);
     let potentialSlug = baseSlug;
     let counter = 2;
 
     while (await checkExists(potentialSlug)) {
-        potentialSlug = `${baseSlug}-${counter}`;
+        const suffix = `-${counter}`;
+        potentialSlug =
+            maxLength === undefined
+                ? `${baseSlug}${suffix}`
+                : `${truncateSlugToMaxLength(baseSlug, maxLength - suffix.length)}${suffix}`;
         counter++;
     }
 

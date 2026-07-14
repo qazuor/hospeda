@@ -1,0 +1,59 @@
+{
+    "slug": "parque_quiros",
+    "lat": -32.22623,
+    "long": -58.13261,
+    "type": "PARK",
+    "icon": null,
+    "description": "Gran parque urbano sobre una barranca con vistas al río Uruguay, senderos, áreas deportivas, juegos, piscinas y espacios familiares.",
+    "nameI18n": {
+        "es": "Parque Dr. Herminio J. Quirós",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Gran parque urbano sobre una barranca con vistas al río Uruguay, senderos, áreas deportivas, juegos, piscinas y espacios familiares.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Gobernador Quirós y Andrade, Colón, Entre Ríos",
+    "keywords": [
+        "parque quiros",
+        "herminio quiros",
+        "mirador",
+        "deportes",
+        "familia",
+        "rio uruguay"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W209285868",
+    "notes": "Coordenadas contrastadas con OpenStreetMap mediante Mapcarta.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

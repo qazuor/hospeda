@@ -1,0 +1,50 @@
+{
+    "slug": "molino_harinero_malarin",
+    "lat": -31.6130873,
+    "long": -58.49173669999999,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Estructuras del molino construido en 1929 por el coronel Malarín, considerado el inicio de la cultura industrial de San Salvador.",
+    "nameI18n": {
+        "es": "Antiguo Molino Harinero Malarín",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Estructuras del molino construido en 1929 por el coronel Malarín, considerado el inicio de la cultura industrial de San Salvador.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Conjunto de la Casa del Fundador, San Salvador, Entre Ríos",
+    "keywords": [
+        "molino harinero malarin",
+        "industria",
+        "1929",
+        "casa del fundador",
+        "patrimonio industrial"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/",
+    "notes": "Historia y relación con la Casa del Fundador confirmadas. Falta geocodificar y documentar accesibilidad. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

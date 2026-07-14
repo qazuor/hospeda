@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "673-point-of-interest-playa_sur",
+    "slug": "playa_sur",
+    "lat": -30.99665,
+    "long": -57.91484,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Playa municipal ubicada al sur del puerto, con acceso al lago Salto Grande y entorno de paseo costero.",
+    "nameI18n": {
+        "es": "Playa Sur",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Playa municipal ubicada al sur del puerto, con acceso al lago Salto Grande y entorno de paseo costero.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Costanera Sur, Federación, Entre Ríos",
+    "keywords": [
+        "playa sur federacion",
+        "costanera sur",
+        "lago salto grande",
+        "playa municipal",
+        "verano"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/nuestras-playas/; https://mapcarta.com/es/W1245062864",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

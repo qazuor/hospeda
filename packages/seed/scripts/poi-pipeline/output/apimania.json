@@ -1,0 +1,54 @@
+{
+    "slug": "apimania",
+    "lat": -31.007468399999997,
+    "long": -57.899809700000006,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Emprendimiento apícola de la Antigua Ciudad con productos derivados de la miel y propuestas vinculadas con la producción local.",
+    "nameI18n": {
+        "es": "Apimanía",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Emprendimiento apícola de la Antigua Ciudad con productos derivados de la miel y propuestas vinculadas con la producción local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Antigua Ciudad de Federación, Entre Ríos",
+    "keywords": [
+        "apimania",
+        "miel",
+        "apicultura",
+        "productos regionales",
+        "antigua ciudad"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/otros-atractivos/",
+    "notes": "Actividad incluida en el circuito productivo oficial. Falta validar atención al público y geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "gastronomy",
+            "isPrimary": true
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

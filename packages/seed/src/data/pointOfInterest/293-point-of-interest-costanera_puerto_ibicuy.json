@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "293-point-of-interest-costanera_puerto_ibicuy",
+    "slug": "costanera_puerto_ibicuy",
+    "lat": -33.752561299999996,
+    "long": -59.1776751,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Paseo público junto al río que integra el muelle de transferencia, vistas portuarias y sectores para caminar y contemplar el atardecer.",
+    "nameI18n": {
+        "es": "Costanera de Puerto Ibicuy",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paseo público junto al río que integra el muelle de transferencia, vistas portuarias y sectores para caminar y contemplar el atardecer.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Puerto Ibicuy, Entre Ríos",
+    "keywords": [
+        "costanera puerto ibicuy",
+        "atardecer",
+        "rio ibicuy",
+        "muelle transferencia",
+        "paseo costero"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://ibicuy.gob.ar/?q=content%2Fque-visitar; https://www.entrerios.tur.ar/localidades-1/ibicuy",
+    "notes": "Paseo lineal. Conviene modelarlo como geometría y definir un acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "waterfront",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

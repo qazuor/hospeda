@@ -1,0 +1,46 @@
+{
+    "slug": "escuela_11_18_octubre",
+    "lat": -32.45608,
+    "long": -58.3853,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Escuela rural ubicada sobre la Ruta Provincial 24, al este de San Justo, y punto de referencia para el entorno productivo de la localidad.",
+    "nameI18n": {
+        "es": "Escuela N.º 11 18 de Octubre",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Escuela rural ubicada sobre la Ruta Provincial 24, al este de San Justo, y punto de referencia para el entorno productivo de la localidad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ruta Provincial 24, San Justo, Entre Ríos",
+    "keywords": [
+        "escuela 11",
+        "18 de octubre",
+        "escuela rural",
+        "ruta provincial 24",
+        "san justo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 10,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/N9066937279",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "education",
+            "isPrimary": true
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

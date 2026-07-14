@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
-import { I18nTextSchema, TranslationMetaSchema } from '../../common/i18n.schema.js';
+import { PartialI18nTextSchema, TranslationMetaSchema } from '../../common/i18n.schema.js';
 import { PointOfInterestIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { PointOfInterestTypeEnumSchema } from '../../enums/point-of-interest-type.schema.js';
@@ -91,10 +91,14 @@ export const PointOfInterestSchema = z.object({
         .max(500, { message: 'zodError.pointOfInterest.description.max' })
         .nullish(),
 
-    // HOS-138 / SPEC-212: I18nText multilang content. Mirrors `destinations`
-    // (destination.schema.ts:69-77). Nullish: DB columns are nullable jsonb.
-    nameI18n: I18nTextSchema.nullish(),
-    descriptionI18n: I18nTextSchema.nullish(),
+    // HOS-138 / SPEC-212: multilang content. Nullish: DB columns are nullable
+    // jsonb. HOS-142: uses PartialI18nTextSchema (NOT the shared I18nTextSchema
+    // `destinations` uses) — POIs come from a bulk, Spanish-sourced import
+    // (the 914-POI catalog) where `en`/`pt` are intentionally left `null`
+    // rather than invented at import time (NG-6); a future translation pass
+    // is a separate follow-up. `es` stays required either way.
+    nameI18n: PartialI18nTextSchema.nullish(),
+    descriptionI18n: PartialI18nTextSchema.nullish(),
 
     /**
      * Per-field, per-locale translation curation metadata (SPEC-212).
