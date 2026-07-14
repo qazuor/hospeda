@@ -5,6 +5,7 @@ import {
     eq,
     gte,
     ilike,
+    inArray,
     isNull,
     lte,
     or,
@@ -84,6 +85,22 @@ export function safeIlike(column: PgColumn, term: string): SQL {
  */
 
 /**
+ * Determines whether a Drizzle column is a native array-typed column
+ * (e.g. `text('tags').array()`), as opposed to a scalar column that
+ * happens to receive an array of candidate values for an `IN` filter.
+ *
+ * Drizzle sets `dataType: 'array'` on `PgArray` columns (see `PgArrayBuilder`
+ * in `drizzle-orm/pg-core`). Scalar columns (`uuid`, `varchar`, `integer`, etc.)
+ * always have a different `dataType` (`'string'`, `'number'`, `'uuid'`, ...).
+ *
+ * @param column - Drizzle column reference
+ * @returns `true` if the column itself stores an array value (e.g. `text[]`)
+ */
+function isArrayColumn(column: PgColumn): boolean {
+    return column.dataType === 'array';
+}
+
+/**
  * Builds a WHERE clause for Drizzle ORM from a plain object.
  *
  * Supports:
@@ -92,6 +109,9 @@ export function safeIlike(column: PgColumn, term: string): SQL {
  * - Case-insensitive search: `{ column_like: 'text' }` -> `WHERE column ILIKE '%text%'`
  * - Greater than or equal: `{ column_gte: value }` -> `WHERE column >= value`
  * - Less than or equal: `{ column_lte: value }` -> `WHERE column <= value`
+ * - Membership: `{ column: [v1, v2] }` -> `WHERE column IN (v1, v2)`, but ONLY when
+ *   `column` is a scalar column. Native array-typed columns (e.g. `text[]`) keep the
+ *   existing `eq()` full-array equality comparison instead of switching to `IN`.
  *
  * @param where - Filter object with key-value pairs
  * @param table - Drizzle table schema object
@@ -154,6 +174,20 @@ export function buildWhereClause(where: Record<string, unknown>, table: Table): 
                         { key, value },
                         `buildWhereClause: value for key "${key}" is a plain object. Use ilike()/eq() directly via additionalConditions instead of passing objects in the where clause.`
                     );
+                }
+                if (Array.isArray(value)) {
+                    const scalarColumn = column as PgColumn;
+                    if (!isArrayColumn(scalarColumn)) {
+                        // Scalar column + array value: this is a membership filter
+                        // (e.g. `{ id: [uuid, uuid] }`), NOT an equality comparison.
+                        // `eq(scalarColumn, array)` would emit invalid SQL against
+                        // Postgres (e.g. `uuid = uuid[]`).
+                        return inArray(scalarColumn, value);
+                    }
+                    // Array-typed column (e.g. `text[]`): fall through to eq() below,
+                    // which performs full-array equality comparison. This is the
+                    // correct, unchanged behavior for columns like
+                    // `applicableVerticals text[]`.
                 }
                 return eq(column, value);
             }
