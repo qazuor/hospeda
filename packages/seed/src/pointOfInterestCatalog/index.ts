@@ -3,6 +3,7 @@ import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
 import { seedPointOfInterestCatalogCategories } from './pointOfInterestCatalogCategories.js';
+import { seedPointOfInterestCatalogRelations } from './pointOfInterestCatalogRelations.js';
 import { seedPointOfInterestCatalog } from './pointsOfInterestCatalog.seed.js';
 
 /**
@@ -22,14 +23,21 @@ import { seedPointOfInterestCatalog } from './pointsOfInterestCatalog.seed.js';
  * already seeded the category catalog and the destinations these POIs
  * relate to.
  *
- * Two steps, in order: (1) create the 914 POI rows, (2) assign each
- * fixture's own `categories[]` (HOS-139 M2M) to its now-existing POI —
- * mirroring the `--required` group's own two-step shape for the original 12
- * (`pointsOfInterest.seed.ts` then `poiCategoryBackfill.seed.ts`).
- * Destination↔POI RELATIONS are NOT seeded here — per HOS-142 spec §6.3
- * point 3, that is Phase 2's `0010-*.ts` dual-write data-migration's
- * responsibility (a new relation-sourcing mechanism, `destination-relations.json`,
- * not yet wired into any seed-time step).
+ * Three steps, in order: (1) create the 908 POI rows, (2) wire each POI's
+ * destination relations (HOS-140 `relation: PRIMARY|NEARBY`) from HOS-141's
+ * `destination-relations.json` pipeline output, (3) assign each fixture's
+ * own `categories[]` (HOS-139 M2M) to its now-existing POI — mirroring the
+ * `--required` group's own multi-step shape for the original 12
+ * (`pointsOfInterest.seed.ts`, `destinations.seed.ts`'s relation builder,
+ * then `poiCategoryBackfill.seed.ts`). Step 2 needs step 1's POIs to
+ * already exist (relations resolve `poiSlug` to a DB id) — see
+ * `pointOfInterestCatalogRelations.ts`'s own JSDoc for the idempotency
+ * rules and the one known cross-environment conflict it documents. Step 2
+ * is the SAME relation-sourcing mechanism the `0013-hos-142-poi-catalog-expansion.ts`
+ * dual-write migration uses for already-seeded staging/prod DBs (both read
+ * the shared `utils/loadDestinationRelations.ts` loader), so a fresh
+ * `db:fresh-dev` and an already-seeded live env converge on identical
+ * relation counts (HOS-142 AC-2).
  *
  * @param context - Seed context with configuration and utilities
  * @returns Promise that resolves when the POI catalog seeding completes
@@ -41,6 +49,7 @@ export async function runPointOfInterestCatalogSeeds(context: SeedContext): Prom
 
     try {
         await seedPointOfInterestCatalog(context);
+        await seedPointOfInterestCatalogRelations();
         await seedPointOfInterestCatalogCategories(context);
 
         logger.success({ msg: `${STATUS_ICONS.Success} POI catalog load completed.` });
