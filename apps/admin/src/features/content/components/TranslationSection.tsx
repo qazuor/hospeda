@@ -23,7 +23,7 @@ import { type TranslationFieldState, TranslationStatus } from './TranslationStat
 // ---------------------------------------------------------------------------
 
 export interface TranslationSectionProps {
-    entityType: 'accommodation' | 'destination' | 'event' | 'post';
+    entityType: 'accommodation' | 'destination' | 'event' | 'post' | 'pointOfInterest';
     entityId: string;
     entity: Record<string, unknown>;
 }
@@ -36,7 +36,8 @@ const TRANSLATABLE_FIELDS: Record<string, string[]> = {
     accommodation: ['name', 'summary', 'description', 'richDescription'],
     destination: ['name', 'summary', 'description'],
     event: ['name', 'summary', 'description'],
-    post: ['title', 'summary', 'content']
+    post: ['title', 'summary', 'content'],
+    pointOfInterest: ['name', 'description']
 };
 
 // ---------------------------------------------------------------------------

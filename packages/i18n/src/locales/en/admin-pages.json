@@ -1299,6 +1299,63 @@
             "noLatestInvoice": "You don't have any invoices available to download yet."
         }
     },
+    "poiCategories": {
+        "title": "Associated categories",
+        "empty": "This point of interest doesn't have any categories assigned yet. Add one below.",
+        "fields": {
+            "categories": "Categories",
+            "primaryCategory": "Primary category"
+        },
+        "hints": {
+            "primaryRequired": "Choose a primary category before saving."
+        },
+        "actions": {
+            "save": "Save categories",
+            "saving": "Saving..."
+        },
+        "messages": {
+            "saved": "Categories saved successfully."
+        },
+        "errors": {
+            "loadFailed": "Could not load the assigned categories.",
+            "saveFailed": "Could not save the categories. Please try again."
+        }
+    },
+    "poiDestinations": {
+        "title": "Associated destinations",
+        "empty": "This point of interest isn't associated with any destination yet. Add one below.",
+        "fields": {
+            "destination": "Destination",
+            "destinationPlaceholder": "Search destination…",
+            "relation": "Relation"
+        },
+        "relation": {
+            "primary": "Primary",
+            "nearby": "Nearby"
+        },
+        "actions": {
+            "add": "Add destination",
+            "remove": "Remove {{name}}",
+            "changeRelation": "Change relation for {{name}}"
+        },
+        "messages": {
+            "added": "\"{{name}}\" added as {{relation}}.",
+            "relationUpdated": "Relation for \"{{name}}\" updated to {{relation}}.",
+            "removed": "\"{{name}}\" removed from associated destinations."
+        },
+        "errors": {
+            "loadFailed": "Could not load associated destinations.",
+            "addFailed": "Could not add the destination. Please try again.",
+            "updateFailed": "Could not update the relation. Please try again.",
+            "removeFailed": "Could not remove the destination. Please try again."
+        },
+        "confirmRemove": {
+            "title": "Remove destination?",
+            "message": "Are you sure you want to remove \"{{name}}\" from this point of interest's associated destinations?",
+            "cancel": "Cancel",
+            "confirm": "Remove"
+        }
+    },
     "faqs": {
         "title": "Frequently asked questions",
         "addTitle": "New frequently asked question",

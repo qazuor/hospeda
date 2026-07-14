@@ -181,14 +181,26 @@ describe('point-of-interest admin category routes (HOS-143 T-012)', () => {
     // GET /{id}/categories
     // -------------------------------------------------------------------
     describe('GET /{id}/categories', () => {
-        it('returns the categories assigned to the point of interest', async () => {
-            const categories = [{ id: CATEGORY_ID_1, slug: 'restaurant', displayWeight: 80 }];
+        it('returns the categories assigned to the point of interest, including isPrimary', async () => {
+            // HOS-144: the GET response must carry `isPrimary` per category,
+            // symmetric with what the PUT route already returns — the admin
+            // category-manager UI needs it to pre-select the primary category.
+            const categories = [
+                {
+                    id: CATEGORY_ID_1,
+                    slug: 'restaurant',
+                    nameI18n: { es: 'Restaurante' },
+                    icon: null,
+                    isPrimary: true
+                }
+            ];
             mockGetCategoriesForPointOfInterest.mockResolvedValue({ data: { categories } });
 
             const handler = getHandler('GET /{id}/categories');
             const result = await handler(buildMockContext(), { id: POI_ID }, {});
 
             expect(result).toEqual(categories);
+            expect((result as typeof categories)[0]).toHaveProperty('isPrimary', true);
             expect(mockGetCategoriesForPointOfInterest).toHaveBeenCalledWith(
                 ADMIN_ACTOR,
                 expect.objectContaining({ pointOfInterestId: POI_ID })

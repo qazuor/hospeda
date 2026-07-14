@@ -85,6 +85,7 @@ export enum EntityType {
     SPONSOR = 'sponsor',
     SPONSORSHIP = 'sponsorship',
     ATTRACTION = 'attraction',
+    POINT_OF_INTEREST = 'point-of-interest',
     FEATURE = 'feature',
     AMENITY = 'amenity',
     TAG = 'tag',
