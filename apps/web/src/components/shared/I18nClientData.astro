@@ -1,0 +1,37 @@
+---
+/**
+ * @file I18nClientData.astro
+ * @description Inlines the current page's flattened translation dictionary for
+ * the CURRENT locale only, as a non-executable `<script type="application/json">`
+ * data block. Client islands read it via `getClientLocaleDict` in `@/lib/i18n`
+ * instead of importing the full `@repo/i18n` catalog, so the other two locales
+ * never ship in the JS bundle (HOS-160 lever A — the ~1 MB `web.*.js` chunk).
+ *
+ * Placed inside `<body>` (in BOTH `BaseLayout` and `AuthLayout`) so that
+ * `<ClientRouter>` soft-navigation swaps it out for the destination page's
+ * locale automatically — a cross-locale navigation therefore delivers the new
+ * locale's dictionary with no script re-execution needed.
+ *
+ * As a data block (`type="application/json"`) it is never executed, so it is
+ * outside CSP `script-src` and needs no nonce.
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { CLIENT_I18N_ELEMENT_ID, getInlineLocaleMessages } from '@/lib/i18n';
+
+interface Props {
+    readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+
+// Escape every `<` as a unicode escape so a translation value containing the
+// closing-script sequence cannot break out of the JSON data element (standard
+// safe JSON-in-HTML embedding).
+const payload = JSON.stringify({ locale, m: getInlineLocaleMessages(locale) }).replace(
+    /</g,
+    '\\u003c'
+);
+---
+
+<script id={CLIENT_I18N_ELEMENT_ID} type="application/json" is:inline set:html={payload}></script>

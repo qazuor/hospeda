@@ -13,6 +13,9 @@ import {
     SUPPORTED_LOCALES
 } from '../../src/lib/i18n';
 
+// The `#hospeda-i18n` data element that the client i18n path reads is seeded
+// globally with the `es` dictionary in `test/setup.ts` (HOS-160 lever A).
+
 describe('isValidLocale', () => {
     it('should return true for supported locales', () => {
         expect(isValidLocale('es')).toBe(true);
@@ -105,5 +108,20 @@ describe('createTranslations', () => {
         const result = t('nav.home');
         expect(result).toBeTruthy();
         expect(result).not.toContain('MISSING');
+    });
+});
+
+describe('client i18n data element delivery (HOS-160 lever A)', () => {
+    it('resolves a key from the inlined #hospeda-i18n element', () => {
+        // The seeded element (beforeAll) carries the es dictionary.
+        const t = createT('es');
+        expect(t('nav.home')).not.toContain('MISSING');
+    });
+
+    it('falls back when the requested locale does not match the inlined element', () => {
+        // The inlined element is `es`; a `pt` lookup finds no matching payload
+        // and returns the caller fallback rather than a wrong-locale string.
+        const t = createT('pt');
+        expect(t('nav.home', 'Inicio')).toBe('Inicio');
     });
 });

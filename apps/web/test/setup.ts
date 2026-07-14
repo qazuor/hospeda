@@ -7,6 +7,26 @@
  */
 
 import '@testing-library/jest-dom/vitest';
+import { trans } from '@repo/i18n/web';
+import { CLIENT_I18N_ELEMENT_ID } from '../src/lib/i18n';
+
+// HOS-160 lever A: the page shell (`I18nClientData.astro`) inlines the current
+// locale's dictionary as a `#hospeda-i18n` data element that client islands read
+// via `@/lib/i18n` instead of importing the full catalog. Vitest runs in client
+// mode (`import.meta.env.SSR === false`), so `createTranslations` follows that DOM
+// path; without the element every key would resolve to `[MISSING: …]`. Seed it
+// once with the `es` dictionary so island/page tests see real translations,
+// mirroring what the server renders in production.
+if (typeof document !== 'undefined' && !document.getElementById(CLIENT_I18N_ELEMENT_ID)) {
+    const el = document.createElement('script');
+    el.id = CLIENT_I18N_ELEMENT_ID;
+    el.type = 'application/json';
+    el.textContent = JSON.stringify({
+        locale: 'es',
+        m: (trans as Record<string, Record<string, string>>).es
+    });
+    document.body.appendChild(el);
+}
 
 // jsdom does not implement IntersectionObserver; provide a minimal mock so
 // islands like AnimatedCounter can mount inside vitest without throwing.
