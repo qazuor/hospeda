@@ -11,7 +11,9 @@
  *     funnel (`/{lang}/publicar/?from=admin`). 90% of the cases — we send
  *     them straight to a friendly conversion surface instead of a cold wall.
  *   - `HOST` (host without panel access) → internal redirect to forbidden
- *     with `reason=host-missing-permission`. Rare config bug.
+ *     with `reason=host-missing-permission`. Expected access boundary, not a
+ *     config error — hosts manage their account from the main site, not the
+ *     admin panel.
  *   - Anything else (guest, staff with wrong account, exotic roles) →
  *     internal redirect to forbidden with `reason=generic`.
  *

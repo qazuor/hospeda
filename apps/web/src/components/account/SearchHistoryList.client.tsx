@@ -465,7 +465,9 @@ export function SearchHistoryList({
     // (BETA-148). Built locally rather than trusting the API gate's raw
     // `details.upgradeUrl` (`/billing/plans`, not a real web route) — same
     // convention as `AlertsList.client.tsx` and `PriceAlertButton.tsx`.
-    const upgradeUrl = buildUrl({ locale, path: 'suscriptores/planes' });
+    // Points at the tourist pricing page, not the owner one (BETA-174) — this
+    // is a tourist-only Área Turista feature.
+    const upgradeUrl = buildUrl({ locale, path: 'suscriptores/turistas' });
 
     // ── Loading state ─────────────────────────────────────────────────────────
 
@@ -607,10 +609,17 @@ export function SearchHistoryList({
                 <div aria-live="polite">
                     <AccountEmptyState
                         title={t('account.searchHistory.empty.title', 'Sin búsquedas guardadas')}
-                        description={t(
-                            'account.searchHistory.empty.body',
-                            'Tus búsquedas aparecerán acá cuando tengas un plan Plus o VIP activo.'
-                        )}
+                        description={
+                            entitlementRequired
+                                ? t(
+                                      'account.searchHistory.empty.upsellBody',
+                                      'Tus búsquedas aparecerán acá cuando tengas un plan Plus o VIP activo.'
+                                  )
+                                : t(
+                                      'account.searchHistory.empty.body',
+                                      'Todavía no tenés búsquedas guardadas.'
+                                  )
+                        }
                         icon={<SearchIcon size={28} />}
                         ctaHref={entitlementRequired ? upgradeUrl : undefined}
                         ctaLabel={

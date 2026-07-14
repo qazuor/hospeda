@@ -107,6 +107,22 @@ describe('PricingSection', () => {
         expect(screen.getByLabelText(/precio por noche/i)).toHaveAttribute('aria-invalid', 'true');
     });
 
+    it('should accept any positive integer price without a step mismatch (BETA-179)', () => {
+        // step={100} used to make the browser reject any value that was not a
+        // multiple of 100 (or had decimals), silently blocking "Guardar".
+        render(
+            <PricingSection
+                {...DEFAULT_PROPS}
+                data={{ ...MOCK_DATA, basePrice: 12345 }}
+            />
+        );
+
+        const priceInput = screen.getByLabelText(/precio por noche/i) as HTMLInputElement;
+        expect(priceInput.value).toBe('12345');
+        expect(priceInput.step).toBe('1');
+        expect(priceInput.validity.stepMismatch).toBe(false);
+    });
+
     it('should NOT render an interactive currency select (BETA-137)', () => {
         render(<PricingSection {...DEFAULT_PROPS} />);
 

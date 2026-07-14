@@ -549,6 +549,7 @@
             "planCardLabel": "Current plan details",
             "statusLabel": "Status",
             "nextBillingLabel": "Next billing date",
+            "accessUntilLabel": "Access until",
             "paymentMethodLabel": "Payment method",
             "paymentMercadoPago": "MercadoPago",
             "noBillingDate": "No billing date available",
@@ -574,10 +575,15 @@
                 "active": "Active",
                 "trial": "Trial",
                 "cancelled": "Cancelled",
+                "cancelling": "Cancellation scheduled",
                 "expired": "Expired",
                 "past_due": "Past due",
                 "pending": "Pending",
                 "paused": "Paused"
+            },
+            "cancelScheduled": {
+                "title": "Subscription cancelled",
+                "body": "No further charges will be made. You keep access to your plan until {date}."
             },
             "pauseModal": {
                 "title": "Pause subscription",
@@ -816,7 +822,8 @@
         "errorFetch": "Could not load search history",
         "empty": {
             "title": "No saved searches",
-            "body": "Your searches will appear here when you have an active Plus or VIP plan."
+            "body": "You don't have any saved searches yet.",
+            "upsellBody": "Your searches will appear here when you have an active Plus or VIP plan."
         },
         "clearAll": "Clear all",
         "clearAllInline": "Yes, clear all",

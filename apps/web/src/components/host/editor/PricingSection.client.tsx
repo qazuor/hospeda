@@ -50,7 +50,11 @@ export function PricingSection({ locale, data, errors, onFieldChange }: PricingS
                         className={styles.fieldInput}
                         value={data.basePrice ?? ''}
                         min={0}
-                        step={100}
+                        // Prices are whole ARS integers — any positive integer must
+                        // save. `step={100}` made native browser validation reject
+                        // any current value that wasn't already a multiple of 100
+                        // (or had decimals), silently blocking "Guardar" (BETA-179).
+                        step={1}
                         onChange={(e) =>
                             onFieldChange(
                                 'basePrice',
