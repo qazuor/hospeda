@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0012-hos-43-occupancy-permissions
+ * Data migration: 0014-hos-43-occupancy-permissions
  *
  * Grants the two new HOS-43 occupancy-calendar permissions
  * (`accommodation.occupancy.manage` / `accommodation.occupancy.view`) to
@@ -27,7 +27,7 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0012-hos-43-occupancy-permissions',
+    name: '0014-hos-43-occupancy-permissions',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
