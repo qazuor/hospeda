@@ -1,7 +1,8 @@
 import type { AccommodationOccupancy } from '@repo/schemas';
 import { OccupancySourceEnum } from '@repo/schemas';
-import { and, asc, eq, gte, inArray, lt, notInArray } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, lt } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
+import { withTransaction } from '../../client.ts';
 import { accommodationOccupancy } from '../../schemas/accommodation/accommodationOccupancy.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 
@@ -23,19 +24,14 @@ import type { DrizzleClient } from '../../types.ts';
  *   `MANUAL` rows, so sync-sourced rows (Phase 2/3) are never removable by
  *   the manual toggle UI.
  *
- * HOS-157 Phase 2 adds the sync counterparts of the above, all scoped by
- * `source` so they can never touch `MANUAL` rows:
+ * HOS-157 Phase 2 adds the sync counterpart of the above, scoped by `source`
+ * so it can never touch `MANUAL` rows:
  *
- * - {@link upsertSyncOccupancy} — idempotent bulk insert of sync-sourced rows
- *   (`source` + `externalEventId`), backs the Google Calendar sync service's
- *   event-import step.
- * - {@link deleteByExternalEventId} — removes every row for an external event
- *   that was deleted at the source.
- * - {@link deleteStaleSyncByExternalEventId} — removes rows for an external
- *   event whose date range shrank (reconciliation).
- * - {@link findBySource} — reads every row for one sync source, used by the
- *   sync service to diff DB state against the latest fetch from the
- *   provider.
+ * - {@link replaceFutureSyncOccupancy} — atomically deletes every future
+ *   row for one sync source and re-inserts a fresh declarative set in a
+ *   single transaction; the core primitive of the HOS-157 declarative
+ *   full-window reconcile. Never touches `MANUAL` rows (source-scoped delete
+ *   + `ON CONFLICT DO NOTHING` on `(accommodationId, date)`).
  *
  * Reconciliation note: there is currently NO index on `external_event_id` —
  * an accepted Phase 2 limitation given the small per-accommodation row
@@ -222,176 +218,90 @@ export class AccommodationOccupancyModel extends BaseModelImpl<AccommodationOccu
     }
 
     /**
-     * Idempotently inserts one row per date for an external sync source
-     * (HOS-157 Phase 2: `GOOGLE_CALENDAR`; reserved for Phase 3 `AIRBNB`/
-     * `BOOKING`).
+     * Atomically replaces every FUTURE sync-sourced row for one source with a
+     * fresh declarative set of blocked dates — the core primitive of the
+     * HOS-157 declarative full-window reconcile (fetch all live events →
+     * compute the desired blocked-date set → replace the DB rows in one shot).
      *
-     * Relies on the same `(accommodation_id, date)` unique index as
-     * {@link batchUpsertManual}, via `onConflictDoNothing`: if a row already
-     * exists for a date — whether `MANUAL` (a host's manual block) or the
-     * same sync source (already reconciled) — the conflict is a no-op. A
-     * `MANUAL` block is NEVER overwritten by a sync source; the day stays
-     * occupied either way, so this is safe.
+     * Runs inside a single transaction: when no `tx` is passed a new one is
+     * opened; when a `tx` IS passed it is reused directly (never a nested
+     * transaction — {@link withTransaction} reuses the existing client). The
+     * two steps are therefore all-or-nothing:
      *
-     * @param params.accommodationId - The accommodation the event belongs to.
-     * @param params.dates - `YYYY-MM-DD` dates the external event covers. Empty array is a no-op.
-     * @param params.source - The sync source (e.g. `GOOGLE_CALENDAR`).
-     * @param params.externalEventId - The id of the event in the external source.
+     * 1. `DELETE FROM accommodation_occupancy WHERE accommodation_id = :id AND
+     *    source = :source AND date >= :fromDate`. The `source` scope means
+     *    this NEVER deletes a `MANUAL` row; the `date >= fromDate` bound means
+     *    past occupancy is never touched.
+     * 2. If `rows` is non-empty, one multi-row `INSERT ... ON CONFLICT
+     *    (accommodation_id, date) DO NOTHING` of `isBlocked=true` rows. The
+     *    conflict clause leaves any `MANUAL` row on a shared date intact —
+     *    MANUAL wins the day — so a host's manual block is never overwritten.
+     *
+     * The caller MUST dedupe `rows` by date (at most one entry per date); the
+     * conflict target only guards against a pre-existing row (typically
+     * `MANUAL`), not against duplicate desired dates within this same batch.
+     *
+     * @param params.accommodationId - The accommodation being reconciled.
+     * @param params.source - The sync source to replace (e.g. `GOOGLE_CALENDAR`).
+     * @param params.fromDate - Inclusive lower bound, `YYYY-MM-DD`; rows before it are untouched.
+     * @param params.rows - The desired blocked dates (deduped by date), each with its provenance event id.
      * @param params.createdById - The system actor recording this sync write.
-     * @param tx - Optional transaction client.
-     * @returns The rows actually inserted (excludes dates that already had a
-     *   row and were skipped by the conflict target).
+     * @param tx - Optional transaction client; reused directly when present.
+     * @returns `removed` (rows deleted) and `inserted` (rows actually inserted,
+     *   excluding dates skipped by the conflict target).
      */
-    async upsertSyncOccupancy(
+    async replaceFutureSyncOccupancy(
         params: {
             accommodationId: string;
-            dates: readonly string[];
             source: OccupancySourceEnum;
-            externalEventId: string;
+            fromDate: string;
+            rows: readonly { date: string; externalEventId: string }[];
             createdById: string;
         },
         tx?: DrizzleClient
-    ): Promise<AccommodationOccupancy[]> {
-        const { accommodationId, dates, source, externalEventId, createdById } = params;
-        if (dates.length === 0) return [];
+    ): Promise<{ removed: number; inserted: number }> {
+        const { accommodationId, source, fromDate, rows, createdById } = params;
 
-        const db = this.getClient(tx);
-        const now = new Date();
-        const values = dates.map((date) => ({
-            accommodationId,
-            date,
-            isBlocked: true,
-            source,
-            externalEventId,
-            note: null,
-            createdById,
-            createdAt: now,
-            updatedAt: now
-        }));
-
-        const inserted = await db
-            .insert(accommodationOccupancy)
-            .values(values)
-            .onConflictDoNothing({
-                target: [accommodationOccupancy.accommodationId, accommodationOccupancy.date]
-            })
-            .returning();
-
-        return inserted as AccommodationOccupancy[];
-    }
-
-    /**
-     * Deletes every occupancy row created for a given external event,
-     * scoped to `source` — used when the event was removed at the source
-     * (e.g. deleted from Google Calendar).
-     *
-     * Filters `source = :source AND external_event_id = :externalEventId`,
-     * which by construction never matches `MANUAL` rows (`externalEventId`
-     * is always `null` for those).
-     *
-     * @param params.accommodationId - The accommodation the event belonged to.
-     * @param params.source - The sync source that owns the event.
-     * @param params.externalEventId - The id of the removed event.
-     * @param tx - Optional transaction client.
-     * @returns The number of rows deleted.
-     */
-    async deleteByExternalEventId(
-        params: { accommodationId: string; source: OccupancySourceEnum; externalEventId: string },
-        tx?: DrizzleClient
-    ): Promise<number> {
-        const { accommodationId, source, externalEventId } = params;
-        const db = this.getClient(tx);
-        const result = await db
-            .delete(accommodationOccupancy)
-            .where(
-                and(
-                    eq(accommodationOccupancy.accommodationId, accommodationId),
-                    eq(accommodationOccupancy.source, source),
-                    eq(accommodationOccupancy.externalEventId, externalEventId)
+        return withTransaction(async (txClient) => {
+            const deleted = await txClient
+                .delete(accommodationOccupancy)
+                .where(
+                    and(
+                        eq(accommodationOccupancy.accommodationId, accommodationId),
+                        eq(accommodationOccupancy.source, source),
+                        gte(accommodationOccupancy.date, fromDate)
+                    )
                 )
-            )
-            .returning();
-        return result.length;
-    }
+                .returning();
+            const removed = deleted.length;
 
-    /**
-     * Deletes the rows for an external event whose date is NOT in
-     * `keepDates` — used when an event's date range shrank at the source
-     * (e.g. a Google Calendar event was shortened from 5 days to 2).
-     *
-     * Same `source` + `externalEventId` scoping as
-     * {@link deleteByExternalEventId}, so this never touches `MANUAL` rows.
-     * An empty `keepDates` deletes every row for the event (equivalent to
-     * {@link deleteByExternalEventId}) — the event no longer covers any date.
-     *
-     * @param params.accommodationId - The accommodation the event belongs to.
-     * @param params.source - The sync source that owns the event.
-     * @param params.externalEventId - The id of the event being reconciled.
-     * @param params.keepDates - `YYYY-MM-DD` dates the event STILL covers; any
-     *   existing row for a date outside this set is deleted.
-     * @param tx - Optional transaction client.
-     * @returns The number of rows deleted.
-     */
-    async deleteStaleSyncByExternalEventId(
-        params: {
-            accommodationId: string;
-            source: OccupancySourceEnum;
-            externalEventId: string;
-            keepDates: readonly string[];
-        },
-        tx?: DrizzleClient
-    ): Promise<number> {
-        const { accommodationId, source, externalEventId, keepDates } = params;
-        const db = this.getClient(tx);
+            if (rows.length === 0) {
+                return { removed, inserted: 0 };
+            }
 
-        const baseConditions = [
-            eq(accommodationOccupancy.accommodationId, accommodationId),
-            eq(accommodationOccupancy.source, source),
-            eq(accommodationOccupancy.externalEventId, externalEventId)
-        ];
+            const now = new Date();
+            const values = rows.map((row) => ({
+                accommodationId,
+                date: row.date,
+                isBlocked: true,
+                source,
+                externalEventId: row.externalEventId,
+                note: null,
+                createdById,
+                createdAt: now,
+                updatedAt: now
+            }));
 
-        const result = await db
-            .delete(accommodationOccupancy)
-            .where(
-                keepDates.length === 0
-                    ? and(...baseConditions)
-                    : and(
-                          ...baseConditions,
-                          notInArray(accommodationOccupancy.date, [...keepDates])
-                      )
-            )
-            .returning();
-        return result.length;
-    }
+            const insertedRows = await txClient
+                .insert(accommodationOccupancy)
+                .values(values)
+                .onConflictDoNothing({
+                    target: [accommodationOccupancy.accommodationId, accommodationOccupancy.date]
+                })
+                .returning();
 
-    /**
-     * Finds every occupancy row for an accommodation from a single sync
-     * source. Used by the sync service to diff DB state against the latest
-     * fetch from the provider and discover orphaned events (present in the
-     * DB, absent from the provider's current event list).
-     *
-     * @param params.accommodationId - The accommodation to query.
-     * @param params.source - The sync source to filter by.
-     * @param tx - Optional transaction client.
-     * @returns Rows ordered by `date` ascending.
-     */
-    async findBySource(
-        params: { accommodationId: string; source: OccupancySourceEnum },
-        tx?: DrizzleClient
-    ): Promise<AccommodationOccupancy[]> {
-        const { accommodationId, source } = params;
-        const db = this.getClient(tx);
-        const rows = await db
-            .select()
-            .from(accommodationOccupancy)
-            .where(
-                and(
-                    eq(accommodationOccupancy.accommodationId, accommodationId),
-                    eq(accommodationOccupancy.source, source)
-                )
-            )
-            .orderBy(asc(accommodationOccupancy.date));
-        return rows as AccommodationOccupancy[];
+            return { removed, inserted: insertedRows.length };
+        }, tx);
     }
 }
 

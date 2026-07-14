@@ -2,11 +2,34 @@
  * Google Calendar occupancy sync service (HOS-157 Phase 2 — Layer 3).
  *
  * Orchestrates one sync run for a single accommodation's Google Calendar
- * connection: fetch events (full or incremental), map each event to the set of
- * dates it occupies, and reconcile the `accommodation_occupancy` rows for
- * `source = GOOGLE_CALENDAR` so they exactly reflect the calendar — WITHOUT
- * ever touching `MANUAL` rows (the model's sync methods are all `source`-scoped
- * by construction).
+ * connection as a DECLARATIVE full-window reconcile:
+ *
+ * 1. Fetch ALL live events from start-of-today forward (a bounded full fetch —
+ *    no incremental syncToken).
+ * 2. Compute the DESIRED set of blocked dates: map every non-cancelled event to
+ *    the dates it occupies and collapse them to one entry per date (first event
+ *    to cover a date wins its provenance).
+ * 3. Atomically REPLACE all future `source = GOOGLE_CALENDAR` occupancy rows
+ *    with that desired set via a single transaction — WITHOUT ever touching
+ *    `MANUAL` rows (the model primitive is `source`-scoped and inserts with
+ *    `ON CONFLICT DO NOTHING`, so MANUAL wins any shared date).
+ *
+ * ## Why declarative (and why incremental syncToken was dropped)
+ *
+ * The `accommodation_occupancy` table has a UNIQUE index on
+ * `(accommodationId, date)` ONLY — there is at most one row per day regardless
+ * of source. Correct overlap handling under that model is impossible per-event:
+ * two overlapping events sharing a date, one of which is deleted, must leave the
+ * day blocked as long as EITHER is still live. Reconciling by DATE from the full
+ * live event set is the only way to get that right. The prior per-event
+ * imperative reconcile (delete-by-external-event-id) could free a date another
+ * live event still covered → double-booking; it also silently deleted past
+ * occupancy and did N+1 DB round trips.
+ *
+ * Incremental syncToken sync is therefore intentionally NOT used: correctly
+ * recomputing the desired date set requires the full event set anyway, and a
+ * bounded full fetch every ~6h is cheap at this scale. The `syncToken` column is
+ * no longer read or written by this service.
  *
  * ## Event → dates mapping (the "≥1 day" rule)
  *
@@ -26,25 +49,15 @@
  * an EMPTY range, so it creates no occupancy. No separate duration branch is
  * needed.
  *
- * ## Full vs incremental + 410 recovery
- *
- * With a stored `syncToken`, an incremental sync is attempted first; Google
- * returns changed AND deleted (`status: 'cancelled'`) events. If the token has
- * expired ({@link GoogleCalendarSyncTokenInvalidError}), the stored token is
- * discarded and a full sync runs. A full sync additionally reconciles ORPHANS —
- * DB rows whose event no longer appears in the calendar at all (deleted while
- * the token was invalid) — which an incremental sync would have caught via an
- * explicit `cancelled` entry.
- *
  * ## Failure handling
  *
  * This service never throws for operational failures — it records the outcome
  * on the connection's sync-state columns (`lastSyncStatus` OK/ERROR,
  * `lastErrorMessage`, `lastSyncAt`) and returns a discriminated
  * {@link CalendarSyncResult}. That keeps the cron loop (Layer 4) simple: it
- * calls this per active connection and moves on. A terminal token failure
- * (host revoked access) is recorded as ERROR so the host UI can prompt a
- * reconnect.
+ * calls this per active connection and moves on. A `401`/`403` from the Calendar
+ * API means the host revoked the grant at Google — classified `terminal` and
+ * recorded as ERROR so the host UI can prompt a reconnect.
  *
  * @module services/google-calendar/google-calendar-sync.service
  */
@@ -55,7 +68,6 @@ import { apiLogger } from '../../utils/logger.js';
 import {
     GoogleCalendarApiError,
     type GoogleCalendarEvent,
-    GoogleCalendarSyncTokenInvalidError,
     listEvents
 } from './google-calendar-client.js';
 import { getGoogleCredential } from './google-calendar-credential.repository.js';
@@ -97,9 +109,9 @@ export type CalendarSyncResult =
           readonly eventsProcessed: number;
           /** Number of occupancy rows inserted this run. */
           readonly datesUpserted: number;
-          /** Number of occupancy rows removed this run (stale, cancelled, or orphaned). */
+          /** Number of occupancy rows removed this run (replaced future rows). */
           readonly datesRemoved: number;
-          /** Whether this run was a full sync (vs incremental). */
+          /** Whether this run was a full sync (always `true` — see module doc). */
           readonly fullSync: boolean;
       }
     | {
@@ -169,58 +181,65 @@ const enumerateHalfOpenDates = (startDate: string, endDate: string): string[] =>
  * Maps a non-cancelled event to the set of dates it occupies. Returns an empty
  * array when the event has no usable start/end or is shorter than one day.
  *
+ * Emits a WARN when the event's date range hits {@link MAX_EVENT_DAYS} — a
+ * pathological span whose occupancy is truncated at the cap.
+ *
  * @param event - A Google Calendar event.
+ * @param accommodationId - The accommodation being synced (for cap-hit logging).
  * @returns The `YYYY-MM-DD` dates the event blocks.
  */
-const mapEventToDates = (event: GoogleCalendarEvent): string[] => {
+const mapEventToDates = (event: GoogleCalendarEvent, accommodationId?: string): string[] => {
     const startDate = markerToDate(event.start);
     const endDate = markerToDate(event.end);
     if (startDate === undefined || endDate === undefined) {
         return [];
     }
-    return enumerateHalfOpenDates(startDate, endDate);
+    const dates = enumerateHalfOpenDates(startDate, endDate);
+    if (dates.length === MAX_EVENT_DAYS) {
+        apiLogger.warn(
+            {
+                ...(accommodationId === undefined ? {} : { accommodationId }),
+                externalEventId: event.id,
+                cappedAt: MAX_EVENT_DAYS
+            },
+            'google-calendar-sync: event date range hit the cap; occupancy truncated'
+        );
+    }
+    return dates;
 };
 
 /**
- * One page-following fetch of all events for a calendar, accumulating items
- * across pages and capturing the final `nextSyncToken`.
+ * One page-following FULL fetch of all events for a calendar from `timeMin`
+ * forward, accumulating items across pages.
  *
  * @param params.accessToken - A valid Google access token.
  * @param params.calendarId - The calendar to read.
- * @param params.syncToken - Incremental token, or `undefined` for a full sync.
- * @param params.timeMin - Full-sync lower bound (ignored when `syncToken` is set).
- * @returns All events plus the new sync token (when Google returned one).
- * @throws {GoogleCalendarSyncTokenInvalidError} On a stale sync token (410).
- * @throws {GoogleCalendarApiError} On other non-2xx responses.
+ * @param params.timeMin - Full-sync lower bound (RFC3339).
+ * @returns All events fetched across every page.
+ * @throws {GoogleCalendarApiError} On any non-2xx response.
  */
 const fetchAllPages = async (params: {
     accessToken: string;
     calendarId: string;
-    syncToken: string | undefined;
-    timeMin: string | undefined;
-}): Promise<{ events: GoogleCalendarEvent[]; nextSyncToken: string | undefined }> => {
-    const { accessToken, calendarId, syncToken, timeMin } = params;
+    timeMin: string;
+}): Promise<{ events: GoogleCalendarEvent[] }> => {
+    const { accessToken, calendarId, timeMin } = params;
     const events: GoogleCalendarEvent[] = [];
     let pageToken: string | undefined;
-    let nextSyncToken: string | undefined;
 
     do {
         const page = await listEvents({
             accessToken,
             calendarId,
             timeZone: SYNC_RESPONSE_TIMEZONE,
-            ...(syncToken === undefined ? {} : { syncToken }),
-            ...(timeMin === undefined ? {} : { timeMin }),
+            timeMin,
             ...(pageToken === undefined ? {} : { pageToken })
         });
         events.push(...page.items);
         pageToken = page.nextPageToken;
-        if (page.nextSyncToken !== undefined) {
-            nextSyncToken = page.nextSyncToken;
-        }
     } while (pageToken !== undefined);
 
-    return { events, nextSyncToken };
+    return { events };
 };
 
 /**
@@ -258,107 +277,8 @@ const recordFailure = async (
 };
 
 /**
- * Applies one event's reconciliation against the occupancy table: upsert the
- * dates it now covers and delete any stale rows it no longer covers (or, for a
- * cancelled / sub-1-day event, delete all of its rows).
- *
- * @param params.accommodationId - The accommodation being synced.
- * @param params.event - The calendar event.
- * @param params.createdById - Actor to attribute inserted rows to.
- * @returns Counts of rows upserted and removed for this event.
- */
-const reconcileEvent = async (params: {
-    accommodationId: string;
-    event: GoogleCalendarEvent;
-    createdById: string;
-}): Promise<{ upserted: number; removed: number }> => {
-    const { accommodationId, event, createdById } = params;
-
-    if (event.status === 'cancelled') {
-        const removed = await accommodationOccupancyModel.deleteByExternalEventId({
-            accommodationId,
-            source: PROVIDER,
-            externalEventId: event.id
-        });
-        return { upserted: 0, removed };
-    }
-
-    const dates = mapEventToDates(event);
-
-    if (dates.length === 0) {
-        // The event covers no full day (e.g. shrank to a same-day timed event):
-        // remove any occupancy rows it previously created.
-        const removed = await accommodationOccupancyModel.deleteByExternalEventId({
-            accommodationId,
-            source: PROVIDER,
-            externalEventId: event.id
-        });
-        return { upserted: 0, removed };
-    }
-
-    const inserted = await accommodationOccupancyModel.upsertSyncOccupancy({
-        accommodationId,
-        dates,
-        source: PROVIDER,
-        externalEventId: event.id,
-        createdById
-    });
-    // Reconcile a shrunk range: drop rows for dates the event no longer covers.
-    const removed = await accommodationOccupancyModel.deleteStaleSyncByExternalEventId({
-        accommodationId,
-        source: PROVIDER,
-        externalEventId: event.id,
-        keepDates: dates
-    });
-
-    return { upserted: inserted.length, removed };
-};
-
-/**
- * Removes occupancy rows for events that no longer exist in the calendar at
- * all — only meaningful after a FULL sync, where deleted events are simply
- * absent (an incremental sync reports them as `cancelled` instead).
- *
- * @param params.accommodationId - The accommodation being synced.
- * @param params.presentEventIds - Ids of events present in this full fetch.
- * @returns The number of orphaned rows removed.
- */
-const cleanupOrphans = async (params: {
-    accommodationId: string;
-    presentEventIds: ReadonlySet<string>;
-}): Promise<number> => {
-    const { accommodationId, presentEventIds } = params;
-
-    const existingRows = await accommodationOccupancyModel.findBySource({
-        accommodationId,
-        source: PROVIDER
-    });
-
-    const orphanEventIds = new Set<string>();
-    for (const row of existingRows) {
-        const externalEventId = row.externalEventId;
-        if (
-            externalEventId !== null &&
-            externalEventId !== undefined &&
-            !presentEventIds.has(externalEventId)
-        ) {
-            orphanEventIds.add(externalEventId);
-        }
-    }
-
-    let removed = 0;
-    for (const externalEventId of orphanEventIds) {
-        removed += await accommodationOccupancyModel.deleteByExternalEventId({
-            accommodationId,
-            source: PROVIDER,
-            externalEventId
-        });
-    }
-    return removed;
-};
-
-/**
- * Runs one Google Calendar → occupancy sync for a single accommodation.
+ * Runs one Google Calendar → occupancy sync for a single accommodation as a
+ * declarative full-window reconcile (see module doc).
  *
  * @param params.accommodationId - The accommodation whose connection to sync.
  * @returns A discriminated {@link CalendarSyncResult}. Never throws for
@@ -404,69 +324,71 @@ export const syncAccommodationCalendar = async (params: {
         );
     }
 
-    // 2. Fetch events (incremental if we have a token, else full). Recover from
-    //    a stale token by falling back to a full sync.
-    const timeMin = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
-    let fullSync = credential.syncToken === null;
-    let fetched: { events: GoogleCalendarEvent[]; nextSyncToken: string | undefined };
+    // 2. Compute the reconcile window ONCE: start-of-today forward, in the AR
+    //    market zone (NOT UTC) so `fromDate` is consistent with how event dates
+    //    are extracted (both in SYNC_RESPONSE_TIMEZONE). Using UTC here would,
+    //    during the ~3h UTC-vs-AR daily overlap, place `fromDate` a day ahead of
+    //    an event's AR date and let a past date slip through. AR is a fixed
+    //    UTC-3 offset (no DST since 2009).
+    const fromDate = new Intl.DateTimeFormat('en-CA', {
+        timeZone: SYNC_RESPONSE_TIMEZONE
+    }).format(new Date());
+    const timeMin = new Date(`${fromDate}T00:00:00-03:00`).toISOString();
+
+    // 3. FULL fetch of every live event from `timeMin` forward.
+    let fetched: { events: GoogleCalendarEvent[] };
     try {
-        fetched = await fetchAllPages({
-            accessToken,
-            calendarId,
-            syncToken: credential.syncToken ?? undefined,
-            timeMin: credential.syncToken === null ? timeMin : undefined
-        });
+        fetched = await fetchAllPages({ accessToken, calendarId, timeMin });
     } catch (error) {
-        if (error instanceof GoogleCalendarSyncTokenInvalidError) {
-            fullSync = true;
-            try {
-                fetched = await fetchAllPages({
-                    accessToken,
-                    calendarId,
-                    syncToken: undefined,
-                    timeMin
-                });
-            } catch (fullError) {
-                return recordFailure(
-                    accommodationId,
-                    fullError instanceof GoogleCalendarApiError ? 'api' : 'unknown',
-                    fullError instanceof Error ? fullError.message : String(fullError)
-                );
-            }
-        } else if (error instanceof GoogleCalendarApiError) {
-            return recordFailure(accommodationId, 'api', error.message);
-        } else {
-            return recordFailure(
-                accommodationId,
-                'unknown',
-                error instanceof Error ? error.message : String(error)
-            );
+        if (error instanceof GoogleCalendarApiError) {
+            // 401/403 => the grant was revoked at Google; the host must
+            // reconnect. Anything else is a retryable API failure.
+            const kind = error.status === 401 || error.status === 403 ? 'terminal' : 'api';
+            return recordFailure(accommodationId, kind, error.message);
         }
+        return recordFailure(
+            accommodationId,
+            'unknown',
+            error instanceof Error ? error.message : String(error)
+        );
     }
 
-    // 3. Reconcile each event; track present (non-cancelled) ids for the
-    //    full-sync orphan pass.
-    let datesUpserted = 0;
-    let datesRemoved = 0;
-    const presentEventIds = new Set<string>();
-
-    try {
-        for (const event of fetched.events) {
-            if (event.status !== 'cancelled') {
-                presentEventIds.add(event.id);
+    // 4. Build the DESIRED blocked-date set: one entry per date, first live
+    //    event to cover a date wins its provenance. Overlaps collapse to a
+    //    single row that stays blocked as long as EITHER event is live.
+    const desired = new Map<string, string>();
+    for (const event of fetched.events) {
+        if (event.status === 'cancelled') {
+            continue;
+        }
+        for (const date of mapEventToDates(event, accommodationId)) {
+            if (!desired.has(date)) {
+                desired.set(date, event.id);
             }
-            const { upserted, removed } = await reconcileEvent({
-                accommodationId,
-                event,
-                createdById: credential.createdById
-            });
-            datesUpserted += upserted;
-            datesRemoved += removed;
         }
+    }
+    // Clamp to the reconcile window: an in-progress event (started before today,
+    // still ongoing) is returned in full by Google (timeMin filters by event END),
+    // so its past dates land in `desired`. The model's DELETE only clears
+    // `date >= fromDate`, so a past date here would be INSERTED and never cleaned
+    // up. Dropping `date < fromDate` keeps the "past rows are never touched"
+    // invariant intact on the insert side too.
+    const rows = [...desired]
+        .filter(([date]) => date >= fromDate)
+        .map(([date, externalEventId]) => ({ date, externalEventId }));
 
-        if (fullSync) {
-            datesRemoved += await cleanupOrphans({ accommodationId, presentEventIds });
-        }
+    // 5. Atomically replace all future GOOGLE_CALENDAR rows with the desired
+    //    set (never touches MANUAL rows).
+    let removed: number;
+    let inserted: number;
+    try {
+        ({ removed, inserted } = await accommodationOccupancyModel.replaceFutureSyncOccupancy({
+            accommodationId,
+            source: PROVIDER,
+            fromDate,
+            rows,
+            createdById: credential.createdById
+        }));
     } catch (error) {
         return recordFailure(
             accommodationId,
@@ -475,11 +397,11 @@ export const syncAccommodationCalendar = async (params: {
         );
     }
 
-    // 4. Persist success + the new sync token.
+    // 6. Persist success. No syncToken — incremental sync is intentionally
+    //    dropped (see module doc).
     await accommodationCalendarSyncModel.updateSyncState({
         accommodationId,
         provider: PROVIDER,
-        ...(fetched.nextSyncToken === undefined ? {} : { syncToken: fetched.nextSyncToken }),
         lastSyncAt: new Date(),
         lastSyncStatus: CalendarSyncStatusEnum.OK,
         lastErrorMessage: null
@@ -488,8 +410,8 @@ export const syncAccommodationCalendar = async (params: {
     return {
         status: 'ok',
         eventsProcessed: fetched.events.length,
-        datesUpserted,
-        datesRemoved,
-        fullSync
+        datesUpserted: inserted,
+        datesRemoved: removed,
+        fullSync: true
     };
 };

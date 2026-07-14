@@ -1,21 +1,17 @@
 /**
- * Integration test: AccommodationOccupancyModel's sync counterpart methods
- * (HOS-157 Phase 2 DB foundation).
+ * Integration test: AccommodationOccupancyModel.replaceFutureSyncOccupancy
+ * (HOS-157 Phase 2 — declarative full-window reconcile primitive).
  *
  * Coverage:
- *   1. `upsertSyncOccupancy` never clobbers an existing `MANUAL` row for the
- *      same date (the manual block wins; the sync insert is a silent no-op
- *      via `onConflictDoNothing`).
- *   2. `upsertSyncOccupancy` is idempotent for the same sync source — running
- *      it twice for the same dates does not create duplicates or error.
- *   3. `deleteByExternalEventId` is scoped to `source` + `externalEventId` —
- *      it never deletes a `MANUAL` row, even one that happens to share a
- *      date with the sync event.
- *   4. `deleteStaleSyncByExternalEventId` deletes only the dates NOT in
- *      `keepDates` (event shrank), and deletes everything when `keepDates`
- *      is empty (event removed entirely).
- *   5. `findBySource` returns only rows for the requested source, ordered by
- *      date ascending.
+ *   1. First sync inserts the desired rows and reports `{ removed: 0,
+ *      inserted: N }`.
+ *   2. OVERLAP — a date covered by two events stays blocked when only one of
+ *      them is removed from the desired set on a second reconcile.
+ *   3. A `MANUAL` row on a date in the desired set is NOT deleted by the
+ *      replace and NOT overwritten (stays `MANUAL` via `ON CONFLICT DO
+ *      NOTHING`).
+ *   4. A pre-existing `GOOGLE_CALENDAR` row with `date < fromDate` is left
+ *      untouched — only `date >= fromDate` is replaced.
  */
 import { OccupancySourceEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -57,203 +53,156 @@ async function seedAccommodation(tx: DrizzleClient, slugSuffix: string) {
     return { owner, destination, accommodation };
 }
 
-describe('AccommodationOccupancyModel — sync methods (HOS-157 Phase 2)', () => {
-    it('upsertSyncOccupancy does not clobber an existing MANUAL row for the same date', async () => {
+describe('AccommodationOccupancyModel.replaceFutureSyncOccupancy (HOS-157 Phase 2)', () => {
+    it('inserts the desired rows on a first sync and reports removed=0', async () => {
         await withTestTransaction(async (tx) => {
-            const { owner, accommodation } = await seedAccommodation(tx, 'no-clobber');
+            const { owner, accommodation } = await seedAccommodation(tx, 'first-sync');
             const model = new AccommodationOccupancyModel();
 
-            await model.batchUpsertManual(
-                { accommodationId: accommodation.id, dates: ['2026-08-10'], createdById: owner.id },
-                tx
-            );
-
-            const inserted = await model.upsertSyncOccupancy(
+            const result = await model.replaceFutureSyncOccupancy(
                 {
                     accommodationId: accommodation.id,
-                    dates: ['2026-08-10', '2026-08-11'],
                     source: OccupancySourceEnum.GOOGLE_CALENDAR,
-                    externalEventId: 'gcal-event-1',
+                    fromDate: '2026-08-01',
+                    rows: [
+                        { date: '2026-08-10', externalEventId: 'gcal-event-1' },
+                        { date: '2026-08-11', externalEventId: 'gcal-event-1' }
+                    ],
                     createdById: owner.id
                 },
                 tx
             );
 
-            // Only the 11th was actually inserted — the 10th already had a MANUAL row.
-            expect(inserted.map((row) => row.date)).toEqual(['2026-08-11']);
+            expect(result).toEqual({ removed: 0, inserted: 2 });
 
-            const allRows = await model.findByAccommodation(
-                { accommodationId: accommodation.id },
-                tx
-            );
-            const row10 = allRows.find((row) => row.date === '2026-08-10');
-            expect(row10?.source).toBe('MANUAL');
+            const rows = await model.findByAccommodation({ accommodationId: accommodation.id }, tx);
+            expect(rows.map((row) => row.date)).toEqual(['2026-08-10', '2026-08-11']);
+            expect(rows.every((row) => row.source === 'GOOGLE_CALENDAR')).toBe(true);
         });
     });
 
-    it('upsertSyncOccupancy is idempotent for the same sync source', async () => {
+    it('OVERLAP: a date covered by two events stays blocked when only one is removed from the desired set', async () => {
         await withTestTransaction(async (tx) => {
-            const { owner, accommodation } = await seedAccommodation(tx, 'idempotent');
+            const { owner, accommodation } = await seedAccommodation(tx, 'overlap');
             const model = new AccommodationOccupancyModel();
 
-            const params = {
-                accommodationId: accommodation.id,
-                dates: ['2026-09-01', '2026-09-02'],
-                source: OccupancySourceEnum.GOOGLE_CALENDAR,
-                externalEventId: 'gcal-event-2',
-                createdById: owner.id
-            };
-
-            const firstRun = await model.upsertSyncOccupancy(params, tx);
-            expect(firstRun).toHaveLength(2);
-
-            const secondRun = await model.upsertSyncOccupancy(params, tx);
-            expect(secondRun).toHaveLength(0);
-
-            const rows = await model.findBySource(
-                { accommodationId: accommodation.id, source: OccupancySourceEnum.GOOGLE_CALENDAR },
+            // First reconcile: ev-A covers 09-10..09-11, ev-B covers 09-11..09-12.
+            // Shared date 09-11 is attributed to ev-A (first event wins provenance,
+            // mirroring the sync service's desired-set construction).
+            await model.replaceFutureSyncOccupancy(
+                {
+                    accommodationId: accommodation.id,
+                    source: OccupancySourceEnum.GOOGLE_CALENDAR,
+                    fromDate: '2026-09-01',
+                    rows: [
+                        { date: '2026-09-10', externalEventId: 'ev-A' },
+                        { date: '2026-09-11', externalEventId: 'ev-A' },
+                        { date: '2026-09-12', externalEventId: 'ev-B' }
+                    ],
+                    createdById: owner.id
+                },
                 tx
             );
-            expect(rows).toHaveLength(2);
+
+            // Second reconcile: ev-A was removed at the source, but ev-B still
+            // covers 09-11..09-12 — so 09-11 must stay blocked (attributed to ev-B
+            // now), while 09-10 (only ev-A) is freed.
+            const result = await model.replaceFutureSyncOccupancy(
+                {
+                    accommodationId: accommodation.id,
+                    source: OccupancySourceEnum.GOOGLE_CALENDAR,
+                    fromDate: '2026-09-01',
+                    rows: [
+                        { date: '2026-09-11', externalEventId: 'ev-B' },
+                        { date: '2026-09-12', externalEventId: 'ev-B' }
+                    ],
+                    createdById: owner.id
+                },
+                tx
+            );
+
+            expect(result).toEqual({ removed: 3, inserted: 2 });
+
+            const rows = await model.findByAccommodation({ accommodationId: accommodation.id }, tx);
+            expect(rows.map((row) => row.date)).toEqual(['2026-09-11', '2026-09-12']);
+            expect(rows.every((row) => row.externalEventId === 'ev-B')).toBe(true);
         });
     });
 
-    it('deleteByExternalEventId only deletes rows for that source + event, never MANUAL', async () => {
+    it('does not delete or overwrite a MANUAL row on a date in the desired set', async () => {
         await withTestTransaction(async (tx) => {
-            const { owner, accommodation } = await seedAccommodation(tx, 'delete-event');
+            const { owner, accommodation } = await seedAccommodation(tx, 'manual-wins');
             const model = new AccommodationOccupancyModel();
 
             await model.batchUpsertManual(
                 { accommodationId: accommodation.id, dates: ['2026-10-05'], createdById: owner.id },
                 tx
             );
-            await model.upsertSyncOccupancy(
+
+            const result = await model.replaceFutureSyncOccupancy(
                 {
                     accommodationId: accommodation.id,
-                    dates: ['2026-10-06', '2026-10-07'],
                     source: OccupancySourceEnum.GOOGLE_CALENDAR,
-                    externalEventId: 'gcal-event-3',
+                    fromDate: '2026-10-01',
+                    rows: [
+                        { date: '2026-10-05', externalEventId: 'gcal-event-2' },
+                        { date: '2026-10-06', externalEventId: 'gcal-event-2' }
+                    ],
                     createdById: owner.id
                 },
                 tx
             );
 
-            const deletedCount = await model.deleteByExternalEventId(
-                {
-                    accommodationId: accommodation.id,
-                    source: OccupancySourceEnum.GOOGLE_CALENDAR,
-                    externalEventId: 'gcal-event-3'
-                },
-                tx
-            );
-            expect(deletedCount).toBe(2);
+            // The MANUAL row is not a GOOGLE_CALENDAR row so the DELETE never
+            // touches it, and the conflicting INSERT for 10-05 is a no-op.
+            expect(result).toEqual({ removed: 0, inserted: 1 });
 
-            const remaining = await model.findByAccommodation(
-                { accommodationId: accommodation.id },
-                tx
-            );
-            expect(remaining.map((row) => row.date)).toEqual(['2026-10-05']);
-            expect(remaining[0]?.source).toBe('MANUAL');
+            const rows = await model.findByAccommodation({ accommodationId: accommodation.id }, tx);
+            const manualRow = rows.find((row) => row.date === '2026-10-05');
+            expect(manualRow?.source).toBe('MANUAL');
+            const syncRow = rows.find((row) => row.date === '2026-10-06');
+            expect(syncRow?.source).toBe('GOOGLE_CALENDAR');
         });
     });
 
-    it('deleteStaleSyncByExternalEventId removes only dates outside keepDates', async () => {
+    it('leaves a pre-existing GOOGLE_CALENDAR row before fromDate untouched', async () => {
         await withTestTransaction(async (tx) => {
-            const { owner, accommodation } = await seedAccommodation(tx, 'stale-shrink');
+            const { owner, accommodation } = await seedAccommodation(tx, 'past-untouched');
             const model = new AccommodationOccupancyModel();
 
-            await model.upsertSyncOccupancy(
+            // Seed a "past" GOOGLE_CALENDAR row before the reconcile window.
+            await model.replaceFutureSyncOccupancy(
                 {
                     accommodationId: accommodation.id,
-                    dates: ['2026-11-01', '2026-11-02', '2026-11-03'],
                     source: OccupancySourceEnum.GOOGLE_CALENDAR,
-                    externalEventId: 'gcal-event-4',
+                    fromDate: '2026-11-01',
+                    rows: [{ date: '2026-11-01', externalEventId: 'gcal-event-past' }],
                     createdById: owner.id
                 },
                 tx
             );
 
-            // Event shrank to only cover the 1st now.
-            const deletedCount = await model.deleteStaleSyncByExternalEventId(
+            // Reconcile again with a LATER fromDate — the 2026-11-01 row is
+            // before the new window and must survive, even though it is empty
+            // of desired rows for this run.
+            const result = await model.replaceFutureSyncOccupancy(
                 {
                     accommodationId: accommodation.id,
                     source: OccupancySourceEnum.GOOGLE_CALENDAR,
-                    externalEventId: 'gcal-event-4',
-                    keepDates: ['2026-11-01']
-                },
-                tx
-            );
-            expect(deletedCount).toBe(2);
-
-            const remaining = await model.findBySource(
-                { accommodationId: accommodation.id, source: OccupancySourceEnum.GOOGLE_CALENDAR },
-                tx
-            );
-            expect(remaining.map((row) => row.date)).toEqual(['2026-11-01']);
-        });
-    });
-
-    it('deleteStaleSyncByExternalEventId with empty keepDates deletes every row for the event', async () => {
-        await withTestTransaction(async (tx) => {
-            const { owner, accommodation } = await seedAccommodation(tx, 'stale-empty');
-            const model = new AccommodationOccupancyModel();
-
-            await model.upsertSyncOccupancy(
-                {
-                    accommodationId: accommodation.id,
-                    dates: ['2026-12-01', '2026-12-02'],
-                    source: OccupancySourceEnum.GOOGLE_CALENDAR,
-                    externalEventId: 'gcal-event-5',
+                    fromDate: '2026-11-02',
+                    rows: [{ date: '2026-11-05', externalEventId: 'gcal-event-future' }],
                     createdById: owner.id
                 },
                 tx
             );
 
-            const deletedCount = await model.deleteStaleSyncByExternalEventId(
-                {
-                    accommodationId: accommodation.id,
-                    source: OccupancySourceEnum.GOOGLE_CALENDAR,
-                    externalEventId: 'gcal-event-5',
-                    keepDates: []
-                },
-                tx
-            );
-            expect(deletedCount).toBe(2);
+            expect(result).toEqual({ removed: 0, inserted: 1 });
 
-            const remaining = await model.findBySource(
-                { accommodationId: accommodation.id, source: OccupancySourceEnum.GOOGLE_CALENDAR },
-                tx
+            const rows = await model.findByAccommodation({ accommodationId: accommodation.id }, tx);
+            expect(rows.map((row) => row.date)).toEqual(['2026-11-01', '2026-11-05']);
+            expect(rows.find((row) => row.date === '2026-11-01')?.externalEventId).toBe(
+                'gcal-event-past'
             );
-            expect(remaining).toHaveLength(0);
-        });
-    });
-
-    it('findBySource returns only rows for the requested source, ordered by date', async () => {
-        await withTestTransaction(async (tx) => {
-            const { owner, accommodation } = await seedAccommodation(tx, 'find-by-source');
-            const model = new AccommodationOccupancyModel();
-
-            await model.batchUpsertManual(
-                { accommodationId: accommodation.id, dates: ['2027-01-05'], createdById: owner.id },
-                tx
-            );
-            await model.upsertSyncOccupancy(
-                {
-                    accommodationId: accommodation.id,
-                    dates: ['2027-01-03', '2027-01-01'],
-                    source: OccupancySourceEnum.GOOGLE_CALENDAR,
-                    externalEventId: 'gcal-event-6',
-                    createdById: owner.id
-                },
-                tx
-            );
-
-            const rows = await model.findBySource(
-                { accommodationId: accommodation.id, source: OccupancySourceEnum.GOOGLE_CALENDAR },
-                tx
-            );
-            expect(rows.map((row) => row.date)).toEqual(['2027-01-01', '2027-01-03']);
-            expect(rows.every((row) => row.source === 'GOOGLE_CALENDAR')).toBe(true);
         });
     });
 });

@@ -2,8 +2,8 @@
  * Google Calendar Sync Cron Job (HOS-157 Phase 2 — Layer 4).
  *
  * Every 6 hours, iterates every ACTIVE Google Calendar connection and runs the
- * incremental occupancy sync (`syncAccommodationCalendar`) for each. The same
- * primitive backs the owner's on-demand "sync now" route.
+ * declarative occupancy reconcile (`syncAccommodationCalendar`) for each. The
+ * same primitive backs the owner's on-demand "sync now" route.
  *
  * ## Why no advisory lock
  *
@@ -13,12 +13,16 @@
  * external Google HTTP calls with DB writes PER accommodation, which must never
  * happen inside an open transaction (the documented "no HTTP in a transaction"
  * rule — see `destination-weather-fetch.job.ts`). Overlap protection is instead
- * provided by IDEMPOTENCY: the sync's writes are `onConflictDoNothing` upserts
- * and delete-by-`externalEventId` reconciliations, and Google refresh tokens
- * are not single-use, so two overlapping runs converge to the same state
- * (wasteful, never corrupting). With a 6-hour cadence and in-process node-cron
- * (which will not start a new run while the previous promise is pending), an
- * actual overlap is not reachable in practice.
+ * provided by the sync's DECLARATIVE nature: each run atomically replaces every
+ * FUTURE `GOOGLE_CALENDAR` occupancy row via
+ * `accommodationOccupancyModel.replaceFutureSyncOccupancy` (a single transaction
+ * that deletes the current future set for that source and inserts the freshly
+ * computed desired set), and Google refresh tokens are not single-use, so
+ * re-running the sync always converges to the same end-state regardless of how
+ * many times — or how close together — it runs (wasteful, never corrupting).
+ * With a 6-hour cadence and in-process node-cron (which will not start a new
+ * run while the previous promise is pending), an actual overlap is not
+ * reachable in practice.
  *
  * ## Failure isolation
  *

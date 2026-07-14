@@ -1,7 +1,10 @@
 /**
  * Google Calendar Occupancy Sync Service Tests (HOS-157 Phase 2 — Layer 3)
  *
- * Unit tests for `syncAccommodationCalendar`.
+ * Unit tests for `syncAccommodationCalendar`, the DECLARATIVE full-window
+ * reconcile: fetch all live events from start-of-today forward, compute the
+ * desired blocked-date set (one row per date, first event wins provenance), and
+ * atomically replace future `GOOGLE_CALENDAR` occupancy rows.
  *
  * Mocked collaborators:
  * - credential repository `getGoogleCredential`
@@ -9,23 +12,23 @@
  * - REST client `listEvents` (error classes kept REAL via importOriginal so the
  *   service's `instanceof` checks work)
  * - `@repo/db` models: `accommodationCalendarSyncModel.updateSyncState` and the
- *   four source-scoped `accommodationOccupancyModel` sync methods.
+ *   single `accommodationOccupancyModel.replaceFutureSyncOccupancy` primitive.
  *
  * The "sync never overwrites MANUAL" invariant is enforced inside the model's
- * source-scoped methods (covered by the DB model's own tests), so it is not
- * re-asserted here.
+ * source-scoped `replaceFutureSyncOccupancy` (covered by the DB model's own
+ * tests), so it is not re-asserted here.
  *
  * Scenarios covered (AAA pattern):
  * 1. Skipped: no connection / inactive / no calendar id.
  * 2. Token terminal + transient failure → error result + ERROR sync state.
- * 3. Incremental all-day event → half-open dates upserted + reconciled + OK state.
- * 4. Cancelled event → deleteByExternalEventId, no upsert.
- * 5. Same-day timed event (< 1 day) → no upsert, rows removed.
- * 6. Multi-day timed event → dates derived from dateTime prefixes.
- * 7. 410 stale token → full-sync fallback + orphan cleanup.
- * 8. Full sync orphan cleanup removes events absent from the fetch.
- * 9. Pagination accumulates across pages; final nextSyncToken persisted.
- * 10. API error → error result (kind 'api') + ERROR sync state.
+ * 3. Happy path: all-day event → half-open desired rows + OK state (no syncToken).
+ * 4. OVERLAP double-booking regression: two overlapping events → one row per
+ *    date, shared date attributed to the first event.
+ * 5. Cancelled events excluded from the desired set.
+ * 6. Same-day timed event (< 1 day) contributes no rows.
+ * 7. Multi-day timed event derives dates from dateTime prefixes.
+ * 8. Pagination accumulates across pages into one desired set.
+ * 9. listEvents 503 → error kind 'api'; 401 → error kind 'terminal'; both ERROR.
  *
  * @module test/services/google-calendar/google-calendar-sync.service
  */
@@ -42,19 +45,13 @@ const {
     mockGetValidGoogleToken,
     mockListEvents,
     mockUpdateSyncState,
-    mockDeleteByExternalEventId,
-    mockUpsertSyncOccupancy,
-    mockDeleteStale,
-    mockFindBySource
+    mockReplaceFutureSyncOccupancy
 } = vi.hoisted(() => ({
     mockGetGoogleCredential: vi.fn(),
     mockGetValidGoogleToken: vi.fn(),
     mockListEvents: vi.fn(),
     mockUpdateSyncState: vi.fn().mockResolvedValue(null),
-    mockDeleteByExternalEventId: vi.fn().mockResolvedValue(0),
-    mockUpsertSyncOccupancy: vi.fn(),
-    mockDeleteStale: vi.fn().mockResolvedValue(0),
-    mockFindBySource: vi.fn().mockResolvedValue([])
+    mockReplaceFutureSyncOccupancy: vi.fn()
 }));
 
 vi.mock('../../../src/services/google-calendar/google-calendar-credential.repository.js', () => ({
@@ -79,10 +76,7 @@ vi.mock(
 vi.mock('@repo/db', () => ({
     accommodationCalendarSyncModel: { updateSyncState: mockUpdateSyncState },
     accommodationOccupancyModel: {
-        deleteByExternalEventId: mockDeleteByExternalEventId,
-        upsertSyncOccupancy: mockUpsertSyncOccupancy,
-        deleteStaleSyncByExternalEventId: mockDeleteStale,
-        findBySource: mockFindBySource
+        replaceFutureSyncOccupancy: mockReplaceFutureSyncOccupancy
     }
 }));
 
@@ -91,6 +85,22 @@ vi.mock('../../../src/utils/logger.js', () => ({
 }));
 
 const ACCOMMODATION_ID = 'acc-1';
+
+/**
+ * Today's `YYYY-MM-DD` in the AR market zone, computed EXACTLY like the
+ * service's `fromDate` (`Intl.DateTimeFormat('en-CA', { timeZone:
+ * 'America/Argentina/Buenos_Aires' })`). A plain UTC computation would be
+ * off-by-one during 00:00-03:00 UTC, since AR is a fixed UTC-3 offset.
+ */
+const todayFromDate = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires'
+}).format(new Date());
+
+/** Adds (or subtracts, via a negative `days`) whole days to a `YYYY-MM-DD` string using UTC date math. */
+const addDaysUtc = (date: string, days: number): string => {
+    const ms = Date.parse(`${date}T00:00:00Z`) + days * 24 * 60 * 60 * 1000;
+    return new Date(ms).toISOString().slice(0, 10);
+};
 
 const buildCredential = (overrides?: Partial<GoogleCredential>): GoogleCredential => ({
     accessToken: 'cached',
@@ -106,18 +116,12 @@ const buildCredential = (overrides?: Partial<GoogleCredential>): GoogleCredentia
 describe('google-calendar-sync.service', () => {
     let syncAccommodationCalendar: typeof import('../../../src/services/google-calendar/google-calendar-sync.service.js').syncAccommodationCalendar;
     let GoogleTokenRefreshError: typeof import('../../../src/services/google-calendar/google-token.errors.js').GoogleTokenRefreshError;
-    let GoogleCalendarSyncTokenInvalidError: typeof import('../../../src/services/google-calendar/google-calendar-client.js').GoogleCalendarSyncTokenInvalidError;
     let GoogleCalendarApiError: typeof import('../../../src/services/google-calendar/google-calendar-client.js').GoogleCalendarApiError;
 
     beforeEach(async () => {
         vi.clearAllMocks();
         mockUpdateSyncState.mockResolvedValue(null);
-        mockDeleteByExternalEventId.mockResolvedValue(0);
-        mockDeleteStale.mockResolvedValue(0);
-        mockFindBySource.mockResolvedValue([]);
-        mockUpsertSyncOccupancy.mockImplementation(({ dates }: { dates: string[] }) =>
-            Promise.resolve(dates.map((date) => ({ date })))
-        );
+        mockReplaceFutureSyncOccupancy.mockResolvedValue({ removed: 0, inserted: 0 });
         mockGetValidGoogleToken.mockResolvedValue('access-token');
 
         ({ syncAccommodationCalendar } = await import(
@@ -126,7 +130,7 @@ describe('google-calendar-sync.service', () => {
         ({ GoogleTokenRefreshError } = await import(
             '../../../src/services/google-calendar/google-token.errors.js'
         ));
-        ({ GoogleCalendarSyncTokenInvalidError, GoogleCalendarApiError } = await import(
+        ({ GoogleCalendarApiError } = await import(
             '../../../src/services/google-calendar/google-calendar-client.js'
         ));
     });
@@ -151,6 +155,7 @@ describe('google-calendar-sync.service', () => {
             );
             const result = await syncAccommodationCalendar({ accommodationId: ACCOMMODATION_ID });
             expect(result).toEqual({ status: 'skipped', reason: 'no-calendar-id' });
+            expect(mockReplaceFutureSyncOccupancy).not.toHaveBeenCalled();
         });
     });
 
@@ -188,80 +193,117 @@ describe('google-calendar-sync.service', () => {
         });
     });
 
-    describe('event reconciliation', () => {
-        it('should upsert the half-open date range for an all-day event and persist OK + new sync token', async () => {
-            // Arrange — incremental sync (stored token), one all-day event Jul10→Jul12.
-            mockGetGoogleCredential.mockResolvedValue(buildCredential({ syncToken: 'old-tok' }));
+    describe('declarative reconcile', () => {
+        it('should replace future rows with the half-open desired set and persist OK (no syncToken)', async () => {
+            // Arrange — one all-day event today→(today+2) (checkout day free).
+            mockGetGoogleCredential.mockResolvedValue(buildCredential());
             mockListEvents.mockResolvedValue({
                 items: [
                     {
-                        id: 'ev-allday',
+                        id: 'ev',
                         status: 'confirmed',
-                        start: { date: '2026-07-10' },
-                        end: { date: '2026-07-12' }
+                        start: { date: todayFromDate },
+                        end: { date: addDaysUtc(todayFromDate, 2) }
                     }
-                ],
-                nextSyncToken: 'new-tok'
+                ]
             });
+            mockReplaceFutureSyncOccupancy.mockResolvedValue({ removed: 3, inserted: 2 });
 
             // Act
             const result = await syncAccommodationCalendar({ accommodationId: ACCOMMODATION_ID });
 
-            // Assert — Jul12 (checkout) is free: only Jul10 + Jul11 blocked.
-            expect(mockUpsertSyncOccupancy).toHaveBeenCalledWith({
+            // Assert — desired rows are today + (today+1), attributed to `ev`.
+            expect(mockReplaceFutureSyncOccupancy).toHaveBeenCalledWith({
                 accommodationId: ACCOMMODATION_ID,
-                dates: ['2026-07-10', '2026-07-11'],
                 source: 'GOOGLE_CALENDAR',
-                externalEventId: 'ev-allday',
+                fromDate: todayFromDate,
+                rows: [
+                    { date: todayFromDate, externalEventId: 'ev' },
+                    { date: addDaysUtc(todayFromDate, 1), externalEventId: 'ev' }
+                ],
                 createdById: 'host-1'
             });
-            expect(mockDeleteStale).toHaveBeenCalledWith({
-                accommodationId: ACCOMMODATION_ID,
-                source: 'GOOGLE_CALENDAR',
-                externalEventId: 'ev-allday',
-                keepDates: ['2026-07-10', '2026-07-11']
-            });
-            expect(mockUpdateSyncState).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    syncToken: 'new-tok',
-                    lastSyncStatus: 'OK',
-                    lastErrorMessage: null
-                })
-            );
-            // Timed events are normalized to the AR market zone by Google.
+            // Google normalizes timed events to the AR market zone.
             expect(mockListEvents.mock.calls[0]?.[0]).toMatchObject({
-                timeZone: 'America/Argentina/Buenos_Aires'
+                timeZone: 'America/Argentina/Buenos_Aires',
+                timeMin: expect.any(String)
             });
-            // Incremental → no orphan scan.
-            expect(mockFindBySource).not.toHaveBeenCalled();
+            // OK sync state with NO syncToken key.
+            const stateArg = mockUpdateSyncState.mock.calls.at(-1)?.[0];
+            expect(stateArg).toMatchObject({
+                lastSyncStatus: 'OK',
+                lastErrorMessage: null
+            });
+            expect(stateArg).not.toHaveProperty('syncToken');
+            // Result maps removed/inserted to datesRemoved/datesUpserted.
             expect(result).toMatchObject({
                 status: 'ok',
-                fullSync: false,
+                fullSync: true,
                 eventsProcessed: 1,
-                datesUpserted: 2
+                datesUpserted: 2,
+                datesRemoved: 3
             });
         });
 
-        it('should delete occupancy for a cancelled event and never upsert', async () => {
-            mockGetGoogleCredential.mockResolvedValue(buildCredential({ syncToken: 'tok' }));
+        it('should collapse overlapping events to one row per date (double-booking regression)', async () => {
+            // Arrange — ev-A covers today..(today+2), ev-B covers (today+1)..(today+3)
+            // (shared date: today+1).
+            mockGetGoogleCredential.mockResolvedValue(buildCredential());
             mockListEvents.mockResolvedValue({
-                items: [{ id: 'ev-gone', status: 'cancelled' }],
-                nextSyncToken: 'tok2'
+                items: [
+                    {
+                        id: 'ev-A',
+                        status: 'confirmed',
+                        start: { date: todayFromDate },
+                        end: { date: addDaysUtc(todayFromDate, 2) }
+                    },
+                    {
+                        id: 'ev-B',
+                        status: 'confirmed',
+                        start: { date: addDaysUtc(todayFromDate, 1) },
+                        end: { date: addDaysUtc(todayFromDate, 3) }
+                    }
+                ]
             });
+            mockReplaceFutureSyncOccupancy.mockResolvedValue({ removed: 0, inserted: 3 });
 
-            const result = await syncAccommodationCalendar({ accommodationId: ACCOMMODATION_ID });
+            // Act
+            await syncAccommodationCalendar({ accommodationId: ACCOMMODATION_ID });
 
-            expect(mockDeleteByExternalEventId).toHaveBeenCalledWith({
-                accommodationId: ACCOMMODATION_ID,
-                source: 'GOOGLE_CALENDAR',
-                externalEventId: 'ev-gone'
-            });
-            expect(mockUpsertSyncOccupancy).not.toHaveBeenCalled();
-            expect(result).toMatchObject({ status: 'ok' });
+            // Assert — exactly one row per date; the shared date wins ev-A (first).
+            const callArg = mockReplaceFutureSyncOccupancy.mock.calls[0]?.[0];
+            expect(callArg.rows).toEqual([
+                { date: todayFromDate, externalEventId: 'ev-A' },
+                { date: addDaysUtc(todayFromDate, 1), externalEventId: 'ev-A' },
+                { date: addDaysUtc(todayFromDate, 2), externalEventId: 'ev-B' }
+            ]);
+            // No duplicate dates.
+            const dates = callArg.rows.map((r: { date: string }) => r.date);
+            expect(new Set(dates).size).toBe(dates.length);
         });
 
-        it('should remove rows for a same-day timed event (< 1 day → empty range)', async () => {
-            mockGetGoogleCredential.mockResolvedValue(buildCredential({ syncToken: 'tok' }));
+        it('should exclude cancelled events from the desired set', async () => {
+            mockGetGoogleCredential.mockResolvedValue(buildCredential());
+            mockListEvents.mockResolvedValue({
+                items: [
+                    { id: 'ev-gone', status: 'cancelled' },
+                    {
+                        id: 'ev-live',
+                        status: 'confirmed',
+                        start: { date: todayFromDate },
+                        end: { date: addDaysUtc(todayFromDate, 1) }
+                    }
+                ]
+            });
+
+            await syncAccommodationCalendar({ accommodationId: ACCOMMODATION_ID });
+
+            const callArg = mockReplaceFutureSyncOccupancy.mock.calls[0]?.[0];
+            expect(callArg.rows).toEqual([{ date: todayFromDate, externalEventId: 'ev-live' }]);
+        });
+
+        it('should contribute no rows for a same-day timed event (< 1 day → empty range)', async () => {
+            mockGetGoogleCredential.mockResolvedValue(buildCredential());
             mockListEvents.mockResolvedValue({
                 items: [
                     {
@@ -270,123 +312,80 @@ describe('google-calendar-sync.service', () => {
                         start: { dateTime: '2026-07-10T14:00:00-03:00' },
                         end: { dateTime: '2026-07-10T16:00:00-03:00' }
                     }
-                ],
-                nextSyncToken: 'tok2'
+                ]
             });
 
             await syncAccommodationCalendar({ accommodationId: ACCOMMODATION_ID });
 
-            expect(mockUpsertSyncOccupancy).not.toHaveBeenCalled();
-            expect(mockDeleteByExternalEventId).toHaveBeenCalledWith({
-                accommodationId: ACCOMMODATION_ID,
-                source: 'GOOGLE_CALENDAR',
-                externalEventId: 'ev-short'
-            });
+            expect(mockReplaceFutureSyncOccupancy).toHaveBeenCalledWith(
+                expect.objectContaining({ rows: [] })
+            );
         });
 
         it('should derive dates from dateTime prefixes for a multi-day timed event', async () => {
-            mockGetGoogleCredential.mockResolvedValue(buildCredential({ syncToken: 'tok' }));
+            mockGetGoogleCredential.mockResolvedValue(buildCredential());
             mockListEvents.mockResolvedValue({
                 items: [
                     {
                         id: 'ev-timed',
                         status: 'confirmed',
-                        start: { dateTime: '2026-07-10T22:00:00-03:00' },
-                        end: { dateTime: '2026-07-12T09:00:00-03:00' }
+                        start: { dateTime: `${todayFromDate}T22:00:00-03:00` },
+                        end: { dateTime: `${addDaysUtc(todayFromDate, 2)}T09:00:00-03:00` }
                     }
-                ],
-                nextSyncToken: 'tok2'
+                ]
             });
 
             await syncAccommodationCalendar({ accommodationId: ACCOMMODATION_ID });
 
-            expect(mockUpsertSyncOccupancy).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    dates: ['2026-07-10', '2026-07-11'],
-                    externalEventId: 'ev-timed'
-                })
-            );
-        });
-    });
-
-    describe('full sync + orphan cleanup', () => {
-        it('should fall back to a full sync when the stored token is stale (410)', async () => {
-            // Arrange — first (incremental) call throws stale-token, second (full) succeeds.
-            mockGetGoogleCredential.mockResolvedValue(buildCredential({ syncToken: 'stale' }));
-            mockListEvents
-                .mockRejectedValueOnce(new GoogleCalendarSyncTokenInvalidError())
-                .mockResolvedValueOnce({
-                    items: [
-                        {
-                            id: 'ev-1',
-                            status: 'confirmed',
-                            start: { date: '2026-07-10' },
-                            end: { date: '2026-07-11' }
-                        }
-                    ],
-                    nextSyncToken: 'fresh-tok'
-                });
-
-            // Act
-            const result = await syncAccommodationCalendar({ accommodationId: ACCOMMODATION_ID });
-
-            // Assert
-            expect(mockListEvents).toHaveBeenCalledTimes(2);
-            // Second call is a full sync: syncToken absent, timeMin present.
-            const secondCallArg = mockListEvents.mock.calls[1]?.[0];
-            expect(secondCallArg.syncToken).toBeUndefined();
-            expect(secondCallArg.timeMin).toBeDefined();
-            // Full sync → orphan scan ran.
-            expect(mockFindBySource).toHaveBeenCalled();
-            expect(result).toMatchObject({ status: 'ok', fullSync: true });
+            const callArg = mockReplaceFutureSyncOccupancy.mock.calls[0]?.[0];
+            expect(callArg.rows).toEqual([
+                { date: todayFromDate, externalEventId: 'ev-timed' },
+                { date: addDaysUtc(todayFromDate, 1), externalEventId: 'ev-timed' }
+            ]);
         });
 
-        it('should delete orphaned events absent from a full fetch', async () => {
-            // Arrange — no stored token → full sync. Fetch has ev-present; DB also
-            // holds a row for ev-orphan (deleted at source while token was invalid).
-            mockGetGoogleCredential.mockResolvedValue(buildCredential({ syncToken: null }));
+        it('should clamp out a past date from an in-progress event, keeping only date >= fromDate', async () => {
+            // Arrange — an all-day event that started yesterday and ends tomorrow
+            // (still "in progress"). Google returns it in full since `timeMin`
+            // filters by event END, not START, so its half-open dates are
+            // [yesterday, today]. The past date (yesterday) must be clamped out
+            // before the rows reach `replaceFutureSyncOccupancy`.
+            const yesterday = addDaysUtc(todayFromDate, -1);
+            const tomorrow = addDaysUtc(todayFromDate, 1);
+            mockGetGoogleCredential.mockResolvedValue(buildCredential());
             mockListEvents.mockResolvedValue({
                 items: [
                     {
-                        id: 'ev-present',
+                        id: 'ev-in-progress',
                         status: 'confirmed',
-                        start: { date: '2026-07-10' },
-                        end: { date: '2026-07-11' }
+                        start: { date: yesterday },
+                        end: { date: tomorrow }
                     }
-                ],
-                nextSyncToken: 'tok'
+                ]
             });
-            mockFindBySource.mockResolvedValue([
-                { externalEventId: 'ev-present', date: '2026-07-10' },
-                { externalEventId: 'ev-orphan', date: '2026-08-01' }
-            ]);
 
             // Act
             await syncAccommodationCalendar({ accommodationId: ACCOMMODATION_ID });
 
-            // Assert — only the orphan is deleted, not the present event.
-            expect(mockDeleteByExternalEventId).toHaveBeenCalledWith({
-                accommodationId: ACCOMMODATION_ID,
-                source: 'GOOGLE_CALENDAR',
-                externalEventId: 'ev-orphan'
-            });
-            expect(mockDeleteByExternalEventId).not.toHaveBeenCalledWith(
-                expect.objectContaining({ externalEventId: 'ev-present' })
-            );
+            // Assert — only today survives; yesterday is dropped.
+            const callArg = mockReplaceFutureSyncOccupancy.mock.calls[0]?.[0];
+            expect(callArg.rows).toEqual([
+                { date: todayFromDate, externalEventId: 'ev-in-progress' }
+            ]);
         });
     });
 
     describe('pagination + errors', () => {
-        it('should accumulate events across pages and persist the final sync token', async () => {
-            mockGetGoogleCredential.mockResolvedValue(buildCredential({ syncToken: 'tok' }));
+        it('should accumulate events across pages into one desired set', async () => {
+            mockGetGoogleCredential.mockResolvedValue(buildCredential());
             mockListEvents
                 .mockResolvedValueOnce({
                     items: [
                         {
                             id: 'ev-1',
                             status: 'confirmed',
-                            start: { date: '2026-07-10' },
-                            end: { date: '2026-07-11' }
+                            start: { date: todayFromDate },
+                            end: { date: addDaysUtc(todayFromDate, 1) }
                         }
                     ],
                     nextPageToken: 'page-2'
@@ -396,26 +395,27 @@ describe('google-calendar-sync.service', () => {
                         {
                             id: 'ev-2',
                             status: 'confirmed',
-                            start: { date: '2026-07-15' },
-                            end: { date: '2026-07-16' }
+                            start: { date: addDaysUtc(todayFromDate, 5) },
+                            end: { date: addDaysUtc(todayFromDate, 6) }
                         }
-                    ],
-                    nextSyncToken: 'final-tok'
+                    ]
                 });
+            mockReplaceFutureSyncOccupancy.mockResolvedValue({ removed: 0, inserted: 2 });
 
             const result = await syncAccommodationCalendar({ accommodationId: ACCOMMODATION_ID });
 
             expect(mockListEvents).toHaveBeenCalledTimes(2);
             expect(mockListEvents.mock.calls[1]?.[0].pageToken).toBe('page-2');
-            expect(mockUpsertSyncOccupancy).toHaveBeenCalledTimes(2);
-            expect(mockUpdateSyncState).toHaveBeenCalledWith(
-                expect.objectContaining({ syncToken: 'final-tok', lastSyncStatus: 'OK' })
-            );
+            const callArg = mockReplaceFutureSyncOccupancy.mock.calls[0]?.[0];
+            expect(callArg.rows).toEqual([
+                { date: todayFromDate, externalEventId: 'ev-1' },
+                { date: addDaysUtc(todayFromDate, 5), externalEventId: 'ev-2' }
+            ]);
             expect(result).toMatchObject({ status: 'ok', eventsProcessed: 2 });
         });
 
-        it('should record ERROR (kind api) when the Calendar API returns a non-2xx', async () => {
-            mockGetGoogleCredential.mockResolvedValue(buildCredential({ syncToken: 'tok' }));
+        it('should record ERROR (kind api) when the Calendar API returns a 503', async () => {
+            mockGetGoogleCredential.mockResolvedValue(buildCredential());
             mockListEvents.mockRejectedValue(
                 new GoogleCalendarApiError('events.list failed with status 503', 503)
             );
@@ -423,6 +423,21 @@ describe('google-calendar-sync.service', () => {
             const result = await syncAccommodationCalendar({ accommodationId: ACCOMMODATION_ID });
 
             expect(result).toMatchObject({ status: 'error', kind: 'api' });
+            expect(mockUpdateSyncState).toHaveBeenCalledWith(
+                expect.objectContaining({ lastSyncStatus: 'ERROR' })
+            );
+            expect(mockReplaceFutureSyncOccupancy).not.toHaveBeenCalled();
+        });
+
+        it('should record ERROR (kind terminal) when the Calendar API returns a 401 (grant revoked)', async () => {
+            mockGetGoogleCredential.mockResolvedValue(buildCredential());
+            mockListEvents.mockRejectedValue(
+                new GoogleCalendarApiError('events.list failed with status 401', 401)
+            );
+
+            const result = await syncAccommodationCalendar({ accommodationId: ACCOMMODATION_ID });
+
+            expect(result).toMatchObject({ status: 'error', kind: 'terminal' });
             expect(mockUpdateSyncState).toHaveBeenCalledWith(
                 expect.objectContaining({ lastSyncStatus: 'ERROR' })
             );
