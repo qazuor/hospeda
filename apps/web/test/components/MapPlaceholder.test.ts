@@ -27,12 +27,27 @@ describe('MapPlaceholder.astro', () => {
             expect(src).toContain('readonly address: string');
         });
 
+        it('accepts a required locale prop', () => {
+            expect(src).toContain('readonly locale: SupportedLocale');
+        });
+
         it('accepts an optional title prop', () => {
             expect(src).toContain('readonly title?: string');
         });
+    });
 
-        it('defaults title to "Ubicación"', () => {
-            expect(src).toContain("= 'Ubicación'");
+    describe('i18n', () => {
+        it('imports createTranslations and SupportedLocale', () => {
+            expect(src).toContain('createTranslations');
+            expect(src).toContain('SupportedLocale');
+        });
+
+        it('builds a translator from the locale prop', () => {
+            expect(src).toContain('createTranslations(locale)');
+        });
+
+        it('resolves the default title from the maps namespace', () => {
+            expect(src).toContain("t('maps.markerLabel'");
         });
     });
 
@@ -76,23 +91,24 @@ describe('MapPlaceholder.astro', () => {
     });
 
     describe('CTA button', () => {
-        it('labels the CTA "Ver en Google Maps"', () => {
-            expect(src).toContain('Ver en Google Maps');
+        it('labels the CTA via the maps.openInGoogleMaps key', () => {
+            expect(src).toContain("t('maps.openInGoogleMaps'");
         });
 
         it('applies the map-placeholder__cta class', () => {
             expect(src).toContain('map-placeholder__cta');
         });
 
-        it('includes an accessible aria-label', () => {
-            expect(src).toContain('aria-label={`Ver ${address} en Google Maps`}');
+        it('builds the accessible aria-label from the maps.openAddressInGoogleMaps key', () => {
+            expect(src).toContain("t('maps.openAddressInGoogleMaps'");
+            expect(src).toContain('{ address }');
         });
     });
 
     describe('card structure', () => {
-        it('renders the title in an h3 element', () => {
+        it('renders the resolved title in an h3 element', () => {
             expect(src).toContain('<h3');
-            expect(src).toContain('{title}');
+            expect(src).toContain('{resolvedTitle}');
         });
 
         it('renders the address in a paragraph', () => {
