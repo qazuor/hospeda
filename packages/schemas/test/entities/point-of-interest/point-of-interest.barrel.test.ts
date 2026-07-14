@@ -51,7 +51,10 @@ const EXPECTED_EXPORTS = [
     'PointOfInterestDestinationListItemSchema',
     // point-of-interest.category-assignment.schema.ts (HOS-143 T-004)
     'PointOfInterestSetCategoriesInputSchema',
-    'PointOfInterestCategoryAssignmentSchema'
+    'PointOfInterestCategoryAssignmentSchema',
+    // point-of-interest.nearby.schema.ts (HOS-145 T-001)
+    'NearbyPoiSchema',
+    'NearbyPoiQuerySchema'
 ] as const;
 
 describe('point-of-interest schemas barrel (HOS-113 T-013)', () => {

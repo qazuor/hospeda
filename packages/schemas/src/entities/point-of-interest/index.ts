@@ -14,6 +14,8 @@ export * from './point-of-interest.crud.schema.js'; // Create, Update, Delete, R
 export * from './point-of-interest.destination-relation.schema.js';
 // HTTP operations
 export * from './point-of-interest.http.schema.js'; // HTTP-compatible schemas with query coercion
+// Nearby POI search (HOS-145)
+export * from './point-of-interest.nearby.schema.js';
 // Query operations
 export * from './point-of-interest.query.schema.js'; // List, Search, Summary, Stats, Filters schemas
 // Relations
