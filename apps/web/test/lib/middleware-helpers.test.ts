@@ -15,8 +15,10 @@ import {
     buildSetPasswordRedirect,
     extractLocaleFromPath,
     generateCspNonce,
+    IMAGE_ENDPOINT_CACHE_CONTROL,
     isAuthRoute,
     isChangePasswordRoute,
+    isImageEndpointRoute,
     isProfileCompletionBypassRole,
     isProfileCompletionRequiredSessionOptionalRoute,
     isProfileCompletionRoute,
@@ -160,6 +162,25 @@ describe('isServerIslandRoute', () => {
 
     it('should return false for non-server-island routes', () => {
         expect(isServerIslandRoute({ path: '/es/' })).toBe(false);
+    });
+});
+
+describe('isImageEndpointRoute (HOS-160 lever C)', () => {
+    it('detects /_image requests', () => {
+        expect(isImageEndpointRoute({ path: '/_image' })).toBe(true);
+        expect(isImageEndpointRoute({ path: '/_image/?href=%2Fhero.jpg&w=800&f=webp' })).toBe(true);
+    });
+
+    it('returns false for other static and page routes', () => {
+        expect(isImageEndpointRoute({ path: '/_astro/index.abc.js' })).toBe(false);
+        expect(isImageEndpointRoute({ path: '/_server-islands/AuthSection' })).toBe(false);
+        expect(isImageEndpointRoute({ path: '/es/' })).toBe(false);
+        expect(isImageEndpointRoute({ path: '' })).toBe(false);
+    });
+
+    it('exposes an immutable, long-lived Cache-Control value', () => {
+        expect(IMAGE_ENDPOINT_CACHE_CONTROL).toContain('immutable');
+        expect(IMAGE_ENDPOINT_CACHE_CONTROL).toContain('max-age=31536000');
     });
 });
 

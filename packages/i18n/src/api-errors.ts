@@ -142,30 +142,24 @@ function lookupTrans(locale: Locale, key: string): string | undefined {
  * translateApiError({ error, t });
  * ```
  */
-export function translateApiError(params: {
+/**
+ * Core priority-chain resolver — the single source of the reason → code →
+ * status → fallback logic. Takes a ready `t` function and NEVER touches the
+ * `trans` catalog, so importing only this function lets a bundler tree-shake
+ * the (large) translation dictionary out of the client bundle (HOS-160 lever A:
+ * the web app imports this directly and always passes its own client-safe `t`).
+ *
+ * @param params.error - The API error payload, or `null` / `undefined`.
+ * @param params.t - Translation function (from `createT` or `useTranslations`).
+ * @param params.fallback - Optional pre-localized fallback string.
+ * @returns A non-empty, user-displayable string.
+ */
+export function translateApiErrorWithT(params: {
     readonly error: ApiErrorShape | null | undefined;
-    readonly t?: TranslationFn;
-    readonly locale?: SupportedLocale;
+    readonly t: TranslationFn;
     readonly fallback?: string;
 }): string {
-    const { error, fallback } = params;
-
-    // Resolve the translation function: prefer an explicit `t`, then build one
-    // from `locale` using the package's own `trans` map.
-    // The built-in function uses `[MISSING: key]` as the sentinel for absent keys
-    // (when no fallback is supplied) so that the `reason` fall-through check in
-    // the priority logic works identically to the web's `createT` behaviour.
-    const t: TranslationFn | undefined =
-        params.t ??
-        (params.locale
-            ? (key: string, fb?: string) =>
-                  lookupTrans(params.locale as Locale, key) ?? fb ?? `[MISSING: ${key}]`
-            : undefined);
-
-    if (!t) {
-        // No translation context — return the most useful raw value.
-        return error?.message ?? fallback ?? 'Something went wrong. Please try again.';
-    }
+    const { error, t, fallback } = params;
 
     const apiMessage = error?.message ?? '';
     const genericFallback =
@@ -199,4 +193,32 @@ export function translateApiError(params: {
     }
 
     return apiMessage || genericFallback;
+}
+
+export function translateApiError(params: {
+    readonly error: ApiErrorShape | null | undefined;
+    readonly t?: TranslationFn;
+    readonly locale?: SupportedLocale;
+    readonly fallback?: string;
+}): string {
+    const { error, fallback } = params;
+
+    // Resolve the translation function: prefer an explicit `t`, then build one
+    // from `locale` using the package's own `trans` map.
+    // The built-in function uses `[MISSING: key]` as the sentinel for absent keys
+    // (when no fallback is supplied) so that the `reason` fall-through check in
+    // the priority logic works identically to the web's `createT` behaviour.
+    const t: TranslationFn | undefined =
+        params.t ??
+        (params.locale
+            ? (key: string, fb?: string) =>
+                  lookupTrans(params.locale as Locale, key) ?? fb ?? `[MISSING: ${key}]`
+            : undefined);
+
+    if (!t) {
+        // No translation context — return the most useful raw value.
+        return error?.message ?? fallback ?? 'Something went wrong. Please try again.';
+    }
+
+    return translateApiErrorWithT({ error, t, fallback });
 }

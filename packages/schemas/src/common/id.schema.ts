@@ -244,3 +244,7 @@ export type UserSearchHistoryIdType = z.infer<typeof UserSearchHistoryIdSchema>;
 // === Price Alerts System IDs (SPEC-286) ===
 export const PriceAlertIdSchema = BaseIdSchema;
 export type PriceAlertIdType = z.infer<typeof PriceAlertIdSchema>;
+
+// === Occupancy Calendar IDs (HOS-43) ===
+export const AccommodationOccupancyIdSchema = BaseIdSchema;
+export type AccommodationOccupancyIdType = z.infer<typeof AccommodationOccupancyIdSchema>;

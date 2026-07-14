@@ -10,6 +10,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
 import Logo from '@/components/shared/navigation/Logo.astro';
+import I18nClientData from '@/components/shared/I18nClientData.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import FontsLoader from '@/components/shared/FontsLoader.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
@@ -97,6 +98,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		</style>
 	</head>
 	<body>
+		<I18nClientData locale={locale} />
 		<!-- Simplified header: logo only -->
 		<header class="error-header">
 			<div class="error-header__container">

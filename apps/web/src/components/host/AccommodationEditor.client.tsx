@@ -24,12 +24,14 @@ import { ExternalReputationSection } from './ExternalReputationSection.client';
 import { ActionBar } from './editor/ActionBar.client';
 import { AmenitiesSection } from './editor/AmenitiesSection.client';
 import { BasicInfoSection } from './editor/BasicInfoSection.client';
+import { CalendarSection } from './editor/CalendarSection.client';
 import { CapacitySection } from './editor/CapacitySection.client';
 import { ContactInfoSection } from './editor/ContactInfoSection.client';
 import type { EditorSectionNavItem } from './editor/EditorSectionNav.client';
 import { EditorSectionNav } from './editor/EditorSectionNav.client';
 import { LocationPicker } from './editor/LocationPicker.client';
 import { PhotoSection } from './editor/PhotoSection.client';
+import { PlanEntitlementGate } from './editor/PlanEntitlementGate.client';
 import { PricingSection } from './editor/PricingSection.client';
 import { SocialNetworksSection } from './editor/SocialNetworksSection.client';
 import { TranslationPanel } from './editor/TranslationPanel.client';
@@ -386,6 +388,7 @@ export function AccommodationEditor({
             socialNetworks: t('host.properties.editor.section.socialNetworks', 'Redes sociales'),
             amenities: t('host.properties.editor.section.amenities', 'Servicios y comodidades'),
             photos: t('host.properties.editor.section.photos', 'Fotos'),
+            calendar: t('host.properties.editor.section.calendar', 'Calendario'),
             translations: t('host.properties.editor.translation.sectionTitle', 'Traducciones'),
             externalReputation: t(
                 'host.properties.editor.section.externalReputation',
@@ -404,7 +407,8 @@ export function AccommodationEditor({
             { id: 'editor-contact', label: sectionLabels.contact },
             { id: 'editor-socialNetworks', label: sectionLabels.socialNetworks },
             { id: 'editor-amenities', label: sectionLabels.amenities },
-            { id: 'editor-photos', label: sectionLabels.photos }
+            { id: 'editor-photos', label: sectionLabels.photos },
+            { id: 'editor-calendar', label: sectionLabels.calendar }
         ];
         if (translationData) {
             sections.push({ id: 'editor-translations', label: sectionLabels.translations });
@@ -546,6 +550,23 @@ export function AccommodationEditor({
                             initialFeaturedImage={initialFeaturedImage}
                             initialGallery={initialGallery}
                         />
+                    </section>
+
+                    <section
+                        id="editor-calendar"
+                        className={styles.card}
+                        aria-label={sectionLabels.calendar}
+                    >
+                        <PlanEntitlementGate
+                            entitlementKey="can_use_calendar"
+                            locale={locale}
+                            upgradeUrl="/suscriptores/planes/"
+                        >
+                            <CalendarSection
+                                locale={locale}
+                                accommodationId={accommodationId}
+                            />
+                        </PlanEntitlementGate>
                     </section>
 
                     {translationData && (

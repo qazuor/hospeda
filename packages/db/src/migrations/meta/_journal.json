@@ -393,6 +393,13 @@
             "when": 1783945738142,
             "tag": "0055_ordinary_arachne",
             "breakpoints": true
+        },
+        {
+            "idx": 56,
+            "version": "7",
+            "when": 1784037206210,
+            "tag": "0056_small_spacker_dave",
+            "breakpoints": true
         }
     ]
 }

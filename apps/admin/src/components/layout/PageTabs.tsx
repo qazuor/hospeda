@@ -112,6 +112,12 @@ export const accommodationTabs: TabConfig[] = [
         label: 'Preguntas frecuentes',
         labelKey: 'admin-tabs.faqs',
         href: '/faqs'
+    },
+    {
+        id: 'occupancy',
+        label: 'Ocupación',
+        labelKey: 'admin-tabs.occupancy',
+        href: '/occupancy'
     }
 ];
 

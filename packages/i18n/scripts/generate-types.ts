@@ -9,9 +9,44 @@
 
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const LOCALES_DIR = resolve(import.meta.dirname, '../src/locales');
 const OUTPUT_FILE = resolve(import.meta.dirname, '../src/types.ts');
+
+/**
+ * Filename → runtime namespace overrides.
+ *
+ * The generator derives each namespace from the locale JSON filename
+ * (e.g. `home.json` → `home`). For MOST files the filename equals the runtime
+ * namespace registered in `config.shared.ts` / `config.admin.ts`. Two files are
+ * the exception: their runtime namespace is the PLURAL form while the file is
+ * named in the singular (`destination.json` → `destinations`, `event.json` →
+ * `events`). Without this remap the generated `TranslationKey` union would emit
+ * `destination.*` / `event.*` keys that never resolve at runtime (the loader
+ * registers `destinations` / `events`), giving false autocomplete safety for
+ * those namespaces (HOS-127).
+ *
+ * Keep this in sync with the namespace keys in `config.shared.ts`
+ * (`rawWebTranslations`), which are the single source of truth for the runtime
+ * namespace of each file.
+ */
+export const FILENAME_NAMESPACE_OVERRIDES: Readonly<Record<string, string>> = {
+    destination: 'destinations',
+    event: 'events'
+};
+
+/**
+ * Resolve the runtime namespace for a locale JSON file's base name.
+ *
+ * @param fileBaseName - The JSON filename without its `.json` extension
+ *   (e.g. `destination`, `home`, `admin-billing`).
+ * @returns The runtime namespace prefix used to build translation keys — the
+ *   override when one exists, otherwise the base name unchanged.
+ */
+export function resolveNamespace(fileBaseName: string): string {
+    return FILENAME_NAMESPACE_OVERRIDES[fileBaseName] ?? fileBaseName;
+}
 
 /**
  * Recursively extracts all keys from a nested object
@@ -61,7 +96,7 @@ function generateTypes(): void {
             // Process each translation file
             for (const file of files) {
                 const filePath = join(localeDir, file);
-                const namespace = file.replace('.json', '');
+                const namespace = resolveNamespace(file.replace('.json', ''));
 
                 try {
                     const content = readFileSync(filePath, 'utf-8');
@@ -114,5 +149,8 @@ export type TranslationKeys = TranslationKey;
     }
 }
 
-// Run the script
-generateTypes();
+// Run the script only when invoked directly (e.g. `tsx scripts/generate-types.ts`),
+// NOT when the module is imported by a test to exercise `resolveNamespace`.
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+    generateTypes();
+}

@@ -19,7 +19,14 @@
 
 import { defineMiddleware } from 'astro:middleware';
 import { injectNonce } from '../integrations/csp-nonce-injector';
-import { getNoindexHosts, isDevelopment } from './lib/env';
+import {
+    getInternalApiUrl,
+    getInternalRequestSecret,
+    getNoindexHosts,
+    isDevelopment,
+    isProduction
+} from './lib/env';
+import { reportInternalBypassSelfCheck } from './lib/internal-bypass-report';
 import {
     buildChangePasswordRedirect,
     buildCspHeader,
@@ -29,9 +36,11 @@ import {
     buildSetPasswordRedirect,
     extractLocaleFromPath,
     generateCspNonce,
+    IMAGE_ENDPOINT_CACHE_CONTROL,
     isAdminBypassUser,
     isAuthRoute,
     isChangePasswordRoute,
+    isImageEndpointRoute,
     isProfileCompletionRequiredSessionOptionalRoute,
     isProfileCompletionRoute,
     isProtectedRoute,
@@ -60,6 +69,36 @@ const NOINDEX_HOSTS = parseNoindexHosts(getNoindexHosts());
 const CSP_HEADER_NAME = 'Content-Security-Policy';
 
 /**
+ * Startup self-check for the SSR internal-request rate-limit bypass
+ * (HOS-155, incident follow-up to HOS-103).
+ *
+ * Runs exactly once, at module load, only when actually running on the SSR
+ * server (`import.meta.env.SSR`) — never during the build/prerender pass and
+ * never in the browser bundle. On misconfiguration this ALERTS LOUDLY (ERROR
+ * log + Sentry capture) but deliberately never throws: a bug in the alert
+ * path itself must not turn into a boot crash-loop. See
+ * `./lib/internal-bypass-selfcheck.ts` for the pure check logic and
+ * `./lib/internal-bypass-report.ts` for the (unit-tested) alerting wrapper,
+ * plus full incident background.
+ *
+ * This block's build-time safety (it never runs during `astro build`) relies
+ * on the HOS-74 invariant that NO route declares `export const prerender =
+ * true` — enforced by the guard test in `./lib/__tests__/csp-middleware.test.ts`.
+ */
+if (import.meta.env.SSR) {
+    try {
+        reportInternalBypassSelfCheck({
+            internalApiUrl: getInternalApiUrl(),
+            internalRequestSecret: getInternalRequestSecret(),
+            isProd: isProduction()
+        });
+    } catch (error) {
+        // The self-check must never break middleware module load.
+        console.error('[web] SSR internal-bypass self-check threw unexpectedly:', error);
+    }
+}
+
+/**
  * Main middleware handler for all requests in the web application.
  */
 export const onRequest = defineMiddleware(async (context, next) => {
@@ -71,6 +110,23 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
     // Step 1: Skip static assets and API routes — no middleware processing needed.
     if (isStaticAssetRoute({ path })) {
+        // The on-demand image endpoint (`/_image`) is a dynamic route, so the
+        // @astrojs/node adapter's automatic long-cache header (physical
+        // dist/client/_astro/* files only) never reaches it — every request
+        // would re-run a Sharp transform and be re-fetched. Give it an explicit
+        // immutable cache so the LCP hero is cached by the browser/CDN
+        // (HOS-160 lever C). All other static routes pass through untouched.
+        if (isImageEndpointRoute({ path })) {
+            const response = await next();
+            // Only cache SUCCESSFUL transforms as immutable. A transient Sharp
+            // failure (500) or a bad `href` (404) must NOT be pinned for a year
+            // by the browser/CDN, which would keep serving a broken hero long
+            // after the cause is fixed, with no natural revalidation.
+            if (response.ok) {
+                response.headers.set('Cache-Control', IMAGE_ENDPOINT_CACHE_CONTROL);
+            }
+            return response;
+        }
         return next();
     }
 

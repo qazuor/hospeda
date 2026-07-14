@@ -2,7 +2,7 @@ import { AttractionModel, DestinationModel, RDestinationAttractionModel } from '
 import type { AttractionIdType, DestinationIdType } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ServiceConfig } from '../../../src';
+import type { ServiceConfig, ServiceContext } from '../../../src';
 import { AttractionService } from '../../../src/services/attraction/attraction.service';
 import { createActor } from '../../factories/actorFactory';
 import { AttractionFactoryBuilder } from '../../factories/attractionFactory';
@@ -85,5 +85,23 @@ describe('AttractionService.addAttractionToDestination', () => {
         const result = await service.addAttractionToDestination(actorWithPerms, validInput);
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
         expect(result.data).toBeUndefined();
+    });
+
+    it('threads ctx.tx through every relation read/write (HOS-126)', async () => {
+        // Sentinel transaction handle: proves each model call joins the
+        // caller-provided transaction boundary rather than the pool.
+        const marker = { __tx: 'hos-126' } as unknown;
+        const ctxWithTx = { tx: marker } as unknown as ServiceContext;
+        asMock(model.findOne).mockResolvedValue(attraction);
+        asMock(destinationModel.findOne).mockResolvedValue(destination);
+        asMock(relatedModel.findOne).mockResolvedValueOnce(null); // no existing relation
+        asMock(relatedModel.create).mockResolvedValue(relation);
+
+        await service.addAttractionToDestination(actorWithPerms, validInput, ctxWithTx);
+
+        expect(model.findOne).toHaveBeenCalledWith(expect.anything(), marker);
+        expect(destinationModel.findOne).toHaveBeenCalledWith(expect.anything(), marker);
+        expect(relatedModel.findOne).toHaveBeenCalledWith(expect.anything(), marker);
+        expect(relatedModel.create).toHaveBeenCalledWith(expect.anything(), marker);
     });
 });
