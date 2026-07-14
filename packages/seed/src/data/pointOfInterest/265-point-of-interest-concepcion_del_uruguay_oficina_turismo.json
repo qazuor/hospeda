@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "265-point-of-interest-concepcion_del_uruguay_oficina_turismo",
+    "slug": "concepcion_del_uruguay_oficina_turismo",
+    "lat": -32.4837819,
+    "long": -58.2307182,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Punto oficial de información sobre atractivos, visitas guiadas, playas, eventos y servicios turísticos.",
+    "nameI18n": {
+        "es": "Oficina de Turismo de Concepción del Uruguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Punto oficial de información sobre atractivos, visitas guiadas, playas, eventos y servicios turísticos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Galarza y Supremo Entrerriano, Concepción del Uruguay, Entre Ríos",
+    "keywords": ["oficina turismo", "informacion turistica", "mapas", "visitas guiadas", "galarza"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/nuevos-puntos-de-venta-de-entradas-para-la-fiesta-de-la-playa",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "services",
+            "isPrimary": true
+        },
+        {
+            "slug": "government",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

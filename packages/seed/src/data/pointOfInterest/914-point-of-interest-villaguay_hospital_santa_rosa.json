@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "914-point-of-interest-villaguay_hospital_santa_rosa",
+    "slug": "villaguay_hospital_santa_rosa",
+    "lat": -31.8527,
+    "long": -59.02568,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Hospital público de referencia para Villaguay y la región, con internación y servicios sanitarios en un amplio predio histórico.",
+    "nameI18n": {
+        "es": "Hospital Santa Rosa",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Hospital público de referencia para Villaguay y la región, con internación y servicios sanitarios en un amplio predio histórico.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida San Martín, boulevard Savio, Belgrano y Tófalo, Villaguay, Entre Ríos",
+    "keywords": [
+        "hospital santa rosa villaguay",
+        "hospital",
+        "guardia",
+        "salud",
+        "predio sanitario"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://mapcarta.com/es/W307479015",
+    "notes": "Historia y función confirmadas; coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "733-point-of-interest-puentes_colgantes_la_chinita",
+    "slug": "puentes_colgantes_la_chinita",
+    "lat": -31.8384741,
+    "long": -59.00134800000001,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Infraestructura recreativa de la reserva que integra el recorrido entre senderos, lagunas y sectores de observación.",
+    "nameI18n": {
+        "es": "Puentes Colgantes de La Chinita",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Infraestructura recreativa de la reserva que integra el recorrido entre senderos, lagunas y sectores de observación.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Reserva Natural Municipal La Chinita, Villaguay, Entre Ríos",
+    "keywords": ["puentes colgantes", "la chinita", "senderos", "aventura", "familia"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://es.wikipedia.org/wiki/Villaguay",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "recreation",
+            "isPrimary": true
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        },
+        {
+            "slug": "reserve",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

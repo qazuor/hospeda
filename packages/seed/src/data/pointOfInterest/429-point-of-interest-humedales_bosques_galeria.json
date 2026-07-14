@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "429-point-of-interest-humedales_bosques_galeria",
+    "slug": "humedales_bosques_galeria",
+    "lat": null,
+    "long": null,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Ambientes de vegetación selvática, sauces, álamos, riachos y canales que sostienen la flora y fauna típica del delta.",
+    "nameI18n": {
+        "es": "Humedales y Bosques en Galería",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Ambientes de vegetación selvática, sauces, álamos, riachos y canales que sostienen la flora y fauna típica del delta.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Entorno natural de Ibicuy, Entre Ríos",
+    "keywords": ["humedales ibicuy", "bosques en galeria", "delta", "flora y fauna", "senderismo"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/ibicuy",
+    "notes": "Ambientes extensos. Falta delimitar áreas accesibles y recorridos seguros.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "reserve",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        }
+    ]
+}

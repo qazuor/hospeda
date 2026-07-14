@@ -1,0 +1,57 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "055-point-of-interest-bajada_prefectura",
+    "slug": "bajada_prefectura",
+    "lat": -31.527250300000002,
+    "long": -58.014700399999995,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Rampa habilitada para acceder al río Uruguay con lanchas, botes, kayaks y canoas dentro del parque.",
+    "nameI18n": {
+        "es": "Bajada de Embarcaciones de Prefectura",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Rampa habilitada para acceder al río Uruguay con lanchas, botes, kayaks y canoas dentro del parque.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Destacamento de Prefectura, Parque Nacional El Palmar, Entre Ríos",
+    "keywords": [
+        "bajada de embarcaciones",
+        "prefectura",
+        "kayak",
+        "canoa",
+        "lancha",
+        "rio uruguay"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/servicios",
+    "notes": "Uso habilitado confirmado. El estado del camino debe consultarse antes de la visita. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "port",
+            "isPrimary": true
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        }
+    ]
+}

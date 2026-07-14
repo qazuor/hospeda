@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "387-point-of-interest-grupo_scout_san_isidro",
+    "slug": "grupo_scout_san_isidro",
+    "lat": -33.03575,
+    "long": -59.0061,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Centro comunitario de Scouts de Argentina con actividades educativas, recreativas y de formación al aire libre.",
+    "nameI18n": {
+        "es": "Grupo Scout San Isidro Labrador",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Centro comunitario de Scouts de Argentina con actividades educativas, recreativas y de formación al aire libre.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "General Ramírez, Larroque, Entre Ríos",
+    "keywords": [
+        "grupo scout san isidro labrador",
+        "scouts",
+        "educacion",
+        "naturaleza",
+        "comunidad"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N6693597306",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "community_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

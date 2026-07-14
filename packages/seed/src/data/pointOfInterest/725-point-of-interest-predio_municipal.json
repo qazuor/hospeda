@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "725-point-of-interest-predio_municipal",
+    "slug": "predio_municipal",
+    "lat": -32.1596749,
+    "long": -58.19943000000001,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio público utilizado para la Fiesta Provincial de la Identidad y el Patrimonio, celebraciones, actividades familiares, espectáculos y eventos comunitarios.",
+    "nameI18n": {
+        "es": "Predio Municipal María Cristina Sandes",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio público utilizado para la Fiesta Provincial de la Identidad y el Patrimonio, celebraciones, actividades familiares, espectáculos y eventos comunitarios.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Pueblo Liebig, Entre Ríos",
+    "keywords": [
+        "predio municipal",
+        "eventos",
+        "fiestas",
+        "actividades familiares",
+        "pueblo liebig"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://puebloliebig.gob.ar/otras/se-viene-una-nueva-edicion-de-la-fiesta-provincial-de-la-identidad-y-el-patrimonio-en-pueblo-liebig/",
+    "notes": "Denominación actual y uso como sede de eventos confirmados en publicaciones municipales de 2026. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "fair",
+            "isPrimary": true
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

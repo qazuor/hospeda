@@ -1,0 +1,57 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "607-point-of-interest-parque_termal",
+    "slug": "parque_termal",
+    "lat": -30.97813,
+    "long": -57.92936,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Complejo termal pionero de Entre Ríos con piscinas cubiertas y al aire libre, aguas hipertermales, sectores de hidromasaje, solárium y propuestas de bienestar.",
+    "nameI18n": {
+        "es": "Parque Termal Federación",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Complejo termal pionero de Entre Ríos con piscinas cubiertas y al aire libre, aguas hipertermales, sectores de hidromasaje, solárium y propuestas de bienestar.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Entre Ríos y Paraná, Federación, Entre Ríos",
+    "keywords": [
+        "termas federacion",
+        "parque termal",
+        "aguas hipertermales",
+        "hidromasaje",
+        "bienestar",
+        "piscinas"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/tarifas-descuentos-2/; https://mapcarta.com/es/W294268034",
+    "notes": "Servicios y características confirmados por Turismo Federación; coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "thermal_complex",
+            "isPrimary": true
+        },
+        {
+            "slug": "wellness",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

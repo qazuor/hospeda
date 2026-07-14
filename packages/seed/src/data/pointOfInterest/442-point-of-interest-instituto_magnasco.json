@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "442-point-of-interest-instituto_magnasco",
+    "slug": "instituto_magnasco",
+    "lat": -33.009651000000005,
+    "long": -58.50927869999999,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Institución cultural histórica con biblioteca, archivo, colecciones y actividades educativas y artísticas.",
+    "nameI18n": {
+        "es": "Complejo Cultural Instituto Magnasco",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Institución cultural histórica con biblioteca, archivo, colecciones y actividades educativas y artísticas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Camila Nievas 78, Gualeguaychú, Entre Ríos",
+    "keywords": ["instituto magnasco", "biblioteca", "archivo", "camila nievas 78", "cultura"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/cultura",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "museum",
+            "isPrimary": false
+        }
+    ]
+}

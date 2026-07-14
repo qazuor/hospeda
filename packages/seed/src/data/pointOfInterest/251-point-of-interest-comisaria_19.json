@@ -1,0 +1,48 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "251-point-of-interest-comisaria_19",
+    "slug": "comisaria_19",
+    "lat": -30.89972,
+    "long": -57.93257,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Dependencia de la Policía de Entre Ríos y referencia de seguridad pública del casco urbano.",
+    "nameI18n": {
+        "es": "Comisaría 19 Santa Ana",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Dependencia de la Policía de Entre Ríos y referencia de seguridad pública del casco urbano.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Cupertino Otaño, Santa Ana, Entre Ríos",
+    "keywords": [
+        "comisaria 19 santa ana",
+        "policia entre rios",
+        "seguridad",
+        "emergencias",
+        "cupertino otaño"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N5539089594",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,57 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "182-point-of-interest-centro_visitantes_el_palmar",
+    "slug": "centro_visitantes_el_palmar",
+    "lat": -31.8674095,
+    "long": -58.208841199999995,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio interpretativo con información sobre ambientes, flora, fauna e historia del parque, exposición fotográfica, auditorio y atención al visitante.",
+    "nameI18n": {
+        "es": "Centro de Visitantes del Parque Nacional El Palmar",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio interpretativo con información sobre ambientes, flora, fauna e historia del parque, exposición fotográfica, auditorio y atención al visitante.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Área de servicios del Parque Nacional El Palmar, Ubajay, Entre Ríos",
+    "keywords": [
+        "centro de visitantes",
+        "interpretacion ambiental",
+        "flora",
+        "fauna",
+        "auditorio",
+        "informacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/servicios",
+    "notes": "Existencia y servicios confirmados por Parques Nacionales. Falta geocodificar el edificio. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        }
+    ]
+}

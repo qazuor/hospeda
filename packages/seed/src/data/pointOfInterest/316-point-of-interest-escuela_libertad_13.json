@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "316-point-of-interest-escuela_libertad_13",
+    "slug": "escuela_libertad_13",
+    "lat": -30.88159,
+    "long": -57.85767,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Escuela rural ubicada en Colonia Ensanche Sauce y vinculada con la comunidad productiva del municipio.",
+    "nameI18n": {
+        "es": "Escuela Libertad N.º 13",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Escuela rural ubicada en Colonia Ensanche Sauce y vinculada con la comunidad productiva del municipio.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Colonia Ensanche Sauce, Entre Ríos",
+    "keywords": ["escuela libertad 13", "colonia ensanche sauce", "escuela rural", "educacion"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W706820034",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "education",
+            "isPrimary": true
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

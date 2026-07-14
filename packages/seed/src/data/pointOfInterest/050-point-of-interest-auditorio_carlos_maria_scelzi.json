@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "050-point-of-interest-auditorio_carlos_maria_scelzi",
+    "slug": "auditorio_carlos_maria_scelzi",
+    "lat": -32.482166,
+    "long": -58.235648,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio cultural municipal utilizado para conciertos, teatro, conferencias, exposiciones y actividades comunitarias.",
+    "nameI18n": {
+        "es": "Auditorio Municipal Carlos María Scelzi",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio cultural municipal utilizado para conciertos, teatro, conferencias, exposiciones y actividades comunitarias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "8 de Junio 773, Concepción del Uruguay, Entre Ríos",
+    "keywords": ["auditorio scelzi", "teatro", "cultura", "eventos", "espectaculos"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "theater",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        }
+    ]
+}

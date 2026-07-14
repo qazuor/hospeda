@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "121-point-of-interest-capilla_el_salvador",
+    "slug": "capilla_el_salvador",
+    "lat": -31.629081900000003,
+    "long": -58.5012286,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Primer templo religioso de la ciudad, construido en 1912 junto a Villa Aurora, con retablo traído desde Francia y una imagen de Nuestra Señora de los Dolores.",
+    "nameI18n": {
+        "es": "Capilla El Salvador",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Primer templo religioso de la ciudad, construido en 1912 junto a Villa Aurora, con retablo traído desde Francia y una imagen de Nuestra Señora de los Dolores.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Junto a Villa Aurora, San Salvador, Entre Ríos",
+    "keywords": [
+        "capilla el salvador",
+        "villa aurora",
+        "1912",
+        "retablo frances",
+        "nuestra señora de los dolores"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/",
+    "notes": "Historia, fecha y elementos interiores confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        }
+    ]
+}

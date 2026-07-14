@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "109-point-of-interest-camping_banco_pelay",
+    "slug": "camping_banco_pelay",
+    "lat": -32.44928,
+    "long": -58.20952,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Área de camping municipal ubicada junto al balneario Banco Pelay, con acceso directo a la playa y espacios arbolados.",
+    "nameI18n": {
+        "es": "Camping Banco Pelay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Área de camping municipal ubicada junto al balneario Banco Pelay, con acceso directo a la playa y espacios arbolados.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Camino a Banco Pelay, Concepción del Uruguay, Entre Ríos",
+    "keywords": ["camping banco pelay", "camping", "carpa", "playa", "rio"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "campground",
+            "isPrimary": true
+        },
+        {
+            "slug": "beach",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "685-point-of-interest-plaza_de_la_madre",
+    "slug": "plaza_de_la_madre",
+    "lat": -32.20874,
+    "long": -58.21888,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Espacio verde urbano situado cerca de la terminal y del Museo de Ciencias Naturales, utilizado para recreación y descanso.",
+    "nameI18n": {
+        "es": "Plaza de la Madre",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio verde urbano situado cerca de la terminal y del Museo de Ciencias Naturales, utilizado para recreación y descanso.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San José, Entre Ríos",
+    "keywords": ["plaza de la madre", "plaza", "parque", "terminal", "espacio verde"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W31404148",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

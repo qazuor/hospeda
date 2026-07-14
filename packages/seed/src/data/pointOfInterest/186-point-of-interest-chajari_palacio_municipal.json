@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "186-point-of-interest-chajari_palacio_municipal",
+    "slug": "chajari_palacio_municipal",
+    "lat": -30.755038700000004,
+    "long": -57.980448300000006,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Edificio municipal histórico inaugurado a comienzos del siglo XX y ubicado dentro de la Plaza Urquiza.",
+    "nameI18n": {
+        "es": "Palacio Municipal de Chajarí",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Edificio municipal histórico inaugurado a comienzos del siglo XX y ubicado dentro de la Plaza Urquiza.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Salvarredy y Falucho, Plaza Urquiza, Chajarí, Entre Ríos",
+    "keywords": [
+        "palacio municipal chajari",
+        "municipalidad",
+        "plaza urquiza",
+        "1901",
+        "patrimonio"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://termaschajari.tur.ar/palacio-municipal/; https://chajari.gob.ar/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

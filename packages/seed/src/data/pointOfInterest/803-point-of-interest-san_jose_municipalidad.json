@@ -1,0 +1,48 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "803-point-of-interest-san_jose_municipalidad",
+    "slug": "san_jose_municipalidad",
+    "lat": -32.213132099999996,
+    "long": -58.2183129,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sede administrativa municipal y punto de referencia para trámites, información pública y servicios locales.",
+    "nameI18n": {
+        "es": "Municipalidad de San José",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sede administrativa municipal y punto de referencia para trámites, información pública y servicios locales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de San José, Entre Ríos",
+    "keywords": [
+        "municipalidad san jose",
+        "municipio",
+        "tramites",
+        "informacion publica",
+        "servicios"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sanjose.gob.ar/; https://mapcarta.com/es/N2482952274",
+    "notes": "Institución y ubicación relativa confirmadas; falta recuperar dirección y coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

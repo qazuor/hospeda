@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "647-point-of-interest-patrimonio_saladeril_puerto_ruiz",
+    "slug": "patrimonio_saladeril_puerto_ruiz",
+    "lat": -33.219740699999996,
+    "long": -59.3629554,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Conjunto de edificaciones y vestigios vinculados con los saladeros y la intensa actividad económica portuaria del siglo XIX y comienzos del XX.",
+    "nameI18n": {
+        "es": "Patrimonio Saladeril de Puerto Ruiz",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Conjunto de edificaciones y vestigios vinculados con los saladeros y la intensa actividad económica portuaria del siglo XIX y comienzos del XX.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Puerto Ruiz, Gualeguay, Entre Ríos",
+    "keywords": [
+        "saladeros puerto ruiz",
+        "patrimonio industrial",
+        "comercio fluvial",
+        "ganaderia",
+        "puerto"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://es.wikipedia.org/wiki/Puerto_Ruiz",
+    "notes": "Patrimonio histórico confirmado de forma general. Falta inventariar edificios y accesos concretos. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

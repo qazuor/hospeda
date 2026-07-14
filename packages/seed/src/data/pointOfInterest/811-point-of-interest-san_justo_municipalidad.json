@@ -1,0 +1,42 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "811-point-of-interest-san_justo_municipalidad",
+    "slug": "san_justo_municipalidad",
+    "lat": -32.44663,
+    "long": -58.4354,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sede administrativa del municipio y punto de referencia para información pública, trámites y servicios locales.",
+    "nameI18n": {
+        "es": "Municipalidad de San Justo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sede administrativa del municipio y punto de referencia para información pública, trámites y servicios locales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida 1 de Mayo, San Justo, Entre Ríos",
+    "keywords": ["municipalidad de san justo", "municipio", "tramites", "servicios publicos"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N9066927915",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap mediante Mapcarta.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

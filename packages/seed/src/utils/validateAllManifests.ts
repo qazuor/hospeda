@@ -2,7 +2,11 @@ import exampleManifest from '../manifest-example.json';
 import requiredManifest from '../manifest-required.json';
 import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
-import { validateManifestVsFolder } from './validateManifestVsFolder.js';
+import {
+    buildFolderDeclaredFiles,
+    resolveEntityFolderName,
+    validateManifestVsFolder
+} from './validateManifestVsFolder.js';
 
 /**
  * Validates all manifests against their corresponding folders.
@@ -40,6 +44,13 @@ export async function validateAllManifests(continueOnError = false): Promise<voi
     for (const { name, manifest, type } of manifests) {
         logger.info(`📁 Validating ${name} (${Object.keys(manifest).length} entities)`);
 
+        // Pre-compute, per physical folder, the UNION of every filename declared
+        // by any entity in this manifest that resolves to that folder (HOS-142:
+        // `pointsOfInterest` + `pointOfInterestCatalog` both read the same
+        // `data/pointOfInterest/` folder). Without this, validating either entity
+        // alone would flag the OTHER entity's files as orphaned.
+        const folderDeclaredFiles = buildFolderDeclaredFiles(manifest as Record<string, string[]>);
+
         for (const [entityName, files] of Object.entries(manifest)) {
             totalValidations++;
 
@@ -48,7 +59,13 @@ export async function validateAllManifests(continueOnError = false): Promise<voi
                 if (type !== 'required' && type !== 'example') {
                     throw new Error(`Invalid manifest type: ${type}`);
                 }
-                await validateManifestVsFolder(entityName, files, type);
+                const combined = folderDeclaredFiles.get(resolveEntityFolderName(entityName));
+                await validateManifestVsFolder(
+                    entityName,
+                    files,
+                    type,
+                    combined ? [...combined] : undefined
+                );
                 logger.success({
                     msg: `${STATUS_ICONS.Success} ${entityName}: ${files.length} files validated`
                 });

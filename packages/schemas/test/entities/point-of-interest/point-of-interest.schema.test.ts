@@ -299,6 +299,30 @@ describe('PointOfInterestSchema', () => {
             expect(result.descriptionI18n?.pt).toBe('Museu');
         });
 
+        it('should accept nameI18n / descriptionI18n with null en/pt (HOS-142 — PartialI18nTextSchema, NG-6)', () => {
+            const data = {
+                ...baseData(),
+                nameI18n: { es: 'Casa Izquierdo', en: null, pt: null },
+                descriptionI18n: { es: 'Edificio histórico', en: null, pt: null }
+            };
+
+            expect(() => PointOfInterestSchema.parse(data)).not.toThrow();
+
+            const result = PointOfInterestSchema.parse(data);
+            expect(result.nameI18n?.es).toBe('Casa Izquierdo');
+            expect(result.nameI18n?.en).toBeNull();
+            expect(result.descriptionI18n?.pt).toBeNull();
+        });
+
+        it('should require es on nameI18n / descriptionI18n even when en/pt are null', () => {
+            const data = {
+                ...baseData(),
+                nameI18n: { en: null, pt: null }
+            };
+
+            expect(() => PointOfInterestSchema.parse(data)).toThrow(ZodError);
+        });
+
         it('should accept translationMeta metadata', () => {
             const data = {
                 ...baseData(),

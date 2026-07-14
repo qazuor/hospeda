@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "108-point-of-interest-camping_balneario_municipal",
+    "slug": "camping_balneario_municipal",
+    "lat": -33.1547992,
+    "long": -59.2939528,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sector de camping asociado al balneario, con parcelas, sombra y servicios para estadías al aire libre.",
+    "nameI18n": {
+        "es": "Camping del Balneario Municipal",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sector de camping asociado al balneario, con parcelas, sombra y servicios para estadías al aire libre.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque Balneario Municipal Dr. Delio Panizza, Gualeguay, Entre Ríos",
+    "keywords": ["camping gualeguay", "balneario municipal", "acampe", "parcelas", "rio"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentinaviajera.com.ar/entrerios/gualeguay.html",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "campground",
+            "isPrimary": true
+        },
+        {
+            "slug": "beach",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

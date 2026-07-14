@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "642-point-of-interest-paseo_stella_maris",
+    "slug": "paseo_stella_maris",
+    "lat": -30.9901586,
+    "long": -57.9140243,
+    "type": "PARK",
+    "icon": null,
+    "description": "Paseo costero dedicado a Stella Maris, patrona de los navegantes, situado en el entorno portuario.",
+    "nameI18n": {
+        "es": "Paseo Stella Maris",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paseo costero dedicado a Stella Maris, patrona de los navegantes, situado en el entorno portuario.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona portuaria de Federación, Entre Ríos",
+    "keywords": [
+        "stella maris federacion",
+        "patrona navegantes",
+        "puerto",
+        "paseo costero",
+        "monumento"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf; https://mapcarta.com/es/W1245062864",
+    "notes": "Nombre y ubicación relativa confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "religious_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "537-point-of-interest-museo_homenaje_flia_elena",
+    "slug": "museo_homenaje_flia_elena",
+    "lat": -32.3008178,
+    "long": -59.138887,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Colección privada y espacio de memoria local incluido en el plano turístico oficial.",
+    "nameI18n": {
+        "es": "Museo Homenaje a Rosario del Tala de la Familia Elena",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Colección privada y espacio de memoria local incluido en el plano turístico oficial.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Rosario del Tala, Entre Ríos",
+    "keywords": ["museo familia elena", "homenaje rosario del tala", "coleccion local", "memoria"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf",
+    "notes": "Incluido en el plano turístico oficial. Falta validar horarios, acceso y dirección. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

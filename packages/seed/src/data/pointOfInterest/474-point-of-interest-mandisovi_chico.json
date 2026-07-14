@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "474-point-of-interest-mandisovi_chico",
+    "slug": "mandisovi_chico",
+    "lat": -30.947476799999997,
+    "long": -57.9476318,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Curso de agua regional vinculado con humedales, actividad rural y el paisaje del corredor del perilago.",
+    "nameI18n": {
+        "es": "Arroyo Mandisoví Chico",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Curso de agua regional vinculado con humedales, actividad rural y el paisaje del corredor del perilago.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de Santa Ana, Entre Ríos",
+    "keywords": ["mandisovi chico", "arroyo", "humedales", "naturaleza", "zona rural"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.santaana.gob.ar/home/ciudad/",
+    "notes": "Curso de agua; requiere geometría lineal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        }
+    ]
+}

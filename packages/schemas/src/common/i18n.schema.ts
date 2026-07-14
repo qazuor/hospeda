@@ -50,6 +50,40 @@ export const I18nTextSchema = z.object({
 export type I18nText = z.infer<typeof I18nTextSchema>;
 
 /**
+ * Localized-text schema for content that is only guaranteed to exist in
+ * Spanish. `es` is required; `en`/`pt` are nullable — for datasets whose
+ * source content is Spanish-only and where auto-translating the other
+ * locales is an explicit, separate follow-up (never invented at import
+ * time) rather than a same-step requirement.
+ *
+ * This is a NARROW, entity-scoped variant — do NOT use it as a drop-in
+ * replacement for {@link I18nTextSchema} across the platform. It exists
+ * because some entities (e.g. the HOS-142 POI catalog import) ingest
+ * bulk, Spanish-sourced content where requiring `en`/`pt` up front would
+ * either invent translations or block the import entirely; most entities
+ * should keep using {@link I18nTextSchema} / {@link i18nText}, which
+ * assume all three locales are always populated.
+ *
+ * @example
+ * // Entity schema field — name that may lack en/pt translations
+ * nameI18n: PartialI18nTextSchema.nullish()
+ */
+export const PartialI18nTextSchema = z.object({
+    /** Spanish locale text — always required. */
+    es: z.string(),
+    /** English locale text — null when not yet translated. */
+    en: z.string().nullish(),
+    /** Portuguese locale text — null when not yet translated. */
+    pt: z.string().nullish()
+});
+
+/**
+ * TypeScript type inferred from {@link PartialI18nTextSchema}.
+ * Represents a localized-text value where only `es` is guaranteed present.
+ */
+export type PartialI18nText = z.infer<typeof PartialI18nTextSchema>;
+
+/**
  * Factory that returns a localized-text Zod schema with per-field string
  * length bounds applied to every locale (`es`, `en`, `pt`).
  *

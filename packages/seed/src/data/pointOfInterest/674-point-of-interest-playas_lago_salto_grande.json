@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "674-point-of-interest-playas_lago_salto_grande",
+    "slug": "playas_lago_salto_grande",
+    "lat": -30.7600499,
+    "long": -57.990708100000006,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Sectores de playa vinculados con el Camping Municipal, utilizados para descanso, pesca y actividades recreativas y náuticas.",
+    "nameI18n": {
+        "es": "Playas del Lago Salto Grande",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sectores de playa vinculados con el Camping Municipal, utilizados para descanso, pesca y actividades recreativas y náuticas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Camping Municipal Chajarí, lago Salto Grande, Entre Ríos",
+    "keywords": ["playas chajari", "lago salto grande", "pesca", "nautica", "camping"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://termaschajari.tur.ar/camping-chajari/; https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        }
+    ]
+}
