@@ -52,9 +52,9 @@
 }
 
 .bannerSuccess {
-    background-color: var(--brand-tertiary-a10, oklch(0.95 0.03 150));
+    background-color: var(--palette-success-50, oklch(0.95 0.03 150));
     color: var(--brand-tertiary, oklch(0.5 0.1 150));
-    border-color: var(--brand-tertiary-a25, oklch(0.85 0.06 150));
+    border-color: var(--palette-success-200, oklch(0.85 0.06 150));
 }
 
 .bannerError {
@@ -140,7 +140,7 @@
 }
 
 .primaryButton:hover:not(:disabled) {
-    background-color: oklch(from var(--brand-primary) calc(l - 0.05) c h);
+    background-color: var(--brand-primary-lm05);
 }
 
 .dangerButton {
