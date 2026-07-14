@@ -14,6 +14,7 @@ import type {
     ExternalReputationBlock,
     FeaturePublic,
     GastronomyPublic,
+    NearbyPoi,
     PartnerPublic,
     PointOfInterestPublic,
     PostListItem,
@@ -348,6 +349,46 @@ export const accommodationsApi = {
         readonly id: string;
     }): Promise<ApiResult<ExternalReputationBlock>> {
         return apiClient.get({ path: `${BASE}/accommodations/${id}/external-reputation` });
+    },
+
+    /**
+     * Get points of interest near an accommodation (HOS-145).
+     *
+     * Hits GET /api/v1/public/accommodations/:slug/nearby-pois. Returns a
+     * plain `{ items: NearbyPoi[] }` object — NOT a paginated envelope — so
+     * this uses `apiClient.get` (which unwraps the API's `{ data }` wrapper
+     * into that object as-is) rather than `apiClient.getList` (which expects
+     * a `{ items, pagination }` shape the API never sends for this route).
+     * Always resolves `{ items: [] }` for an unknown slug or an
+     * accommodation without coordinates — never a 404.
+     *
+     * @param params - Accommodation slug, optional radius (km) and limit
+     * @returns Nearby points of interest, nearest-first, each with `distanceKm`
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationsApi.getNearbyPois({ slug: 'cabana-del-rio' });
+     * if (result.ok) {
+     *   const pois = result.data.items;
+     * }
+     * ```
+     */
+    getNearbyPois({
+        slug,
+        radius,
+        limit
+    }: {
+        readonly slug: string;
+        readonly radius?: number;
+        readonly limit?: number;
+    }): Promise<ApiResult<{ readonly items: readonly NearbyPoi[] }>> {
+        const params: Record<string, unknown> = {};
+        if (radius !== undefined) params.radius = radius;
+        if (limit !== undefined) params.limit = limit;
+        return apiClient.get({
+            path: `${BASE}/accommodations/${slug}/nearby-pois`,
+            params: Object.keys(params).length > 0 ? params : undefined
+        });
     }
 };
 

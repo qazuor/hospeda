@@ -22,6 +22,8 @@ import {
     type DestinationIdsByPointOfInterestSlugsOutput,
     type DestinationsByPointOfInterestInput,
     DestinationsByPointOfInterestInputSchema,
+    type NearbyPoi,
+    NearbyPoiSchema,
     type PointOfInterestAddToDestinationInput,
     PointOfInterestAddToDestinationInputSchema,
     type PointOfInterestAdminSearch,
@@ -41,6 +43,7 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import { inArray, type SQL } from 'drizzle-orm';
+import { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import {
@@ -92,6 +95,22 @@ const DESTINATION_RELATIONS_PAGE_SIZE = 200;
  * more than 20 POIs share a category (HOS-139 judgment-day INFO).
  */
 const POI_CATEGORY_RELATIONS_PAGE_SIZE = 200;
+
+/**
+ * Input schema for {@link PointOfInterestService.getNearby} (HOS-145 T-003).
+ * Not published as a shared `@repo/schemas` schema: it is purely a
+ * service-level RO-RO input (no HTTP layer parses it directly — callers like
+ * the future HOS-146/147 routes coerce/validate their own query params
+ * first), mirroring the inline `z.object()` schemas already used elsewhere
+ * in this package for one-off method inputs (e.g. `tag.service.ts`,
+ * `eventLocation.service.ts`).
+ */
+const GetNearbyPoisInputSchema = z.object({
+    lat: z.number(),
+    long: z.number(),
+    radiusKm: z.number().positive().max(20),
+    limit: z.number().int().positive().max(50)
+});
 
 /**
  * Service for managing points of interest (HOS-113). Implements business
@@ -718,6 +737,50 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                     resolvedCtx.tx
                 );
                 return { destinationIds };
+            }
+        });
+    }
+
+    /**
+     * Finds points of interest within a radius of a geographic point,
+     * ordered nearest-first (HOS-145 T-003). Delegates the geo query to
+     * {@link PointOfInterestModel.findWithinRadius} (haversine distance,
+     * scoped to ACTIVE/non-deleted/coordinate-present rows) and projects
+     * each row to the PUBLIC shape via {@link NearbyPoiSchema} — reusing the
+     * exact `PointOfInterestPublicSchema` field set the public POI routes
+     * already expose (see `apps/api/src/routes/point-of-interest/public/`),
+     * plus `distanceKm`. `NearbyPoiSchema.parse()` both strips
+     * non-public fields and validates `distanceKm`, so this method never
+     * hand-picks fields itself.
+     *
+     * Kept fully generic (no accommodation coupling) so later specs
+     * (HOS-146/147) can reuse it for any lat/long origin, not just
+     * accommodations.
+     *
+     * Permission: public catalog read — mirrors {@link _canList} /
+     * {@link checkCanListPointsOfInterest}, a no-op check. POIs are public
+     * data; no stricter gate is applied.
+     *
+     * @param params - Search center (`lat`/`long`), `radiusKm`, and `limit`.
+     * @param actor - The actor performing the action.
+     * @param ctx - Optional service context carrying transaction and hookState.
+     * @returns Public-shaped POIs within the radius, sorted nearest-first.
+     *   Empty array when no point of interest matches.
+     */
+    public async getNearby(
+        params: { lat: number; long: number; radiusKm: number; limit: number },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<NearbyPoi[]>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getNearby',
+            input: { ...params, actor },
+            schema: GetNearbyPoisInputSchema,
+            ctx,
+            execute: async (validatedParams, actor, resolvedCtx) => {
+                await this._canList(actor);
+                const rows = await this.model.findWithinRadius(validatedParams, resolvedCtx.tx);
+                return rows.map((row) => NearbyPoiSchema.parse(row));
             }
         });
     }

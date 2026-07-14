@@ -12,6 +12,7 @@ import { getStatsRoute } from './getStats';
 import { getSummaryRoute } from './getSummary';
 import { getTopRatedByDestinationRoute } from './getTopRatedByDestination';
 import { publicListAccommodationsRoute } from './list';
+import { publicGetAccommodationNearbyPoisRoute } from './nearbyPois';
 import { publicGetSimilarRoute } from './similar';
 
 const app = createRouter();
@@ -27,6 +28,9 @@ app.route('/', publicGetAccommodationByIdRoute);
 
 // GET /slug/:slug - Get by slug
 app.route('/', publicGetAccommodationBySlugRoute);
+
+// GET /:slug/nearby-pois - Points of interest near an accommodation
+app.route('/', publicGetAccommodationNearbyPoisRoute);
 
 // GET /destination/:destinationId - Get by destination
 app.route('/', getByDestinationRoute);
