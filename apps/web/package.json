@@ -28,7 +28,7 @@
     "dependencies": {
         "@astrojs/node": "^11.0.2",
         "@astrojs/react": "^6.0.1",
-        "@astrojs/rss": "^4.0.18",
+        "@astrojs/rss": "^4.0.19",
         "@astrojs/sitemap": "^3.7.3",
         "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
