@@ -258,6 +258,10 @@
         "geoRadius.browserError": "We couldn't detect your location. Check your browser permissions.",
         "geoRadius.destinationMode": "One destination",
         "geoRadius.destinationPlaceholder": "Choose a destination",
+        "geoRadius.poiMode": "A landmark",
+        "geoRadius.poiPlaceholder": "Search a square, beach, monument...",
+        "geoRadius.poiSearching": "Searching...",
+        "geoRadius.poiNoResults": "We couldn't find any landmark with that name",
         "geoRadius.radiusUnit": "km",
         "section": {
             "location": "Location",
