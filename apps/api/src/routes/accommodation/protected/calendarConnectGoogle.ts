@@ -24,10 +24,15 @@ import { EntitlementKey } from '@repo/billing';
 import { AccommodationIdSchema } from '@repo/schemas';
 import { assertOccupancyManageAccess } from '@repo/service-core';
 import type { Context } from 'hono';
+import { setCookie } from 'hono/cookie';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { requireEntitlement } from '../../../middlewares/entitlement';
-import { generateCalendarOAuthState } from '../../../services/google-calendar/calendar-oauth-state';
+import {
+    CALENDAR_OAUTH_STATE_COOKIE,
+    CALENDAR_OAUTH_STATE_COOKIE_MAX_AGE_S,
+    generateCalendarOAuthState
+} from '../../../services/google-calendar/calendar-oauth-state';
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -44,16 +49,30 @@ const ConnectGoogleResponseSchema = z.object({
 
 /**
  * Optional same-origin relative path to return the browser to after the OAuth
- * callback completes (e.g. the editor page). Constrained to a safe relative
- * path — must start with a single `/` and must NOT be protocol-relative (`//`)
- * or contain a scheme — so it can never be abused as an open redirect.
+ * callback completes (e.g. the editor page). This is an EARLY sanity filter
+ * only — the authoritative open-redirect guard lives in the callback's
+ * `buildWebRedirect`, which resolves the value with `new URL()` and rejects it
+ * unless the resulting origin equals the site origin. The string checks here
+ * reject the obvious cases (protocol-relative `//`, a scheme, backslashes, and
+ * ANY C0 control character — the WHATWG URL parser strips tab/LF/CR anywhere in
+ * the string, so `/\t/evil.com` would otherwise resolve off-origin).
  */
-const SafeReturnToSchema = z
+export const SafeReturnToSchema = z
     .string()
     .max(512)
-    .refine((value) => value.startsWith('/') && !value.startsWith('//') && !value.includes('://'), {
-        message: 'returnTo must be a same-origin relative path'
-    });
+    .refine(
+        (value) =>
+            value.startsWith('/') &&
+            !value.startsWith('//') &&
+            !value.includes('://') &&
+            !value.includes('\\') &&
+            // Reject ANY C0 control char (charCode < 0x20): the WHATWG URL parser
+            // strips tab/LF/CR anywhere in the string, so a value like `/<TAB>/evil.com`
+            // would otherwise resolve off-origin. Checked by code, not a literal-control
+            // regex, so no control byte lives in this source file.
+            ![...value].some((ch) => ch.charCodeAt(0) < 0x20),
+        { message: 'returnTo must be a same-origin relative path' }
+    );
 
 const ConnectGoogleBodySchema = z.object({
     returnTo: SafeReturnToSchema.optional()
@@ -102,6 +121,20 @@ export const protectedCalendarConnectGoogleRoute = createProtectedRoute({
             accommodationId,
             userId: actor.id,
             ...(returnTo === undefined ? {} : { returnTo })
+        });
+
+        // Double-submit CSRF cookie: the public callback re-checks that the
+        // browser completing the flow presents this same state via cookie, so
+        // an attacker cannot hand a victim a callback URL carrying the
+        // attacker's own state (login-CSRF / calendar hijack). SameSite=Lax so
+        // the cookie still rides Google's top-level redirect back to the
+        // callback; HttpOnly so page scripts can't read it; Secure in prod.
+        setCookie(ctx, CALENDAR_OAUTH_STATE_COOKIE, state, {
+            httpOnly: true,
+            sameSite: 'Lax',
+            secure: env.NODE_ENV === 'production',
+            path: '/',
+            maxAge: CALENDAR_OAUTH_STATE_COOKIE_MAX_AGE_S
         });
 
         const authorizeUrl = new URL(GOOGLE_AUTHORIZATION_URL);

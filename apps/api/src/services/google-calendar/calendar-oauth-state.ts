@@ -28,6 +28,19 @@ import { randomBytes } from 'node:crypto';
 /** How long a generated `state` token stays valid before it expires. */
 const STATE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
+/**
+ * Name of the HttpOnly, SameSite=Lax cookie the connect route sets to the
+ * `state` value and the callback re-checks (double-submit CSRF binding). This
+ * proves the browser completing the OAuth flow is the SAME one that started it —
+ * without requiring a still-fresh Better Auth session on the callback — and
+ * closes the login-CSRF where an attacker hands a victim a callback URL carrying
+ * the attacker's own state.
+ */
+export const CALENDAR_OAUTH_STATE_COOKIE = 'gcal_oauth_state';
+
+/** Cookie lifetime in seconds — matches the state TTL. */
+export const CALENDAR_OAUTH_STATE_COOKIE_MAX_AGE_S = STATE_TTL_MS / 1000;
+
 /** A pending (not-yet-consumed) calendar OAuth state entry. */
 interface PendingCalendarOAuthState {
     /** The accommodation the connect flow is attaching a calendar to. */
