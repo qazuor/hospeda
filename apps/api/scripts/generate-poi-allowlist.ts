@@ -100,16 +100,45 @@
  * `poi-allowlist.generated.json` directly — it will be overwritten on the
  * next run.
  *
+ * ## Prompt-embedded slug subset (HOS-142 Phase 4b)
+ *
+ * The full `POI_ALLOWLIST` (curated 12 + these ~1733 generated terms,
+ * flattening to ~661 distinct slugs) is used for the SERVER-SIDE
+ * `matchPoiTerms` lexical fallback (`search-chat.ts`), but embedding all ~661
+ * slugs in the LLM prompt (`buildAllowlistLines`, `search-chat.prompt.ts`)
+ * would bloat every conversational-search request. This script therefore also
+ * writes a separate, MUCH smaller `promptFeaturedSlugs` list: the union of the
+ * 12 curated slugs with the top `PROMPT_FEATURED_POI_LIMIT` in-scope POIs,
+ * ranked by `displayWeight` descending (ties broken by `verified` — verified
+ * landmarks first — then `slug` ascending for full determinism). `isFeatured`
+ * alone (661) and `displayWeight >= 100` alone (653) are both far too large to
+ * embed directly (hundreds, not the tens/dozens a prompt subset needs), hence
+ * the additional top-N cut on top of the scope cut. Any landmark NOT in this
+ * smaller list is still fully reachable — `matchPoiTerms` matches against the
+ * complete `POI_ALLOWLIST`, independent of what got embedded in the prompt.
+ *
  * @module apps/api/scripts/generate-poi-allowlist
  */
 
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CURATED_POI_ALLOWLIST } from '../src/routes/ai/protected/poi-allowlist.js';
+import {
+    CURATED_POI_ALLOWLIST,
+    extractAllSlugs
+} from '../src/routes/ai/protected/poi-allowlist.js';
 
 /** Maximum number of distinct POI slugs a single NL term may map to before it is treated as generic noise and discarded (R-5). See the module doc above for how this was chosen. */
 const MAX_SLUGS_PER_TERM = 3;
+
+/**
+ * How many additional (non-curated) in-scope POI slugs to embed in the LLM
+ * prompt's `promptFeaturedSlugs` subset, on top of the 12 curated slugs — see
+ * "Prompt-embedded slug subset" in the module doc. 40 keeps the combined
+ * embedded total (12 curated + up to 40 featured, deduplicated) within the
+ * ~30-60 slug target.
+ */
+const PROMPT_FEATURED_POI_LIMIT = 40;
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const SEED_POI_DIR = resolve(SCRIPT_DIR, '../../../packages/seed/src/data/pointOfInterest');
@@ -120,6 +149,7 @@ interface PoiFixture {
     readonly slug: string;
     readonly isFeatured?: boolean;
     readonly displayWeight?: number;
+    readonly verified?: boolean;
     readonly keywords?: readonly string[];
     readonly nameI18n?: {
         readonly es?: string | null;
@@ -262,6 +292,39 @@ function applyGenericTermFilter(
     return { kept, discardedBareWord, discardedGeneric, skippedCurated };
 }
 
+/**
+ * Selects the small "prompt-embedded" slug subset (HOS-142 Phase 4b): the
+ * union of every curated slug with the top {@link PROMPT_FEATURED_POI_LIMIT}
+ * in-scope POIs ranked by `displayWeight` descending, `verified` descending,
+ * then `slug` ascending (full determinism when `displayWeight` ties, which is
+ * the common case — most in-scope POIs share `displayWeight: 100`).
+ *
+ * @param inScopePois - The POIs that passed {@link isInScope}.
+ * @param curatedSlugs - Slugs already covered by the curated dictionary.
+ * @returns Sorted, de-duplicated array of slugs to embed in the LLM prompt.
+ */
+function selectPromptFeaturedSlugs(
+    inScopePois: readonly PoiFixture[],
+    curatedSlugs: ReadonlySet<string>
+): readonly string[] {
+    const ranked = [...inScopePois].sort((a, b) => {
+        const weightDiff = (b.displayWeight ?? 0) - (a.displayWeight ?? 0);
+        if (weightDiff !== 0) {
+            return weightDiff;
+        }
+        const verifiedDiff = (b.verified === true ? 1 : 0) - (a.verified === true ? 1 : 0);
+        if (verifiedDiff !== 0) {
+            return verifiedDiff;
+        }
+        return a.slug.localeCompare(b.slug);
+    });
+
+    const topFeatured = ranked.slice(0, PROMPT_FEATURED_POI_LIMIT).map((poi) => poi.slug);
+    const combined = new Set([...curatedSlugs, ...topFeatured]);
+
+    return Array.from(combined).sort();
+}
+
 function main(): void {
     const fixtures = loadPoiFixtures();
     const inScopePois = fixtures.filter(isInScope);
@@ -273,7 +336,10 @@ function main(): void {
         curatedTerms
     );
 
-    const output = { es: kept };
+    const curatedSlugs = extractAllSlugs(CURATED_POI_ALLOWLIST);
+    const promptFeaturedSlugs = selectPromptFeaturedSlugs(inScopePois, curatedSlugs);
+
+    const output = { es: kept, promptFeaturedSlugs };
     writeFileSync(OUTPUT_PATH, `${JSON.stringify(output, null, 4)}\n`, 'utf-8');
 
     console.log('========================================');
@@ -286,6 +352,10 @@ function main(): void {
     console.log(`Discarded (generic, >${MAX_SLUGS_PER_TERM} slugs):    ${discardedGeneric}`);
     console.log(`Skipped (already curated):     ${skippedCurated}`);
     console.log(`Final generated terms:         ${Object.keys(kept).length}`);
+    console.log(`Curated slugs:                 ${curatedSlugs.size}`);
+    console.log(
+        `Prompt-embedded slugs (curated + top ${PROMPT_FEATURED_POI_LIMIT} featured): ${promptFeaturedSlugs.length}`
+    );
     console.log(`Written to: ${OUTPUT_PATH}`);
 }
 

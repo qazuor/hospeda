@@ -44,6 +44,18 @@
  * On any key collision the CURATED entry always wins — the generated file is
  * never allowed to silently redefine a hand-verified alias.
  *
+ * ## Prompt-embedded slug subset (HOS-142 Phase 4b)
+ *
+ * `POI_ALLOWLIST`/`matchPoiTerms` are used SERVER-SIDE only (`search-chat.ts`'s
+ * lexical fallback) — they are never embedded verbatim in the LLM prompt.
+ * {@link PROMPT_FEATURED_POI_SLUGS} is the deliberately small subset (curated
+ * 12 + the top featured POIs by `displayWeight`, ~52 total — see
+ * `scripts/generate-poi-allowlist.ts`'s "Prompt-embedded slug subset" doc)
+ * that `search-chat.prompt.ts`'s `buildAllowlistLines` actually embeds. A
+ * landmark whose slug is NOT in this smaller list is still fully resolvable —
+ * just not through the LLM's own extraction; `matchPoiTerms` covers it
+ * server-side against the FULL `POI_ALLOWLIST` regardless.
+ *
  * @module apps/api/routes/ai/protected/poi-allowlist
  */
 
@@ -51,6 +63,12 @@ import generatedPoiAllowlistData from './poi-allowlist.generated.json' with { ty
 
 /** Shape shared by both the curated and generated POI allowlist dictionaries. */
 type PoiAllowlistDict = Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>;
+
+/** Shape of the JSON artifact produced by `scripts/generate-poi-allowlist.ts`. */
+interface GeneratedPoiAllowlistFile {
+    readonly es: Readonly<Record<string, readonly string[]>>;
+    readonly promptFeaturedSlugs: readonly string[];
+}
 
 /**
  * Hand-curated dictionary mapping NL landmark-name/alias variants → an array
@@ -159,13 +177,16 @@ export const CURATED_POI_ALLOWLIST: PoiAllowlistDict = {
     }
 } as const;
 
+/** Typed view of the raw imported generated JSON artifact. */
+const generatedPoiAllowlistFile = generatedPoiAllowlistData as GeneratedPoiAllowlistFile;
+
 /**
  * Machine-generated `es`-only NL term → slug entries produced by
  * `scripts/generate-poi-allowlist.ts` (HOS-142 G-7). See the module doc above
  * and the script's own header comment for the scope cut, candidate-term
  * derivation, and R-5 generic-term filter that produced this data.
  */
-const GENERATED_POI_ALLOWLIST = generatedPoiAllowlistData as PoiAllowlistDict;
+const GENERATED_POI_ALLOWLIST: PoiAllowlistDict = { es: generatedPoiAllowlistFile.es };
 
 /**
  * Merges a single locale's curated and generated term dictionaries, with
@@ -221,6 +242,53 @@ export const POI_ALLOWLIST: PoiAllowlistDict = mergePoiAllowlists(
     CURATED_POI_ALLOWLIST,
     GENERATED_POI_ALLOWLIST
 );
+
+/**
+ * Extracts every distinct slug referenced anywhere in a POI allowlist
+ * dictionary (across every locale and every term). Exported so both this
+ * module and `scripts/generate-poi-allowlist.ts` derive "every curated slug"
+ * from the SAME logic rather than duplicating it.
+ *
+ * @param dict - A POI allowlist dictionary (curated, generated, or merged).
+ * @returns De-duplicated set of every slug appearing in `dict`.
+ */
+export function extractAllSlugs(dict: PoiAllowlistDict): ReadonlySet<string> {
+    const slugs = new Set<string>();
+    for (const localeDict of Object.values(dict)) {
+        for (const termSlugs of Object.values(localeDict)) {
+            for (const slug of termSlugs) {
+                slugs.add(slug);
+            }
+        }
+    }
+    return slugs;
+}
+
+/**
+ * The small, LLM-prompt-embeddable subset of POI slugs (HOS-142 Phase 4b) —
+ * see the module doc's "Prompt-embedded slug subset" section. Computed as the
+ * union of every curated slug (always included, regardless of ranking) with
+ * the generated `promptFeaturedSlugs` list (the top featured POIs by
+ * `displayWeight`, produced by `scripts/generate-poi-allowlist.ts`). Recomputing
+ * the curated half at runtime (rather than trusting the generated file's own
+ * embedded union) means a hand-edit to {@link CURATED_POI_ALLOWLIST} is always
+ * reflected here even before the next `generate-poi-allowlist` run.
+ *
+ * `search-chat.prompt.ts`'s `buildAllowlistLines` embeds exactly this list in
+ * the LLM prompt — NOT the full `POI_ALLOWLIST`. Every other in-scope POI
+ * remains reachable via the server-side `matchPoiTerms` lexical fallback.
+ *
+ * @example
+ * ```ts
+ * PROMPT_FEATURED_POI_SLUGS.length; // ~52 (12 curated + up to 40 featured)
+ * ```
+ */
+export const PROMPT_FEATURED_POI_SLUGS: readonly string[] = Array.from(
+    new Set([
+        ...extractAllSlugs(CURATED_POI_ALLOWLIST),
+        ...generatedPoiAllowlistFile.promptFeaturedSlugs
+    ])
+).sort();
 
 /**
  * Match NL point-of-interest mentions to canonical POI slugs.
