@@ -1,4 +1,5 @@
 export * from './accommodation.model.ts';
+export * from './accommodationCalendarSync.model.ts';
 export * from './accommodationFaq.model.ts';
 export * from './accommodationIaData.model.ts';
 export * from './accommodationMedia.model.ts';

@@ -248,3 +248,7 @@ export type PriceAlertIdType = z.infer<typeof PriceAlertIdSchema>;
 // === Occupancy Calendar IDs (HOS-43) ===
 export const AccommodationOccupancyIdSchema = BaseIdSchema;
 export type AccommodationOccupancyIdType = z.infer<typeof AccommodationOccupancyIdSchema>;
+
+// === Calendar Sync IDs (HOS-157 Phase 2) ===
+export const AccommodationCalendarSyncIdSchema = BaseIdSchema;
+export type AccommodationCalendarSyncIdType = z.infer<typeof AccommodationCalendarSyncIdSchema>;
