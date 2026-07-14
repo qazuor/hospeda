@@ -15,6 +15,7 @@ import {
     PostSponsorUpdateOutputSchema,
     PostSponsorViewOutputSchema
 } from '../../../src/entities/postSponsor/postSponsor.crud.schema.js';
+import { LifecycleStatusEnum } from '../../../src/enums/lifecycle-state.enum.js';
 import { createBasePaginationParams } from '../../fixtures/common.fixtures.js';
 import {
     createPostSponsorCreateInput,
@@ -337,6 +338,78 @@ describe('PostSponsor CRUD Schemas', () => {
             for (const output of invalidOutputs) {
                 expect(() => PostSponsorCountOutputSchema.parse(output)).toThrow(ZodError);
             }
+        });
+    });
+
+    // ------------------------------------------------------------------------
+    // HOS-106 — lifecycleState is a real create/update field, not omitted.
+    //
+    // The admin sponsor form submits `lifecycleState` as a required editable
+    // field. It used to be `.omit()`'d from the strict schemas, so once
+    // `.strict()` is actually enforced at the HTTP layer it would have 400'd
+    // every sponsor create/update. It is now included (owner decision), while
+    // `.strict()` is preserved and defaults are stripped on update so a partial
+    // update that omits it does not reset the state to ACTIVE.
+    // ------------------------------------------------------------------------
+    describe('lifecycleState handling (HOS-106)', () => {
+        it('create accepts a body that includes lifecycleState', () => {
+            const input = {
+                ...createPostSponsorCreateInput(),
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            };
+
+            const result = PostSponsorCreateInputSchema.safeParse(input);
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.lifecycleState).toBe(LifecycleStatusEnum.DRAFT);
+            }
+        });
+
+        it('create leaves lifecycleState absent when omitted (no forced default)', () => {
+            const result = PostSponsorCreateInputSchema.safeParse(createPostSponsorCreateInput());
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                // Optional, no default: absent input stays absent so the service/DB
+                // keeps the prior behavior rather than being forced to ACTIVE.
+                expect(result.data.lifecycleState).toBeUndefined();
+            }
+        });
+
+        it('update accepts lifecycleState', () => {
+            const result = PostSponsorUpdateInputSchema.safeParse({
+                name: 'Updated sponsor name',
+                lifecycleState: LifecycleStatusEnum.ARCHIVED
+            });
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.lifecycleState).toBe(LifecycleStatusEnum.ARCHIVED);
+            }
+        });
+
+        it('update does NOT inject lifecycleState when omitted (no default-reset)', () => {
+            const result = PostSponsorUpdateInputSchema.safeParse({ name: 'Name only change' });
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                // The default must NOT be applied on a partial update, or every
+                // name-only edit would silently reset the sponsor to ACTIVE.
+                expect('lifecycleState' in result.data).toBe(false);
+            }
+        });
+
+        it('create still rejects an unknown key (.strict() preserved)', () => {
+            const input = { ...createPostSponsorCreateInput(), notAField: 'boom' };
+
+            expect(PostSponsorCreateInputSchema.safeParse(input).success).toBe(false);
+        });
+
+        it('update still rejects an unknown key (.strict() preserved)', () => {
+            expect(
+                PostSponsorUpdateInputSchema.safeParse({ name: 'x', notAField: 'boom' }).success
+            ).toBe(false);
         });
     });
 });
