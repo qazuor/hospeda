@@ -1316,6 +1316,63 @@
             "onDragCancel": "Reordenamiento cancelado. La pregunta volvió a la posición {{position}}."
         }
     },
+    "poiCategories": {
+        "title": "Categorías asociadas",
+        "empty": "Este punto de interés todavía no tiene categorías asignadas. Agregá una abajo.",
+        "fields": {
+            "categories": "Categorías",
+            "primaryCategory": "Categoría principal"
+        },
+        "hints": {
+            "primaryRequired": "Elegí una categoría principal antes de guardar."
+        },
+        "actions": {
+            "save": "Guardar categorías",
+            "saving": "Guardando..."
+        },
+        "messages": {
+            "saved": "Categorías guardadas correctamente."
+        },
+        "errors": {
+            "loadFailed": "No se pudieron cargar las categorías asignadas.",
+            "saveFailed": "No se pudieron guardar las categorías. Intentá de nuevo."
+        }
+    },
+    "poiDestinations": {
+        "title": "Destinos asociados",
+        "empty": "Este punto de interés todavía no está asociado a ningún destino. Agregá uno abajo.",
+        "fields": {
+            "destination": "Destino",
+            "destinationPlaceholder": "Buscar destino…",
+            "relation": "Relación"
+        },
+        "relation": {
+            "primary": "Principal",
+            "nearby": "Cercano"
+        },
+        "actions": {
+            "add": "Agregar destino",
+            "remove": "Quitar {{name}}",
+            "changeRelation": "Cambiar relación de {{name}}"
+        },
+        "messages": {
+            "added": "«{{name}}» agregado como {{relation}}.",
+            "relationUpdated": "Relación de «{{name}}» actualizada a {{relation}}.",
+            "removed": "«{{name}}» quitado de los destinos asociados."
+        },
+        "errors": {
+            "loadFailed": "No se pudieron cargar los destinos asociados.",
+            "addFailed": "No se pudo agregar el destino. Intentá de nuevo.",
+            "updateFailed": "No se pudo actualizar la relación. Intentá de nuevo.",
+            "removeFailed": "No se pudo quitar el destino. Intentá de nuevo."
+        },
+        "confirmRemove": {
+            "title": "¿Quitar destino?",
+            "message": "¿Seguro que querés quitar «{{name}}» de los destinos asociados a este punto de interés?",
+            "cancel": "Cancelar",
+            "confirm": "Quitar"
+        }
+    },
     "gallery": {
         "title": "Galería de fotos",
         "portada": {

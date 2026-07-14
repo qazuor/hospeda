@@ -93,6 +93,12 @@
     "includeDeleted": {
         "label": "Mostrar excluídos"
     },
+    "hasOwnPage": {
+        "label": "Com página própria"
+    },
+    "verified": {
+        "label": "Verificado"
+    },
     "ownerId": {
         "label": "Proprietário"
     },

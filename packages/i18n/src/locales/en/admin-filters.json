@@ -93,6 +93,12 @@
     "includeDeleted": {
         "label": "Show deleted"
     },
+    "hasOwnPage": {
+        "label": "Has own page"
+    },
+    "verified": {
+        "label": "Verified"
+    },
     "ownerId": {
         "label": "Owner"
     },

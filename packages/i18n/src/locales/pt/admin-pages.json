@@ -1282,6 +1282,63 @@
             "noLatestInvoice": "Você ainda não tem faturas disponíveis para baixar."
         }
     },
+    "poiCategories": {
+        "title": "Categorias associadas",
+        "empty": "Este ponto de interesse ainda não tem categorias atribuídas. Adicione uma abaixo.",
+        "fields": {
+            "categories": "Categorias",
+            "primaryCategory": "Categoria principal"
+        },
+        "hints": {
+            "primaryRequired": "Escolha uma categoria principal antes de salvar."
+        },
+        "actions": {
+            "save": "Salvar categorias",
+            "saving": "Salvando..."
+        },
+        "messages": {
+            "saved": "Categorias salvas com sucesso."
+        },
+        "errors": {
+            "loadFailed": "Não foi possível carregar as categorias atribuídas.",
+            "saveFailed": "Não foi possível salvar as categorias. Tente novamente."
+        }
+    },
+    "poiDestinations": {
+        "title": "Destinos associados",
+        "empty": "Este ponto de interesse ainda não está associado a nenhum destino. Adicione um abaixo.",
+        "fields": {
+            "destination": "Destino",
+            "destinationPlaceholder": "Buscar destino…",
+            "relation": "Relação"
+        },
+        "relation": {
+            "primary": "Principal",
+            "nearby": "Próximo"
+        },
+        "actions": {
+            "add": "Adicionar destino",
+            "remove": "Remover {{name}}",
+            "changeRelation": "Alterar relação de {{name}}"
+        },
+        "messages": {
+            "added": "\"{{name}}\" adicionado como {{relation}}.",
+            "relationUpdated": "Relação de \"{{name}}\" atualizada para {{relation}}.",
+            "removed": "\"{{name}}\" removido dos destinos associados."
+        },
+        "errors": {
+            "loadFailed": "Não foi possível carregar os destinos associados.",
+            "addFailed": "Não foi possível adicionar o destino. Tente novamente.",
+            "updateFailed": "Não foi possível atualizar a relação. Tente novamente.",
+            "removeFailed": "Não foi possível remover o destino. Tente novamente."
+        },
+        "confirmRemove": {
+            "title": "Remover destino?",
+            "message": "Tem certeza de que deseja remover \"{{name}}\" dos destinos associados a este ponto de interesse?",
+            "cancel": "Cancelar",
+            "confirm": "Remover"
+        }
+    },
     "faqs": {
         "title": "Perguntas frequentes",
         "addTitle": "Nova pergunta frequente",
