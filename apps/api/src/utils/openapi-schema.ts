@@ -63,18 +63,72 @@ export function createOpenAPISchema<T extends z.ZodTypeAny>(schema: T): z.ZodTyp
                 newShape[key] = convertDateField(value as z.ZodTypeAny, key);
             }
 
-            return z.object(newShape);
+            // Preserve the original object's unknown-keys mode. z.object() defaults
+            // to 'strip', so a bare rebuild silently drops .strict()/.passthrough()
+            // (or a custom catchall) from the source schema. route-factory feeds
+            // this rebuilt copy to BOTH the OpenAPI doc AND the runtime body
+            // validator, so losing .strict() makes affected endpoints accept-and-
+            // strip unknown fields instead of rejecting them with 400 (HOS-106).
+            const rebuilt = z.object(newShape);
+            return reapplyUnknownKeys(rebuilt, schema);
         } catch {
             // If shape access fails (e.g., Zod v4 .pick()/.omit() Proxy with invalid keys),
-            // return a generic passthrough object schema that OpenAPI can process without errors.
-            // This preserves API functionality (runtime validation still works with the original schema)
-            // while preventing zod-to-openapi from crashing on Proxy introspection.
+            // return a generic permissive object schema so zod-to-openapi does not crash on
+            // Proxy introspection. NOTE: this schema is fed to the runtime body validator too
+            // (route-factory), so it does NOT preserve a source .strict() — a strict request
+            // body reaching this path would be downgraded to accept unknown keys. No current
+            // route hits this fallback with a strict request body; if one is ever added,
+            // handle its mode explicitly here rather than relying on this permissive default.
             return createFallbackObjectSchema();
         }
     }
 
     // For non-object schemas, just convert the field directly
     return convertDateField(schema, 'root');
+}
+
+/**
+ * Re-apply the original ZodObject's unknown-keys mode to the rebuilt object.
+ *
+ * `z.object(newShape)` defaults to `strip`, so a bare rebuild silently drops the
+ * source schema's unknown-keys behavior. This restores it across Zod v3 and v4:
+ * - Zod v3 encoded the mode in `_def.unknownKeys` ('strict' | 'passthrough' | 'strip').
+ * - Zod v4 (this repo) encodes it in `_def.catchall`: a `ZodNever` catchall means
+ *   `.strict()`, a `ZodUnknown` catchall means `.passthrough()`, no catchall means
+ *   the default `.strip()`, and any OTHER catchall (e.g. `.catchall(z.boolean())`)
+ *   is a custom per-unknown-key validator that is re-applied verbatim.
+ *
+ * @param rebuilt - The freshly rebuilt object (date fields already converted).
+ * @param original - The source ZodObject whose unknown-keys mode must survive.
+ * @returns The rebuilt object with the original unknown-keys mode restored.
+ */
+function reapplyUnknownKeys(
+    rebuilt: z.ZodObject<z.ZodRawShape>,
+    original: z.ZodTypeAny
+): z.ZodTypeAny {
+    // biome-ignore lint/suspicious/noExplicitAny: Zod internal _def access for schema introspection
+    const def = (original as any)._def;
+    // Zod v3 fast-path.
+    if (def?.unknownKeys === 'strict') {
+        return rebuilt.strict();
+    }
+    if (def?.unknownKeys === 'passthrough') {
+        return rebuilt.passthrough();
+    }
+    // Zod v4: the mode lives in the catchall schema.
+    const catchall = def?.catchall as z.ZodTypeAny | undefined;
+    if (catchall instanceof z.ZodNever) {
+        return rebuilt.strict();
+    }
+    if (catchall instanceof z.ZodUnknown) {
+        return rebuilt.passthrough();
+    }
+    if (catchall) {
+        // A custom `.catchall(...)` validator — preserve it verbatim so the
+        // rebuilt schema constrains unknown keys exactly like the source did.
+        return rebuilt.catchall(catchall);
+    }
+    return rebuilt; // strip (default) — no catchall to restore.
 }
 
 /**

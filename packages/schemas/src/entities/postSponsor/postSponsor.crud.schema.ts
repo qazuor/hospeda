@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { PostSponsorIdSchema } from '../../common/id.schema.js';
 import { BaseSearchSchema } from '../../common/pagination.schema.js';
-import { ClientTypeEnumSchema } from '../../enums/index.js';
+import { ClientTypeEnumSchema, LifecycleStatusEnumSchema } from '../../enums/index.js';
 import { PostSponsorSchema } from './postSponsor.schema.js';
 
 /**
@@ -32,7 +32,18 @@ export const PostSponsorCreateInputSchema = PostSponsorSchema.omit({
     deletedById: true,
     adminInfo: true,
     lifecycleState: true
-}).strict();
+})
+    .extend({
+        // HOS-106: the admin sponsor form submits lifecycleState as an editable
+        // field, and `.strict()` now actually enforces request bodies. Re-add it
+        // as OPTIONAL (matching the feature-create pattern) rather than inheriting
+        // the base `.default(ACTIVE)` — a default would make it required in the
+        // inferred type and would reset the state to ACTIVE on any partial update
+        // that omits it. Absent on create means the service/DB keeps the prior
+        // behavior; the form sends one of DRAFT/ACTIVE/ARCHIVED.
+        lifecycleState: LifecycleStatusEnumSchema.optional()
+    })
+    .strict();
 
 /**
  * Schema for post sponsor creation response
@@ -50,6 +61,8 @@ export const PostSponsorCreateOutputSchema = z.object({
  * Schema for updating a post sponsor
  * All fields optional except those that shouldn't be updated
  */
+// lifecycleState is optional (no default) on create, so `.partial()` stays
+// safe — an update that omits it leaves the state unchanged (HOS-106).
 export const PostSponsorUpdateInputSchema = PostSponsorCreateInputSchema.partial();
 
 /**
