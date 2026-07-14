@@ -89,8 +89,8 @@
             "contactAdmin": "Contactar soporte",
             "reason": {
                 "host-missing-permission": {
-                    "title": "Hay un problema con tu cuenta",
-                    "message": "Detectamos que sos anfitrión pero el acceso al panel está deshabilitado. Probablemente sea una configuración faltante en tu cuenta. Escribinos y lo resolvemos."
+                    "title": "El panel de administración no es parte de tu cuenta",
+                    "message": "Los anfitriones gestionan sus alojamientos y reservas desde el sitio principal de Hospeda — el panel de administración es solo para el equipo de Hospeda. Esto no es un error, es simplemente la puerta equivocada. Volvé al sitio para seguir gestionando tu cuenta."
                 },
                 "generic": {
                     "title": "Zona reservada",

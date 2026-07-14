@@ -31,6 +31,8 @@ import {
     PointOfInterestRemoveFromDestinationInputSchema,
     type PointOfInterestSearchInput,
     PointOfInterestSearchInputSchema,
+    type PointOfInterestUpdateDestinationRelationInput,
+    PointOfInterestUpdateDestinationRelationInputSchema,
     PointOfInterestUpdateInputSchema,
     type PointsOfInterestByDestinationInput,
     PointsOfInterestByDestinationInputSchema,
@@ -197,6 +199,18 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         checkCanDeletePointOfInterest(actor);
     }
     /**
+     * Permission hook for {@link updatePointOfInterestDestinationRelation}
+     * (HOS-143 T-005, Decision 1). Deliberately delegates to
+     * `checkCanUpdatePointOfInterest` — the same `POINT_OF_INTEREST_UPDATE`
+     * checker used by `_canUpdate` — rather than introducing a dedicated
+     * `DESTINATION_POINT_OF_INTEREST_MANAGE` permission, to keep this file's
+     * `POINT_OF_INTEREST_*`-only consistency (see
+     * `point-of-interest.permissions.ts`'s file-level deviation note).
+     */
+    protected _canUpdatePointOfInterestDestinationRelation(actor: Actor): void {
+        checkCanUpdatePointOfInterest(actor);
+    }
+    /**
      * @inheritdoc
      * Verifies admin access via base class, then checks entity-specific permission.
      */
@@ -360,6 +374,92 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                     );
                 }
                 return { relation: relation as DestinationPointOfInterestRelation };
+            }
+        });
+    }
+
+    /**
+     * Updates the `relation` kind (`PRIMARY`/`NEARBY`, HOS-140) of an
+     * EXISTING point-of-interest-destination link (HOS-143 T-005). Mirrors
+     * {@link addPointOfInterestToDestination}'s parallel existence-check
+     * shape, but never creates the relation row — if the POI, the
+     * destination, or the relation itself does not already exist, this
+     * throws `NOT_FOUND` rather than silently creating it (AC-4). Use
+     * {@link addPointOfInterestToDestination} to create a new link.
+     * @param actor - The actor performing the action
+     * @param params - The destination/POI pair and the new `relation` kind
+     * @param ctx - Optional service context carrying transaction and hookState.
+     */
+    public async updatePointOfInterestDestinationRelation(
+        actor: Actor,
+        params: PointOfInterestUpdateDestinationRelationInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ relation: DestinationPointOfInterestRelation }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'updatePointOfInterestDestinationRelation',
+            input: { ...params, actor },
+            schema: PointOfInterestUpdateDestinationRelationInputSchema,
+            ctx,
+            execute: async (validatedParams, actor) => {
+                await this._canUpdatePointOfInterestDestinationRelation(actor);
+                const {
+                    destinationId,
+                    pointOfInterestId,
+                    relation: relationKind
+                } = validatedParams;
+
+                // Run all existence checks in parallel for better performance
+                const [pointOfInterest, destination, existing] = await Promise.all([
+                    this.model.findOne({ id: pointOfInterestId as PointOfInterestIdType }),
+                    this.destinationModel.findOne({ id: destinationId as DestinationIdType }),
+                    this.relatedModel.findOne({
+                        destinationId: destinationId as DestinationIdType,
+                        pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                    })
+                ]);
+
+                if (!pointOfInterest) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Point of interest not found'
+                    );
+                }
+                if (!destination) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+                }
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Point of interest relation not found for this destination'
+                    );
+                }
+
+                // Update the relation kind. Does NOT create the row — the
+                // existence check above guarantees it already exists (AC-4).
+                const relation = await this.relatedModel.update(
+                    {
+                        destinationId: destinationId as DestinationIdType,
+                        pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                    },
+                    { relation: relationKind }
+                );
+
+                // If the model returns just an id or number, fetch the full relation
+                let fullRelation = relation;
+                if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
+                    const found = await this.relatedModel.findOne({
+                        destinationId: destinationId as DestinationIdType,
+                        pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                    });
+                    if (!found) {
+                        throw new ServiceError(
+                            ServiceErrorCode.INTERNAL_ERROR,
+                            'Failed to update relation'
+                        );
+                    }
+                    fullRelation = found;
+                }
+                return { relation: fullRelation as DestinationPointOfInterestRelation };
             }
         });
     }
@@ -579,14 +679,21 @@ export class PointOfInterestService extends BaseCrudRelatedService<
      * @returns A `where` object safe to pass to `model.findAll`/`model.count`.
      */
     private buildSearchWhere(
-        params: Pick<PointOfInterestSearchInput, 'slug' | 'type' | 'isFeatured' | 'isBuiltin'>
+        params: Pick<
+            PointOfInterestSearchInput,
+            'slug' | 'type' | 'isFeatured' | 'isBuiltin' | 'hasOwnPage' | 'verified'
+        >
     ): Record<string, unknown> {
-        const { slug, type, isFeatured, isBuiltin } = params;
+        const { slug, type, isFeatured, isBuiltin, hasOwnPage, verified } = params;
         const where: Record<string, unknown> = {};
         if (slug) where.slug = slug;
         if (type) where.type = type;
         if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
+        // HOS-143 T-007: `hasOwnPage`/`verified` are real plain columns
+        // (HOS-138), same passthrough pattern as `isFeatured`/`isBuiltin`.
+        if (typeof hasOwnPage === 'boolean') where.hasOwnPage = hasOwnPage;
+        if (typeof verified === 'boolean') where.verified = verified;
         return where;
     }
 

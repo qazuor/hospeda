@@ -770,16 +770,33 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
     // ── Derived values ─────────────────────────────────────────────────────
 
     const status = subscription.status as SubscriptionStatus;
-    const badgeClass = getBadgeClass(status);
 
-    const statusLabel = t(
-        `account.pages.subscription.status.${status}`,
-        status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')
-    );
+    /**
+     * A soft-cancelled subscription (BETA-184) keeps `status: 'active'` until
+     * the finalization cron flips it to `cancelled` at period end — but
+     * `cancelAtPeriodEnd` is already `true` the moment the user cancels. The
+     * dashboard must reflect that immediately instead of showing a plain
+     * "ACTIVA" badge with a "Próxima facturación" date that will never be
+     * charged, and offering a redundant "Cancelar suscripción" action.
+     */
+    const isCancelScheduled = subscription.cancelAtPeriodEnd === true;
+
+    const badgeClass = isCancelScheduled ? (styles.badgeCancelling ?? '') : getBadgeClass(status);
+
+    const statusLabel = isCancelScheduled
+        ? t('account.pages.subscription.status.cancelling', 'Cancelación programada')
+        : t(
+              `account.pages.subscription.status.${status}`,
+              status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')
+          );
 
     const nextBillingDate = subscription.currentPeriodEnd
         ? formatDate({ date: subscription.currentPeriodEnd, locale })
         : t('account.pages.subscription.noBillingDate', 'N/A');
+
+    const nextBillingLabel = isCancelScheduled
+        ? t('account.pages.subscription.accessUntilLabel', 'Acceso hasta')
+        : t('account.pages.subscription.nextBillingLabel', 'Próxima facturación');
 
     const paymentMethodLabel = formatPaymentMethod(
         subscription.paymentMethod,
@@ -796,8 +813,11 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
         adminUrl = '';
     }
 
-    const canCancel = status === 'active' || status === 'trial';
-    const canPause = status === 'active' || status === 'trial';
+    // Cancel/pause stop making sense once the cancellation is already
+    // scheduled — there is no "undo cancel" endpoint, so hide both actions
+    // rather than let the user re-trigger a cancel that already happened.
+    const canCancel = (status === 'active' || status === 'trial') && !isCancelScheduled;
+    const canPause = (status === 'active' || status === 'trial') && !isCancelScheduled;
     const canResume = status === 'paused';
 
     // ── JSX ────────────────────────────────────────────────────────────────
@@ -825,12 +845,7 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
 
                 <div className={styles.metaGrid}>
                     <div className={styles.metaItem}>
-                        <p className={styles.metaLabel}>
-                            {t(
-                                'account.pages.subscription.nextBillingLabel',
-                                'Próxima facturación'
-                            )}
-                        </p>
+                        <p className={styles.metaLabel}>{nextBillingLabel}</p>
                         <p className={styles.metaValue}>{nextBillingDate}</p>
                     </div>
 
@@ -841,6 +856,33 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
                         <p className={styles.metaValue}>{paymentMethodLabel}</p>
                     </div>
                 </div>
+
+                {/* ── Cancellation-scheduled banner (BETA-184) ── */}
+                {isCancelScheduled && (
+                    <div
+                        className={styles.cancelScheduledBanner}
+                        role="note"
+                        aria-label={t(
+                            'account.pages.subscription.cancelScheduled.title',
+                            'Suscripción cancelada'
+                        )}
+                    >
+                        <div>
+                            <p className={styles.cancelScheduledBannerTitle}>
+                                {t(
+                                    'account.pages.subscription.cancelScheduled.title',
+                                    'Suscripción cancelada'
+                                )}
+                            </p>
+                            <p className={styles.cancelScheduledBannerBody}>
+                                {t(
+                                    'account.pages.subscription.cancelScheduled.body',
+                                    'No se realizarán más cobros. Mantenés acceso a tu plan hasta el {date}.'
+                                ).replace('{date}', nextBillingDate)}
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {/* ── Scheduled plan-change banner (T-004) ── */}
                 {subscription.scheduledPlanChange && (

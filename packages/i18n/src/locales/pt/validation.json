@@ -3048,6 +3048,11 @@
                 "min": "[PT] El point of interest ids debe tener al menos {{min}} caracteres"
             }
         },
+        "categories": {
+            "max": "[PT] No se pueden asignar más de {{max}} categorías",
+            "min": "[PT] Debe asignarse al menos {{min}} categoría",
+            "primaryNotInSet": "[PT] La categoría primaria debe estar incluida en el conjunto de categorías asignadas"
+        },
         "description": {
             "max": "[PT] La descripción no puede superar los {{max}} caracteres",
             "min": "[PT] La descripción debe tener al menos {{min}} caracteres",

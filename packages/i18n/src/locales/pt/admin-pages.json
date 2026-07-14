@@ -89,8 +89,8 @@
             "contactAdmin": "Contatar suporte",
             "reason": {
                 "host-missing-permission": {
-                    "title": "Há um problema com sua conta",
-                    "message": "Detectamos que você é anfitrião mas o acesso ao painel está desabilitado. Provavelmente é uma configuração faltando na sua conta. Nos escreva e resolvemos."
+                    "title": "O painel de administração não faz parte da sua conta",
+                    "message": "Os anfitriões gerenciam seus alojamentos e reservas pelo site principal da Hospeda — o painel de administração é só para a equipe da Hospeda. Isso não é um erro, é só a porta errada. Volte ao site para continuar gerenciando sua conta."
                 },
                 "generic": {
                     "title": "Área restrita",

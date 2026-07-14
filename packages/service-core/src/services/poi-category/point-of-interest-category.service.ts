@@ -11,6 +11,7 @@ import type {
     PoiCategory,
     PoiCategoryIdType,
     PointOfInterest,
+    PointOfInterestCategoryAssignment,
     PointOfInterestCategoryRelation,
     PointOfInterestIdType
 } from '@repo/schemas';
@@ -24,6 +25,8 @@ import {
     type PoiCategorySearchInput,
     PoiCategorySearchInputSchema,
     PoiCategoryUpdateInputSchema,
+    type PointOfInterestSetCategoriesInput,
+    PointOfInterestSetCategoriesInputSchema,
     type PointsOfInterestByPoiCategoryInput,
     PointsOfInterestByPoiCategoryInputSchema,
     ServiceErrorCode,
@@ -184,6 +187,16 @@ export class PointOfInterestCategoryService extends BaseCrudRelatedService<
         checkCanDeletePoiCategory(actor);
     }
     protected _canSetPrimaryCategory(actor: Actor): void {
+        checkCanUpdatePoiCategory(actor);
+    }
+    /**
+     * Full-replace of a POI's category set (spec §6.4, HOS-143 T-006) is
+     * gated the same as {@link setPrimaryCategory} — it mutates the same
+     * "which categories + which is primary" state, just for the whole set at
+     * once instead of one relation. No dedicated permission is minted (spec
+     * §7.3 precedent: reuse the existing `POI_CATEGORY_*` family).
+     */
+    protected _canSetCategoriesForPointOfInterest(actor: Actor): void {
         checkCanUpdatePoiCategory(actor);
     }
     /**
@@ -575,6 +588,149 @@ export class PointOfInterestCategoryService extends BaseCrudRelatedService<
                     return runSetPrimaryChange(execCtx);
                 }
                 return withServiceTransaction(runSetPrimaryChange, execCtx);
+            }
+        });
+    }
+
+    /**
+     * Replaces the ENTIRE set of categories assigned to a point of interest
+     * in one call (HOS-143 T-006), the transactional counterpart to the
+     * admin category-picker UI's "save" action. Unlike
+     * `assignCategoryToPointOfInterest`/`unassignCategoryFromPointOfInterest`
+     * (single-relation mutations), this deletes every existing
+     * `r_poi_category` row for the POI and re-inserts the submitted set —
+     * `isPrimary: true` on exactly `primaryCategoryId`, `false` on the rest.
+     *
+     * Every id in `categoryIds` (including `primaryCategoryId`, which the
+     * schema's refinement already guarantees is one of them) is resolved
+     * against the `poi_categories` catalog BEFORE any write, so a single bad
+     * id fails the whole call with zero mutation. The delete + re-insert +
+     * derived `points_of_interest.type` write (spec §6.5/§7.6) all happen in
+     * the SAME transaction (AC-6) — a failure partway through rolls back, so
+     * the POI never ends up with zero categories or a stale `type`.
+     *
+     * @param actor - The actor performing the action.
+     * @param params - `pointOfInterestId`, the full `categoryIds` set, and
+     *   `primaryCategoryId` (must be one of `categoryIds`).
+     * @param ctx - Optional service context carrying transaction and hookState.
+     */
+    public async setCategoriesForPointOfInterest(
+        actor: Actor,
+        params: PointOfInterestSetCategoriesInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ categories: PointOfInterestCategoryAssignment[] }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'setCategoriesForPointOfInterest',
+            input: { ...params, actor },
+            schema: PointOfInterestSetCategoriesInputSchema,
+            ctx,
+            execute: async (validatedParams, actor, execCtx) => {
+                this._canSetCategoriesForPointOfInterest(actor);
+                const { pointOfInterestId, categoryIds, primaryCategoryId } = validatedParams;
+
+                // NOTE: `primaryCategoryId ∈ categoryIds` is enforced by
+                // `PointOfInterestSetCategoriesInputSchema`'s `.refine(...)`,
+                // which runs INSIDE `runWithLoggingAndValidation` before this
+                // `execute` callback is ever invoked (see `BaseService`).
+                // A redundant re-check here would be permanently unreachable
+                // dead code — unlike the sibling methods' guards below, which
+                // all validate against live DB state the schema cannot see
+                // (existence, already-assigned), this invariant is pure input
+                // shape and the schema is the single source of truth for it.
+
+                const pointOfInterest = await this.pointOfInterestModel.findOne(
+                    { id: pointOfInterestId as PointOfInterestIdType },
+                    execCtx?.tx
+                );
+                if (!pointOfInterest) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Point of interest not found'
+                    );
+                }
+
+                // Resolve every submitted id BEFORE any write (AC-6): a
+                // missing/deleted category id must fail the whole call, never
+                // leave a partial delete+insert behind.
+                const uniqueCategoryIds = Array.from(new Set(categoryIds)) as PoiCategoryIdType[];
+                const foundCategories = await Promise.all(
+                    uniqueCategoryIds.map((id) => this.model.findOne({ id }, execCtx?.tx))
+                );
+                const missingIndex = foundCategories.findIndex((found) => !found);
+                if (missingIndex !== -1) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `POI category not found: ${uniqueCategoryIds[missingIndex]}`
+                    );
+                }
+                const categoriesById = new Map<PoiCategoryIdType, PoiCategory>(
+                    foundCategories.map((found, idx) => {
+                        // biome-ignore lint/style/noNonNullAssertion: verified non-null by the missingIndex check above
+                        const id = uniqueCategoryIds[idx]!;
+                        return [id, found as PoiCategory];
+                    })
+                );
+                // biome-ignore lint/style/noNonNullAssertion: primaryCategoryId is in categoryIds (checked above), so it resolved in the loop above
+                const primaryCategory = categoriesById.get(primaryCategoryId as PoiCategoryIdType)!;
+                const derivedType = deriveTypeFromCategorySlug(primaryCategory.slug);
+
+                const runSetCategoriesChange = async (
+                    txCtx: ServiceContext
+                ): Promise<{ categories: PointOfInterestCategoryAssignment[] }> => {
+                    // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+                    const tx = txCtx.tx!;
+
+                    // Full replace: remove every existing relation row for
+                    // this POI, then re-insert the submitted set. Both steps
+                    // share this transaction, so a failure on the insert
+                    // rolls back the delete too (AC-6).
+                    await this.relatedModel.hardDelete(
+                        { pointOfInterestId: pointOfInterestId as PointOfInterestIdType },
+                        tx
+                    );
+
+                    await Promise.all(
+                        uniqueCategoryIds.map((catId) =>
+                            this.relatedModel.create(
+                                {
+                                    pointOfInterestId: pointOfInterestId as PointOfInterestIdType,
+                                    categoryId: catId,
+                                    isPrimary: catId === (primaryCategoryId as PoiCategoryIdType)
+                                },
+                                tx
+                            )
+                        )
+                    );
+
+                    await this.pointOfInterestModel.update(
+                        { id: pointOfInterestId as PointOfInterestIdType },
+                        { type: derivedType },
+                        tx
+                    );
+
+                    const sortedAssignments = uniqueCategoryIds
+                        // biome-ignore lint/style/noNonNullAssertion: every id in uniqueCategoryIds resolved above
+                        .map((id) => categoriesById.get(id)!)
+                        .sort((a, b) => (b.displayWeight ?? 50) - (a.displayWeight ?? 50))
+                        .map(
+                            (found): PointOfInterestCategoryAssignment => ({
+                                id: found.id,
+                                slug: found.slug,
+                                nameI18n: found.nameI18n,
+                                icon: found.icon,
+                                isPrimary: found.id === (primaryCategoryId as PoiCategoryIdType)
+                            })
+                        );
+
+                    return { categories: sortedAssignments };
+                };
+
+                // If the caller already provides an active transaction, join it instead
+                // of opening a new, independent one (HOS-139 judgment-day WARNING).
+                if (execCtx?.tx) {
+                    return runSetCategoriesChange(execCtx);
+                }
+                return withServiceTransaction(runSetCategoriesChange, execCtx);
             }
         });
     }

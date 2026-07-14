@@ -32,13 +32,13 @@ import { apiLogger } from '../../../utils/logger';
 // ---------------------------------------------------------------------------
 
 const BatchTranslateRequestSchema = z.object({
-    entityType: z.enum(['accommodation', 'destination', 'event', 'post']),
+    entityType: z.enum(['accommodation', 'destination', 'event', 'post', 'pointOfInterest']),
     cursor: z.string().optional(),
     batchSize: z.coerce.number().int().min(1).max(50).default(10)
 });
 
 const TranslateEntityRequestSchema = z.object({
-    entityType: z.enum(['accommodation', 'destination', 'event', 'post']),
+    entityType: z.enum(['accommodation', 'destination', 'event', 'post', 'pointOfInterest']),
     entityId: z.string().uuid(),
     // The locale the editor is working in; translations flow OUT of it. Defaults
     // to Spanish for backward compatibility.
@@ -49,7 +49,7 @@ const TranslateEntityRequestSchema = z.object({
 });
 
 const OverrideRequestSchema = z.object({
-    entityType: z.enum(['accommodation', 'destination', 'event', 'post']),
+    entityType: z.enum(['accommodation', 'destination', 'event', 'post', 'pointOfInterest']),
     entityId: z.string().uuid(),
     locale: z.enum(['en', 'pt']),
     fieldType: z.string().min(1).max(100),
