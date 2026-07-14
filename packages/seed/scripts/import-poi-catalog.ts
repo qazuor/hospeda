@@ -1,16 +1,18 @@
 #!/usr/bin/env tsx
 /**
- * HOS-142 T-0xx — imports HOS-141's staged POI pipeline output
+ * HOS-142 — imports HOS-141's staged POI pipeline output
  * (`scripts/poi-pipeline/output/*.json`) into the live seed data folder
  * (`src/data/pointOfInterest/`), per spec §6.1.
  *
- * This script is INTENTIONALLY conservative: it validates every transformed
+ * This script is INTENTIONALLY conservative: it sanitizes known upstream
+ * data-quality issues (see {@link sanitizeFixture}), then validates every
  * fixture against the real `PointOfInterestCreateInputSchema` (the exact
  * schema `service.create()` enforces at seed time) BEFORE writing anything,
- * and refuses to write ANY file if even one fixture fails validation — "fail
- * the copy step loudly on any row that doesn't validate" (spec §6.1). It also
- * refuses to run if any new slug collides with one of the 12 pre-HOS-142
- * fixtures already in the folder.
+ * and refuses to write ANY file if even one fixture still fails validation
+ * after sanitizing — "fail the copy step loudly on any row that doesn't
+ * validate" (spec §6.1). It also drops (never renames or duplicates) any new
+ * fixture whose slug collides with one of the 12 pre-HOS-142 curated
+ * fixtures already in the folder — see the collision-handling comment below.
  *
  * Usage:
  *   pnpm --filter @repo/seed import:poi-catalog          # validate + write
@@ -20,7 +22,11 @@
  * convention from `013` onward (the 12 existing fixtures are `001`-`012`),
  * assigned by sorting the pipeline's fixtures by `slug` (the pipeline itself
  * already writes its per-slug files in slug order, per
- * `scripts/poi-pipeline/OUTPUT-CONTRACT.md`'s determinism guarantee).
+ * `scripts/poi-pipeline/OUTPUT-CONTRACT.md`'s determinism guarantee). On the
+ * real HOS-141 output (as of 2026-07-14) this writes 908 fixtures — 914 rows
+ * minus 6 that collide with a pre-HOS-142 curated slug — for 920 total files
+ * under `src/data/pointOfInterest/` (see HOS-142 delegation report for the
+ * exact 6 slugs).
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -46,6 +52,54 @@ interface ValidationFailure {
     readonly file: string;
     readonly slug: string;
     readonly issues: string;
+}
+
+/** Max length of the `source` field, mirrors `PointOfInterestSchema.source`'s `.max(200)`. */
+const SOURCE_MAX_LENGTH = 200;
+
+/** Tally of how many rows each sanitization rule actually touched. */
+interface SanitizeStats {
+    verifiedAtNulled: number;
+    sourceTruncated: number;
+}
+
+/**
+ * Sanitizes one raw pipeline fixture BEFORE schema validation, fixing known
+ * upstream (HOS-141) data-quality issues that the pipeline itself should
+ * arguably have caught, but which this import step defensively normalizes
+ * rather than blocking the whole catalog on:
+ *
+ * - `verifiedAt`: the schema requires a real `Date` instance
+ *   (`z.date().nullish()`), but a static JSON fixture can only ever contain a
+ *   string or `null` — no string, however well-formed, survives a JSON
+ *   round-trip as a `Date`. The pipeline output carries a plain string here
+ *   (in 159/914 rows, all the identical bogus Excel-serial artifact
+ *   `"46214"`, not a real per-row verification date), so every non-null
+ *   `verifiedAt` string is nulled out.
+ * - `source`: multiple semicolon-joined URLs can exceed the schema's 200-char
+ *   max (~22/914 rows). Takes just the first URL; if that alone still
+ *   overflows, hard-truncates to 200 chars.
+ *
+ * @param data - The raw fixture as read from the pipeline output.
+ * @param stats - Mutable tally, incremented per rule actually applied.
+ * @returns A new object with the sanitized fields (fixture otherwise unchanged).
+ */
+function sanitizeFixture(data: RawPoiFixture, stats: SanitizeStats): RawPoiFixture {
+    const sanitized: Record<string, unknown> = { ...data };
+
+    if (typeof sanitized.verifiedAt === 'string') {
+        sanitized.verifiedAt = null;
+        stats.verifiedAtNulled++;
+    }
+
+    if (typeof sanitized.source === 'string' && sanitized.source.length > SOURCE_MAX_LENGTH) {
+        const firstUrl = (sanitized.source.split(';')[0] ?? sanitized.source).trim();
+        sanitized.source =
+            firstUrl.length > SOURCE_MAX_LENGTH ? firstUrl.slice(0, SOURCE_MAX_LENGTH) : firstUrl;
+        stats.sourceTruncated++;
+    }
+
+    return sanitized as RawPoiFixture;
 }
 
 /** Reads every real POI fixture from the staged pipeline output, sorted by slug. */
@@ -93,8 +147,19 @@ async function main(): Promise<void> {
         return;
     }
 
-    const fixtures = readPipelineFixtures();
-    console.log(`Read ${fixtures.length} POI fixtures from ${PIPELINE_OUTPUT_DIR}`);
+    const rawFixtures = readPipelineFixtures();
+    console.log(`Read ${rawFixtures.length} POI fixtures from ${PIPELINE_OUTPUT_DIR}`);
+
+    // ── 0. Sanitize known upstream (HOS-141) data-quality issues. ──
+    const sanitizeStats: SanitizeStats = { verifiedAtNulled: 0, sourceTruncated: 0 };
+    const fixtures = rawFixtures.map(({ file, data }) => ({
+        file,
+        data: sanitizeFixture(data, sanitizeStats)
+    }));
+    console.log(
+        `Sanitized ${sanitizeStats.verifiedAtNulled} row(s): verifiedAt string -> null. ` +
+            `Sanitized ${sanitizeStats.sourceTruncated} row(s): source truncated to first URL / ${SOURCE_MAX_LENGTH} chars.`
+    );
 
     // ── 1. Schema validation — fail loudly, write nothing on any failure. ──
     const failures: ValidationFailure[] = [];
@@ -120,9 +185,10 @@ async function main(): Promise<void> {
             console.error(` - ${f.file} (${f.slug}): ${f.issues}`);
         }
         console.error(
-            '\nRefusing to write any fixture until every row validates (HOS-142 spec §6.1). See the ' +
-                'HOS-142 delegation report for the known upstream mismatches (nameI18n/descriptionI18n ' +
-                'en/pt nulls, verifiedAt date-vs-string, source length overflow).'
+            '\nRefusing to write any fixture until every row validates (HOS-142 spec §6.1). ' +
+                'The known sanitizable mismatches (verifiedAt strings, source overflow) are already ' +
+                'handled by sanitizeFixture() above — a failure past that point is a NEW mismatch ' +
+                'that needs its own fix, not a repeat of the original HOS-141/HOS-142 findings.'
         );
         process.exitCode = 1;
         return;
@@ -131,6 +197,14 @@ async function main(): Promise<void> {
     console.log(`All ${fixtures.length} fixtures validated successfully.`);
 
     // ── 2. Slug collision check against the 12 existing fixtures. ──
+    // A handful of the 914 bulk-imported rows re-discover the SAME real-world
+    // landmark the 12 HOS-113 hand-curated fixtures already cover (e.g. "Palacio
+    // San José", "Parque Nacional El Palmar") — expected, since the bulk dataset
+    // covers the full 22-destination catalog the 12 curated POIs are also part
+    // of. The curated originals have real en/pt translations and vetted content,
+    // the bulk duplicates do not, so on a collision the ORIGINAL wins: the
+    // colliding bulk row is DROPPED (not written, not an error) rather than
+    // creating two rows for the same landmark or renaming either slug.
     const existingSlugs = readExistingSlugs();
     if (existingSlugs.size !== EXISTING_FIXTURE_COUNT) {
         console.error(
@@ -141,16 +215,16 @@ async function main(): Promise<void> {
     }
     const collisions = fixtures.filter(({ data }) => existingSlugs.has(data.slug));
     if (collisions.length > 0) {
-        console.error(
-            `${collisions.length} new fixture(s) collide with an existing slug:`,
+        console.warn(
+            `${collisions.length} new fixture(s) collide with an existing (pre-HOS-142) slug — ` +
+                'dropping the bulk-imported duplicate, keeping the curated original:',
             collisions.map((c) => c.data.slug)
         );
-        process.exitCode = 1;
-        return;
     }
+    const deduped = fixtures.filter(({ data }) => !existingSlugs.has(data.slug));
 
-    // ── 3. Duplicate-slug check within the new 914. ──
-    const newSlugs = fixtures.map(({ data }) => data.slug);
+    // ── 3. Duplicate-slug check within the remaining new set. ──
+    const newSlugs = deduped.map(({ data }) => data.slug);
     const duplicates = newSlugs.filter((slug, i) => newSlugs.indexOf(slug) !== i);
     if (duplicates.length > 0) {
         console.error('Duplicate slugs within the new fixture set:', [...new Set(duplicates)]);
@@ -159,31 +233,41 @@ async function main(): Promise<void> {
     }
 
     if (dryRun) {
-        console.log(`Dry run: would write ${fixtures.length} files to ${LIVE_DATA_DIR}.`);
+        console.log(`Dry run: would write ${deduped.length} files to ${LIVE_DATA_DIR}.`);
         return;
     }
 
     // ── 4. Write, numbered 013 onward, sorted by slug. ──
     mkdirSync(LIVE_DATA_DIR, { recursive: true });
-    let written = 0;
-    for (let i = 0; i < fixtures.length; i++) {
-        const { data } = fixtures[i] as { data: RawPoiFixture };
+    const writtenFilenames: string[] = [];
+    for (let i = 0; i < deduped.length; i++) {
+        const { data } = deduped[i] as { data: RawPoiFixture };
         const num = String(i + 1 + EXISTING_FIXTURE_COUNT).padStart(3, '0');
         const id = `${num}-point-of-interest-${data.slug}`;
+        const filename = `${id}.json`;
         const fixture = {
             $schema: '../../schemas/point-of-interest.schema.json',
             id,
             ...data
         };
-        writeFileSync(join(LIVE_DATA_DIR, `${id}.json`), `${JSON.stringify(fixture, null, 4)}\n`);
-        written++;
+        writeFileSync(join(LIVE_DATA_DIR, filename), `${JSON.stringify(fixture, null, 4)}\n`);
+        writtenFilenames.push(filename);
     }
 
     console.log(
-        `Wrote ${written} fixtures to ${LIVE_DATA_DIR} (${EXISTING_FIXTURE_COUNT + 1}-${EXISTING_FIXTURE_COUNT + written} numbering).`
+        `Wrote ${writtenFilenames.length} fixtures to ${LIVE_DATA_DIR} ` +
+            `(${EXISTING_FIXTURE_COUNT + 1}-${EXISTING_FIXTURE_COUNT + writtenFilenames.length} numbering).`
     );
+
+    // ── 5. Populate manifest-required.json's "pointOfInterestCatalog" key. ──
+    // Generated from the actual written filenames (reviewable via `git diff`),
+    // never hand-typed.
+    const manifestPath = join(REPO_ROOT, 'src/manifest-required.json');
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as Record<string, unknown>;
+    manifest.pointOfInterestCatalog = writtenFilenames;
+    writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 4)}\n`);
     console.log(
-        'Next step: add every new filename to manifest-required.json\'s "pointOfInterestCatalog" key.'
+        `Updated ${manifestPath} — pointOfInterestCatalog now lists ${writtenFilenames.length} filenames.`
     );
 }
 
