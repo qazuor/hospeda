@@ -15,6 +15,7 @@ import type {
     FeaturePublic,
     GastronomyPublic,
     PartnerPublic,
+    PointOfInterestPublic,
     PostListItem,
     PostPublic,
     PostSummary
@@ -172,6 +173,16 @@ export const accommodationsApi = {
         longitude?: number;
         /** Geo radius — radius in kilometers around (latitude, longitude). */
         radius?: number;
+        /**
+         * HOS-113 §6.2 / HOS-142 G-6 — "near a point of interest" proximity
+         * search. Resolved server-side to `{ latitude, longitude }`, feeding
+         * the same geo-radius path as `latitude`/`longitude` above. Mutually
+         * exclusive with `poiSlug` (400 if both are sent); takes precedence
+         * over `poiSlug` when both are present.
+         */
+        poiId?: string;
+        /** HOS-113 §6.2 — slug form of `poiId`. */
+        poiSlug?: string;
         /**
          * HOS-103: opt in to the short-TTL SSR cache. Pass
          * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites (the homepage
@@ -380,6 +391,48 @@ export const attractionsApi = {
     /** Get attraction by slug */
     getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.get({ path: `${BASE}/attractions/by-slug/${slug}` });
+    }
+};
+
+// --- Points of Interest ---
+
+/**
+ * Public point-of-interest API endpoints (HOS-113 catalog, HOS-142 G-6
+ * proximity-search picker). `list` doubles as the search source for the
+ * accommodation search sidebar's POI-picker autocomplete: `q` free-text
+ * search and `sortBy`/`sortOrder`/`isFeatured` actually reach the query
+ * (HOS-142 fixed a bug where the service silently ignored them).
+ */
+export const pointOfInterestApi = {
+    /** List/search points of interest with pagination, text search, and sort. */
+    list(params?: {
+        page?: number;
+        pageSize?: number;
+        q?: string;
+        isFeatured?: boolean;
+        sortBy?: string;
+        sortOrder?: 'asc' | 'desc';
+    }): Promise<ApiResult<PaginatedResponse<PointOfInterestPublic>>> {
+        return apiClient.getList({ path: `${BASE}/points-of-interest`, params });
+    },
+
+    /**
+     * Get a single point of interest by id. Used to resolve the POI-picker
+     * autocomplete's display label when hydrating a `?poiId=` URL param on
+     * page load (the autocomplete only has a paginated slice of the 914-row
+     * catalog in memory, never the one specific POI the URL refers to).
+     */
+    getById({ id }: { readonly id: string }): Promise<ApiResult<PointOfInterestPublic | null>> {
+        return apiClient.get({ path: `${BASE}/points-of-interest/${id}` });
+    },
+
+    /** Get a single point of interest by slug. Slug counterpart of `getById`. */
+    getBySlug({
+        slug
+    }: {
+        readonly slug: string;
+    }): Promise<ApiResult<PointOfInterestPublic | null>> {
+        return apiClient.get({ path: `${BASE}/points-of-interest/slug/${slug}` });
     }
 };
 
