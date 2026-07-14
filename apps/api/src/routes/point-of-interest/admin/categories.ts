@@ -6,7 +6,6 @@
 import {
     PermissionEnum,
     PoiCategoryIdSchema,
-    PoiCategorySchema,
     PointOfInterestCategoryAssignmentSchema,
     PointOfInterestIdSchema
 } from '@repo/schemas';
@@ -30,13 +29,13 @@ export const adminGetPointOfInterestCategoriesRoute = createAdminRoute({
     path: '/{id}/categories',
     summary: 'List categories assigned to a point of interest (admin)',
     description:
-        'Retrieves every POI category currently assigned to a point of interest, sorted by displayWeight descending.',
+        'Retrieves every POI category currently assigned to a point of interest, sorted by displayWeight descending. Each entry carries the per-POI isPrimary flag, symmetric with the PUT response.',
     tags: ['PointsOfInterest'],
     requiredPermissions: [PermissionEnum.POINT_OF_INTEREST_VIEW],
     requestParams: {
         id: PointOfInterestIdSchema
     },
-    responseSchema: z.array(PoiCategorySchema),
+    responseSchema: z.array(PointOfInterestCategoryAssignmentSchema),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const pointOfInterestId = params.id as string;

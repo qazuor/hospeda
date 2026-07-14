@@ -739,6 +739,12 @@ export class PointOfInterestCategoryService extends BaseCrudRelatedService<
      * Lists all categories assigned to a point of interest, sorted by
      * `displayWeight` descending. Mirrors
      * `PointOfInterestService.getPointsOfInterestForDestination`.
+     *
+     * Each returned category carries the per-POI `isPrimary` flag from the
+     * `r_poi_category` join row (HOS-144), symmetric with what
+     * `setCategoriesForPointOfInterest` already returns — the admin
+     * category-manager UI needs this to pre-select the primary category
+     * when the tab loads.
      * @param actor - The actor performing the action.
      * @param params - The params containing the point-of-interest ID.
      * @param ctx - Optional service context carrying transaction and hookState.
@@ -747,7 +753,7 @@ export class PointOfInterestCategoryService extends BaseCrudRelatedService<
         actor: Actor,
         params: PoiCategoriesByPointOfInterestInput,
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<{ categories: PoiCategory[] }>> {
+    ): Promise<ServiceOutput<{ categories: PointOfInterestCategoryAssignment[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getCategoriesForPointOfInterest',
             input: { ...params, actor },
@@ -785,6 +791,12 @@ export class PointOfInterestCategoryService extends BaseCrudRelatedService<
                 const categoryIds = relations.map(
                     (r: PointOfInterestCategoryRelation) => r.categoryId
                 );
+                const isPrimaryByCategoryId = new Map<PoiCategoryIdType, boolean>(
+                    relations.map((r: PointOfInterestCategoryRelation) => [
+                        r.categoryId,
+                        r.isPrimary
+                    ])
+                );
 
                 const { items: categories } = await this.model.findAll(
                     {},
@@ -795,7 +807,14 @@ export class PointOfInterestCategoryService extends BaseCrudRelatedService<
                 const sorted = [...categories].sort(
                     (a, b) => (b.displayWeight ?? 50) - (a.displayWeight ?? 50)
                 );
-                return { categories: sorted };
+                const assignments: PointOfInterestCategoryAssignment[] = sorted.map((category) => ({
+                    id: category.id,
+                    slug: category.slug,
+                    nameI18n: category.nameI18n,
+                    icon: category.icon,
+                    isPrimary: isPrimaryByCategoryId.get(category.id) ?? false
+                }));
+                return { categories: assignments };
             }
         });
     }
