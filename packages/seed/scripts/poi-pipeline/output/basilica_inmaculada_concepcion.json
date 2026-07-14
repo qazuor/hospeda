@@ -1,0 +1,50 @@
+{
+    "slug": "basilica_inmaculada_concepcion",
+    "lat": -32.48513,
+    "long": -58.23303,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Templo católico declarado Monumento Histórico Nacional. En su interior se encuentra el mausoleo que conserva los restos del general Justo José de Urquiza.",
+    "nameI18n": {
+        "es": "Basílica de la Inmaculada Concepción",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Templo católico declarado Monumento Histórico Nacional. En su interior se encuentra el mausoleo que conserva los restos del general Justo José de Urquiza.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "3 de Febrero 50, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "basilica",
+        "iglesia",
+        "urquiza",
+        "mausoleo",
+        "casco historico"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        }
+    ]
+}

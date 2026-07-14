@@ -150,6 +150,19 @@ export function buildAccommodationsFilterGroups({
                 'accommodations.sidebar.geoRadius.browserError',
                 'No pudimos detectar tu ubicación. Revisá los permisos del navegador.'
             ),
+            // HOS-142 G-6: third "near a landmark" mode, an autocomplete
+            // against the public POI catalog (914 rows) rather than a
+            // pre-fetched flat list — see `GeoRadiusFilter.tsx`.
+            poiModeLabel: t('accommodations.sidebar.geoRadius.poiMode', 'Un lugar de interés'),
+            poiPlaceholder: t(
+                'accommodations.sidebar.geoRadius.poiPlaceholder',
+                'Buscá una plaza, playa, monumento...'
+            ),
+            poiSearchingLabel: t('accommodations.sidebar.geoRadius.poiSearching', 'Buscando...'),
+            poiNoResultsLabel: t(
+                'accommodations.sidebar.geoRadius.poiNoResults',
+                'No encontramos ningún lugar con ese nombre'
+            ),
             radiusUnitLabel: t('accommodations.sidebar.geoRadius.radiusUnit', 'km')
         },
         {

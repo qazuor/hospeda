@@ -1,0 +1,55 @@
+{
+    "slug": "almacen_francou",
+    "lat": -32.041179299999996,
+    "long": -58.390917599999995,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Almacén rural en funcionamiento desde 1907, conservado por la misma familia y abierto a visitas guiadas, gastronomía y experiencias vinculadas con la vida de colonia.",
+    "nameI18n": {
+        "es": "Almacén de Ramos Generales Francou",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Almacén rural en funcionamiento desde 1907, conservado por la misma familia y abierto a visitas guiadas, gastronomía y experiencias vinculadas con la vida de colonia.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Colonia El Carmen, a 16 km de Villa Elisa, Entre Ríos",
+    "keywords": [
+        "almacen francou",
+        "ramos generales",
+        "colonia el carmen",
+        "1907",
+        "turismo rural",
+        "gastronomia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://villaelisa.tur.ar/atractivos/",
+    "notes": "Antigüedad, funcionamiento y ubicación general confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        }
+    ]
+}

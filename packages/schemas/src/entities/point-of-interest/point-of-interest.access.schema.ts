@@ -22,6 +22,12 @@ export const PointOfInterestPublicSchema = PointOfInterestSchema.pick({
     type: true,
 
     // Content
+    // HOS-142 G-6: `nameI18n` (HOS-138) is the canonical display-name source
+    // (the legacy `destinations.poiNames.<slug>` i18n keys were removed) — not
+    // sensitive data, same rationale as `lat`/`long`/`type` already being
+    // public. Needed by the proximity-search POI-picker autocomplete, which
+    // has nothing else to label its options with.
+    nameI18n: true,
     description: true,
     icon: true,
     isFeatured: true,

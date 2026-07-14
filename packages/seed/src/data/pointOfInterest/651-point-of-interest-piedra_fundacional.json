@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "651-point-of-interest-piedra_fundacional",
+    "slug": "piedra_fundacional",
+    "lat": -32.4694115,
+    "long": -58.478538300000004,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Hito conmemorativo incluido en el city tour y vinculado con la fundación de la localidad.",
+    "nameI18n": {
+        "es": "Piedra Fundacional de Caseros",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Hito conmemorativo incluido en el city tour y vinculado con la fundación de la localidad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Caseros, Entre Ríos",
+    "keywords": ["piedra fundacional", "fundacion caseros", "monumento", "historia", "city tour"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://caseros.gob.ar/turismo-y-cultura/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "paseo_puerto_ruiz",
+    "lat": -33.219740699999996,
+    "long": -59.3629554,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido junto al río con paisaje portuario, historia local, pesca y propuestas gastronómicas.",
+    "nameI18n": {
+        "es": "Paseo Costero de Puerto Ruiz",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido junto al río con paisaje portuario, historia local, pesca y propuestas gastronómicas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Costa de Puerto Ruiz, Gualeguay, Entre Ríos",
+    "keywords": [
+        "paseo puerto ruiz",
+        "costa",
+        "gastronomia",
+        "pesca",
+        "historia portuaria"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.facebook.com/municipalidaddegualeguay/videos/836069999500317/; https://es.wikipedia.org/wiki/Puerto_Ruiz",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "waterfront",
+            "isPrimary": true
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        }
+    ]
+}

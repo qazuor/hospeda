@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "210-point-of-interest-circuito_gimnasia_aire_libre",
+    "slug": "circuito_gimnasia_aire_libre",
+    "lat": -30.7603828,
+    "long": -57.9852672,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Recorrido urbano equipado para actividad física, entrenamiento y recreación al aire libre.",
+    "nameI18n": {
+        "es": "Circuito de Gimnasia al Aire Libre",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido urbano equipado para actividad física, entrenamiento y recreación al aire libre.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Chajarí, Entre Ríos",
+    "keywords": [
+        "circuito gimnasia",
+        "gimnasio al aire libre",
+        "actividad fisica",
+        "deportes",
+        "salud"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf",
+    "notes": "Circuito incluido en el plano turístico. Falta digitalizar su recorrido. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

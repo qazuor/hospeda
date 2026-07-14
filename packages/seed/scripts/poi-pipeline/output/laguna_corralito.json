@@ -1,0 +1,54 @@
+{
+    "slug": "laguna_corralito",
+    "lat": -32.9190545,
+    "long": -59.155007899999994,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Laguna vinculada al paraje de El Corralito y al paisaje natural de la zona rural de Talitas.",
+    "nameI18n": {
+        "es": "Laguna de El Corralito",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Laguna vinculada al paraje de El Corralito y al paisaje natural de la zona rural de Talitas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Paso El Corralito, zona rural Talitas, Entre Ríos",
+    "keywords": [
+        "laguna corralito",
+        "talitas",
+        "aves",
+        "paisaje rural",
+        "rio gualeguay"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes; https://es.wikipedia.org/wiki/Larroque_%28Argentina%29",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        }
+    ]
+}

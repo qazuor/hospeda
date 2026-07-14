@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "104-point-of-interest-camino_real",
+    "slug": "camino_real",
+    "lat": -32.4296383,
+    "long": -58.5108525,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Antiguo camino rural utilizado por Justo José de Urquiza y su familia entre el Palacio San José y Concepción del Uruguay.",
+    "nameI18n": {
+        "es": "Camino Real",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Antiguo camino rural utilizado por Justo José de Urquiza y su familia entre el Palacio San José y Concepción del Uruguay.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de San Justo, Entre Ríos",
+    "keywords": [
+        "camino real san justo",
+        "urquiza",
+        "palacio san jose",
+        "camino rural",
+        "historia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.hotelposadatierralinda.com.ar/",
+    "notes": "Falta digitalizar el trazado histórico y diferenciar tramos públicos. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        }
+    ]
+}

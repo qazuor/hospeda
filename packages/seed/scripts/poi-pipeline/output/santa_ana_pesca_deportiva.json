@@ -1,0 +1,54 @@
+{
+    "slug": "santa_ana_pesca_deportiva",
+    "lat": -30.9132853,
+    "long": -57.926673599999994,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Actividad de pesca desde costa, espigones y embarcaciones en el lago Salto Grande y arroyos cercanos.",
+    "nameI18n": {
+        "es": "Circuito de Pesca Deportiva",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Actividad de pesca desde costa, espigones y embarcaciones en el lago Salto Grande y arroyos cercanos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Lago Salto Grande y costa de Santa Ana, Entre Ríos",
+    "keywords": [
+        "pesca santa ana",
+        "lago salto grande",
+        "pesca deportiva",
+        "embarcaciones",
+        "espigon"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/santa-ana; https://www.turismoentrerios.com/santaana/pesca.htm",
+    "notes": "Actividad confirmada. Falta relevar bajadas, permisos, guías y puntos seguros. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

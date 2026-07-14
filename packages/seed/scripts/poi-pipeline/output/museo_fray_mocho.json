@@ -1,0 +1,54 @@
+{
+    "slug": "museo_fray_mocho",
+    "lat": -33.0062523,
+    "long": -58.517043099999995,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Casa museo dedicada al escritor y periodista José S. Álvarez, conocido como Fray Mocho.",
+    "nameI18n": {
+        "es": "Museo Casa Natal de Fray Mocho",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Casa museo dedicada al escritor y periodista José S. Álvarez, conocido como Fray Mocho.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Fray Mocho 135, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "fray mocho",
+        "casa natal",
+        "jose s alvarez",
+        "literatura",
+        "periodismo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/cultura",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

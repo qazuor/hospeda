@@ -1,0 +1,54 @@
+{
+    "slug": "paseo_anunciacion",
+    "lat": -30.98647,
+    "long": -57.9194,
+    "type": "PARK",
+    "icon": null,
+    "description": "Paseo recreativo y cultural situado junto al Museo de los Asentamientos y al centro artístico Poblarte.",
+    "nameI18n": {
+        "es": "Paseo de la Anunciación",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paseo recreativo y cultural situado junto al Museo de los Asentamientos y al centro artístico Poblarte.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Federación, Entre Ríos",
+    "keywords": [
+        "paseo de la anunciacion",
+        "museo asentamientos",
+        "poblarte",
+        "paseo urbano",
+        "cultura"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W1101824521; https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,46 @@
+{
+    "slug": "paranacito_municipalidad",
+    "lat": -33.71566,
+    "long": -58.66521,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sede del gobierno local y punto de referencia para trámites e información pública.",
+    "nameI18n": {
+        "es": "Municipalidad de Villa Paranacito",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sede del gobierno local y punto de referencia para trámites e información pública.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Entre Ríos 941, Villa Paranacito, Entre Ríos",
+    "keywords": [
+        "municipalidad villa paranacito",
+        "avenida entre rios 941",
+        "municipio",
+        "tramites",
+        "gobierno"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://www.villaparanacito.gob.ar/; https://mapcarta.com/es/N4418543858",
+    "notes": "Dirección y coordenadas contrastadas con fuente municipal y OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

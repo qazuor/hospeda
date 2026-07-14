@@ -4,6 +4,7 @@ import {
     AmenitiesTypeEnum,
     AuthProviderEnum,
     BillingIntervalEnum,
+    CalendarSyncStatusEnum,
     ClientTypeEnum,
     ConversationStatusEnum,
     DestinationTypeEnum,
@@ -30,6 +31,7 @@ import {
     NewsletterSourceEnum,
     NewsletterSubscriberStatusEnum,
     NotificationRecipientSideEnum,
+    OccupancySourceEnum,
     OwnerPromotionDiscountTypeEnum,
     PartnerSubscriptionStatusEnum,
     PartnerTierEnum,
@@ -38,6 +40,7 @@ import {
     PermissionCategoryEnum,
     PermissionEffectEnum,
     PermissionEnum,
+    PointOfInterestDestinationRelationEnum,
     PointOfInterestTypeEnum,
     PostCategoryEnum,
     PreferredContactEnum,
@@ -139,6 +142,16 @@ export const PermissionCategoryPgEnum = pgEnum(
 export const PointOfInterestTypePgEnum = pgEnum(
     'point_of_interest_type_enum',
     enumToTuple(PointOfInterestTypeEnum)
+);
+
+/**
+ * PostgreSQL enum for the point-of-interest ⇄ destination relation kind (HOS-140).
+ * Values: PRIMARY (POI is physically in the destination), NEARBY (cross-referenced
+ * from a different destination's page).
+ */
+export const PointOfInterestDestinationRelationPgEnum = pgEnum(
+    'point_of_interest_destination_relation_enum',
+    enumToTuple(PointOfInterestDestinationRelationEnum)
 );
 
 export const PostCategoryPgEnum = pgEnum('post_category_enum', enumToTuple(PostCategoryEnum));
@@ -358,4 +371,23 @@ export const PartnerTierPgEnum = pgEnum('partner_tier_enum', enumToTuple(Partner
 export const PartnerSubscriptionStatusPgEnum = pgEnum(
     'partner_subscription_status_enum',
     enumToTuple(PartnerSubscriptionStatusEnum)
+);
+
+/**
+ * PostgreSQL enum for the origin of an `accommodation_occupancy` row (HOS-43
+ * Phase 1). Values: MANUAL, GOOGLE_CALENDAR, AIRBNB, BOOKING.
+ */
+export const OccupancySourcePgEnum = pgEnum(
+    'occupancy_source_enum',
+    enumToTuple(OccupancySourceEnum)
+);
+
+/**
+ * PostgreSQL enum for the outcome of the most recent sync attempt on an
+ * `accommodation_calendar_sync` row (HOS-157 Phase 2). Values: PENDING, OK,
+ * ERROR.
+ */
+export const CalendarSyncStatusPgEnum = pgEnum(
+    'calendar_sync_status_enum',
+    enumToTuple(CalendarSyncStatusEnum)
 );

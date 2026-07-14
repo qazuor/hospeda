@@ -1,0 +1,50 @@
+{
+    "slug": "ibicuy_oficina_turismo",
+    "lat": -33.7458168,
+    "long": -59.15929699999999,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Punto municipal de información sobre circuitos, pesca, naturaleza, alojamiento y actividades del destino.",
+    "nameI18n": {
+        "es": "Secretaría de Cultura y Turismo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Punto municipal de información sobre circuitos, pesca, naturaleza, alojamiento y actividades del destino.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Boulevard 17 de Octubre, ingreso de Ibicuy, Entre Ríos",
+    "keywords": [
+        "turismo ibicuy",
+        "oficina de turismo",
+        "boulevard 17 de octubre",
+        "mapas",
+        "informacion turistica"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://ibicuy.gob.ar/?q=oficina-turismo",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "services",
+            "isPrimary": true
+        },
+        {
+            "slug": "government",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

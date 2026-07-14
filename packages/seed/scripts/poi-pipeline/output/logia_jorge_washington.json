@@ -1,0 +1,50 @@
+{
+    "slug": "logia_jorge_washington",
+    "lat": -32.4851849,
+    "long": -58.2320232,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Edificio histórico y espacio cultural asociado con la tradición masónica y la vida institucional de la ciudad.",
+    "nameI18n": {
+        "es": "Logia Masónica Jorge Washington",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Edificio histórico y espacio cultural asociado con la tradición masónica y la vida institucional de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "logia jorge washington",
+        "masoneria",
+        "arquitectura",
+        "historia institucional",
+        "patrimonio"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/concepcion-del-uruguay-tendra-su-noche-de-los-museos",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

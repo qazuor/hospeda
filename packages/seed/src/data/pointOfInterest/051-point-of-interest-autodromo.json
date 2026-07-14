@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "051-point-of-interest-autodromo",
+    "slug": "autodromo",
+    "lat": -31.307286999999995,
+    "long": -58.008091,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Circuito automovilístico utilizado por categorías nacionales y regionales, con pista, boxes, tribunas y sectores de servicios.",
+    "nameI18n": {
+        "es": "Parque Autódromo Ciudad de Concordia",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Circuito automovilístico utilizado por categorías nacionales y regionales, con pista, boxes, tribunas y sectores de servicios.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona norte de Concordia, Entre Ríos",
+    "keywords": ["autodromo concordia", "turismo carretera", "automovilismo", "circuito", "boxes"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/noticias/turismo/turismo-carretera-concordia-confirmado-para-el-27-de-mayo; https://www.concordia.gob.ar/turismo/agenda/turismo-nacional-3era-fecha-del-campeonato-2025-0",
+    "notes": "Nombre y actividad vigente confirmados. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

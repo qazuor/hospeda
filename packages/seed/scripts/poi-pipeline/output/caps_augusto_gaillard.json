@@ -1,0 +1,46 @@
+{
+    "slug": "caps_augusto_gaillard",
+    "lat": -32.1549732,
+    "long": -58.1948004,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Centro público de atención primaria que presta servicios sanitarios y desarrolla actividades de prevención y promoción de la salud para la comunidad.",
+    "nameI18n": {
+        "es": "Centro de Atención Primaria Augusto Gaillard",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Centro público de atención primaria que presta servicios sanitarios y desarrolla actividades de prevención y promoción de la salud para la comunidad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Pueblo Liebig, Entre Ríos",
+    "keywords": [
+        "centro de salud augusto gaillard",
+        "caps",
+        "salud",
+        "atencion primaria",
+        "emergencias"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://puebloliebig.gob.ar/noticias/se-realizo-en-pueblo-liebig-la-charla-taller-sobre-lactancia-materna/",
+    "notes": "Institución y actividad actual confirmadas. Falta domicilio exacto y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

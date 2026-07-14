@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
+    BirthDateHttpInputSchema,
     UserActivateInputSchema,
     UserAddPermissionInputSchema,
     UserAssignRoleInputSchema,
@@ -158,6 +159,41 @@ describe('User CRUD Schemas', () => {
             const validInput = {};
 
             expect(() => UserPatchInputSchema.parse(validInput)).not.toThrow();
+        });
+    });
+
+    // Regression: BETA-34 — editing the profile birth date rejected the
+    // `YYYY-MM-DD` string every `<input type="date">` sends. This schema is
+    // the HTTP-layer override applied to `birthDate` on all four user write
+    // routes; it must accept a plain calendar date and `''` (clear), and
+    // reject non-date garbage.
+    describe('BirthDateHttpInputSchema', () => {
+        it('accepts a valid YYYY-MM-DD date string', () => {
+            expect(() => BirthDateHttpInputSchema.parse('1990-05-15')).not.toThrow();
+            expect(BirthDateHttpInputSchema.parse('1990-05-15')).toBe('1990-05-15');
+        });
+
+        it('accepts an empty string (clears the field)', () => {
+            expect(() => BirthDateHttpInputSchema.parse('')).not.toThrow();
+            expect(BirthDateHttpInputSchema.parse('')).toBe('');
+        });
+
+        it('accepts null', () => {
+            expect(() => BirthDateHttpInputSchema.parse(null)).not.toThrow();
+            expect(BirthDateHttpInputSchema.parse(null)).toBeNull();
+        });
+
+        it('accepts undefined (field not submitted)', () => {
+            expect(() => BirthDateHttpInputSchema.parse(undefined)).not.toThrow();
+            expect(BirthDateHttpInputSchema.parse(undefined)).toBeUndefined();
+        });
+
+        it('rejects a non-date garbage string', () => {
+            expect(() => BirthDateHttpInputSchema.parse('not-a-date')).toThrow(ZodError);
+        });
+
+        it('rejects a full ISO-8601 datetime string (the pre-fix, overly strict shape)', () => {
+            expect(() => BirthDateHttpInputSchema.parse('1990-05-15T00:00:00Z')).toThrow(ZodError);
         });
     });
 

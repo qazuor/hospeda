@@ -1,0 +1,55 @@
+{
+    "slug": "franco_suizos",
+    "lat": -32.195297499999995,
+    "long": -58.2431496,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Emprendimiento familiar vinculado con la producción vitivinícola, quesos y dulce de leche, integrado a los paseos productivos de San José.",
+    "nameI18n": {
+        "es": "Establecimiento Franco Suizos",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Emprendimiento familiar vinculado con la producción vitivinícola, quesos y dulce de leche, integrado a los paseos productivos de San José.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de San José, Entre Ríos",
+    "keywords": [
+        "franco suizos",
+        "vino",
+        "quesos",
+        "dulce de leche",
+        "produccion regional",
+        "turismo rural"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sanjose.gob.ar/san-jose-se-posiciona-como-uno-de-los-destinos-preferidos-de-la-provincia-de-entre-rios-para-disfrutar-del-ocio-y-descanso-sobre-la-orilla-del-rio-uruguay/; https://sanjose.gob.ar/despues-casi-100-anos-san-jose-recupera-la-actividad-vitivinicola/",
+    "notes": "Actividad turística-productiva confirmada; falta domicilio, condiciones de visita y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "winery",
+            "isPrimary": true
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        }
+    ]
+}

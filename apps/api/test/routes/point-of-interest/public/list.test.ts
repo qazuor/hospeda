@@ -89,6 +89,38 @@ describe('GET /api/v1/public/points-of-interest', () => {
             });
             expect([400, 422]).toContain(res.status);
         });
+
+        // HOS-142 G-6: the proximity-search POI-picker autocomplete relies on
+        // `q` (free-text) + `sortBy=displayWeight`/`isFeatured` (featured-first
+        // ordering) actually reaching the search — accept them without a
+        // validation error (the DB-dependent 200 vs 500 split mirrors the
+        // other query-param tests above, which don't have a live DB either).
+        it('should accept a `q` free-text search param without a validation error', async () => {
+            const res = await app.request(`${BASE}?page=1&pageSize=10&q=plaza`, {
+                method: 'GET',
+                headers: { 'user-agent': 'vitest', accept: 'application/json' }
+            });
+            expect([200, 500]).toContain(res.status);
+        });
+
+        it('should accept sortBy=displayWeight&sortOrder=desc without a validation error', async () => {
+            const res = await app.request(
+                `${BASE}?page=1&pageSize=10&sortBy=displayWeight&sortOrder=desc`,
+                {
+                    method: 'GET',
+                    headers: { 'user-agent': 'vitest', accept: 'application/json' }
+                }
+            );
+            expect([200, 500]).toContain(res.status);
+        });
+
+        it('should accept isFeatured=true without a validation error', async () => {
+            const res = await app.request(`${BASE}?page=1&pageSize=10&isFeatured=true`, {
+                method: 'GET',
+                headers: { 'user-agent': 'vitest', accept: 'application/json' }
+            });
+            expect([200, 500]).toContain(res.status);
+        });
     });
 
     // -------------------------------------------------------------------------

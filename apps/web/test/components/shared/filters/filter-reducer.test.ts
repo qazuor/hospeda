@@ -15,6 +15,8 @@ import { describe, expect, it } from 'vitest';
 import {
     buildParamsFromState,
     filterReducer,
+    groupActiveCount,
+    groupHasActiveSelection,
     initStateFromParams
 } from '@/components/shared/filters/filter-reducer';
 import type {
@@ -280,6 +282,111 @@ describe('filterReducer — CLEAR_GROUP with extraToggleKeys', () => {
         expect(params.get('latitude')).toBe('-34.6');
         expect(params.get('longitude')).toBe('-58.4');
         expect(params.get('radius')).toBe('25');
+    });
+
+    // -------------------------------------------------------------------------
+    // HOS-142 G-6 — POI proximity-search mode (AC-6)
+    // -------------------------------------------------------------------------
+
+    const poiGeoRadiusConfig: GeoRadiusFilterConfig = {
+        id: 'location',
+        label: 'Ubicación',
+        type: 'geo-radius',
+        destinationOptions: [
+            { value: 'cdu', label: 'Concepción del Uruguay', lat: -32.48, long: -58.23 }
+        ],
+        destinationModeLabel: 'Un destino',
+        browserModeLabel: 'Mi ubicación',
+        destinationPlaceholder: 'Elegí un destino',
+        browserCtaLabel: 'Usar mi ubicación',
+        browserPendingLabel: 'Detectando…',
+        browserErrorLabel: 'Error',
+        radiusUnitLabel: 'km',
+        poiModeLabel: 'Un lugar de interés',
+        poiPlaceholder: 'Buscá un lugar...',
+        poiSearchingLabel: 'Buscando...',
+        poiNoResultsLabel: 'Sin resultados'
+    };
+
+    it('SET_GEO stores a poi-mode value with poiId and radius', () => {
+        const state = filterReducer(makeState(), {
+            type: 'SET_GEO',
+            groupId: 'location',
+            value: { mode: 'poi', poiId: 'poi-uuid-1', radius: 10 }
+        });
+        expect(state.geo.location).toEqual({ mode: 'poi', poiId: 'poi-uuid-1', radius: 10 });
+    });
+
+    it('initStateFromParams restores poi mode from poiId + radius', () => {
+        const state = initStateFromParams({
+            filters: [poiGeoRadiusConfig],
+            defaultSort: 'featured',
+            params: { poiId: 'poi-uuid-1', radius: '10' }
+        });
+        expect(state.geo.location).toEqual({ mode: 'poi', poiId: 'poi-uuid-1', radius: 10 });
+    });
+
+    it('initStateFromParams restores poi mode from poiSlug when poiId is absent', () => {
+        const state = initStateFromParams({
+            filters: [poiGeoRadiusConfig],
+            defaultSort: 'featured',
+            params: { poiSlug: 'plaza-san-martin', radius: '25' }
+        });
+        expect(state.geo.location).toEqual({
+            mode: 'poi',
+            poiSlug: 'plaza-san-martin',
+            radius: 25
+        });
+    });
+
+    it('initStateFromParams prefers poiId over a stale latitude/longitude pair in the same URL', () => {
+        const state = initStateFromParams({
+            filters: [poiGeoRadiusConfig],
+            defaultSort: 'featured',
+            params: {
+                poiId: 'poi-uuid-1',
+                radius: '10',
+                latitude: '-34.6',
+                longitude: '-58.4'
+            }
+        });
+        expect(state.geo.location).toEqual({ mode: 'poi', poiId: 'poi-uuid-1', radius: 10 });
+    });
+
+    it('buildParamsFromState (AC-6): poi mode emits poiId + radius and NEVER latitude/longitude', () => {
+        const state = makeState({
+            geo: { location: { mode: 'poi', poiId: 'poi-uuid-1', radius: 10 } }
+        });
+
+        const params = buildParamsFromState({ state, filters: [poiGeoRadiusConfig] });
+
+        expect(params.get('poiId')).toBe('poi-uuid-1');
+        expect(params.get('radius')).toBe('10');
+        expect(params.has('latitude')).toBe(false);
+        expect(params.has('longitude')).toBe(false);
+        expect(params.has('poiSlug')).toBe(false);
+    });
+
+    it('buildParamsFromState emits poiSlug (not poiId) when only poiSlug is set', () => {
+        const state = makeState({
+            geo: { location: { mode: 'poi', poiSlug: 'plaza-san-martin', radius: 25 } }
+        });
+
+        const params = buildParamsFromState({ state, filters: [poiGeoRadiusConfig] });
+
+        expect(params.get('poiSlug')).toBe('plaza-san-martin');
+        expect(params.get('radius')).toBe('25');
+        expect(params.has('poiId')).toBe(false);
+        expect(params.has('latitude')).toBe(false);
+        expect(params.has('longitude')).toBe(false);
+    });
+
+    it('groupHasActiveSelection / groupActiveCount treat an active poi selection like any other geo-radius selection', () => {
+        const state = makeState({
+            geo: { location: { mode: 'poi', poiId: 'poi-uuid-1', radius: 10 } }
+        });
+        expect(groupHasActiveSelection(poiGeoRadiusConfig, state)).toBe(true);
+        expect(groupActiveCount(poiGeoRadiusConfig, state)).toBe(1);
     });
 
     it('is a no-op for keys not provided when extraToggleKeys is omitted', () => {

@@ -1,0 +1,46 @@
+{
+    "slug": "terminal_omnibus_juan_pablo_ii",
+    "lat": -31.843738499999997,
+    "long": -59.0196497,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Principal terminal terrestre de pasajeros de Villaguay, con conexiones regionales y nacionales.",
+    "nameI18n": {
+        "es": "Terminal de Ómnibus Juan Pablo II",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Principal terminal terrestre de pasajeros de Villaguay, con conexiones regionales y nacionales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Leopoldo Herrera, sector norte de Villaguay, Entre Ríos",
+    "keywords": [
+        "terminal villaguay",
+        "juan pablo ii",
+        "terminal de omnibus",
+        "micros",
+        "colectivos"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://villaguay.gob.ar/boletindigital/documentos/Legislativas/Ordenanzas/2019/O1517.pdf; https://mapcarta.com/es/W307832654",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "transport",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

@@ -131,3 +131,67 @@ describe('fetchAuthMe', () => {
         );
     });
 });
+
+describe('fetchAuthMe in-flight dedup (HOS-160 lever D)', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('collapses two concurrent callers onto a single network request', async () => {
+        // Arrange: a fetch that stays pending until resolved, so both callers
+        // are genuinely in-flight at once (the cold-load UserMenu + MobileMenu race).
+        let resolveFetch: (r: unknown) => void = () => undefined;
+        const fetchMock = vi.fn(
+            () =>
+                new Promise((resolve) => {
+                    resolveFetch = resolve;
+                })
+        );
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        // Act: two callers in the same tick, empty cache.
+        const p1 = fetchAuthMe();
+        const p2 = fetchAuthMe();
+
+        // Assert: only one request went out while both were pending.
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+
+        resolveFetch({
+            ok: true,
+            json: async () => ({ data: { actor: null, isAuthenticated: false } })
+        });
+        const [s1, s2] = await Promise.all([p1, p2]);
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(s1).toEqual(s2);
+    });
+
+    it('re-fetches on a subsequent call once the previous one has settled', async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ data: { actor: null, isAuthenticated: false } })
+        });
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        await fetchAuthMe();
+        await fetchAuthMe();
+
+        // Dedup only collapses concurrent callers; sequential calls re-fetch
+        // (TTL caching is the hook layer's job, not this module's).
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('resolves to a guest snapshot when the request rejects (transport error)', async () => {
+        // A network/DNS/CORS failure must NOT reject — otherwise, with the shared
+        // in-flight promise, one rejection would fan out to every concurrent
+        // caller. It resolves to guest instead (never-throws contract).
+        const fetchMock = vi.fn().mockRejectedValue(new Error('network down'));
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        const [s1, s2] = await Promise.all([fetchAuthMe(), fetchAuthMe()]);
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(s1).toMatchObject({ isAuthenticated: false, user: null, role: null });
+        expect(s2).toEqual(s1);
+    });
+});

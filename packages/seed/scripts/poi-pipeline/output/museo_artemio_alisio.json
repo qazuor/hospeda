@@ -1,0 +1,50 @@
+{
+    "slug": "museo_artemio_alisio",
+    "lat": -32.484721,
+    "long": -58.229581,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo provincial especializado en dibujo y grabado, con una colección de obras de artistas argentinos y exposiciones temporales.",
+    "nameI18n": {
+        "es": "Museo Provincial de Dibujo y Grabado Artemio Alisio",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo provincial especializado en dibujo y grabado, con una colección de obras de artistas argentinos y exposiciones temporales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Juan Perón 82, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "artemio alisio",
+        "museo de arte",
+        "dibujo",
+        "grabado",
+        "exposiciones"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        }
+    ]
+}

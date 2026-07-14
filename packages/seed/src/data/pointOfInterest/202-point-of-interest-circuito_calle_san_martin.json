@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "202-point-of-interest-circuito_calle_san_martin",
+    "slug": "circuito_calle_san_martin",
+    "lat": -31.6082776,
+    "long": -58.5236331,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido peatonal de aproximadamente cinco cuadras por calle San Martín, desde la estación hasta el Museo del Arroz, interpretando edificios civiles, religiosos y patrimoniales.",
+    "nameI18n": {
+        "es": "Circuito Una Calle con Historia",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido peatonal de aproximadamente cinco cuadras por calle San Martín, desde la estación hasta el Museo del Arroz, interpretando edificios civiles, religiosos y patrimoniales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Calle San Martín, San Salvador, Entre Ríos",
+    "keywords": [
+        "una calle con historia",
+        "calle san martin",
+        "circuito peatonal",
+        "edificios historicos",
+        "visita guiada"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/gobierno/turismo/; https://sansalvadorer.gob.ar/ciudad/",
+    "notes": "Recorrido oficial de turismo educativo. Falta digitalizar el trazado lineal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

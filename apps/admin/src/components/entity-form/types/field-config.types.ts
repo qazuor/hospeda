@@ -97,7 +97,8 @@ export type FieldTypeConfig =
     | PostSponsorshipSelectFieldConfig
     | FeatureSelectFieldConfig
     | AmenitySelectFieldConfig
-    | TagSelectFieldConfig;
+    | TagSelectFieldConfig
+    | PoiCategorySelectFieldConfig;
 
 /**
  * Text field specific configuration
@@ -419,6 +420,13 @@ export type AmenitySelectFieldConfig = BaseEntitySelectFieldConfig & {
 export type TagSelectFieldConfig = BaseEntitySelectFieldConfig & {
     categoryFilter?: string[]; // Filter by tag category
 };
+
+/**
+ * POI category select field specific configuration (HOS-144 §6.4).
+ * No extra filters — the `poi_categories` catalog is small (client-side
+ * search, whole catalog loaded once), mirroring `AmenitySelectFieldConfig`.
+ */
+export type PoiCategorySelectFieldConfig = BaseEntitySelectFieldConfig;
 
 /**
  * Create modal configuration (for future implementation)

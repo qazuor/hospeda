@@ -180,20 +180,45 @@ export interface GeoRadiusFilterConfig {
     readonly browserErrorLabel: string;
     /** Suffix appended to each preset chip (e.g. "km"). */
     readonly radiusUnitLabel: string;
+    /**
+     * HOS-142 G-6: enables a third "near a landmark" radio mode, backed by an
+     * autocomplete against the public POI catalog (914 rows — too large for
+     * a caller-provided flat list like `destinationOptions`) instead of a
+     * pre-fetched option array. Optional: omitting it (and the sibling
+     * `poi*` labels below) keeps the picker exactly as it was pre-HOS-142
+     * (destination + browser only) for any other `geo-radius` consumer that
+     * doesn't want the POI mode.
+     */
+    readonly poiModeLabel?: string;
+    /** Placeholder for the POI autocomplete input. Required when `poiModeLabel` is set. */
+    readonly poiPlaceholder?: string;
+    /** Status copy shown while a POI search request is in flight. */
+    readonly poiSearchingLabel?: string;
+    /** Status copy when a POI search yields no matches. */
+    readonly poiNoResultsLabel?: string;
 }
 
 /**
  * Reducer slot value for a geo-radius filter. `null` (or no entry) = inactive.
- * `mode` distinguishes between browser geolocation (`'browser'`) and the
- * destination picker (`'destination'`) so the UI can stay on the user's last
- * choice across re-renders. `destId` is only meaningful when `mode === 'destination'`.
+ * `mode` distinguishes between browser geolocation (`'browser'`), the
+ * destination picker (`'destination'`), and the POI picker (`'poi'`, HOS-142
+ * G-6) so the UI can stay on the user's last choice across re-renders.
+ * `destId` is only meaningful when `mode === 'destination'`; `poiId`/`poiSlug`
+ * only when `mode === 'poi'` (mirrors the `poiId`/`poiSlug` accommodation
+ * search query params HOS-113 §6.2 already accepts — `poiId` wins when both
+ * are present, same server precedence). `lat`/`long` are omitted in `'poi'`
+ * mode: the server resolves `poiId`/`poiSlug` to coordinates itself (NG-3 —
+ * this UI reuses that existing resolution, it does not duplicate it
+ * client-side).
  */
 export interface GeoRadiusState {
-    readonly mode: 'browser' | 'destination';
-    readonly lat: number;
-    readonly long: number;
+    readonly mode: 'browser' | 'destination' | 'poi';
+    readonly lat?: number;
+    readonly long?: number;
     readonly radius: number;
     readonly destId?: string;
+    readonly poiId?: string;
+    readonly poiSlug?: string;
 }
 
 /** Union of all supported filter group configurations. */

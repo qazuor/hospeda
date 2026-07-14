@@ -1,0 +1,54 @@
+{
+    "slug": "concordia_plaza_25_mayo",
+    "lat": -31.397222,
+    "long": -58.017222,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plaza principal del centro de Concordia, frente a la Catedral y rodeada por edificios históricos, comercios y espacios cívicos.",
+    "nameI18n": {
+        "es": "Plaza 25 de Mayo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plaza principal del centro de Concordia, frente a la Catedral y rodeada por edificios históricos, comercios y espacios cívicos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urquiza y Mitre, Concordia, Entre Ríos",
+    "keywords": [
+        "plaza 25 de mayo concordia",
+        "plaza principal",
+        "centro historico",
+        "catedral",
+        "urquiza y mitre"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://www.concordia.gob.ar/mapas/plaza-25-de-mayo; https://wikimapia.org/6347328/Plaza-25-de-Mayo-principal",
+    "notes": "Ubicación por calles y coordenadas contrastadas.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

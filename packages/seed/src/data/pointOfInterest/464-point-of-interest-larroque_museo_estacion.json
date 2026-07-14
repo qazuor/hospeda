@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "464-point-of-interest-larroque_museo_estacion",
+    "slug": "larroque_museo_estacion",
+    "lat": -33.0348821,
+    "long": -59.005246199999995,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo ferroviario y social con objetos, documentos y fotografías que reconstruyen la historia de Larroque y su relación con el tren.",
+    "nameI18n": {
+        "es": "Museo de la Estación",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo ferroviario y social con objetos, documentos y fotografías que reconstruyen la historia de Larroque y su relación con el tren.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Bulevar Ramírez, frente al Parque de la Estación, Larroque, Entre Ríos",
+    "keywords": [
+        "museo de la estacion",
+        "ferrocarril",
+        "documentos historicos",
+        "fotografias",
+        "historia social"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

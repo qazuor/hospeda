@@ -7,6 +7,7 @@ import { publicAccommodationReviewRoutes } from '../reviews/public/index.js';
 import { getByDestinationRoute } from './getByDestination';
 import { publicGetAccommodationByIdRoute } from './getById';
 import { publicGetAccommodationBySlugRoute } from './getBySlug';
+import { publicGetOccupancyRoute } from './getOccupancy';
 import { getStatsRoute } from './getStats';
 import { getSummaryRoute } from './getSummary';
 import { getTopRatedByDestinationRoute } from './getTopRatedByDestination';
@@ -35,6 +36,9 @@ app.route('/', getTopRatedByDestinationRoute);
 
 // GET /:id/summary - Get summary
 app.route('/', getSummaryRoute);
+
+// GET /:id/occupancy - Occupancy calendar (public, blocked days only) - HOS-43
+app.route('/', publicGetOccupancyRoute);
 
 // GET /stats - Get stats
 app.route('/', getStatsRoute);

@@ -166,6 +166,18 @@ const catalogoSidebar: SidebarInput = {
                     icon: 'MapIcon',
                     route: '/content/destination-attractions',
                     permissions: ['ATTRACTION_VIEW']
+                },
+                {
+                    type: 'link',
+                    id: 'puntos-de-interes',
+                    label: {
+                        es: 'Puntos de interés',
+                        en: 'Points of interest',
+                        pt: 'Pontos de interesse'
+                    },
+                    icon: 'LocationIcon',
+                    route: '/content/points-of-interest',
+                    permissions: ['POINT_OF_INTEREST_VIEW']
                 }
             ]
         },

@@ -166,20 +166,6 @@
             }
         }
     },
-    "featureFlag": {
-        "description": {
-            "max": "A descrição não pode exceder {{max}} caracteres",
-            "min": "A descrição deve ter pelo menos {{min}} caracteres"
-        },
-        "key": {
-            "invalidPattern": "O formato da chave é inválido",
-            "max": "A chave não pode exceder {{max}} caracteres",
-            "min": "A chave deve ter pelo menos {{min}} caracteres"
-        },
-        "reason": {
-            "max": "O motivo não pode exceder {{max}} caracteres"
-        }
-    },
     "accommodationAmenity": {
         "additionalCostPercent": {
             "max": "[PT] El additional cost percent no puede superar los {{max}} caracteres",
@@ -2075,6 +2061,9 @@
         "permissionEffect": {
             "invalid": "O efeito da permissão é inválido"
         },
+        "pointOfInterestDestinationRelation": {
+            "invalid": "[PT] The point of interest destination relation is invalid"
+        },
         "pointOfInterestType": {
             "invalid": "[PT] El point of interest type no es válido"
         },
@@ -2158,6 +2147,12 @@
         },
         "visibility": {
             "invalid": "[PT] El visibility no es válido"
+        },
+        "occupancySource": {
+            "invalid": "A origem de ocupação é inválida"
+        },
+        "calendarSyncStatus": {
+            "invalid": "O status de sincronização do calendário é inválido"
         }
     },
     "event": {
@@ -2680,6 +2675,20 @@
             "required": "[PT] El applicable verticals es obligatorio"
         }
     },
+    "featureFlag": {
+        "description": {
+            "max": "A descrição não pode exceder {{max}} caracteres",
+            "min": "A descrição deve ter pelo menos {{min}} caracteres"
+        },
+        "key": {
+            "invalidPattern": "O formato da chave é inválido",
+            "max": "A chave não pode exceder {{max}} caracteres",
+            "min": "A chave deve ter pelo menos {{min}} caracteres"
+        },
+        "reason": {
+            "max": "O motivo não pode exceder {{max}} caracteres"
+        }
+    },
     "field": {
         "custom": "[PT] Error de validación personalizado",
         "invalidArguments": "[PT] Argumentos inválidos",
@@ -3008,6 +3017,25 @@
             "required": "[PT] La versión es obligatoria"
         }
     },
+    "poiCategory": {
+        "displayWeight": {
+            "int": "[PT] El peso de visualización debe ser un número entero",
+            "max": "[PT] El peso de visualización no puede superar los {{max}} caracteres",
+            "min": "[PT] El peso de visualización debe tener al menos {{min}} caracteres",
+            "required": "[PT] El peso de visualización es obligatorio"
+        },
+        "icon": {
+            "max": "[PT] El ícono no puede superar los {{max}} caracteres",
+            "min": "[PT] El ícono debe tener al menos {{min}} caracteres",
+            "required": "[PT] El ícono es obligatorio"
+        },
+        "slug": {
+            "max": "[PT] El slug no puede superar los {{max}} caracteres",
+            "min": "[PT] El slug debe tener al menos {{min}} caracteres",
+            "pattern": "[PT] El formato del slug no es válido",
+            "required": "[PT] El slug es obligatorio"
+        }
+    },
     "pointOfInterest": {
         "address": {
             "required": "[PT] La dirección es obligatoria",
@@ -3025,6 +3053,11 @@
                 "max": "[PT] El point of interest ids no puede superar los {{max}} caracteres",
                 "min": "[PT] El point of interest ids debe tener al menos {{min}} caracteres"
             }
+        },
+        "categories": {
+            "max": "[PT] No se pueden asignar más de {{max}} categorías",
+            "min": "[PT] Debe asignarse al menos {{min}} categoría",
+            "primaryNotInSet": "[PT] La categoría primaria debe estar incluida en el conjunto de categorías asignadas"
         },
         "description": {
             "max": "[PT] La descripción no puede superar los {{max}} caracteres",
@@ -4320,6 +4353,62 @@
         },
         "zod": {
             "failed": "[PT] La validación del esquema ha fallado"
+        }
+    },
+    "accommodationOccupancy": {
+        "createdAt": {
+            "required": "A data de criação é obrigatória"
+        },
+        "date": {
+            "invalid": "A data não é uma data de calendário válida",
+            "pattern": "A data deve estar no formato AAAA-MM-DD",
+            "required": "A data é obrigatória"
+        },
+        "dates": {
+            "max": "Não é possível enviar mais de 366 datas",
+            "min": "É necessário indicar pelo menos uma data",
+            "required": "As datas são obrigatórias"
+        },
+        "externalEventId": {
+            "max": "O ID do evento externo não pode ultrapassar 255 caracteres",
+            "required": "O ID do evento externo é obrigatório"
+        },
+        "isBlocked": {
+            "required": "O status de bloqueio é obrigatório"
+        },
+        "note": {
+            "max": "A nota não pode ultrapassar 500 caracteres",
+            "required": "A nota é obrigatória"
+        },
+        "range": {
+            "fromBeforeTo": "A data inicial deve ser anterior à data final"
+        },
+        "updatedAt": {
+            "required": "A data de atualização é obrigatória"
+        }
+    },
+    "accommodationCalendarSync": {
+        "accessTokenAuthTag": {
+            "required": "A tag de autenticação do token de acesso é obrigatória"
+        },
+        "accessTokenCiphertext": {
+            "required": "O texto cifrado do token de acesso é obrigatório"
+        },
+        "accessTokenIv": {
+            "required": "O IV do token de acesso é obrigatório"
+        },
+        "createdAt": {
+            "required": "A data de criação é obrigatória"
+        },
+        "externalCalendarId": {
+            "max": "O ID do calendário externo não pode ultrapassar 255 caracteres",
+            "required": "O ID do calendário externo é obrigatório"
+        },
+        "isActive": {
+            "required": "O status ativo é obrigatório"
+        },
+        "updatedAt": {
+            "required": "A data de atualização é obrigatória"
         }
     }
 }

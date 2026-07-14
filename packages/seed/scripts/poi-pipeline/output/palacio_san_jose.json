@@ -1,0 +1,56 @@
+{
+    "slug": "palacio_san_jose",
+    "lat": -32.427222,
+    "long": -58.522872,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Antigua residencia del general Justo José de Urquiza, primer presidente constitucional de la Argentina. El conjunto conserva el palacio, patios, jardines, capilla, dependencias históricas y colecciones vinculadas con la organización nacional.",
+    "nameI18n": {
+        "es": "Palacio San José",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Antigua residencia del general Justo José de Urquiza, primer presidente constitucional de la Argentina. El conjunto conserva el palacio, patios, jardines, capilla, dependencias históricas y colecciones vinculadas con la organización nacional.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ruta Provincial 39 km 128, zona rural de Caseros, Entre Ríos",
+    "keywords": [
+        "palacio san jose",
+        "urquiza",
+        "museo",
+        "historia argentina",
+        "confederacion argentina",
+        "monumento historico",
+        "jardines"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://museourquiza.cultura.gob.ar/info/visita/",
+    "notes": "Coordenadas contrastadas con Wikimedia Commons/Wikidata y descripción con el sitio oficial del museo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "museum",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        }
+    ]
+}

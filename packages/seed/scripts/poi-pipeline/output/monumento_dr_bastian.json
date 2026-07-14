@@ -1,0 +1,46 @@
+{
+    "slug": "monumento_dr_bastian",
+    "lat": -32.2096568,
+    "long": -58.219216200000005,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Monumento funerario dedicado al primer médico de la Colonia San José, ubicado en el cementerio municipal y puesto en valor por el museo local.",
+    "nameI18n": {
+        "es": "Monumento al Dr. Juan José Bastian",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Monumento funerario dedicado al primer médico de la Colonia San José, ubicado en el cementerio municipal y puesto en valor por el museo local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Cementerio Municipal de San José, Entre Ríos",
+    "keywords": [
+        "doctor bastian",
+        "juan jose bastian",
+        "monumento",
+        "primer medico",
+        "cementerio"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sanjose.gob.ar/trabajos-de-puesta-en-valor-del-monumento-al-dr-bastian-en-el-cementerio-de-san-jose/",
+    "notes": "Existencia, historia y ubicación dentro del cementerio confirmadas; falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

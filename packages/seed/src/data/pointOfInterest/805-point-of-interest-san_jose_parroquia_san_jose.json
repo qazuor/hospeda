@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "805-point-of-interest-san_jose_parroquia_san_jose",
+    "slug": "san_jose_parroquia_san_jose",
+    "lat": -32.21207,
+    "long": -58.21836,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Principal templo católico de la ciudad y uno de los edificios religiosos del centro histórico de San José.",
+    "nameI18n": {
+        "es": "Parroquia San José",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Principal templo católico de la ciudad y uno de los edificios religiosos del centro histórico de San José.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San José, Entre Ríos",
+    "keywords": ["parroquia san jose", "iglesia", "templo", "centro historico", "religion"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N2482952274",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

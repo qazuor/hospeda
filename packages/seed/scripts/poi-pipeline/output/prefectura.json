@@ -1,0 +1,50 @@
+{
+    "slug": "prefectura",
+    "lat": -33.71612,
+    "long": -58.65611,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Dependencia de seguridad náutica y asistencia vinculada con la navegación y emergencias en el delta.",
+    "nameI18n": {
+        "es": "Prefectura Naval Argentina",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Dependencia de seguridad náutica y asistencia vinculada con la navegación y emergencias en el delta.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Villa Paranacito, Entre Ríos",
+    "keywords": [
+        "prefectura naval",
+        "seguridad nautica",
+        "emergencias",
+        "navegacion",
+        "delta"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W444347839",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        },
+        {
+            "slug": "port",
+            "isPrimary": false
+        }
+    ]
+}

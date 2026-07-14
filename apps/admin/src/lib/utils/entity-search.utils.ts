@@ -473,6 +473,20 @@ export const entitySearchConfigs: Record<EntityTypeEnum, EntitySearchConfig> = {
         sortBy: 'createdAt',
         sortOrder: 'desc',
         filters: {}
+    },
+
+    // HOS-144: unused by `PoiCategorySelectField` (it builds its own
+    // typeConfig directly, mirroring `AmenitySelectField`) — present only to
+    // keep this `Record<EntityTypeEnum, ...>` exhaustive.
+    [EntityTypeEnum.POI_CATEGORY]: {
+        entityType: EntityTypeEnum.POI_CATEGORY,
+        searchFields: ['slug'],
+        limit: 20,
+        sortBy: 'slug',
+        sortOrder: 'asc',
+        filters: {
+            status: 'active'
+        }
     }
 };
 
@@ -533,6 +547,14 @@ export const entityLoadConfigs: Record<EntityTypeEnum, EntityLoadConfig> = {
     [EntityTypeEnum.POST_SPONSORSHIP]: {
         entityType: EntityTypeEnum.POST_SPONSORSHIP,
         includeFields: ['id', 'message', 'description', 'sponsor']
+    },
+
+    // HOS-144: unused by `PoiCategorySelectField` (it builds its own
+    // typeConfig directly, mirroring `AmenitySelectField`) — present only to
+    // keep this `Record<EntityTypeEnum, ...>` exhaustive.
+    [EntityTypeEnum.POI_CATEGORY]: {
+        entityType: EntityTypeEnum.POI_CATEGORY,
+        includeFields: ['id', 'slug', 'nameI18n', 'icon', 'status']
     }
 };
 

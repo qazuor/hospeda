@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "415-point-of-interest-hornos_cal",
+    "slug": "hornos_cal",
+    "lat": -31.8730865,
+    "long": -58.2091714,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Vestigios industriales vinculados con la producción de cal y con una etapa importante de la economía local.",
+    "nameI18n": {
+        "es": "Hornos Históricos de Cal",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Vestigios industriales vinculados con la producción de cal y con una etapa importante de la economía local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de San Justo, Entre Ríos",
+    "keywords": [
+        "hornos de cal",
+        "caleras",
+        "patrimonio industrial",
+        "historia productiva",
+        "san justo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.facebook.com/municipalidadsanjustoentrerios/",
+    "notes": "Falta inventariar estructuras, ubicación y condiciones de acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

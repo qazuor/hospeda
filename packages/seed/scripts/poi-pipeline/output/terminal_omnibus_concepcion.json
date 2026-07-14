@@ -1,0 +1,46 @@
+{
+    "slug": "terminal_omnibus_concepcion",
+    "lat": -32.48201,
+    "long": -58.24791,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Principal terminal de transporte terrestre de pasajeros, con servicios hacia destinos provinciales, nacionales e internacionales.",
+    "nameI18n": {
+        "es": "Terminal de Ómnibus de Concepción del Uruguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Principal terminal de transporte terrestre de pasajeros, con servicios hacia destinos provinciales, nacionales e internacionales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Galarza 1400, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "terminal",
+        "omnibus",
+        "colectivos",
+        "micros",
+        "transporte"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "transport",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "239-point-of-interest-club_social_traccion",
+    "slug": "club_social_traccion",
+    "lat": -33.74365,
+    "long": -59.15798,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Centro comunitario histórico ligado a la vida social de la localidad y a su identidad ferroviaria.",
+    "nameI18n": {
+        "es": "Club Social Tracción",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Centro comunitario histórico ligado a la vida social de la localidad y a su identidad ferroviaria.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Calle Almafuerte, Ibicuy, Entre Ríos",
+    "keywords": [
+        "club social traccion",
+        "centro comunitario",
+        "almafuerte",
+        "ferrocarril",
+        "vida social"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W407228813",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "community_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

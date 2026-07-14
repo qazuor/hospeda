@@ -1,0 +1,49 @@
+{
+    "slug": "monumento_antepasados",
+    "lat": -33.025670999999996,
+    "long": -58.5230038,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Monumento urbano dedicado a quienes contribuyeron a la formación histórica y social de la ciudad.",
+    "nameI18n": {
+        "es": "Monumento a los Antepasados",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Monumento urbano dedicado a quienes contribuyeron a la formación histórica y social de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ayacucho y Asisclo Méndez, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "monumento a los antepasados",
+        "ayacucho",
+        "asisclo mendez",
+        "memoria"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/cultura",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        }
+    ]
+}

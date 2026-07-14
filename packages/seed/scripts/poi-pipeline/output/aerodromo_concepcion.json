@@ -1,0 +1,50 @@
+{
+    "slug": "aerodromo_concepcion",
+    "lat": -32.45215,
+    "long": -58.29296,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Aeródromo local utilizado por aviación general, vuelos privados, actividades del aeroclub y operaciones vinculadas con emergencias.",
+    "nameI18n": {
+        "es": "Aeródromo de Concepción del Uruguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Aeródromo local utilizado por aviación general, vuelos privados, actividades del aeroclub y operaciones vinculadas con emergencias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Acceso por zona oeste de Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "aerodromo",
+        "aeroclub",
+        "aeropuerto",
+        "aviones",
+        "aviacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "transport",
+            "isPrimary": true
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

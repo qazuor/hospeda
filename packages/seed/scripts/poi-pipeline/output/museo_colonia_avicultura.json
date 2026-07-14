@@ -1,0 +1,54 @@
+{
+    "slug": "museo_colonia_avicultura",
+    "lat": -32.44476,
+    "long": -58.43301,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo local dedicado a la historia de la colonia agrícola y al desarrollo de la avicultura, actividad estrechamente vinculada con la identidad productiva de San Justo.",
+    "nameI18n": {
+        "es": "Museo de la Colonia y la Avicultura",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo local dedicado a la historia de la colonia agrícola y al desarrollo de la avicultura, actividad estrechamente vinculada con la identidad productiva de San Justo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "9 de Julio, San Justo, Entre Ríos",
+    "keywords": [
+        "museo de la colonia",
+        "avicultura",
+        "historia local",
+        "colonia agricola",
+        "san justo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://www.entrerios.tur.ar/localidades-1/san-justo; https://mapcarta.com/es/N9066937278",
+    "notes": "El museo figura en la oferta turística provincial y su ubicación fue contrastada con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

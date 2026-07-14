@@ -31,6 +31,20 @@ vi.mock('@/lib/cn', () => ({
     cn: (...classes: (string | undefined | false | null)[]) => classes.filter(Boolean).join(' ')
 }));
 
+// The Location section renders LocationPicker → LocationPickerMap, which
+// imports Leaflet and initialises a real map instance in a `useEffect`. In
+// jsdom this races React Testing Library's synchronous `cleanup()` (fired
+// automatically between tests): once the calendar-gate tests below started
+// rendering the FULL editor without an intervening `await`/`waitFor`, the DOM
+// node backing the map got unmounted before Leaflet's async init settled,
+// throwing an unhandled `Error: Map container not found` that flips the
+// vitest process exit code to 1 even though every assertion still passes.
+// Stubbed with a minimal placeholder (mirrors `LocationPicker.test.tsx`'s
+// mock of the same module) — this file never asserts on map internals.
+vi.mock('@/components/host/editor/LocationPickerMap.client', () => ({
+    LocationPickerMap: () => <div data-testid="mock-location-picker-map" />
+}));
+
 // CSS module mocks for all section modules
 vi.mock('@/components/host/AccommodationEditor.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
@@ -61,6 +75,27 @@ vi.mock('@/components/host/editor/LocationSection.module.css', () => ({
 }));
 vi.mock('@/components/host/editor/PhotoSection.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
+}));
+vi.mock('@/components/host/editor/CalendarSection.module.css', () => ({
+    default: new Proxy({}, { get: (_t, prop) => String(prop) })
+}));
+vi.mock('@/components/host/editor/PlanEntitlementGate.module.css', () => ({
+    default: new Proxy({}, { get: (_t, prop) => String(prop) })
+}));
+
+// Entitlements gate the calendar section (`can_use_calendar`). Default to
+// "resolved, not entitled" so unrelated tests never race the real hook's
+// async session/entitlements fetch. Individual tests override `mockHas`.
+let mockHas = vi.fn((_key: string) => false);
+const mockIsLoading = { current: false };
+vi.mock('@/hooks/useMyEntitlements', () => ({
+    useMyEntitlements: () => ({
+        has: mockHas,
+        isLoading: mockIsLoading.current,
+        error: null,
+        limit: vi.fn(() => -1),
+        plan: null
+    })
 }));
 
 // ---------------------------------------------------------------------------
@@ -141,6 +176,8 @@ describe('AccommodationEditor', () => {
                 })
             })
         );
+        mockHas = vi.fn((_key: string) => false);
+        mockIsLoading.current = false;
     });
 
     afterEach(() => {
@@ -483,5 +520,35 @@ describe('AccommodationEditor', () => {
         // media only appears when photoData diverges from initial
         // (gallery was initialised from initialGallery prop, so no change)
         expect(callArg.data.media).toBeUndefined();
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-43: calendar section entitlement gate
+    // -----------------------------------------------------------------------
+
+    describe('calendar section entitlement gate', () => {
+        it('renders the upgrade nudge (not the calendar) when the owner lacks can_use_calendar', () => {
+            mockHas = vi.fn((_key: string) => false);
+            mockIsLoading.current = false;
+
+            render(<AccommodationEditor {...DEFAULT_PROPS} />);
+
+            // Other sections also use PlanEntitlementGate with the same fallback
+            // copy — scope to the calendar section's own <section> landmark.
+            const calendarSection = within(screen.getByRole('region', { name: 'Calendario' }));
+            expect(calendarSection.getByText('Función premium')).toBeInTheDocument();
+            expect(calendarSection.queryByText('Calendario de ocupación')).not.toBeInTheDocument();
+        });
+
+        it('renders the calendar section when the owner has can_use_calendar', () => {
+            mockHas = vi.fn((key: string) => key === 'can_use_calendar');
+            mockIsLoading.current = false;
+
+            render(<AccommodationEditor {...DEFAULT_PROPS} />);
+
+            const calendarSection = within(screen.getByRole('region', { name: 'Calendario' }));
+            expect(calendarSection.getByText('Calendario de ocupación')).toBeInTheDocument();
+            expect(calendarSection.queryByText('Función premium')).not.toBeInTheDocument();
+        });
     });
 });

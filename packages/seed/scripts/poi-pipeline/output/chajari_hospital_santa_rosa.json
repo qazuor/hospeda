@@ -1,0 +1,46 @@
+{
+    "slug": "chajari_hospital_santa_rosa",
+    "lat": -30.74548,
+    "long": -57.98327,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Hospital público provincial con internación general y servicios sanitarios de referencia para Chajarí y su zona de influencia.",
+    "nameI18n": {
+        "es": "Hospital Santa Rosa",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Hospital público provincial con internación general y servicios sanitarios de referencia para Chajarí y su zona de influencia.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Doctor Planas 2285, Chajarí, Entre Ríos",
+    "keywords": [
+        "hospital santa rosa",
+        "hospital chajari",
+        "guardia",
+        "emergencias",
+        "salud"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf; https://mapcarta.com/es/W466441688",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "slug": "gruta_virgen",
+    "lat": -33.0305469,
+    "long": -59.005376999999996,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio de devoción religiosa y paseo urbano incluido entre los sitios tradicionales de la ciudad.",
+    "nameI18n": {
+        "es": "Gruta de la Virgen",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio de devoción religiosa y paseo urbano incluido entre los sitios tradicionales de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Larroque, Entre Ríos",
+    "keywords": [
+        "gruta de la virgen",
+        "devocion",
+        "monumento religioso",
+        "paseo",
+        "larroque"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.turismoentrerios.com/larroque/sitios.htm",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        }
+    ]
+}

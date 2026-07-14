@@ -2,7 +2,7 @@
  * AI Content Translation Service (SPEC-212).
  *
  * Orchestrates AI translation for content entities (accommodation, destination,
- * event, post). Uses the existing AI engine with feature='translate'.
+ * event, post, pointOfInterest). Uses the existing AI engine with feature='translate'.
  *
  * Design:
  * - Single-entity translate: translates one entity's fields to target locales.
@@ -15,7 +15,7 @@
  */
 
 import { getDb } from '@repo/db';
-import { accommodations, destinations, events, posts } from '@repo/db/schemas';
+import { accommodations, destinations, events, pointsOfInterest, posts } from '@repo/db/schemas';
 import type { AiFeature, I18nText, TranslationMeta } from '@repo/schemas';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
@@ -27,14 +27,24 @@ import { createConfiguredAiService } from './ai-service.factory.js';
 // ---------------------------------------------------------------------------
 
 /** Entity types that can be translated. */
-export type TranslatableEntityType = 'accommodation' | 'destination' | 'event' | 'post';
+export type TranslatableEntityType =
+    | 'accommodation'
+    | 'destination'
+    | 'event'
+    | 'post'
+    | 'pointOfInterest';
 
 /** Fields to translate per entity type. */
 const ENTITY_FIELDS: Readonly<Record<TranslatableEntityType, readonly string[]>> = {
     accommodation: ['name', 'summary', 'description', 'richDescription'],
     destination: ['name', 'summary', 'description'],
     event: ['name', 'summary', 'description'],
-    post: ['title', 'summary', 'content']
+    post: ['title', 'summary', 'content'],
+    // HOS-143 G-6: POI (HOS-138 v2 model) only ever had `nameI18n` /
+    // `descriptionI18n` — there is no plain `name` column (see the
+    // `loadTranslatableFields` fallback below for how the Spanish source
+    // value is still resolved for `name`).
+    pointOfInterest: ['name', 'description']
 } as const;
 
 /**
@@ -79,7 +89,8 @@ function getEntityTable(entityType: TranslatableEntityType): TranslatableTable {
         accommodation: accommodations,
         destination: destinations,
         event: events,
-        post: posts
+        post: posts,
+        pointOfInterest: pointsOfInterest
     };
     // TYPE-WORKAROUND: a Drizzle table's structural shape does not overlap the
     // narrow `TranslatableTable` view (columns live under an internal symbol), so
@@ -109,6 +120,10 @@ const I18N_COLUMN_MAP: Record<TranslatableEntityType, Record<string, string>> = 
         title: 'titleI18n',
         summary: 'summaryI18n',
         content: 'contentI18n'
+    },
+    pointOfInterest: {
+        name: 'nameI18n',
+        description: 'descriptionI18n'
     }
 };
 
@@ -534,6 +549,17 @@ export async function loadTranslatableFields(
         let value: unknown;
         if (sourceLocale === 'es') {
             value = data[field];
+            // HOS-143 G-6: `pointOfInterest.name` has no plain column (HOS-138 —
+            // `nameI18n` is the sole name source), so `data[field]` is always
+            // `undefined` for it. Fall back to the field's i18n column `es` key
+            // in that case. This branch is unreachable for the other four
+            // entity types, whose plain columns always exist (value is `null`
+            // or a string there, never `undefined`).
+            if (value === undefined) {
+                const i18nCol = i18nColumnMap[field];
+                const i18nValue = i18nCol ? (data[i18nCol] as I18nText | null) : null;
+                value = i18nValue?.es;
+            }
         } else {
             const i18nCol = i18nColumnMap[field];
             const i18nValue = i18nCol ? (data[i18nCol] as I18nText | null) : null;

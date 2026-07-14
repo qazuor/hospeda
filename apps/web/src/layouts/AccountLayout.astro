@@ -90,6 +90,35 @@ const { groups: navGroups } = getNavForSurface({
 const visibleDoors = ACCOUNT_DISCOVERY_DOORS.filter((door) =>
 	isDoorVisible({ door, visibility: (node) => isVisibleByRole(node, userRole) }),
 );
+
+/**
+ * Label shown in the mobile collapsed toggle. It mirrors the currently active
+ * nav item / door label so the collapsed bar communicates "you are here" once
+ * it becomes a sticky header on scroll. Falls back to the generic menu label on
+ * the dashboard root, where no single item is active.
+ */
+function resolveActiveLabel(): string {
+	for (const group of navGroups) {
+		for (const item of group.items) {
+			if (getActiveSectionKey(item.href) === activeSection) {
+				return t(item.i18nKey);
+			}
+		}
+	}
+	for (const door of visibleDoors) {
+		if (getActiveSectionKey(door.href) === activeSection) {
+			return t(
+				resolveDoorLabelKey({
+					door,
+					visibility: (node) => isVisibleByRole(node, userRole),
+				}),
+			);
+		}
+	}
+	return t('account.menu', 'Menú de cuenta');
+}
+
+const activeLabel = resolveActiveLabel();
 ---
 
 <BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
@@ -104,19 +133,28 @@ const visibleDoors = ACCOUNT_DISCOVERY_DOORS.filter((door) =>
 
 	<div class="account-page">
 		<div class="account-page__container">
-			<!-- Mobile toggle -->
-			<button
-				class="account-page__toggle"
-				aria-expanded="false"
-				aria-controls="account-nav"
-				type="button"
-			>
-				<span class="account-page__toggle-label">{t('account.menu', 'Menú de cuenta')}</span>
-				<span class="account-page__toggle-icon" aria-hidden="true">▾</span>
-			</button>
+			<!--
+				Nav wrapper. On desktop it's just the sidebar column (stretched so the
+				inner sticky sidebar keeps its scroll travel). On mobile it becomes a
+				sticky element: the collapsed toggle stays pinned to the top of the
+				viewport and morphs from a dropdown into a full-width header bar once
+				stuck (detected via IntersectionObserver → `.is-stuck`).
+			-->
+			<div class="account-page__nav">
+				<!-- Mobile toggle -->
+				<button
+					class="account-page__toggle"
+					aria-expanded="false"
+					aria-controls="account-nav"
+					aria-label={`${t('account.menu', 'Menú de cuenta')}: ${activeLabel}`}
+					type="button"
+				>
+					<span class="account-page__toggle-label">{activeLabel}</span>
+					<span class="account-page__toggle-icon" aria-hidden="true">▾</span>
+				</button>
 
-			<!-- Sidebar navigation -->
-			<aside id="account-nav" class="account-page__sidebar" aria-label="Account navigation">
+				<!-- Sidebar navigation -->
+				<aside id="account-nav" class="account-page__sidebar" aria-label="Account navigation">
 				<nav class="account-nav">
 					{navGroups.map((group) => {
 						const suppressHeader = group.suppressHeaderWhenSingle && group.items.length === 1;
@@ -196,7 +234,8 @@ const visibleDoors = ACCOUNT_DISCOVERY_DOORS.filter((door) =>
 						</ul>
 					</div>
 				)}
-			</aside>
+				</aside>
+			</div>
 
 			<!-- Content area -->
 			<div class="account-page__content">
@@ -207,19 +246,70 @@ const visibleDoors = ACCOUNT_DISCOVERY_DOORS.filter((door) =>
 </BaseLayout>
 
 <script>
-	function initAccountToggle(): void {
+	function initAccountNav(): void {
+		const wrapper = document.querySelector<HTMLDivElement>('.account-page__nav');
 		const toggle = document.querySelector<HTMLButtonElement>('.account-page__toggle');
 		const nav = document.getElementById('account-nav');
-		if (!toggle || !nav) return;
+		if (!wrapper || !toggle || !nav) return;
+
+		const openClass = 'account-page__sidebar--open';
+
+		const setOpen = (open: boolean): void => {
+			toggle.setAttribute('aria-expanded', String(open));
+			nav.classList.toggle(openClass, open);
+			// Lock page scroll while the panel is open so only the panel's own
+			// internal scroll works — the tall menu shouldn't scroll the page
+			// behind it. The scroll root is <html> (documentElement), not <body>,
+			// so lock it there; restored on close (and on soft-nav, since a link
+			// click routes through setOpen(false) first).
+			document.documentElement.style.overflow = open ? 'hidden' : '';
+		};
 
 		toggle.addEventListener('click', () => {
-			const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
-			toggle.setAttribute('aria-expanded', String(!isExpanded));
-			nav.classList.toggle('account-page__sidebar--open');
+			setOpen(toggle.getAttribute('aria-expanded') !== 'true');
 		});
+
+		// Close after picking a destination (soft-nav via ClientRouter keeps the
+		// DOM, so the open panel would otherwise stay covering the new page).
+		nav.addEventListener('click', (event) => {
+			if ((event.target as HTMLElement).closest('a')) {
+				setOpen(false);
+			}
+		});
+
+		// Close when tapping outside the sticky nav, or on Escape.
+		document.addEventListener('click', (event) => {
+			if (
+				nav.classList.contains(openClass) &&
+				!wrapper.contains(event.target as Node)
+			) {
+				setOpen(false);
+			}
+		});
+		document.addEventListener('keydown', (event) => {
+			if (event.key === 'Escape' && nav.classList.contains(openClass)) {
+				setOpen(false);
+				toggle.focus();
+			}
+		});
+
+		// Toggle the "stuck" header treatment once the sticky wrapper pins to the
+		// top. No scroll listener: a single IntersectionObserver on the wrapper
+		// flips `.is-stuck` when its top edge crosses the pin line (ratio < 1).
+		// The top rootMargin must match the wrapper's own sticky `top` (it pins
+		// below the site header, not at 0), so read it from CSS and derive the
+		// margin — desktop has no `top` (auto → 0), where `.is-stuck` is unstyled.
+		const stickyTop = Number.parseInt(getComputedStyle(wrapper).top, 10) || 0;
+		const stickyObserver = new IntersectionObserver(
+			([entry]) => {
+				wrapper.classList.toggle('is-stuck', entry.intersectionRatio < 1);
+			},
+			{ threshold: [1], rootMargin: `-${stickyTop + 1}px 0px 0px 0px` },
+		);
+		stickyObserver.observe(wrapper);
 	}
 
-	document.addEventListener('astro:page-load', initAccountToggle);
+	document.addEventListener('astro:page-load', initAccountNav);
 </script>
 
 <style>
@@ -238,6 +328,17 @@ const visibleDoors = ACCOUNT_DISCOVERY_DOORS.filter((door) =>
 		align-items: start;
 	}
 
+	/*
+	 * Nav column wrapper. `align-self: stretch` makes it take the row height
+	 * (i.e. the content column height) so the inner `position: sticky` sidebar
+	 * keeps a full scroll travel — a shrink-wrapped wrapper would collapse to
+	 * the sidebar's own height and neutralize the sticky behavior.
+	 */
+	.account-page__nav {
+		grid-column: 1;
+		align-self: stretch;
+	}
+
 	/* Mobile toggle */
 	.account-page__toggle {
 		display: none;
@@ -253,6 +354,15 @@ const visibleDoors = ACCOUNT_DISCOVERY_DOORS.filter((door) =>
 		cursor: pointer;
 		justify-content: space-between;
 		align-items: center;
+		transition: border-radius var(--duration-fast) ease,
+					box-shadow var(--duration-fast) ease,
+					border-color var(--duration-fast) ease;
+	}
+
+	.account-page__toggle-label {
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
 	}
 
 	.account-page__toggle-icon {
@@ -475,19 +585,66 @@ const visibleDoors = ACCOUNT_DISCOVERY_DOORS.filter((door) =>
 			gap: var(--space-4);
 		}
 
+		/*
+		 * The nav wrapper pins flush against the bottom edge of the sticky site
+		 * header (76px tall on mobile), so the full-width bar sits directly below
+		 * the main nav with no gap. `z-index` stays under the header's (`--z-nav:
+		 * 50`) so the header always wins if they ever overlap; the wrapper is
+		 * also the positioning context for the absolutely positioned open panel.
+		 * NOTE: the stuck-detection observer reads this `top` at runtime to
+		 * derive its rootMargin — keep them in sync via that read, not a literal.
+		 */
+		.account-page__nav {
+			position: sticky;
+			top: 76px;
+			z-index: 40;
+			align-self: auto;
+		}
+
 		.account-page__toggle {
 			display: flex;
-			grid-column: 1;
+		}
+
+		/*
+		 * Stuck treatment: the collapsed toggle morphs from a rounded dropdown
+		 * into a full-bleed header bar (edge-to-edge, squared corners, elevated
+		 * shadow). Only radius/shadow/border transition — the full-bleed margin
+		 * snaps with the pin, which reads as "anchored", not janky.
+		 */
+		.account-page__nav.is-stuck {
+			width: 100vw;
+			margin-inline: calc(50% - 50vw);
+		}
+
+		.account-page__nav.is-stuck .account-page__toggle {
+			border-radius: 0;
+			border-color: transparent;
+			padding-inline: var(--space-container-x);
+			box-shadow: var(--shadow-card, 0 2px 8px var(--core-foreground-a08));
 		}
 
 		.account-page__sidebar {
 			position: static;
+			top: auto;
 			display: none;
 		}
 
+		/*
+		 * Open panel: an absolutely positioned dropdown under the toggle (not an
+		 * in-flow block), so it floats over the page instead of pushing content
+		 * down. Capped height + internal scroll keeps the tall menu usable while
+		 * pinned near the top of the viewport.
+		 */
 		.account-page__sidebar--open {
 			display: block;
-			margin-bottom: var(--space-4);
+			position: absolute;
+			top: calc(100% + var(--space-2));
+			left: 0;
+			right: 0;
+			max-height: calc(100dvh - 10rem);
+			overflow-y: auto;
+			z-index: 1;
+			box-shadow: var(--shadow-card, 0 8px 24px var(--core-foreground-a08));
 		}
 	}
 </style>

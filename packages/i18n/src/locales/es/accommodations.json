@@ -486,6 +486,10 @@
         "geoRadius.browserError": "No pudimos detectar tu ubicación. Revisá los permisos del navegador.",
         "geoRadius.destinationMode": "Un destino",
         "geoRadius.destinationPlaceholder": "Elegí un destino",
+        "geoRadius.poiMode": "Un lugar de interés",
+        "geoRadius.poiPlaceholder": "Buscá una plaza, playa, monumento...",
+        "geoRadius.poiSearching": "Buscando...",
+        "geoRadius.poiNoResults": "No encontramos ningún lugar con ese nombre",
         "geoRadius.radiusUnit": "km",
         "section": {
             "location": "Ubicación",

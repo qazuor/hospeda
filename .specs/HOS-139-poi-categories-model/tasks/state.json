@@ -1,0 +1,914 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-139",
+    "title": "POI categories model (M2M catalog, replaces single `type` enum)",
+    "created": "2026-07-13T04:33:14.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add poi_categories dbschema",
+            "description": "Create packages/db/src/schemas/destination/poi-category.dbschema.ts: table poi_categories with id (uuid PK), slug (text UNIQUE NOT NULL), nameI18n (jsonb NOT NULL, $type<I18nText>()), translationMeta (jsonb NULL DEFAULT '{}', $type<TranslationMeta>()), icon (text NULL), displayWeight (integer NOT NULL DEFAULT 50), plus BaseModel lifecycle/audit columns (lifecycleState default ACTIVE, adminInfo, createdAt/By, updatedAt/By, deletedAt/By) and unique index on slug. Mirror destinations.nameI18n shape (data-driven, NOT i18n-by-slug). Spec §6.1. Tests: covered by T-004.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-003", "T-004", "T-002"],
+            "subtasks": [
+                {
+                    "title": "Create poi-category.dbschema.ts with all columns",
+                    "completed": true
+                },
+                {
+                    "title": "Unique index on slug",
+                    "completed": true
+                },
+                {
+                    "title": "Export from db schema barrel",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:17:07.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add r_poi_category join dbschema with partial unique primary index",
+            "description": "Create packages/db/src/schemas/destination/r_poi_category.dbschema.ts mirroring r_destination_point_of_interest: columns pointOfInterestId (uuid FK -> points_of_interest.id ON DELETE CASCADE), categoryId (uuid FK -> poi_categories.id ON DELETE CASCADE), isPrimary (boolean NOT NULL DEFAULT false). Composite PK (pointOfInterestId, categoryId). Indexes: composite (pointOfInterestId, categoryId) + standalone on categoryId. Single-primary invariant: partial uniqueIndex('r_poi_category_primary_idx').on(pointOfInterestId).where(sql`is_primary = true`) declared directly in the Drizzle table (Carril 1, no extras CHECK). Spec §6.2/§5. Tests: T-004, T-025.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-004", "T-012", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Create r_poi_category.dbschema.ts with composite PK + both FKs cascade",
+                    "completed": true
+                },
+                {
+                    "title": "Composite index + standalone categoryId index",
+                    "completed": true
+                },
+                {
+                    "title": "Partial unique index on pointOfInterestId WHERE is_primary = true",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:17:07.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Generate structural migration (0053)",
+            "description": "Run pnpm db:generate to produce the next sequential structural migration (0053 verified free vs origin/staging 2026-07-13; last is 0052 — RE-CHECK immediately before PR, a parallel PR may take it). Verify the generated SQL includes both CREATE TABLE statements, the FKs ON DELETE CASCADE, all indexes, and the partial unique index WHERE is_primary = true. Spec §7.1. Do NOT hand-edit; regenerate if wrong.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                {
+                    "title": "pnpm db:generate",
+                    "completed": true
+                },
+                {
+                    "title": "Verify partial unique index present in SQL",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm next-free prefix vs origin/staging",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "migration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:17:07.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add/update dbschema structural tests",
+            "description": "Create packages/db/test/schemas/destination/poi-category.dbschema.test.ts and r_poi_category.dbschema.test.ts mirroring point-of-interest.dbschema.test.ts: assert column set, types, NOT NULL, defaults, unique index on slug, composite PK, both FK cascade, the two supporting indexes, and the partial unique index. Spec §6.1/§6.2. AC-1 (index existence assertion; the DB-rejection test lives in T-025).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "poi-category.dbschema.test.ts",
+                    "completed": true
+                },
+                {
+                    "title": "r_poi_category.dbschema.test.ts incl partial unique index",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "test"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:17:07.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Create poi-category Zod 6-file set",
+            "description": "Create packages/schemas/src/entities/poi-category/ mirroring attraction/: .schema.ts (PoiCategorySchema: id, slug, nameI18n: I18nTextSchema, translationMeta: TranslationMetaSchema.nullish(), icon?, displayWeight, lifecycle/admin/audit), .crud.schema.ts (PoiCategoryCreateInputSchema/UpdateInputSchema), .query.schema.ts (PoiCategorySearchInputSchema), .http.schema.ts, .access.schema.ts, index.ts. Reuse I18nTextSchema/TranslationMetaSchema from common/i18n.schema.ts. Any zodError.poiCategory... messages must get i18n keys in T-009. Spec §7.2.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-006", "T-009", "T-011", "T-017"],
+            "subtasks": [
+                {
+                    "title": "PoiCategorySchema + crud + query + http + access + index",
+                    "completed": true
+                },
+                {
+                    "title": "Export from @repo/schemas entity barrel",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "zod"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:17:07.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Add category-assignment relation input schemas",
+            "description": "Mirror point-of-interest.relations.schema.ts: AssignCategoryToPointOfInterestInputSchema (pointOfInterestId, categoryId, isPrimary?: boolean.default(false)), UnassignCategoryFromPointOfInterestInputSchema (pointOfInterestId, categoryId), SetPrimaryCategoryInputSchema (pointOfInterestId, categoryId). Spec §7.2. zodError keys handled in T-009.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-009", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Three relation input schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Export from barrel",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "zod"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:17:07.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add additive category filter to PointOfInterestSearchInputSchema",
+            "description": "Add optional categoryId and categorySlug filter fields to packages/schemas/src/entities/point-of-interest/point-of-interest.query.schema.ts. Additive only — do NOT remove/alter the existing type filter. Resolved through the join in T-016. Spec §7.2/§6.5.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Add categoryId/categorySlug optional fields",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "zod"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:17:07.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Add CATEGORY_SLUG_TO_POI_TYPE reverse map + forward map constant",
+            "description": "In @repo/schemas (alongside point-of-interest enums), add two exported constants: the §7.4 forward map (legacy type -> category slug, 9 rows) and §7.6 reverse map CATEGORY_SLUG_TO_POI_TYPE (category slug -> PointOfInterestTypeEnum). Reverse derivation must be TOTAL: 9 known slugs map to their enum value, every other slug -> OTHER (provide a deriveTypeFromCategorySlug(slug) helper defaulting to OTHER). Unit test asserting all 9 known mappings + winery/gastronomy/unknown -> OTHER. Spec §7.4/§7.6. Consumed by service (T-012..T-014), seed (T-019), migration (T-020).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-012", "T-019", "T-020", "T-023"],
+            "subtasks": [
+                {
+                    "title": "Forward + reverse map constants",
+                    "completed": true
+                },
+                {
+                    "title": "deriveTypeFromCategorySlug helper (unknown -> OTHER)",
+                    "completed": true
+                },
+                {
+                    "title": "Unit test for total derivation",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "mapping"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:17:07.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Register zodError i18n keys for poi-category + regenerate",
+            "description": "For every Zod field carrying {message:'zodError.poiCategory...'} in T-005/T-006, add the key to packages/i18n/src/locales/{es,en,pt}/validation.json (top-level entity under the zodError namespace). Then run npx tsx scripts/extract-zod-keys.ts --verify (GAP-010 guard), pnpm --filter @repo/i18n generate-types, and commit scripts/zod-keys-inventory.json. Guardrail learned in HOS-138.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-006"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add keys to es/en/pt validation.json",
+                    "completed": true
+                },
+                {
+                    "title": "extract-zod-keys --verify passes",
+                    "completed": true
+                },
+                {
+                    "title": "generate-types + commit inventory",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "schemas"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:17:07.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Add POI_CATEGORY_* PermissionEnum values",
+            "description": "Add POI_CATEGORY_CREATE/UPDATE/DELETE/VIEW/RESTORE/HARD_DELETE to packages/schemas/src/enums/permission.enum.ts, mirroring POINT_OF_INTEREST_* naming/value convention, plus a matching PermissionCategoryEnum entry. Assign/unassign/set-primary reuse these (create≈assign, delete≈unassign, update≈set-primary) — no separate manage permission. Spec §7.3/§6.6.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Add 6 POI_CATEGORY_* permission values",
+                    "completed": true
+                },
+                {
+                    "title": "Add PermissionCategoryEnum entry",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:17:07.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Scaffold PointOfInterestCategoryService (catalog CRUD)",
+            "description": "Create packages/service-core/src/services/poi-category/point-of-interest-category.service.ts extending BaseCrudService for poi_categories CRUD (create/update/delete/restore/list/search, 12-method permission-hook shape), gated by POI_CATEGORY_* (T-010). Add model in @repo/db mirroring existing BaseModel-extending models. Naming: PointOfInterestCategoryService (full spelling per §6.4). Unit tests for permission gating.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-010"],
+            "blocks": ["T-012", "T-015"],
+            "subtasks": [
+                {
+                    "title": "PoiCategoryModel in @repo/db",
+                    "completed": true
+                },
+                {
+                    "title": "Service extends BaseCrudService + permission hooks",
+                    "completed": true
+                },
+                {
+                    "title": "runWithLoggingAndValidation wiring + Result<T> returns",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:45:35.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Implement assignCategoryToPointOfInterest (+ type sync)",
+            "description": "assignCategoryToPointOfInterest(actor, {pointOfInterestId, categoryId, isPrimary?}, ctx): create r_poi_category row. If isPrimary:true and a different primary exists, flip it to false in the SAME transaction. When the primary changes, write points_of_interest.type = deriveTypeFromCategorySlug(primaryCategory.slug) in the same tx (§6.5/§7.6). Mirror addPointOfInterestToDestination shape. Spec §6.4. Tests: T-022, T-023.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-008", "T-002", "T-006"],
+            "blocks": ["T-013", "T-014", "T-022", "T-023"],
+            "subtasks": [
+                {
+                    "title": "Insert join row + demote existing primary in tx",
+                    "completed": true
+                },
+                {
+                    "title": "Write derived type on primary change",
+                    "completed": true
+                },
+                {
+                    "title": "Permission check reuses POI_CATEGORY_CREATE",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:45:35.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Implement unassignCategoryFromPointOfInterest (+ auto-promote + type)",
+            "description": "unassignCategoryFromPointOfInterest(actor, {pointOfInterestId, categoryId}, ctx): remove the join row. If it was the primary and other category rows remain, auto-promote the next-highest-displayWeight remaining category to primary (OQ-1) and re-derive points_of_interest.type in the same tx. If no rows remain, leave type as-is (never null). Spec §6.4/§6.2/§6.5. Tests: T-022, T-023.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-022", "T-023"],
+            "subtasks": [
+                {
+                    "title": "Remove join row",
+                    "completed": true
+                },
+                {
+                    "title": "Auto-promote next by displayWeight when removing primary",
+                    "completed": true
+                },
+                {
+                    "title": "Re-derive type in tx; no-op type when empty",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:45:35.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Implement setPrimaryCategory (+ type re-derive)",
+            "description": "setPrimaryCategory(actor, {pointOfInterestId, categoryId}, ctx): among a POI's already-assigned categories, flip the old primary off and the target on in one transaction, then re-derive points_of_interest.type from the new primary slug (§6.5/§7.6). Reuses POI_CATEGORY_UPDATE. Spec §6.4. Tests: T-022, T-023.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-022", "T-023"],
+            "subtasks": [
+                {
+                    "title": "Flip old/new primary in tx",
+                    "completed": true
+                },
+                {
+                    "title": "Re-derive type",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:45:35.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Implement category read-side methods",
+            "description": "getCategoriesForPointOfInterest(actor, {pointOfInterestId}, ctx) and getPointsOfInterestForCategory(actor, {categoryId}, ctx), mirroring PointOfInterestService.getPointsOfInterestForDestination/getDestinationsByPointOfInterest. Spec §6.4. Unit tests.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Both read-side join queries + tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:45:35.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Wire categoryId/categorySlug filter in buildSearchWhere",
+            "description": "Resolve the new categoryId/categorySlug filter (T-007) in PointOfInterestService.buildSearchWhere by joining through r_poi_category (like destinationId already does), NOT a column on points_of_interest. Leave the existing type filter branch (lines ~494-504) unchanged. Spec §6.5/§2. Tests: T-024.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-002"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "Join-based resolution for category filter",
+                    "completed": true
+                },
+                {
+                    "title": "type filter branch untouched",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:45:35.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Author 40 category fixtures (multilang)",
+            "description": "Create 40 fixture files under packages/seed/src/data/poiCategory/*.json, one per dataset category (§2 list). Each: slug, nameI18n {es,en,pt} (es authoritative), curated icon, displayWeight (rough frequency/importance). Deterministic ids. Spec §6.3/§7.5/R-2. Tests: T-026.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-018", "T-019", "T-020", "T-021"],
+            "subtasks": [
+                {
+                    "title": "40 json fixtures with es/en/pt names",
+                    "completed": true
+                },
+                {
+                    "title": "icon + displayWeight per row",
+                    "completed": true
+                }
+            ],
+            "tags": ["seed", "content"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T05:45:35.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Create poiCategories.seed.ts + manifest entry",
+            "description": "Create packages/seed/src/required/poiCategories.seed.ts loading the 40 fixtures (idempotent upsert by slug), and add the poiCategories entry to manifest-required.json. Mirror attractions.seed.ts. Spec §7.5.1.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "poiCategories.seed.ts",
+                    "completed": true
+                },
+                {
+                    "title": "manifest-required.json entry",
+                    "completed": true
+                }
+            ],
+            "tags": ["seed"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T06:01:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Add 12-POI r_poi_category backfill seed step",
+            "description": "Add a relationship-seed step (separate step or extension of pointsOfInterest.seed.ts, mirroring attractions relationship seed) creating one r_poi_category row per the 12 existing POIs using §7.4 legacy-type -> category-slug mapping, each isPrimary=true. Also ensure each POI's points_of_interest.type equals deriveTypeFromCategorySlug(primary slug) so baseline stays consistent (§6.5). Spec §6.3/§7.5.1. Tests: T-026.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-018", "T-008"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                {
+                    "title": "12 backfill rows per §7.4 mapping, isPrimary=true",
+                    "completed": true
+                },
+                {
+                    "title": "type consistency with derived value",
+                    "completed": true
+                }
+            ],
+            "tags": ["seed"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T06:01:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Create data-migration 0012-hos-139-poi-categories",
+            "description": "Create packages/seed/src/data-migrations/0012-hos-139-poi-categories.ts (0012 verified next-free vs origin/staging 2026-07-13; last is 0011-hos-138 — RE-CHECK before PR). Idempotent: insert 40 categories (skip existing slug) + 12 r_poi_category backfill rows (skip existing POI-category pair) + set derived type on those 12 POIs. Ledgered in seed_migrations. Spec §7.5.2. Tests: T-026.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-017", "T-008"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                {
+                    "title": "40 categories idempotent insert",
+                    "completed": true
+                },
+                {
+                    "title": "12 backfill assignments + type sync idempotent",
+                    "completed": true
+                },
+                {
+                    "title": "Verify next-free number before PR",
+                    "completed": true
+                }
+            ],
+            "tags": ["seed", "migration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T06:01:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Add poiCategory glob to check-seed-dual-write.sh",
+            "description": "Add the new poiCategory data path glob to scripts/check-seed-dual-write.sh's path list so the dual-write CI guard covers this new entity. Spec §7.5.3.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add poiCategory glob",
+                    "completed": true
+                }
+            ],
+            "tags": ["seed", "ci"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T06:01:00.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Service tests: primary demote (AC-5) + auto-promote (AC-6)",
+            "description": "Unit tests: assignCategoryToPointOfInterest with isPrimary:true demotes the pre-existing primary (exactly one primary remains) — AC-5; unassign of current primary with others remaining promotes next-highest-displayWeight — AC-6. Also cover setPrimaryCategory single-primary invariant. ≥90% coverage on the primary-management logic.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-012", "T-013", "T-014"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "AC-5 demote test",
+                    "completed": true
+                },
+                {
+                    "title": "AC-6 auto-promote test",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "test"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T06:03:34.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "type-sync tests (AC-8 a/b)",
+            "description": "Tests asserting points_of_interest.type equals §7.6 mapping after assign(isPrimary)/setPrimary/unassign-auto-promote (AC-8a), and that a primary category with no enum equivalent (e.g. winery) derives type=OTHER (AC-8b). Uses deriveTypeFromCategorySlug.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012", "T-013", "T-014", "T-008"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                {
+                    "title": "type equals mapping after each op",
+                    "completed": true
+                },
+                {
+                    "title": "winery -> OTHER",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "test"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T06:03:34.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Category filter service test (AC-7)",
+            "description": "Service-level test: PointOfInterestSearchInputSchema categoryId/categorySlug filter returns only POIs joined to that category via r_poi_category, using at least two POIs in different categories. Assert the type filter still works independently.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-016"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Two-POI two-category filter test",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "test"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T06:03:34.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Partial unique index rejection test (AC-1)",
+            "description": "DB-level test that inserts a second r_poi_category row with isPrimary=true for the same pointOfInterestId and asserts the database rejects it (partial unique index). Complements T-004's existence assertion.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Insert duplicate primary -> expect rejection",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "test"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T07:31:23.000Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Seed backfill test (AC-4)",
+            "description": "Test that all 12 existing seeded POIs have exactly one r_poi_category row marked isPrimary=true matching §7.4, on both a fresh build (baseline seed) and a pre-existing seeded DB run through the 0012 data-migration. Assert type equals the derived value for each.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-019", "T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Fresh baseline: 12 primaries per mapping",
+                    "completed": true
+                },
+                {
+                    "title": "Migrate path: same result idempotent",
+                    "completed": true
+                }
+            ],
+            "tags": ["seed", "test"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T07:31:23.000Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Consumer regression test (AC-8c)",
+            "description": "Regression test asserting the existing type-keyed consumers (PointOfInterestService type filter, apps/web poi-labels.ts, DestinationPOISection.astro badge) are unchanged in code and still work given a synced type value. Confirms the sync keeps type a valid populated enum (never null / invalid).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-023"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "poi-labels.ts unchanged behavior with synced type",
+                    "completed": true
+                },
+                {
+                    "title": "search type filter unchanged",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "regression"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T07:31:23.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Quality gate + migration prefix re-check",
+            "description": "Run pnpm typecheck; full suites pnpm --filter @repo/db test, --filter @repo/schemas test, --filter @repo/service-core test, --filter @repo/seed test (NOT scoped); test:integration (separate command); check-seed-dual-write.sh; extract-zod-keys --verify; i18n generate-types clean. RE-CHECK structural (0053) and data-migration (0012) prefixes are still free vs origin/staging immediately before opening the PR (a parallel PR may have taken them — this broke HOS-138 in CI). Fix any red before PR. Spec §12.7.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [
+                "T-004",
+                "T-009",
+                "T-021",
+                "T-022",
+                "T-023",
+                "T-024",
+                "T-025",
+                "T-026",
+                "T-027"
+            ],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "typecheck + all touched package suites + integration",
+                    "completed": true
+                },
+                {
+                    "title": "dual-write + zod-keys + i18n guards green",
+                    "completed": true
+                },
+                {
+                    "title": "Re-verify migration prefixes vs origin/staging",
+                    "completed": true
+                }
+            ],
+            "tags": ["quality-gate"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-13T04:33:14.000Z",
+                "started": null,
+                "completed": "2026-07-13T07:31:23.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 28,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 28,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}

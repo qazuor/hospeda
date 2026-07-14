@@ -97,6 +97,15 @@
     border: 1px solid var(--brand-accent-a25);
 }
 
+/* Soft-cancelled but still within the paid period (BETA-184) — distinct from
+   both the plain "active" (green) and terminal "cancelled" (grey) badges so
+   the user notices the pending cancellation. */
+.badgeCancelling {
+    background-color: var(--destructive-a12);
+    color: var(--destructive, oklch(0.55 0.22 25));
+    border: 1px solid var(--destructive-a25);
+}
+
 /* ── Meta row (billing date + payment method) ──────────────────────────────── */
 
 .metaGrid {
@@ -475,6 +484,36 @@
 }
 
 .scheduledChangeBannerBody {
+    margin: 0;
+    color: var(--core-foreground);
+}
+
+/* ── Cancellation-scheduled banner (BETA-184) ─────────────────────────────── */
+
+.cancelScheduledBanner {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3, 12px);
+    padding: var(--space-4, 16px);
+    background-color: var(--destructive-a05);
+    border: 1px solid var(--destructive-a25);
+    border-radius: var(--radius-sm, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--core-foreground);
+    line-height: 1.5;
+}
+
+.cancelScheduledBannerTitle {
+    font-weight: 600;
+    color: var(--destructive, oklch(0.55 0.22 25));
+    margin: 0 0 var(--space-1, 4px);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.cancelScheduledBannerBody {
     margin: 0;
     color: var(--core-foreground);
 }

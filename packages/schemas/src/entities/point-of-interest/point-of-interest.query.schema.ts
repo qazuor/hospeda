@@ -6,6 +6,8 @@ import {
 } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/index.js';
+import { PointOfInterestDestinationRelationEnum } from '../../enums/point-of-interest-destination-relation.enum.js';
+import { PointOfInterestDestinationRelationEnumSchema } from '../../enums/point-of-interest-destination-relation.schema.js';
 import { PointOfInterestTypeEnumSchema } from '../../enums/point-of-interest-type.schema.js';
 import { applyOpenApiMetadata, type OpenApiSchemaMetadata } from '../../utils/openapi.utils.js';
 import { PointOfInterestSchema } from './point-of-interest.schema.js';
@@ -35,11 +37,22 @@ export const PointOfInterestFiltersSchema = z.object({
     isFeatured: z.boolean().optional(),
     isBuiltin: z.boolean().optional(),
 
+    // Editorial-curation plain-column filters (HOS-138 columns, HOS-143 T-007
+    // admin-search filter). Same passthrough shape as `isFeatured`/`isBuiltin`.
+    hasOwnPage: z.boolean().optional(),
+    verified: z.boolean().optional(),
+
     // Lifecycle state
     lifecycleState: LifecycleStatusEnumSchema.optional(),
 
     // Destination relation filter (M2M via join table, HOS-113 OQ-1)
-    destinationId: z.string().uuid().optional()
+    destinationId: z.string().uuid().optional(),
+
+    // Category relation filters (M2M via r_poi_category join table, HOS-139
+    // spec §6.5/§7.2 — additive, resolved through the join, not a plain
+    // column, alongside (not replacing) the legacy `type` filter above).
+    categoryId: z.string().uuid().optional(),
+    categorySlug: z.string().optional()
 });
 
 // ============================================================================
@@ -55,8 +68,19 @@ export const PointOfInterestSearchSchema = BaseSearchSchema.extend({
     type: PointOfInterestTypeEnumSchema.optional(),
     isFeatured: z.boolean().optional(),
     isBuiltin: z.boolean().optional(),
+
+    // Editorial-curation plain-column filters (HOS-138 columns, HOS-143 T-007
+    // admin-search filter). Same passthrough shape as `isFeatured`/`isBuiltin`.
+    hasOwnPage: z.boolean().optional(),
+    verified: z.boolean().optional(),
+
     lifecycleState: LifecycleStatusEnumSchema.optional(),
-    destinationId: z.string().uuid().optional()
+    destinationId: z.string().uuid().optional(),
+
+    // Category relation filters (M2M via r_poi_category join table, HOS-139
+    // spec §6.5/§7.2 — additive, alongside the legacy `type` filter above).
+    categoryId: z.string().uuid().optional(),
+    categorySlug: z.string().optional()
 });
 
 // ============================================================================
@@ -117,12 +141,21 @@ export const PointOfInterestListWithCountsResponseSchema = PaginationResultSchem
 // ============================================================================
 
 /**
- * Schema for getting points of interest by destination
+ * Schema for getting points of interest by destination.
+ *
+ * `relation` (HOS-140) is an optional 3-value filter — `'PRIMARY'` (default,
+ * POIs physically in the destination), `'NEARBY'` (cross-referenced from a
+ * different destination), or `'ALL'` (both). Omitting it preserves the
+ * pre-HOS-140 default behavior (PRIMARY-only), a behavior-preserving no-op
+ * for every row seeded before this spec shipped.
  */
 export const PointsOfInterestByDestinationSchema = z.object({
     destinationId: z.string().uuid(),
     page: z.number().int().min(1).default(1),
-    pageSize: z.number().int().min(1).max(100).default(10)
+    pageSize: z.number().int().min(1).max(100).default(10),
+    relation: z
+        .union([PointOfInterestDestinationRelationEnumSchema, z.literal('ALL')])
+        .default(PointOfInterestDestinationRelationEnum.PRIMARY)
 });
 
 /**

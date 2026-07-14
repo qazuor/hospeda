@@ -11,6 +11,9 @@ export * from './auth-provider.enum.js';
 export * from './auth-provider.schema.js';
 export * from './billing-interval.enum.js';
 export * from './billing-interval.schema.js';
+// Calendar sync enums (HOS-157 Phase 2)
+export * from './calendar-sync-status.enum.js';
+export * from './calendar-sync-status.schema.js';
 export * from './client-type.enum.js';
 export * from './client-type.schema.js';
 // Commerce enums (SPEC-239)
@@ -73,6 +76,9 @@ export * from './newsletter-subscriber-status.enum.js';
 export * from './newsletter-subscriber-status.schema.js';
 export * from './notification-recipient-side.enum.js';
 export * from './notification-recipient-side.schema.js';
+// Occupancy calendar enums (HOS-43)
+export * from './occupancy-source.enum.js';
+export * from './occupancy-source.schema.js';
 export * from './owner-promotion-discount-type.enum.js';
 export * from './owner-promotion-discount-type.schema.js';
 export * from './partner-subscription-status.enum.js';
@@ -87,6 +93,11 @@ export * from './payment-status.schema.js';
 export * from './permission.enum.js';
 export * from './permission.schema.js';
 export * from './permission-effect.enum.js';
+// POI category ⇄ legacy type mapping (HOS-139)
+export * from './poi-category-type-mapping.js';
+// Point of Interest ⇄ Destination relation kind (HOS-140)
+export * from './point-of-interest-destination-relation.enum.js';
+export * from './point-of-interest-destination-relation.schema.js';
 // Point of Interest enums (HOS-113)
 export * from './point-of-interest-type.enum.js';
 export * from './point-of-interest-type.schema.js';

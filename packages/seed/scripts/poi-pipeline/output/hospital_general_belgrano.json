@@ -1,0 +1,46 @@
+{
+    "slug": "hospital_general_belgrano",
+    "lat": -32.6706401,
+    "long": -58.888819899999994,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Hospital público y principal referencia sanitaria para Urdinarrain y su área rural.",
+    "nameI18n": {
+        "es": "Hospital General Manuel Belgrano",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Hospital público y principal referencia sanitaria para Urdinarrain y su área rural.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urdinarrain, Entre Ríos",
+    "keywords": [
+        "hospital general manuel belgrano",
+        "hospital urdinarrain",
+        "guardia",
+        "salud",
+        "emergencias"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/19211508",
+    "notes": "Existencia y ubicación general confirmadas. Falta recuperar dirección y coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "plazoleta_7_noviembre",
+    "lat": -32.29965,
+    "long": -59.14544,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plazoleta conmemorativa dedicada a la fecha fundacional de Rosario del Tala.",
+    "nameI18n": {
+        "es": "Plazoleta 7 de Noviembre",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plazoleta conmemorativa dedicada a la fecha fundacional de Rosario del Tala.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "plazoleta 7 de noviembre",
+        "fundacion",
+        "1799",
+        "plaza",
+        "memoria local"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W679355178; https://www.rosariodeltala.gob.ar/?q=areas-noticias%2Fturismo",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        }
+    ]
+}

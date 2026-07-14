@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "589-point-of-interest-parque_estacion_fabio_larrosa",
+    "slug": "parque_estacion_fabio_larrosa",
+    "lat": -33.035753,
+    "long": -59.006104099999995,
+    "type": "PARK",
+    "icon": null,
+    "description": "Parque ferroviario recuperado para recreación, cultura y esparcimiento, con salas, monumentos y espacios comunitarios.",
+    "nameI18n": {
+        "es": "Parque de la Estación Intendente Fabio A. Larrosa",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Parque ferroviario recuperado para recreación, cultura y esparcimiento, con salas, monumentos y espacios comunitarios.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Predio ferroviario, Larroque, Entre Ríos",
+    "keywords": [
+        "parque de la estacion",
+        "fabio larrosa",
+        "predio ferroviario",
+        "cultura",
+        "recreacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes; https://www.larroque.gob.ar/noticia/2205/visito_nuestra_ciudad_el_intendente_de_general_galarza",
+    "notes": "Área extensa confirmada. Falta definir acceso principal y polígono. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

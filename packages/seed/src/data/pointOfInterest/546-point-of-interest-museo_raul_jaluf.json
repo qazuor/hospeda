@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "546-point-of-interest-museo_raul_jaluf",
+    "slug": "museo_raul_jaluf",
+    "lat": -31.870939699999997,
+    "long": -59.02637219999999,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo histórico y natural instalado en una casa de 1873, con salas sobre pobladores, inmigrantes, ciencias naturales, prensa y cultura gauchesca.",
+    "nameI18n": {
+        "es": "Museo Histórico Municipal Raúl Jaluf",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo histórico y natural instalado en una casa de 1873, con salas sobre pobladores, inmigrantes, ciencias naturales, prensa y cultura gauchesca.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Hermelo y Saavedra, Villaguay, Entre Ríos",
+    "keywords": [
+        "museo raul jaluf",
+        "museo historico villaguay",
+        "mariposas",
+        "inmigrantes",
+        "ciencias naturales"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.villaguay.gob.ar/app/noticias/exitoso_3_taller_de_cocineritos_en_el_museo_historico_raul_jaluf",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

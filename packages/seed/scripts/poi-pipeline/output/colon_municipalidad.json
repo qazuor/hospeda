@@ -1,0 +1,46 @@
+{
+    "slug": "colon_municipalidad",
+    "lat": -32.2240366,
+    "long": -58.14196140000001,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sede administrativa municipal y punto de referencia para trámites, información pública y servicios locales.",
+    "nameI18n": {
+        "es": "Municipalidad de Colón",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sede administrativa municipal y punto de referencia para trámites, información pública y servicios locales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro cívico de Colón, Entre Ríos",
+    "keywords": [
+        "municipalidad de colon",
+        "municipio",
+        "tramites",
+        "servicios publicos",
+        "centro civico"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://colon.gov.ar/",
+    "notes": "Institución confirmada. Falta recuperar domicilio y coordenadas exactas del edificio. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

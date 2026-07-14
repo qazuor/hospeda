@@ -1,0 +1,46 @@
+{
+    "slug": "urdinarrain_municipalidad",
+    "lat": -32.68742,
+    "long": -58.89024,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sede administrativa municipal y punto de referencia para trámites, información pública y servicios locales.",
+    "nameI18n": {
+        "es": "Municipalidad de Urdinarrain",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sede administrativa municipal y punto de referencia para trámites, información pública y servicios locales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Doctor Virginio Silva 417, Urdinarrain, Entre Ríos",
+    "keywords": [
+        "municipalidad urdinarrain",
+        "doctor virginio silva 417",
+        "municipio",
+        "tramites",
+        "gobierno"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://urdinarrain.gov.ar/v2/; https://mapcarta.com/es/W597083874",
+    "notes": "Dirección y coordenadas contrastadas con fuente municipal y OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

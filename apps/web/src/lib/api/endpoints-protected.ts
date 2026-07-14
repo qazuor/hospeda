@@ -6,11 +6,13 @@
  * The apiClient methods `getProtected` and `postProtected` handle this automatically.
  */
 import type {
+    AccommodationCalendarSyncStatus,
     AccommodationComparisonResponse,
     AccommodationImportAsyncStartResponse,
     AccommodationImportResponse,
     AccommodationImportStatusQuery,
     AccommodationImportStatusResponse,
+    AccommodationOccupancy,
     AccommodationReviewListItem,
     DestinationReviewListItem,
     DowngradePreview,
@@ -2915,6 +2917,190 @@ export const accommodationMediaApi = {
     }): Promise<ApiResult<{ readonly media: AccommodationMediaRow }>> {
         return apiClient.put({
             path: `${PROTECTED}/accommodations/${id}/media/${mediaId}/featured`
+        });
+    }
+};
+
+// --- Accommodation Occupancy Calendar (Protected — HOS-43 Phase 1) ---
+
+/**
+ * Owner-facing protected endpoints for the occupancy calendar
+ * (`CalendarSection.client.tsx`).
+ *
+ * `batchToggle` is the primary mutation for the grid UI: it applies a single
+ * `isBlocked` value to a list of dates in one request (idempotent on both
+ * directions — see `AccommodationOccupancyBatchInputSchema` in `@repo/schemas`).
+ * There are no single-day add/remove wrappers here since the batch endpoint
+ * already covers a one-date selection (`dates: [date]`).
+ *
+ * @example
+ * ```ts
+ * const list = await accommodationOccupancyApi.list({ id: 'acc-uuid', from: '2026-07-01', to: '2026-08-01' });
+ * const result = await accommodationOccupancyApi.batchToggle({
+ *   id: 'acc-uuid',
+ *   dates: ['2026-07-10', '2026-07-11'],
+ *   isBlocked: true
+ * });
+ * ```
+ */
+export const accommodationOccupancyApi = {
+    /**
+     * Reads the owner's occupancy rows for an accommodation, optionally
+     * scoped to a half-open `[from, to)` date range.
+     *
+     * @param params - Accommodation ID, optional `from`/`to` range (both
+     *   `YYYY-MM-DD`; omit both to fetch every row), and optional SSR cookie.
+     * @returns `{ occupancy: AccommodationOccupancy[] }`
+     */
+    list({
+        id,
+        from,
+        to,
+        cookieHeader
+    }: {
+        readonly id: string;
+        readonly from?: string;
+        readonly to?: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly occupancy: readonly AccommodationOccupancy[] }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/${id}/occupancy`,
+            params: { from, to },
+            cookieHeader
+        });
+    },
+
+    /**
+     * Blocks or unblocks a set of dates in one request.
+     *
+     * `isBlocked: true` idempotently upserts `source=MANUAL` rows for every
+     * date; `isBlocked: false` deletes only the `MANUAL` rows (sync-sourced
+     * rows are left untouched server-side). Returns the post-operation state
+     * for exactly the requested dates.
+     *
+     * @param params - Accommodation ID, the target dates, the desired
+     *   `isBlocked` value, and an optional note (applied when blocking).
+     * @returns `{ occupancy: AccommodationOccupancy[] }` — the current rows
+     *   for the requested dates after the operation.
+     */
+    batchToggle({
+        id,
+        dates,
+        isBlocked,
+        note
+    }: {
+        readonly id: string;
+        readonly dates: readonly string[];
+        readonly isBlocked: boolean;
+        readonly note?: string;
+    }): Promise<ApiResult<{ readonly occupancy: readonly AccommodationOccupancy[] }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/accommodations/${id}/occupancy/batch`,
+            body: { accommodationId: id, dates, isBlocked, note }
+        });
+    }
+};
+
+// --- Accommodation Calendar Sync (Protected — HOS-157 Phase 2) ---
+
+/**
+ * Result of an on-demand calendar sync, mirroring the API's `CalendarSyncResult`
+ * discriminated union (not exported from `@repo/schemas` — it lives in apps/api,
+ * so the shape is re-declared here for the client).
+ */
+export type CalendarSyncResult =
+    | {
+          readonly status: 'ok';
+          readonly eventsProcessed: number;
+          readonly datesUpserted: number;
+          readonly datesRemoved: number;
+          readonly fullSync: boolean;
+      }
+    | { readonly status: 'skipped'; readonly reason: string }
+    | {
+          readonly status: 'error';
+          readonly kind: 'terminal' | 'transient' | 'api' | 'unknown';
+          readonly message: string;
+      };
+
+/**
+ * Owner-facing protected endpoints for the Google Calendar occupancy sync
+ * (`CalendarSyncPanel.client.tsx`).
+ *
+ * The connect flow is a full-page OAuth round-trip: `connectGoogle` returns the
+ * Google authorize URL the panel navigates to; after consent the API callback
+ * returns the browser to `returnTo` (the editor page) with a `?calendarSync`
+ * result flag the panel reads on mount.
+ */
+export const accommodationCalendarSyncApi = {
+    /**
+     * Starts the Google Calendar connect flow.
+     *
+     * @param params - Accommodation ID and an optional same-origin `returnTo`
+     *   path to come back to after the OAuth callback (e.g. the editor page).
+     * @returns `{ authorizeUrl }` — navigate the browser here to grant consent.
+     */
+    connectGoogle({
+        id,
+        returnTo
+    }: {
+        readonly id: string;
+        readonly returnTo?: string;
+    }): Promise<ApiResult<{ readonly authorizeUrl: string }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/accommodations/${id}/calendar-sync/connect-google`,
+            body: returnTo ? { returnTo } : {}
+        });
+    },
+
+    /**
+     * Reads the accommodation's Google Calendar connection status (safe
+     * projection — no tokens).
+     *
+     * @param params - Accommodation ID and optional SSR cookie header.
+     * @returns `{ connected, status }` — `status` is `null` when never connected.
+     */
+    status({ id, cookieHeader }: { readonly id: string; readonly cookieHeader?: string }): Promise<
+        ApiResult<{
+            readonly connected: boolean;
+            readonly status: AccommodationCalendarSyncStatus | null;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/${id}/calendar-sync/status`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Triggers an on-demand sync. Operational failures come back as
+     * `{ status: 'error', ... }` (HTTP 200), not a rejected request.
+     *
+     * @param params - Accommodation ID.
+     * @returns The {@link CalendarSyncResult}.
+     */
+    sync({ id }: { readonly id: string }): Promise<ApiResult<CalendarSyncResult>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/accommodations/${id}/calendar-sync/sync`
+        });
+    },
+
+    /**
+     * Soft-disconnects the accommodation's calendar connection for a provider
+     * (Phase 2: `google`).
+     *
+     * @param params - Accommodation ID and provider token (defaults to `google`).
+     * @returns `{ disconnected }`.
+     */
+    disconnect({
+        id,
+        provider = 'google'
+    }: {
+        readonly id: string;
+        readonly provider?: 'google';
+    }): Promise<ApiResult<{ readonly disconnected: boolean }>> {
+        return apiClient.delete({
+            path: `${PROTECTED}/accommodations/${id}/calendar-sync/${provider}`
         });
     }
 };

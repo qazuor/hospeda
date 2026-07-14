@@ -1,0 +1,50 @@
+{
+    "slug": "teatro_drewanz",
+    "lat": -30.90058,
+    "long": -57.93511,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sala teatral y espacio cultural utilizado para espectáculos, actos y actividades comunitarias.",
+    "nameI18n": {
+        "es": "Teatro Juan Martín Drewanz",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sala teatral y espacio cultural utilizado para espectáculos, actos y actividades comunitarias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Santa Ana, Entre Ríos",
+    "keywords": [
+        "juan martin drewanz",
+        "teatro santa ana",
+        "espectaculos",
+        "cultura",
+        "actos"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W1241556771",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "theater",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        }
+    ]
+}

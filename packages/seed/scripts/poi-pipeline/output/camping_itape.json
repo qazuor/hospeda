@@ -1,0 +1,54 @@
+{
+    "slug": "camping_itape",
+    "lat": -32.4957221,
+    "long": -58.255998000000005,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sector de acampe y recreación asociado con el balneario y el parque ribereño.",
+    "nameI18n": {
+        "es": "Camping del Parque Itapé",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sector de acampe y recreación asociado con el balneario y el parque ribereño.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque Itapé, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "camping itape",
+        "acampe",
+        "balneario",
+        "parque itape",
+        "rio uruguay"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/apertura-de-sesiones-2026-di%C3%A1logo%2C-gesti%C3%B3n-y-anuncios-en-un-contexto-adverso-2",
+    "notes": "Falta geocodificar accesos, parcelas y servicios. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "campground",
+            "isPrimary": true
+        },
+        {
+            "slug": "beach",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,29 @@
+{
+    "$schema": "../../schemas/poi-category.schema.json",
+    "id": "004-poi-category-natural_area",
+    "slug": "natural_area",
+    "nameI18n": {
+        "es": "Área natural",
+        "en": "Natural area",
+        "pt": "Área natural"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            }
+        }
+    },
+    "icon": "forest",
+    "displayWeight": 78,
+    "lifecycleState": "ACTIVE"
+}

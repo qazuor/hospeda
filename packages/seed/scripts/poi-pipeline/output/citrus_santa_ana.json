@@ -1,0 +1,50 @@
+{
+    "slug": "citrus_santa_ana",
+    "lat": -30.89882,
+    "long": -57.92906,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Establecimiento industrial asociado con la producción, procesamiento y empaque citrícola local.",
+    "nameI18n": {
+        "es": "Citrus Santa Ana",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Establecimiento industrial asociado con la producción, procesamiento y empaque citrícola local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Martín, Santa Ana, Entre Ríos",
+    "keywords": [
+        "citrus santa ana",
+        "fabrica",
+        "citricultura",
+        "empaque",
+        "industria"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W704414820",
+    "notes": "Coordenadas contrastadas con OpenStreetMap; no se presume acceso turístico.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        }
+    ]
+}

@@ -48,6 +48,7 @@ import type {
     RawExtraction
 } from '../adapter.types.js';
 import { runApifyActor, startApifyRun } from './apify-client.js';
+import { isPlausiblePerNightUsd } from './price-plausibility.js';
 import { startApifyRunWithRetry } from './start-apify-run-with-retry.js';
 import { withRetry } from './with-retry.js';
 
@@ -409,12 +410,16 @@ function parseCurrencyString(raw: string | null | undefined): number | null {
  *    (for generic actor shapes that return a flat number or string).
  *
  * Returns `null` when no price can be derived OR when the computed per-night
- * value is `< 1` (a sub-$1/night result indicates a mis-parse or placeholder).
- * Under-resolve is always safer than mis-resolve.
+ * value falls outside the plausible USD band enforced by
+ * {@link isPlausiblePerNightUsd}: a sub-$1/night result indicates a mis-parse
+ * or placeholder, and an implausibly HIGH result signals the actor ignored the
+ * requested USD currency and returned the host's local currency instead
+ * (BETA-169 — e.g. an ARS value ~1000x the real USD figure). Both are dropped;
+ * under-resolve is always safer than mis-resolve.
  *
  * @param raw - The raw `price` field from the dataset item.
  * @param nights - Number of probe nights used to divide a total into per-night.
- * @returns A finite per-night price `≥ 1`, or `null`.
+ * @returns A plausible per-night USD price, or `null`.
  */
 function extractPerNightPrice(
     raw: number | string | AirbnbPricing | null | undefined,
@@ -425,7 +430,7 @@ function extractPerNightPrice(
     // Flat number (generic actors)
     if (typeof raw === 'number') {
         const perNight = raw / nights;
-        return Number.isFinite(perNight) && perNight >= 1 ? perNight : null;
+        return isPlausiblePerNightUsd(perNight) ? perNight : null;
     }
 
     // Flat string (generic actors — e.g. "157.32")
@@ -433,7 +438,7 @@ function extractPerNightPrice(
         const total = parseCurrencyString(raw);
         if (total === null) return null;
         const perNight = total / nights;
-        return Number.isFinite(perNight) && perNight >= 1 ? perNight : null;
+        return isPlausiblePerNightUsd(perNight) ? perNight : null;
     }
 
     // AirbnbPricing object (rooms-urls-scraper)
@@ -448,7 +453,7 @@ function extractPerNightPrice(
         const perNightMatch = /x\s*\$?([\d,.]+)/i.exec(basePriceDesc);
         if (perNightMatch?.[1]) {
             const n = parseCurrencyString(perNightMatch[1]);
-            if (n !== null && n >= 1) return n;
+            if (n !== null && isPlausiblePerNightUsd(n)) return n;
         }
     }
 
@@ -458,7 +463,7 @@ function extractPerNightPrice(
         const total = parseCurrencyString(String(totalPriceStr));
         if (total !== null) {
             const perNight = total / nights;
-            if (Number.isFinite(perNight) && perNight >= 1) return perNight;
+            if (isPlausiblePerNightUsd(perNight)) return perNight;
         }
     }
 
@@ -473,7 +478,7 @@ function extractPerNightPrice(
                 : parseCurrencyString(String(topPriceStr));
         if (total !== null) {
             const perNight = total / nights;
-            if (Number.isFinite(perNight) && perNight >= 1) return perNight;
+            if (isPlausiblePerNightUsd(perNight)) return perNight;
         }
     }
 
@@ -483,7 +488,7 @@ function extractPerNightPrice(
             typeof pricing.rate === 'number'
                 ? pricing.rate
                 : parseCurrencyString(String(pricing.rate));
-        if (rateRaw !== null && Number.isFinite(rateRaw) && rateRaw >= 1) return rateRaw;
+        if (rateRaw !== null && isPlausiblePerNightUsd(rateRaw)) return rateRaw;
     }
 
     return null;
@@ -737,6 +742,17 @@ export function mapItemToRawExtraction(raw: AirbnbItem): RawExtraction {
     // CONFIDENCE_BY_SOURCE) because this is a date-specific parsed estimate,
     // NOT the listing's authoritative base price. Signals "plausible, requires
     // host review" to the downstream mapping pipeline.
+    //
+    // BETA-169: extractPerNightPrice drops any value outside the plausible USD
+    // band (isPlausiblePerNightUsd). We store PRICE_PROBE_CURRENCY ('USD')
+    // because that is the currency we REQUESTED. The guard is a magnitude-only
+    // heuristic: it rejects the range of values most likely to be a currency
+    // mislabel (a per-night figure far above any realistic USD rate almost
+    // certainly means the actor returned the host's local currency, e.g. ARS
+    // ~1000x). It does NOT verify the currency — the Airbnb actor only echoes an
+    // ambiguous `$` symbol — so a low-magnitude local-currency value could still
+    // slip through; that residual gap is documented in price-plausibility.ts.
+    // When the value is dropped, `price` is left absent for the host to fill in.
     const perNightPrice =
         extractPerNightPrice(raw.price, PRICE_PROBE_NIGHTS) ??
         extractPerNightPrice(raw.pricing ?? null, PRICE_PROBE_NIGHTS);

@@ -1,0 +1,54 @@
+{
+    "slug": "federacion_puerto",
+    "lat": -30.985898900000002,
+    "long": -57.9202185,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Puerto deportivo sobre el lago Salto Grande, utilizado como punto de salida de paseos náuticos, pesca y actividades acuáticas.",
+    "nameI18n": {
+        "es": "Puerto de Federación",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Puerto deportivo sobre el lago Salto Grande, utilizado como punto de salida de paseos náuticos, pesca y actividades acuáticas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Costanera de Federación, Entre Ríos",
+    "keywords": [
+        "puerto federacion",
+        "paseos nauticos",
+        "pesca",
+        "lago salto grande",
+        "embarcaciones"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf; https://www.federacion.tur.ar/otros-atractivos/",
+    "notes": "Existencia y función confirmadas. Falta geocodificar el acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "port",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        }
+    ]
+}

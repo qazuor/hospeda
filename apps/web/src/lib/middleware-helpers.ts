@@ -243,6 +243,31 @@ export function isServerIslandRoute({ path }: { path: string }): boolean {
     return !!path && path.startsWith('/_server-islands/');
 }
 
+/** URL prefix of Astro's on-demand image transform endpoint. */
+export const IMAGE_ENDPOINT_PREFIX = '/_image';
+
+/**
+ * `Cache-Control` applied to `/_image` responses (HOS-160 lever C). The
+ * `@astrojs/node` adapter only auto-caches physical `dist/client/_astro/*`
+ * files, so this dynamic endpoint would otherwise re-run a Sharp transform and
+ * be re-fetched on every request. A year-long immutable cache is safe because
+ * the transformed output is content-addressed by the query string (`href` +
+ * `w`/`h` + `f`ormat), and the local `astro:assets` sources served through
+ * `/_image` are themselves content-hashed (remote images use a raw `<img>` per
+ * the web styleguide, so they never reach this endpoint).
+ */
+export const IMAGE_ENDPOINT_CACHE_CONTROL = 'public, max-age=31536000, immutable';
+
+/**
+ * Checks if a URL path targets Astro's on-demand image endpoint (`/_image`).
+ *
+ * @param params - Object containing the URL path string
+ * @returns True for `/_image` requests
+ */
+export function isImageEndpointRoute({ path }: { path: string }): boolean {
+    return !!path && path.startsWith(IMAGE_ENDPOINT_PREFIX);
+}
+
 // `buildLoginRedirect` now lives in the client-safe `./auth-redirect` module so
 // React islands can use it without dragging this server-only module (logger,
 // Sentry, process.env) into the browser bundle. Re-exported here so existing

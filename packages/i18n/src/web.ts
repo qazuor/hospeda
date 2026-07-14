@@ -21,8 +21,10 @@
  */
 
 export type { ApiErrorShape, SupportedLocale, TranslationFn } from './api-errors';
-// API error translation (no admin dependency)
-export { translateApiError } from './api-errors';
+// API error translation (no admin dependency). `translateApiErrorWithT` is the
+// t-only core that never references the translation catalog — the web app
+// imports it so the dictionary tree-shakes out of the client bundle (HOS-160).
+export { translateApiError, translateApiErrorWithT } from './api-errors';
 // Core configuration — shared (non-admin) only
 export {
     defaultIntlLocale,

@@ -1,0 +1,54 @@
+{
+    "slug": "villa_aurora",
+    "lat": -31.6247717,
+    "long": -58.5051869,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Edificio en pie más antiguo de San Salvador, datado en 1890. Fue sede de la primera administración de la colonia y residencia vinculada con la familia Malarín.",
+    "nameI18n": {
+        "es": "Villa Aurora",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Edificio en pie más antiguo de San Salvador, datado en 1890. Fue sede de la primera administración de la colonia y residencia vinculada con la familia Malarín.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Salvador, Entre Ríos",
+    "keywords": [
+        "villa aurora",
+        "primera administracion",
+        "familia malarin",
+        "1890",
+        "edificio antiguo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/",
+    "notes": "Historia y relevancia confirmadas por la Municipalidad. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

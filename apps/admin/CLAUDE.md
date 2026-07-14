@@ -658,6 +658,60 @@ Destinations and accommodations expose an admin **"FAQs" sub-tab** to create, ed
   `DESTINATION_UPDATE`; accommodations allow `UPDATE_ANY` or `UPDATE_OWN` + ownership, so owning
   hosts can manage their own accommodation FAQs). The routes themselves only require admin-panel access.
 
+## Points of Interest — relation-manager patterns (HOS-144)
+
+Points of interest (`/content/points-of-interest`) expose two admin sub-tabs on
+the VIEW/EDIT pages — **Categories** and **Destinations** — that each pioneer a
+reusable relation-management pattern for future many-to-many / relation-heavy
+entities. Both live under `features/points-of-interest/components/` and are
+mounted via `PointOfInterestSubTabLayout.tsx`.
+
+### Per-row-persisted relation manager (`PoiDestinationRelationManager`)
+
+Mirrors `FaqManager` (see FAQ Management above): each row **saves itself** —
+there is no page-level "Save" button for the whole tab.
+
+- Lists the POI's current destination relations (`PRIMARY` / `NEARBY` badge),
+  each row offering an inline `<select>` to change the relation and a delete
+  button gated by `DeleteConfirmDialog`.
+- An "Add destination" row (a `DestinationSelectField` combobox + a
+  primary/nearby radio group + an Add button) appends a new relation.
+- Every action (`add` / update relation / remove) fires its own mutation
+  immediately via `usePointOfInterestDestinations.ts` hooks
+  (`useAddPointOfInterestDestinationMutation`,
+  `useUpdatePointOfInterestDestinationRelationMutation`,
+  `useRemovePointOfInterestDestinationMutation`) hitting
+  `/api/v1/admin/points-of-interest/:id/destinations[/:destinationId]`.
+- Use this pattern when a relation tab has enough per-item metadata (a
+  relation type, an order, a role) that each row is independently meaningful
+  and should not require re-submitting the whole list to change one row.
+
+### Full-replace relation manager with derived primary (`PoiCategoryManager`)
+
+The opposite persistence model on the same entity — a **form-style "Save"**
+component, not a per-row manager:
+
+- A chip multi-select (`PoiCategorySelectField`) over the full category
+  catalog builds `selectedCategoryIds` in local state.
+- A primary-category radio list is rendered from `selectedCategoryIds`
+  itself — a category not currently selected in the chip field can never
+  appear as a radio option, so it is structurally impossible to submit a
+  `primaryCategoryId` outside the selected set (no post-hoc validation
+  needed for that invariant). Deselecting the current primary's chip clears
+  `primaryCategoryId` via a `useEffect` so the Save button correctly
+  re-disables.
+- Save fires one `useSetPointOfInterestCategoriesMutation` call
+  (`PUT /api/v1/admin/points-of-interest/:id/categories`) with the full
+  `{ categoryIds, primaryCategoryId }` payload — a true full-replace, not a
+  diff. On save failure the in-progress local selection is intentionally
+  **not** reverted, so the operator can retry without re-selecting.
+- Use this pattern when the relation carries no per-row metadata worth
+  editing inline (just membership + a single "primary" flag) and a
+  full-replace PUT is simpler than diffing add/remove calls.
+
+Both components are covered by component tests under
+`features/points-of-interest/components/__tests__/`.
+
 ## Common Gotchas
 
 ### Fresh `pnpm install` requires a workspace build before `pnpm dev`

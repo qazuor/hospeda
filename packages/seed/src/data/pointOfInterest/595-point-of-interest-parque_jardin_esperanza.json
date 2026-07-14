@@ -1,0 +1,54 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "595-point-of-interest-parque_jardin_esperanza",
+    "slug": "parque_jardin_esperanza",
+    "lat": -31.629033599999996,
+    "long": -58.51346219999999,
+    "type": "PARK",
+    "icon": null,
+    "description": "Parque barrial con canchas para básquet y fútbol, obras artísticas y espacios destinados al encuentro y recreación familiar.",
+    "nameI18n": {
+        "es": "Parque Jardín Esperanza",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Parque barrial con canchas para básquet y fútbol, obras artísticas y espacios destinados al encuentro y recreación familiar.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Barrio Jardín Esperanza, San Salvador, Entre Ríos",
+    "keywords": ["parque jardin esperanza", "basquet 3x3", "futbol", "arte barrial", "familia"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/se-inauguro-el-nuevo-parque-jardin-esperanza/",
+    "notes": "Inauguración, equipamiento y uso comunitario confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "044-point-of-interest-arroyo_sauce",
+    "slug": "arroyo_sauce",
+    "lat": -30.9477785,
+    "long": -58.5539306,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Arroyo del ejido municipal integrado a los paisajes naturales y productivos de Santa Ana.",
+    "nameI18n": {
+        "es": "Arroyo Sauce",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Arroyo del ejido municipal integrado a los paisajes naturales y productivos de Santa Ana.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ejido de Santa Ana, Entre Ríos",
+    "keywords": ["arroyo sauce", "naturaleza", "paisaje rural", "aves", "santa ana"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.santaana.gob.ar/home/ciudad/",
+    "notes": "Curso de agua; requiere geometría lineal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        }
+    ]
+}

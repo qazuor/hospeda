@@ -143,10 +143,10 @@ export const AdminEnvSchema = z.object({
     VITE_SENTRY_RELEASE: z.string().optional().describe('Sentry release identifier'),
     VITE_SENTRY_PROJECT: z.string().optional().describe('Sentry project slug'),
     VITE_SENTRY_ENVIRONMENT: z
-        .string()
+        .enum(['production', 'staging'])
         .optional()
         .describe(
-            'Sentry environment tag (production | staging | development). Overrides import.meta.env.MODE so staging and prod (both MODE=production) end up in separate Sentry environments.'
+            'Sentry environment tag (production | staging). Overrides import.meta.env.MODE so staging and prod (both MODE=production) end up in separate Sentry environments. Only ever set explicitly in Coolify for prod/staging — local dev leaves it unset and falls back to MODE.'
         ),
     VITE_SENTRY_CSP_REPORT_URI: z
         .string()

@@ -1,0 +1,45 @@
+{
+    "slug": "escuela_secundaria_della_chiesa",
+    "lat": -33.5008201,
+    "long": -58.8062896,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Institución educativa secundaria y referencia comunitaria del área urbana.",
+    "nameI18n": {
+        "es": "Escuela Secundaria N.º 1 David Della Chiesa",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Institución educativa secundaria y referencia comunitaria del área urbana.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ceibas, Entre Ríos",
+    "keywords": [
+        "escuela david della chiesa",
+        "secundaria ceibas",
+        "educacion",
+        "comunidad"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N11132368105",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "education",
+            "isPrimary": true
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

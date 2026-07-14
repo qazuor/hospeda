@@ -1,0 +1,57 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "758-point-of-interest-reserva_natural",
+    "slug": "reserva_natural",
+    "lat": -33.4912493,
+    "long": -58.6798977,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Área natural de bañados, pastizales, montes y cursos de agua reconocida como uno de los principales destinos de observación de aves del sur entrerriano.",
+    "nameI18n": {
+        "es": "Reserva Natural Ceibas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Área natural de bañados, pastizales, montes y cursos de agua reconocida como uno de los principales destinos de observación de aves del sur entrerriano.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Entorno rural de Ceibas, Entre Ríos",
+    "keywords": [
+        "reserva natural ceibas",
+        "avistaje de aves",
+        "humedales",
+        "pastizales",
+        "bañados",
+        "ecoturismo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/ceibas; https://www.lanacion.com.ar/revista-lugares/meca-internacional-el-pueblo-que-convoca-gente-del-mundo-entero-para-ver-y-fotografiar-aves-nid03082025/",
+    "notes": "Área natural extensa. Falta identificar límites, accesos permitidos y sectores de uso público. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "reserve",
+            "isPrimary": true
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        }
+    ]
+}

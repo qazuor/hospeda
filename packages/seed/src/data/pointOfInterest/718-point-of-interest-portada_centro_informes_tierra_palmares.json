@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "718-point-of-interest-portada_centro_informes_tierra_palmares",
+    "slug": "portada_centro_informes_tierra_palmares",
+    "lat": -31.816523399999994,
+    "long": -58.321273100000006,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Acceso principal al Parque Nacional El Palmar y centro de información regional sobre el área protegida y las localidades que integran Tierra de Palmares.",
+    "nameI18n": {
+        "es": "Portada y Centro de Informes Tierra de Palmares",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Acceso principal al Parque Nacional El Palmar y centro de información regional sobre el área protegida y las localidades que integran Tierra de Palmares.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ruta Nacional 14 km 198, acceso al Parque Nacional El Palmar, Entre Ríos",
+    "keywords": [
+        "portada el palmar",
+        "centro de informes",
+        "tierra de palmares",
+        "entrada parque",
+        "ruta 14"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/horarios-como-llegar",
+    "notes": "Función y ubicación vial confirmadas. Falta geocodificar el edificio de informes. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "services",
+            "isPrimary": true
+        },
+        {
+            "slug": "government",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

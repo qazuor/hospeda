@@ -1,0 +1,54 @@
+{
+    "slug": "concepcion_del_uruguay_museo_ferroviario",
+    "lat": -32.4800172,
+    "long": -58.243522,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Espacio dedicado a la historia del ferrocarril, su personal, herramientas, material rodante y vínculo con el desarrollo regional.",
+    "nameI18n": {
+        "es": "Museo Ferroviario de Concepción del Uruguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio dedicado a la historia del ferrocarril, su personal, herramientas, material rodante y vínculo con el desarrollo regional.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Predio ferroviario de Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "museo ferroviario",
+        "ferrocarril urquiza",
+        "trenes",
+        "patrimonio ferroviario",
+        "historia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/realizar%C3%A1n-el-iv-encuentro-regional-de-museos",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

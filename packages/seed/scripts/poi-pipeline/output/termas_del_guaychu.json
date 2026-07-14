@@ -1,0 +1,54 @@
+{
+    "slug": "termas_del_guaychu",
+    "lat": -32.970819,
+    "long": -58.592959199999996,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Complejo termal con piscinas cubiertas y al aire libre, parque acuático, alojamiento y servicios recreativos.",
+    "nameI18n": {
+        "es": "Termas del Guaychú",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Complejo termal con piscinas cubiertas y al aire libre, parque acuático, alojamiento y servicios recreativos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Autovía Ruta Nacional 14 km 63, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "termas del guaychu",
+        "piscinas termales",
+        "parque acuatico",
+        "ruta 14",
+        "bienestar"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/termas; https://gualeguaychutermal.com.ar/",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "thermal_complex",
+            "isPrimary": true
+        },
+        {
+            "slug": "wellness",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

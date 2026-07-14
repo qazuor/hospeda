@@ -1,6 +1,8 @@
 // Export all entity schemas
 export * from './accommodation/index.js';
+export * from './accommodation-calendar-sync/index.js';
 export * from './accommodation-external/index.js';
+export * from './accommodation-occupancy/index.js';
 export * from './accommodationReview/index.js';
 export * from './ai/index.js';
 export * from './amenity/index.js';
@@ -29,6 +31,7 @@ export * from './ownerPromotion/index.js';
 export * from './partner/index.js';
 export * from './permission/index.js';
 export * from './platformSettings/index.js';
+export * from './poi-category/index.js';
 export * from './point-of-interest/index.js';
 export * from './post/index.js';
 export * from './postSponsor/index.js';

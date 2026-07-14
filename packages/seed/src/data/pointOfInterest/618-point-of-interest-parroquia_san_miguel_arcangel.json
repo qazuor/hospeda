@@ -1,0 +1,42 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "618-point-of-interest-parroquia_san_miguel_arcangel",
+    "slug": "parroquia_san_miguel_arcangel",
+    "lat": -32.46245,
+    "long": -58.47851,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Principal templo católico de Caseros y uno de los edificios representativos del circuito histórico urbano de la localidad.",
+    "nameI18n": {
+        "es": "Parroquia San Miguel Arcángel",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Principal templo católico de Caseros y uno de los edificios representativos del circuito histórico urbano de la localidad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Caseros, Entre Ríos",
+    "keywords": ["san miguel arcangel", "parroquia", "iglesia", "templo", "caseros"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N4097203058",
+    "notes": "Ubicación contrastada con OpenStreetMap mediante Mapcarta. Dirección postal exacta no publicada.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

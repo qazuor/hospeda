@@ -1,0 +1,50 @@
+{
+    "slug": "biblioteca_general_urquiza",
+    "lat": -32.2128543,
+    "long": -58.2177269,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Biblioteca popular de la ciudad, dedicada a la lectura, la educación y el desarrollo de actividades culturales y comunitarias.",
+    "nameI18n": {
+        "es": "Biblioteca Popular General Urquiza",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Biblioteca popular de la ciudad, dedicada a la lectura, la educación y el desarrollo de actividades culturales y comunitarias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San José, Entre Ríos",
+    "keywords": [
+        "biblioteca general urquiza",
+        "biblioteca popular",
+        "libros",
+        "lectura",
+        "cultura"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sanjose.gob.ar/firma-de-convenio-por-el-bibliomovil-en-el-marco-de-la-5ta-feria-popular-del-libro-de-san-jose/; https://mapcarta.com/es/28447862",
+    "notes": "Institución vigente y ubicación urbana confirmadas; falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

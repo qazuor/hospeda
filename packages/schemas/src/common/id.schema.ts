@@ -55,6 +55,9 @@ export type AttractionIdType = z.infer<typeof AttractionIdSchema>;
 export const PointOfInterestIdSchema = BaseIdSchema;
 export type PointOfInterestIdType = z.infer<typeof PointOfInterestIdSchema>;
 
+export const PoiCategoryIdSchema = BaseIdSchema;
+export type PoiCategoryIdType = z.infer<typeof PoiCategoryIdSchema>;
+
 export const HostTradeIdSchema = BaseIdSchema;
 export type HostTradeIdType = z.infer<typeof HostTradeIdSchema>;
 
@@ -241,3 +244,11 @@ export type UserSearchHistoryIdType = z.infer<typeof UserSearchHistoryIdSchema>;
 // === Price Alerts System IDs (SPEC-286) ===
 export const PriceAlertIdSchema = BaseIdSchema;
 export type PriceAlertIdType = z.infer<typeof PriceAlertIdSchema>;
+
+// === Occupancy Calendar IDs (HOS-43) ===
+export const AccommodationOccupancyIdSchema = BaseIdSchema;
+export type AccommodationOccupancyIdType = z.infer<typeof AccommodationOccupancyIdSchema>;
+
+// === Calendar Sync IDs (HOS-157 Phase 2) ===
+export const AccommodationCalendarSyncIdSchema = BaseIdSchema;
+export type AccommodationCalendarSyncIdType = z.infer<typeof AccommodationCalendarSyncIdSchema>;

@@ -1,0 +1,54 @@
+{
+    "slug": "bodega_ianni",
+    "lat": -32.9426503,
+    "long": -58.38503850000001,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Bodega familiar ubicada entre lomadas y vistas del valle, integrada al Camino del Vino y abierta a experiencias enoturísticas.",
+    "nameI18n": {
+        "es": "Bodega Ianni Altos del Gualeguaychú",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Bodega familiar ubicada entre lomadas y vistas del valle, integrada al Camino del Vino y abierta a experiencias enoturísticas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Calle 4 entre 7 y 8, Colonia El Potrero, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "bodega ianni",
+        "altos del gualeguaychu",
+        "vino entrerriano",
+        "colonia el potrero",
+        "degustacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/detalle?id=415; https://gualeguaychu.tur.ar/detalle?id=450",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "winery",
+            "isPrimary": true
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        }
+    ]
+}

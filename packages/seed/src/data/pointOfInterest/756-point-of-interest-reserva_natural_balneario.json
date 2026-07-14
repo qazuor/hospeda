@@ -1,0 +1,61 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "756-point-of-interest-reserva_natural_balneario",
+    "slug": "reserva_natural_balneario",
+    "lat": -32.193597000000004,
+    "long": -58.158560400000006,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Área natural protegida asociada al complejo balneario, con ambientes ribereños y sectores destinados a conservación, observación y educación ambiental.",
+    "nameI18n": {
+        "es": "Reserva Natural Balneario San José",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Área natural protegida asociada al complejo balneario, con ambientes ribereños y sectores destinados a conservación, observación y educación ambiental.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona balnearia de San José, Entre Ríos",
+    "keywords": [
+        "reserva balneario san jose",
+        "reserva natural",
+        "humedal",
+        "aves",
+        "naturaleza",
+        "rio uruguay"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sanjose.gob.ar/con-nueva-politica-de-turismo-sostenible-el-gobierno-municipal-busca-impulsar-el-sector/; https://mapcarta.com/es/N9147097112",
+    "notes": "Área incluida en el circuito sostenible municipal; falta identificar el acceso o centroide oficial. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "reserve",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

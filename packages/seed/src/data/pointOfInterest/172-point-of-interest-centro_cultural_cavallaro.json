@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "172-point-of-interest-centro_cultural_cavallaro",
+    "slug": "centro_cultural_cavallaro",
+    "lat": -30.753518,
+    "long": -57.98232849999999,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Centro cultural municipal con auditorio, salón de usos múltiples y salas para teatro, música, danza, talleres y conferencias.",
+    "nameI18n": {
+        "es": "Centro Cultural Constantino Cavallaro",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Centro cultural municipal con auditorio, salón de usos múltiples y salas para teatro, música, danza, talleres y conferencias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida 9 de Julio y Salvarredy, Chajarí, Entre Ríos",
+    "keywords": [
+        "centro cultural constantino cavallaro",
+        "auditorio",
+        "teatro",
+        "talleres",
+        "9 de julio"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://termaschajari.tur.ar/centro-cultural/; https://chajari.gob.ar/wp-content/uploads/2018/12/GCCH-Programa-1%C2%BA-Foro-de-Ciudades.pdf",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "theater",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        }
+    ]
+}

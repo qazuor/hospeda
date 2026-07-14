@@ -1,0 +1,42 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "716-point-of-interest-polideportivo",
+    "slug": "polideportivo",
+    "lat": -32.444826299999995,
+    "long": -58.43300799999999,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Instalación deportiva municipal utilizada para actividades recreativas, encuentros y prácticas de distintas disciplinas.",
+    "nameI18n": {
+        "es": "Polideportivo de San Justo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Instalación deportiva municipal utilizada para actividades recreativas, encuentros y prácticas de distintas disciplinas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Justo, Entre Ríos",
+    "keywords": ["polideportivo san justo", "deportes", "recreacion", "cancha"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N9066937279",
+    "notes": "La instalación aparece cartografiada cerca del centro; falta identificar el nodo exacto y el acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

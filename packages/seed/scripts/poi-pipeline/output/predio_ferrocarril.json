@@ -1,0 +1,59 @@
+{
+    "slug": "predio_ferrocarril",
+    "lat": -31.7954778,
+    "long": -58.312284,
+    "type": "PARK",
+    "icon": null,
+    "description": "Parque público alrededor de la antigua estación con quinchos, parrillas, juegos, duchas y espacios para eventos y recreación.",
+    "nameI18n": {
+        "es": "Predio del Ferrocarril de Ubajay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Parque público alrededor de la antigua estación con quinchos, parrillas, juegos, duchas y espacios para eventos y recreación.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Boulevard Palmar Yatay, Ubajay, Entre Ríos",
+    "keywords": [
+        "predio ferrocarril ubajay",
+        "quinchos",
+        "parrillas",
+        "juegos",
+        "eventos",
+        "estacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades; https://ubajay.gob.ar/category/obras/espacios-verdes/",
+    "notes": "Servicios y uso comunitario confirmados. Falta geocodificar el polígono. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

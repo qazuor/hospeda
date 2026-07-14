@@ -1,0 +1,58 @@
+{
+    "slug": "plaza_moreno",
+    "lat": -32.1631324,
+    "long": -58.4004902,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plaza urbana dedicada a José María Moreno, amigo del fundador Héctor de Elia, con espacios de descanso y memoriales vinculados con Malvinas.",
+    "nameI18n": {
+        "es": "Plaza Moreno",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plaza urbana dedicada a José María Moreno, amigo del fundador Héctor de Elia, con espacios de descanso y memoriales vinculados con Malvinas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Villa Elisa, Entre Ríos",
+    "keywords": [
+        "plaza moreno",
+        "jose maria moreno",
+        "malvinas",
+        "plaza",
+        "wifi"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://villaelisa.gov.ar/category/villa-elisa-en-qr/page/3/; https://villaelisa.gov.ar/conectate-de-manera-libre-y-gratuita-en-plaza-moreno-y-urquiza-de-villa-elisa/",
+    "notes": "Nombre, historia y uso público confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

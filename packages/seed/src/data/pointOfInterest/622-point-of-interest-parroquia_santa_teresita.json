@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "622-point-of-interest-parroquia_santa_teresita",
+    "slug": "parroquia_santa_teresita",
+    "lat": -31.62546,
+    "long": -58.50591,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Principal templo católico de San Salvador y edificio destacado del eje histórico de calle San Martín.",
+    "nameI18n": {
+        "es": "Parroquia Santa Teresita del Niño Jesús",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Principal templo católico de San Salvador y edificio destacado del eje histórico de calle San Martín.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Martín 359, San Salvador, Entre Ríos",
+    "keywords": [
+        "santa teresita del niño jesus",
+        "parroquia",
+        "iglesia",
+        "calle san martin",
+        "patrona"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/lugares-con-historia-parroquia-santa-teresita-del-nino-jesus/; https://mapcarta.com/es/W622153137",
+    "notes": "Dirección y coordenadas contrastadas con fuentes oficiales y OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

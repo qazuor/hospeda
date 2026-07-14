@@ -23,6 +23,8 @@ export enum PermissionCategoryEnum {
     PAYMENT_METHOD = 'PAYMENT_METHOD',
     PERMISSION = 'PERMISSION',
     POINT_OF_INTEREST = 'POINT_OF_INTEREST',
+    /** POI category catalog (HOS-139). */
+    POI_CATEGORY = 'POI_CATEGORY',
     POST = 'POST',
     POST_COMMENT = 'POST_COMMENT',
     POST_SPONSOR = 'POST_SPONSOR',
@@ -118,6 +120,8 @@ export enum PermissionEnum {
     ACCOMMODATION_IA_SUGGESTIONS_VIEW = 'accommodation.iaSuggestions.view', // Allows viewing AI suggestions for accommodations.
     ACCOMMODATION_IA_CONTENT_APPROVE = 'accommodation.iaContent.approve', // Allows approving AI-generated content for accommodations.
     ACCOMMODATION_SLUG_MANAGE = 'accommodation.slug.manage', // Allows managing accommodation slugs.
+    ACCOMMODATION_OCCUPANCY_MANAGE = 'accommodation.occupancy.manage', // HOS-43: Allows managing (create/toggle/delete) an accommodation's occupancy calendar.
+    ACCOMMODATION_OCCUPANCY_VIEW = 'accommodation.occupancy.view', // HOS-43: Allows viewing an accommodation's occupancy calendar.
 
     // ACCOMMODATION: Granular section permissions
     ACCOMMODATION_BASIC_INFO_EDIT = 'accommodation.basicInfo.edit', // Allows editing basic accommodation information
@@ -522,6 +526,18 @@ export enum PermissionEnum {
     POINT_OF_INTEREST_RESTORE = 'pointOfInterest.restore', // Allows restoring a deleted point of interest.
     POINT_OF_INTEREST_LIFECYCLE_CHANGE = 'pointOfInterest.lifecycle.change', // Allows changing point-of-interest lifecycle state.
     POINT_OF_INTEREST_HARD_DELETE = 'pointOfInterest.hardDelete', // Allows permanently deleting a point of interest.
+
+    // POI_CATEGORY: Permissions related to the POI category catalog + POI assignment (HOS-139).
+    // The assign/unassign/set-primary join operations reuse these (create≈assign,
+    // delete≈unassign, update≈set-primary) rather than minting a dedicated "manage
+    // assignment" permission — mirrors how POINT_OF_INTEREST_CREATE already covers
+    // `addPointOfInterestToDestination` (spec §7.3).
+    POI_CATEGORY_CREATE = 'poiCategory.create', // Allows creating a new POI category (also gates assign).
+    POI_CATEGORY_UPDATE = 'poiCategory.update', // Allows updating a POI category (also gates set-primary).
+    POI_CATEGORY_DELETE = 'poiCategory.delete', // Allows deleting a POI category (soft delete, also gates unassign).
+    POI_CATEGORY_VIEW = 'poiCategory.view', // Allows viewing POI category information.
+    POI_CATEGORY_RESTORE = 'poiCategory.restore', // Allows restoring a deleted POI category.
+    POI_CATEGORY_HARD_DELETE = 'poiCategory.hardDelete', // Allows permanently deleting a POI category.
 
     // CLIENT_ACCESS_RIGHT: Permissions related to client access rights management
     CLIENT_ACCESS_RIGHT_CREATE = 'clientAccessRight.create', // Allows creating a new client access right.

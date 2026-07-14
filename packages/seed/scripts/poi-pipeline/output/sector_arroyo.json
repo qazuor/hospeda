@@ -1,0 +1,50 @@
+{
+    "slug": "sector_arroyo",
+    "lat": -32.1419423,
+    "long": -59.03456259999999,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Sector recreativo del complejo termal y balneario desarrollado junto a un curso de agua y utilizado para descanso y actividades al aire libre.",
+    "nameI18n": {
+        "es": "Sector Arroyo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sector recreativo del complejo termal y balneario desarrollado junto a un curso de agua y utilizado para descanso y actividades al aire libre.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona termal y balnearia de San José, Entre Ríos",
+    "keywords": [
+        "sector arroyo",
+        "arroyo",
+        "naturaleza",
+        "termas",
+        "balneario"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W202761730",
+    "notes": "Existencia cartográfica confirmada; falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

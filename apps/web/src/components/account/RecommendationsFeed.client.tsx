@@ -238,9 +238,11 @@ export function RecommendationsFeed({ locale, apiUrl }: RecommendationsFeedProps
         'No pudimos cargar tus recomendaciones'
     );
 
-    // Same upgrade destination as AlertsList / ExclusiveDealsList (BETA-168):
-    // never introduce a new routing mechanism for the "Ver planes" CTA.
-    const upgradeHref = buildUrl({ locale, path: 'suscriptores/planes' });
+    // Same upgrade destination as AlertsList / ExclusiveDealsList / SearchHistoryList.
+    // This is a tourist-only Área Turista feature — the CTA must point at the
+    // tourist pricing page, not the owner one (BETA-174; previously all four
+    // pointed at `suscriptores/planes`, the owner page, per the stale BETA-168 note).
+    const upgradeHref = buildUrl({ locale, path: 'suscriptores/turistas' });
 
     const fetchFeed = useCallback(async () => {
         if (!isMountedRef.current) return;

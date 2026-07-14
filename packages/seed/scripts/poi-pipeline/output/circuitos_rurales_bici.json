@@ -1,0 +1,55 @@
+{
+    "slug": "circuitos_rurales_bici",
+    "lat": -32.4825673,
+    "long": -58.232021499999995,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Conjunto de recorridos por caminos de tierra, ripio y asfalto para conocer producción, historia, tradiciones y naturaleza del entorno rural.",
+    "nameI18n": {
+        "es": "Circuitos Rurales en Bicicleta",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Conjunto de recorridos por caminos de tierra, ripio y asfalto para conocer producción, historia, tradiciones y naturaleza del entorno rural.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de Urdinarrain, Entre Ríos",
+    "keywords": [
+        "circuitos rurales",
+        "bicicleta",
+        "cicloturismo",
+        "caminos rurales",
+        "naturaleza",
+        "produccion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://urdinarrain.tur.ar/que-hacer/; https://www.argentina.gob.ar/jefatura/turismo/best-tourism-villages-argentina/urdinarrain-entre-rios",
+    "notes": "Oferta oficial confirmada. Falta incorporar cada circuito como geometría separada. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        }
+    ]
+}

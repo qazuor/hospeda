@@ -1,0 +1,49 @@
+{
+    "slug": "rectorado_uner",
+    "lat": -32.485551,
+    "long": -58.230728,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Edificio institucional de valor arquitectónico que alberga el Rectorado de la Universidad Nacional de Entre Ríos.",
+    "nameI18n": {
+        "es": "Rectorado de la Universidad Nacional de Entre Ríos",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Edificio institucional de valor arquitectónico que alberga el Rectorado de la Universidad Nacional de Entre Ríos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Eva Perón 24, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "uner",
+        "rectorado",
+        "universidad nacional",
+        "educacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "education",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "government",
+            "isPrimary": false
+        }
+    ]
+}

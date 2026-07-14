@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "296-point-of-interest-defensa_sur_costanera_sur",
+    "slug": "defensa_sur_costanera_sur",
+    "lat": -32.498014,
+    "long": -58.228078,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Paseo urbano construido como defensa contra inundaciones, con avenida, bicisenda, áreas de descanso, miradores y espacios verdes.",
+    "nameI18n": {
+        "es": "Defensa Sur y Costanera Sur",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paseo urbano construido como defensa contra inundaciones, con avenida, bicisenda, áreas de descanso, miradores y espacios verdes.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Costanera Sur, Concepción del Uruguay, Entre Ríos",
+    "keywords": ["defensa sur", "costanera sur", "bicisenda", "paseo", "mirador"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "waterfront",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}
