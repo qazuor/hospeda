@@ -8,10 +8,24 @@ import { randomUUID } from 'node:crypto';
  *  - nearest-first ordering with a numeric `distanceKm` per item (AC-1/AC-6)
  *  - `{ items: [] }` (never a 404) for a coordinate-less accommodation (AC-2)
  *  - `{ items: [] }` (never a 404) for an unknown slug (AC-2/route contract)
+ *  - `{ items: [] }` (never a leak) for a DRAFT accommodation with coords +
+ *    nearby POIs — visibility enforcement via the gated read (AC-8, HOS-145
+ *    judgment-day #1 fix, 2026-07-14)
  *  - the accommodation's own coordinates never leak into the response body
  *    (AC-4 — the privacy-critical assertion)
  *  - `radius`/`limit` query params are honored and out-of-bounds values are
  *    rejected with 400 (AC-6)
+ *
+ * NOTE (2026-07-14 judgment-day R-4): the proximity search is centered on the
+ * accommodation's OBFUSCATED `approximateLocation` (SPEC-097), not its real
+ * coordinate — see `AccommodationService.getNearbyPois`. Distances therefore
+ * carry a small (<=~141m) deterministic-per-accommodation offset from the
+ * true distance. The near/mid/far POI fixtures below use wide margins
+ * (60m / 1.9km / 22km, against a 0.5km narrow-radius test and the 5km
+ * default / 20km max radii) specifically so ordering/inclusion assertions
+ * stay correct regardless of that offset — assertions here intentionally
+ * check ordering, membership, and `typeof distanceKm === 'number'`, never an
+ * exact distance value tied to the real coordinate.
  *
  * Uses testDb.setup()/clean()/teardown() + direct `getDb()` inserts, mirroring
  * `test/integration/destination/detail-includes-points-of-interest.test.ts`.
@@ -40,6 +54,7 @@ describe('GET /accommodations/:slug/nearby-pois (HOS-145 T-005)', () => {
 
     let slugWithCoords: string;
     let slugWithoutCoords: string;
+    let slugDraft: string;
     const unknownSlug = `hos145-t005-unknown-${ts}`;
 
     let poiNearSlug: string;
@@ -95,6 +110,25 @@ describe('GET /accommodations/:slug/nearby-pois (HOS-145 T-005)', () => {
             destinationId: destId,
             lifecycleState: 'ACTIVE',
             visibility: 'PUBLIC'
+        } as typeof accommodations.$inferInsert);
+
+        // DRAFT + coords + nearby POIs — must NOT leak proximity data to an
+        // anonymous actor (HOS-145 judgment-day #1: visibility bypass fix).
+        // Uses the SAME coordinates as `slugWithCoords` so a would-be leak
+        // would surface the exact same near/mid POIs if the visibility gate
+        // were not enforced.
+        slugDraft = `hos145-t005-acc-draft-${ts}`;
+        await db.insert(accommodations).values({
+            slug: slugDraft,
+            name: 'HOS-145 T-005 Accommodation DRAFT',
+            summary: 'DRAFT accommodation seeded with real coordinates — must not leak.',
+            type: 'APARTMENT',
+            description: 'Accommodation seeded for the HOS-145 T-005 nearby-POIs integration test.',
+            ownerId,
+            destinationId: destId,
+            lifecycleState: 'DRAFT',
+            visibility: 'PUBLIC',
+            location: { coordinates: { lat: accLat, long: accLong } }
         } as typeof accommodations.$inferInsert);
 
         // ~0.06km from the accommodation
@@ -205,6 +239,17 @@ describe('GET /accommodations/:slug/nearby-pois (HOS-145 T-005)', () => {
 
     it('returns 200 { items: [] } for an unknown slug — never 404', async () => {
         const res = await app.request(`${base}/${unknownSlug}/nearby-pois`, {
+            headers: { 'user-agent': 'vitest', Accept: 'application/json' }
+        });
+
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.success).toBe(true);
+        expect(body.data.items).toEqual([]);
+    });
+
+    it('AC-8: returns 200 { items: [] } for a DRAFT accommodation with coords + nearby POIs — never leaks proximity data to an anonymous actor', async () => {
+        const res = await app.request(`${base}/${slugDraft}/nearby-pois`, {
             headers: { 'user-agent': 'vitest', Accept: 'application/json' }
         });
 
