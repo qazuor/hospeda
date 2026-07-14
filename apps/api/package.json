@@ -83,16 +83,16 @@
         "@sentry/esbuild-plugin": "^5.1.1",
         "@types/bcryptjs": "^3.0.0",
         "@types/lru-cache": "^7.10.10",
-        "@types/node": "^26.0.1",
+        "@types/node": "^26.1.0",
         "@types/node-cron": "^3.0.11",
         "@types/pg": "^8.20.0",
         "@types/sanitize-html": "^2.16.1",
-        "@vitest/coverage-v8": "^4.1.9",
+        "@vitest/coverage-v8": "^4.1.10",
         "tsup": "^8.5.1",
-        "tsx": "^4.22.4",
+        "tsx": "^4.23.0",
         "typescript": "6.0.3",
         "vite-tsconfig-paths": "^6.1.1",
-        "vitest": "^4.1.9"
+        "vitest": "^4.1.10"
     },
     "optionalDependencies": {
         "node-cron": "^4.6.0"
