@@ -17,12 +17,17 @@ const LOCALE_FALLBACK_ORDER = ['es', 'en', 'pt'] as const;
 /**
  * Partial i18n text shape accepted defensively when the raw API response
  * has not been parsed through a strict Zod schema (e.g. inside transforms.ts
- * where the raw value arrives as `unknown`).
+ * where the raw value arrives as `unknown`), or when it comes from a schema
+ * that intentionally allows `null` for untranslated locales (e.g.
+ * `PartialI18nTextSchema` — HOS-138/HOS-145 `nameI18n`/`descriptionI18n`
+ * fields for bulk, Spanish-sourced imports where `en`/`pt` are left `null`
+ * rather than invented at import time).
  *
- * All three locales are optional here so the helper can still extract
- * a value from incomplete payloads without throwing at the type level.
+ * All three locales are optional and nullable here so the helper can still
+ * extract a value from incomplete or partially-translated payloads without
+ * throwing at the type level.
  */
-export type I18nTextLike = Partial<I18nText>;
+export type I18nTextLike = { readonly [K in keyof I18nText]?: I18nText[K] | null };
 
 /**
  * Resolves a localized text value to a displayable string for the given locale.

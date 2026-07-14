@@ -1,0 +1,175 @@
+---
+/**
+ * @file WhatsNearbySection.astro
+ * @description "What's nearby" section for the accommodation detail page
+ * (HOS-145 T-008). Purely presentational — it does NOT fetch data; it
+ * receives an already-fetched `NearbyPoi[]` list as props (the SSR fetch is
+ * T-009). Mirrors `DestinationPOISection.astro`'s structure, i18n
+ * resolution, empty convention, and scoped-`<style>` grid approach, adding
+ * a per-card distance badge (`formatDistanceKm`) since `NearbyPoi` extends
+ * the public POI schema with `distanceKm` (great-circle distance from the
+ * accommodation).
+ *
+ * Each card shows: a type-derived icon, the display name (resolves
+ * admin-editable multilang `nameI18n`, degrading to a humanized slug when
+ * absent — see `poi-labels.ts`), a translated type label
+ * (`destinations.poiTypeLabels.<TYPE>`), the distance from the
+ * accommodation, and an optional 2-line description. `NearbyPoi` (derived
+ * from `PointOfInterestPublicSchema`) only carries the legacy plain-text
+ * `description` field — no `descriptionI18n` — so unlike
+ * `DestinationPOISection.astro` there is no multilang description to
+ * resolve here. Ordered by ascending distance — the backend already
+ * returns nearest-first, but this component sorts defensively so the
+ * presentational contract is self-contained. Renders nothing when there
+ * are no nearby POIs.
+ */
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { formatDistanceKm } from '@/lib/format-distance';
+import { translatePoiName, translatePoiTypeLabel } from '@/lib/poi-labels';
+import { getPointOfInterestTypeIcon } from '@/lib/poi-type-icons';
+import type { NearbyPoi } from '@repo/schemas';
+
+interface Props {
+	readonly pointsOfInterest: ReadonlyArray<NearbyPoi>;
+	readonly locale: SupportedLocale;
+}
+
+const { pointsOfInterest, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+if (!pointsOfInterest || pointsOfInterest.length === 0) return;
+
+const sorted = [...pointsOfInterest]
+	.map((poi) => ({
+		...poi,
+		displayName: translatePoiName({ slug: poi.slug, nameI18n: poi.nameI18n, locale }),
+		distanceLabel: formatDistanceKm({ distanceKm: poi.distanceKm, locale })
+	}))
+	.sort((a, b) => a.distanceKm - b.distanceKm);
+---
+
+<section class="nearby-poi-section" aria-labelledby="nearby-poi-section-title">
+	<h2 class="nearby-poi-section__title" id="nearby-poi-section-title">
+		{t('accommodations.detail.nearbyPoi.title', 'Qué hay cerca')}
+	</h2>
+
+	<div class="nearby-poi-section__grid">
+		{sorted.map((poi) => {
+			const Icon = getPointOfInterestTypeIcon({ type: poi.type });
+			const typeLabel = translatePoiTypeLabel({ t, type: poi.type });
+			return (
+				<div class="nearby-poi-section__card">
+					<span class="nearby-poi-section__icon" aria-hidden="true">
+						<Icon size={28} weight="fill" aria-hidden="true" />
+					</span>
+					<h3 class="nearby-poi-section__name">{poi.displayName}</h3>
+					<div class="nearby-poi-section__meta">
+						<span class="nearby-poi-section__type-badge">{typeLabel}</span>
+						<span class="nearby-poi-section__distance">{poi.distanceLabel}</span>
+					</div>
+					{poi.description && (
+						<p class="nearby-poi-section__description">{poi.description}</p>
+					)}
+				</div>
+			);
+		})}
+	</div>
+</section>
+
+<style>
+	.nearby-poi-section {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+
+	.nearby-poi-section__title {
+		font-family: var(--font-heading);
+		font-size: 1.5rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+		margin: 0;
+	}
+
+	.nearby-poi-section__grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+
+	@media (min-width: 640px) {
+		.nearby-poi-section__grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.nearby-poi-section__grid {
+			grid-template-columns: repeat(4, 1fr);
+		}
+	}
+
+	.nearby-poi-section__card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		padding: 1.25rem;
+		background-color: var(--core-card);
+		border-radius: var(--radius-card);
+		box-shadow: var(--shadow-card);
+		transition: box-shadow var(--duration-fast) ease;
+	}
+
+	.nearby-poi-section__card:hover {
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	.nearby-poi-section__icon {
+		display: inline-flex;
+		color: var(--brand-primary);
+	}
+
+	.nearby-poi-section__name {
+		font-family: var(--font-heading);
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+		margin: 0;
+	}
+
+	.nearby-poi-section__meta {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.nearby-poi-section__type-badge {
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--brand-primary);
+		background-color: var(--surface-warm);
+		border-radius: var(--radius-pill);
+		padding: 0.25rem 0.75rem;
+	}
+
+	.nearby-poi-section__distance {
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--core-muted-foreground);
+	}
+
+	.nearby-poi-section__description {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		color: var(--core-muted-foreground);
+		margin: 0;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+</style>
