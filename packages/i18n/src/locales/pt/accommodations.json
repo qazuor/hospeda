@@ -550,6 +550,9 @@
             "title": "Localização",
             "mapPlaceholder": "Mapa em breve"
         },
+        "nearbyPoi": {
+            "title": "O que há por perto"
+        },
         "related": {
             "similar": "Alojamentos similares",
             "byOwner": "Outros alojamentos de {name}",

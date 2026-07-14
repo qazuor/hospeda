@@ -550,6 +550,9 @@
             "title": "Location",
             "mapPlaceholder": "Map coming soon"
         },
+        "nearbyPoi": {
+            "title": "What's nearby"
+        },
         "related": {
             "similar": "Similar accommodations",
             "byOwner": "Other properties by {name}",
