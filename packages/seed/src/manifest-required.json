@@ -108,6 +108,7 @@
         "011-point-of-interest-parque_nacional_el_palmar.json",
         "012-point-of-interest-termas_de_federacion.json"
     ],
+    "pointOfInterestCatalog": [],
     "poiCategories": [
         "001-poi-category-historic_site.json",
         "002-poi-category-recreation.json",
