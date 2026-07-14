@@ -806,6 +806,37 @@ describe('PointOfInterestCategoryService', () => {
             );
         });
 
+        it('should carry the per-POI isPrimary flag on each returned category (HOS-144)', async () => {
+            // GET must be symmetric with what setCategoriesForPointOfInterest
+            // (PUT) already returns — the admin category-manager UI needs
+            // isPrimary here to pre-select the primary category on load.
+            asMock(pointOfInterestModel.findOne).mockResolvedValue(poi);
+            asMock(relatedModel.findAll).mockResolvedValue({
+                items: [
+                    { pointOfInterestId: poiId, categoryId, isPrimary: true },
+                    { pointOfInterestId: poiId, categoryId: otherCategoryId, isPrimary: false }
+                ]
+            });
+            asMock(model.findAll).mockResolvedValue({ items: [category, wineryCategory] });
+
+            const result = await service.getCategoriesForPointOfInterest(actorWithView, {
+                pointOfInterestId: poiId,
+                page: 1,
+                pageSize: 10
+            });
+
+            expect(result.error).toBeUndefined();
+            const categories = result.data?.categories ?? [];
+            expect(categories).toHaveLength(2);
+
+            // Sorted by displayWeight descending: wineryCategory (80) first,
+            // museum category (50) second.
+            const winery = categories.find((c) => c.id === wineryCategory.id);
+            const museum = categories.find((c) => c.id === categoryId);
+            expect(winery?.isPrimary).toBe(false);
+            expect(museum?.isPrimary).toBe(true);
+        });
+
         it('should return an empty array when the POI has no categories', async () => {
             asMock(pointOfInterestModel.findOne).mockResolvedValue(poi);
             asMock(relatedModel.findAll).mockResolvedValue({ items: [] });

@@ -2150,6 +2150,9 @@
         },
         "occupancySource": {
             "invalid": "The occupancy source is invalid"
+        },
+        "calendarSyncStatus": {
+            "invalid": "The calendar sync status is invalid"
         }
     },
     "event": {
@@ -4379,6 +4382,30 @@
         },
         "range": {
             "fromBeforeTo": "The start date must be before the end date"
+        },
+        "updatedAt": {
+            "required": "The update date is required"
+        }
+    },
+    "accommodationCalendarSync": {
+        "accessTokenAuthTag": {
+            "required": "The access token auth tag is required"
+        },
+        "accessTokenCiphertext": {
+            "required": "The access token ciphertext is required"
+        },
+        "accessTokenIv": {
+            "required": "The access token IV is required"
+        },
+        "createdAt": {
+            "required": "The creation date is required"
+        },
+        "externalCalendarId": {
+            "max": "The external calendar ID cannot exceed 255 characters",
+            "required": "The external calendar ID is required"
+        },
+        "isActive": {
+            "required": "The active status is required"
         },
         "updatedAt": {
             "required": "The update date is required"

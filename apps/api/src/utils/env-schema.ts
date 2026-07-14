@@ -498,9 +498,15 @@ export const ApiEnvBaseSchema = z.object({
      * for Sentry event tagging — lets prod and staging both run with
      * NODE_ENV=production (preserving prod-like behavior like
      * tracesSampleRate>0) while still separating events in the Sentry
-     * dashboard. Recommended values: `production`, `staging`.
+     * dashboard.
+     *
+     * Only `production` and `staging` are ever set explicitly (see
+     * `docs/runbooks/sentry-setup.md` "Values by Environment" table).
+     * Local dev never sets this var — it falls back to `NODE_ENV` instead
+     * (see `apps/api/src/lib/sentry.ts`), so `development`/`test` are
+     * intentionally NOT valid explicit values here.
      */
-    HOSPEDA_SENTRY_ENVIRONMENT: z.string().optional(),
+    HOSPEDA_SENTRY_ENVIRONMENT: z.enum(['production', 'staging']).optional(),
 
     // Media / Cloudinary
     /** Cloudinary cloud name (cloud_name in Cloudinary dashboard) */
@@ -651,6 +657,12 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_MERCADOLIBRE_CLIENT_SECRET: z.string().optional(),
     /** MercadoLibre OAuth redirect URI registered on the ML app (HOS-45 OAuth refresh flow) */
     HOSPEDA_MERCADOLIBRE_REDIRECT_URI: z.string().optional(),
+    /** Google OAuth app client ID for the Google Calendar occupancy sync (HOS-157 Phase 2). Optional: required only in environments where the Google Calendar sync tier is enabled. */
+    HOSPEDA_GOOGLE_CALENDAR_CLIENT_ID: z.string().optional(),
+    /** Google OAuth app client secret for the Google Calendar occupancy sync (HOS-157 Phase 2) */
+    HOSPEDA_GOOGLE_CALENDAR_CLIENT_SECRET: z.string().optional(),
+    /** Google OAuth redirect URI registered on the Google Calendar sync OAuth client (HOS-157 Phase 2) */
+    HOSPEDA_GOOGLE_CALENDAR_REDIRECT_URI: z.string().optional(),
     /**
      * AES-256-GCM master key for the OAuth credentials vault (HOS-45). Provider-agnostic
      * name (NOT ML-specific) because the encrypted credentials table is designed to extend

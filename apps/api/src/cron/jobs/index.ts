@@ -21,6 +21,7 @@ export { appLogPurgeJob } from './app-log-purge.job.js';
 export { applyScheduledPlanChangesJob } from './apply-scheduled-plan-changes.js';
 export { archiveAbandonedDraftsJob } from './archive-abandoned-drafts.job.js';
 export { archiveExpiredPromotionsJob } from './archive-expired-promotions.job.js';
+export { calendarSyncGoogleJob } from './calendar-sync-google.job.js';
 export { cloudinaryE2eCleanupJob } from './cloudinary-e2e-cleanup.job.js';
 export { conversationNotificationJob } from './conversation-notification.job.js';
 export { conversationTokenCleanupJob } from './conversation-token-cleanup.job.js';

@@ -48,6 +48,8 @@ import { webLogger } from '@/lib/logger';
 import { CalendarDayCell } from './CalendarDayCell.client';
 import { CalendarLegend } from './CalendarLegend.client';
 import styles from './CalendarSection.module.css';
+import { CalendarSyncPanel } from './CalendarSyncPanel.client';
+import { PlanEntitlementGate } from './PlanEntitlementGate.client';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -240,6 +242,24 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                     'Marcá los días en los que tu alojamiento está ocupado. Esas fechas no aparecerán disponibles en las búsquedas.'
                 )}
             </p>
+
+            {/*
+             * Google Calendar sync panel — only for hosts whose plan grants
+             * can_sync_external_calendar. The empty-fragment fallback suppresses
+             * the gate's default upgrade box (passing `null` would fall through
+             * to it), so hosts without the entitlement simply see the manual
+             * calendar below with no clutter.
+             */}
+            <PlanEntitlementGate
+                entitlementKey="can_sync_external_calendar"
+                locale={locale}
+                fallback={<></>}
+            >
+                <CalendarSyncPanel
+                    locale={locale}
+                    accommodationId={accommodationId}
+                />
+            </PlanEntitlementGate>
 
             <div className={styles.monthHeader}>
                 <button

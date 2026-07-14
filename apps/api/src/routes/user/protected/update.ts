@@ -3,6 +3,7 @@
  * Allows users to update their own profile
  */
 import {
+    BirthDateHttpInputSchema,
     ServiceErrorCode,
     UserIdSchema,
     UserSelfSchema,
@@ -17,12 +18,17 @@ import {
  * web-scoped allowlist so Zod cannot inject admin defaults that would
  * later cause a spurious 403. See `patch.ts` for the full rationale.
  *
+ * `birthDate` is overridden with `BirthDateHttpInputSchema` (BETA-34): see
+ * that schema's JSDoc for why the domain `z.date()` field cannot be used
+ * directly on an HTTP request schema.
+ *
  * SPEC-096 / REQ-096-05 / T-032.
  */
 const UserProtectedUpdateInputSchema = UserUpdateInputSchema.omit({
     settings: true
 }).extend({
-    settings: UserSettingsWebPatchSchema.optional()
+    settings: UserSettingsWebPatchSchema.optional(),
+    birthDate: BirthDateHttpInputSchema
 });
 
 import { ServiceError, UserService } from '@repo/service-core';
@@ -30,6 +36,7 @@ import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { withDomainBirthDate } from '../../../utils/user-birth-date';
 import { userCache } from '../../../utils/user-cache';
 
 /**
@@ -91,7 +98,10 @@ export const protectedUpdateUserRoute = createProtectedRoute({
     ) => {
         const actor = getActorFromContext(ctx);
         const { id } = params;
-        const userData = body as UserUpdateInput;
+        // `birthDate` arrives as a `YYYY-MM-DD` string / `''` / `null` per
+        // `BirthDateHttpInputSchema` and is converted to the domain `Date |
+        // null` shape `UserService.update` expects (BETA-34).
+        const userData = withDomainBirthDate(body) as UserUpdateInput;
 
         // Field-level permissions: `UserProtectedUpdateInputSchema` constrains
         // `settings` to the web-scoped allowlist at the validator layer, so

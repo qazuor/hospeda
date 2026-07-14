@@ -12,6 +12,11 @@ import { addFaqRoute } from './addFaq';
 import { protectedAddMediaRoute } from './addMedia';
 import { protectedAddOccupancyRoute } from './addOccupancy';
 import { protectedBatchOccupancyRoute } from './batchOccupancy';
+import { protectedCalendarConnectGoogleRoute } from './calendarConnectGoogle';
+import { protectedCalendarDisconnectRoute } from './calendarDisconnect';
+import { protectedCalendarGoogleCallbackRoute } from './calendarGoogleCallback';
+import { protectedCalendarSyncRoute } from './calendarSync';
+import { protectedCalendarSyncStatusRoute } from './calendarSyncStatus';
 import { compareAccommodationsRoute } from './compare';
 import { protectedGetContactRoute } from './contact';
 import { protectedCreateAccommodationRoute } from './create';
@@ -111,6 +116,17 @@ app.route('/', protectedGetOccupancyRoute);
 app.route('/', protectedAddOccupancyRoute);
 app.route('/', protectedBatchOccupancyRoute);
 app.route('/', protectedRemoveOccupancyRoute);
+
+// Google Calendar sync (HOS-157 Phase 2). Auth required; ownership + MANAGE
+// enforced inline, CAN_SYNC_EXTERNAL_CALENDAR at the route on connect/sync.
+// The callback is a FIXED path (no :id) matching the registered Google redirect
+// URI — registered before the /:id calendar-sync routes for clarity (Hono
+// matches the all-literal path unambiguously either way).
+app.route('/', protectedCalendarGoogleCallbackRoute);
+app.route('/', protectedCalendarConnectGoogleRoute);
+app.route('/', protectedCalendarSyncRoute);
+app.route('/', protectedCalendarSyncStatusRoute);
+app.route('/', protectedCalendarDisconnectRoute);
 
 // FAQ management (auth required, no ownership)
 app.route('/', getFaqsRoute);

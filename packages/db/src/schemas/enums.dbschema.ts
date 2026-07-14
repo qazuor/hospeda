@@ -4,6 +4,7 @@ import {
     AmenitiesTypeEnum,
     AuthProviderEnum,
     BillingIntervalEnum,
+    CalendarSyncStatusEnum,
     ClientTypeEnum,
     ConversationStatusEnum,
     DestinationTypeEnum,
@@ -379,4 +380,14 @@ export const PartnerSubscriptionStatusPgEnum = pgEnum(
 export const OccupancySourcePgEnum = pgEnum(
     'occupancy_source_enum',
     enumToTuple(OccupancySourceEnum)
+);
+
+/**
+ * PostgreSQL enum for the outcome of the most recent sync attempt on an
+ * `accommodation_calendar_sync` row (HOS-157 Phase 2). Values: PENDING, OK,
+ * ERROR.
+ */
+export const CalendarSyncStatusPgEnum = pgEnum(
+    'calendar_sync_status_enum',
+    enumToTuple(CalendarSyncStatusEnum)
 );

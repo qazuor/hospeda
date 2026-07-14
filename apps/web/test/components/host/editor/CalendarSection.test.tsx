@@ -65,6 +65,13 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
     }
 }));
 
+// The Google-sync panel (HOS-157) is gated + covered by its own test; render
+// nothing here so this suite stays focused on the manual occupancy grid and
+// never touches the entitlements hook / calendar-sync API.
+vi.mock('@/components/host/editor/PlanEntitlementGate.client', () => ({
+    PlanEntitlementGate: () => null
+}));
+
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------

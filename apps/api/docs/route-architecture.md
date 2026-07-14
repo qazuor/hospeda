@@ -232,7 +232,8 @@ The following entities use the three-tier structure:
 | `amenity` | yes | yes | yes |
 | `feature` | yes | yes | yes |
 | `attraction` | yes | yes | yes |
-| `point-of-interest` | yes | no | no (seed-only, HOS-113 NG-5) |
+| `point-of-interest` | yes | no | yes (HOS-143) |
+| `poi-category` | no | no | yes (list/search catalog only, HOS-144 NG-1) |
 | `tag` | yes | no | yes |
 | `event-location` | yes | yes | yes |
 | `event-organizer` | yes | yes | yes |

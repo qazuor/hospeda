@@ -2150,6 +2150,9 @@
         },
         "occupancySource": {
             "invalid": "El origen de ocupación no es válido"
+        },
+        "calendarSyncStatus": {
+            "invalid": "El estado de sincronización del calendario no es válido"
         }
     },
     "event": {
@@ -4379,6 +4382,30 @@
         },
         "range": {
             "fromBeforeTo": "La fecha inicial debe ser anterior a la fecha final"
+        },
+        "updatedAt": {
+            "required": "La fecha de actualización es obligatoria"
+        }
+    },
+    "accommodationCalendarSync": {
+        "accessTokenAuthTag": {
+            "required": "El auth tag del token de acceso es obligatorio"
+        },
+        "accessTokenCiphertext": {
+            "required": "El texto cifrado del token de acceso es obligatorio"
+        },
+        "accessTokenIv": {
+            "required": "El IV del token de acceso es obligatorio"
+        },
+        "createdAt": {
+            "required": "La fecha de creación es obligatoria"
+        },
+        "externalCalendarId": {
+            "max": "El ID del calendario externo no puede superar los 255 caracteres",
+            "required": "El ID del calendario externo es obligatorio"
+        },
+        "isActive": {
+            "required": "El estado activo es obligatorio"
         },
         "updatedAt": {
             "required": "La fecha de actualización es obligatoria"

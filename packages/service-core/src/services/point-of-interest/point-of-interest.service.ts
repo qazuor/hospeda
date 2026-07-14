@@ -26,6 +26,8 @@ import {
     NearbyPoiSchema,
     type PointOfInterestAddToDestinationInput,
     PointOfInterestAddToDestinationInputSchema,
+    type PointOfInterestAdminSearch,
+    PointOfInterestAdminSearchSchema,
     PointOfInterestCreateInputSchema,
     PointOfInterestDestinationRelationEnum,
     type PointOfInterestListWithCountsResponse,
@@ -46,6 +48,7 @@ import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import {
     type Actor,
+    type AdminSearchExecuteParams,
     type PaginatedListOutput,
     type ServiceConfig,
     type ServiceContext,
@@ -119,6 +122,17 @@ export class PointOfInterestService extends BaseCrudRelatedService<
     public readonly createSchema = PointOfInterestCreateInputSchema;
     public readonly updateSchema = PointOfInterestUpdateInputSchema;
     public readonly searchSchema = PointOfInterestSearchInputSchema;
+    /**
+     * HOS-144 regression fix (HOS-143 gap): `adminList()` throws
+     * `CONFIGURATION_ERROR` when `adminSearchSchema` is unset (see
+     * `BaseCrudRead.adminList`). Unlike `AmenityService`/`AttractionService`,
+     * this schema is NOT safe to pair with the base `_executeAdminSearch`
+     * default: `destinationId`/`categoryId` are M2M join-table filters, not
+     * plain columns on `points_of_interest` (same reason `buildSearchWhere`
+     * excludes them — see its docstring). `_executeAdminSearch` is overridden
+     * below to resolve them the same way `_executeSearch` does.
+     */
+    public readonly adminSearchSchema = PointOfInterestAdminSearchSchema;
 
     protected getDefaultListRelations() {
         return undefined;
@@ -985,6 +999,75 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         }
         const count = await this.model.count(where, { additionalConditions });
         return { count };
+    }
+
+    /**
+     * Admin-list query executor (HOS-144 regression fix). Overrides the base
+     * default because `PointOfInterestAdminSearchSchema` includes
+     * `destinationId`/`categoryId`, which are M2M join-table filters, not
+     * plain columns on `points_of_interest` — passing them straight through
+     * to `model.findAll`'s `where` clause (the base default's behavior) would
+     * throw an unknown-column `DbError` or be silently dropped, exactly as
+     * documented on {@link buildSearchWhere}.
+     *
+     * Mirrors {@link _executeSearch}: extracts `destinationId`/`categoryId`
+     * from `entityFilters`, resolves them via {@link resolveRelationFilters}
+     * into `id IN (...)` conditions, and passes the remaining plain-column
+     * filters (`type`, `isFeatured`, `isBuiltin`, `hasOwnPage`, `verified`)
+     * straight through to `model.findAll`'s `where` clause alongside the
+     * base admin `where` (status, soft-delete, date range).
+     *
+     * @param params - The assembled admin search parameters from `adminList()`.
+     * @returns A paginated list of matching points of interest.
+     */
+    protected async _executeAdminSearch(
+        params: AdminSearchExecuteParams<
+            Omit<
+                PointOfInterestAdminSearch,
+                | 'page'
+                | 'pageSize'
+                | 'search'
+                | 'sort'
+                | 'status'
+                | 'includeDeleted'
+                | 'createdAfter'
+                | 'createdBefore'
+            >
+        >
+    ): Promise<PaginatedListOutput<PointOfInterest>> {
+        const { where, entityFilters, pagination, sort, search, extraConditions, ctx } = params;
+        const { destinationId, categoryId, ...plainFilters } = entityFilters;
+
+        const { empty, additionalConditions } = await this.resolveRelationFilters({
+            destinationId,
+            categoryId,
+            categorySlug: undefined
+        });
+        if (empty) {
+            return { items: [], total: 0 };
+        }
+
+        const mergedWhere: Record<string, unknown> = { ...where, ...plainFilters };
+
+        const conditions: SQL[] = [...additionalConditions];
+        if (search) {
+            conditions.push(search);
+        }
+        if (extraConditions) {
+            conditions.push(...extraConditions);
+        }
+
+        return this.model.findAll(
+            mergedWhere,
+            {
+                page: pagination.page,
+                pageSize: pagination.pageSize,
+                sortBy: sort.sortBy,
+                sortOrder: sort.sortOrder
+            },
+            conditions.length > 0 ? conditions : undefined,
+            ctx?.tx
+        );
     }
 
     /**

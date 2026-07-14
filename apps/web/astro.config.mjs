@@ -9,6 +9,7 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { validateWebEnv } from './src/env.ts';
 import { ALLOWED_REMOTE_HOSTS } from './src/lib/media.ts';
 import { buildSitemapAlternateLinks, isExcludedSitemapPage } from './src/lib/seo-config.ts';
+import { resolveSourcemapSetting } from './src/lib/sourcemap-config.ts';
 
 const rootDir = resolve(new URL('.', import.meta.url).pathname, '../../');
 const appDir = resolve(new URL('.', import.meta.url).pathname);
@@ -138,7 +139,15 @@ export default defineConfig({
                   sentry({
                       org: 'qazuor',
                       project: 'hospeda-web',
-                      authToken: process.env.SENTRY_AUTH_TOKEN
+                      authToken: process.env.SENTRY_AUTH_TOKEN,
+                      // BETA-66: delete the generated `.map` files from the
+                      // output directory once they have been uploaded to
+                      // Sentry, so they never ship to the client/CDN. Paired
+                      // with the explicit `vite.build.sourcemap: 'hidden'`
+                      // below (parity with the admin app's Vite config).
+                      sourcemaps: {
+                          filesToDeleteAfterUpload: ['**/*.map']
+                      }
                   })
               ]
             : []),
@@ -266,6 +275,13 @@ export default defineConfig({
                     process.env.PUBLIC_SENTRY_RELEASE ||
                     ''
             )
+        },
+        build: {
+            // BETA-66: source maps hardening. See resolveSourcemapSetting()
+            // for the gating rationale (tested in
+            // test/lib/sourcemap-config.test.ts). Matches the admin app's
+            // Vite `build.sourcemap` config (apps/admin/vite.config.ts).
+            sourcemap: resolveSourcemapSetting({ authToken: process.env.SENTRY_AUTH_TOKEN })
         }
     }
 });

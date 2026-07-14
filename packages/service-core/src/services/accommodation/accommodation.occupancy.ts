@@ -424,3 +424,61 @@ export async function removeOccupancy(params: RemoveOccupancyInput): Promise<{ d
     });
     return { deleted: deletedCount > 0 };
 }
+
+// ---------------------------------------------------------------------------
+// Reusable ownership guards (HOS-157 Phase 2 — calendar sync route layer)
+// ---------------------------------------------------------------------------
+
+/**
+ * Input for {@link assertOccupancyManageAccess} / {@link assertOccupancyReadAccess}.
+ */
+export interface AssertOccupancyAccessInput {
+    /** The actor whose access is being checked. */
+    readonly actor: Actor;
+    /** The accommodation the actor is trying to act on. */
+    readonly accommodationId: string;
+}
+
+/**
+ * Asserts the actor may MANAGE the accommodation's occupancy calendar
+ * (`ACCOMMODATION_OCCUPANCY_MANAGE` + ownership, or the `ACCOMMODATION_UPDATE_ANY`
+ * staff bypass), reusing the exact same gate as the manual write endpoints.
+ *
+ * Exposed for the Phase 2 Google Calendar sync routes (in `apps/api`, which
+ * hold the OAuth/vault code and cannot live in service-core) so they enforce
+ * the identical ownership + permission model without duplicating it. The
+ * `CAN_SYNC_EXTERNAL_CALENDAR` billing entitlement is enforced separately at
+ * the route via `requireEntitlement` (same split as `CAN_USE_CALENDAR` for the
+ * manual endpoints — see this module's doc).
+ *
+ * @param input - Actor and accommodation id.
+ * @returns The fetched accommodation (owner resolved).
+ * @throws {ServiceError} `NOT_FOUND` when the accommodation does not exist or is
+ * soft-deleted. `FORBIDDEN` when the actor lacks manage access.
+ */
+export async function assertOccupancyManageAccess(
+    input: AssertOccupancyAccessInput
+): Promise<Accommodation> {
+    const accommodation = await getAccommodationOrThrow(input.accommodationId);
+    assertManageAccess(input.actor, accommodation);
+    return accommodation;
+}
+
+/**
+ * Asserts the actor may READ the accommodation's occupancy calendar
+ * (ownership, or the `ACCOMMODATION_UPDATE_ANY` staff bypass) — no entitlement
+ * or MANAGE permission required, matching the read gate of the manual
+ * endpoints. Used by the Phase 2 sync-status route.
+ *
+ * @param input - Actor and accommodation id.
+ * @returns The fetched accommodation (owner resolved).
+ * @throws {ServiceError} `NOT_FOUND` when the accommodation does not exist or is
+ * soft-deleted. `FORBIDDEN` when the actor does not own it and lacks the staff bypass.
+ */
+export async function assertOccupancyReadAccess(
+    input: AssertOccupancyAccessInput
+): Promise<Accommodation> {
+    const accommodation = await getAccommodationOrThrow(input.accommodationId);
+    assertOwnerReadAccess(input.actor, accommodation);
+    return accommodation;
+}
