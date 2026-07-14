@@ -6,7 +6,7 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ServiceConfig } from '../../../src';
+import type { ServiceConfig, ServiceContext } from '../../../src';
 import { PointOfInterestService } from '../../../src/services/point-of-interest/point-of-interest.service';
 import { createActor } from '../../factories/actorFactory';
 import { PointOfInterestFactoryBuilder } from '../../factories/pointOfInterestFactory';
@@ -104,6 +104,24 @@ describe('PointOfInterestService.addPointOfInterestToDestination', () => {
         expect(result.data).toBeUndefined();
     });
 
+    it('threads ctx.tx through every relation read/write (HOS-126)', async () => {
+        // Sentinel transaction handle: proves each model call joins the
+        // caller-provided transaction boundary rather than the pool.
+        const marker = { __tx: 'hos-126' } as unknown;
+        const ctxWithTx = { tx: marker } as unknown as ServiceContext;
+        asMock(model.findOne).mockResolvedValue(pointOfInterest);
+        asMock(destinationModel.findOne).mockResolvedValue(destination);
+        asMock(relatedModel.findOne).mockResolvedValueOnce(null); // no existing relation
+        asMock(relatedModel.create).mockResolvedValue(relation);
+
+        await service.addPointOfInterestToDestination(actorWithPerms, validInput, ctxWithTx);
+
+        expect(model.findOne).toHaveBeenCalledWith(expect.anything(), marker);
+        expect(destinationModel.findOne).toHaveBeenCalledWith(expect.anything(), marker);
+        expect(relatedModel.findOne).toHaveBeenCalledWith(expect.anything(), marker);
+        expect(relatedModel.create).toHaveBeenCalledWith(expect.anything(), marker);
+    });
+
     // HOS-140 — relation kind (AC-3)
     describe('relation kind (HOS-140)', () => {
         it('defaults to PRIMARY when relation is omitted from the raw input (Zod default)', async () => {
@@ -123,7 +141,9 @@ describe('PointOfInterestService.addPointOfInterestToDestination', () => {
                     destinationId,
                     pointOfInterestId,
                     relation: PointOfInterestDestinationRelationEnum.PRIMARY
-                })
+                }),
+                // HOS-126: create now receives the (undefined here) tx handle.
+                undefined
             );
         });
 
@@ -149,7 +169,9 @@ describe('PointOfInterestService.addPointOfInterestToDestination', () => {
                     destinationId,
                     pointOfInterestId,
                     relation: PointOfInterestDestinationRelationEnum.NEARBY
-                })
+                }),
+                // HOS-126: create now receives the (undefined here) tx handle.
+                undefined
             );
             expect(result.data?.relation).toEqual(nearbyRelation);
             expect(result.error).toBeUndefined();

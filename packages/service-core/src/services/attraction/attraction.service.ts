@@ -243,18 +243,26 @@ export class AttractionService extends BaseCrudRelatedService<
             input: { ...params, actor },
             schema: AttractionAddToDestinationInputSchema,
             ctx,
-            execute: async (validatedParams, actor) => {
+            execute: async (validatedParams, actor, execCtx) => {
                 await this._canAddAttractionToDestination(actor);
                 const { destinationId, attractionId } = validatedParams;
 
-                // Run all existence checks in parallel for better performance
+                // Run all existence checks in parallel for better performance.
+                // `execCtx?.tx` is threaded so these reads participate in a
+                // caller-provided transaction boundary (HOS-126).
                 const [attraction, destination, existing] = await Promise.all([
-                    this.model.findOne({ id: attractionId as AttractionIdType }),
-                    this.destinationModel.findOne({ id: destinationId as DestinationIdType }),
-                    this.relatedModel.findOne({
-                        destinationId: destinationId as DestinationIdType,
-                        attractionId: attractionId as AttractionIdType
-                    })
+                    this.model.findOne({ id: attractionId as AttractionIdType }, execCtx?.tx),
+                    this.destinationModel.findOne(
+                        { id: destinationId as DestinationIdType },
+                        execCtx?.tx
+                    ),
+                    this.relatedModel.findOne(
+                        {
+                            destinationId: destinationId as DestinationIdType,
+                            attractionId: attractionId as AttractionIdType
+                        },
+                        execCtx?.tx
+                    )
                 ]);
 
                 if (!attraction) {
@@ -271,18 +279,24 @@ export class AttractionService extends BaseCrudRelatedService<
                 }
 
                 // Create the relation
-                const relation = await this.relatedModel.create({
-                    destinationId: destinationId as DestinationIdType,
-                    attractionId: attractionId as AttractionIdType
-                });
+                const relation = await this.relatedModel.create(
+                    {
+                        destinationId: destinationId as DestinationIdType,
+                        attractionId: attractionId as AttractionIdType
+                    },
+                    execCtx?.tx
+                );
 
                 // If the model returns just an id or number, fetch the full relation
                 let fullRelation = relation;
                 if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
-                    const found = await this.relatedModel.findOne({
-                        destinationId: destinationId as DestinationIdType,
-                        attractionId: attractionId as AttractionIdType
-                    });
+                    const found = await this.relatedModel.findOne(
+                        {
+                            destinationId: destinationId as DestinationIdType,
+                            attractionId: attractionId as AttractionIdType
+                        },
+                        execCtx?.tx
+                    );
                     if (!found) {
                         throw new ServiceError(
                             ServiceErrorCode.INTERNAL_ERROR,
@@ -312,27 +326,34 @@ export class AttractionService extends BaseCrudRelatedService<
             input: { ...params, actor },
             schema: AttractionRemoveFromDestinationInputSchema,
             ctx,
-            execute: async (validatedParams, actor) => {
+            execute: async (validatedParams, actor, execCtx) => {
                 await this._canRemoveAttractionFromDestination(actor);
                 const { destinationId, attractionId } = validatedParams;
-                // Verify attraction exists
-                const attraction = await this.model.findOne({
-                    id: attractionId as AttractionIdType
-                });
+                // Verify attraction exists. `execCtx?.tx` is threaded so these
+                // reads/writes participate in a caller-provided transaction
+                // boundary (HOS-126).
+                const attraction = await this.model.findOne(
+                    { id: attractionId as AttractionIdType },
+                    execCtx?.tx
+                );
                 if (!attraction) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Attraction not found');
                 }
-                const destination = await this.destinationModel.findOne({
-                    id: destinationId as DestinationIdType
-                });
+                const destination = await this.destinationModel.findOne(
+                    { id: destinationId as DestinationIdType },
+                    execCtx?.tx
+                );
                 if (!destination) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
                 }
                 // Verify that the relation exists
-                const existing = await this.relatedModel.findOne({
-                    destinationId: destinationId as DestinationIdType,
-                    attractionId: attractionId as AttractionIdType
-                });
+                const existing = await this.relatedModel.findOne(
+                    {
+                        destinationId: destinationId as DestinationIdType,
+                        attractionId: attractionId as AttractionIdType
+                    },
+                    execCtx?.tx
+                );
                 if (!existing) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
@@ -340,15 +361,21 @@ export class AttractionService extends BaseCrudRelatedService<
                     );
                 }
                 // Remove the relation (soft delete or delete)
-                const relation = await this.relatedModel.softDelete({
-                    destinationId: destinationId as DestinationIdType,
-                    attractionId: attractionId as AttractionIdType
-                });
-                if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
-                    const fullRelation = await this.relatedModel.findOne({
+                const relation = await this.relatedModel.softDelete(
+                    {
                         destinationId: destinationId as DestinationIdType,
                         attractionId: attractionId as AttractionIdType
-                    });
+                    },
+                    execCtx?.tx
+                );
+                if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
+                    const fullRelation = await this.relatedModel.findOne(
+                        {
+                            destinationId: destinationId as DestinationIdType,
+                            attractionId: attractionId as AttractionIdType
+                        },
+                        execCtx?.tx
+                    );
                     if (!fullRelation) {
                         throw new ServiceError(
                             ServiceErrorCode.INTERNAL_ERROR,
