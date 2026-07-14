@@ -13,6 +13,24 @@
  * Runs in the seed integration carril: the globalSetup provisions the ephemeral
  * DB (incl. the `seed_migrations` ledger) and exports HOSPEDA_DATABASE_URL,
  * which the spawned CLI inherits.
+ *
+ * ## `maxBuffer` / `LOG_LEVEL` (HOS-142 follow-up)
+ *
+ * `--data-migrate` now also applies `0013-hos-142-poi-catalog-expansion.ts`
+ * (908 POIs + ~1556 destination relations + ~3206 category assignments —
+ * roughly 11k individual `@repo/db` model calls). `@repo/logger`'s default
+ * level (`LOG`) is maximally permissive (it shows DEBUG lines too, per
+ * `shouldLog`'s `default` branch in `packages/logger/src/logger.ts`), and
+ * every model `create`/`findOne` call logs a DEBUG line via `logQuery`/
+ * `logAction` that includes the full (unsummarized) input `params` — at
+ * this row count that floods stdout well past Node's default 1MB
+ * `execFile` `maxBuffer`, which is what actually failed
+ * (`ERR_CHILD_PROCESS_STDIO_MAXBUFFER`), not a real CLI/migration bug.
+ * Two changes, both scoped to this test only (no production code touched):
+ * `LOG_LEVEL=INFO` (unless the environment already sets one) suppresses
+ * that per-row DEBUG noise at the source, and a generous explicit
+ * `maxBuffer` is a defensive backstop for whatever INFO-level output (or a
+ * future larger migration) remains.
  */
 import { execFile } from 'node:child_process';
 import path from 'node:path';
@@ -28,6 +46,18 @@ const seedPkgDir = path.resolve(__dirname, '../..');
 
 const dbAvailable = Boolean(process.env.HOSPEDA_DATABASE_URL);
 
+/**
+ * Generous `execFile` stdout/stderr buffer cap for the spawned CLI. Node's
+ * `child_process` default is 1MB, which `--data-migrate` can now exceed on
+ * its own (see this file's "maxBuffer / LOG_LEVEL" note above) even with
+ * `LOG_LEVEL=INFO` trimming the bulk of the per-row DEBUG noise. 20MB is
+ * comfortable headroom for the current ~5670-row 0013 migration plus
+ * meaningful future growth, while still failing loudly (a real hang/runaway
+ * output would still blow past 20MB) rather than silently raising it to
+ * `Infinity`.
+ */
+const CLI_MAX_BUFFER = 20 * 1024 * 1024;
+
 /** Runs the seed CLI with the given args from the package dir, inheriting env. */
 async function runCli(
     args: readonly string[]
@@ -36,7 +66,16 @@ async function runCli(
         const { stdout, stderr } = await execFileAsync(
             'pnpm',
             ['exec', 'tsx', '--tsconfig', './tsconfig.json', './src/cli.ts', ...args],
-            { cwd: seedPkgDir, env: { ...process.env }, timeout: 90_000 }
+            {
+                cwd: seedPkgDir,
+                // Defaults to INFO so the CLI's per-row DEBUG query logging
+                // (see this file's top JSDoc) doesn't flood stdout; an
+                // explicit LOG_LEVEL in the environment (e.g. a developer
+                // debugging locally) always wins.
+                env: { ...process.env, LOG_LEVEL: process.env.LOG_LEVEL ?? 'INFO' },
+                timeout: 90_000,
+                maxBuffer: CLI_MAX_BUFFER
+            }
         );
         return { stdout, stderr, code: 0 };
     } catch (error) {
