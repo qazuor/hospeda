@@ -66,6 +66,11 @@ import { accommodationCalendarSyncModel, accommodationOccupancyModel } from '@re
 import { CalendarSyncStatusEnum, OccupancySourceEnum } from '@repo/schemas';
 import { apiLogger } from '../../utils/logger.js';
 import {
+    enumerateHalfOpenDates,
+    MAX_EVENT_DAYS,
+    markerToDate
+} from '../calendar-sync/date-range.js';
+import {
     GoogleCalendarApiError,
     type GoogleCalendarEvent,
     listEvents
@@ -89,15 +94,6 @@ const PROVIDER = OccupancySourceEnum.GOOGLE_CALENDAR;
  * per-accommodation zone) only if non-AR accommodations are onboarded.
  */
 const SYNC_RESPONSE_TIMEZONE = 'America/Argentina/Buenos_Aires';
-
-/** Milliseconds in a day, for half-open date enumeration. */
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/**
- * Defensive cap on the number of days a single event may occupy. Guards against
- * a pathological multi-year event exploding into tens of thousands of rows.
- */
-const MAX_EVENT_DAYS = 370;
 
 /**
  * Outcome of a single {@link syncAccommodationCalendar} run.
@@ -128,58 +124,16 @@ export type CalendarSyncResult =
       };
 
 /**
- * Extracts the wall-clock `YYYY-MM-DD` date from an event start/end marker.
- * All-day markers expose `date` directly; timed markers expose `dateTime`
- * whose `YYYY-MM-DD` prefix is the date in {@link SYNC_RESPONSE_TIMEZONE}
- * (Google normalizes timed events to that zone at the API layer).
- *
- * @param marker - The event start or end marker, if present.
- * @returns The `YYYY-MM-DD` date, or `undefined` when the marker is absent/unusable.
- */
-const markerToDate = (marker: GoogleCalendarEvent['start']): string | undefined => {
-    if (marker === undefined) {
-        return undefined;
-    }
-    if (marker.date !== undefined) {
-        return marker.date;
-    }
-    if (marker.dateTime !== undefined && marker.dateTime.length >= 10) {
-        return marker.dateTime.slice(0, 10);
-    }
-    return undefined;
-};
-
-/**
- * Enumerates the half-open `[startDate, endDate)` date range as `YYYY-MM-DD`
- * strings, using UTC date math to avoid any local-timezone drift.
- *
- * Returns an empty array when the range is empty or inverted (`endDate <=
- * startDate`) — this is exactly how same-day / sub-1-day events are excluded.
- *
- * @param startDate - Inclusive lower bound, `YYYY-MM-DD`.
- * @param endDate - Exclusive upper bound, `YYYY-MM-DD`.
- * @returns The occupied dates, capped at {@link MAX_EVENT_DAYS}.
- */
-const enumerateHalfOpenDates = (startDate: string, endDate: string): string[] => {
-    const startMs = Date.parse(`${startDate}T00:00:00Z`);
-    const endMs = Date.parse(`${endDate}T00:00:00Z`);
-    if (Number.isNaN(startMs) || Number.isNaN(endMs) || endMs <= startMs) {
-        return [];
-    }
-
-    const dates: string[] = [];
-    let cursor = startMs;
-    while (cursor < endMs && dates.length < MAX_EVENT_DAYS) {
-        // Built from a `T00:00:00Z` base, so the ISO date prefix is stable.
-        dates.push(new Date(cursor).toISOString().slice(0, 10));
-        cursor += DAY_MS;
-    }
-    return dates;
-};
-
-/**
  * Maps a non-cancelled event to the set of dates it occupies. Returns an empty
  * array when the event has no usable start/end or is shorter than one day.
+ *
+ * Uses the shared provider-agnostic {@link markerToDate} /
+ * {@link enumerateHalfOpenDates} helpers (`../calendar-sync/date-range.js`) —
+ * `event.start`/`event.end` structurally satisfy `DateOrDateTimeMarker`. The
+ * `YYYY-MM-DD` extraction from a timed marker's `dateTime` prefix is
+ * deterministic here specifically because {@link SYNC_RESPONSE_TIMEZONE} is
+ * requested from the Calendar API (Google normalizes timed events to that
+ * zone at the API layer).
  *
  * Emits a WARN when the event's date range hits {@link MAX_EVENT_DAYS} — a
  * pathological span whose occupancy is truncated at the cap.
