@@ -172,4 +172,62 @@ describe('PATCH /protected/users/:id — system-flag mass-assignment guard', () 
             lastName: 'Tester'
         });
     });
+
+    // Regression: BETA-34 — the `<input type="date">` on the profile edit
+    // form sends a plain `YYYY-MM-DD` string, but the route body schema
+    // used the domain `z.date()` field directly, which the route-factory's
+    // OpenAPI conversion turned into a full ISO-8601 datetime validator.
+    // That rejected every legitimate birth date submission with 400
+    // `Invalid ISO datetime`.
+    describe('birthDate (BETA-34)', () => {
+        it('accepts a YYYY-MM-DD birth date string and forwards it as a Date', async () => {
+            // Arrange + Act
+            const res = await app.request(`/api/v1/protected/users/${validUuid}`, {
+                method: 'PATCH',
+                headers: makeHeaders(selfActor),
+                body: JSON.stringify({ birthDate: '1990-05-15' })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            expect(userServiceRef.update).toHaveBeenCalledTimes(1);
+
+            const input = (userServiceRef.update.mock.calls[0]?.[2] ?? {}) as Record<
+                string,
+                unknown
+            >;
+            expect(input.birthDate).toBeInstanceOf(Date);
+            expect((input.birthDate as Date).toISOString().startsWith('1990-05-15')).toBe(true);
+        });
+
+        it('accepts an empty string birthDate and forwards null (clears the field)', async () => {
+            // Arrange + Act
+            const res = await app.request(`/api/v1/protected/users/${validUuid}`, {
+                method: 'PATCH',
+                headers: makeHeaders(selfActor),
+                body: JSON.stringify({ birthDate: '' })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const input = (userServiceRef.update.mock.calls[0]?.[2] ?? {}) as Record<
+                string,
+                unknown
+            >;
+            expect(input.birthDate).toBeNull();
+        });
+
+        it('rejects a full ISO-8601 datetime birth date with 400', async () => {
+            // Arrange + Act: the pre-fix wire format the route no longer accepts.
+            const res = await app.request(`/api/v1/protected/users/${validUuid}`, {
+                method: 'PATCH',
+                headers: makeHeaders(selfActor),
+                body: JSON.stringify({ birthDate: '1990-05-15T00:00:00Z' })
+            });
+
+            // Assert
+            expect(res.status).toBe(400);
+            expect(userServiceRef.update).not.toHaveBeenCalled();
+        });
+    });
 });
