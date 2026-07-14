@@ -3047,7 +3047,7 @@ export const accommodationCalendarSyncApi = {
         readonly id: string;
         readonly returnTo?: string;
     }): Promise<ApiResult<{ readonly authorizeUrl: string }>> {
-        return apiClient.post({
+        return apiClient.postProtected({
             path: `${PROTECTED}/accommodations/${id}/calendar-sync/connect-google`,
             body: returnTo ? { returnTo } : {}
         });
@@ -3080,7 +3080,7 @@ export const accommodationCalendarSyncApi = {
      * @returns The {@link CalendarSyncResult}.
      */
     sync({ id }: { readonly id: string }): Promise<ApiResult<CalendarSyncResult>> {
-        return apiClient.post({
+        return apiClient.postProtected({
             path: `${PROTECTED}/accommodations/${id}/calendar-sync/sync`
         });
     },
