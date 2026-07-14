@@ -112,7 +112,7 @@ import { SubscriptionCheckoutError } from '../../src/services/billing/subscripti
 /** Expected checkout return URLs built by the handler for the default 'es' locale. */
 const EXPECTED_URLS = {
     paymentMethodReturnUrl: 'https://hospeda.test/es/suscriptores/checkout/success/',
-    notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
+    notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago?source_news=webhooks'
 };
 
 /**
@@ -122,7 +122,7 @@ const EXPECTED_URLS = {
 const EXPECTED_ANNUAL_URLS = {
     successUrl: 'https://hospeda.test/es/suscriptores/checkout/success/',
     cancelUrl: 'https://hospeda.test/es/suscriptores/checkout/failure/',
-    notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
+    notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago?source_news=webhooks'
 };
 
 /**
