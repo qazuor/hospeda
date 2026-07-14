@@ -33,22 +33,17 @@ function localeFileBaseNames(): readonly string[] {
 
 /**
  * Locale JSON files that exist on disk but are intentionally NOT registered as a
- * runtime namespace, tracked in HOS-163. `cookies` / `partners` are a live en/pt
- * bug (their `t()` calls always fall back to Spanish); the other five are dead
- * files pending deletion. Every file NOT in this allowlist MUST resolve to a
- * registered namespace — that is the drift guard. When HOS-163 registers or
- * deletes one of these, remove it from this set (the honesty test below enforces
- * that the allowlist never goes stale).
+ * runtime namespace. Every file NOT in this allowlist MUST resolve to a
+ * registered namespace — that is the drift guard. A NEW orphan added here must
+ * reference a tracking issue.
+ *
+ * HOS-163 emptied this set: `cookies` / `partners` were registered in
+ * `config.shared.ts` (they were a live en/pt bug — their `t()` calls fell back
+ * to Spanish), and the five genuinely-dead files (`breadcrumbs`,
+ * `categoryTiles`, `seo`, `shared`, `tagChips`) were deleted. The honesty test
+ * below keeps this allowlist from going stale.
  */
-const KNOWN_UNREGISTERED_FILES: ReadonlySet<string> = new Set([
-    'breadcrumbs',
-    'categoryTiles',
-    'cookies',
-    'partners',
-    'seo',
-    'shared',
-    'tagChips'
-]);
+const KNOWN_UNREGISTERED_FILES: ReadonlySet<string> = new Set([]);
 
 describe('generate-types namespace resolution (HOS-127)', () => {
     it('remaps the singular locale filenames to their plural runtime namespace', () => {

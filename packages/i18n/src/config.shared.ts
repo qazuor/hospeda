@@ -57,6 +57,8 @@ export const webNamespaces = [
     'host',
     'conversations',
     'cookieConsent',
+    'cookies',
+    'partners',
     'tags',
     'maps',
     'contributions',
@@ -119,6 +121,7 @@ import contentModerationEn from './locales/en/content-moderation.json';
 import contributionsEn from './locales/en/contributions.json';
 import conversationsEn from './locales/en/conversations.json';
 import cookieConsentEn from './locales/en/cookieConsent.json';
+import cookiesEn from './locales/en/cookies.json';
 import destinationEn from './locales/en/destination.json';
 import errorEn from './locales/en/error.json';
 import eventEn from './locales/en/event.json';
@@ -139,6 +142,7 @@ import navEn from './locales/en/nav.json';
 import newsletterEn from './locales/en/newsletter.json';
 import notificationsEn from './locales/en/notifications.json';
 import ownersEn from './locales/en/owners.json';
+import partnersEn from './locales/en/partners.json';
 import pricingEn from './locales/en/pricing.json';
 import privacyEn from './locales/en/privacy.json';
 import revalidationEn from './locales/en/revalidation.json';
@@ -169,6 +173,7 @@ import contentModerationEs from './locales/es/content-moderation.json';
 import contributionsEs from './locales/es/contributions.json';
 import conversationsEs from './locales/es/conversations.json';
 import cookieConsentEs from './locales/es/cookieConsent.json';
+import cookiesEs from './locales/es/cookies.json';
 import destinationEs from './locales/es/destination.json';
 import errorEs from './locales/es/error.json';
 import eventEs from './locales/es/event.json';
@@ -189,6 +194,7 @@ import navEs from './locales/es/nav.json';
 import newsletterEs from './locales/es/newsletter.json';
 import notificationsEs from './locales/es/notifications.json';
 import ownersEs from './locales/es/owners.json';
+import partnersEs from './locales/es/partners.json';
 import pricingEs from './locales/es/pricing.json';
 import privacyEs from './locales/es/privacy.json';
 import revalidationEs from './locales/es/revalidation.json';
@@ -220,6 +226,7 @@ import contentModerationPt from './locales/pt/content-moderation.json';
 import contributionsPt from './locales/pt/contributions.json';
 import conversationsPt from './locales/pt/conversations.json';
 import cookieConsentPt from './locales/pt/cookieConsent.json';
+import cookiesPt from './locales/pt/cookies.json';
 import destinationPt from './locales/pt/destination.json';
 import errorPt from './locales/pt/error.json';
 import eventPt from './locales/pt/event.json';
@@ -240,6 +247,7 @@ import navPt from './locales/pt/nav.json';
 import newsletterPt from './locales/pt/newsletter.json';
 import notificationsPt from './locales/pt/notifications.json';
 import ownersPt from './locales/pt/owners.json';
+import partnersPt from './locales/pt/partners.json';
 import pricingPt from './locales/pt/pricing.json';
 import privacyPt from './locales/pt/privacy.json';
 import revalidationPt from './locales/pt/revalidation.json';
@@ -299,6 +307,8 @@ export const rawWebTranslations = {
         fields: fieldsEs,
         conversations: conversationsEs,
         cookieConsent: cookieConsentEs,
+        cookies: cookiesEs,
+        partners: partnersEs,
         validation: validationEs,
         revalidation: revalidationEs,
         tags: tagsEs,
@@ -348,6 +358,8 @@ export const rawWebTranslations = {
         fields: fieldsEn,
         conversations: conversationsEn,
         cookieConsent: cookieConsentEn,
+        cookies: cookiesEn,
+        partners: partnersEn,
         validation: validationEn,
         revalidation: revalidationEn,
         tags: tagsEn,
@@ -397,6 +409,8 @@ export const rawWebTranslations = {
         fields: fieldsPt,
         conversations: conversationsPt,
         cookieConsent: cookieConsentPt,
+        cookies: cookiesPt,
+        partners: partnersPt,
         validation: validationPt,
         revalidation: revalidationPt,
         tags: tagsPt,

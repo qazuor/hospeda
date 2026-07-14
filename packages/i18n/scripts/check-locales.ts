@@ -36,11 +36,6 @@ type Locale = (typeof REQUIRED_LOCALES)[number];
  * Keep in sync with the spec when adding new web-only namespaces.
  */
 const SPEC_096_REQUIRED_NAMESPACES = [
-    'breadcrumbs',
-    'categoryTiles',
-    'tagChips',
-    'shared',
-    'seo',
     'nav',
     'footer',
     'common',
@@ -51,7 +46,11 @@ const SPEC_096_REQUIRED_NAMESPACES = [
     // Gastronomy commerce listings (SPEC-239)
     'gastronomy',
     // Commerce shared — lead form, change-password, visibility (SPEC-239)
-    'commerce'
+    'commerce',
+    // Legal cookies page + partners directory — registered as runtime
+    // namespaces in HOS-163; enforce cross-locale parity so en/pt never drift.
+    'cookies',
+    'partners'
 ] as const;
 
 const STRICT_EXTRA = process.env.I18N_CHECK_STRICT_EXTRA === '1';
