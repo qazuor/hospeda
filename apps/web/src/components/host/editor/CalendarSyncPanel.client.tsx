@@ -24,7 +24,7 @@ import {
     GoogleIcon,
     SynchronizeIcon
 } from '@repo/icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { accommodationCalendarSyncApi } from '@/lib/api/endpoints-protected';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -60,7 +60,12 @@ type Busy = 'connecting' | 'syncing' | 'disconnecting' | null;
  * Google Calendar connect/sync/disconnect panel.
  */
 export function CalendarSyncPanel({ locale, accommodationId }: CalendarSyncPanelProps) {
-    const { t } = createTranslations(locale);
+    // Memoize so `t` keeps a stable identity across renders. The mount effect
+    // below depends on `t`; without this, `createTranslations` returns a fresh
+    // `t` every render, re-running the effect → re-fetching status → infinite
+    // render/fetch loop that hammers the API into a 429 (matches the
+    // SearchHistoryList island pattern).
+    const { t } = useMemo(() => createTranslations(locale), [locale]);
 
     const [isLoading, setIsLoading] = useState(true);
     const [connection, setConnection] = useState<ConnectionState | null>(null);

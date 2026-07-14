@@ -96,6 +96,27 @@ describe('CalendarSyncPanel', () => {
         expect(await screen.findByText('Conectar Google Calendar')).toBeInTheDocument();
     });
 
+    it('fetches connection status exactly once on mount (no render/fetch loop — HOS-157 regression)', async () => {
+        // Regression for the infinite render/fetch loop: the mount effect
+        // depended on `t`, and `createTranslations` returns a fresh `t` every
+        // render (the mock above mirrors that). Without memoizing `t`, each
+        // state update re-ran the effect → re-fetched status → looped, hammering
+        // the API into a 429. The panel must call `status` once per mount.
+        mockStatus.mockResolvedValue(disconnectedStatus());
+
+        render(
+            <CalendarSyncPanel
+                locale="es"
+                accommodationId={ACC_ID}
+            />
+        );
+        await screen.findByText('Conectar Google Calendar');
+        // Give any erroneous re-render loop time to fire extra fetches.
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        expect(mockStatus).toHaveBeenCalledTimes(1);
+    });
+
     it('calls connectGoogle with the current path as returnTo when connecting', async () => {
         mockStatus.mockResolvedValue(disconnectedStatus());
         mockConnectGoogle.mockResolvedValue({ ok: true, data: { authorizeUrl: '' } });
