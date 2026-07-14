@@ -22,6 +22,7 @@ import {
     type DestinationIdsByPointOfInterestSlugsOutput,
     type DestinationsByPointOfInterestInput,
     DestinationsByPointOfInterestInputSchema,
+    LifecycleStatusEnum,
     type NearbyPoi,
     NearbyPoiSchema,
     type PointOfInterestAddToDestinationInput,
@@ -212,8 +213,8 @@ export class PointOfInterestService extends BaseCrudRelatedService<
     protected _canDelete(actor: Actor): void {
         checkCanDeletePointOfInterest(actor);
     }
-    protected _canView(actor: Actor): void {
-        checkCanViewPointOfInterest(actor);
+    protected _canView(actor: Actor, entity: PointOfInterest): void {
+        checkCanViewPointOfInterest(actor, entity);
     }
     protected _canList(actor: Actor): void {
         checkCanListPointsOfInterest(actor);
@@ -807,7 +808,21 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         >
     ): Record<string, unknown> {
         const { slug, type, isFeatured, isBuiltin, hasOwnPage, verified } = params;
-        const where: Record<string, unknown> = {};
+        // HOS-132: this is the shared where-builder for `_executeSearch`,
+        // `_executeCount`, and `searchForList` — the PUBLIC/anonymous read
+        // paths (`checkCanListPointsOfInterest` is an unconditional no-op by
+        // design: "results are filtered elsewhere", which was aspirational
+        // until this fix). Force ACTIVE + non-deleted unconditionally so no
+        // caller-supplied filter can widen the result set, mirroring
+        // `ExperienceService._executeSearch`/`_executeCount`. Deliberately
+        // NOT applied to `_executeAdminSearch` below, which never calls this
+        // method — admins must still see archived/draft/deleted POIs via the
+        // admin list (its own `status`/`includeDeleted` params, applied by
+        // `BaseCrudRead.adminList()`).
+        const where: Record<string, unknown> = {
+            deletedAt: null,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        };
         if (slug) where.slug = slug;
         if (type) where.type = type;
         if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
