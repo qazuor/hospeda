@@ -111,6 +111,41 @@ describe('Point Of Interest Query Schemas', () => {
                 PointsOfInterestByDestinationInputSchema.parse({ destinationId: 'invalid-uuid' })
             ).toThrow(ZodError);
         });
+
+        // HOS-140 — AC-4: 3-value `relation` filter contract
+        describe('relation filter (HOS-140)', () => {
+            it('should default relation to PRIMARY when omitted', () => {
+                const result = PointsOfInterestByDestinationInputSchema.parse({
+                    destinationId: faker.string.uuid()
+                });
+                expect(result.relation).toBe('PRIMARY');
+            });
+
+            it('should accept relation: NEARBY', () => {
+                const result = PointsOfInterestByDestinationInputSchema.parse({
+                    destinationId: faker.string.uuid(),
+                    relation: 'NEARBY'
+                });
+                expect(result.relation).toBe('NEARBY');
+            });
+
+            it('should accept relation: ALL', () => {
+                const result = PointsOfInterestByDestinationInputSchema.parse({
+                    destinationId: faker.string.uuid(),
+                    relation: 'ALL'
+                });
+                expect(result.relation).toBe('ALL');
+            });
+
+            it('should reject an invalid relation value', () => {
+                expect(() =>
+                    PointsOfInterestByDestinationInputSchema.parse({
+                        destinationId: faker.string.uuid(),
+                        relation: 'INVALID'
+                    })
+                ).toThrow(ZodError);
+            });
+        });
     });
 
     describe('DestinationsByPointOfInterestInputSchema', () => {
