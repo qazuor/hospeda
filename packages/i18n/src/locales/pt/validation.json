@@ -2147,6 +2147,9 @@
         },
         "visibility": {
             "invalid": "[PT] El visibility no es válido"
+        },
+        "occupancySource": {
+            "invalid": "A origem de ocupação é inválida"
         }
     },
     "event": {
@@ -4347,6 +4350,38 @@
         },
         "zod": {
             "failed": "[PT] La validación del esquema ha fallado"
+        }
+    },
+    "accommodationOccupancy": {
+        "createdAt": {
+            "required": "A data de criação é obrigatória"
+        },
+        "date": {
+            "invalid": "A data não é uma data de calendário válida",
+            "pattern": "A data deve estar no formato AAAA-MM-DD",
+            "required": "A data é obrigatória"
+        },
+        "dates": {
+            "max": "Não é possível enviar mais de 366 datas",
+            "min": "É necessário indicar pelo menos uma data",
+            "required": "As datas são obrigatórias"
+        },
+        "externalEventId": {
+            "max": "O ID do evento externo não pode ultrapassar 255 caracteres",
+            "required": "O ID do evento externo é obrigatório"
+        },
+        "isBlocked": {
+            "required": "O status de bloqueio é obrigatório"
+        },
+        "note": {
+            "max": "A nota não pode ultrapassar 500 caracteres",
+            "required": "A nota é obrigatória"
+        },
+        "range": {
+            "fromBeforeTo": "A data inicial deve ser anterior à data final"
+        },
+        "updatedAt": {
+            "required": "A data de atualização é obrigatória"
         }
     }
 }

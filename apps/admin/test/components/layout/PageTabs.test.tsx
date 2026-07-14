@@ -265,7 +265,7 @@ describe('PageTabs', () => {
     describe('pre-defined tab configurations', () => {
         it('should export accommodationTabs', () => {
             expect(accommodationTabs).toBeDefined();
-            expect(accommodationTabs).toHaveLength(7);
+            expect(accommodationTabs).toHaveLength(8);
             expect(accommodationTabs.map((t) => t.id)).toEqual([
                 'overview',
                 'gallery',
@@ -273,7 +273,8 @@ describe('PageTabs', () => {
                 'reviews',
                 'pricing',
                 'seo',
-                'faqs'
+                'faqs',
+                'occupancy'
             ]);
         });
 

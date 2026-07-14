@@ -240,7 +240,8 @@
                 "photos": "Photos",
                 "photosDescription": "Upload photos of your property to attract more guests",
                 "externalReputation": "External reputation",
-                "featuredToggle": "[EN] Destacado"
+                "featuredToggle": "[EN] Destacado",
+                "calendar": "Calendar"
             },
             "sectionNav": {
                 "ariaLabel": "Form section navigation"
@@ -382,6 +383,42 @@
                 "label": "[EN] Destacar mi alojamiento",
                 "hint": "[EN] Cuando está activo, tu alojamiento aparece con prioridad en los listados y búsquedas.",
                 "toggleError": "[EN] No se pudo actualizar el destacado. Intentá de nuevo."
+            },
+            "calendar": {
+                "title": "Occupancy calendar",
+                "description": "Mark the days your property is occupied. Those dates won't show up as available in search.",
+                "loading": "Loading calendar...",
+                "loadError": "We couldn't load the calendar. Please try again.",
+                "prevMonth": "Previous month",
+                "nextMonth": "Next month",
+                "statusFree": "Free",
+                "statusOccupied": "Occupied",
+                "rangeHint": "Click another day to complete the range, or click the same day again to select just that date.",
+                "selectionCount_one": "{{count}} day selected",
+                "selectionCount_other": "{{count}} days selected",
+                "noteLabel": "Note (optional)",
+                "notePlaceholder": "E.g.: booked off-platform",
+                "blockAction": "Block",
+                "blockingAction": "Blocking...",
+                "unblockAction": "Free up",
+                "unblockingAction": "Freeing up...",
+                "cancelSelection": "Cancel selection",
+                "applyError": "We couldn't update the calendar. Please try again.",
+                "emptyMonth": "No blocked days this month",
+                "legend": {
+                    "title": "Legend",
+                    "free": "Free",
+                    "manual": "Manually blocked",
+                    "google": "Synced — Google Calendar",
+                    "airbnb": "Synced — Airbnb",
+                    "booking": "Synced — Booking.com"
+                },
+                "source": {
+                    "manual": "Manual",
+                    "google": "Google Calendar",
+                    "airbnb": "Airbnb",
+                    "booking": "Booking.com"
+                }
             }
         },
         "empty": {

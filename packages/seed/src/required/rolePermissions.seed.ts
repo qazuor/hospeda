@@ -36,6 +36,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCOMMODATION_IA_SUGGESTIONS_VIEW,
         PermissionEnum.ACCOMMODATION_IA_CONTENT_APPROVE,
         PermissionEnum.ACCOMMODATION_SLUG_MANAGE,
+        PermissionEnum.ACCOMMODATION_OCCUPANCY_MANAGE, // HOS-43
+        PermissionEnum.ACCOMMODATION_OCCUPANCY_VIEW, // HOS-43
 
         // ACCOMMODATION: Granular section permissions
         PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT,
@@ -432,6 +434,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCOMMODATION_IA_SUGGESTIONS_VIEW,
         PermissionEnum.ACCOMMODATION_IA_CONTENT_APPROVE,
         PermissionEnum.ACCOMMODATION_SLUG_MANAGE,
+        PermissionEnum.ACCOMMODATION_OCCUPANCY_VIEW, // HOS-43
 
         // ACCOMMODATION: Granular section permissions
         PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT,
@@ -928,6 +931,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCOMMODATION_GALLERY_MANAGE,
         PermissionEnum.ACCOMMODATION_CONTACT_UPDATE,
         PermissionEnum.ACCOMMODATION_SLUG_MANAGE,
+        PermissionEnum.ACCOMMODATION_OCCUPANCY_MANAGE, // HOS-43: own accommodations only (ownership enforced by the service layer)
+        PermissionEnum.ACCOMMODATION_OCCUPANCY_VIEW, // HOS-43
 
         // ACCOMMODATION: Granular section permissions (for own accommodations)
         PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT,

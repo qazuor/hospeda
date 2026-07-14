@@ -65,6 +65,8 @@ export const accommodationQueryKeys = {
     owner: (id: string) => [...accommodationQueryKeys.relations(id), 'owner'] as const,
     reviews: (id: string, filters?: ReviewFilters) =>
         [...accommodationQueryKeys.relations(id), 'reviews', filters] as const,
+    occupancy: (id: string, range?: OccupancyRangeFilters) =>
+        [...accommodationQueryKeys.relations(id), 'occupancy', range] as const,
 
     /**
      * Statistics queries - for accommodation metrics
@@ -155,6 +157,17 @@ export interface ReviewFilters {
     /** Pagination */
     page?: number;
     limit?: number;
+}
+
+/**
+ * Filters for occupancy calendar queries (HOS-43 Phase 1).
+ *
+ * `from`/`to` mirror the admin endpoint's half-open `?from&to` range query
+ * (`YYYY-MM-DD`, both optional — omitting them fetches every row).
+ */
+export interface OccupancyRangeFilters {
+    from?: string;
+    to?: string;
 }
 
 /**
