@@ -1,6 +1,6 @@
 /**
- * Curated point-of-interest allowlist for the AI NL search route
- * (HOS-113 §6.3 — "cerca del autódromo").
+ * Curated + machine-generated point-of-interest allowlist for the AI NL
+ * search route (HOS-113 §6.3 — "cerca del autódromo"; extended HOS-142 §6.6).
  *
  * Same shape/pattern as `attraction-allowlist.ts` (HOS-111 T-015), with one
  * conceptual difference: an attraction NL term names a CONCEPT ("carnaval")
@@ -27,12 +27,35 @@
  * "ATTRACTION_ALLOWLIST structure" companion suite, which asserts every
  * allowlisted slug is present in the seed fixture set (R-4 defence).
  *
+ * ## HOS-142 extension (G-7)
+ *
+ * `POI_ALLOWLIST` (the exported constant consumers use) is now the MERGE of
+ * two sources:
+ *
+ * 1. {@link CURATED_POI_ALLOWLIST} — the original 12 hand-curated entries
+ *    below, unchanged, covering all three locales.
+ * 2. `poi-allowlist.generated.json` — machine-derived `es`-only entries for
+ *    the featured/high-priority subset (~661) of the full seeded catalog,
+ *    produced by `scripts/generate-poi-allowlist.ts` (see that file's header
+ *    for the exact scope cut, candidate-term derivation, and R-5 generic-term
+ *    filter). Never hand-edit the generated file directly — regenerate it
+ *    instead.
+ *
+ * On any key collision the CURATED entry always wins — the generated file is
+ * never allowed to silently redefine a hand-verified alias.
+ *
  * @module apps/api/routes/ai/protected/poi-allowlist
  */
 
+import generatedPoiAllowlistData from './poi-allowlist.generated.json' with { type: 'json' };
+
+/** Shape shared by both the curated and generated POI allowlist dictionaries. */
+type PoiAllowlistDict = Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>;
+
 /**
- * Per-locale dictionary mapping NL landmark-name/alias variants → an array of
- * canonical point-of-interest slugs (as stored in `points_of_interest.slug`).
+ * Hand-curated dictionary mapping NL landmark-name/alias variants → an array
+ * of canonical point-of-interest slugs (as stored in
+ * `points_of_interest.slug`), for the original 12 HOS-113 landmarks.
  *
  * Keys are natural-language terms users might write (matching code
  * normalises case at call time). Values are DE-DUPLICATED arrays of real,
@@ -40,102 +63,164 @@
  *
  * @example
  * ```ts
+ * const slugs = CURATED_POI_ALLOWLIST['es']['autódromo'];
+ * // ['autodromo_concepcion_del_uruguay']
+ * ```
+ */
+export const CURATED_POI_ALLOWLIST: PoiAllowlistDict = {
+    es: {
+        // 001 — Autódromo de Concepción del Uruguay (STADIUM)
+        autódromo: ['autodromo_concepcion_del_uruguay'],
+        autodromo: ['autodromo_concepcion_del_uruguay'],
+        'autódromo de concepción del uruguay': ['autodromo_concepcion_del_uruguay'],
+        'circuito de carreras': ['autodromo_concepcion_del_uruguay'],
+        // 002 — Playa Banco Pelay (BEACH)
+        'banco pelay': ['playa_banco_pelay'],
+        'playa banco pelay': ['playa_banco_pelay'],
+        // 003 — Palacio San José (MUSEUM)
+        'palacio san josé': ['palacio_san_jose'],
+        'palacio san jose': ['palacio_san_jose'],
+        // 004 — Basílica Inmaculada Concepción (MONUMENT)
+        'basílica inmaculada concepción': ['basilica_inmaculada_concepcion'],
+        'basilica inmaculada concepcion': ['basilica_inmaculada_concepcion'],
+        basílica: ['basilica_inmaculada_concepcion'],
+        // 005 — Parque Unzué (PARK)
+        'parque unzué': ['parque_unzue'],
+        'parque unzue': ['parque_unzue'],
+        // 006 — Isla del Puerto (NATURAL)
+        'isla del puerto': ['isla_del_puerto'],
+        // 007 — Plaza Francisco Ramírez (PLAZA)
+        'plaza francisco ramírez': ['plaza_francisco_ramirez'],
+        'plaza ramírez': ['plaza_francisco_ramirez'],
+        'plaza ramirez': ['plaza_francisco_ramirez'],
+        // 008 — Mirador Costanera (VIEWPOINT)
+        'mirador de la costanera': ['mirador_costanera'],
+        'mirador costanera': ['mirador_costanera'],
+        // 009 — Complejo Termal Concordia (OTHER)
+        'termas de concordia': ['complejo_termal_concordia'],
+        'complejo termal concordia': ['complejo_termal_concordia'],
+        // 010 — Balneario Itapé (BEACH)
+        'balneario itapé': ['balneario_itape'],
+        'balneario itape': ['balneario_itape'],
+        itapé: ['balneario_itape'],
+        // 011 — Parque Nacional El Palmar (PARK)
+        'parque nacional el palmar': ['parque_nacional_el_palmar'],
+        'el palmar': ['parque_nacional_el_palmar'],
+        // 012 — Termas de Federación (OTHER)
+        'termas de federación': ['termas_de_federacion'],
+        'termas de federacion': ['termas_de_federacion']
+    },
+    en: {
+        autodrome: ['autodromo_concepcion_del_uruguay'],
+        'race track': ['autodromo_concepcion_del_uruguay'],
+        'racing circuit': ['autodromo_concepcion_del_uruguay'],
+        'concepción del uruguay autodrome': ['autodromo_concepcion_del_uruguay'],
+        'banco pelay beach': ['playa_banco_pelay'],
+        'banco pelay': ['playa_banco_pelay'],
+        'san josé palace': ['palacio_san_jose'],
+        'san jose palace': ['palacio_san_jose'],
+        'immaculate conception basilica': ['basilica_inmaculada_concepcion'],
+        basilica: ['basilica_inmaculada_concepcion'],
+        'unzué park': ['parque_unzue'],
+        'unzue park': ['parque_unzue'],
+        'port island': ['isla_del_puerto'],
+        'francisco ramírez square': ['plaza_francisco_ramirez'],
+        'ramírez square': ['plaza_francisco_ramirez'],
+        'costanera viewpoint': ['mirador_costanera'],
+        'riverside lookout': ['mirador_costanera'],
+        'concordia thermal springs': ['complejo_termal_concordia'],
+        'itapé resort': ['balneario_itape'],
+        itape: ['balneario_itape'],
+        'el palmar national park': ['parque_nacional_el_palmar'],
+        'el palmar': ['parque_nacional_el_palmar'],
+        'federación hot springs': ['termas_de_federacion'],
+        'federacion hot springs': ['termas_de_federacion']
+    },
+    pt: {
+        autódromo: ['autodromo_concepcion_del_uruguay'],
+        'autódromo de concepción del uruguay': ['autodromo_concepcion_del_uruguay'],
+        'circuito de corridas': ['autodromo_concepcion_del_uruguay'],
+        'praia banco pelay': ['playa_banco_pelay'],
+        'banco pelay': ['playa_banco_pelay'],
+        'palácio san josé': ['palacio_san_jose'],
+        'palacio san jose': ['palacio_san_jose'],
+        basílica: ['basilica_inmaculada_concepcion'],
+        'basílica da imaculada conceição': ['basilica_inmaculada_concepcion'],
+        'parque unzué': ['parque_unzue'],
+        'ilha do porto': ['isla_del_puerto'],
+        'praça francisco ramírez': ['plaza_francisco_ramirez'],
+        'praça ramírez': ['plaza_francisco_ramirez'],
+        'mirante da costanera': ['mirador_costanera'],
+        'termas de concórdia': ['complejo_termal_concordia'],
+        'balneário itapé': ['balneario_itape'],
+        itapé: ['balneario_itape'],
+        'parque nacional el palmar': ['parque_nacional_el_palmar'],
+        'termas de federação': ['termas_de_federacion']
+    }
+} as const;
+
+/**
+ * Machine-generated `es`-only NL term → slug entries produced by
+ * `scripts/generate-poi-allowlist.ts` (HOS-142 G-7). See the module doc above
+ * and the script's own header comment for the scope cut, candidate-term
+ * derivation, and R-5 generic-term filter that produced this data.
+ */
+const GENERATED_POI_ALLOWLIST = generatedPoiAllowlistData as PoiAllowlistDict;
+
+/**
+ * Merges a single locale's curated and generated term dictionaries, with
+ * curated entries always taking precedence on a key collision.
+ *
+ * @param curated - The locale's hand-curated term → slugs map, if any.
+ * @param generated - The locale's machine-generated term → slugs map, if any.
+ * @returns The merged term → slugs map for this locale.
+ */
+function mergeLocaleDict(
+    curated: Readonly<Record<string, readonly string[]>> | undefined,
+    generated: Readonly<Record<string, readonly string[]>> | undefined
+): Readonly<Record<string, readonly string[]>> {
+    return { ...(generated ?? {}), ...(curated ?? {}) };
+}
+
+/**
+ * Merges the curated and generated POI allowlist dictionaries across every
+ * locale present in either source. Curated entries always win on a key
+ * collision (see {@link mergeLocaleDict}).
+ *
+ * @param curated - The hand-curated dictionary.
+ * @param generated - The machine-generated dictionary.
+ * @returns The merged, per-locale dictionary.
+ */
+function mergePoiAllowlists(
+    curated: PoiAllowlistDict,
+    generated: PoiAllowlistDict
+): PoiAllowlistDict {
+    const locales = new Set([...Object.keys(curated), ...Object.keys(generated)]);
+    const merged: Record<string, Readonly<Record<string, readonly string[]>>> = {};
+    for (const locale of locales) {
+        merged[locale] = mergeLocaleDict(curated[locale], generated[locale]);
+    }
+    return merged;
+}
+
+/**
+ * Per-locale dictionary mapping NL landmark-name/alias variants → an array of
+ * canonical point-of-interest slugs (as stored in `points_of_interest.slug`).
+ *
+ * The merge of {@link CURATED_POI_ALLOWLIST} (hand-curated, all locales) and
+ * the HOS-142 machine-generated `es`-only entries — see the module doc above
+ * for the merge/precedence rule.
+ *
+ * @example
+ * ```ts
  * const slugs = POI_ALLOWLIST['es']['autódromo'];
  * // ['autodromo_concepcion_del_uruguay']
  * ```
  */
-export const POI_ALLOWLIST: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>> =
-    {
-        es: {
-            // 001 — Autódromo de Concepción del Uruguay (STADIUM)
-            autódromo: ['autodromo_concepcion_del_uruguay'],
-            autodromo: ['autodromo_concepcion_del_uruguay'],
-            'autódromo de concepción del uruguay': ['autodromo_concepcion_del_uruguay'],
-            'circuito de carreras': ['autodromo_concepcion_del_uruguay'],
-            // 002 — Playa Banco Pelay (BEACH)
-            'banco pelay': ['playa_banco_pelay'],
-            'playa banco pelay': ['playa_banco_pelay'],
-            // 003 — Palacio San José (MUSEUM)
-            'palacio san josé': ['palacio_san_jose'],
-            'palacio san jose': ['palacio_san_jose'],
-            // 004 — Basílica Inmaculada Concepción (MONUMENT)
-            'basílica inmaculada concepción': ['basilica_inmaculada_concepcion'],
-            'basilica inmaculada concepcion': ['basilica_inmaculada_concepcion'],
-            basílica: ['basilica_inmaculada_concepcion'],
-            // 005 — Parque Unzué (PARK)
-            'parque unzué': ['parque_unzue'],
-            'parque unzue': ['parque_unzue'],
-            // 006 — Isla del Puerto (NATURAL)
-            'isla del puerto': ['isla_del_puerto'],
-            // 007 — Plaza Francisco Ramírez (PLAZA)
-            'plaza francisco ramírez': ['plaza_francisco_ramirez'],
-            'plaza ramírez': ['plaza_francisco_ramirez'],
-            'plaza ramirez': ['plaza_francisco_ramirez'],
-            // 008 — Mirador Costanera (VIEWPOINT)
-            'mirador de la costanera': ['mirador_costanera'],
-            'mirador costanera': ['mirador_costanera'],
-            // 009 — Complejo Termal Concordia (OTHER)
-            'termas de concordia': ['complejo_termal_concordia'],
-            'complejo termal concordia': ['complejo_termal_concordia'],
-            // 010 — Balneario Itapé (BEACH)
-            'balneario itapé': ['balneario_itape'],
-            'balneario itape': ['balneario_itape'],
-            itapé: ['balneario_itape'],
-            // 011 — Parque Nacional El Palmar (PARK)
-            'parque nacional el palmar': ['parque_nacional_el_palmar'],
-            'el palmar': ['parque_nacional_el_palmar'],
-            // 012 — Termas de Federación (OTHER)
-            'termas de federación': ['termas_de_federacion'],
-            'termas de federacion': ['termas_de_federacion']
-        },
-        en: {
-            autodrome: ['autodromo_concepcion_del_uruguay'],
-            'race track': ['autodromo_concepcion_del_uruguay'],
-            'racing circuit': ['autodromo_concepcion_del_uruguay'],
-            'concepción del uruguay autodrome': ['autodromo_concepcion_del_uruguay'],
-            'banco pelay beach': ['playa_banco_pelay'],
-            'banco pelay': ['playa_banco_pelay'],
-            'san josé palace': ['palacio_san_jose'],
-            'san jose palace': ['palacio_san_jose'],
-            'immaculate conception basilica': ['basilica_inmaculada_concepcion'],
-            basilica: ['basilica_inmaculada_concepcion'],
-            'unzué park': ['parque_unzue'],
-            'unzue park': ['parque_unzue'],
-            'port island': ['isla_del_puerto'],
-            'francisco ramírez square': ['plaza_francisco_ramirez'],
-            'ramírez square': ['plaza_francisco_ramirez'],
-            'costanera viewpoint': ['mirador_costanera'],
-            'riverside lookout': ['mirador_costanera'],
-            'concordia thermal springs': ['complejo_termal_concordia'],
-            'itapé resort': ['balneario_itape'],
-            itape: ['balneario_itape'],
-            'el palmar national park': ['parque_nacional_el_palmar'],
-            'el palmar': ['parque_nacional_el_palmar'],
-            'federación hot springs': ['termas_de_federacion'],
-            'federacion hot springs': ['termas_de_federacion']
-        },
-        pt: {
-            autódromo: ['autodromo_concepcion_del_uruguay'],
-            'autódromo de concepción del uruguay': ['autodromo_concepcion_del_uruguay'],
-            'circuito de corridas': ['autodromo_concepcion_del_uruguay'],
-            'praia banco pelay': ['playa_banco_pelay'],
-            'banco pelay': ['playa_banco_pelay'],
-            'palácio san josé': ['palacio_san_jose'],
-            'palacio san jose': ['palacio_san_jose'],
-            basílica: ['basilica_inmaculada_concepcion'],
-            'basílica da imaculada conceição': ['basilica_inmaculada_concepcion'],
-            'parque unzué': ['parque_unzue'],
-            'ilha do porto': ['isla_del_puerto'],
-            'praça francisco ramírez': ['plaza_francisco_ramirez'],
-            'praça ramírez': ['plaza_francisco_ramirez'],
-            'mirante da costanera': ['mirador_costanera'],
-            'termas de concórdia': ['complejo_termal_concordia'],
-            'balneário itapé': ['balneario_itape'],
-            itapé: ['balneario_itape'],
-            'parque nacional el palmar': ['parque_nacional_el_palmar'],
-            'termas de federação': ['termas_de_federacion']
-        }
-    } as const;
+export const POI_ALLOWLIST: PoiAllowlistDict = mergePoiAllowlists(
+    CURATED_POI_ALLOWLIST,
+    GENERATED_POI_ALLOWLIST
+);
 
 /**
  * Match NL point-of-interest mentions to canonical POI slugs.
