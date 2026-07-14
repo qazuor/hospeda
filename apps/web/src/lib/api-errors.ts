@@ -22,6 +22,23 @@ import { createT } from '@/lib/i18n';
 export type { ApiErrorShape, TranslationFn };
 
 /**
+ * Builds a `t` from a locale that yields the `[MISSING: key]` sentinel for an
+ * absent key when no fallback is given. `createT` returns the raw dotted key in
+ * that case in PRODUCTION (only DEV emits the sentinel), but
+ * `translateApiErrorWithT`'s `reason`/`status` fall-through detects absence via
+ * the sentinel — so without this an unmapped `error.reason` would surface the
+ * raw `common.apiError.<REASON>` key to the user in prod instead of falling
+ * through to `code`/`message`/`fallback` (HOS-160 review fix).
+ */
+function buildLocaleT(locale: SupportedLocale): TranslationFn {
+    const t = createT(locale);
+    return (key, fallback, params) => {
+        const result = t(key, fallback, params);
+        return fallback === undefined && result === key ? `[MISSING: ${key}]` : result;
+    };
+}
+
+/**
  * Resolve an API error to a localized user-facing message. Accepts either a
  * ready `t` function or a `locale` (from which a client-safe `t` is built).
  * Never throws — always returns a non-empty string.
@@ -39,7 +56,7 @@ export function translateApiError(params: {
     readonly fallback?: string;
 }): string {
     const { error, t, locale, fallback } = params;
-    const resolvedT: TranslationFn | undefined = t ?? (locale ? createT(locale) : undefined);
+    const resolvedT: TranslationFn | undefined = t ?? (locale ? buildLocaleT(locale) : undefined);
 
     if (!resolvedT) {
         // No translation context — return the most useful raw value.

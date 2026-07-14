@@ -81,7 +81,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
         // (HOS-160 lever C). All other static routes pass through untouched.
         if (isImageEndpointRoute({ path })) {
             const response = await next();
-            response.headers.set('Cache-Control', IMAGE_ENDPOINT_CACHE_CONTROL);
+            // Only cache SUCCESSFUL transforms as immutable. A transient Sharp
+            // failure (500) or a bad `href` (404) must NOT be pinned for a year
+            // by the browser/CDN, which would keep serving a broken hero long
+            // after the cause is fixed, with no natural revalidation.
+            if (response.ok) {
+                response.headers.set('Cache-Control', IMAGE_ENDPOINT_CACHE_CONTROL);
+            }
             return response;
         }
         return next();

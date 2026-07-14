@@ -141,50 +141,63 @@ export async function fetchAuthMe(params: FetchAuthMeParams = {}): Promise<AuthM
     }
 }
 
+/** Guest (unauthenticated) snapshot — the uniform result for any non-ok or failed request. */
+function guestAuthMeSnapshot(): AuthMeSnapshot {
+    return {
+        isAuthenticated: false,
+        user: null,
+        permissions: [],
+        role: null,
+        cachedAt: Date.now()
+    };
+}
+
 /**
  * Performs the actual `/auth/me` request and mapping. Kept separate from
- * `fetchAuthMe` so the in-flight dedup wrapper stays thin.
+ * `fetchAuthMe` so the in-flight dedup wrapper stays thin. Never rejects — a
+ * transport failure (network/DNS/CORS) or malformed JSON resolves to a guest
+ * snapshot, so the shared in-flight promise never fans a rejection out to every
+ * concurrent awaiter.
  */
 async function performAuthMeFetch({ apiUrl }: FetchAuthMeParams): Promise<AuthMeSnapshot> {
     const resolvedApiUrl = apiUrl ?? getApiUrl();
-    const response = await fetch(`${resolvedApiUrl}/api/v1/public/auth/me`, {
-        credentials: 'include'
-    });
-    if (!response.ok) {
+    try {
+        const response = await fetch(`${resolvedApiUrl}/api/v1/public/auth/me`, {
+            credentials: 'include'
+        });
+        if (!response.ok) {
+            return guestAuthMeSnapshot();
+        }
+        const json = (await response.json()) as AuthMeResponseBody;
+
+        const actor = json.data?.actor;
+        const isAuthenticated = json.data?.isAuthenticated === true;
+
         return {
-            isAuthenticated: false,
-            user: null,
-            permissions: [],
-            role: null,
+            isAuthenticated,
+            user:
+                isAuthenticated && actor?.id
+                    ? {
+                          id: actor.id,
+                          name: actor.name ?? '',
+                          email: actor.email ?? '',
+                          // Map actor.image → avatarUrl so the navbar avatar
+                          // stays in sync after the post-mount /auth/me refresh
+                          // (otherwise OAuth users would flicker from the
+                          // SSR-provided picture back to initials after ~1s,
+                          // mirroring the name flicker fixed in PR #1111).
+                          avatarUrl:
+                              typeof actor.image === 'string' && actor.image.length > 0
+                                  ? actor.image
+                                  : undefined
+                      }
+                    : null,
+            permissions: actor?.permissions ?? [],
+            role: isAuthenticated && actor?.role ? actor.role : null,
             cachedAt: Date.now()
         };
+    } catch {
+        // Network/DNS/CORS failure or malformed JSON — treat as guest.
+        return guestAuthMeSnapshot();
     }
-    const json = (await response.json()) as AuthMeResponseBody;
-
-    const actor = json.data?.actor;
-    const isAuthenticated = json.data?.isAuthenticated === true;
-
-    return {
-        isAuthenticated,
-        user:
-            isAuthenticated && actor?.id
-                ? {
-                      id: actor.id,
-                      name: actor.name ?? '',
-                      email: actor.email ?? '',
-                      // Map actor.image → avatarUrl so the navbar avatar
-                      // stays in sync after the post-mount /auth/me refresh
-                      // (otherwise OAuth users would flicker from the
-                      // SSR-provided picture back to initials after ~1s,
-                      // mirroring the name flicker fixed in PR #1111).
-                      avatarUrl:
-                          typeof actor.image === 'string' && actor.image.length > 0
-                              ? actor.image
-                              : undefined
-                  }
-                : null,
-        permissions: actor?.permissions ?? [],
-        role: isAuthenticated && actor?.role ? actor.role : null,
-        cachedAt: Date.now()
-    };
 }

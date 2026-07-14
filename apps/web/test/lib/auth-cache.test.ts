@@ -180,4 +180,18 @@ describe('fetchAuthMe in-flight dedup (HOS-160 lever D)', () => {
         // (TTL caching is the hook layer's job, not this module's).
         expect(fetchMock).toHaveBeenCalledTimes(2);
     });
+
+    it('resolves to a guest snapshot when the request rejects (transport error)', async () => {
+        // A network/DNS/CORS failure must NOT reject — otherwise, with the shared
+        // in-flight promise, one rejection would fan out to every concurrent
+        // caller. It resolves to guest instead (never-throws contract).
+        const fetchMock = vi.fn().mockRejectedValue(new Error('network down'));
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        const [s1, s2] = await Promise.all([fetchAuthMe(), fetchAuthMe()]);
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(s1).toMatchObject({ isAuthenticated: false, user: null, role: null });
+        expect(s2).toEqual(s1);
+    });
 });
