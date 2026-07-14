@@ -111,6 +111,28 @@ describe('PointOfInterestService.getNearby', () => {
         expect(result.data).toEqual([]);
     });
 
+    it('rejects a radiusKm above the 20km upper bound (defense-in-depth, HOS-145 judgment-day)', async () => {
+        const result = await service.getNearby(
+            { lat: -32.4825, long: -58.2372, radiusKm: 21, limit: 12 },
+            actorWithPerms
+        );
+
+        expect(result.data).toBeUndefined();
+        expect(result.error?.code).toBe('VALIDATION_ERROR');
+        expect(model.findWithinRadius).not.toHaveBeenCalled();
+    });
+
+    it('rejects a limit above the 50 upper bound (defense-in-depth, HOS-145 judgment-day)', async () => {
+        const result = await service.getNearby(
+            { lat: -32.4825, long: -58.2372, radiusKm: 5, limit: 51 },
+            actorWithPerms
+        );
+
+        expect(result.data).toBeUndefined();
+        expect(result.error?.code).toBe('VALIDATION_ERROR');
+        expect(model.findWithinRadius).not.toHaveBeenCalled();
+    });
+
     it('preserves distanceKm as a number for multiple rows, sorted as returned by the model', async () => {
         const near = buildPoiRow({
             id: getMockId('pointOfInterest', 'poi-near') as PointOfInterestIdType,

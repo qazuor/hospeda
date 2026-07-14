@@ -83,6 +83,7 @@ import {
     AccommodationTopRatedParamsSchema,
     type AccommodationUpdateInput,
     AccommodationUpdateInputSchema,
+    type ApproximateLocationType,
     type CountResponse,
     DestinationTypeEnum,
     type EntityFilters,
@@ -158,6 +159,7 @@ import {
 import {
     applyAccommodationLocationPrivacy,
     applyAccommodationLocationPrivacyList,
+    projectAccommodationApproximateLocation,
     projectAccommodationCityDestination,
     projectAccommodationCityDestinationList,
     projectAccommodationOwnerAvatar,
@@ -187,8 +189,8 @@ const NEARBY_POI_DEFAULT_LIMIT = 12;
  */
 const AccommodationGetNearbyPoisParamsSchema = z.object({
     slug: z.string().min(1),
-    radiusKm: z.number().positive().optional(),
-    limit: z.number().int().positive().optional()
+    radiusKm: z.number().positive().max(20).optional(),
+    limit: z.number().int().positive().max(50).optional()
 });
 
 /**
@@ -2738,42 +2740,66 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
-     * Finds points of interest near a single accommodation's exact
-     * coordinates (HOS-145 T-004). This is the privacy-preserving core of
-     * the "near POI" accommodation feature: the accommodation's real
-     * coordinates are read and used ONLY to center the proximity search —
-     * they are NEVER included in the returned value, which is a plain
-     * `NearbyPoi[]`.
+     * Finds points of interest near a single accommodation's OBFUSCATED
+     * (approximate) location (HOS-145 T-004, revised 2026-07-14 judgment-day
+     * R-4). This is the privacy-preserving core of the "near POI"
+     * accommodation feature: the proximity search is centered on
+     * `approximateLocation` — never on the accommodation's real
+     * coordinates, which are not even read by this method.
      *
-     * Reads the accommodation via `model.findOne({ slug })` directly
-     * (the same flat, relation-free read `getStats` uses) instead of going
-     * through `getByField`/`getBySlug`. This deliberately BYPASSES the
-     * `_afterGetByField` hook that applies
-     * {@link applyAccommodationLocationPrivacy} — that hook exists to strip
-     * exact coordinates from RESPONSES sent to callers, but this method
-     * needs the exact coordinates internally to center the search and never
-     * echoes them back. Using the projected read here would make the
-     * feature non-functional for actors without
-     * `ACCOMMODATION_LOCATION_EXACT_VIEW` (i.e. everyone except
-     * admins/owners), which is the opposite of the intent (POI proximity
-     * should work for public/anonymous visitors too).
+     * ### Why `approximateLocation`, not the exact coordinate (trilateration, R-4)
      *
-     * Coordinates are parsed from `location.coordinates.{lat,long}` (stored
-     * as strings in the JSONB `location` column) the same way
-     * {@link projectAccommodationApproximateLocation} does. A missing slug,
-     * missing coordinates, or unparseable coordinates all resolve to an
-     * empty array rather than throwing — a "no coordinates yet" accommodation
-     * has a valid, empty nearby-POI state (AC-2), and this method is not
-     * responsible for 404-ing on a missing slug (the route layer does).
+     * An earlier version centered the search on the real coordinate (read via
+     * a raw `model.findOne`) on the reasoning that the coordinate itself was
+     * never echoed back. That reasoning missed a side channel: each returned
+     * POI already carries its own PUBLIC exact `lat`/`long`, and the POI
+     * proximity ordering/distance is derived from the real accommodation
+     * coordinate. Three or more POI distances from known POI coordinates are
+     * enough to trilaterate the real accommodation coordinate to
+     * near-exactness, silently defeating the SPEC-097 obfuscation the rest of
+     * the API surface enforces. Centering on `approximateLocation` instead
+     * means every distance returned already carries the same random
+     * obfuscation offset as the public location circle, so no amount of POI
+     * trilateration can recover a better fix than that circle already gives.
+     *
+     * ### Why a lightweight gated read, not `getBySlug` (R-5, performance)
+     *
+     * `getBySlug` (⇒ `getByField`) always loads `getDefaultGetByIdRelations()`
+     * (destination/owner/reviews/faqs) and runs `attachComposedMedia` (another
+     * DB read) — all just to obtain `approximateLocation`. Since the
+     * accommodation detail page already calls `getBySlug` for its own render,
+     * every page view would otherwise pay for that heavy read TWICE. This
+     * method instead does a bare `this.model.findOne({ slug })` (no relations,
+     * no media) and applies the SAME visibility gate as every other read via
+     * `this._canView(actor, entity)` — the identical `checkCanView` logic
+     * `getByField` calls internally — followed by
+     * `projectAccommodationApproximateLocation` (the same projection
+     * `_afterGetByField` uses under the hood via
+     * {@link applyAccommodationLocationPrivacy}) to compute the obfuscated
+     * circle. No relation or media data is ever loaded, and the real
+     * coordinate never leaves this method.
+     *
+     * A gated read that resolves to NOT_FOUND / FORBIDDEN / GONE (not found,
+     * not visible, soft-deleted) or that succeeds but has no
+     * `approximateLocation` (accommodation has no coordinates yet) both
+     * resolve to an empty array rather than propagating a 403/404 — the
+     * public "near POI" surface stays a uniform 200 `{ items: [] }` for
+     * anti-enumeration (AC-2, AC-8). Any OTHER error (e.g. `INTERNAL_ERROR`/
+     * `DATABASE_ERROR` from a genuine backend failure, or a raw `DbError`
+     * from the model layer) is deliberately NOT swallowed — it propagates as
+     * an error result so it surfaces as a 5xx instead of masquerading as "no
+     * POIs nearby" (judgment-day round 2 #4).
      *
      * @param params - `slug` (required), plus optional `radiusKm`/`limit`
      *   overrides. Defaults: `radiusKm` = {@link DEFAULT_POI_PROXIMITY_RADIUS_KM}
      *   (5km), `limit` = {@link NEARBY_POI_DEFAULT_LIMIT} (12).
-     * @param actor - The actor performing the search (forwarded to
-     *   `PointOfInterestService.getNearby` for its own permission checks).
+     * @param actor - The actor performing the search (forwarded to both the
+     *   visibility gate and `PointOfInterestService.getNearby` for its own
+     *   permission checks).
      * @param ctx - Optional service context for transaction propagation.
      * @returns The nearby points of interest, nearest-first. Never includes
-     *   the accommodation's own coordinates or any other accommodation field.
+     *   the accommodation's own coordinates (real or approximate) or any
+     *   other accommodation field.
      */
     public async getNearbyPois(
         params: { slug: string; radiusKm?: number; limit?: number },
@@ -2786,19 +2812,56 @@ export class AccommodationService extends BaseCrudService<
             schema: AccommodationGetNearbyPoisParamsSchema,
             ctx,
             execute: async (validatedParams, validatedActor, execCtx) => {
-                // Raw, relation-free, privacy-UNPROJECTED read — see JSDoc above.
-                const entity = await this.model.findOne(
-                    { slug: validatedParams.slug },
-                    execCtx?.tx
-                );
+                let approximateLocation: ApproximateLocationType | undefined;
 
-                if (!entity?.location?.coordinates) {
-                    return [];
+                try {
+                    // Lightweight visibility-gated read (R-5): a bare
+                    // `findOne` (no relations, no media) instead of
+                    // `getBySlug`, since this method only needs the
+                    // obfuscated coordinate. `_canView` enforces the exact
+                    // same gate `getByField` would (DRAFT/PRIVATE/
+                    // soft-deleted/suspended/plan-restricted/RESTRICTED-
+                    // without-VIP are all excluded).
+                    const entity = await this.model.findOne(
+                        { slug: validatedParams.slug },
+                        execCtx?.tx
+                    );
+
+                    if (!entity) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            `${this.entityName} not found`
+                        );
+                    }
+
+                    await this._canView(validatedActor, entity as Accommodation);
+
+                    const salt = this.getLocationSalt();
+                    approximateLocation = salt
+                        ? projectAccommodationApproximateLocation(entity as Accommodation, {
+                              salt
+                          }).approximateLocation
+                        : undefined;
+                } catch (error) {
+                    if (
+                        error instanceof ServiceError &&
+                        (error.code === ServiceErrorCode.NOT_FOUND ||
+                            error.code === ServiceErrorCode.FORBIDDEN ||
+                            error.code === ServiceErrorCode.GONE)
+                    ) {
+                        // Not found / not visible — uniform empty result, no leak.
+                        return [];
+                    }
+                    // Any other failure (INTERNAL_ERROR, DATABASE_ERROR, a raw
+                    // DbError from the model, ...) is a genuine backend
+                    // failure, not an intended "not visible" outcome —
+                    // propagate it (judgment-day round 2 #4) instead of
+                    // silently swallowing it into `{ items: [] }`.
+                    throw error;
                 }
 
-                const lat = Number.parseFloat(entity.location.coordinates.lat);
-                const long = Number.parseFloat(entity.location.coordinates.long);
-                if (!Number.isFinite(lat) || !Number.isFinite(long)) {
+                if (!approximateLocation) {
+                    // No coordinates on this accommodation yet — valid empty state.
                     return [];
                 }
 
@@ -2806,7 +2869,12 @@ export class AccommodationService extends BaseCrudService<
                 const limit = validatedParams.limit ?? NEARBY_POI_DEFAULT_LIMIT;
 
                 const result = await this.pointOfInterestService.getNearby(
-                    { lat, long, radiusKm, limit },
+                    {
+                        lat: approximateLocation.lat,
+                        long: approximateLocation.lng,
+                        radiusKm,
+                        limit
+                    },
                     validatedActor,
                     execCtx
                 );

@@ -90,8 +90,8 @@ const POI_CATEGORY_RELATIONS_PAGE_SIZE = 200;
 const GetNearbyPoisInputSchema = z.object({
     lat: z.number(),
     long: z.number(),
-    radiusKm: z.number().positive(),
-    limit: z.number().int().positive()
+    radiusKm: z.number().positive().max(20),
+    limit: z.number().int().positive().max(50)
 });
 
 /**
