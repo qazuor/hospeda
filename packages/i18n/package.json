@@ -38,12 +38,12 @@
     "devDependencies": {
         "@repo/schemas": "workspace:*",
         "@repo/typescript-config": "workspace:*",
-        "@types/node": "^26.0.1",
+        "@types/node": "^26.1.0",
         "@types/react": "^19.1.1",
-        "@vitest/coverage-v8": "^4.1.9",
-        "tsx": "^4.22.4",
+        "@vitest/coverage-v8": "^4.1.10",
+        "tsx": "^4.23.0",
         "typescript": "6.0.3",
         "vite-tsconfig-paths": "^6.1.1",
-        "vitest": "^4.1.9"
+        "vitest": "^4.1.10"
     }
 }

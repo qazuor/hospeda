@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "536-point-of-interest-museo_historico_municipal",
+    "slug": "museo_historico_municipal",
+    "lat": -32.30137,
+    "long": -59.13904,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo fundado en 1965 con piezas paleontológicas, armas, objetos domésticos, herramientas, documentación y la máquina original del reloj municipal.",
+    "nameI18n": {
+        "es": "Museo Histórico Municipal Rosario del Tala",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo fundado en 1965 con piezas paleontológicas, armas, objetos domésticos, herramientas, documentación y la máquina original del reloj municipal.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urquiza 269, Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "museo historico municipal",
+        "reloj municipal",
+        "paleontologia",
+        "historia local",
+        "urquiza 269"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf; https://mapcarta.com/es/W355824971",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "208-point-of-interest-circuito_fotografia_naturaleza",
+    "slug": "circuito_fotografia_naturaleza",
+    "lat": -33.5006069,
+    "long": -58.8047168,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Experiencia guiada orientada a fotografía de aves y paisajes en horarios de amanecer y atardecer.",
+    "nameI18n": {
+        "es": "Circuito de Fotografía de Naturaleza",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Experiencia guiada orientada a fotografía de aves y paisajes en horarios de amanecer y atardecer.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Entorno natural de Ceibas, Entre Ríos",
+    "keywords": ["fotografia de aves", "amanecer", "atardecer", "guia local", "naturaleza"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.lanacion.com.ar/revista-lugares/meca-internacional-el-pueblo-que-convoca-gente-del-mundo-entero-para-ver-y-fotografiar-aves-nid03082025/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

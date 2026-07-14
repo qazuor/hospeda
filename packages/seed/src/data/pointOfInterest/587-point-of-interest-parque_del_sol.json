@@ -1,0 +1,54 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "587-point-of-interest-parque_del_sol",
+    "slug": "parque_del_sol",
+    "lat": -32.984740699999996,
+    "long": -58.498847700000006,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Extenso complejo recreativo a orillas del río con playa, camping, servicios y espacios para pasar el día.",
+    "nameI18n": {
+        "es": "Parque del Sol",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Extenso complejo recreativo a orillas del río con playa, camping, servicios y espacios para pasar el día.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ruta Internacional 136 y río Gualeguaychú, Entre Ríos",
+    "keywords": ["parque del sol", "camping", "playa", "ruta 136", "rio gualeguaychu"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/playas; https://gualeguaychu.gov.ar/noticia/29722-parque-del-sol%3A-servicios%2C-camping-y-playa-para-disfrutar-el-verano-en-gualeguaychu",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "campground",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

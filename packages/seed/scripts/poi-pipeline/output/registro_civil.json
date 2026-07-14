@@ -1,0 +1,45 @@
+{
+    "slug": "registro_civil",
+    "lat": -33.71642,
+    "long": -58.65948,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Oficina gubernamental para trámites de identidad, estado civil y documentación.",
+    "nameI18n": {
+        "es": "Registro Civil de Villa Paranacito",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Oficina gubernamental para trámites de identidad, estado civil y documentación.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Entre Ríos, Villa Paranacito, Entre Ríos",
+    "keywords": [
+        "registro civil villa paranacito",
+        "documentacion",
+        "tramites",
+        "avenida entre rios"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W411223140",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

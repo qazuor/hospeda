@@ -1,0 +1,54 @@
+{
+    "slug": "sala_san_martin",
+    "lat": -31.626099999999997,
+    "long": -58.504609200000004,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Antiguo cine transformado en sala cultural y teatral, utilizado para espectáculos, cine, presentaciones y actividades comunitarias.",
+    "nameI18n": {
+        "es": "Sala Municipal San Martín",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Antiguo cine transformado en sala cultural y teatral, utilizado para espectáculos, cine, presentaciones y actividades comunitarias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Calle San Martín, San Salvador, Entre Ríos",
+    "keywords": [
+        "sala san martin",
+        "antiguo cine",
+        "teatro",
+        "cultura",
+        "espectaculos"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/; https://sansalvadorer.gob.ar/este-sabado-se-presenta-audicion-poetica-de-berta-singerman-en-nuestra-ciudad/",
+    "notes": "Denominación, origen y uso cultural confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "theater",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        }
+    ]
+}

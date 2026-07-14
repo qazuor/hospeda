@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "569-point-of-interest-paraje_mazaruca",
+    "slug": "paraje_mazaruca",
+    "lat": -33.60873,
+    "long": -59.27758,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Paraje rural conocido por sus ambientes de pesca, campings y paisaje isleño dentro del ejido de Ibicuy.",
+    "nameI18n": {
+        "es": "Paraje Mazaruca",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paraje rural conocido por sus ambientes de pesca, campings y paisaje isleño dentro del ejido de Ibicuy.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Mazaruca, Entre Ríos",
+    "keywords": ["mazaruca", "pesca", "camping", "paraje rural", "delta"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/ibicuy; https://mapcarta.com/es/19207228",
+    "notes": "Paraje mencionado por Turismo Entre Ríos; coordenadas del centro poblado contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "campground",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

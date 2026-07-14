@@ -1,0 +1,54 @@
+{
+    "slug": "circuito_funerario_historico",
+    "lat": -32.4851941,
+    "long": -58.2334373,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido interpretativo por antiguos cementerios, capillas, mausoleos y sitios de memoria de la ciudad.",
+    "nameI18n": {
+        "es": "Circuito Histórico y Funerario",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido interpretativo por antiguos cementerios, capillas, mausoleos y sitios de memoria de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro histórico y Cementerio Municipal, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "circuito funerario",
+        "cementerios historicos",
+        "mausoleos",
+        "memoria urbana",
+        "patrimonio"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/concepcion-del-uruguay-tendra-su-noche-de-los-museos",
+    "notes": "Recorrido temático documentado; falta consolidar trazado permanente. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        }
+    ]
+}

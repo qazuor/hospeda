@@ -1,0 +1,42 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "311-point-of-interest-escuela_20_monner_sanz",
+    "slug": "escuela_20_monner_sanz",
+    "lat": -33.64753,
+    "long": -58.59578,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Institución educativa y referencia comunitaria de Arroyo Martínez.",
+    "nameI18n": {
+        "es": "Escuela N.º 20 Ricardo Monner Sanz",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Institución educativa y referencia comunitaria de Arroyo Martínez.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Arroyo Martínez, Entre Ríos",
+    "keywords": ["escuela 20 ricardo monner sanz", "arroyo martinez", "educacion", "escuela rural"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N9172251262",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "education",
+            "isPrimary": true
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

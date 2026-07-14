@@ -1,0 +1,51 @@
+{
+    "slug": "la_famiglia_regionales",
+    "lat": -30.8952536,
+    "long": -58.0438605,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Elaboración artesanal de licores, dulces, mermeladas, yerbas agroecológicas, salames, quesos y vinos regionales.",
+    "nameI18n": {
+        "es": "La Famiglia Regionales",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Elaboración artesanal de licores, dulces, mermeladas, yerbas agroecológicas, salames, quesos y vinos regionales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Concepción del Uruguay 577, Federación, Entre Ríos",
+    "keywords": [
+        "la famiglia regionales",
+        "licores",
+        "dulces",
+        "quesos",
+        "salames",
+        "productos regionales"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/otros-atractivos/",
+    "notes": "Dirección y producción confirmadas. Falta validar atención actual y geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "gastronomy",
+            "isPrimary": true
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "342-point-of-interest-ex_fabrica_aceites",
+    "slug": "ex_fabrica_aceites",
+    "lat": -30.7603828,
+    "long": -57.9852672,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sitio de patrimonio industrial incluido en el circuito guiado de referencias urbanas de Chajarí.",
+    "nameI18n": {
+        "es": "Ex Fábrica de Aceites",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sitio de patrimonio industrial incluido en el circuito guiado de referencias urbanas de Chajarí.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Chajarí, Entre Ríos",
+    "keywords": [
+        "ex fabrica de aceites",
+        "patrimonio industrial",
+        "industria",
+        "circuito guiado",
+        "chajari"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf",
+    "notes": "Sitio incluido en el plano turístico oficial. Falta confirmar estado actual, acceso y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

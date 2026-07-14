@@ -1,0 +1,50 @@
+{
+    "slug": "gaucho_paintball",
+    "lat": null,
+    "long": null,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Predio de paintball y recreación al aire libre situado sobre el acceso Eva Perón.",
+    "nameI18n": {
+        "es": "Gaucho Paintball",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Predio de paintball y recreación al aire libre situado sobre el acceso Eva Perón.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Acceso Eva Perón, Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "gaucho paintball",
+        "paintball",
+        "aventura",
+        "acceso eva peron",
+        "juego en equipo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=que-hacer",
+    "notes": "Prestador listado oficialmente. Falta validar operación actual y geocodificar.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        }
+    ]
+}

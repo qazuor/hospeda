@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "119-point-of-interest-cano_tala",
+    "slug": "cano_tala",
+    "lat": -32.3169459,
+    "long": -59.146917800000004,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Escuela y prestador de canotaje con cursos básicos y salidas combinadas con ciclismo.",
+    "nameI18n": {
+        "es": "Cano Tala",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Escuela y prestador de canotaje con cursos básicos y salidas combinadas con ciclismo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Balneario Delio Panizza, Rosario del Tala, Entre Ríos",
+    "keywords": ["cano tala", "canotaje", "canoa", "ciclismo", "balneario"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=que-hacer",
+    "notes": "Prestador listado oficialmente. Falta validar vigencia y ubicación dentro del balneario. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

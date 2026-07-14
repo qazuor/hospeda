@@ -1,0 +1,59 @@
+{
+    "slug": "camping_club_piedras_coloradas",
+    "lat": -32.223271,
+    "long": -58.13160699999999,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Camping y balneario con sectores para carpas, sanitarios, restaurante, recreación náutica, canchas y servicios de guardavidas en temporada.",
+    "nameI18n": {
+        "es": "Camping Club Piedras Coloradas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Camping y balneario con sectores para carpas, sanitarios, restaurante, recreación náutica, canchas y servicios de guardavidas en temporada.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Doctor Juan Adolfo Ansaldi, Colón, Entre Ríos",
+    "keywords": [
+        "piedras coloradas",
+        "camping",
+        "balneario",
+        "carpas",
+        "playa",
+        "recreacion nautica"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.colonturismo.tur.ar/directorio/camping-club-piedras-coloradas/",
+    "notes": "Servicios y dirección confirmados por Turismo Colón. Falta geocodificar el acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "campground",
+            "isPrimary": true
+        },
+        {
+            "slug": "beach",
+            "isPrimary": false
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

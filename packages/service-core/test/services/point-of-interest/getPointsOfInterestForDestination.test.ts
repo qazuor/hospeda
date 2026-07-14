@@ -1,6 +1,6 @@
 import { DestinationModel, PointOfInterestModel, RDestinationPointOfInterestModel } from '@repo/db';
 import type { DestinationIdType, PointOfInterestIdType } from '@repo/schemas';
-import { ServiceErrorCode } from '@repo/schemas';
+import { PointOfInterestDestinationRelationEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ServiceConfig } from '../../../src';
 import { PointOfInterestService } from '../../../src/services/point-of-interest/point-of-interest.service';
@@ -21,8 +21,16 @@ const poi2 = {
     id: getMockId('pointOfInterest', 'poi-2') as PointOfInterestIdType,
     slug: 'test-poi-2'
 };
-const relation1 = { destinationId, pointOfInterestId: poi1.id };
-const relation2 = { destinationId, pointOfInterestId: poi2.id };
+const relation1 = {
+    destinationId,
+    pointOfInterestId: poi1.id,
+    relation: PointOfInterestDestinationRelationEnum.PRIMARY
+};
+const relation2 = {
+    destinationId,
+    pointOfInterestId: poi2.id,
+    relation: PointOfInterestDestinationRelationEnum.PRIMARY
+};
 
 describe('PointOfInterestService.getPointsOfInterestForDestination', () => {
     let service: PointOfInterestService;
@@ -47,9 +55,13 @@ describe('PointOfInterestService.getPointsOfInterestForDestination', () => {
         const result = await service.getPointsOfInterestForDestination(actorWithPerms, {
             destinationId,
             page: 1,
-            pageSize: 10
+            pageSize: 10,
+            relation: PointOfInterestDestinationRelationEnum.PRIMARY
         });
-        expect(result.data?.pointsOfInterest).toEqual([poi1, poi2]);
+        expect(result.data?.pointsOfInterest).toEqual([
+            { ...poi1, relation: PointOfInterestDestinationRelationEnum.PRIMARY },
+            { ...poi2, relation: PointOfInterestDestinationRelationEnum.PRIMARY }
+        ]);
         expect(result.error).toBeUndefined();
     });
 
@@ -58,7 +70,8 @@ describe('PointOfInterestService.getPointsOfInterestForDestination', () => {
         const result = await service.getPointsOfInterestForDestination(actorWithPerms, {
             destinationId,
             page: 1,
-            pageSize: 10
+            pageSize: 10,
+            relation: PointOfInterestDestinationRelationEnum.PRIMARY
         });
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
         expect(result.data).toBeUndefined();
@@ -71,7 +84,8 @@ describe('PointOfInterestService.getPointsOfInterestForDestination', () => {
         const result = await service.getPointsOfInterestForDestination(actorWithPerms, {
             destinationId,
             page: 1,
-            pageSize: 10
+            pageSize: 10,
+            relation: PointOfInterestDestinationRelationEnum.PRIMARY
         });
         expect(result.data?.pointsOfInterest).toEqual([]);
         expect(result.error).toBeUndefined();
@@ -90,9 +104,21 @@ describe('PointOfInterestService.getPointsOfInterestForDestination', () => {
             id: getMockId('pointOfInterest', 'poi-high') as PointOfInterestIdType,
             displayWeight: 90
         };
-        const relLow = { destinationId, pointOfInterestId: poiLow.id };
-        const relMid = { destinationId, pointOfInterestId: poiMid.id };
-        const relHigh = { destinationId, pointOfInterestId: poiHigh.id };
+        const relLow = {
+            destinationId,
+            pointOfInterestId: poiLow.id,
+            relation: PointOfInterestDestinationRelationEnum.PRIMARY
+        };
+        const relMid = {
+            destinationId,
+            pointOfInterestId: poiMid.id,
+            relation: PointOfInterestDestinationRelationEnum.PRIMARY
+        };
+        const relHigh = {
+            destinationId,
+            pointOfInterestId: poiHigh.id,
+            relation: PointOfInterestDestinationRelationEnum.PRIMARY
+        };
 
         asMock(destinationModel.findOne).mockResolvedValue(destination);
         asMock(relatedModel.findAll).mockResolvedValue({ items: [relMid, relLow, relHigh] });
@@ -101,7 +127,8 @@ describe('PointOfInterestService.getPointsOfInterestForDestination', () => {
         const result = await service.getPointsOfInterestForDestination(actorWithPerms, {
             destinationId,
             page: 1,
-            pageSize: 10
+            pageSize: 10,
+            relation: PointOfInterestDestinationRelationEnum.PRIMARY
         });
 
         const items = result.data?.pointsOfInterest;
@@ -117,9 +144,110 @@ describe('PointOfInterestService.getPointsOfInterestForDestination', () => {
         const result = await service.getPointsOfInterestForDestination(actorWithPerms, {
             destinationId,
             page: 1,
-            pageSize: 10
+            pageSize: 10,
+            relation: PointOfInterestDestinationRelationEnum.PRIMARY
         });
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
         expect(result.data).toBeUndefined();
+    });
+
+    // HOS-140 — 3-value relation filter contract (AC-4, AC-6)
+    describe('relation filter (HOS-140)', () => {
+        it('AC-6: filters by relation PRIMARY when relation is the default (behavior-preserving no-op)', async () => {
+            asMock(destinationModel.findOne).mockResolvedValue(destination);
+            asMock(relatedModel.findAll).mockResolvedValue({ items: [relation1, relation2] });
+            asMock(model.findAll).mockResolvedValue({ items: [poi1, poi2] });
+
+            const result = await service.getPointsOfInterestForDestination(actorWithPerms, {
+                destinationId,
+                page: 1,
+                pageSize: 10,
+                relation: PointOfInterestDestinationRelationEnum.PRIMARY
+            });
+
+            expect(relatedModel.findAll).toHaveBeenCalledWith({
+                destinationId,
+                relation: PointOfInterestDestinationRelationEnum.PRIMARY
+            });
+            // AC-4: every entry carries its (here, uniformly PRIMARY) relation.
+            expect(result.data?.pointsOfInterest).toEqual([
+                { ...poi1, relation: PointOfInterestDestinationRelationEnum.PRIMARY },
+                { ...poi2, relation: PointOfInterestDestinationRelationEnum.PRIMARY }
+            ]);
+        });
+
+        it('AC-4: filters by relation NEARBY when explicitly requested, and each entry carries relation NEARBY', async () => {
+            const nearbyRelation1 = {
+                destinationId,
+                pointOfInterestId: poi1.id,
+                relation: PointOfInterestDestinationRelationEnum.NEARBY
+            };
+            asMock(destinationModel.findOne).mockResolvedValue(destination);
+            asMock(relatedModel.findAll).mockResolvedValue({ items: [nearbyRelation1] });
+            asMock(model.findAll).mockResolvedValue({ items: [poi1] });
+
+            const result = await service.getPointsOfInterestForDestination(actorWithPerms, {
+                destinationId,
+                page: 1,
+                pageSize: 10,
+                relation: PointOfInterestDestinationRelationEnum.NEARBY
+            });
+
+            expect(relatedModel.findAll).toHaveBeenCalledWith({
+                destinationId,
+                relation: PointOfInterestDestinationRelationEnum.NEARBY
+            });
+            expect(result.data?.pointsOfInterest).toEqual([
+                { ...poi1, relation: PointOfInterestDestinationRelationEnum.NEARBY }
+            ]);
+        });
+
+        it('AC-4: drops the relation filter entirely when relation: ALL is requested, and each entry carries its own matching relation', async () => {
+            const nearbyRelation2 = {
+                destinationId,
+                pointOfInterestId: poi2.id,
+                relation: PointOfInterestDestinationRelationEnum.NEARBY
+            };
+            asMock(destinationModel.findOne).mockResolvedValue(destination);
+            // Mixed PRIMARY (relation1) and NEARBY (nearbyRelation2) join rows.
+            asMock(relatedModel.findAll).mockResolvedValue({
+                items: [relation1, nearbyRelation2]
+            });
+            asMock(model.findAll).mockResolvedValue({ items: [poi1, poi2] });
+
+            const result = await service.getPointsOfInterestForDestination(actorWithPerms, {
+                destinationId,
+                page: 1,
+                pageSize: 10,
+                relation: 'ALL'
+            });
+
+            expect(relatedModel.findAll).toHaveBeenCalledWith({ destinationId });
+            expect(result.data?.pointsOfInterest).toEqual([
+                { ...poi1, relation: PointOfInterestDestinationRelationEnum.PRIMARY },
+                { ...poi2, relation: PointOfInterestDestinationRelationEnum.NEARBY }
+            ]);
+        });
+
+        it('AC-6: filters by relation PRIMARY when relation is OMITTED from the raw input (Zod default fires)', async () => {
+            asMock(destinationModel.findOne).mockResolvedValue(destination);
+            asMock(relatedModel.findAll).mockResolvedValue({ items: [relation1, relation2] });
+            asMock(model.findAll).mockResolvedValue({ items: [poi1, poi2] });
+
+            // Simulates a raw (untyped) caller — e.g. an HTTP query string —
+            // that never set `relation`. The Zod schema's
+            // `.default(PointOfInterestDestinationRelationEnum.PRIMARY)` must
+            // fill it in at validation time (runWithLoggingAndValidation),
+            // preserving the pre-HOS-140 PRIMARY-only filtering behavior.
+            const rawInput = { destinationId, page: 1, pageSize: 10 } as unknown as Parameters<
+                typeof service.getPointsOfInterestForDestination
+            >[1];
+            await service.getPointsOfInterestForDestination(actorWithPerms, rawInput);
+
+            expect(relatedModel.findAll).toHaveBeenCalledWith({
+                destinationId,
+                relation: PointOfInterestDestinationRelationEnum.PRIMARY
+            });
+        });
     });
 });

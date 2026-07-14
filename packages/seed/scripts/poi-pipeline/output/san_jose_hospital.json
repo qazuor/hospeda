@@ -1,0 +1,46 @@
+{
+    "slug": "san_jose_hospital",
+    "lat": -32.21129,
+    "long": -58.2263,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Hospital público provincial con internación general, guardia y servicios sanitarios para la ciudad y localidades cercanas.",
+    "nameI18n": {
+        "es": "Hospital San José",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Hospital público provincial con internación general, guardia y servicios sanitarios para la ciudad y localidades cercanas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Doctor Luis Cettour 1274, San José, Entre Ríos",
+    "keywords": [
+        "hospital san jose",
+        "hospital",
+        "guardia",
+        "emergencias",
+        "salud"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W785406288",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

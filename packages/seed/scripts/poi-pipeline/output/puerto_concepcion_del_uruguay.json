@@ -1,0 +1,50 @@
+{
+    "slug": "puerto_concepcion_del_uruguay",
+    "lat": -32.49062,
+    "long": -58.22087,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Puerto de ultramar sobre el río Uruguay con importancia histórica, productiva y comercial para la ciudad y la región.",
+    "nameI18n": {
+        "es": "Puerto de Concepción del Uruguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Puerto de ultramar sobre el río Uruguay con importancia histórica, productiva y comercial para la ciudad y la región.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Paysandú, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "puerto",
+        "puerto de ultramar",
+        "rio uruguay",
+        "barcos",
+        "exportacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "port",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        }
+    ]
+}

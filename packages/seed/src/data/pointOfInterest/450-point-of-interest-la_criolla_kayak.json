@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "450-point-of-interest-la_criolla_kayak",
+    "slug": "la_criolla_kayak",
+    "lat": -31.714309000000004,
+    "long": -60.5075115,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Prestador de paseos guiados en kayak por el río Gualeguay desde el balneario.",
+    "nameI18n": {
+        "es": "La Criolla Kayak",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Prestador de paseos guiados en kayak por el río Gualeguay desde el balneario.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Balneario Delio Panizza, Rosario del Tala, Entre Ríos",
+    "keywords": ["la criolla kayak", "paseos en kayak", "rio gualeguay", "balneario", "remo"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir",
+    "notes": "Prestador listado oficialmente. Falta validar vigencia, reservas y punto de salida. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "801-point-of-interest-san_jose_cementerio_municipal",
+    "slug": "san_jose_cementerio_municipal",
+    "lat": -32.2014971,
+    "long": -58.2221131,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Necrópolis local con valor histórico y patrimonial, incluida en circuitos vinculados con las primeras familias de la colonia.",
+    "nameI18n": {
+        "es": "Cementerio Municipal de San José",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Necrópolis local con valor histórico y patrimonial, incluida en circuitos vinculados con las primeras familias de la colonia.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San José, Entre Ríos",
+    "keywords": [
+        "cementerio san jose",
+        "cementerio historico",
+        "colonos",
+        "patrimonio",
+        "recorrido"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sanjose.gob.ar/con-nueva-politica-de-turismo-sostenible-el-gobierno-municipal-busca-impulsar-el-sector/",
+    "notes": "Valor patrimonial y uso turístico confirmados; falta dirección y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

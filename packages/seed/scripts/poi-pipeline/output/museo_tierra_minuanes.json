@@ -1,0 +1,55 @@
+{
+    "slug": "museo_tierra_minuanes",
+    "lat": -31.86977,
+    "long": -59.02729,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo municipal con litos, cerámicas, huesos y testimonios de culturas charrúas y minuanes del centro entrerriano.",
+    "nameI18n": {
+        "es": "Museo Arqueológico y Antropológico Tierra de Minuanes",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo municipal con litos, cerámicas, huesos y testimonios de culturas charrúas y minuanes del centro entrerriano.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Villaguay, Entre Ríos",
+    "keywords": [
+        "tierra de minuanes",
+        "museo arqueologico",
+        "museo antropologico",
+        "charruas",
+        "minuanes",
+        "ceramica"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://mapcarta.com/es/W307824618",
+    "notes": "Coordenadas y operador municipal contrastados con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

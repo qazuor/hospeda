@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "344-point-of-interest-expo_feria_rural",
+    "slug": "expo_feria_rural",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Feria educativa y productiva vinculada con la escuela rural, emprendedores y actividades del campo.",
+    "nameI18n": {
+        "es": "Expo-Feria Rural",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Feria educativa y productiva vinculada con la escuela rural, emprendedores y actividades del campo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Escuela N.º 11 18 de Octubre, San Justo, Entre Ríos",
+    "keywords": ["expo feria rural", "escuela 11", "productores", "campo", "emprendedores"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://munisanjusto.gob.ar/noticias/1er-expo-feria-rural-escuela-nina-n-11-18-de-octubre-2024-07-11t11-30-00-000z-1er-e",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "fair",
+            "isPrimary": true
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        }
+    ]
+}

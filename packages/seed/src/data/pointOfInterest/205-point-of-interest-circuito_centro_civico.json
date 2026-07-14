@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "205-point-of-interest-circuito_centro_civico",
+    "slug": "circuito_centro_civico",
+    "lat": -31.8384741,
+    "long": -59.00134800000001,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido peatonal por Plaza 25 de Mayo, Palacio Municipal, Tribunales, parroquia, teatros, instituciones y edificios protegidos.",
+    "nameI18n": {
+        "es": "Circuito Histórico y Cultural del Centro Cívico",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido peatonal por Plaza 25 de Mayo, Palacio Municipal, Tribunales, parroquia, teatros, instituciones y edificios protegidos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de Villaguay, Entre Ríos",
+    "keywords": [
+        "circuito historico villaguay",
+        "centro civico",
+        "arquitectura",
+        "plaza 25 de mayo",
+        "city tour"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://www.villaguay.gob.ar/app/villaguay/historia",
+    "notes": "Recorrido confirmado como producto cultural. Falta digitalizar paradas y trazado. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        }
+    ]
+}

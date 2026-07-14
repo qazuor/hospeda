@@ -1,0 +1,46 @@
+{
+    "slug": "caps_alicia_moreau",
+    "lat": -32.4465759,
+    "long": -58.43376669999999,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Centro público de atención primaria de la salud que brinda servicios sanitarios básicos a la comunidad de San Justo.",
+    "nameI18n": {
+        "es": "Centro de Atención Primaria Alicia Moreau de Justo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Centro público de atención primaria de la salud que brinda servicios sanitarios básicos a la comunidad de San Justo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Justo, Entre Ríos",
+    "keywords": [
+        "centro de salud",
+        "alicia moreau de justo",
+        "caps",
+        "salud",
+        "guardia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N9066937279",
+    "notes": "La institución aparece cartografiada; falta confirmar coordenadas y domicilio exactos. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

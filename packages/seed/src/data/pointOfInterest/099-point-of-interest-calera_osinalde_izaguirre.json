@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "099-point-of-interest-calera_osinalde_izaguirre",
+    "slug": "calera_osinalde_izaguirre",
+    "lat": -32.3121393,
+    "long": -59.074371799999994,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Antiguo complejo industrial de hornos Hoffmann que produjo cal hasta la década de 1960 y marcó el desarrollo económico local.",
+    "nameI18n": {
+        "es": "Calera Osinalde-Izaguirre",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Antiguo complejo industrial de hornos Hoffmann que produjo cal hasta la década de 1960 y marcó el desarrollo económico local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Corredor ferroviario de Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "calera osinalde izaguirre",
+        "hornos hoffmann",
+        "cal",
+        "patrimonio industrial",
+        "chimenea"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf",
+    "notes": "Complejo histórico parcialmente conservado. Falta delimitar vestigios y condiciones de acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

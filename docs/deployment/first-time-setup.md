@@ -774,18 +774,20 @@ The day-1 production seed must therefore be a curated `--required` run that **ex
 4. Seed the curated production-safe required data. This runs every required step **except `users`** so no hardcoded admin credentials are loaded.
 
     ```bash
-    pnpm --filter @repo/seed seed --required --exclude=users
+    pnpm --filter @repo/seed seed --required --poi-catalog --exclude=users
     ```
 
     Notes on the flags:
     - **No `--reset`**: leaves any existing data untouched. Required for any rerun against a live database.
     - **No `--example`**: skips Faker-generated demo data (accommodations, posts, reviews, bookmarks).
+    - **`--poi-catalog`** (HOS-142): seeds the 914-POI production catalog (`packages/seed/src/pointOfInterestCatalog/`). This is real, permanent production content — not demo data — so it is a dedicated group instead of living inside `--example`, but it is NOT part of `--required` either (that group stays small/fast for non-production consumers like integration test setup). Omitting this flag on a fresh production DB silently ships zero POIs.
     - **`--exclude=users`**: skips the hardcoded `admin@hospeda.com` and `super-admin@hospeda.com` records. Step IDs accepted by `--exclude=` are the keys in [`packages/seed/src/manifest-required.json`](../../packages/seed/src/manifest-required.json) (e.g., `users`, `attractions`, `destinations`).
 
     What this DOES seed in prod:
     - System user, INTERNAL tags, SYSTEM tags, post tags
     - Role permissions
     - Amenities, features, attractions, destinations
+    - Points of interest catalog (HOS-142, via `--poi-catalog`)
     - Sponsorship levels and packages
     - Billing entitlements, limits, plans, add-ons, promo codes
     - Exchange rate config and initial rates

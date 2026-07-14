@@ -166,20 +166,6 @@
             }
         }
     },
-    "featureFlag": {
-        "description": {
-            "max": "Description cannot exceed {{max}} characters",
-            "min": "Description must be at least {{min}} characters"
-        },
-        "key": {
-            "invalidPattern": "Key format is invalid",
-            "max": "Key cannot exceed {{max}} characters",
-            "min": "Key must be at least {{min}} characters"
-        },
-        "reason": {
-            "max": "Reason cannot exceed {{max}} characters"
-        }
-    },
     "accommodationAmenity": {
         "additionalCostPercent": {
             "max": "[EN] El additional cost percent no puede superar los {{max}} caracteres",
@@ -2075,6 +2061,9 @@
         "permissionEffect": {
             "invalid": "The permission effect is invalid"
         },
+        "pointOfInterestDestinationRelation": {
+            "invalid": "[EN] The point of interest destination relation is invalid"
+        },
         "pointOfInterestType": {
             "invalid": "[EN] El point of interest type no es válido"
         },
@@ -2683,6 +2672,20 @@
             "required": "[EN] El applicable verticals es obligatorio"
         }
     },
+    "featureFlag": {
+        "description": {
+            "max": "Description cannot exceed {{max}} characters",
+            "min": "Description must be at least {{min}} characters"
+        },
+        "key": {
+            "invalidPattern": "Key format is invalid",
+            "max": "Key cannot exceed {{max}} characters",
+            "min": "Key must be at least {{min}} characters"
+        },
+        "reason": {
+            "max": "Reason cannot exceed {{max}} characters"
+        }
+    },
     "field": {
         "custom": "[EN] Error de validación personalizado",
         "invalidArguments": "[EN] Argumentos inválidos",
@@ -3011,6 +3014,25 @@
             "required": "[EN] La versión es obligatoria"
         }
     },
+    "poiCategory": {
+        "displayWeight": {
+            "int": "[EN] El peso de visualización debe ser un número entero",
+            "max": "[EN] El peso de visualización no puede superar los {{max}} caracteres",
+            "min": "[EN] El peso de visualización debe tener al menos {{min}} caracteres",
+            "required": "[EN] El peso de visualización es obligatorio"
+        },
+        "icon": {
+            "max": "[EN] El ícono no puede superar los {{max}} caracteres",
+            "min": "[EN] El ícono debe tener al menos {{min}} caracteres",
+            "required": "[EN] El ícono es obligatorio"
+        },
+        "slug": {
+            "max": "[EN] El slug no puede superar los {{max}} caracteres",
+            "min": "[EN] El slug debe tener al menos {{min}} caracteres",
+            "pattern": "[EN] El formato del slug no es válido",
+            "required": "[EN] El slug es obligatorio"
+        }
+    },
     "pointOfInterest": {
         "address": {
             "required": "[EN] La dirección es obligatoria",
@@ -3028,6 +3050,11 @@
                 "max": "[EN] El point of interest ids no puede superar los {{max}} caracteres",
                 "min": "[EN] El point of interest ids debe tener al menos {{min}} caracteres"
             }
+        },
+        "categories": {
+            "max": "[EN] No se pueden asignar más de {{max}} categorías",
+            "min": "[EN] Debe asignarse al menos {{min}} categoría",
+            "primaryNotInSet": "[EN] La categoría primaria debe estar incluida en el conjunto de categorías asignadas"
         },
         "description": {
             "max": "[EN] La descripción no puede superar los {{max}} caracteres",

@@ -45,7 +45,15 @@ describe('checkout-return-urls — annual builders (HOS-123 T-005)', () => {
         expect(buildAnnualSuccessUrl('es')).toBe(buildPaymentMethodReturnUrl('es'));
     });
 
-    it('buildNotificationUrl points at the MP webhook endpoint', () => {
-        expect(buildNotificationUrl()).toBe('https://api.test/api/v1/webhooks/mercadopago');
+    it('buildNotificationUrl points at the MP webhook endpoint with the v2 source_news marker (HOS-159)', () => {
+        const url = buildNotificationUrl();
+        expect(url).toBe('https://api.test/api/v1/webhooks/mercadopago?source_news=webhooks');
+        // HOS-159 regression guard: the `?source_news=webhooks` marker MUST be
+        // present. The webhook router (routes/webhooks/mercadopago/router.ts,
+        // V2_SOURCE_NEWS_MARKER) DROPS any delivery without it as a legacy IPN
+        // duplicate — without this marker every subscription webhook MP posts to
+        // this notification_url is silently discarded (0 billing_webhook_events /
+        // billing_payments; activation falls back to the polling cron only).
+        expect(url).toContain('source_news=webhooks');
     });
 });

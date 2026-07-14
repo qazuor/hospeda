@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "283-point-of-interest-cooperativa_lucienville",
+    "slug": "cooperativa_lucienville",
+    "lat": -32.3810646,
+    "long": -58.880753500000004,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Institución productiva histórica vinculada con el desarrollo agrícola, económico y comunitario de las colonias judías.",
+    "nameI18n": {
+        "es": "Cooperativa Agrícola Lucienville",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Institución productiva histórica vinculada con el desarrollo agrícola, económico y comunitario de las colonias judías.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Área de Lucienville, departamento Villaguay, Entre Ríos",
+    "keywords": [
+        "cooperativa lucienville",
+        "agricultura",
+        "colonias judias",
+        "cooperativismo",
+        "patrimonio productivo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.turismoentrerios.com/villaguay/circuito-colonias-judias.htm",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

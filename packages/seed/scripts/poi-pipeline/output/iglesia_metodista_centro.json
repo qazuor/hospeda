@@ -1,0 +1,50 @@
+{
+    "slug": "iglesia_metodista_centro",
+    "lat": -32.3010568,
+    "long": -59.14022739999999,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Templo urbano heredero de la comunidad valdense y metodista establecida en Rosario del Tala desde el siglo XIX.",
+    "nameI18n": {
+        "es": "Iglesia Evangélica Metodista del Centro",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Templo urbano heredero de la comunidad valdense y metodista establecida en Rosario del Tala desde el siglo XIX.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "iglesia metodista",
+        "valdenses",
+        "inmigracion",
+        "templo evangelico",
+        "historia religiosa"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir",
+    "notes": "Templo céntrico confirmado por la historia municipal. Falta diferenciarlo cartográficamente de la Capilla Central rural. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

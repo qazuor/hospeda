@@ -1,0 +1,29 @@
+{
+    "$schema": "../../schemas/poi-category.schema.json",
+    "id": "003-poi-category-tourist_route",
+    "slug": "tourist_route",
+    "nameI18n": {
+        "es": "Ruta turística",
+        "en": "Tourist route",
+        "pt": "Rota turística"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            }
+        }
+    },
+    "icon": "route",
+    "displayWeight": 55,
+    "lifecycleState": "ACTIVE"
+}

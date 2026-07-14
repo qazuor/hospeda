@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "080-point-of-interest-biblioteca_fiat_lux",
+    "slug": "biblioteca_fiat_lux",
+    "lat": -32.2206046,
+    "long": -58.137223999999996,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Biblioteca popular histórica que ofrece servicios de lectura, consulta y actividades culturales y educativas para residentes y visitantes.",
+    "nameI18n": {
+        "es": "Biblioteca Popular Fiat Lux",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Biblioteca popular histórica que ofrece servicios de lectura, consulta y actividades culturales y educativas para residentes y visitantes.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "12 de Abril 208, Colón, Entre Ríos",
+    "keywords": ["biblioteca fiat lux", "biblioteca popular", "libros", "lectura", "cultura"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://colon.gov.ar/llega-a-colon-la-edicion-2023-de-la-noche-de-los-museos/",
+    "notes": "Nombre y dirección confirmados por el municipio. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

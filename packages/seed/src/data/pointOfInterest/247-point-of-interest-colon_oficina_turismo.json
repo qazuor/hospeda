@@ -1,0 +1,48 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "247-point-of-interest-colon_oficina_turismo",
+    "slug": "colon_oficina_turismo",
+    "lat": -32.2157078,
+    "long": -58.13650620000001,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Centro oficial de información turística, útil para obtener mapas, orientación, recomendaciones, datos de prestadores y agenda local.",
+    "nameI18n": {
+        "es": "Oficina de Turismo de Colón",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Centro oficial de información turística, útil para obtener mapas, orientación, recomendaciones, datos de prestadores y agenda local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Costanera y Gouchón, Colón, Entre Ríos",
+    "keywords": [
+        "oficina de turismo",
+        "informacion turistica",
+        "mapas",
+        "agenda",
+        "atencion al turista"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.colonturismo.tur.ar/",
+    "notes": "Domicilio publicado por Turismo Colón. Falta validar coordenadas exactas del acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "services",
+            "isPrimary": true
+        },
+        {
+            "slug": "government",
+            "isPrimary": false
+        }
+    ]
+}

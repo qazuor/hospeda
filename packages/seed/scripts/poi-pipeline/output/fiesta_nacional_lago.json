@@ -1,0 +1,54 @@
+{
+    "slug": "fiesta_nacional_lago",
+    "lat": -30.994779299999998,
+    "long": -57.91400149999999,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Celebración anual que reúne música, espectáculos, gastronomía y actividades vinculadas con la identidad lacustre de Federación.",
+    "nameI18n": {
+        "es": "Fiesta Nacional del Lago",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Celebración anual que reúne música, espectáculos, gastronomía y actividades vinculadas con la identidad lacustre de Federación.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Anfiteatro Juancho Garcilazo, Federación, Entre Ríos",
+    "keywords": [
+        "fiesta nacional del lago",
+        "festival federacion",
+        "musica",
+        "gastronomia",
+        "lago salto grande"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/fiesta-nacional-del-lago/",
+    "notes": "Evento oficial del destino. Comparte ubicación general con el anfiteatro. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "fair",
+            "isPrimary": true
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        }
+    ]
+}

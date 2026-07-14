@@ -1,0 +1,50 @@
+{
+    "slug": "molino_aventura",
+    "lat": -32.2182804,
+    "long": -58.1356171,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Parque recreativo orientado a familias y grupos, con propuestas de aventura y actividades al aire libre.",
+    "nameI18n": {
+        "es": "Molino Aventura",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Parque recreativo orientado a familias y grupos, con propuestas de aventura y actividades al aire libre.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Colón, Entre Ríos",
+    "keywords": [
+        "molino aventura",
+        "aventura",
+        "familia",
+        "juegos",
+        "actividades al aire libre"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://colon.gov.ar/colon-alcanzo-el-85-de-ocupacion-en-los-primeros-dias-del-ano-2026/",
+    "notes": "Actividad vigente confirmada por la Municipalidad en enero de 2026. Falta validar domicilio y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "recreation",
+            "isPrimary": true
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        }
+    ]
+}

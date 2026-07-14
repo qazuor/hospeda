@@ -1,0 +1,45 @@
+{
+    "slug": "utn_concepcion_del_uruguay",
+    "lat": -32.49575,
+    "long": -58.22964,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sede regional de la Universidad Tecnológica Nacional ubicada en el edificio histórico de la antigua Aduana de la Confederación.",
+    "nameI18n": {
+        "es": "Facultad Regional Concepción del Uruguay de la UTN",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sede regional de la Universidad Tecnológica Nacional ubicada en el edificio histórico de la antigua Aduana de la Confederación.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ingeniero Pereyra 676, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "utn",
+        "facultad regional",
+        "universidad tecnologica",
+        "estudiantes"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "education",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

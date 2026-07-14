@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
     capitalize,
+    createUniqueSlug,
     isEmpty,
     randomString,
     stripHtml,
@@ -168,6 +169,62 @@ describe('String Utilities', () => {
 
         it('returns false for non-empty string', () => {
             expect(isEmpty('hello')).toBe(false);
+        });
+    });
+
+    // BETA-172 regression: createUniqueSlug must respect an optional maxLength,
+    // including when a uniqueness suffix is appended, and must not change
+    // behavior for existing callers that omit maxLength.
+    describe('createUniqueSlug', () => {
+        it('truncates a base slug longer than maxLength, with no trailing hyphen', async () => {
+            // Arrange
+            const longName =
+                'A Very Long Accommodation Name That Definitely Exceeds Fifty Characters In Length';
+            const checkExists = vi.fn().mockResolvedValue(false);
+
+            // Act
+            const slug = await createUniqueSlug(longName, checkExists, 50);
+
+            // Assert
+            expect(slug.length).toBeLessThanOrEqual(50);
+            expect(slug.endsWith('-')).toBe(false);
+        });
+
+        it('keeps the result within maxLength when a uniqueness suffix is appended', async () => {
+            // Arrange — first candidate collides, second one is free
+            const longName =
+                'A Very Long Accommodation Name That Definitely Exceeds Fifty Characters In Length';
+            const checkExists = vi.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+
+            // Act
+            const slug = await createUniqueSlug(longName, checkExists, 50);
+
+            // Assert
+            expect(slug.length).toBeLessThanOrEqual(50);
+            expect(slug.endsWith('-2')).toBe(true);
+            expect(slug.endsWith('-')).toBe(false);
+        });
+
+        it('behaves identically to the pre-maxLength implementation when maxLength is omitted', async () => {
+            // Arrange
+            const checkExists = vi.fn().mockResolvedValue(false);
+
+            // Act
+            const slug = await createUniqueSlug('My Post', checkExists);
+
+            // Assert — no truncation applied, full slug returned
+            expect(slug).toBe('my-post');
+        });
+
+        it('appends the uniqueness suffix without truncation when maxLength is omitted', async () => {
+            // Arrange
+            const checkExists = vi.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+
+            // Act
+            const slug = await createUniqueSlug('My Post', checkExists);
+
+            // Assert
+            expect(slug).toBe('my-post-2');
         });
     });
 

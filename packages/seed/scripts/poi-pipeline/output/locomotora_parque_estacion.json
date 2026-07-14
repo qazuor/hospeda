@@ -1,0 +1,54 @@
+{
+    "slug": "locomotora_parque_estacion",
+    "lat": -33.034435,
+    "long": -59.005360100000004,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Pieza ferroviaria preservada como monumento y referencia visual del patrimonio de la ciudad.",
+    "nameI18n": {
+        "es": "Locomotora Histórica del Parque de la Estación",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Pieza ferroviaria preservada como monumento y referencia visual del patrimonio de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque de la Estación Intendente Fabio A. Larrosa, Larroque, Entre Ríos",
+    "keywords": [
+        "locomotora larroque",
+        "monumento ferroviario",
+        "parque estacion",
+        "tren",
+        "patrimonio"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.larroque.gob.ar/noticia/1995/la_rica_historia_de_larroque_y_la_conexion_de_sus_museos",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

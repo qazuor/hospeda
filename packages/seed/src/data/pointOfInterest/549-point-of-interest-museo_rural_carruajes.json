@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "549-point-of-interest-museo_rural_carruajes",
+    "slug": "museo_rural_carruajes",
+    "lat": -32.6870085,
+    "long": -58.8918263,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo que conserva carruajes, herramientas y objetos vinculados con el trabajo rural y la movilidad de otras épocas.",
+    "nameI18n": {
+        "es": "Museo Rural de Carruajes",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo que conserva carruajes, herramientas y objetos vinculados con el trabajo rural y la movilidad de otras épocas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Complejo Cultural La Estación, Urdinarrain, Entre Ríos",
+    "keywords": [
+        "museo de carruajes",
+        "carruajes",
+        "vida rural",
+        "herramientas antiguas",
+        "la estacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://urdinarrain.tur.ar/que-hacer/; https://urdinarrain.gov.ar/v2/wp-content/uploads/2026/03/Apertura-Sesiones-HCD-Urdinarrain.pdf",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

@@ -30,6 +30,17 @@ describe('Point Of Interest Access Schemas', () => {
             expect(result).toHaveProperty('displayWeight');
         });
 
+        it('should include nameI18n (HOS-142 G-6 — the canonical display-name source since HOS-138, needed by the proximity-search picker)', () => {
+            const data = {
+                ...createValidPointOfInterest(),
+                nameI18n: { es: 'Plaza San Martín', en: null, pt: null }
+            };
+            const result = PointOfInterestPublicSchema.parse(data);
+
+            expect(result).toHaveProperty('nameI18n');
+            expect(result.nameI18n).toEqual({ es: 'Plaza San Martín', en: null, pt: null });
+        });
+
         it('should strip audit and admin fields', () => {
             const data = createValidPointOfInterest();
             const result = PointOfInterestPublicSchema.parse(data);

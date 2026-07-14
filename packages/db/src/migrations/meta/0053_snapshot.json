@@ -1,5 +1,5 @@
 {
-    "id": "122bd773-54d4-4174-bffb-24046a8cff2d",
+    "id": "787e8edb-fb93-4fc0-bb96-9c7f4edbc7a1",
     "prevId": "5362b76f-1021-4a6d-b950-7f747176d176",
     "version": "7",
     "dialect": "postgresql",
@@ -1525,125 +1525,6 @@
                     "columnsFrom": ["moderated_by_id"],
                     "columnsTo": ["id"],
                     "onDelete": "set null",
-                    "onUpdate": "no action"
-                }
-            },
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "policies": {},
-            "checkConstraints": {},
-            "isRLSEnabled": false
-        },
-        "public.accommodation_occupancy": {
-            "name": "accommodation_occupancy",
-            "schema": "",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "uuid",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "default": "gen_random_uuid()"
-                },
-                "accommodation_id": {
-                    "name": "accommodation_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "date": {
-                    "name": "date",
-                    "type": "date",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "is_blocked": {
-                    "name": "is_blocked",
-                    "type": "boolean",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": true
-                },
-                "source": {
-                    "name": "source",
-                    "type": "occupancy_source_enum",
-                    "typeSchema": "public",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "external_event_id": {
-                    "name": "external_event_id",
-                    "type": "varchar(255)",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "note": {
-                    "name": "note",
-                    "type": "varchar(500)",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "created_by_id": {
-                    "name": "created_by_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "created_at": {
-                    "name": "created_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "now()"
-                },
-                "updated_at": {
-                    "name": "updated_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "now()"
-                }
-            },
-            "indexes": {
-                "accommodationOccupancy_accommodationId_date_uq": {
-                    "name": "accommodationOccupancy_accommodationId_date_uq",
-                    "columns": [
-                        {
-                            "expression": "accommodation_id",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        },
-                        {
-                            "expression": "date",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": true,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                }
-            },
-            "foreignKeys": {
-                "accommodation_occupancy_accommodation_id_accommodations_id_fk": {
-                    "name": "accommodation_occupancy_accommodation_id_accommodations_id_fk",
-                    "tableFrom": "accommodation_occupancy",
-                    "tableTo": "accommodations",
-                    "columnsFrom": ["accommodation_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "cascade",
-                    "onUpdate": "no action"
-                },
-                "accommodation_occupancy_created_by_id_users_id_fk": {
-                    "name": "accommodation_occupancy_created_by_id_users_id_fk",
-                    "tableFrom": "accommodation_occupancy",
-                    "tableTo": "users",
-                    "columnsFrom": ["created_by_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "restrict",
                     "onUpdate": "no action"
                 }
             },
@@ -7792,6 +7673,175 @@
             "checkConstraints": {},
             "isRLSEnabled": false
         },
+        "public.poi_categories": {
+            "name": "poi_categories",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "slug": {
+                    "name": "slug",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "name_i18n": {
+                    "name": "name_i18n",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "translation_meta": {
+                    "name": "translation_meta",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "default": "'{}'::jsonb"
+                },
+                "icon": {
+                    "name": "icon",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "display_weight": {
+                    "name": "display_weight",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": 50
+                },
+                "lifecycle_state": {
+                    "name": "lifecycle_state",
+                    "type": "lifecycle_status_enum",
+                    "typeSchema": "public",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "poiCategories_slug_idx": {
+                    "name": "poiCategories_slug_idx",
+                    "columns": [
+                        {
+                            "expression": "slug",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "poiCategories_lifecycleState_idx": {
+                    "name": "poiCategories_lifecycleState_idx",
+                    "columns": [
+                        {
+                            "expression": "lifecycle_state",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                }
+            },
+            "foreignKeys": {
+                "poi_categories_created_by_id_users_id_fk": {
+                    "name": "poi_categories_created_by_id_users_id_fk",
+                    "tableFrom": "poi_categories",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "poi_categories_updated_by_id_users_id_fk": {
+                    "name": "poi_categories_updated_by_id_users_id_fk",
+                    "tableFrom": "poi_categories",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "poi_categories_deleted_by_id_users_id_fk": {
+                    "name": "poi_categories_deleted_by_id_users_id_fk",
+                    "tableFrom": "poi_categories",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {
+                "poi_categories_slug_unique": {
+                    "name": "poi_categories_slug_unique",
+                    "nullsNotDistinct": false,
+                    "columns": ["slug"]
+                }
+            },
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
         "public.points_of_interest": {
             "name": "points_of_interest",
             "schema": "",
@@ -8260,6 +8310,115 @@
                 "r_destination_point_of_interest_destination_id_point_of_interest_id_pk": {
                     "name": "r_destination_point_of_interest_destination_id_point_of_interest_id_pk",
                     "columns": ["destination_id", "point_of_interest_id"]
+                }
+            },
+            "uniqueConstraints": {},
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
+        "public.r_poi_category": {
+            "name": "r_poi_category",
+            "schema": "",
+            "columns": {
+                "point_of_interest_id": {
+                    "name": "point_of_interest_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "category_id": {
+                    "name": "category_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "is_primary": {
+                    "name": "is_primary",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": false
+                }
+            },
+            "indexes": {
+                "pointOfInterestId_categoryId_idx": {
+                    "name": "pointOfInterestId_categoryId_idx",
+                    "columns": [
+                        {
+                            "expression": "point_of_interest_id",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        },
+                        {
+                            "expression": "category_id",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "r_poi_category_categoryId_idx": {
+                    "name": "r_poi_category_categoryId_idx",
+                    "columns": [
+                        {
+                            "expression": "category_id",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "r_poi_category_primary_idx": {
+                    "name": "r_poi_category_primary_idx",
+                    "columns": [
+                        {
+                            "expression": "point_of_interest_id",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": true,
+                    "where": "is_primary = true",
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                }
+            },
+            "foreignKeys": {
+                "r_poi_category_point_of_interest_id_points_of_interest_id_fk": {
+                    "name": "r_poi_category_point_of_interest_id_points_of_interest_id_fk",
+                    "tableFrom": "r_poi_category",
+                    "tableTo": "points_of_interest",
+                    "columnsFrom": ["point_of_interest_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "r_poi_category_category_id_poi_categories_id_fk": {
+                    "name": "r_poi_category_category_id_poi_categories_id_fk",
+                    "tableFrom": "r_poi_category",
+                    "tableTo": "poi_categories",
+                    "columnsFrom": ["category_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {
+                "r_poi_category_point_of_interest_id_category_id_pk": {
+                    "name": "r_poi_category_point_of_interest_id_category_id_pk",
+                    "columns": ["point_of_interest_id", "category_id"]
                 }
             },
             "uniqueConstraints": {},
@@ -26378,11 +26537,6 @@
             "schema": "public",
             "values": ["GUEST", "OWNER"]
         },
-        "public.occupancy_source_enum": {
-            "name": "occupancy_source_enum",
-            "schema": "public",
-            "values": ["MANUAL", "GOOGLE_CALENDAR", "AIRBNB", "BOOKING"]
-        },
         "public.owner_promotion_discount_type_enum": {
             "name": "owner_promotion_discount_type_enum",
             "schema": "public",
@@ -26532,8 +26686,6 @@
                 "accommodation.iaSuggestions.view",
                 "accommodation.iaContent.approve",
                 "accommodation.slug.manage",
-                "accommodation.occupancy.manage",
-                "accommodation.occupancy.view",
                 "accommodation.basicInfo.edit",
                 "accommodation.contactInfo.edit",
                 "accommodation.location.edit",

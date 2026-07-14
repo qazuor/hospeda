@@ -1,0 +1,58 @@
+{
+    "slug": "reserva_ribera_sur",
+    "lat": -32.2359942,
+    "long": -58.1242978,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Área natural urbana del sector sur de la costa destinada a conservar ambientes ribereños y favorecer actividades de observación y educación ambiental.",
+    "nameI18n": {
+        "es": "Reserva Urbana Ribera Sur",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Área natural urbana del sector sur de la costa destinada a conservar ambientes ribereños y favorecer actividades de observación y educación ambiental.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ribera Sur de Colón, Entre Ríos",
+    "keywords": [
+        "ribera sur",
+        "reserva urbana",
+        "naturaleza",
+        "aves",
+        "humedal"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.colonturismo.tur.ar/directorio/reserva-urbana-rivera-sur/",
+    "notes": "Existencia confirmada por Turismo Colón. Falta precisar acceso y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "reserve",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "hiking",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

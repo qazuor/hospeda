@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "889-point-of-interest-urdinarrain_estacion_ferroviaria",
+    "slug": "urdinarrain_estacion_ferroviaria",
+    "lat": -32.68475,
+    "long": -58.89174,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Estación inaugurada en 1890 que dio origen al crecimiento urbano y constituye el principal símbolo patrimonial de la ciudad.",
+    "nameI18n": {
+        "es": "Estación Urdinarrain",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Estación inaugurada en 1890 que dio origen al crecimiento urbano y constituye el principal símbolo patrimonial de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Complejo Cultural La Estación, Urdinarrain, Entre Ríos",
+    "keywords": [
+        "estacion urdinarrain",
+        "ferrocarril",
+        "1890",
+        "villa florida",
+        "patrimonio ferroviario"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://urdinarrain.tur.ar/la-ciudad/; https://www.argentina.gob.ar/jefatura/turismo/best-tourism-villages-argentina/urdinarrain-entre-rios; https://mapcarta.com/es/N494264016",
+    "notes": "Historia confirmada por fuentes oficiales; coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        }
+    ]
+}

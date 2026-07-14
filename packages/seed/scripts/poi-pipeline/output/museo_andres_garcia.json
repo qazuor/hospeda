@@ -1,0 +1,49 @@
+{
+    "slug": "museo_andres_garcia",
+    "lat": -32.483947,
+    "long": -58.232264,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Residencia urbana construida para la familia de Urquiza que posteriormente funcionó como residencia de gobernadores. Actualmente alberga el Museo Andrés García.",
+    "nameI18n": {
+        "es": "Residencia del General Urquiza y Museo Andrés García",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Residencia urbana construida para la familia de Urquiza que posteriormente funcionó como residencia de gobernadores. Actualmente alberga el Museo Andrés García.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Galarza y 25 de Mayo, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "museo andres garcia",
+        "residencia urquiza",
+        "gobernadores",
+        "historia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        }
+    ]
+}

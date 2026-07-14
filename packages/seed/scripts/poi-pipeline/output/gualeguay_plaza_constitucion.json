@@ -1,0 +1,54 @@
+{
+    "slug": "gualeguay_plaza_constitucion",
+    "lat": -33.1503543,
+    "long": -59.3107183,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plaza principal y núcleo del centro cívico, rodeada por la Iglesia San Antonio, el Club Social, edificios históricos y servicios.",
+    "nameI18n": {
+        "es": "Plaza Constitución",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plaza principal y núcleo del centro cívico, rodeada por la Iglesia San Antonio, el Club Social, edificios históricos y servicios.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de Gualeguay, Entre Ríos",
+    "keywords": [
+        "plaza constitucion gualeguay",
+        "centro civico",
+        "plaza principal",
+        "iglesia san antonio",
+        "casco historico"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/gualeguay; https://www.turismoentrerios.com/gualeguay/city-tour.htm",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,57 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "796-point-of-interest-salon_cultura",
+    "slug": "salon_cultura",
+    "lat": -32.1538932,
+    "long": -58.1899907,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio cultural municipal utilizado para talleres, tango, celebraciones religiosas, actividades artísticas y encuentros comunitarios.",
+    "nameI18n": {
+        "es": "Salón de la Cultura",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio cultural municipal utilizado para talleres, tango, celebraciones religiosas, actividades artísticas y encuentros comunitarios.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Municipalidad de Pueblo Liebig, Entre Ríos",
+    "keywords": [
+        "salon de la cultura",
+        "talleres",
+        "tango",
+        "eventos culturales",
+        "municipalidad",
+        "pueblo liebig"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://puebloliebig.gob.ar/category/cultura/; https://puebloliebig.gob.ar/otras/pueblo-liebig-celebra-sus-51-anos-de-historia/",
+    "notes": "Uso cultural actual confirmado en publicaciones de 2026. Falta identificar dirección y coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        }
+    ]
+}

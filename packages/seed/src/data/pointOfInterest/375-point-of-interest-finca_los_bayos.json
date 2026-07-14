@@ -1,0 +1,57 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "375-point-of-interest-finca_los_bayos",
+    "slug": "finca_los_bayos",
+    "lat": -32.6494126,
+    "long": -58.885979600000006,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Viñedo y bodega artesanal con Merlot, Chardonnay, nuez pecán, visitas guiadas y degustaciones de vinos y productos regionales.",
+    "nameI18n": {
+        "es": "Finca Los Bayos",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Viñedo y bodega artesanal con Merlot, Chardonnay, nuez pecán, visitas guiadas y degustaciones de vinos y productos regionales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de Urdinarrain, Entre Ríos",
+    "keywords": [
+        "finca los bayos",
+        "bodega urdinarrain",
+        "merlot",
+        "chardonnay",
+        "nuez pecan",
+        "degustacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://urdinarrain.tur.ar/que-hacer/",
+    "notes": "Oferta enoturística confirmada. Falta geocodificar el acceso y validar reservas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "winery",
+            "isPrimary": true
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        }
+    ]
+}

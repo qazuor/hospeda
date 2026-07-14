@@ -1,0 +1,42 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "501-point-of-interest-monumento_malvinas",
+    "slug": "monumento_malvinas",
+    "lat": -32.44529,
+    "long": -58.43756,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Monumento conmemorativo dedicado a la memoria de los combatientes y veteranos de la Guerra de Malvinas.",
+    "nameI18n": {
+        "es": "Monumento de Malvinas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Monumento conmemorativo dedicado a la memoria de los combatientes y veteranos de la Guerra de Malvinas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Justo, Entre Ríos",
+    "keywords": ["monumento de malvinas", "malvinas", "veteranos", "memoria", "san justo"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N9066937524",
+    "notes": "Ubicación y tipo de monumento contrastados con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

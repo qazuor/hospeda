@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "115-point-of-interest-camping_termas",
+    "slug": "camping_termas",
+    "lat": -30.746011,
+    "long": -58.010871,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sector de acampe dentro del complejo termal, con acceso a servicios recreativos y espacios verdes.",
+    "nameI18n": {
+        "es": "Camping de Termas Chajarí",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sector de acampe dentro del complejo termal, con acceso a servicios recreativos y espacios verdes.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque Termal Daniel Pedro Tisocco, Chajarí, Entre Ríos",
+    "keywords": ["camping termas chajari", "acampe", "termas", "familia", "espacios verdes"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://termaschajari.tur.ar/ciudad/atractivos/; https://termaschajari.tur.ar/arco-de-entrada/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "campground",
+            "isPrimary": true
+        },
+        {
+            "slug": "thermal_complex",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

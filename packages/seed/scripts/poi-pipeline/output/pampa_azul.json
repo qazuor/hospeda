@@ -1,0 +1,59 @@
+{
+    "slug": "pampa_azul",
+    "lat": -31.3133995,
+    "long": -57.9914905,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Reserva y bodega boutique orientada a la sustentabilidad, con viñedos, producción de vinos y experiencias de enoturismo.",
+    "nameI18n": {
+        "es": "Pampa Azul Reserva, Viñedo y Bodega Boutique",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Reserva y bodega boutique orientada a la sustentabilidad, con viñedos, producción de vinos y experiencias de enoturismo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de Concordia, Entre Ríos",
+    "keywords": [
+        "pampa azul",
+        "bodega boutique",
+        "viñedo",
+        "tannat",
+        "reserva natural",
+        "enoturismo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/node/11941; https://www.concordia.gob.ar/turismo/atractivos/turismo-rural",
+    "notes": "Actividad turística y productiva confirmada. Falta dirección exacta, condiciones de visita y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "winery",
+            "isPrimary": true
+        },
+        {
+            "slug": "reserve",
+            "isPrimary": false
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        }
+    ]
+}

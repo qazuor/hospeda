@@ -1,0 +1,46 @@
+{
+    "slug": "ceibas_municipalidad",
+    "lat": -33.50148,
+    "long": -58.80157,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sede del gobierno local y punto de referencia para trámites, información pública y servicios municipales.",
+    "nameI18n": {
+        "es": "Municipalidad de Ceibas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sede del gobierno local y punto de referencia para trámites, información pública y servicios municipales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "General José de San Martín 65, Ceibas, Entre Ríos",
+    "keywords": [
+        "municipalidad ceibas",
+        "san martin 65",
+        "municipio",
+        "tramites",
+        "informacion publica"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/N5002299891; https://municipiosycomunas.com.ar/pueblo-ceibas/",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

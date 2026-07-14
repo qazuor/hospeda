@@ -16,6 +16,7 @@ envConfig({
 import { configureLogger } from '@repo/logger';
 import { CloudinaryProvider, resolveEnvironment } from '@repo/media/server';
 import { runExampleSeeds } from './example/index.js';
+import { runPointOfInterestCatalogSeeds } from './pointOfInterestCatalog/index.js';
 import { runRequiredSeeds } from './required/index.js';
 import { runTestUserSeeds } from './test-users/index.js';
 import { DEFAULT_CACHE_PATH, flushCache, readCache } from './utils/cloudinary-cache.js';
@@ -43,6 +44,16 @@ type SeedOptions = {
      * include these accounts.
      */
     testUsers?: boolean;
+    /**
+     * Whether to run the HOS-142 dedicated `--poi-catalog` seed group (the
+     * 914-POI production catalog). Unlike `testUsers`, this group IS real
+     * production content and must run in every path that seeds real content
+     * (`db:fresh`, `db:fresh-dev`, `db:seed`, production day-1 bootstrap) —
+     * it is intentionally NOT folded into `required` (which stays small/fast
+     * for FK-baseline-only consumers) or `example` (dev/demo-only, excluded
+     * from production bootstrap). See HOS-142 spec §6.2.
+     */
+    pointOfInterestCatalog?: boolean;
     /** Whether to reset the database before seeding */
     reset?: boolean;
     /** Whether to rollback on error (incompatible with continueOnError) */
@@ -90,6 +101,7 @@ export async function runSeed(options: SeedOptions): Promise<void> {
         required,
         example,
         testUsers,
+        pointOfInterestCatalog,
         reset,
         exclude = [],
         continueOnError = false,
@@ -168,7 +180,8 @@ export async function runSeed(options: SeedOptions): Promise<void> {
 
         // Validate all manifests once at the beginning.
         // testUsers does NOT use the manifest system, so it's excluded here.
-        if ((required || example) && seedContext.validateManifests) {
+        // pointOfInterestCatalog DOES use the manifest system (HOS-142), so it's included.
+        if ((required || example || pointOfInterestCatalog) && seedContext.validateManifests) {
             try {
                 await validateAllManifests(continueOnError);
                 summaryTracker.trackProcessStep(
@@ -198,7 +211,9 @@ export async function runSeed(options: SeedOptions): Promise<void> {
 
         // Load super admin if necessary (for example/required seeds or if it doesn't exist).
         // testUsers does NOT require a super-admin actor — it inserts via UserModel directly.
-        if (example || required) {
+        // pointOfInterestCatalog DOES require an actor — its seed factory calls
+        // `PointOfInterestService.create()`, which needs `context.actor` set (HOS-142).
+        if (example || required || pointOfInterestCatalog) {
             try {
                 const superAdminActor = await loadSuperAdminAndGetActor();
                 seedContext.actor = superAdminActor;
@@ -241,6 +256,15 @@ export async function runSeed(options: SeedOptions): Promise<void> {
         if (example) {
             seedContext.seedSource = 'example';
             await runExampleSeeds(seedContext);
+        }
+
+        if (pointOfInterestCatalog) {
+            // HOS-142 dedicated group — the 914-POI production catalog.
+            // Requires `--required` to have been run previously (or in the
+            // same invocation, since it runs after the block above): the
+            // POI category catalog and destinations must already exist.
+            seedContext.seedSource = 'required';
+            await runPointOfInterestCatalogSeeds(seedContext);
         }
 
         if (testUsers) {

@@ -534,13 +534,13 @@ Check that the variable is in `turbo.json` `globalEnv`. Variables not listed
 there are invisible to Turbo's cache key. Add the variable name and run
 `pnpm build` again.
 
-**env:check reports variables as missing from Vercel**
+### env:check reports variables as missing from Vercel
 
 Run `pnpm env:push` to push the local `.env.local` values to Vercel, or add the
 variables manually in the Vercel dashboard under Project Settings > Environment
 Variables.
 
-**env:pull or env:push fails with "project not linked"**
+### env:pull or env:push fails with "project not linked"
 
 Run `vercel link` inside the app directory (`apps/api`, `apps/web`, or
 `apps/admin`). This creates `.vercel/project.json` with the project ID that the

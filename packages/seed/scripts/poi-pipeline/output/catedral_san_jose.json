@@ -1,0 +1,50 @@
+{
+    "slug": "catedral_san_jose",
+    "lat": -33.0083117,
+    "long": -58.511926800000005,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Principal templo católico de la ciudad y uno de los edificios centrales del casco histórico de Gualeguaychú.",
+    "nameI18n": {
+        "es": "Catedral San José",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Principal templo católico de la ciudad y uno de los edificios centrales del casco histórico de Gualeguaychú.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San José 7, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "catedral san jose",
+        "iglesia",
+        "templo",
+        "casco historico",
+        "plaza san martin"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/cultura; https://www.entrerios.tur.ar/localidades-1/gualeguaych%C3%BA",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

@@ -549,6 +549,7 @@
             "planCardLabel": "Detalles del plan actual",
             "statusLabel": "Estado",
             "nextBillingLabel": "Próxima facturación",
+            "accessUntilLabel": "Acceso hasta",
             "paymentMethodLabel": "Método de pago",
             "paymentMercadoPago": "MercadoPago",
             "noBillingDate": "No hay fecha de facturación disponible",
@@ -574,10 +575,15 @@
                 "active": "Activa",
                 "trial": "Prueba",
                 "cancelled": "Cancelada",
+                "cancelling": "Cancelación programada",
                 "expired": "Vencida",
                 "past_due": "Pago pendiente",
                 "pending": "Pendiente",
                 "paused": "Pausada"
+            },
+            "cancelScheduled": {
+                "title": "Suscripción cancelada",
+                "body": "No se realizarán más cobros. Mantenés acceso a tu plan hasta el {date}."
             },
             "pauseModal": {
                 "title": "Pausar suscripción",
@@ -816,7 +822,8 @@
         "errorFetch": "No se pudo cargar el historial de búsquedas",
         "empty": {
             "title": "Sin búsquedas guardadas",
-            "body": "Tus búsquedas aparecerán acá cuando tengas un plan Plus o VIP activo."
+            "body": "Todavía no tenés búsquedas guardadas.",
+            "upsellBody": "Tus búsquedas aparecerán acá cuando tengas un plan Plus o VIP activo."
         },
         "clearAll": "Borrar todo",
         "clearAllInline": "Sí, borrar todo",
@@ -913,6 +920,10 @@
             "title": "No encontramos recomendaciones por ahora",
             "body": "Volvé más tarde o explorá todo nuestro catálogo de alojamientos."
         },
-        "entitlementRequired": "Esta función no está disponible para tu cuenta."
+        "upgrade": {
+            "title": "Sugerencias para vos",
+            "message": "Las sugerencias personalizadas están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.",
+            "cta": "Ver planes"
+        }
     }
 }

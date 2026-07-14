@@ -1,0 +1,29 @@
+{
+    "$schema": "../../schemas/poi-category.schema.json",
+    "id": "011-poi-category-architecture",
+    "slug": "architecture",
+    "nameI18n": {
+        "es": "Arquitectura",
+        "en": "Architecture",
+        "pt": "Arquitetura"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            }
+        }
+    },
+    "icon": "architecture",
+    "displayWeight": 55,
+    "lifecycleState": "ACTIVE"
+}

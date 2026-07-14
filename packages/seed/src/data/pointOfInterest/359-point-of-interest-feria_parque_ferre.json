@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "359-point-of-interest-feria_parque_ferre",
+    "slug": "feria_parque_ferre",
+    "lat": -31.392057400000002,
+    "long": -58.0327377,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Feria popular con puestos de productos, artesanías y propuestas comunitarias instalada en el Parque Ferré.",
+    "nameI18n": {
+        "es": "Feria del Parque Ferré",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Feria popular con puestos de productos, artesanías y propuestas comunitarias instalada en el Parque Ferré.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque Ferré, Concordia, Entre Ríos",
+    "keywords": ["feria parque ferre", "feriantes", "artesanias", "productos", "feria popular"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/noticias/gesti%C3%B3n/mejoras-y-valorizaci%C3%B3n-de-la-feria-del-parque-ferr%C3%A9",
+    "notes": "Existencia y funcionamiento confirmados. Falta geocodificar el sector de puestos. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "fair",
+            "isPrimary": true
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

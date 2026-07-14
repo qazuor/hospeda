@@ -1,0 +1,50 @@
+{
+    "slug": "centro_interpretacion_humedal",
+    "lat": -32.47803,
+    "long": -58.213944,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Espacio educativo dedicado a la biodiversidad, el paisaje y el ecosistema de humedales presente en la Isla del Puerto y el río Uruguay.",
+    "nameI18n": {
+        "es": "Centro de Interpretación del Humedal",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio educativo dedicado a la biodiversidad, el paisaje y el ecosistema de humedales presente en la Isla del Puerto y el río Uruguay.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Acceso a la Isla del Puerto, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "humedal",
+        "centro de interpretacion",
+        "naturaleza",
+        "biodiversidad",
+        "isla"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

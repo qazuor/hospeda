@@ -1,0 +1,45 @@
+{
+    "slug": "escuela_86_corrientes",
+    "lat": -32.462048599999996,
+    "long": -58.480119,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Institución educativa de nivel primario ubicada en el área urbana de Caseros y utilizada como punto de referencia comunitario.",
+    "nameI18n": {
+        "es": "Escuela N.º 86 Corrientes",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Institución educativa de nivel primario ubicada en el área urbana de Caseros y utilizada como punto de referencia comunitario.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Calle 15 N.º 130, Caseros, Entre Ríos",
+    "keywords": [
+        "escuela 86 corrientes",
+        "escuela primaria",
+        "educacion",
+        "caseros"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 10,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/",
+    "notes": "La institución y el domicilio están identificados; falta validar coordenadas puntuales. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "education",
+            "isPrimary": true
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

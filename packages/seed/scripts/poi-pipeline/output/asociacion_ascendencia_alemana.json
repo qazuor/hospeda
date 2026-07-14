@@ -1,0 +1,50 @@
+{
+    "slug": "asociacion_ascendencia_alemana",
+    "lat": -32.68218,
+    "long": -58.89102,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Institución vinculada con la preservación de tradiciones, memoria y expresiones culturales de la inmigración alemana.",
+    "nameI18n": {
+        "es": "Asociación de Argentinos de Ascendencia Alemana",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Institución vinculada con la preservación de tradiciones, memoria y expresiones culturales de la inmigración alemana.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urdinarrain, Entre Ríos",
+    "keywords": [
+        "ascendencia alemana",
+        "alemanes del volga",
+        "inmigracion",
+        "colectividad alemana",
+        "cultura"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://urdinarrain.tur.ar/la-ciudad/; https://mapcarta.com/es/N2592202540",
+    "notes": "Función cultural y coordenadas contrastadas con fuentes turísticas y OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

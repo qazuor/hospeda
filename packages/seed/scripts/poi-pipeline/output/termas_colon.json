@@ -1,0 +1,55 @@
+{
+    "slug": "termas_colon",
+    "lat": -32.2097666,
+    "long": -58.145095600000005,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Complejo termal ubicado en la zona norte de la ciudad, con piscinas de distintas temperaturas, sectores cubiertos, espacios verdes, propuestas de bienestar y parque acuático.",
+    "nameI18n": {
+        "es": "Termas Colón",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Complejo termal ubicado en la zona norte de la ciudad, con piscinas de distintas temperaturas, sectores cubiertos, espacios verdes, propuestas de bienestar y parque acuático.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Batalla de Cepeda 100, Colón, Entre Ríos",
+    "keywords": [
+        "termas colon",
+        "aguas termales",
+        "piscinas",
+        "parque acuatico",
+        "relax",
+        "bienestar"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://termascolon.gov.ar/rincon-de-termas/",
+    "notes": "Nombre, servicios y domicilio confirmados en el sitio oficial. Falta validar coordenadas del acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "thermal_complex",
+            "isPrimary": true
+        },
+        {
+            "slug": "wellness",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

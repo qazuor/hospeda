@@ -1,0 +1,59 @@
+{
+    "slug": "balneario_camping",
+    "lat": -32.190039299999995,
+    "long": -58.160633999999995,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Complejo municipal sobre el río Uruguay con playa, parcelas para carpas y motorhomes, servicios recreativos y propuestas culturales durante la temporada.",
+    "nameI18n": {
+        "es": "Balneario Camping San José",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Complejo municipal sobre el río Uruguay con playa, parcelas para carpas y motorhomes, servicios recreativos y propuestas culturales durante la temporada.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona balnearia de San José, Entre Ríos",
+    "keywords": [
+        "balneario san jose",
+        "camping san jose",
+        "playa",
+        "rio uruguay",
+        "motorhome",
+        "campamentista"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sanjose.gob.ar/el-municipio-continua-con-tareas-de-mantenimiento-integral-en-el-balneario-camping-san-jose/; https://sanjose.gob.ar/masiva-celebracion-de-la-fiesta-provincial-del-campamentista-en-el-balneario-san-jose-mas-de-20-000-personas-disfrutaron-de-los-shows-musicales-del-sabado-y-domingo/",
+    "notes": "Existencia y operación actual confirmadas; falta geocodificar el acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "campground",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

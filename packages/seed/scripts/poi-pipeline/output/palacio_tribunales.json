@@ -1,0 +1,50 @@
+{
+    "slug": "palacio_tribunales",
+    "lat": -31.8681652,
+    "long": -59.0264045,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Edificio judicial de comienzos del siglo XX y uno de los hitos arquitectónicos del centro cívico.",
+    "nameI18n": {
+        "es": "Palacio de Tribunales",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Edificio judicial de comienzos del siglo XX y uno de los hitos arquitectónicos del centro cívico.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Entorno de Plaza 25 de Mayo, Villaguay, Entre Ríos",
+    "keywords": [
+        "palacio de tribunales villaguay",
+        "justicia",
+        "centro civico",
+        "arquitectura",
+        "patrimonio"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://es.wikipedia.org/wiki/Villaguay",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

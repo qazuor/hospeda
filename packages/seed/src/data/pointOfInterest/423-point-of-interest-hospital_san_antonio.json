@@ -1,0 +1,42 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "423-point-of-interest-hospital_san_antonio",
+    "slug": "hospital_san_antonio",
+    "lat": -33.13183,
+    "long": -59.30896,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Hospital público provincial con internación general y servicios sanitarios para la ciudad y el departamento.",
+    "nameI18n": {
+        "es": "Hospital San Antonio",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Hospital público provincial con internación general y servicios sanitarios para la ciudad y el departamento.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida de la Soberanía, Gualeguay, Entre Ríos",
+    "keywords": ["hospital san antonio gualeguay", "hospital", "guardia", "emergencias", "salud"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N870946457",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

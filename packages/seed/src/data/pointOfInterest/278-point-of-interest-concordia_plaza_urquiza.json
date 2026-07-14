@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "278-point-of-interest-concordia_plaza_urquiza",
+    "slug": "concordia_plaza_urquiza",
+    "lat": -31.391891400000002,
+    "long": -58.017049899999996,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plaza histórica del centro urbano, ubicada frente al Palacio Arruabarrena y utilizada como espacio de encuentro y recreación.",
+    "nameI18n": {
+        "es": "Plaza Urquiza",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plaza histórica del centro urbano, ubicada frente al Palacio Arruabarrena y utilizada como espacio de encuentro y recreación.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Entre Ríos y Ramírez, Concordia, Entre Ríos",
+    "keywords": [
+        "plaza urquiza concordia",
+        "palacio arruabarrena",
+        "plaza",
+        "centro",
+        "espacio verde"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/museos; https://mapcarta.com/es/W627635367",
+    "notes": "Nombre y ubicación relativa confirmados. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

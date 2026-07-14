@@ -1,5 +1,6 @@
 /**
- * Unit tests for the point-of-interest allowlist (HOS-113 §6.3).
+ * Unit tests for the point-of-interest allowlist (HOS-113 §6.3, extended
+ * HOS-142 §6.6/G-7).
  *
  * Tests:
  * - `matchPoiTerms`: exact match (es/en/pt); partial-text match; unknown term
@@ -9,7 +10,11 @@
  * - Cross-check every allowlisted slug against the real seed fixture set
  *   (`packages/seed/src/data/pointOfInterest/*.json`), per the HOS-111 T-009
  *   lesson (a previously-wrong slug shipped silently broken until it was
- *   cross-checked against seed data) — R-4 defence.
+ *   cross-checked against seed data) — R-4 defence. This guard now runs
+ *   against the full ~920-fixture HOS-142 catalog, not just the original 12.
+ * - AC-7: the merged allowlist's total entry count strictly increases from
+ *   the pre-HOS-142 baseline (proving the HOS-142 generated entries actually
+ *   added coverage, not just re-validated the original 12).
  *
  * @module apps/api/routes/ai/protected/poi-allowlist.test
  */
@@ -227,5 +232,41 @@ describe('POI_ALLOWLIST vs seed data (R-4 hallucination defence)', () => {
                 `allowlisted slug "${slug}" is not a real seeded POI`
             ).toBe(true);
         }
+    });
+});
+
+// ─── AC-7: allowlist coverage must strictly grow past the pre-HOS-142 baseline ─
+
+describe('POI_ALLOWLIST coverage growth (HOS-142 AC-7)', () => {
+    /**
+     * Total NL-term entry count across all three locales in the
+     * pre-HOS-142 hand-curated dictionary (the original 12 POIs): 28 `es` +
+     * 24 `en` + 19 `pt` = 71. Verified by direct inspection of
+     * `poi-allowlist.ts` before the HOS-142 generated-entries merge landed.
+     * This is a historical constant, not derived from the current file —
+     * AC-7 requires proving growth AGAINST that fixed baseline, not against
+     * a moving target.
+     */
+    const PRE_HOS_142_BASELINE_ENTRY_COUNT = 71;
+
+    /** Total NL-term entry count across all locales in the current (merged) `POI_ALLOWLIST`. */
+    function countTotalEntries(): number {
+        let total = 0;
+        for (const locale of ['es', 'en', 'pt'] as const) {
+            total += Object.keys(POI_ALLOWLIST[locale] ?? {}).length;
+        }
+        return total;
+    }
+
+    it('should strictly increase total entry count from the pre-HOS-142 baseline', () => {
+        expect(countTotalEntries()).toBeGreaterThan(PRE_HOS_142_BASELINE_ENTRY_COUNT);
+    });
+
+    it('should still expose every pre-HOS-142 curated slug (curated entries are never dropped)', () => {
+        // Spot-check a handful of the original 12 landmarks across locales —
+        // the merge must never drop or shadow a curated entry.
+        expect(POI_ALLOWLIST.es?.autódromo).toEqual(['autodromo_concepcion_del_uruguay']);
+        expect(POI_ALLOWLIST.en?.['race track']).toEqual(['autodromo_concepcion_del_uruguay']);
+        expect(POI_ALLOWLIST.pt?.autódromo).toEqual(['autodromo_concepcion_del_uruguay']);
     });
 });

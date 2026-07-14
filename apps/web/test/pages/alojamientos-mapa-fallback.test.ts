@@ -66,3 +66,39 @@ describe('alojamientos/mapa.astro — MapPlaceholder fallback (SPEC-228 T-016)',
         });
     });
 });
+
+describe('alojamientos/mapa.astro — filters forwarded to the viewport-search refetch (BETA-166)', () => {
+    it('builds mapExtraSearchParams from the same URL filters used for the SSR fetch', () => {
+        expect(src).toContain('const mapExtraSearchParams: Record<string, unknown> = {');
+        const startIdx = src.indexOf('const mapExtraSearchParams');
+        const endIdx = src.indexOf('};', startIdx);
+        const block = src.slice(startIdx, endIdx);
+        for (const key of [
+            'q,',
+            'types,',
+            'destinationIds,',
+            'minPrice,',
+            'maxPrice,',
+            'sortBy,',
+            'sortOrder,',
+            'isFeatured,',
+            'minGuests,',
+            'minBedrooms,',
+            'minBathrooms,',
+            'minRating,',
+            'amenities: amenitiesParam,',
+            'features: featuresParam,',
+            'includeNoPrice,',
+            'includeNoReviews,'
+        ]) {
+            expect(block).toContain(key);
+        }
+    });
+
+    it('passes mapExtraSearchParams as extraSearchParams to AccommodationsListingMap', () => {
+        const islandStart = src.indexOf('<AccommodationsListingMap');
+        const islandEnd = src.indexOf('</AccommodationsListingMap>');
+        const islandSection = src.slice(islandStart, islandEnd);
+        expect(islandSection).toContain('extraSearchParams={mapExtraSearchParams}');
+    });
+});

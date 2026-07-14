@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "512-point-of-interest-museo_aduana",
+    "slug": "museo_aduana",
+    "lat": -33.0144446,
+    "long": -58.5056737,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo dedicado a la historia aduanera, portuaria y comercial de la ciudad y su relación con los ríos.",
+    "nameI18n": {
+        "es": "Museo de la Aduana Gualeguaychú",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo dedicado a la historia aduanera, portuaria y comercial de la ciudad y su relación con los ríos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida del Valle 275, Gualeguaychú, Entre Ríos",
+    "keywords": ["museo aduana", "aduana gualeguaychu", "puerto", "comercio", "historia"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/cultura",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

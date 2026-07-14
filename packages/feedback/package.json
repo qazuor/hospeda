@@ -54,11 +54,11 @@
         "@types/react-dom": "19.2.3",
         "@types/ua-parser-js": "^0.7.39",
         "@vitejs/plugin-react": "^6",
-        "@vitest/coverage-v8": "^4.1.9",
+        "@vitest/coverage-v8": "^4.1.10",
         "jsdom": "^26",
         "tsup": "^8.5.1",
         "typescript": "6.0.3",
         "vite-tsconfig-paths": "^6",
-        "vitest": "^4.1.9"
+        "vitest": "^4.1.10"
     }
 }

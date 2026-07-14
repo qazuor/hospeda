@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "509-point-of-interest-muelle_continental",
+    "slug": "muelle_continental",
+    "lat": null,
+    "long": null,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Muelle operativo del puerto con 220 metros de atraque y calado apto para buques de gran porte.",
+    "nameI18n": {
+        "es": "Muelle Continental",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Muelle operativo del puerto con 220 metros de atraque y calado apto para buques de gran porte.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Puerto Ibicuy, Entre Ríos",
+    "keywords": ["muelle continental", "puerto ibicuy", "atraque", "panamax", "calado"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/puertos-vias-navegables-y-marina-mercante/informaci%C3%B3n-portuaria/ibicuy",
+    "notes": "Instalación operativa, no necesariamente visitable. Falta confirmar zona pública de observación.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "port",
+            "isPrimary": true
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "slug": "club_pelota",
+    "lat": -33.1504259,
+    "long": -59.3106789,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Institución deportiva con tradición en pelota vasca y trinquete, sede de competencias nacionales e internacionales.",
+    "nameI18n": {
+        "es": "Club Pelota Gualeguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Institución deportiva con tradición en pelota vasca y trinquete, sede de competencias nacionales e internacionales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Gualeguay, Entre Ríos",
+    "keywords": [
+        "club pelota gualeguay",
+        "pelota vasca",
+        "trinquete",
+        "deportes",
+        "campeonato mundial"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://es.wikipedia.org/wiki/Gualeguay",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

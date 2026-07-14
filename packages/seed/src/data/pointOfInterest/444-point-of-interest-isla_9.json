@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "444-point-of-interest-isla_9",
+    "slug": "isla_9",
+    "lat": -33.7422,
+    "long": -58.5916,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Sector forestado del área insular, representativo de los paisajes productivos y naturales del delta.",
+    "nameI18n": {
+        "es": "Isla 9",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sector forestado del área insular, representativo de los paisajes productivos y naturales del delta.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Área insular de Villa Paranacito, Entre Ríos",
+    "keywords": ["isla 9", "bosque", "forestacion", "delta", "paisaje isleño"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W444858913",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        }
+    ]
+}

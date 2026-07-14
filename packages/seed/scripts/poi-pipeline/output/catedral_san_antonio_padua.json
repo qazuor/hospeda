@@ -1,0 +1,50 @@
+{
+    "slug": "catedral_san_antonio_padua",
+    "lat": -31.39738,
+    "long": -58.01835,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Principal templo católico de Concordia y sede de la diócesis, inaugurado a fines del siglo XIX frente a la Plaza 25 de Mayo.",
+    "nameI18n": {
+        "es": "Catedral San Antonio de Padua",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Principal templo católico de Concordia y sede de la diócesis, inaugurado a fines del siglo XIX frente a la Plaza 25 de Mayo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urquiza 625, Concordia, Entre Ríos",
+    "keywords": [
+        "catedral concordia",
+        "san antonio de padua",
+        "diocesis",
+        "iglesia",
+        "plaza 25 de mayo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W621698511; https://www.concordia.gob.ar/noticias/turismo/agenda-de-actividades-para-vivir-y-disfrutar-durante-semana-santa-en-concordia",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

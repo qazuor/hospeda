@@ -370,7 +370,8 @@ describe('handleStartPaidSubscription (monthly)', () => {
             priceId: MONTHLY_PRICE_ID,
             mode: 'paid',
             billingInterval: 'monthly',
-            notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
+            notificationUrl:
+                'https://api.hospeda.test/api/v1/webhooks/mercadopago?source_news=webhooks'
         });
         expect(typeof callArg.paymentMethodReturnUrl).toBe('string');
         // Finding #8: MP back_url points at the existing locale-prefixed
@@ -779,7 +780,9 @@ describe('handleStartPaidSubscription (annual)', () => {
         // checkout pages (success/failure), not the old /billing/return.
         expect(call.successUrl).toBe('https://hospeda.test/es/suscriptores/checkout/success/');
         expect(call.cancelUrl).toBe('https://hospeda.test/es/suscriptores/checkout/failure/');
-        expect(call.notificationUrl).toBe('https://api.hospeda.test/api/v1/webhooks/mercadopago');
+        expect(call.notificationUrl).toBe(
+            'https://api.hospeda.test/api/v1/webhooks/mercadopago?source_news=webhooks'
+        );
         expect(call.statementDescriptor).toBe('HOSPEDA');
     });
 

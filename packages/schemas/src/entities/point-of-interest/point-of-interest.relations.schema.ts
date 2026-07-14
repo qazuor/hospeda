@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { DestinationIdSchema, PointOfInterestIdSchema } from '../../common/id.schema.js';
+import { PointOfInterestDestinationRelationEnumSchema } from '../../enums/point-of-interest-destination-relation.schema.js';
 import {
     PointOfInterestMiniSchema,
     PointOfInterestSummarySchema
@@ -21,6 +22,12 @@ export const DestinationPointOfInterestRelationSchema = z.object({
     destinationId: DestinationIdSchema,
     pointOfInterestId: PointOfInterestIdSchema,
     ...BaseAuditFields,
+
+    // Relation kind (HOS-140): PRIMARY (POI is physically in this
+    // destination) or NEARBY (cross-referenced from a different
+    // destination's page). Required — every row read back has a concrete
+    // value (defaulted at the DB/write-path level, never absent).
+    relation: PointOfInterestDestinationRelationEnumSchema,
 
     // Optional metadata for the relation
     order: z

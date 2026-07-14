@@ -237,7 +237,7 @@ describe('handlePlanChange — SPEC-141 D7 upgrade branch', () => {
         );
         expect(call?.urls.cancelUrl).toBe('https://hospeda.test/es/suscriptores/checkout/failure/');
         expect(call?.urls.notificationUrl).toBe(
-            'https://api.hospeda.test/api/v1/webhooks/mercadopago'
+            'https://api.hospeda.test/api/v1/webhooks/mercadopago?source_news=webhooks'
         );
         expect(call?.statementDescriptor).toBe('HOSPEDA');
     });

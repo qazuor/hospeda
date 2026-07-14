@@ -1,0 +1,55 @@
+{
+    "slug": "almacen_don_leandro",
+    "lat": -32.08672,
+    "long": -58.3448933,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Antiguo almacén rural de Colonia Hocker con gastronomía de raíz inmigrante, licores, picadas, platos caseros y venta de productos regionales.",
+    "nameI18n": {
+        "es": "Almacén Don Leandro",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Antiguo almacén rural de Colonia Hocker con gastronomía de raíz inmigrante, licores, picadas, platos caseros y venta de productos regionales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Colonia Hocker, a 12 km de Villa Elisa, Entre Ríos",
+    "keywords": [
+        "almacen don leandro",
+        "colonia hocker",
+        "gastronomia inmigrante",
+        "licores",
+        "picadas",
+        "turismo rural"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://villaelisa.tur.ar/atractivos/",
+    "notes": "Actividad, ubicación general y propuesta confirmadas por Turismo Villa Elisa. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "gastronomy",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        }
+    ]
+}

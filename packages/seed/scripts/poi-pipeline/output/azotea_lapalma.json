@@ -1,0 +1,54 @@
+{
+    "slug": "azotea_lapalma",
+    "lat": -33.0036282,
+    "long": -58.526142300000004,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Casa museo y conjunto histórico que conserva mobiliario, archivos y testimonios de la vida urbana y rural de otros períodos.",
+    "nameI18n": {
+        "es": "Museo Azotea de Lapalma",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Casa museo y conjunto histórico que conserva mobiliario, archivos y testimonios de la vida urbana y rural de otros períodos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Jujuy 1403, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "azotea de lapalma",
+        "museo historico",
+        "jujuy 1403",
+        "casa museo",
+        "patrimonio"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/cultura; https://www.entrerios.tur.ar/localidades-1/gualeguaych%C3%BA",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

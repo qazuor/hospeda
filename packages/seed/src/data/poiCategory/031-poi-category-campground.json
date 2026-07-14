@@ -1,0 +1,29 @@
+{
+    "$schema": "../../schemas/poi-category.schema.json",
+    "id": "031-poi-category-campground",
+    "slug": "campground",
+    "nameI18n": {
+        "es": "Camping",
+        "en": "Campground",
+        "pt": "Camping"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            }
+        }
+    },
+    "icon": "cabin",
+    "displayWeight": 50,
+    "lifecycleState": "ACTIVE"
+}

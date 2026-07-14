@@ -1,0 +1,54 @@
+{
+    "slug": "observatorio_monte",
+    "lat": -31.870004299999998,
+    "long": -58.227728299999995,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Punto de observación preparado para apreciar aves y flora del monte seco, uno de los ambientes menos extendidos dentro del parque.",
+    "nameI18n": {
+        "es": "Observatorio de Aves del Monte",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Punto de observación preparado para apreciar aves y flora del monte seco, uno de los ambientes menos extendidos dentro del parque.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Camino al mirador Los Loros, Parque Nacional El Palmar, Entre Ríos",
+    "keywords": [
+        "observatorio del monte",
+        "aves",
+        "monte seco",
+        "flora",
+        "mirador los loros"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
+    "notes": "Ubicación relativa y función confirmadas. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "birdwatching",
+            "isPrimary": true
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

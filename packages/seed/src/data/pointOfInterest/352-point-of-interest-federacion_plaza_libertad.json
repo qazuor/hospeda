@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "352-point-of-interest-federacion_plaza_libertad",
+    "slug": "federacion_plaza_libertad",
+    "lat": -30.984419100000004,
+    "long": -57.921269499999994,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plaza céntrica próxima al Museo de los Asentamientos, Poblarte y el Auditorio del Bicentenario.",
+    "nameI18n": {
+        "es": "Plaza Libertad",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plaza céntrica próxima al Museo de los Asentamientos, Poblarte y el Auditorio del Bicentenario.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de Federación, Entre Ríos",
+    "keywords": [
+        "plaza libertad federacion",
+        "museo asentamientos",
+        "poblarte",
+        "auditorio",
+        "centro"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W1101824521; https://mapcarta.com/es/N10082753555",
+    "notes": "Existencia y ubicación relativa confirmadas. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

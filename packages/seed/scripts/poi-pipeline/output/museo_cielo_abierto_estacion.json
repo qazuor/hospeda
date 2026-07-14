@@ -1,0 +1,54 @@
+{
+    "slug": "museo_cielo_abierto_estacion",
+    "lat": -32.46547530000001,
+    "long": -58.4809474,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Circuito patrimonial con piezas, edificios y relatos ferroviarios distribuidos en el Parque del Ferrocarril.",
+    "nameI18n": {
+        "es": "Museo a Cielo Abierto de la Estación",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Circuito patrimonial con piezas, edificios y relatos ferroviarios distribuidos en el Parque del Ferrocarril.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque del Ferrocarril, Caseros, Entre Ríos",
+    "keywords": [
+        "museo cielo abierto",
+        "estacion caseros",
+        "ferrocarril",
+        "audioguia",
+        "patrimonio"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://caseros.gob.ar/turismo-y-cultura/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

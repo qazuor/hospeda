@@ -20,6 +20,7 @@ describe('Point Of Interest Relation Schemas', () => {
             const validRelation = {
                 destinationId: faker.string.uuid(),
                 pointOfInterestId: faker.string.uuid(),
+                relation: 'PRIMARY',
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 createdById: faker.string.uuid(),
@@ -35,6 +36,7 @@ describe('Point Of Interest Relation Schemas', () => {
             const relation = {
                 destinationId: faker.string.uuid(),
                 pointOfInterestId: faker.string.uuid(),
+                relation: 'PRIMARY',
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 createdById: faker.string.uuid(),
@@ -252,6 +254,7 @@ describe('Point Of Interest Relation Schemas', () => {
             const validData = {
                 destinationId: faker.string.uuid(),
                 pointOfInterestId: faker.string.uuid(),
+                relation: 'PRIMARY',
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 createdById: faker.string.uuid(),

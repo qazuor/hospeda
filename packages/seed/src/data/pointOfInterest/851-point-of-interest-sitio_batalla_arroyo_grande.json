@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "851-point-of-interest-sitio_batalla_arroyo_grande",
+    "slug": "sitio_batalla_arroyo_grande",
+    "lat": -31.6111322,
+    "long": -58.467959,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Área rural cercana al arroyo donde se desarrolló el 6 de diciembre de 1842 uno de los enfrentamientos más importantes de las guerras civiles rioplatenses.",
+    "nameI18n": {
+        "es": "Sitio Histórico de la Batalla de Arroyo Grande",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Área rural cercana al arroyo donde se desarrolló el 6 de diciembre de 1842 uno de los enfrentamientos más importantes de las guerras civiles rioplatenses.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona del Arroyo Grande, departamento San Salvador, Entre Ríos",
+    "keywords": [
+        "batalla de arroyo grande",
+        "6 de diciembre de 1842",
+        "guerras civiles",
+        "guerra grande",
+        "sitio historico"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/",
+    "notes": "Hecho y área general confirmados. El campo de batalla requiere delimitación histórica y cartográfica. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

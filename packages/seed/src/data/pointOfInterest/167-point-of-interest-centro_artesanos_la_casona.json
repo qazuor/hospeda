@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "167-point-of-interest-centro_artesanos_la_casona",
+    "slug": "centro_artesanos_la_casona",
+    "lat": -32.219379499999995,
+    "long": -58.135491599999995,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Centro de artesanos que funciona en una construcción histórica de 1868 y reúne producción artesanal local y regional.",
+    "nameI18n": {
+        "es": "Centro de Artesanos La Casona",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Centro de artesanos que funciona en una construcción histórica de 1868 y reúne producción artesanal local y regional.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "12 de Abril 106, Colón, Entre Ríos",
+    "keywords": ["la casona", "artesanos", "artesanias", "casona historica", "compras"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.colonturismo.tur.ar/directorio/centro-de-artesanos-la-casona/",
+    "notes": "Nombre y domicilio confirmados por Turismo Colón. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "fair",
+            "isPrimary": true
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

@@ -89,8 +89,8 @@
             "contactAdmin": "Contact support",
             "reason": {
                 "host-missing-permission": {
-                    "title": "There's a problem with your account",
-                    "message": "We see you're a host but your admin panel access is disabled. This is likely a missing config on your account. Drop us a line and we'll sort it out."
+                    "title": "The admin panel isn't part of your account",
+                    "message": "Hosts manage their listings and bookings from the main Hospeda site — the admin panel is only for Hospeda staff. This isn't an error, just the wrong door. Head back to the site to keep managing your account."
                 },
                 "generic": {
                     "title": "Restricted area",

@@ -1,0 +1,54 @@
+{
+    "slug": "paraje_la_argentina",
+    "lat": -33.54237,
+    "long": -59.31573,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Paraje rural del ejido de Ibicuy asociado con pesca, campings y descanso junto a ambientes isleños.",
+    "nameI18n": {
+        "es": "Paraje La Argentina",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paraje rural del ejido de Ibicuy asociado con pesca, campings y descanso junto a ambientes isleños.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "La Argentina, Entre Ríos",
+    "keywords": [
+        "la argentina ibicuy",
+        "pesca",
+        "camping",
+        "paraje",
+        "naturaleza"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://www.entrerios.tur.ar/localidades-1/ibicuy; https://mapcarta.com/es/19211762",
+    "notes": "Paraje mencionado por Turismo Entre Ríos; coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "campground",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

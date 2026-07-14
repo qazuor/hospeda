@@ -1,0 +1,54 @@
+{
+    "slug": "quinchos_municipales",
+    "lat": -32.4640665,
+    "long": -58.4844206,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Área pública con tres quinchos, mesas, bancos, parrillas y sanitarios para reuniones familiares.",
+    "nameI18n": {
+        "es": "Espacio Recreativo Quinchos Municipales",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Área pública con tres quinchos, mesas, bancos, parrillas y sanitarios para reuniones familiares.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Calles 18 y 9, Caseros, Entre Ríos",
+    "keywords": [
+        "quinchos municipales",
+        "parrillas",
+        "familia",
+        "calle 18",
+        "sendero del tunel"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://caseros.gob.ar/turismo-y-cultura/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "recreation",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

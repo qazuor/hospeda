@@ -1,0 +1,54 @@
+{
+    "slug": "panaderia_ubajay",
+    "lat": -31.7942135,
+    "long": -58.3132535,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Panadería tradicional con casi un siglo de historia, reconocida por sus panes en horno a leña y productos dulces artesanales.",
+    "nameI18n": {
+        "es": "Panadería Ubajay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Panadería tradicional con casi un siglo de historia, reconocida por sus panes en horno a leña y productos dulces artesanales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ubajay, Entre Ríos",
+    "keywords": [
+        "panaderia ubajay",
+        "horno a leña",
+        "pan artesanal",
+        "productos dulces",
+        "historia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades; https://www.lanacion.com.ar/revista-lugares/el-encantador-pueblo-fundado-por-colonos-judios-que-es-base-ideal-para-visitar-el-pn-el-palmar-nid12072025/",
+    "notes": "Historia y vigencia confirmadas. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "gastronomy",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

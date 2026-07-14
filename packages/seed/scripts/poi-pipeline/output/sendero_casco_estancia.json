@@ -1,0 +1,54 @@
+{
+    "slug": "sendero_casco_estancia",
+    "lat": -31.816523399999994,
+    "long": -58.321273100000006,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido de 400 metros desde el Centro de Visitantes por edificios y jardines que explican la vida de la antigua estancia.",
+    "nameI18n": {
+        "es": "Sendero Casco de Estancia",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido de 400 metros desde el Centro de Visitantes por edificios y jardines que explican la vida de la antigua estancia.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de Visitantes, Parque Nacional El Palmar, Entre Ríos",
+    "keywords": [
+        "sendero casco de estancia",
+        "edificios historicos",
+        "jardines",
+        "vida rural",
+        "centro visitantes"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
+    "notes": "Nombre, longitud y recorrido confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "hiking",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

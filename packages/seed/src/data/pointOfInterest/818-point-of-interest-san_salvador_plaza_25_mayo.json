@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "818-point-of-interest-san_salvador_plaza_25_mayo",
+    "slug": "san_salvador_plaza_25_mayo",
+    "lat": -31.62492,
+    "long": -58.5051,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plaza principal y centro neurálgico de la vida social de San Salvador. Contiene el monumento al General José de San Martín y el Monumento a la Madre.",
+    "nameI18n": {
+        "es": "Plaza 25 de Mayo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plaza principal y centro neurálgico de la vida social de San Salvador. Contiene el monumento al General José de San Martín y el Monumento a la Madre.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de San Salvador, Entre Ríos",
+    "keywords": [
+        "plaza 25 de mayo",
+        "plaza principal",
+        "monumento san martin",
+        "monumento a la madre",
+        "centro"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/; https://mapcarta.com/es/W215493579",
+    "notes": "Nombre, elementos y coordenadas confirmados.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

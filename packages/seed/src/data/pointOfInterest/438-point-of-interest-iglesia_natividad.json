@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "438-point-of-interest-iglesia_natividad",
+    "slug": "iglesia_natividad",
+    "lat": -32.165207699999996,
+    "long": -58.401718599999995,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Templo central conocido como Iglesia Virgen Niña, iniciado en 1936 y destacado por sus murales testimoniales del cristianismo y su presencia urbana.",
+    "nameI18n": {
+        "es": "Iglesia Natividad de Nuestra Señora",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Templo central conocido como Iglesia Virgen Niña, iniciado en 1936 y destacado por sus murales testimoniales del cristianismo y su presencia urbana.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de Villa Elisa, Entre Ríos",
+    "keywords": [
+        "iglesia virgen niña",
+        "natividad de nuestra señora",
+        "iglesia central",
+        "murales",
+        "religion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://villaelisa.tur.ar/atractivos/; https://villaelisa.tur.ar/preguntas-frecuentes/",
+    "notes": "Nombre, historia y relevancia turística confirmados. Falta dirección postal y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        }
+    ]
+}

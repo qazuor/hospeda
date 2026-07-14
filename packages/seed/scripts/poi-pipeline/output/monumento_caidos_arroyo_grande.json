@@ -1,0 +1,50 @@
+{
+    "slug": "monumento_caidos_arroyo_grande",
+    "lat": -31.6111322,
+    "long": -58.467959,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Monumento situado a unos tres kilómetros al este de la ciudad, dedicado a quienes murieron en la batalla de Arroyo Grande de 1842.",
+    "nameI18n": {
+        "es": "Monumento a los Caídos en Arroyo Grande",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Monumento situado a unos tres kilómetros al este de la ciudad, dedicado a quienes murieron en la batalla de Arroyo Grande de 1842.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Aproximadamente 3 km al este de San Salvador, Entre Ríos",
+    "keywords": [
+        "arroyo grande",
+        "monumento a los caidos",
+        "batalla de 1842",
+        "manuel oribe",
+        "fructuoso rivera"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/",
+    "notes": "Existencia, significado y ubicación relativa confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

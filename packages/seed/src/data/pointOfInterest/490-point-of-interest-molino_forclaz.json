@@ -1,0 +1,57 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "490-point-of-interest-molino_forclaz",
+    "slug": "molino_forclaz",
+    "lat": -32.2172,
+    "long": -58.18665,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Monumento Histórico Nacional y museo dedicado a la historia de la inmigración y la producción agrícola de la antigua Colonia San José.",
+    "nameI18n": {
+        "es": "Museo Provincial Molino Forclaz",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Monumento Histórico Nacional y museo dedicado a la historia de la inmigración y la producción agrícola de la antigua Colonia San José.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de San José, Entre Ríos",
+    "keywords": [
+        "molino forclaz",
+        "museo provincial",
+        "molino",
+        "inmigrantes",
+        "monumento historico",
+        "colonia san jose"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N512926538; https://sanjose.gob.ar/se-firmaron-convenios-para-fortalecer-el-observatorio-economico-turistico-en-la-microrregion-tierra-de-palmares/",
+    "notes": "Coordenadas contrastadas con OpenStreetMap; vigencia institucional confirmada por el municipio.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "slug": "acceso_oficina_turismo",
+    "lat": -30.76181,
+    "long": -58.0169,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Punto de recepción e información para visitantes ubicado sobre uno de los principales accesos a la ciudad.",
+    "nameI18n": {
+        "es": "Acceso Chajarí y Oficina de Turismo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Punto de recepción e información para visitantes ubicado sobre uno de los principales accesos a la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Acceso oeste de Chajarí, Entre Ríos",
+    "keywords": [
+        "acceso chajari",
+        "oficina de turismo",
+        "informacion turistica",
+        "entrada ciudad",
+        "mapas"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W511364843",
+    "notes": "Coordenadas y función turística contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "services",
+            "isPrimary": true
+        },
+        {
+            "slug": "government",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

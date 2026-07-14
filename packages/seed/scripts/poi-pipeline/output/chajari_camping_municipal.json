@@ -1,0 +1,58 @@
+{
+    "slug": "chajari_camping_municipal",
+    "lat": -30.89198,
+    "long": -57.96021,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Camping municipal a orillas del lago de Salto Grande, con naturaleza, playas, alojamiento y actividades náuticas.",
+    "nameI18n": {
+        "es": "Camping Municipal Chajarí",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Camping municipal a orillas del lago de Salto Grande, con naturaleza, playas, alojamiento y actividades náuticas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ribera del lago Salto Grande, a 16 km de Chajarí, Entre Ríos",
+    "keywords": [
+        "camping municipal chajari",
+        "lago salto grande",
+        "playas",
+        "deportes nauticos",
+        "acampe"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://termaschajari.tur.ar/camping-chajari/; https://mapcarta.com/es/W438836539",
+    "notes": "Actividad y ubicación confirmadas; coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "campground",
+            "isPrimary": true
+        },
+        {
+            "slug": "beach",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

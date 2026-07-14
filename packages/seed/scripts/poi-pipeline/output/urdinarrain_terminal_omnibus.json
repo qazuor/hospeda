@@ -1,0 +1,46 @@
+{
+    "slug": "urdinarrain_terminal_omnibus",
+    "lat": -32.68929,
+    "long": -58.89174,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Terminal terrestre de pasajeros con servicios de transporte regional.",
+    "nameI18n": {
+        "es": "Terminal de Ómnibus de Urdinarrain",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Terminal terrestre de pasajeros con servicios de transporte regional.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urdinarrain, Entre Ríos",
+    "keywords": [
+        "terminal urdinarrain",
+        "terminal de omnibus",
+        "colectivos",
+        "micros",
+        "transporte"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W911571423",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "transport",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "683-point-of-interest-plaza_constituyentes",
+    "slug": "plaza_constituyentes",
+    "lat": -30.97968,
+    "long": -57.92997,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plaza cercana al Parque Termal y al casino, también conocida como Plaza Seca.",
+    "nameI18n": {
+        "es": "Plaza de los Constituyentes",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plaza cercana al Parque Termal y al casino, también conocida como Plaza Seca.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona termal de Federación, Entre Ríos",
+    "keywords": [
+        "plaza de los constituyentes",
+        "plaza seca",
+        "parque termal",
+        "espacio verde",
+        "federacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W294339065",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}
