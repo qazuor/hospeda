@@ -19,7 +19,14 @@
 
 import { defineMiddleware } from 'astro:middleware';
 import { injectNonce } from '../integrations/csp-nonce-injector';
-import { getNoindexHosts, isDevelopment } from './lib/env';
+import {
+    getInternalApiUrl,
+    getInternalRequestSecret,
+    getNoindexHosts,
+    isDevelopment,
+    isProduction
+} from './lib/env';
+import { reportInternalBypassSelfCheck } from './lib/internal-bypass-report';
 import {
     buildChangePasswordRedirect,
     buildCspHeader,
@@ -58,6 +65,36 @@ const NOINDEX_HOSTS = parseNoindexHosts(getNoindexHosts());
  * HOS-30 T-020: Phase 2 enforce — flipped from `Content-Security-Policy-Report-Only`.
  */
 const CSP_HEADER_NAME = 'Content-Security-Policy';
+
+/**
+ * Startup self-check for the SSR internal-request rate-limit bypass
+ * (HOS-155, incident follow-up to HOS-103).
+ *
+ * Runs exactly once, at module load, only when actually running on the SSR
+ * server (`import.meta.env.SSR`) — never during the build/prerender pass and
+ * never in the browser bundle. On misconfiguration this ALERTS LOUDLY (ERROR
+ * log + Sentry capture) but deliberately never throws: a bug in the alert
+ * path itself must not turn into a boot crash-loop. See
+ * `./lib/internal-bypass-selfcheck.ts` for the pure check logic and
+ * `./lib/internal-bypass-report.ts` for the (unit-tested) alerting wrapper,
+ * plus full incident background.
+ *
+ * This block's build-time safety (it never runs during `astro build`) relies
+ * on the HOS-74 invariant that NO route declares `export const prerender =
+ * true` — enforced by the guard test in `./lib/__tests__/csp-middleware.test.ts`.
+ */
+if (import.meta.env.SSR) {
+    try {
+        reportInternalBypassSelfCheck({
+            internalApiUrl: getInternalApiUrl(),
+            internalRequestSecret: getInternalRequestSecret(),
+            isProd: isProduction()
+        });
+    } catch (error) {
+        // The self-check must never break middleware module load.
+        console.error('[web] SSR internal-bypass self-check threw unexpectedly:', error);
+    }
+}
 
 /**
  * Main middleware handler for all requests in the web application.
