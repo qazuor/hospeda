@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "912-point-of-interest-villaguay_cementerio_israelita",
+    "slug": "villaguay_cementerio_israelita",
+    "lat": -32.3501289,
+    "long": -58.84514919999999,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sitio de memoria de las familias de la colonización agrícola judía y parada del circuito histórico regional.",
+    "nameI18n": {
+        "es": "Cementerio Israelita de las Colonias",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sitio de memoria de las familias de la colonización agrícola judía y parada del circuito histórico regional.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Área rural del departamento Villaguay, Entre Ríos",
+    "keywords": [
+        "cementerio israelita villaguay",
+        "cementerio judio",
+        "colonias judias",
+        "memoria",
+        "lucienville"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.turismoentrerios.com/villaguay/circuito-colonias-judias.htm",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "religious_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

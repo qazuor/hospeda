@@ -43,7 +43,7 @@ import type {
 } from '@repo/schemas';
 import { AMENITY_ALLOWLIST, FEATURE_ALLOWLIST } from './amenity-allowlist.js';
 import { ATTRACTION_ALLOWLIST } from './attraction-allowlist.js';
-import { POI_ALLOWLIST } from './poi-allowlist.js';
+import { PROMPT_FEATURED_POI_SLUGS } from './poi-allowlist.js';
 
 /**
  * Maximum number of trailing conversation messages embedded in the prompt.
@@ -82,18 +82,19 @@ const buildAllowlistLines = (locale: 'es' | 'en' | 'pt'): readonly string[] => {
     >;
     const attractionSlugs = [...new Set(Object.values(attractionDict).flat())].join(', ');
 
-    // HOS-113 §6.3: POI allowlist values are also arrays of slugs (mirroring
-    // the attraction shape) — flatten before de-duplicating.
-    const poiDict = (POI_ALLOWLIST[locale] ?? POI_ALLOWLIST.es) as Readonly<
-        Record<string, readonly string[]>
-    >;
-    const poiSlugs = [...new Set(Object.values(poiDict).flat())].join(', ');
+    // HOS-142 Phase 4b: the full POI allowlist covers ~661 landmarks, but only
+    // a small curated + top-featured subset (~52 slugs, PROMPT_FEATURED_POI_SLUGS)
+    // is embedded here to keep prompt size bounded. Everything else is still
+    // reachable — `search-chat.ts` runs `matchPoiTerms` against the FULL
+    // `POI_ALLOWLIST` server-side, independent of what the model extracts from
+    // this (deliberately partial) embedded list.
+    const poiSlugs = PROMPT_FEATURED_POI_SLUGS.join(', ');
 
     return [
         `Allowed amenity slugs for this request (match user mentions to these; ignore any amenity not in this list): ${amenitySlugs}`,
         `Allowed feature slugs for this request (environment/atmosphere/aptitude/style only; match user mentions to these; ignore any feature not in this list): ${featureSlugs}`,
         `Allowed destination attraction slugs for this request (match user mentions of a destination attraction, e.g. "a city with carnival", to these canonical slugs in entities.attractionSlugs; ignore any attraction not in this list — never invent a slug): ${attractionSlugs}`,
-        `Allowed destination point-of-interest slugs for this request (match user mentions of a specific named landmark, e.g. "near the autódromo", to these canonical slugs in entities.poiSlugs; ignore any landmark not in this list — never invent a slug): ${poiSlugs}`
+        `Featured destination point-of-interest slugs for this request — a curated subset of well-known landmarks, NOT the complete catalog (match user mentions of a specific named landmark, e.g. "near the autódromo", to these canonical slugs in entities.poiSlugs when you recognize one; if a mentioned landmark is not in this list, do not invent a slug for it — a separate server-side lookup covers landmarks beyond this featured subset): ${poiSlugs}`
     ];
 };
 

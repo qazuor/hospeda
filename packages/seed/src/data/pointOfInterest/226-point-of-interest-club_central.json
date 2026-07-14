@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "226-point-of-interest-club_central",
+    "slug": "club_central",
+    "lat": -33.0317599,
+    "long": -58.99744200000001,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Institución deportiva y social con actividad en vóley y otras disciplinas, vinculada con la vida comunitaria local.",
+    "nameI18n": {
+        "es": "Club Central Larroque",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Institución deportiva y social con actividad en vóley y otras disciplinas, vinculada con la vida comunitaria local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Larroque, Entre Ríos",
+    "keywords": ["club central larroque", "voley", "deportes", "club social", "comunidad"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.larroque.gob.ar/larroque/storage/public/transparency/456/1732530489_09-_BO_SEPTIEMBRE_2024.pdf",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

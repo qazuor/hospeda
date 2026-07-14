@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "517-point-of-interest-museo_antropologia",
+    "slug": "museo_antropologia",
+    "lat": -31.40105,
+    "long": -58.01353,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo con colecciones arqueológicas, antropológicas y naturales de la región de Salto Grande y del nordeste entrerriano.",
+    "nameI18n": {
+        "es": "Museo de Antropología y Ciencias Naturales",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo con colecciones arqueológicas, antropológicas y naturales de la región de Salto Grande y del nordeste entrerriano.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Rivadavia 456, Concordia, Entre Ríos",
+    "keywords": [
+        "museo antropologia concordia",
+        "ciencias naturales",
+        "arqueologia",
+        "salto grande",
+        "pueblos originarios"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/museos/museo-de-antropolog%C3%ADa-y-ciencias-naturales; https://mapcarta.com/es/W630772741",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

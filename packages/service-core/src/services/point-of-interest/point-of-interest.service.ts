@@ -1,4 +1,5 @@
 import {
+    buildSearchCondition,
     DestinationModel,
     PoiCategoryModel,
     PointOfInterestModel,
@@ -254,7 +255,7 @@ export class PointOfInterestService extends BaseCrudRelatedService<
             input: { ...params, actor },
             schema: PointOfInterestAddToDestinationInputSchema,
             ctx,
-            execute: async (validatedParams, actor) => {
+            execute: async (validatedParams, actor, execCtx) => {
                 await this._canAddPointOfInterestToDestination(actor);
                 const {
                     destinationId,
@@ -262,14 +263,25 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                     relation: relationKind
                 } = validatedParams;
 
-                // Run all existence checks in parallel for better performance
+                // Run all existence checks in parallel for better performance.
+                // `execCtx?.tx` is threaded so these reads participate in a
+                // caller-provided transaction boundary (HOS-126).
                 const [pointOfInterest, destination, existing] = await Promise.all([
-                    this.model.findOne({ id: pointOfInterestId as PointOfInterestIdType }),
-                    this.destinationModel.findOne({ id: destinationId as DestinationIdType }),
-                    this.relatedModel.findOne({
-                        destinationId: destinationId as DestinationIdType,
-                        pointOfInterestId: pointOfInterestId as PointOfInterestIdType
-                    })
+                    this.model.findOne(
+                        { id: pointOfInterestId as PointOfInterestIdType },
+                        execCtx?.tx
+                    ),
+                    this.destinationModel.findOne(
+                        { id: destinationId as DestinationIdType },
+                        execCtx?.tx
+                    ),
+                    this.relatedModel.findOne(
+                        {
+                            destinationId: destinationId as DestinationIdType,
+                            pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                        },
+                        execCtx?.tx
+                    )
                 ]);
 
                 if (!pointOfInterest) {
@@ -290,19 +302,25 @@ export class PointOfInterestService extends BaseCrudRelatedService<
 
                 // Create the relation (HOS-140: relationKind defaults to
                 // PRIMARY in the Zod schema when omitted)
-                const relation = await this.relatedModel.create({
-                    destinationId: destinationId as DestinationIdType,
-                    pointOfInterestId: pointOfInterestId as PointOfInterestIdType,
-                    relation: relationKind
-                });
+                const relation = await this.relatedModel.create(
+                    {
+                        destinationId: destinationId as DestinationIdType,
+                        pointOfInterestId: pointOfInterestId as PointOfInterestIdType,
+                        relation: relationKind
+                    },
+                    execCtx?.tx
+                );
 
                 // If the model returns just an id or number, fetch the full relation
                 let fullRelation = relation;
                 if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
-                    const found = await this.relatedModel.findOne({
-                        destinationId: destinationId as DestinationIdType,
-                        pointOfInterestId: pointOfInterestId as PointOfInterestIdType
-                    });
+                    const found = await this.relatedModel.findOne(
+                        {
+                            destinationId: destinationId as DestinationIdType,
+                            pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                        },
+                        execCtx?.tx
+                    );
                     if (!found) {
                         throw new ServiceError(
                             ServiceErrorCode.INTERNAL_ERROR,
@@ -332,30 +350,37 @@ export class PointOfInterestService extends BaseCrudRelatedService<
             input: { ...params, actor },
             schema: PointOfInterestRemoveFromDestinationInputSchema,
             ctx,
-            execute: async (validatedParams, actor) => {
+            execute: async (validatedParams, actor, execCtx) => {
                 await this._canRemovePointOfInterestFromDestination(actor);
                 const { destinationId, pointOfInterestId } = validatedParams;
-                // Verify point of interest exists
-                const pointOfInterest = await this.model.findOne({
-                    id: pointOfInterestId as PointOfInterestIdType
-                });
+                // Verify point of interest exists. `execCtx?.tx` is threaded so
+                // these reads/writes participate in a caller-provided
+                // transaction boundary (HOS-126).
+                const pointOfInterest = await this.model.findOne(
+                    { id: pointOfInterestId as PointOfInterestIdType },
+                    execCtx?.tx
+                );
                 if (!pointOfInterest) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'Point of interest not found'
                     );
                 }
-                const destination = await this.destinationModel.findOne({
-                    id: destinationId as DestinationIdType
-                });
+                const destination = await this.destinationModel.findOne(
+                    { id: destinationId as DestinationIdType },
+                    execCtx?.tx
+                );
                 if (!destination) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
                 }
                 // Verify that the relation exists
-                const existing = await this.relatedModel.findOne({
-                    destinationId: destinationId as DestinationIdType,
-                    pointOfInterestId: pointOfInterestId as PointOfInterestIdType
-                });
+                const existing = await this.relatedModel.findOne(
+                    {
+                        destinationId: destinationId as DestinationIdType,
+                        pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                    },
+                    execCtx?.tx
+                );
                 if (!existing) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
@@ -363,15 +388,21 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                     );
                 }
                 // Remove the relation (soft delete)
-                const relation = await this.relatedModel.softDelete({
-                    destinationId: destinationId as DestinationIdType,
-                    pointOfInterestId: pointOfInterestId as PointOfInterestIdType
-                });
-                if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
-                    const fullRelation = await this.relatedModel.findOne({
+                const relation = await this.relatedModel.softDelete(
+                    {
                         destinationId: destinationId as DestinationIdType,
                         pointOfInterestId: pointOfInterestId as PointOfInterestIdType
-                    });
+                    },
+                    execCtx?.tx
+                );
+                if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
+                    const fullRelation = await this.relatedModel.findOne(
+                        {
+                            destinationId: destinationId as DestinationIdType,
+                            pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                        },
+                        execCtx?.tx
+                    );
                     if (!fullRelation) {
                         throw new ServiceError(
                             ServiceErrorCode.INTERNAL_ERROR,
@@ -840,7 +871,7 @@ export class PointOfInterestService extends BaseCrudRelatedService<
     protected async _executeSearch(
         params: PointOfInterestSearchInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<PointOfInterest>> {
         const where = this.buildSearchWhere(params);
         const { empty, additionalConditions } = await this.resolveRelationFilters({
@@ -851,7 +882,41 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         if (empty) {
             return { items: [], total: 0 };
         }
-        const { items, total } = await this.model.findAll(where, undefined, additionalConditions);
+
+        // HOS-142 G-6 bug fix: `BaseCrudRead.search` strips
+        // `page`/`pageSize`/`sortBy`/`sortOrder` from `params` before this hook
+        // runs (SPEC-088) and republishes them via `ctx.pagination` — this hook
+        // was silently ignoring that context and always calling
+        // `model.findAll(where, undefined, ...)`, which fell back to the
+        // model's own default page/pageSize and never sorted. Forward them
+        // explicitly, mirroring `AttractionService._executeSearch`, so the
+        // public list endpoint actually honors caller-provided pagination and
+        // `sortBy`/`sortOrder` (needed for the POI-picker autocomplete's
+        // "featured/high-priority first" ordering, e.g. `sortBy=displayWeight`).
+        //
+        // Also builds the free-text `q` condition here: the base `list()` path
+        // does this generically via `getSearchableColumns()` +
+        // `buildSearchCondition`, but `search()` requires each subclass to opt
+        // in, and this one never did — `q` was accepted by the HTTP schema but
+        // silently discarded. Matches against `slug`/`description` (the same
+        // columns `getSearchableColumns()` already declares for `list()`).
+        const searchCondition = params.q
+            ? buildSearchCondition(params.q, this.getSearchableColumns(), pointsOfInterest)
+            : undefined;
+        const combinedConditions = searchCondition
+            ? [...additionalConditions, searchCondition]
+            : additionalConditions;
+
+        const { items, total } = await this.model.findAll(
+            where,
+            {
+                page: ctx.pagination?.page ?? 1,
+                pageSize: ctx.pagination?.pageSize ?? 10,
+                sortBy: ctx.pagination?.sortBy,
+                sortOrder: ctx.pagination?.sortOrder
+            },
+            combinedConditions
+        );
         return { items, total };
     }
 

@@ -56,6 +56,13 @@
     box-shadow: 0 0 0 3px var(--brand-primary-a20);
 }
 
+/* HOS-142 G-6: POI-picker mode. `SearchableSelect` (shared component) owns
+ * its own `.combobox*` styling from `apps/web/src/styles/components.css` —
+ * this wrapper only makes it span the same full width as `.destSelect`. */
+.poiPicker {
+    width: 100%;
+}
+
 .browserBlock {
     display: flex;
     flex-direction: column;

@@ -28,6 +28,11 @@ import type { AiChatMessage, SearchIntentEntities } from '@repo/schemas';
 import { AccommodationTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
+    extractAllSlugs,
+    POI_ALLOWLIST,
+    PROMPT_FEATURED_POI_SLUGS
+} from '../../../../src/routes/ai/protected/poi-allowlist';
+import {
     buildConversationalSearchPrompt,
     buildSearchReplyMessages,
     buildSearchReplySystemPrompt,
@@ -47,17 +52,42 @@ describe('buildConversationalSearchPrompt', () => {
         expect(prompt).toContain('Allowed feature slugs for this request');
     });
 
-    it('embeds the locale destination attraction and point-of-interest allowlist lines (HOS-113 §6.3)', () => {
+    it('embeds the locale destination attraction and point-of-interest allowlist lines (HOS-113 §6.3, HOS-142 Phase 4b)', () => {
         const prompt = buildConversationalSearchPrompt({
             history: [],
             message: MESSAGE,
             locale: 'es'
         });
         expect(prompt).toContain('Allowed destination attraction slugs for this request');
-        expect(prompt).toContain('Allowed destination point-of-interest slugs for this request');
-        // Flattened + de-duplicated: the curated allowlist slugs appear verbatim.
+        // HOS-142 Phase 4b: the embedded POI line now advertises itself as a
+        // curated/featured SUBSET (not the complete ~661-landmark catalog) —
+        // see search-chat.prompt.ts's buildAllowlistLines + poi-allowlist.ts's
+        // PROMPT_FEATURED_POI_SLUGS. The curated allowlist slugs still appear
+        // verbatim, since they are always part of the embedded subset.
+        expect(prompt).toContain('Featured destination point-of-interest slugs for this request');
         expect(prompt).toContain('autodromo_concepcion_del_uruguay');
         expect(prompt).toContain('entities.poiSlugs');
+    });
+
+    it('embeds only the bounded PROMPT_FEATURED_POI_SLUGS subset, not the full POI_ALLOWLIST catalog (HOS-142 Phase 4b)', () => {
+        const prompt = buildConversationalSearchPrompt({
+            history: [],
+            message: MESSAGE,
+            locale: 'es'
+        });
+
+        const fullCatalogSlugCount = extractAllSlugs(POI_ALLOWLIST).size;
+
+        // The full catalog (~661 landmarks) must NOT be embedded verbatim —
+        // only the small featured/curated subset. Bounds match the ~30-60
+        // target the generator script's PROMPT_FEATURED_POI_LIMIT aims for.
+        expect(PROMPT_FEATURED_POI_SLUGS.length).toBeGreaterThan(0);
+        expect(PROMPT_FEATURED_POI_SLUGS.length).toBeLessThanOrEqual(60);
+        expect(PROMPT_FEATURED_POI_SLUGS.length).toBeLessThan(fullCatalogSlugCount);
+
+        for (const slug of PROMPT_FEATURED_POI_SLUGS) {
+            expect(prompt).toContain(slug);
+        }
     });
 
     it('embeds the new user message verbatim in triple quotes', () => {

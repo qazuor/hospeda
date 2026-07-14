@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "768-point-of-interest-rio_gualeguaychu",
+    "slug": "rio_gualeguaychu",
+    "lat": -33.0078908,
+    "long": -58.5109859,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Curso de agua central para la identidad de la ciudad, utilizado para navegación, kayak, pesca, paseos náuticos y actividades recreativas.",
+    "nameI18n": {
+        "es": "Río Gualeguaychú",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Curso de agua central para la identidad de la ciudad, utilizado para navegación, kayak, pesca, paseos náuticos y actividades recreativas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Gualeguaychú, Entre Ríos",
+    "keywords": ["rio gualeguaychu", "kayak", "pesca", "paseos nauticos", "canotaje"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/naturaleza; https://www.entrerios.tur.ar/localidades-1/gualeguaych%C3%BA",
+    "notes": "Curso de agua; no debe tratarse como punto único definitivo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

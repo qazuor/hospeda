@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "895-point-of-interest-velissa_spa_termal",
+    "slug": "velissa_spa_termal",
+    "lat": -32.12611,
+    "long": -58.44013,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Centro de bienestar ubicado dentro del complejo Termas Villa Elisa, con tratamientos de spa y servicios orientados al descanso y la relajación.",
+    "nameI18n": {
+        "es": "Velissa Spa Termal",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Centro de bienestar ubicado dentro del complejo Termas Villa Elisa, con tratamientos de spa y servicios orientados al descanso y la relajación.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Complejo Termas Villa Elisa, Ruta Nacional 130 km 20, Villa Elisa, Entre Ríos",
+    "keywords": ["velissa spa", "spa termal", "masajes", "bienestar", "termas villa elisa"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W296734564; https://villaelisa.tur.ar/turismo-accesible/",
+    "notes": "Coordenadas contrastadas con OpenStreetMap mediante Mapcarta.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "wellness",
+            "isPrimary": true
+        },
+        {
+            "slug": "thermal_complex",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

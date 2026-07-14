@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "070-point-of-interest-bancos_arena_rio_uruguay",
+    "slug": "bancos_arena_rio_uruguay",
+    "lat": null,
+    "long": null,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Sectores naturales de arena frente a la costa, visitados mediante paseos náuticos y utilizados para descanso y actividades recreativas en temporada.",
+    "nameI18n": {
+        "es": "Bancos de Arena del Río Uruguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sectores naturales de arena frente a la costa, visitados mediante paseos náuticos y utilizados para descanso y actividades recreativas en temporada.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Río Uruguay, frente a Pueblo Liebig, Entre Ríos",
+    "keywords": ["bancos de arena", "rio uruguay", "paseos nauticos", "playa natural", "lancha"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.instagram.com/turismopuebloliebig/reel/DZyNz-qOnY8/; https://www.entrerios.tur.ar/localidades-1/pueblo-liebig",
+    "notes": "La propuesta náutica está confirmada, pero la posición de los bancos es variable. No debe asignarse una coordenada fija sin relevamiento.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "beach",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

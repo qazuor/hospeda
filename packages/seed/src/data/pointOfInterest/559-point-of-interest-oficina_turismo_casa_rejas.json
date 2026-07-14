@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "559-point-of-interest-oficina_turismo_casa_rejas",
+    "slug": "oficina_turismo_casa_rejas",
+    "lat": -33.149670199999996,
+    "long": -59.309800300000006,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Punto municipal de información turística instalado en uno de los edificios patrimoniales más reconocibles de la ciudad.",
+    "nameI18n": {
+        "es": "Oficina de Turismo Casa de las Rejas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Punto municipal de información turística instalado en uno de los edificios patrimoniales más reconocibles de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "1.º de Mayo y Monte Caseros, Gualeguay, Entre Ríos",
+    "keywords": [
+        "oficina turismo gualeguay",
+        "casa de las rejas",
+        "informacion turistica",
+        "mapas",
+        "visitantes"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.instagram.com/reel/DKXGexsu5GO/; https://www.facebook.com/gualeguayteespera/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "services",
+            "isPrimary": true
+        },
+        {
+            "slug": "government",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

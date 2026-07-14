@@ -764,4 +764,92 @@ describe('PointOfInterestService', () => {
             expect(model.findAll).not.toHaveBeenCalled();
         });
     });
+
+    describe('search() pagination/sort forwarding + text search (HOS-142 G-6 regression)', () => {
+        const poiA = PointOfInterestFactoryBuilder.create({
+            id: getMockId('pointOfInterest', 'poi-search-a') as PointOfInterestIdType
+        });
+
+        it('should forward page/pageSize/sortBy/sortOrder to model.findAll instead of always calling it with undefined options', async () => {
+            // Before the fix, `_executeSearch` called
+            // `this.model.findAll(where, undefined, additionalConditions)`,
+            // silently discarding the caller's page/pageSize/sortBy/sortOrder
+            // (republished via `BaseCrudRead.search`'s `ctx.pagination`) —
+            // the public list endpoint always fell back to the model's own
+            // default pagination and never sorted.
+            asMock(model.findAll).mockResolvedValue({ items: [poiA], total: 1 });
+
+            const result = await service.search(actorNoPerms, {
+                page: 2,
+                pageSize: 5,
+                sortBy: 'displayWeight',
+                sortOrder: 'desc'
+            });
+
+            expect(result.error).toBeUndefined();
+            const [, optionsArg] = asMock(model.findAll).mock.calls[0] as [
+                Record<string, unknown>,
+                { page?: number; pageSize?: number; sortBy?: string; sortOrder?: string }
+            ];
+            expect(optionsArg).toEqual({
+                page: 2,
+                pageSize: 5,
+                sortBy: 'displayWeight',
+                sortOrder: 'desc'
+            });
+        });
+
+        it('should default to page 1 / pageSize 10 when the caller omits pagination', async () => {
+            asMock(model.findAll).mockResolvedValue({ items: [poiA], total: 1 });
+
+            // Cast: `page`/`pageSize` carry Zod `.default()`s, so the schema
+            // happily fills them in at runtime for an omitted-pagination
+            // caller (e.g. a route passing a raw query object) — but the
+            // service's TS signature reflects the POST-parse (defaults
+            // applied) shape, which makes them look required. The cast lets
+            // this test exercise that real, supported runtime path.
+            await service.search(actorNoPerms, {} as Parameters<typeof service.search>[1]);
+
+            const [, optionsArg] = asMock(model.findAll).mock.calls[0] as [
+                Record<string, unknown>,
+                { page?: number; pageSize?: number }
+            ];
+            expect(optionsArg?.page).toBe(1);
+            expect(optionsArg?.pageSize).toBe(10);
+        });
+
+        it('should build a text-search condition from `q` against slug/description and merge it into additionalConditions', async () => {
+            // Before the fix, `q` was accepted by the HTTP schema but never
+            // reached the database query — `_executeSearch` ignored it
+            // entirely, so free-text search silently did nothing.
+            asMock(model.findAll).mockResolvedValue({ items: [poiA], total: 1 });
+
+            const result = await service.search(actorNoPerms, {
+                q: 'plaza',
+                page: 1,
+                pageSize: 10
+            });
+
+            expect(result.error).toBeUndefined();
+            const [, , additionalConditionsArg] = asMock(model.findAll).mock.calls[0] as [
+                Record<string, unknown>,
+                unknown,
+                unknown[]
+            ];
+            expect(additionalConditionsArg).toHaveLength(1);
+        });
+
+        it('should not add a text-search condition when `q` is absent', async () => {
+            asMock(model.findAll).mockResolvedValue({ items: [poiA], total: 1 });
+
+            await service.search(actorNoPerms, { page: 1, pageSize: 10 });
+
+            const [, , additionalConditionsArg] = asMock(model.findAll).mock.calls[0] as [
+                Record<string, unknown>,
+                unknown,
+                unknown[]
+            ];
+            expect(additionalConditionsArg).toEqual([]);
+        });
+    });
 });

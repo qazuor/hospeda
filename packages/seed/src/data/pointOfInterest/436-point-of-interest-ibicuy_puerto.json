@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "436-point-of-interest-ibicuy_puerto",
+    "slug": "ibicuy_puerto",
+    "lat": -33.75889,
+    "long": -59.17894,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Puerto de aguas profundas sobre la margen izquierda del río Ibicuy, vinculado con cargas forestales, granos y navegación de ultramar.",
+    "nameI18n": {
+        "es": "Puerto Ibicuy",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Puerto de aguas profundas sobre la margen izquierda del río Ibicuy, vinculado con cargas forestales, granos y navegación de ultramar.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Kilómetro 217 del río Ibicuy, margen izquierda, Entre Ríos",
+    "keywords": [
+        "puerto ibicuy",
+        "puerto de aguas profundas",
+        "cargas forestales",
+        "buques panamax",
+        "rio ibicuy"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/puertos-vias-navegables-y-marina-mercante/informaci%C3%B3n-portuaria/ibicuy; https://mapcarta.com/es/35396866",
+    "notes": "Localización oficial del puerto convertida a coordenadas decimales y contrastada con cartografía abierta.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "port",
+            "isPrimary": true
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

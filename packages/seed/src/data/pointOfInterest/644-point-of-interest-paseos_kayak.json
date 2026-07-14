@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "644-point-of-interest-paseos_kayak",
+    "slug": "paseos_kayak",
+    "lat": -33.7163973,
+    "long": -58.6620273,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Excursiones guiadas en kayak por el delta, ofrecidas por prestadores registrados en el portal municipal.",
+    "nameI18n": {
+        "es": "Paseos en Kayak",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Excursiones guiadas en kayak por el delta, ofrecidas por prestadores registrados en el portal municipal.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Villa Paranacito, Entre Ríos",
+    "keywords": ["kayak villa paranacito", "remo", "delta", "aventura", "paseo guiado"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.villaparanacito.gob.ar/turismo/actividades",
+    "notes": "Actividad oficial vigente. Falta geocodificar el punto de salida. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

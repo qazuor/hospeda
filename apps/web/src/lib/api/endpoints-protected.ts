@@ -11,6 +11,7 @@ import type {
     AccommodationImportResponse,
     AccommodationImportStatusQuery,
     AccommodationImportStatusResponse,
+    AccommodationOccupancy,
     AccommodationReviewListItem,
     DestinationReviewListItem,
     DowngradePreview,
@@ -2915,6 +2916,86 @@ export const accommodationMediaApi = {
     }): Promise<ApiResult<{ readonly media: AccommodationMediaRow }>> {
         return apiClient.put({
             path: `${PROTECTED}/accommodations/${id}/media/${mediaId}/featured`
+        });
+    }
+};
+
+// --- Accommodation Occupancy Calendar (Protected — HOS-43 Phase 1) ---
+
+/**
+ * Owner-facing protected endpoints for the occupancy calendar
+ * (`CalendarSection.client.tsx`).
+ *
+ * `batchToggle` is the primary mutation for the grid UI: it applies a single
+ * `isBlocked` value to a list of dates in one request (idempotent on both
+ * directions — see `AccommodationOccupancyBatchInputSchema` in `@repo/schemas`).
+ * There are no single-day add/remove wrappers here since the batch endpoint
+ * already covers a one-date selection (`dates: [date]`).
+ *
+ * @example
+ * ```ts
+ * const list = await accommodationOccupancyApi.list({ id: 'acc-uuid', from: '2026-07-01', to: '2026-08-01' });
+ * const result = await accommodationOccupancyApi.batchToggle({
+ *   id: 'acc-uuid',
+ *   dates: ['2026-07-10', '2026-07-11'],
+ *   isBlocked: true
+ * });
+ * ```
+ */
+export const accommodationOccupancyApi = {
+    /**
+     * Reads the owner's occupancy rows for an accommodation, optionally
+     * scoped to a half-open `[from, to)` date range.
+     *
+     * @param params - Accommodation ID, optional `from`/`to` range (both
+     *   `YYYY-MM-DD`; omit both to fetch every row), and optional SSR cookie.
+     * @returns `{ occupancy: AccommodationOccupancy[] }`
+     */
+    list({
+        id,
+        from,
+        to,
+        cookieHeader
+    }: {
+        readonly id: string;
+        readonly from?: string;
+        readonly to?: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly occupancy: readonly AccommodationOccupancy[] }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/${id}/occupancy`,
+            params: { from, to },
+            cookieHeader
+        });
+    },
+
+    /**
+     * Blocks or unblocks a set of dates in one request.
+     *
+     * `isBlocked: true` idempotently upserts `source=MANUAL` rows for every
+     * date; `isBlocked: false` deletes only the `MANUAL` rows (sync-sourced
+     * rows are left untouched server-side). Returns the post-operation state
+     * for exactly the requested dates.
+     *
+     * @param params - Accommodation ID, the target dates, the desired
+     *   `isBlocked` value, and an optional note (applied when blocking).
+     * @returns `{ occupancy: AccommodationOccupancy[] }` — the current rows
+     *   for the requested dates after the operation.
+     */
+    batchToggle({
+        id,
+        dates,
+        isBlocked,
+        note
+    }: {
+        readonly id: string;
+        readonly dates: readonly string[];
+        readonly isBlocked: boolean;
+        readonly note?: string;
+    }): Promise<ApiResult<{ readonly occupancy: readonly AccommodationOccupancy[] }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/accommodations/${id}/occupancy/batch`,
+            body: { accommodationId: id, dates, isBlocked, note }
         });
     }
 };

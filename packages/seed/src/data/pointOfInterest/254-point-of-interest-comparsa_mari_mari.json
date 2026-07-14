@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "254-point-of-interest-comparsa_mari_mari",
+    "slug": "comparsa_mari_mari",
+    "lat": -33.017818999999996,
+    "long": -58.514434400000006,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Comparsa histórica del Carnaval del País vinculada con el Club Central Entrerriano.",
+    "nameI18n": {
+        "es": "Comparsa Marí Marí",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Comparsa histórica del Carnaval del País vinculada con el Club Central Entrerriano.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "España 283, Gualeguaychú, Entre Ríos",
+    "keywords": ["comparsa mari mari", "carnaval", "españa 283", "central entrerriano", "batucada"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/carnaval",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "cultural_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

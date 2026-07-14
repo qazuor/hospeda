@@ -77,6 +77,90 @@ export function parseAcceptLanguage(header: string | null): SupportedLocale {
 }
 
 /**
+ * DOM id of the `<script type="application/json">` element that carries the
+ * current page's flattened translation dictionary to the client. Emitted by
+ * `I18nClientData.astro` in the page shell (HOS-160 lever A). It lives inside
+ * the `<body>` so `<ClientRouter>` soft-navigation swaps it out for the
+ * destination page's locale automatically.
+ */
+export const CLIENT_I18N_ELEMENT_ID = 'hospeda-i18n';
+
+/**
+ * Shape of the payload serialized into the client i18n data element.
+ *
+ * Production emits the single-locale `{ locale, m }` form (only the current
+ * page's dictionary ships — the whole point of HOS-160 lever A). The optional
+ * `all` form (every locale at once) is a TEST-ONLY convenience seeded by
+ * `test/setup.ts`, so a single element serves whatever locale a test renders;
+ * production never emits it.
+ */
+interface ClientI18nPayload {
+    readonly locale?: string;
+    readonly m?: Record<string, string>;
+    readonly all?: Record<string, Record<string, string>>;
+}
+
+/** Client-only memo of the last-resolved locale dictionary. */
+let clientI18nCache: { locale: string; m: Record<string, string> } | null = null;
+
+/**
+ * Reads the current page's flattened dictionary from the inlined
+ * `#hospeda-i18n` data element (client only). Returns an empty map — so keys
+ * fall through to their fallback — when the element is absent or its locale
+ * does not match the requested one, neither of which happens on a normally
+ * rendered page. Re-reads the DOM whenever the requested locale changes, which
+ * is how a cross-locale soft navigation picks up the swapped-in element.
+ */
+function getClientLocaleDict(locale: SupportedLocale): Record<string, string> {
+    if (clientI18nCache?.locale === locale) return clientI18nCache.m;
+    if (typeof document === 'undefined') return {};
+    const raw = document.getElementById(CLIENT_I18N_ELEMENT_ID)?.textContent;
+    if (!raw) return {};
+    try {
+        const parsed = JSON.parse(raw) as ClientI18nPayload;
+        const m = parsed.all
+            ? (parsed.all[locale] ?? {})
+            : parsed.locale === locale
+              ? (parsed.m ?? {})
+              : {};
+        clientI18nCache = { locale, m };
+        return m;
+    } catch {
+        return {};
+    }
+}
+
+/**
+ * Resolves the flattened `{ "namespace.key": "value" }` dictionary for a
+ * locale. On the server it reads the full `@repo/i18n` catalog directly; on
+ * the client it reads only the current locale's inlined dictionary, so the
+ * other locales never ship in the JS bundle (HOS-160 lever A). The
+ * `import.meta.env.SSR` guard lets the bundler drop the full-catalog import
+ * from the client build.
+ */
+function getLocaleDict(locale: SupportedLocale): Record<string, string> {
+    if (import.meta.env.SSR) {
+        const all = trans as Record<string, Record<string, string>>;
+        return all[locale] ?? all[DEFAULT_LOCALE] ?? {};
+    }
+    return getClientLocaleDict(locale);
+}
+
+/**
+ * Server-only: the flattened dictionary for a single locale, to be inlined
+ * into the page HTML by `I18nClientData.astro` for the client to read. Returns
+ * an empty map if ever called on the client (it never is — the guard keeps the
+ * full catalog out of the client bundle).
+ */
+export function getInlineLocaleMessages(locale: SupportedLocale): Record<string, string> {
+    if (import.meta.env.SSR) {
+        const all = trans as Record<string, Record<string, string>>;
+        return all[locale] ?? all[DEFAULT_LOCALE] ?? {};
+    }
+    return {};
+}
+
+/**
  * Gets all translations for a given locale and namespace from @repo/i18n.
  *
  * @param params - Object with locale and namespace.
@@ -89,8 +173,7 @@ export function getTranslations({
     locale: SupportedLocale;
     namespace: Namespace;
 }): TranslationRecord {
-    const allTranslations = trans as Record<string, Record<string, string>>;
-    const localeTranslations = allTranslations[locale] ?? allTranslations[DEFAULT_LOCALE] ?? {};
+    const localeTranslations = getLocaleDict(locale);
 
     const namespacePrefix = `${namespace}.`;
     const result: TranslationRecord = {};
@@ -126,8 +209,7 @@ function resolve({
     fallback?: string;
     params?: Record<string, unknown>;
 }): string {
-    const allTranslations = trans as Record<string, Record<string, string>>;
-    const localeTranslations = allTranslations[locale] ?? allTranslations[DEFAULT_LOCALE] ?? {};
+    const localeTranslations = getLocaleDict(locale);
 
     let raw: string | undefined = localeTranslations[fullKey];
 

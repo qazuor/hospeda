@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "670-point-of-interest-playa_punta_sur",
+    "slug": "playa_punta_sur",
+    "lat": -33.008302,
+    "long": -58.488687899999995,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Sector de playa urbana situado hacia el extremo sur del paseo costero.",
+    "nameI18n": {
+        "es": "Playa Punta Sur",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sector de playa urbana situado hacia el extremo sur del paseo costero.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Juan al Este, Gualeguaychú, Entre Ríos",
+    "keywords": ["playa punta sur", "san juan al este", "playa urbana", "rio"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/playas",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

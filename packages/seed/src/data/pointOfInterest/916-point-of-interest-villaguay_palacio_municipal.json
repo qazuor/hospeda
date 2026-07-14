@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "916-point-of-interest-villaguay_palacio_municipal",
+    "slug": "villaguay_palacio_municipal",
+    "lat": -31.8676401,
+    "long": -59.027630099999996,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Edificio neoclásico del gobierno local, con torre reloj, balcones y una fuerte presencia arquitectónica frente a la plaza.",
+    "nameI18n": {
+        "es": "Palacio Municipal de Villaguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Edificio neoclásico del gobierno local, con torre reloj, balcones y una fuerte presencia arquitectónica frente a la plaza.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro cívico, Plaza 25 de Mayo, Villaguay, Entre Ríos",
+    "keywords": [
+        "palacio municipal villaguay",
+        "municipalidad",
+        "torre reloj",
+        "arquitectura neoclasica",
+        "centro civico"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.villaguay.gob.ar/; https://www.villaguay.gob.ar/app/turismo/declaracion_de_interes; https://www.entrerios.tur.ar/localidades-1/villaguay",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

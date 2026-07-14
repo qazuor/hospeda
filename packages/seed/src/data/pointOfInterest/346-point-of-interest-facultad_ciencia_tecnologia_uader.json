@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "346-point-of-interest-facultad_ciencia_tecnologia_uader",
+    "slug": "facultad_ciencia_tecnologia_uader",
+    "lat": -32.4851849,
+    "long": -58.2320232,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sede universitaria con carreras científicas, tecnológicas y actividades de divulgación.",
+    "nameI18n": {
+        "es": "Facultad de Ciencia y Tecnología de UADER",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sede universitaria con carreras científicas, tecnológicas y actividades de divulgación.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "fcyt uader",
+        "facultad ciencia tecnologia",
+        "universidad",
+        "investigacion",
+        "educacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://fcyt.uader.edu.ar/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "education",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

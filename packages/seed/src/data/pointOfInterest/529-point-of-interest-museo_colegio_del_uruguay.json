@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "529-point-of-interest-museo_colegio_del_uruguay",
+    "slug": "museo_colegio_del_uruguay",
+    "lat": -32.484289,
+    "long": -58.233495,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo ubicado dentro del Colegio del Uruguay, con documentos, mobiliario y objetos relacionados con la historia educativa y política argentina.",
+    "nameI18n": {
+        "es": "Museo Histórico Evocativo del Colegio del Uruguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo ubicado dentro del Colegio del Uruguay, con documentos, mobiliario y objetos relacionados con la historia educativa y política argentina.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "General Urquiza 25, Concepción del Uruguay, Entre Ríos",
+    "keywords": ["museo colegio", "colegio nacional", "urquiza", "historia argentina"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,42 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "573-point-of-interest-paranacito_hospital",
+    "slug": "paranacito_hospital",
+    "lat": -33.71642,
+    "long": -58.65461,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Hospital público provincial con internación general y principal referencia sanitaria de la localidad.",
+    "nameI18n": {
+        "es": "Hospital Paranacito",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Hospital público provincial con internación general y principal referencia sanitaria de la localidad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Arroyo La Tinta, Villa Paranacito, Entre Ríos",
+    "keywords": ["hospital paranacito", "hospital", "guardia", "emergencias", "salud"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N3849356728",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

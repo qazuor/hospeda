@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "093-point-of-interest-bodega_vulliez_sermet",
+    "slug": "bodega_vulliez_sermet",
+    "lat": -32.23824,
+    "long": -58.1589,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Bodega y viñedo abierto al turismo, con visitas vinculadas con la producción vitivinícola y la historia del vino en la región.",
+    "nameI18n": {
+        "es": "Bodega Vulliez-Sermet",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Bodega y viñedo abierto al turismo, con visitas vinculadas con la producción vitivinícola y la historia del vino en la región.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ruta Nacional 135 km 8, Colón, Entre Ríos",
+    "keywords": ["bodega vulliez sermet", "vino", "viñedo", "degustacion", "enoturismo"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N7223246485",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap; sitio oficial enlazado desde Mapcarta.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "winery",
+            "isPrimary": true
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

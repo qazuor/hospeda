@@ -351,26 +351,42 @@ export function initStateFromParams({
             if (min || max) ranges[group.id] = { min, max };
         }
         if (group.type === 'geo-radius') {
-            const lat = Number.parseFloat(params.latitude ?? '');
-            const long = Number.parseFloat(params.longitude ?? '');
             const radius = Number.parseFloat(params.radius ?? '');
-            if (Number.isFinite(lat) && Number.isFinite(long) && Number.isFinite(radius)) {
-                // Decide which mode the URL belongs to: if the coordinates
-                // match one of the config's destinations, restore destination
-                // mode and remember the matched id; otherwise fall back to
-                // browser mode (user shared their location previously).
-                const matchedDest = group.destinationOptions.find(
-                    (opt) => opt.lat === lat && opt.long === long
-                );
-                geo[group.id] = matchedDest
-                    ? {
-                          mode: 'destination',
-                          lat,
-                          long,
-                          radius,
-                          destId: matchedDest.value
-                      }
-                    : { mode: 'browser', lat, long, radius };
+            const poiId = params.poiId;
+            const poiSlug = params.poiSlug;
+            // HOS-142 G-6: a `poiId`/`poiSlug` param (mutually exclusive with
+            // `latitude`/`longitude` server-side, HOS-113 §6.2) restores POI
+            // mode. Checked first — a URL carrying both a stale
+            // latitude/longitude AND a poiId reflects the poiId as the more
+            // recent, more specific selection.
+            if ((poiId || poiSlug) && Number.isFinite(radius)) {
+                geo[group.id] = {
+                    mode: 'poi',
+                    radius,
+                    ...(poiId ? { poiId } : {}),
+                    ...(poiSlug ? { poiSlug } : {})
+                };
+            } else {
+                const lat = Number.parseFloat(params.latitude ?? '');
+                const long = Number.parseFloat(params.longitude ?? '');
+                if (Number.isFinite(lat) && Number.isFinite(long) && Number.isFinite(radius)) {
+                    // Decide which mode the URL belongs to: if the coordinates
+                    // match one of the config's destinations, restore destination
+                    // mode and remember the matched id; otherwise fall back to
+                    // browser mode (user shared their location previously).
+                    const matchedDest = group.destinationOptions.find(
+                        (opt) => opt.lat === lat && opt.long === long
+                    );
+                    geo[group.id] = matchedDest
+                        ? {
+                              mode: 'destination',
+                              lat,
+                              long,
+                              radius,
+                              destId: matchedDest.value
+                          }
+                        : { mode: 'browser', lat, long, radius };
+                }
             }
         }
     }
@@ -461,9 +477,23 @@ export function buildParamsFromState({
         if (group.type === 'geo-radius') {
             const value = state.geo[group.id];
             if (value) {
-                params.set('latitude', String(value.lat));
-                params.set('longitude', String(value.long));
-                params.set('radius', String(value.radius));
+                // HOS-142 G-6 / AC-6: 'poi' mode emits `poiId`/`poiSlug` +
+                // `radius` — deliberately NEVER `latitude`/`longitude`, which
+                // the server resolves itself from the POI (HOS-113 §6.2).
+                // `poiId` wins over `poiSlug` when both are somehow set,
+                // mirroring the server's own precedence.
+                if (value.mode === 'poi' && (value.poiId || value.poiSlug)) {
+                    if (value.poiId) {
+                        params.set('poiId', value.poiId);
+                    } else if (value.poiSlug) {
+                        params.set('poiSlug', value.poiSlug);
+                    }
+                    params.set('radius', String(value.radius));
+                } else if (value.lat !== undefined && value.long !== undefined) {
+                    params.set('latitude', String(value.lat));
+                    params.set('longitude', String(value.long));
+                    params.set('radius', String(value.radius));
+                }
             }
         }
     }

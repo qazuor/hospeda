@@ -1032,6 +1032,23 @@
             "featuredImageAlt": "Imagen destacada",
             "title": "Galería",
             "imageAlt": "Imagen de galería {index}"
+        },
+        "occupancy": {
+            "title": "Ocupación",
+            "empty": "Este alojamiento no tiene fechas ocupadas registradas.",
+            "loadError": "No se pudo cargar el calendario de ocupación.",
+            "noNote": "Sin nota",
+            "columns": {
+                "date": "Fecha",
+                "source": "Origen",
+                "note": "Nota"
+            },
+            "sourceLabels": {
+                "MANUAL": "Manual",
+                "GOOGLE_CALENDAR": "Google Calendar",
+                "AIRBNB": "Airbnb",
+                "BOOKING": "Booking.com"
+            }
         }
     },
     "exchangeRates": {

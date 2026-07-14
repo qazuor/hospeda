@@ -120,7 +120,13 @@ const radiusRaw = url.searchParams.get('radius');
 const latitude = latitudeRaw !== null ? Number.parseFloat(latitudeRaw) : Number.NaN;
 const longitude = longitudeRaw !== null ? Number.parseFloat(longitudeRaw) : Number.NaN;
 const radius = radiusRaw !== null ? Number.parseFloat(radiusRaw) : Number.NaN;
-const hasGeoRadius = Number.isFinite(latitude) && Number.isFinite(longitude) && Number.isFinite(radius);
+const hasLatLongRadius = Number.isFinite(latitude) && Number.isFinite(longitude) && Number.isFinite(radius);
+
+// HOS-142 G-6 — "near a landmark" proximity mode (mirrors alojamientos/index.astro).
+const poiIdRaw = url.searchParams.get('poiId') ?? undefined;
+const poiSlugRaw = poiIdRaw ? undefined : (url.searchParams.get('poiSlug') ?? undefined);
+const hasPoiRadius = Boolean((poiIdRaw || poiSlugRaw) && Number.isFinite(radius));
+const hasGeoRadius = hasLatLongRadius || hasPoiRadius;
 
 // `distance` is only meaningful when the geo filter is active; degrade to the
 // default otherwise (the backend would silently drop it too).
@@ -172,9 +178,14 @@ const result = await accommodationsApi.list({
 	hasPool,
 	hasParking,
 	allowsPets,
-	latitude: hasGeoRadius ? latitude : undefined,
-	longitude: hasGeoRadius ? longitude : undefined,
-	radius: hasGeoRadius ? radius : undefined
+	// HOS-142 G-6 (AC-6): the `poi` mode forwards `poiId`/`poiSlug`, never raw
+	// `latitude`/`longitude` — the server resolves the POI's coordinates
+	// itself (HOS-113 §6.2).
+	latitude: hasLatLongRadius ? latitude : undefined,
+	longitude: hasLatLongRadius ? longitude : undefined,
+	radius: hasGeoRadius ? radius : undefined,
+	poiId: poiIdRaw,
+	poiSlug: poiSlugRaw
 });
 
 const hasError = !result.ok;
@@ -237,7 +248,11 @@ if (hasWifi) initialParams.hasWifi = 'true';
 if (hasPool) initialParams.hasPool = 'true';
 if (hasParking) initialParams.hasParking = 'true';
 if (allowsPets) initialParams.allowsPets = 'true';
-if (hasGeoRadius) {
+if (hasPoiRadius) {
+	if (poiIdRaw) initialParams.poiId = poiIdRaw;
+	if (poiSlugRaw) initialParams.poiSlug = poiSlugRaw;
+	initialParams.radius = String(radius);
+} else if (hasLatLongRadius) {
 	initialParams.latitude = String(latitude);
 	initialParams.longitude = String(longitude);
 	initialParams.radius = String(radius);

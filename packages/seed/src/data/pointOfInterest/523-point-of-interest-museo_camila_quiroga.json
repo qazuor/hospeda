@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "523-point-of-interest-museo_camila_quiroga",
+    "slug": "museo_camila_quiroga",
+    "lat": -30.7464713,
+    "long": -57.97834830000001,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo regional instalado en la casa natal de la actriz Camila Quiroga, dedicado a la historia local, la vida cotidiana y la memoria cultural de Chajarí.",
+    "nameI18n": {
+        "es": "Museo Regional Camila Quiroga",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo regional instalado en la casa natal de la actriz Camila Quiroga, dedicado a la historia local, la vida cotidiana y la memoria cultural de Chajarí.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Casco histórico de Chajarí, Entre Ríos",
+    "keywords": [
+        "museo camila quiroga",
+        "camila quiroga",
+        "museo regional",
+        "historia local",
+        "casa natal"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf; https://termaschajari.tur.ar/arco-de-entrada/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

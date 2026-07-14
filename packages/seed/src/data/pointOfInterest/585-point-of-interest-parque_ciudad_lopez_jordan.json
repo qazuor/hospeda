@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "585-point-of-interest-parque_ciudad_lopez_jordan",
+    "slug": "parque_ciudad_lopez_jordan",
+    "lat": -32.46972,
+    "long": -58.23377,
+    "type": "PARK",
+    "icon": null,
+    "description": "Amplio parque urbano con sectores verdes, senderos, espacios deportivos y áreas recreativas utilizadas por residentes y visitantes.",
+    "nameI18n": {
+        "es": "Parque de la Ciudad Ricardo López Jordán",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Amplio parque urbano con sectores verdes, senderos, espacios deportivos y áreas recreativas utilizadas por residentes y visitantes.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Boulevard Hipólito Yrigoyen y Maipú, Concepción del Uruguay, Entre Ríos",
+    "keywords": ["parque de la ciudad", "lopez jordan", "parque", "deportes", "familia"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

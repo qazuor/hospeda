@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "672-point-of-interest-playa_santa_ana",
+    "slug": "playa_santa_ana",
+    "lat": -30.91092,
+    "long": -57.91994,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Playa de arena sobre el lago Salto Grande, próxima al camping municipal y utilizada para baño y recreación estival.",
+    "nameI18n": {
+        "es": "Playa Santa Ana",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Playa de arena sobre el lago Salto Grande, próxima al camping municipal y utilizada para baño y recreación estival.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Costa de Santa Ana, Entre Ríos",
+    "keywords": ["playa santa ana", "lago salto grande", "arena", "balneario", "verano"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/santa-ana; https://mapcarta.com/es/W577908981",
+    "notes": "Coordenadas del sector de playa contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

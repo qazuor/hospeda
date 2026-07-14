@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "719-point-of-interest-pozo_cuatro",
+    "slug": "pozo_cuatro",
+    "lat": -32.3121393,
+    "long": -59.074371799999994,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Sector de playa y baño habilitado del río Gualeguay, asociado al parque balneario municipal.",
+    "nameI18n": {
+        "es": "Pozo de los Cuatro",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sector de playa y baño habilitado del río Gualeguay, asociado al parque balneario municipal.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque Balneario Municipal Dr. Delio Panizza, Rosario del Tala, Entre Ríos",
+    "keywords": ["pozo de los cuatro", "playa", "rio gualeguay", "baño", "balneario"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://es.wikipedia.org/wiki/Rosario_del_Tala; https://www.turismoentrerios.com/rosariotala/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

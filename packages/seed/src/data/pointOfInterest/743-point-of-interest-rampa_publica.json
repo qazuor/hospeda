@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "743-point-of-interest-rampa_publica",
+    "slug": "rampa_publica",
+    "lat": -33.71648,
+    "long": -58.66215,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Bajada pública para botadura de lanchas y embarcaciones pequeñas en la costa urbana.",
+    "nameI18n": {
+        "es": "Rampa Pública de Lanchas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Bajada pública para botadura de lanchas y embarcaciones pequeñas en la costa urbana.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Costa urbana de Villa Paranacito, Entre Ríos",
+    "keywords": ["rampa publica", "bajada de lanchas", "botadura", "embarcaciones", "rio"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N4421680660",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "port",
+            "isPrimary": true
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

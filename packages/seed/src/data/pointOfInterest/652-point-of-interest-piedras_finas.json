@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "652-point-of-interest-piedras_finas",
+    "slug": "piedras_finas",
+    "lat": -30.90378,
+    "long": -57.86522,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Sector del perilago con paisaje costero, alojamientos rurales y cercanía a miradores y bajadas al agua.",
+    "nameI18n": {
+        "es": "Piedras Finas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sector del perilago con paisaje costero, alojamientos rurales y cercanía a miradores y bajadas al agua.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Piedras Finas, Santa Ana, Entre Ríos",
+    "keywords": ["piedras finas", "perilago", "costa", "paisaje", "alojamientos"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N9393209833",
+    "notes": "Coordenadas del centro del sector contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        }
+    ]
+}

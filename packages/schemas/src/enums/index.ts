@@ -73,6 +73,9 @@ export * from './newsletter-subscriber-status.enum.js';
 export * from './newsletter-subscriber-status.schema.js';
 export * from './notification-recipient-side.enum.js';
 export * from './notification-recipient-side.schema.js';
+// Occupancy calendar enums (HOS-43)
+export * from './occupancy-source.enum.js';
+export * from './occupancy-source.schema.js';
 export * from './owner-promotion-discount-type.enum.js';
 export * from './owner-promotion-discount-type.schema.js';
 export * from './partner-subscription-status.enum.js';

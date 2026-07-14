@@ -33,7 +33,8 @@
         "migrate:accommodation-prices": "tsx --tsconfig ./tsconfig.json ./scripts/migrate-accommodation-prices.ts",
         "validate:accommodations": "tsx --tsconfig ./tsconfig.json ./scripts/validate-fix-accommodations.ts",
         "lint:image-pool": "tsx --tsconfig ./tsconfig.json ./scripts/check-image-pool-coverage.ts",
-        "seed:ready-user": "tsx --tsconfig ./tsconfig.json ./scripts/mark-user-ready.ts"
+        "seed:ready-user": "tsx --tsconfig ./tsconfig.json ./scripts/mark-user-ready.ts",
+        "import:poi-catalog": "tsx --tsconfig ./tsconfig.json ./scripts/import-poi-catalog.ts"
     },
     "dependencies": {
         "@repo/ai-core": "workspace:*",

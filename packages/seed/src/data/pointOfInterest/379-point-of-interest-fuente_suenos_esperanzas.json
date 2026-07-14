@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "379-point-of-interest-fuente_suenos_esperanzas",
+    "slug": "fuente_suenos_esperanzas",
+    "lat": -30.746330399999998,
+    "long": -57.9744482,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Fuente ornamental y punto de referencia urbano ubicado en una intersección central de la ciudad.",
+    "nameI18n": {
+        "es": "Fuente Sueños y Esperanzas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Fuente ornamental y punto de referencia urbano ubicado en una intersección central de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida 25 de Mayo y Avenida 9 de Julio, Chajarí, Entre Ríos",
+    "keywords": [
+        "fuente sueños y esperanzas",
+        "25 de mayo",
+        "9 de julio",
+        "fuente",
+        "punto de referencia"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf; https://termaschajari.tur.ar/arco-de-entrada/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

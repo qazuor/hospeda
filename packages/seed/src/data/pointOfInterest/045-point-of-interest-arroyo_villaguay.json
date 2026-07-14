@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "045-point-of-interest-arroyo_villaguay",
+    "slug": "arroyo_villaguay",
+    "lat": -31.706129,
+    "long": -58.8576175,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Curso de agua vinculado con el paisaje, el origen del topónimo local, el balneario y las experiencias recreativas y naturales.",
+    "nameI18n": {
+        "es": "Arroyo Villaguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Curso de agua vinculado con el paisaje, el origen del topónimo local, el balneario y las experiencias recreativas y naturales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ejido de Villaguay, Entre Ríos",
+    "keywords": ["arroyo villaguay", "rio del tigre", "toponimo", "naturaleza", "balneario"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.villaguay.gob.ar/app/villaguay/historia; https://www.entrerios.tur.ar/localidades-1/villaguay",
+    "notes": "Curso de agua; requiere geometría lineal y puntos de acceso separados. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

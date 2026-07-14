@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "865-point-of-interest-teatro_monica_pesse",
+    "slug": "teatro_monica_pesse",
+    "lat": -32.30263,
+    "long": -59.14171,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sala teatral municipal utilizada para espectáculos, talleres, producciones escénicas y actividades culturales.",
+    "nameI18n": {
+        "es": "Sala Municipal de Teatro Mónica Pesse",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sala teatral municipal utilizada para espectáculos, talleres, producciones escénicas y actividades culturales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "teatro monica pesse",
+        "sala municipal",
+        "artes escenicas",
+        "cultura",
+        "espectaculos"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf; https://mapcarta.com/es/N7784551632",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "theater",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        }
+    ]
+}

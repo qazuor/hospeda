@@ -1,0 +1,48 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "459-point-of-interest-larroque_bomberos_voluntarios",
+    "slug": "larroque_bomberos_voluntarios",
+    "lat": -33.03209,
+    "long": -59.00171,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Cuartel de bomberos voluntarios y servicio esencial de emergencias de la ciudad.",
+    "nameI18n": {
+        "es": "Bomberos Voluntarios de Larroque",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Cuartel de bomberos voluntarios y servicio esencial de emergencias de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Baudillo Iglesias 27, Larroque, Entre Ríos",
+    "keywords": [
+        "bomberos voluntarios larroque",
+        "cuartel",
+        "emergencias",
+        "baudillo iglesias",
+        "servicio comunitario"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N8778022673",
+    "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "services",
+            "isPrimary": true
+        },
+        {
+            "slug": "community_center",
+            "isPrimary": false
+        }
+    ]
+}

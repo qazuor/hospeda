@@ -13,6 +13,7 @@ import { adminDeleteAccommodationRoute } from './delete';
 import { adminGetAccommodationByIdRoute } from './getById';
 import { adminGetFaqsRoute } from './getFaqs';
 import { adminGetMediaRoute } from './getMedia';
+import { adminGetOccupancyRoute } from './getOccupancy';
 import { adminHardDeleteAccommodationRoute } from './hardDelete';
 import { adminListAccommodationsRoute } from './list';
 import { adminAccommodationOptionsRoute } from './options';
@@ -68,6 +69,9 @@ app.route('/', adminRestoreAccommodationRoute);
 
 // POST /:id/verify - Verify / unverify accommodation
 app.route('/', adminVerifyAccommodationRoute);
+
+// GET /:id/occupancy - Occupancy calendar (staff, ACCOMMODATION_OCCUPANCY_VIEW) - HOS-43
+app.route('/', adminGetOccupancyRoute);
 
 // PATCH /:id/faqs/reorder - Reorder FAQs for an accommodation
 // Registered before /:id/faqs routes to prevent "reorder" matching as a faqId param

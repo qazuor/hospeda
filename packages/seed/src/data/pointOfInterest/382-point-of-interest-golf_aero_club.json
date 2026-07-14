@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "382-point-of-interest-golf_aero_club",
+    "slug": "golf_aero_club",
+    "lat": -31.8559602,
+    "long": -59.0764559,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Complejo deportivo con golf, tenis, pádel, hockey y una cancha de nueve hoyos rodeada por una arboleda consolidada.",
+    "nameI18n": {
+        "es": "Golf Aero Club Villaguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Complejo deportivo con golf, tenis, pádel, hockey y una cancha de nueve hoyos rodeada por una arboleda consolidada.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ejido oeste, a 5 km del centro de Villaguay, Entre Ríos",
+    "keywords": ["golf aero club villaguay", "golf", "tenis", "padel", "hockey", "nueve hoyos"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://es.wikipedia.org/wiki/Villaguay",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        }
+    ]
+}

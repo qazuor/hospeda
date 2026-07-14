@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "391-point-of-interest-gruta_santa_rita",
+    "slug": "gruta_santa_rita",
+    "lat": -32.1533146,
+    "long": -58.196708799999996,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio religioso y parque de devoción popular situado en el ingreso al pueblo, visitado especialmente durante las celebraciones dedicadas a Santa Rita de Casia.",
+    "nameI18n": {
+        "es": "Gruta de Santa Rita",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio religioso y parque de devoción popular situado en el ingreso al pueblo, visitado especialmente durante las celebraciones dedicadas a Santa Rita de Casia.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ingreso a Pueblo Liebig, calle Santa Rita, Entre Ríos",
+    "keywords": [
+        "gruta santa rita",
+        "santa rita de casia",
+        "religion",
+        "peregrinacion",
+        "ingreso liebig"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://aldiaentrerios.com.ar/pueblo-liebig-celebro-el-dia-de-santa-rita-de-casia; https://www.argentinaturismo.com.ar/pueblo-liebig/gruta-de-santa-rita.html",
+    "notes": "Ubicación general y vigencia confirmadas en mayo de 2026. Falta geocodificar la entrada. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        }
+    ]
+}
