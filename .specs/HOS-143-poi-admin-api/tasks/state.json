@@ -1,0 +1,560 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-143",
+    "title": "Point of Interest (POI) Admin CRUD API",
+    "created": "2026-07-13T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add PointOfInterestAdminSearchSchema",
+            "description": "Create packages/schemas/src/entities/point-of-interest/point-of-interest.admin-search.schema.ts mirroring attraction.admin-search.schema.ts. Extend AdminSearchBaseSchema with: type (PointOfInterestTypeEnumSchema.optional()), isFeatured/isBuiltin/hasOwnPage/verified (queryBooleanParam()), destinationId (DestinationIdSchema.optional()), categoryId (PoiCategoryIdSchema.optional() — NOTE real name, not PointOfInterestCategoryIdSchema). Export from index.ts. Tests: valid/invalid parse cases for each filter.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-008"],
+            "subtasks": [
+                {
+                    "title": "Create admin-search schema file",
+                    "completed": true
+                },
+                {
+                    "title": "Export from entity index.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests for filter parsing",
+                    "completed": true
+                }
+            ],
+            "tags": ["schema"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-13T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-14T01:15:55.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add PointOfInterest batch schemas",
+            "description": "Create packages/schemas/src/entities/point-of-interest/point-of-interest.batch.schema.ts (structural copy of attraction.batch.schema.ts): PointOfInterestBatchRequestSchema (ids uuid[].min(1).max(100), optional fields), PointOfInterestBatchItemSchema (PointOfInterestSchema.partial().required({id:true})), PointOfInterestBatchResponseSchema (array nullable). CRITICAL (R-4): requiredFields must be ['id','slug'] NOT ['id','name'] — POI has no name column. Export from index.ts. Tests: batch request validation.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Create batch schema file with id/slug required",
+                    "completed": true
+                },
+                {
+                    "title": "Export from entity index.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["schema"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-13T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-14T01:15:55.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add destination-relation management schemas",
+            "description": "Add PointOfInterestUpdateDestinationRelationInputSchema ({destinationId, pointOfInterestId, relation}) and PointOfInterestDestinationListItemSchema ({destinationId, destinationName, destinationSlug, relation}) to .crud.schema.ts (or new .destination-relation.schema.ts). Use PointOfInterestDestinationRelationEnumSchema (real name — NOT DestinationPointOfInterest...). Export from index.ts. Tests: valid/invalid relation enum.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-005", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Add update+list-item schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Export from index.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["schema"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-13T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-14T01:15:55.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add category-assignment schemas",
+            "description": "Add PointOfInterestSetCategoriesInputSchema ({pointOfInterestId, categoryIds: array(PoiCategoryIdSchema).min(1).max(10), primaryCategoryId: PoiCategoryIdSchema}).refine(primaryCategoryId in categoryIds, 'zodError.pointOfInterest.categories.primaryNotInSet') and PointOfInterestCategoryAssignmentSchema ({id: PoiCategoryIdSchema, slug, nameI18n: I18nTextSchema, icon nullish, isPrimary}). Use PoiCategoryIdSchema (real name). Add i18n error key. Export from index.ts. Tests: refine passes/fails, max-10 cap.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-006", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Add set-categories + assignment schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Add primaryNotInSet i18n error key",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests for refine + max cap",
+                    "completed": true
+                }
+            ],
+            "tags": ["schema"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-13T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-14T01:15:55.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add updatePointOfInterestDestinationRelation service method",
+            "description": "New method on PointOfInterestService (packages/service-core/src/services/point-of-interest/point-of-interest.service.ts), same shape as addPointOfInterestToDestination: runWithLoggingAndValidation, parallel existence checks, ServiceError(NOT_FOUND) if POI/destination/relation row missing (AC-4: must NOT silently create). Calls this.relatedModel.update({destinationId, pointOfInterestId}, {relation}). Input: PointOfInterestUpdateDestinationRelationInputSchema. NO permission-hook change (Decision 1: keep POINT_OF_INTEREST_UPDATE via existing _canUpdate-style checker). Tests: happy update, NOT_FOUND on missing row.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Implement method with existence checks",
+                    "completed": true
+                },
+                {
+                    "title": "Wire permission checker (POINT_OF_INTEREST_UPDATE)",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests happy + NOT_FOUND",
+                    "completed": true
+                }
+            ],
+            "tags": ["service"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-13T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-14T01:26:26.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Add setCategoriesForPointOfInterest (transactional full-replace)",
+            "description": "Decision 2: add to the EXISTING PointOfInterestCategoryService (packages/service-core/src/services/poi-category/point-of-interest-category.service.ts), NOT PointOfInterestService. Full-replace: validate primaryCategoryId in categoryIds, validate every id resolves to a non-deleted poi_categories row (parallel Promise.all), then inside withServiceTransaction: delete all r_poi_category rows for the POI and insert the new set with isPrimary on exactly primaryCategoryId. Reuse existing getCategoriesForPointOfInterest for reads. Use RPoiCategoryModel via generic findAll({pointOfInterestId}). Tests: AC-5 exact-set + one-primary, AC-6 rollback on bad id mid-array (previous assignment intact).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Implement transactional full-replace method",
+                    "completed": true
+                },
+                {
+                    "title": "Validate primary + all category ids exist",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests exact-set, one-primary, rollback",
+                    "completed": true
+                }
+            ],
+            "tags": ["service"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-13T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-14T01:26:26.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Extend admin-search filters (hasOwnPage, verified, categoryId)",
+            "description": "In point-of-interest.service.ts: extend buildSearchWhere to pass hasOwnPage and verified plain-column filters (same pattern as isFeatured). Add private resolveCategoryIdFilter(categoryId) mirroring resolveDestinationIdFilter but joining through r_poi_category; AND its additionalConditions with the destination filter's when both present (AC-2/R-5: AND not OR). type/isFeatured/isBuiltin/destinationId already supported. Tests: hasOwnPage+verified filters, destinationId+categoryId AND semantics.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Add hasOwnPage/verified to buildSearchWhere",
+                    "completed": true
+                },
+                {
+                    "title": "Add resolveCategoryIdFilter with AND semantics",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests incl. combined AND",
+                    "completed": true
+                }
+            ],
+            "tags": ["service"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-13T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-14T01:26:26.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create standard CRUD admin route tier (9 files + index)",
+            "description": "Create apps/api/src/routes/point-of-interest/admin/ as structural copy of attraction/admin/: list.ts, getById.ts, create.ts, update.ts, patch.ts, delete.ts, hardDelete.ts, restore.ts, batch.ts, index.ts. Swap service to PointOfInterestService, schemas to POI equivalents (§6.1 table). Copy patch.ts customRateLimit and getById.ts cacheTTL/rateLimit overrides verbatim. batch handler requiredFields ['id','slug']. Permissions per §6.1 table.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-009", "T-010"],
+            "subtasks": [
+                {
+                    "title": "Copy 9 route files with PointOfInterest rewire",
+                    "completed": true
+                },
+                {
+                    "title": "admin/index.ts router assembling all routes",
+                    "completed": true
+                },
+                {
+                    "title": "batch requiredFields id/slug",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "routes"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-13T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-14T01:30:22.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Register admin POI routes",
+            "description": "point-of-interest/index.ts: export { adminPointOfInterestRoutes } from './admin/index.js'. apps/api/src/routes/index.ts: add app.route('/api/v1/admin/points-of-interest', adminPointOfInterestRoutes) in admin tier block, alphabetically after attractions. No change to public mount.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-010", "T-011", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Export adminPointOfInterestRoutes",
+                    "completed": true
+                },
+                {
+                    "title": "Mount in routes/index.ts admin block",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "routes"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-13T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-14T01:30:22.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Integration tests: standard CRUD tier",
+            "description": "One integration test per CRUD route (list/getById/create/update/patch/delete/hardDelete/restore/batch): happy path (200/201) + permission-denied (403 for actor missing the route's permission per §6.1). AC-1. Also AC-2: list combining destinationId+categoryId returns only POIs matching BOTH.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-008", "T-009"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "CRUD happy-path tests",
+                    "completed": true
+                },
+                {
+                    "title": "403 permission-gate tests per route",
+                    "completed": true
+                },
+                {
+                    "title": "AC-2 combined AND filter test",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "test"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-13T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-14T02:00:52.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Destination-relation sub-router + tests",
+            "description": "Create apps/api/src/routes/point-of-interest/admin/destinations.ts mounted at /{id}/destinations on admin router (nested path on SAME router, like attraction batch). GET (VIEW) → getDestinationsByPointOfInterest + relation value; POST (CREATE) → addPointOfInterestToDestination (409 ALREADY_EXISTS); PATCH /{destinationId} (UPDATE) → updatePointOfInterestDestinationRelation; DELETE /{destinationId} (DELETE) → removePointOfInterestFromDestination. Decision 1 permissions. Tests: AC-3 (409), AC-4 (404 no silent create), AC-7 (per-permission 403).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-005", "T-009"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Implement 4 relation routes",
+                    "completed": true
+                },
+                {
+                    "title": "Mount on admin router",
+                    "completed": true
+                },
+                {
+                    "title": "Integration tests AC-3/AC-4/AC-7",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "routes", "test"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-13T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-14T01:50:06.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Category-assignment routes + tests",
+            "description": "Create apps/api/src/routes/point-of-interest/admin/categories.ts mounted at /{id}/categories. GET (POINT_OF_INTEREST_VIEW) → PointOfInterestCategoryService.getCategoriesForPointOfInterest. PUT (POINT_OF_INTEREST_UPDATE) → setCategoriesForPointOfInterest (full-replace). Decision 2: call the existing category service. Tests: AC-5 (primary not in set → 400 before write; valid → exact set + one primary), AC-6 (rollback).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-006", "T-009"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Implement GET + PUT category routes",
+                    "completed": true
+                },
+                {
+                    "title": "Mount on admin router",
+                    "completed": true
+                },
+                {
+                    "title": "Integration tests AC-5/AC-6",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "routes", "test"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-13T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-14T01:50:06.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "AI-translate: add pointOfInterest entity (6 sites)",
+            "description": "§6.5/§14.2 — 6 edit sites across 2 files. ai-translate.service.ts: (1) widen TranslatableEntityType union, (2) ENTITY_FIELDS {name:['nameI18n'],description:['descriptionI18n']}, (3) getEntityTable tables map add pointOfInterest→pointsOfInterest, (4) I18N_COLUMN_MAP {name:'nameI18n',description:'descriptionI18n'}. routes/ai/admin/translate.ts: widen the three z.enum literals (lines ~35,41,52) to include 'pointOfInterest'. Tests: AC-8 integration — translate POI nameI18n/descriptionI18n into missing locale, persists.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "4 service-file edits",
+                    "completed": true
+                },
+                {
+                    "title": "3 route z.enum widenings",
+                    "completed": true
+                },
+                {
+                    "title": "AC-8 integration test",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "ai"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-13T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-14T01:45:37.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Gate-matrix rows for all new admin routes",
+            "description": "AC-9/R-7 — add a row to docs/billing/endpoint-gate-matrix.md for every new admin route file (9 CRUD + 4 destination + 2 category = 15) with Decision: none and a one-line reason (POI admin routes carry no billing entitlement gate). Confirm apps/api/test/middlewares/endpoint-gate-matrix.guard.test.ts passes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-011", "T-012"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Add 15 matrix rows Decision:none",
+                    "completed": true
+                },
+                {
+                    "title": "Run gate-matrix guard test green",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-13T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-14T02:00:52.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Update spec closeout + Linear notes",
+            "description": "Record env/migrations (none) + design reversals (Decision 1/2) on the HOS-143 Linear issue per §14. Note in PR description that destination-relation gate stays POINT_OF_INTEREST_* (not MANAGE) per R-2 workflow.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Linear issue notes",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-13T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-14T02:02:01.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Quality gate: typecheck + suites + coverage",
+            "description": "AC-10 — pnpm typecheck and full apps/api + packages/schemas + packages/service-core test suites pass; ≥90% coverage on the two new service methods (T-005, T-006) and the two new resolver helpers (T-007). Run scoped/sequential per resource-care rule.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-013", "T-015"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "typecheck green",
+                    "completed": true
+                },
+                {
+                    "title": "test suites green",
+                    "completed": true
+                },
+                {
+                    "title": "coverage ≥90% on new units",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "cleanup"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-07-13T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-14T02:12:42.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 16,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 16,
+        "blocked": 0,
+        "averageComplexity": 2.3
+    }
+}
