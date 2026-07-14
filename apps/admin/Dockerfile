@@ -39,6 +39,11 @@ ARG VITE_ADMIN_URL=https://admin.placeholder.local
 ARG VITE_BETTER_AUTH_URL=https://api.placeholder.local/api/auth
 ARG VITE_SENTRY_DSN
 ARG VITE_SENTRY_ENVIRONMENT
+# Sentry project slug used by the Sentry Vite plugin's source-map upload
+# (BETA-66 W-1). Without this ARG, Docker silently drops the --build-arg
+# Coolify passes and vite.config.ts always falls back to the hardcoded
+# 'hospeda-admin' default.
+ARG VITE_SENTRY_PROJECT
 # Dedicated `hospeda-csp` Sentry project for CSP violation reports (Sentry
 # prod-hardening), kept separate from VITE_SENTRY_DSN (admin app errors).
 # Falls back to the VITE_SENTRY_DSN-derived report-uri when unset.
@@ -72,6 +77,7 @@ ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     VITE_SENTRY_DSN=$VITE_SENTRY_DSN \
     VITE_SENTRY_RELEASE=$VITE_SENTRY_RELEASE \
     VITE_SENTRY_ENVIRONMENT=$VITE_SENTRY_ENVIRONMENT \
+    VITE_SENTRY_PROJECT=$VITE_SENTRY_PROJECT \
     VITE_SENTRY_CSP_REPORT_URI=$VITE_SENTRY_CSP_REPORT_URI \
     VITE_POSTHOG_KEY=$VITE_POSTHOG_KEY \
     VITE_POSTHOG_HOST=$VITE_POSTHOG_HOST \
