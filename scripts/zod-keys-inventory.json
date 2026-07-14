@@ -1185,6 +1185,9 @@
         "zodError.pointOfInterest.bulkAdd.pointOfInterestIds.min",
         "zodError.pointOfInterest.bulkRemove.pointOfInterestIds.max",
         "zodError.pointOfInterest.bulkRemove.pointOfInterestIds.min",
+        "zodError.pointOfInterest.categories.max",
+        "zodError.pointOfInterest.categories.min",
+        "zodError.pointOfInterest.categories.primaryNotInSet",
         "zodError.pointOfInterest.description.max",
         "zodError.pointOfInterest.description.min",
         "zodError.pointOfInterest.description.required",
@@ -1660,7 +1663,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1659,
+    "total": 1662,
     "byNamespace": {
         "accommodation": 55,
         "accommodationAmenity": 4,
@@ -1705,7 +1708,7 @@
         "pagination": 7,
         "params": 36,
         "poiCategory": 11,
-        "pointOfInterest": 37,
+        "pointOfInterest": 40,
         "positive": 1,
         "post": 49,
         "postSponsor": 5,
