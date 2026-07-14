@@ -39,6 +39,7 @@ import type {
 } from '../adapter.types.js';
 import { extractJsonLd } from '../extractors/jsonld.js';
 import { runApifyActor, startApifyRun } from './apify-client.js';
+import { isPlausiblePerNightUsd } from './price-plausibility.js';
 import { startApifyRunWithRetry } from './start-apify-run-with-retry.js';
 import { withRetry } from './with-retry.js';
 
@@ -246,6 +247,11 @@ export interface BookingItem {
     //   `"price": null`  — when no dates are given or listing is unavailable.
     // Divide by PRICE_PROBE_NIGHTS to get a per-night figure.
     readonly price?: number | string | null | undefined;
+
+    // Currency the actor priced the stay in. voyager/booking-scraper returns
+    // `currency: null` without dates; with dates it echoes the pricing currency
+    // (BETA-169 — read to detect when the actor ignored the requested USD).
+    readonly currency?: string | null | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -472,9 +478,15 @@ function buildPriceProbeDates(): { readonly checkIn: string; readonly checkOut: 
  * CONFIDENCE_BY_SOURCE) because this is a date-specific parsed estimate,
  * NOT the listing's authoritative base price.
  *
+ * BETA-169: the computed per-night value is dropped when it falls outside the
+ * plausible USD band ({@link isPlausiblePerNightUsd}). An implausibly high
+ * value signals the actor ignored the requested USD currency and returned the
+ * host's local currency instead (e.g. ARS, ~1000x), which would otherwise be
+ * stored mislabelled as USD. Under-resolve is safer than mis-resolve.
+ *
  * @param rawPrice - The raw `price` field from the dataset item.
  * @param nights - Number of probe nights used to divide total into per-night.
- * @returns A positive finite per-night price, or `null`.
+ * @returns A plausible per-night USD price, or `null`.
  */
 function extractPerNightPriceBooking(
     rawPrice: number | string | null | undefined,
@@ -492,7 +504,45 @@ function extractPerNightPriceBooking(
               })();
     if (total === null || total <= 0) return null;
     const perNight = total / nights;
-    return Number.isFinite(perNight) && perNight > 0 ? perNight : null;
+    return isPlausiblePerNightUsd(perNight) ? perNight : null;
+}
+
+/**
+ * Decides whether the actor's echoed pricing currency is consistent with the
+ * currency we REQUESTED ({@link PRICE_PROBE_CURRENCY}). This is the Booking-only
+ * complement to the magnitude guard (BETA-169): the `voyager/booking-scraper`
+ * actor echoes a `currency` field, so when it reports a clearly different ISO
+ * currency (e.g. `"ARS"`) we know it ignored the USD request and the price must
+ * NOT be stored labelled USD — regardless of the value's magnitude, which closes
+ * the low-value mislabel gap the magnitude guard alone cannot.
+ *
+ * Conservative on purpose:
+ * - Absent / empty currency → inconclusive → `true` (defer to the magnitude
+ *   guard). Common: the actor returns `null` unless it has confident pricing.
+ * - Ambiguous non-ISO strings (a bare `$`, `US$`, symbols) → inconclusive →
+ *   `true`. We only treat a value as a mismatch when it is an unambiguous
+ *   3-letter ISO-4217 alpha code that differs from the requested currency, so a
+ *   genuine USD listing whose actor happens to echo a symbol is never dropped
+ *   on this signal.
+ *
+ * @param rawCurrency - The actor's echoed `currency` field.
+ * @returns `false` only when the actor clearly priced in a non-USD ISO currency.
+ */
+function actorCurrencyMatchesRequest(rawCurrency: string | null | undefined): boolean {
+    // The dataset item is an unchecked `as BookingItem` cast over untrusted
+    // Apify JSON, so `currency` may arrive as a non-string at runtime despite
+    // the type. Guard with `typeof` (matching every other string-field read in
+    // this file) — a bad type is inconclusive → defer, never throw. Throwing
+    // here would bubble to the outer try/catch and discard the ENTIRE otherwise
+    // valid extraction, a far worse under-resolve than dropping just the price.
+    if (typeof rawCurrency !== 'string') return true;
+    const normalized = rawCurrency.trim().toUpperCase();
+    if (normalized.length === 0) return true;
+    // Only a clear ISO-4217 alpha code is decisive; anything else is deferred.
+    if (/^[A-Z]{3}$/.test(normalized)) {
+        return normalized === PRICE_PROBE_CURRENCY;
+    }
+    return true;
 }
 
 /**
@@ -604,8 +654,15 @@ export function mapApifyItemToRawExtraction(raw: BookingItem): RawExtraction {
     // Tagged `source: 'text'` (→ 50% confidence via CONFIDENCE_BY_SOURCE):
     // this is a date-specific parsed estimate, not the listing's authoritative
     // base price. Signals "plausible, requires host review" to the pipeline.
+    //
+    // BETA-169: two independent gates protect against storing a value in the
+    // wrong currency labelled USD — (1) extractPerNightPriceBooking drops
+    // implausible magnitudes; (2) actorCurrencyMatchesRequest drops the price
+    // when the actor clearly priced in a non-USD ISO currency (e.g. ARS), which
+    // catches mislabels the magnitude guard would miss. When either gate fails,
+    // `price` is left absent for the host to fill in.
     const perNightPrice = extractPerNightPriceBooking(raw.price, PRICE_PROBE_NIGHTS);
-    if (perNightPrice !== null) {
+    if (perNightPrice !== null && actorCurrencyMatchesRequest(raw.currency)) {
         result.price = {
             price: { value: perNightPrice, source: 'text' },
             currency: { value: PRICE_PROBE_CURRENCY, source: 'text' }
