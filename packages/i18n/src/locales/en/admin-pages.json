@@ -89,8 +89,8 @@
             "contactAdmin": "Contact support",
             "reason": {
                 "host-missing-permission": {
-                    "title": "There's a problem with your account",
-                    "message": "We see you're a host but your admin panel access is disabled. This is likely a missing config on your account. Drop us a line and we'll sort it out."
+                    "title": "The admin panel isn't part of your account",
+                    "message": "Hosts manage their listings and bookings from the main Hospeda site — the admin panel is only for Hospeda staff. This isn't an error, just the wrong door. Head back to the site to keep managing your account."
                 },
                 "generic": {
                     "title": "Restricted area",
@@ -1032,6 +1032,23 @@
             "featuredImageAlt": "Featured image",
             "title": "Gallery",
             "imageAlt": "Gallery image {index}"
+        },
+        "occupancy": {
+            "title": "Occupancy",
+            "empty": "This accommodation has no occupied dates recorded.",
+            "loadError": "Failed to load the occupancy calendar.",
+            "noNote": "No note",
+            "columns": {
+                "date": "Date",
+                "source": "Source",
+                "note": "Note"
+            },
+            "sourceLabels": {
+                "MANUAL": "Manual",
+                "GOOGLE_CALENDAR": "Google Calendar",
+                "AIRBNB": "Airbnb",
+                "BOOKING": "Booking.com"
+            }
         }
     },
     "exchangeRates": {
@@ -1280,6 +1297,63 @@
             "manageSubscriptionHint": "We'll take you to hospeda.com.ar to change your plan or payment method.",
             "downloadLatestInvoice": "Download latest invoice",
             "noLatestInvoice": "You don't have any invoices available to download yet."
+        }
+    },
+    "poiCategories": {
+        "title": "Associated categories",
+        "empty": "This point of interest doesn't have any categories assigned yet. Add one below.",
+        "fields": {
+            "categories": "Categories",
+            "primaryCategory": "Primary category"
+        },
+        "hints": {
+            "primaryRequired": "Choose a primary category before saving."
+        },
+        "actions": {
+            "save": "Save categories",
+            "saving": "Saving..."
+        },
+        "messages": {
+            "saved": "Categories saved successfully."
+        },
+        "errors": {
+            "loadFailed": "Could not load the assigned categories.",
+            "saveFailed": "Could not save the categories. Please try again."
+        }
+    },
+    "poiDestinations": {
+        "title": "Associated destinations",
+        "empty": "This point of interest isn't associated with any destination yet. Add one below.",
+        "fields": {
+            "destination": "Destination",
+            "destinationPlaceholder": "Search destination…",
+            "relation": "Relation"
+        },
+        "relation": {
+            "primary": "Primary",
+            "nearby": "Nearby"
+        },
+        "actions": {
+            "add": "Add destination",
+            "remove": "Remove {{name}}",
+            "changeRelation": "Change relation for {{name}}"
+        },
+        "messages": {
+            "added": "\"{{name}}\" added as {{relation}}.",
+            "relationUpdated": "Relation for \"{{name}}\" updated to {{relation}}.",
+            "removed": "\"{{name}}\" removed from associated destinations."
+        },
+        "errors": {
+            "loadFailed": "Could not load associated destinations.",
+            "addFailed": "Could not add the destination. Please try again.",
+            "updateFailed": "Could not update the relation. Please try again.",
+            "removeFailed": "Could not remove the destination. Please try again."
+        },
+        "confirmRemove": {
+            "title": "Remove destination?",
+            "message": "Are you sure you want to remove \"{{name}}\" from this point of interest's associated destinations?",
+            "cancel": "Cancel",
+            "confirm": "Remove"
         }
     },
     "faqs": {

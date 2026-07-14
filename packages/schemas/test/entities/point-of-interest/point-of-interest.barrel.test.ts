@@ -39,7 +39,22 @@ const EXPECTED_EXPORTS = [
     // point-of-interest.relations.schema.ts
     'DestinationPointOfInterestRelationSchema',
     'PointOfInterestWithDestinationsSchema',
-    'PointOfInterestBulkRelationOperationOutputSchema'
+    'PointOfInterestBulkRelationOperationOutputSchema',
+    // point-of-interest.admin-search.schema.ts (HOS-143 T-001)
+    'PointOfInterestAdminSearchSchema',
+    // point-of-interest.batch.schema.ts (HOS-143 T-002)
+    'PointOfInterestBatchRequestSchema',
+    'PointOfInterestBatchItemSchema',
+    'PointOfInterestBatchResponseSchema',
+    // point-of-interest.destination-relation.schema.ts (HOS-143 T-003)
+    'PointOfInterestUpdateDestinationRelationInputSchema',
+    'PointOfInterestDestinationListItemSchema',
+    // point-of-interest.category-assignment.schema.ts (HOS-143 T-004)
+    'PointOfInterestSetCategoriesInputSchema',
+    'PointOfInterestCategoryAssignmentSchema',
+    // point-of-interest.nearby.schema.ts (HOS-145 T-001)
+    'NearbyPoiSchema',
+    'NearbyPoiQuerySchema'
 ] as const;
 
 describe('point-of-interest schemas barrel (HOS-113 T-013)', () => {

@@ -1,0 +1,46 @@
+{
+    "slug": "estacion_servicio_genesis",
+    "lat": -30.88166,
+    "long": -57.91965,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Punto de abastecimiento de combustible y servicio vial en el acceso norte del área urbana.",
+    "nameI18n": {
+        "es": "Estación de Servicios Génesis",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Punto de abastecimiento de combustible y servicio vial en el acceso norte del área urbana.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Acceso a Santa Ana, Entre Ríos",
+    "keywords": [
+        "estacion de servicios genesis",
+        "combustible",
+        "acceso santa ana",
+        "ruta",
+        "servicios"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/N3657241733",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "transport",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

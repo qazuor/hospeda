@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "726-point-of-interest-predio_tematico_vial",
+    "slug": "predio_tematico_vial",
+    "lat": -32.6849274,
+    "long": -58.8916416,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio educativo y recreativo dedicado a seguridad vial y aprendizaje práctico para niños y familias.",
+    "nameI18n": {
+        "es": "Predio Temático Vial",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio educativo y recreativo dedicado a seguridad vial y aprendizaje práctico para niños y familias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Complejo Cultural La Estación, Urdinarrain, Entre Ríos",
+    "keywords": ["predio tematico vial", "seguridad vial", "educacion", "niños", "la estacion"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://urdinarrain.tur.ar/que-hacer/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "education",
+            "isPrimary": true
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        }
+    ]
+}

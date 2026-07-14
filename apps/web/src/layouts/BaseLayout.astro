@@ -25,6 +25,7 @@ import GlobalAnnouncements from '@/components/GlobalAnnouncements.astro';
 import SkipToContent from '@/components/shared/navigation/SkipToContent.astro';
 import ScrollToTop from '@/components/shared/navigation/ScrollToTop.astro';
 import NavigationProgress from '@/components/shared/navigation/NavigationProgress.astro';
+import I18nClientData from '@/components/shared/I18nClientData.astro';
 import FontsLoader from '@/components/shared/FontsLoader.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import { CookieConsentBanner } from '@/components/legal/CookieConsentBanner.client';
@@ -229,6 +230,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		}
 	</head>
 	<body>
+		<I18nClientData locale={locale} />
 		<NavigationProgress locale={locale} />
 		<SkipToContent locale={locale} />
 		<Header locale={locale} />

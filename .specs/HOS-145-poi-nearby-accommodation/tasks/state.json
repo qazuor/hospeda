@@ -1,0 +1,294 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-145",
+    "title": "\"What's Nearby\" POI Section on Accommodation Detail",
+    "created": "2026-07-14T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add NearbyPoi + query-params Zod schemas",
+            "description": "In packages/schemas (POI entity): NearbyPoiSchema = PointOfInterestPublicSchema.extend({ distanceKm: z.number().nonnegative() }); NearbyPoiQuerySchema = { radius?: number default 5, min 0.1, max 20; limit?: number default 12, min 1, max 50 }. Export the inferred types. Tests: unit tests asserting defaults, min/max bounds rejection, and distanceKm shape. Test file: packages/schemas/test/entities/point-of-interest/nearby-poi.schema.test.ts.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-003", "T-005", "T-008"],
+            "subtasks": [
+                {
+                    "title": "NearbyPoiSchema extends PointOfInterestPublicSchema with distanceKm",
+                    "completed": false
+                },
+                {
+                    "title": "NearbyPoiQuerySchema with radius/limit defaults + bounds",
+                    "completed": false
+                },
+                { "title": "Export inferred types + barrel", "completed": false },
+                { "title": "Unit tests for defaults/bounds/shape", "completed": false }
+            ],
+            "tags": ["schema", "zod"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "PointOfInterestModel.findWithinRadius (geo.ts wiring)",
+            "description": "Add findWithinRadius({ lat, long, radiusKm, limit }) to packages/db PointOfInterestModel. Wire buildWithinRadiusClause + buildDistanceOrderByExpr from packages/db/src/utils/geo.ts against pointsOfInterest.lat/long (plain doublePrecision, pass directly, NO buildJsonbCoordinateExprs). Filters: lifecycleState = ACTIVE, deletedAt IS NULL, lat/long IS NOT NULL (R-1 guard). Order by distance asc, apply limit. Return POI rows + computed distanceKm. Tests: in-range, out-of-range excluded, null-coord POI excluded, non-ACTIVE/soft-deleted excluded, ascending-distance ordering, limit honored. Test file: packages/db/test/models/point-of-interest-find-within-radius.test.ts (or integration if geo SQL needs a real DB).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-003"],
+            "subtasks": [
+                { "title": "findWithinRadius signature + geo helper wiring", "completed": false },
+                {
+                    "title": "ACTIVE / not-deleted / isNotNull(lat,long) filters",
+                    "completed": false
+                },
+                {
+                    "title": "Order by distance asc + limit + distanceKm projection",
+                    "completed": false
+                },
+                {
+                    "title": "Unit/integration tests incl null-coord + ordering + bounds",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "geo"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "PointOfInterestService.getNearby",
+            "description": "Add getNearby({ lat, long, radiusKm, limit }, actor, ctx?) to PointOfInterestService. runWithLoggingAndValidation wrapper over model.findWithinRadius; project results to the public shape + distanceKm (NearbyPoi). Keep it GENERIC so HOS-146/147 can reuse it. Tests: unit tests with mocked model verifying projection, distanceKm passthrough, and empty result handling. Test file: packages/service-core/test/services/point-of-interest/getNearby.test.ts.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-004"],
+            "subtasks": [
+                {
+                    "title": "getNearby method + public projection to NearbyPoi",
+                    "completed": false
+                },
+                { "title": "runWithLoggingAndValidation wrapping", "completed": false },
+                { "title": "Unit tests (projection, distanceKm, empty)", "completed": false }
+            ],
+            "tags": ["service", "poi"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "AccommodationService.getNearbyPois (reads real coords)",
+            "description": "Add getNearbyPois({ slug, radiusKm?, limit? }, actor, ctx?) to AccommodationService. Read the RAW accommodation (real location.coordinates.{lat,long} strings from JSONB, BEFORE any privacy projection). If no coordinates -> return []. Else parse to numbers and delegate to PointOfInterestService.getNearby. Return ONLY the POI list; the accommodation coordinate must NEVER be in the result (AC-4/AC-5, R-4). Apply defaults radius 5 / limit 12 when omitted. Tests: unit tests for (a) accommodation with coords -> delegates with correct real lat/long, (b) no-coordinates -> [], (c) unparseable coords -> [], (d) result never contains accommodation coords. Test file: packages/service-core/test/services/accommodation/getNearbyPois.test.ts.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                { "title": "Read raw accommodation coords pre-projection", "completed": false },
+                { "title": "no-coords / unparseable -> [] path", "completed": false },
+                {
+                    "title": "Delegate to getNearby with real lat/long + defaults",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests incl AC-4 (no coord leak) + no-coords empty",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "accommodation", "privacy"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Public API route GET /accommodations/:slug/nearby-pois",
+            "description": "Add apps/api/src/routes/accommodation/public/nearbyPois.ts via createPublicRoute. Validate query params against NearbyPoiQuerySchema (radius/limit). Resolve actor via getActorFromContext, call AccommodationService.getNearbyPois. Respond { items: NearbyPoi[] } (empty array when no coords / no POIs; 404 only when slug does not resolve to a public accommodation). Cache 300s + rate-limit like sibling public POI routes. Register in public/index.ts. Tests: integration test asserting 200 + items shape, ordering, empty-array cases, AND AC-4 privacy assertion (response JSON contains NO accommodation lat/long anywhere). Test file: apps/api/test/integration/accommodation/nearby-pois.test.ts.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-004"],
+            "blocks": ["T-006", "T-011"],
+            "subtasks": [
+                {
+                    "title": "nearbyPois.ts route + createPublicRoute + query validation",
+                    "completed": false
+                },
+                { "title": "Register in public/index.ts + cache/rate-limit", "completed": false },
+                { "title": "Integration test: items shape + ordering + empty", "completed": false },
+                {
+                    "title": "Integration test: AC-4 no-coordinate-leak assertion",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "route", "privacy"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Web API client accommodationsApi.getNearbyPois",
+            "description": "Add getNearbyPois({ slug, radius?, limit? }) to accommodationsApi in apps/web/src/lib/api/endpoints.ts, calling GET /public/accommodations/:slug/nearby-pois and returning ApiResult<NearbyPoi[]>. Tests: unit test with mocked apiClient verifying path + params. Test file: apps/web/test/lib/api/accommodations-nearby-pois.test.ts.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                { "title": "getNearbyPois client fn + params", "completed": false },
+                { "title": "Unit test (path + params)", "completed": false }
+            ],
+            "tags": ["web", "api-client"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "i18n keys for the nearby-POI section",
+            "description": "Add accommodations.detail.nearbyPoi.title (and any distance-format helper strings) to packages/i18n es/en/pt accommodations.json. Reuse existing destinations.poiTypeLabels.* for type badges (cross-namespace). Tests: i18n key-parity check already enforced by the package's suite; ensure all three locales present. No new test file unless parity harness needs an entry.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-008"],
+            "subtasks": [
+                { "title": "es/en/pt accommodations.detail.nearbyPoi.title", "completed": false },
+                { "title": "Verify locale parity", "completed": false }
+            ],
+            "tags": ["i18n"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "WhatsNearbySection.astro presentational component",
+            "description": "Add apps/web/src/components/accommodation/WhatsNearbySection.astro (props: items: ReadonlyArray<NearbyPoi>, locale). Mirror DestinationPOISection.astro: per POI show getPointOfInterestTypeIcon, translatePoiName, translatePoiTypeLabel, formatted distance, optional 2-line-clamped resolveI18nText description. Order by ascending distanceKm. Empty convention: if !items || items.length === 0 -> render nothing. Include a pure distance-format util (< 1km -> meters rounded to nearest 50; >= 1km -> km with 1 decimal, locale separator). CSS module colocated (web = vanilla CSS/CSS Modules, NOT Tailwind). Tests: unit test for the distance-format util (boundaries: 0, 949m->950m, 1000m->1,0km, 1250m->1,3km). Test file: apps/web/test/lib/format-distance.test.ts.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-007"],
+            "blocks": ["T-009", "T-010"],
+            "subtasks": [
+                { "title": "format-distance pure util + unit tests", "completed": false },
+                { "title": "WhatsNearbySection.astro markup + CSS module", "completed": false },
+                {
+                    "title": "Icon/name/type/distance/description rendering via existing helpers",
+                    "completed": false
+                },
+                { "title": "Empty -> render nothing convention", "completed": false }
+            ],
+            "tags": ["web", "component", "astro"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Wire SSR fetch + section into accommodation detail page",
+            "description": "In apps/web/src/pages/[lang]/alojamientos/[slug].astro: SSR-fetch nearby POIs via accommodationsApi.getNearbyPois({ slug }) and render <WhatsNearbySection items={...} locale={...} /> right after <LocationSection /> (~line 578). Fetch must fail soft (network error -> empty section, never breaks the page). Tests: covered by T-011 acceptance flow; add a focused render assertion if a page-level test harness exists.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-008"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                { "title": "SSR fetch with soft-fail", "completed": false },
+                {
+                    "title": "Insert <WhatsNearbySection/> after LocationSection",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "page", "ssr"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Component render tests (ordering + empty + distance)",
+            "description": "Web component tests for WhatsNearbySection: (a) renders items ordered nearest-first, (b) empty items -> nothing rendered (no header), (c) distance labels formatted correctly, (d) name/type/icon resolve via helpers with humanized-slug fallback (no [MISSING: leaks, AC-7). Test file: apps/web/test/components/accommodation/WhatsNearbySection.test.ts.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Ordering + empty-state render tests", "completed": false },
+                { "title": "Distance label + i18n fallback tests (AC-7)", "completed": false }
+            ],
+            "tags": ["testing", "web"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "End-to-end acceptance verification (AC-1..AC-6)",
+            "description": "Cross-cutting verification against the running app / integration layer: AC-1 (accommodation with coords + nearby ACTIVE POIs shows ordered list), AC-2 (no coords -> no section, no error), AC-3 (all-excluded POIs -> no section), AC-5 (distances from real coords, not approximateLocation), AC-6 (radius/limit bounds honored). Reuse the route integration test from T-005 for backend ACs; add a page-level check for AC-1/AC-2 if the web e2e harness supports it. Document the run in the Linear issue.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Backend AC coverage via route integration", "completed": false },
+                { "title": "Page-level AC-1/AC-2 check", "completed": false }
+            ],
+            "tags": ["testing", "e2e"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 11,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 11,
+        "blocked": 0,
+        "averageComplexity": 2.2
+    }
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "campo_las_ruedas",
+    "lat": -32.4963409,
+    "long": -58.442593,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Emprendimiento familiar de apicultura y agricultura orgánica con visitas guiadas, colmenas y degustación de mieles.",
+    "nameI18n": {
+        "es": "Campo Las Ruedas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Emprendimiento familiar de apicultura y agricultura orgánica con visitas guiadas, colmenas y degustación de mieles.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ruta Provincial J, a 1 km de la RP 39, Caseros, Entre Ríos",
+    "keywords": [
+        "campo las ruedas",
+        "apicultura",
+        "miel",
+        "agricultura organica",
+        "visita guiada"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://caseros.gob.ar/turismo-y-cultura/",
+    "notes": "Prestador privado con reservas. Falta geocodificar el acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        }
+    ]
+}

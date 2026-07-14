@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "197-point-of-interest-circuito_art_nouveau",
+    "slug": "circuito_art_nouveau",
+    "lat": -31.367828,
+    "long": -57.99815650000001,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido por edificios y fachadas que convierten a Concordia en uno de los principales conjuntos Art Nouveau de la Argentina.",
+    "nameI18n": {
+        "es": "Circuito Art Nouveau de Concordia",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido por edificios y fachadas que convierten a Concordia en uno de los principales conjuntos Art Nouveau de la Argentina.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro histórico de Concordia, Entre Ríos",
+    "keywords": [
+        "art nouveau concordia",
+        "arquitectura",
+        "fachadas historicas",
+        "circuito urbano",
+        "patrimonio"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/art-nouveau; https://egob.concordia.gob.ar/servicios/digesto.do?idNormativa=987&opcion=idNormativa",
+    "notes": "Circuito turístico y catálogo patrimonial confirmados. Falta digitalizar el trazado y sus paradas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "tourist_route",
+            "isPrimary": true
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        }
+    ]
+}

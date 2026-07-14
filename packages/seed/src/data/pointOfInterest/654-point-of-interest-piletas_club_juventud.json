@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "654-point-of-interest-piletas_club_juventud",
+    "slug": "piletas_club_juventud",
+    "lat": -32.465553799999995,
+    "long": -58.489002799999994,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Complejo de verano con pileta preolímpica, colonia de vacaciones, enseñanza de natación, parque y parrilleros.",
+    "nameI18n": {
+        "es": "Piletas del Club Juventud",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Complejo de verano con pileta preolímpica, colonia de vacaciones, enseñanza de natación, parque y parrilleros.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Polideportivo del Club Juventud, sudoeste de Caseros, Entre Ríos",
+    "keywords": [
+        "piletas club juventud",
+        "pileta preolimpica",
+        "natacion",
+        "colonia vacaciones",
+        "verano"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://caseros.gob.ar/turismo-y-cultura/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

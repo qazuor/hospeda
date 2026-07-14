@@ -1,0 +1,42 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "416-point-of-interest-hospital_bhering",
+    "slug": "hospital_bhering",
+    "lat": -33.74488,
+    "long": -59.14867,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Hospital público y principal referencia sanitaria para la localidad y el área rural del municipio.",
+    "nameI18n": {
+        "es": "Hospital Behring",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Hospital público y principal referencia sanitaria para la localidad y el área rural del municipio.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Calle Doctor Solsona, Ibicuy, Entre Ríos",
+    "keywords": ["hospital behring", "hospital ibicuy", "guardia", "salud", "doctor solsona"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N4088196388",
+    "notes": "Ubicación y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

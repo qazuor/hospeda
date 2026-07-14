@@ -1,0 +1,54 @@
+{
+    "slug": "grupo_scout_karol_wojtyla",
+    "lat": -32.5018337,
+    "long": -58.281497599999994,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Centro comunitario scout con actividades educativas, recreativas y de contacto con la naturaleza.",
+    "nameI18n": {
+        "es": "Grupo Scout Karol Wojtyla",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Centro comunitario scout con actividades educativas, recreativas y de contacto con la naturaleza.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ceibas, Entre Ríos",
+    "keywords": [
+        "grupo scout karol wojtyla",
+        "scouts ceibas",
+        "educacion",
+        "naturaleza",
+        "comunidad"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N11132368105",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "community_center",
+            "isPrimary": true
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

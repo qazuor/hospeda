@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "638-point-of-interest-paseo_milenio_bicentenario",
+    "slug": "paseo_milenio_bicentenario",
+    "lat": -31.614578700000003,
+    "long": -58.51629260000001,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Conjunto de espacios conmemorativos de avenida Malarín dedicados al cambio de milenio y al Bicentenario argentino.",
+    "nameI18n": {
+        "es": "Paseo del Milenio y Bicentenario",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Conjunto de espacios conmemorativos de avenida Malarín dedicados al cambio de milenio y al Bicentenario argentino.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Malarín, San Salvador, Entre Ríos",
+    "keywords": ["cruz del milenio", "bicentenario", "avenida malarin", "paseo conmemorativo"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/",
+    "notes": "Los espacios del Milenio y Bicentenario están confirmados; se agrupan como un único POI hasta geocodificarlos por separado. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

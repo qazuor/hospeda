@@ -10,6 +10,7 @@ import type { AnyColumn, SQL } from 'drizzle-orm';
 import { and, asc, count, desc, eq, gte, inArray, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
+import { accommodationOccupancy } from '../../schemas/accommodation/accommodationOccupancy.dbschema.ts';
 import { rAccommodationAmenity } from '../../schemas/accommodation/r_accommodation_amenity.dbschema.ts';
 import { rAccommodationFeature } from '../../schemas/accommodation/r_accommodation_feature.dbschema.ts';
 import { destinations } from '../../schemas/destination/destination.dbschema.ts';
@@ -367,6 +368,47 @@ function buildGeoRadiusClause(
     });
 }
 
+/**
+ * Build the correlated `NOT EXISTS` clause used to exclude accommodations
+ * with a blocked day anywhere inside `[checkIn, checkOut)` (HOS-43 Phase 1).
+ * Only called once the caller has verified BOTH dates are present — see the
+ * `params.checkIn && params.checkOut` guard at each call site.
+ *
+ * Half-open range: `date >= checkIn AND date < checkOut`. The checkout day
+ * itself is deliberately excluded — hotel semantics treat checkout as
+ * "vacating", so an accommodation occupied 10→12 is free again for a search
+ * of checkIn=12 / checkOut=13.
+ *
+ * `checkIn`/`checkOut` arrive as `Date` objects (the HTTP layer coerces the
+ * `YYYY-MM-DD` query param via `z.coerce.date()`). They are normalized to
+ * canonical UTC `YYYY-MM-DD` strings before binding as SQL parameters — `pg`'s
+ * default `Date` serialization uses the process's LOCAL timezone getters,
+ * which can silently shift the bound day by ±1 depending on the server's `TZ`
+ * (a UTC-midnight `Date` serialized from a process running in `UTC-3`
+ * resolves to the previous local day). Binding a canonical date string
+ * sidesteps that landmine entirely; the target column is a native Postgres
+ * `date`, so the implicit text→date cast on either bound is exact.
+ *
+ * Follows the same `FROM ${table} alias` + raw `alias.column` convention as
+ * the correlated subqueries in {@link AccommodationModel.getMarketComparisonByOwnerId}
+ * rather than the `${column}`-template-ref workaround documented on
+ * {@link buildAmenityIntersectionClause} — there is no lateral-join
+ * re-aliasing risk here because the subquery's own columns are never
+ * expressed as typed Drizzle column refs, only the outer correlation
+ * (`${accommodations.id}`) and the two bound date params are.
+ */
+function buildOccupancyAvailabilityClause(checkIn: Date, checkOut: Date): SQL<unknown> {
+    const checkInDate = checkIn.toISOString().slice(0, 10);
+    const checkOutDate = checkOut.toISOString().slice(0, 10);
+    return sql<unknown>`NOT EXISTS (
+        SELECT 1 FROM ${accommodationOccupancy} ao
+        WHERE ao.accommodation_id = ${accommodations.id}
+          AND ao.date >= ${checkInDate}
+          AND ao.date < ${checkOutDate}
+          AND ao.is_blocked = true
+    )`;
+}
+
 export class AccommodationModel extends BaseModelImpl<Accommodation> {
     protected table = accommodations;
     public entityName = 'accommodations';
@@ -554,6 +596,14 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             );
         }
 
+        // HOS-43 — occupancy availability filter. Excludes accommodations with
+        // a blocked day anywhere in the half-open range [checkIn, checkOut).
+        // Requires BOTH dates; a lone checkIn or checkOut is ignored so the
+        // search stays retrocompatible with pre-HOS-43 callers.
+        if (params.checkIn && params.checkOut) {
+            whereClauses.push(buildOccupancyAvailabilityClause(params.checkIn, params.checkOut));
+        }
+
         const where = and(...whereClauses);
 
         const totalQuery = db.select({ count: count() }).from(this.table).where(where);
@@ -699,6 +749,12 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             whereClauses.push(
                 buildGeoRadiusClause(params.latitude, params.longitude, params.radius)
             );
+        }
+
+        // HOS-43 — occupancy availability filter. See countByFilters() for
+        // rationale; requires BOTH dates, otherwise the search is untouched.
+        if (params.checkIn && params.checkOut) {
+            whereClauses.push(buildOccupancyAvailabilityClause(params.checkIn, params.checkOut));
         }
 
         const where = and(...whereClauses);
@@ -880,6 +936,12 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             whereClauses.push(
                 buildGeoRadiusClause(params.latitude, params.longitude, params.radius)
             );
+        }
+
+        // HOS-43 — occupancy availability filter. See countByFilters() for
+        // rationale; requires BOTH dates, otherwise the search is untouched.
+        if (params.checkIn && params.checkOut) {
+            whereClauses.push(buildOccupancyAvailabilityClause(params.checkIn, params.checkOut));
         }
 
         const where = and(...whereClauses);

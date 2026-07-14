@@ -1,0 +1,57 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "531-point-of-interest-museo_del_arroz",
+    "slug": "museo_del_arroz",
+    "lat": -31.62426,
+    "long": -58.50716,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo único en su tipo en la Argentina, instalado en la antigua comisaría de 1929. Sus salas recorren la historia de la ciudad, la producción arrocera, la industria, los pioneros y la inmigración.",
+    "nameI18n": {
+        "es": "Museo del Arroz",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo único en su tipo en la Argentina, instalado en la antigua comisaría de 1929. Sus salas recorren la historia de la ciudad, la producción arrocera, la industria, los pioneros y la inmigración.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Salvador, Entre Ríos",
+    "keywords": [
+        "museo del arroz",
+        "capital nacional del arroz",
+        "industria arrocera",
+        "pioneros",
+        "inmigrantes",
+        "antigua comisaria"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/museodelarroz/; https://mapcarta.com/es/W448500538",
+    "notes": "Existencia y contenido confirmados por el municipio; coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

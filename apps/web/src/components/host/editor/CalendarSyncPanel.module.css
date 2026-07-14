@@ -1,0 +1,160 @@
+/* CalendarSyncPanel.module.css — HOS-157 Phase 2 Google Calendar sync panel */
+
+.panel {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    padding: var(--space-4, 1rem);
+    margin-bottom: var(--space-5, 1.5rem);
+    background-color: var(--surface-warm, var(--core-card));
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-2, 0.5rem);
+    color: var(--core-foreground);
+}
+
+.title {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.description {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin: 0 0 var(--space-3, 0.75rem);
+}
+
+.loading {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    padding: var(--space-2, 0.5rem) 0;
+}
+
+/* --- Banners --- */
+
+.bannerSuccess,
+.bannerError,
+.bannerInfo {
+    padding: 0.625rem 0.875rem;
+    border-radius: var(--radius-md, 10px);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    margin-bottom: var(--space-3, 0.75rem);
+    border: 1px solid transparent;
+}
+
+.bannerSuccess {
+    background-color: var(--palette-success-50, oklch(0.95 0.03 150));
+    color: var(--brand-tertiary, oklch(0.5 0.1 150));
+    border-color: var(--palette-success-200, oklch(0.85 0.06 150));
+}
+
+.bannerError {
+    background-color: var(--destructive-a10, oklch(0.96 0.02 25));
+    color: var(--destructive);
+    border-color: var(--destructive-a25, oklch(0.88 0.06 25));
+}
+
+.bannerInfo {
+    background-color: var(--brand-primary-a10, oklch(0.95 0.03 250));
+    color: var(--brand-primary);
+    border-color: var(--brand-primary-a25, oklch(0.85 0.06 250));
+}
+
+/* --- Connected state --- */
+
+.connected {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.statusRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.statusIconOk {
+    color: var(--brand-tertiary, oklch(0.5 0.1 150));
+    flex-shrink: 0;
+}
+
+.statusIconError {
+    color: var(--destructive);
+    flex-shrink: 0;
+}
+
+.statusText {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--core-foreground);
+}
+
+.lastSync {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1, 0.35rem);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+/* --- Actions --- */
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.primaryButton,
+.dangerButton {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: 0.5rem 0.875rem;
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background-color var(--duration-fast, 0.2s) ease-in-out;
+}
+
+.primaryButton {
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+}
+
+.primaryButton:hover:not(:disabled) {
+    background-color: var(--brand-primary-lm05);
+}
+
+.dangerButton {
+    background-color: transparent;
+    color: var(--destructive);
+    border-color: var(--destructive-a25, oklch(0.88 0.06 25));
+}
+
+.dangerButton:hover:not(:disabled) {
+    background-color: var(--destructive-a10, oklch(0.96 0.02 25));
+}
+
+.primaryButton:disabled,
+.dangerButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

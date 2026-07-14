@@ -6,7 +6,9 @@
  * never sent here — they are redirected by `_authed.tsx` to the public
  * host-onboarding funnel. This page only sees:
  *
- *   - `reason=host-missing-permission` — HOST without panel access (config bug).
+ *   - `reason=host-missing-permission` — HOST without panel access. This is an
+ *     expected access boundary, not a config error: hosts manage their
+ *     account from the main site, not the admin panel.
  *   - `reason=generic` — staff with the wrong account, exotic roles, guests
  *     who somehow ended up here.
  *

@@ -61,6 +61,12 @@
             "description": "Manage tourist attractions of destinations",
             "list": "Attractions List"
         },
+        "pointOfInterest": {
+            "singular": "Point of Interest",
+            "plural": "Points of Interest",
+            "description": "Manage destinations' points of interest (POIs)",
+            "list": "Points of Interest List"
+        },
         "eventOrganizer": {
             "singular": "Organizer",
             "plural": "Organizers",
@@ -251,6 +257,7 @@
         "placeName": "Place Name",
         "icon": "Icon",
         "weight": "Weight",
+        "hasOwnPage": "Own Page",
         "published": "Published",
         "readingTime": "Reading Time",
         "sponsor": "Sponsor",

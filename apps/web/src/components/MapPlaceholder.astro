@@ -12,6 +12,7 @@
  * ```astro
  * <MapPlaceholder
  *   address="Rivadavia 543, Concepción del Uruguay, Entre Ríos"
+ *   locale={locale}
  *   title="Ubicación del evento"
  * />
  * ```
@@ -19,25 +20,31 @@
 
 import { MapIcon } from '@repo/icons';
 import { LocationIcon } from '@repo/icons';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 
 interface Props {
     /** Full address text displayed in the card and used for the Google Maps query */
     readonly address: string;
-    /** Optional card title. Defaults to "Ubicación" */
+    /** Locale used to translate the card title, button, and accessibility labels */
+    readonly locale: SupportedLocale;
+    /** Optional card title. Defaults to the localized "Location" label */
     readonly title?: string;
 }
 
-const { address, title = 'Ubicación' } = Astro.props;
+const { address, locale, title } = Astro.props;
+
+const { t } = createTranslations(locale);
+const resolvedTitle = title ?? t('maps.markerLabel', 'Ubicación');
 
 const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(address)}`;
 ---
 
-<div class="map-placeholder" aria-label={`${title}: ${address}`}>
+<div class="map-placeholder" aria-label={`${resolvedTitle}: ${address}`}>
     <div class="map-placeholder__header">
         <span class="map-placeholder__icon" aria-hidden="true">
             <MapIcon size={20} weight="duotone" aria-hidden="true" />
         </span>
-        <h3 class="map-placeholder__title">{title}</h3>
+        <h3 class="map-placeholder__title">{resolvedTitle}</h3>
     </div>
 
     <div class="map-placeholder__address-row">
@@ -50,9 +57,9 @@ const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(address)}`;
         class="map-placeholder__cta"
         target="_blank"
         rel="noopener noreferrer"
-        aria-label={`Ver ${address} en Google Maps`}
+        aria-label={t('maps.openAddressInGoogleMaps', 'Ver {{address}} en Google Maps', { address })}
     >
-        Ver en Google Maps
+        {t('maps.openInGoogleMaps', 'Ver en Google Maps')}
     </a>
 </div>
 

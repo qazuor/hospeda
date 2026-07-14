@@ -1,0 +1,54 @@
+{
+    "slug": "cooperativa_arrocera",
+    "lat": -31.6247717,
+    "long": -58.5051869,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Cooperativa fundada en 1952 y reconocida como la primera cooperativa arrocera de América Latina, pieza central de la identidad productiva local.",
+    "nameI18n": {
+        "es": "Cooperativa Arrocera San Salvador",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Cooperativa fundada en 1952 y reconocida como la primera cooperativa arrocera de América Latina, pieza central de la identidad productiva local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "San Salvador, Entre Ríos",
+    "keywords": [
+        "cooperativa arrocera",
+        "primera de america latina",
+        "arroz",
+        "1952",
+        "industria arrocera"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/; https://sansalvadorer.gob.ar/gobierno/turismo/; https://mapcarta.com/es/W448499240",
+    "notes": "Historia y rol productivo confirmados. Falta geocodificar el acceso administrativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

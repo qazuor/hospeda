@@ -90,16 +90,23 @@ every POI has at least a primary category from day one.
 - **G-6** New `PermissionEnum` values for the category catalog, separate from
   `POINT_OF_INTEREST_*` (mirroring how `attractions`/`amenities` each own
   their own permission set rather than reusing accommodation's).
+- **G-7** Keep `points_of_interest.type` synced from the primary category
+  (HOS-138 R-4) via a lossy category-slug → enum reverse mapping (§7.6),
+  written transactionally by the service on every primary-category change, so
+  existing `type` consumers keep working unchanged. **In scope per the
+  2026-07-13 scope decision** (Revision History).
 
 ## 4. Non-goals
 
-- **NG-1** Deriving/syncing `points_of_interest.type` from the new primary
-  category. HOS-138 marked `type` deprecated-transitional and explicitly
-  deferred this decision here (HOS-138 §6.6/R-4) — but this spec, in turn,
-  defers the actual *sync mechanism* to a follow-up once every `type`-keyed
-  consumer (search filter, `poi-labels.ts`'s type badge,
-  `DestinationPOISection.astro`'s badge render) has a category-aware
-  replacement ready. See OQ-2.
+- **NG-1** Migrating the `type`-keyed *consumers* to read categories directly.
+  This spec keeps `points_of_interest.type` **populated and correct** by syncing
+  it from the primary category (§6.5/§7.6, in scope per the 2026-07-13 scope
+  decision — Revision History), so the existing consumers (search filter,
+  `poi-labels.ts`'s type badge, `DestinationPOISection.astro`'s badge render)
+  keep working unchanged against a `type` value that now always reflects the
+  real primary category. **Rewriting those consumers** to read `r_poi_category`
+  instead of `type` is the follow-up (the plan's `[J]` thematic-filters +
+  consumer-migration pass), NOT this spec. See OQ-2.
 - **NG-2** Admin CRUD HTTP routes or an admin UI screen for managing
   categories. This spec ships the table, seed, and service only — the plan's
   Fase 1 "CRUD API admin de POIs"/"CRUD admin UI de POIs" work (not yet its
@@ -286,20 +293,43 @@ shape (`point-of-interest.service.ts:187-326`) exactly:
 - `setPrimaryCategory(actor, {pointOfInterestId, categoryId}, ctx)` —
   explicit primary re-assignment among a POI's already-assigned categories
   (flips the old primary off, the new one on, in one transaction).
+
+Every method above that changes which category is primary (`assign` with
+`isPrimary: true`, `setPrimaryCategory`, and `unassign`'s auto-promotion path)
+also writes the derived `points_of_interest.type` in the **same transaction**,
+per §6.5/§7.6 — the sync is a service-layer responsibility, never a separate
+call the caller can forget.
+
 - `getCategoriesForPointOfInterest(actor, {pointOfInterestId}, ctx)` /
   `getPointsOfInterestForCategory(actor, {categoryId}, ctx)` — read-side
   mirrors of `PointOfInterestService.getPointsOfInterestForDestination`/
   `getDestinationsByPointOfInterest` (`point-of-interest.service.ts:335-437`).
 
-### 6.5 `type` remains untouched (again)
+### 6.5 `type` is synced from the primary category (HOS-138 R-4, now in scope)
 
-Confirming HOS-138's deferral (§6.6 there): this spec does **not** modify the
-`type` column, does not sync it from the new primary category, and does not
-change `PointOfInterestService.buildSearchWhere`'s existing `type` filter
-branch (`point-of-interest.service.ts:494-504`). A category-based search
-filter (`categoryId`/`categorySlug` query param) is additive, alongside the
-existing `type` filter, not a replacement of it — see §7.2 and OQ-2 for the
-eventual sunset path.
+Per the 2026-07-13 scope decision (Revision History), this spec **owns** keeping
+`points_of_interest.type` in agreement with the POI's primary category — the
+HOS-138 R-4 derivation, brought into scope here rather than deferred. The
+`PointOfInterestCategoryService` writes `type` in the **same transaction** as
+every operation that changes which category is primary (`assign` with
+`isPrimary: true`, `setPrimaryCategory`, and the auto-promotion path in
+`unassign`), using the **category-slug → `type` reverse mapping** in §7.6.
+
+Because `type` is a closed 9-value enum and categories are an open 40+ set, the
+derivation is **lossy by construction**: the 9 categories with a direct enum
+equivalent map back to that value; every other category (`winery`, `gastronomy`,
+`religious_site`, …) derives to `OTHER`. `type` therefore stays a valid,
+populated enum value at all times — never `null`, never an enum-invalid
+string — so every existing `type` consumer keeps working with no code change. A
+POI with **zero** categories keeps whatever `type` it already had (the sync only
+fires when a primary exists); this spec never writes `null` to the `NOT NULL`
+column.
+
+`PointOfInterestService.buildSearchWhere`'s existing `type` filter branch
+(`point-of-interest.service.ts:494-504`) is **unchanged** — the new
+`categoryId`/`categorySlug` filter (§7.2) is additive, joining through
+`r_poi_category`, alongside (not replacing) the `type` filter. See §7.2 and OQ-2
+for the eventual consumer sunset path.
 
 ## 7. Data model / contracts
 
@@ -386,6 +416,33 @@ Same-PR dual write:
 3. `scripts/check-seed-dual-write.sh`'s path list gains the new
    `poiCategory` glob (this entity did not exist before this spec).
 
+### 7.6 Category `slug` → legacy `type` reverse mapping (used by the sync, §6.5)
+
+The sync in §6.5 derives `points_of_interest.type` from the primary category's
+`slug`. Only the 9 categories with a direct `PointOfInterestTypeEnum` equivalent
+map back to a specific enum value (the inverse of §7.4's 9 rows); **every other
+category derives to `OTHER`**:
+
+| Primary category `slug` | Derived `type` |
+| --- | --- |
+| `beach` | `BEACH` |
+| `sports_venue` | `STADIUM` |
+| `park` | `PARK` |
+| `museum` | `MUSEUM` |
+| `square` | `PLAZA` |
+| `monument` | `MONUMENT` |
+| `viewpoint` | `VIEWPOINT` |
+| `natural_area` | `NATURAL` |
+| every other slug (`winery`, `gastronomy`, `religious_site`, `historic_site`, `art`, `theater`, `other`, …) | `OTHER` |
+
+This is the inverse of §7.4's forward table for the 9 overlapping concepts
+(`other` → `OTHER` is covered by the catch-all row). The mapping lives as a
+single exported constant (`CATEGORY_SLUG_TO_POI_TYPE` in `@repo/schemas`,
+alongside §7.4's forward map) so the service, the seed, and the data migration
+derive `type` identically. Because the derivation is **total** (every slug
+resolves; unknown → `OTHER`), adding a 41st category later never breaks the
+sync — it just derives to `OTHER` until someone extends the map.
+
 ## 8. UX / UI behavior
 
 No new UI surface in this spec (NG-2/NG-5). The only indirect UX effect: once
@@ -423,10 +480,16 @@ possible without also needing a data backfill at that time.
   `categorySlug` filter returns only POIs actually joined to that category via
   `r_poi_category`, verified with a service-level test using at least two
   POIs in different categories.
-- **AC-8** `points_of_interest.type` and every existing `type`-keyed consumer
+- **AC-8** `points_of_interest.type` is synced from the primary category per
+  §6.5/§7.6: (a) `assignCategoryToPointOfInterest` with `isPrimary: true`,
+  `setPrimaryCategory`, and the `unassign` auto-promotion path each write the
+  derived `type` in the same transaction — a test asserts `type` equals §7.6's
+  mapping after each; (b) a primary category with no enum equivalent (e.g.
+  `winery`) derives `type = OTHER`; (c) the existing `type`-keyed consumers
   (search filter, `poi-labels.ts`, `DestinationPOISection.astro`'s badge) are
-  provably unchanged by this spec — a snapshot/regression test asserts no
-  diff in their current behavior (NG-1/§6.5).
+  **unchanged in code** and still work, because `type` remains a valid populated
+  enum value at all times — a regression test asserts their behavior is
+  unchanged given a synced `type`.
 
 ## 10. Risks
 
@@ -470,13 +533,14 @@ possible without also needing a data backfill at that time.
   "display the POI's primary category badge" consumer with a silent `null`,
   which is worse than a best-guess auto-promotion (by `displayWeight`) that
   an admin can always correct afterward.
-- **OQ-2** When and how does `points_of_interest.type` actually get derived
-  from/synced with the new primary category (HOS-138 R-4's deferred
-  question)? Not resolved here — proposed as a **follow-up issue**, scoped
-  only once the three `type`-keyed consumers (§6.5) have category-aware
-  replacements ready to receive the cutover, so the sync and the consumer
-  migration land together instead of the enum silently drifting out of sync
-  with the "real" category data.
+- **OQ-2 (resolved 2026-07-13)** When/how does `points_of_interest.type` get
+  synced from the primary category (HOS-138 R-4)? **Resolved: in scope for this
+  spec** (§6.5/§7.6) — the service writes a lossy-derived `type` (40 categories
+  → 9 enum values, non-matching → `OTHER`) in the same transaction as every
+  primary-category change, keeping `type` valid and populated so existing
+  consumers keep working. The remaining follow-up is only the *consumer
+  read-migration* (making `poi-labels.ts`/`DestinationPOISection.astro` read
+  `r_poi_category` directly instead of `type`), NG-1 — not the column sync.
 - **OQ-3** Should `poi_categories.slug` also carry an `applicableVertical`-like
   scoping column (mirroring the amenity/feature catalog's
   `applicable_verticals text[]`, per root `CLAUDE.md`'s "Amenity/feature
@@ -499,17 +563,37 @@ Suggested phasing (for Task Master task generation):
    unassign/set-primary + the two read-side list methods), each with its own
    unit tests (AC-5/AC-6 in particular).
 5. **Seed**: 40-category fixtures + `poiCategories.seed.ts` + the 12-POI
-   backfill relationship step + data migration + dual-write guard path
-   update.
-6. **Regression coverage**: AC-8's "nothing about `type` changed" snapshot
-   tests.
+   backfill relationship step (each backfilled POI's `type` re-derived from its
+   primary category via §7.6 so baseline + migration stay consistent) + data
+   migration + dual-write guard path update.
+6. **`type` sync + regression coverage**: the `CATEGORY_SLUG_TO_POI_TYPE`
+   constant (§7.6), the service transactional `type` write on every
+   primary-category change (§6.5), and AC-8's tests — both the sync assertions
+   and the "consumers unchanged in code, still work" regression.
 7. **Quality gate**: `pnpm typecheck`, `@repo/db`/`@repo/schemas`/
    `@repo/service-core` test suites, `check-seed-dual-write.sh`.
 
-Do not start the deferred `type`-sync follow-up (OQ-2) or any admin CRUD
-route work until this spec's service layer is merged and stable.
+Do not start the deferred `type` **consumer read-migration** (NG-1/OQ-2 — making
+`poi-labels.ts`/`DestinationPOISection.astro` read `r_poi_category` directly) or
+any admin CRUD route work until this spec's service layer is merged and stable.
+The `type` **column sync** itself IS in scope here (§6.5) and must not be
+deferred.
 
 ## 13. Linear
 
 Canonical tracking:
 HOS-139
+
+## 14. Revision History
+
+- **2026-07-13 — `type` sync brought into scope (owner decision).** The original
+  spec deferred syncing `points_of_interest.type` from the primary category to a
+  follow-up (old NG-1/§6.5/OQ-2/AC-8). At implementation start the owner decided
+  HOS-139 should OWN the HOS-138 R-4 `type` derivation directly, so the enum
+  stays populated/correct while its consumers are migrated later. Changes:
+  added G-7; rewrote NG-1 (now only the *consumer read-migration* is deferred),
+  §6.5 (sync in scope), §6.4 (service writes `type` transactionally), AC-8 (sync
+  assertions instead of "unchanged"), OQ-2 (resolved), §12 phases 5–6; added
+  §7.6 (lossy category-slug → `type` reverse mapping, non-matching → `OTHER`).
+  The consumer *read-migration* (rewriting `poi-labels.ts` /
+  `DestinationPOISection.astro` to read `r_poi_category`) remains out of scope.

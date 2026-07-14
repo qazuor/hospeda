@@ -3,6 +3,7 @@
  * Allows users to partially update their own profile
  */
 import {
+    BirthDateHttpInputSchema,
     ServiceErrorCode,
     UserIdSchema,
     UserPatchInputSchema,
@@ -15,6 +16,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { transformApiInputToDomain } from '../../../utils/openapi-schema';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { withDomainBirthDate } from '../../../utils/user-birth-date';
 import { userCache } from '../../../utils/user-cache';
 
 /**
@@ -45,6 +47,12 @@ import { userCache } from '../../../utils/user-cache';
  * If a new user-editable field is added to the profile UI, it MUST be added
  * to this `pick` or it will be silently ignored.
  *
+ * `birthDate` is overridden with `BirthDateHttpInputSchema` (BETA-34): the
+ * picked domain field is `z.date()`, which the route-factory's OpenAPI
+ * conversion turns into a full ISO-8601 datetime validator that rejects the
+ * plain `YYYY-MM-DD` string the web app's date input sends. See
+ * `BirthDateHttpInputSchema`'s JSDoc for the full rationale.
+ *
  * SPEC-096 / REQ-096-05 / T-032.
  */
 const UserProtectedPatchInputSchema = UserPatchInputSchema.pick({
@@ -58,7 +66,8 @@ const UserProtectedPatchInputSchema = UserPatchInputSchema.pick({
     socialNetworks: true,
     location: true
 }).extend({
-    settings: UserSettingsWebPatchSchema.optional()
+    settings: UserSettingsWebPatchSchema.optional(),
+    birthDate: BirthDateHttpInputSchema
 });
 
 /**
@@ -141,8 +150,11 @@ export const protectedPatchUserRoute = createProtectedRoute({
             validateProtectedSettings((body as { settings?: unknown }).settings);
         }
 
-        // Transform API input (string dates) to domain format (Date objects)
-        const domainInput = transformApiInputToDomain(body);
+        // Transform API input (string dates) to domain format (Date objects).
+        // `birthDate` is NOT touched by transformApiInputToDomain (its
+        // `YYYY-MM-DD` shape doesn't match the ISO-datetime detector), so it
+        // is converted explicitly afterwards (BETA-34).
+        const domainInput = withDomainBirthDate(transformApiInputToDomain(body));
 
         const result = await userService.update(actor, id, domainInput as never);
 

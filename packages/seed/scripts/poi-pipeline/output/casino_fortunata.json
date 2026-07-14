@@ -1,0 +1,50 @@
+{
+    "slug": "casino_fortunata",
+    "lat": -30.97978,
+    "long": -57.93096,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Casino y espacio de entretenimiento situado junto a la Plaza de los Constituyentes y próximo al complejo termal.",
+    "nameI18n": {
+        "es": "Casino Fortunata",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Casino y espacio de entretenimiento situado junto a la Plaza de los Constituyentes y próximo al complejo termal.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona termal de Federación, Entre Ríos",
+    "keywords": [
+        "casino fortunata",
+        "casino federacion",
+        "entretenimiento",
+        "vida nocturna",
+        "termas"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/N8285059511",
+    "notes": "Coordenadas y tipo de establecimiento contrastados con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "casino",
+            "isPrimary": true
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "nightlife",
+            "isPrimary": false
+        }
+    ]
+}

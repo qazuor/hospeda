@@ -1,0 +1,46 @@
+{
+    "slug": "gualeguay_terminal_omnibus",
+    "lat": -33.13237,
+    "long": -59.31624,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Principal terminal terrestre de pasajeros con conexiones regionales y nacionales.",
+    "nameI18n": {
+        "es": "Terminal de Ómnibus de Gualeguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Principal terminal terrestre de pasajeros con conexiones regionales y nacionales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Gualeguay, Entre Ríos",
+    "keywords": [
+        "terminal gualeguay",
+        "terminal de omnibus",
+        "micros",
+        "colectivos",
+        "transporte"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W226433575",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "transport",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

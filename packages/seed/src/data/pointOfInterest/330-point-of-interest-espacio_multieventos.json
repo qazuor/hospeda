@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "330-point-of-interest-espacio_multieventos",
+    "slug": "espacio_multieventos",
+    "lat": -30.7642,
+    "long": -57.98186,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Predio municipal y antiguo corsódromo utilizado para espectáculos, encuentros y actividades de gran convocatoria.",
+    "nameI18n": {
+        "es": "Espacio Multieventos Chajarí",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Predio municipal y antiguo corsódromo utilizado para espectáculos, encuentros y actividades de gran convocatoria.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Chajarí, Entre Ríos",
+    "keywords": [
+        "espacio multieventos chajari",
+        "corsodromo",
+        "eventos",
+        "espectaculos",
+        "predio municipal"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N10589843332",
+    "notes": "Coordenadas y operador municipal contrastados con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "entertainment",
+            "isPrimary": true
+        },
+        {
+            "slug": "fair",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

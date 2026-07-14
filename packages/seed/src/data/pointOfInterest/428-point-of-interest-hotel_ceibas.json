@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "428-point-of-interest-hotel_ceibas",
+    "slug": "hotel_ceibas",
+    "lat": -33.49924,
+    "long": -58.80474,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Alojamiento especializado en recibir observadores de aves y coordinar salidas guiadas por los ambientes naturales de la zona.",
+    "nameI18n": {
+        "es": "Hotel Ceibas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Alojamiento especializado en recibir observadores de aves y coordinar salidas guiadas por los ambientes naturales de la zona.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Calle 1 s/n, Ceibas, Entre Ríos",
+    "keywords": ["hotel ceibas", "alojamiento", "birdwatching", "guias de aves", "calle 1"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://www.lanacion.com.ar/revista-lugares/meca-internacional-el-pueblo-que-convoca-gente-del-mundo-entero-para-ver-y-fotografiar-aves-nid03082025/; https://mapcarta.com/es/N11132368105",
+    "notes": "Actividad y especialización confirmadas; coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "services",
+            "isPrimary": true
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "slug": "cruz_ingleses",
+    "lat": -33.74628,
+    "long": -59.15651,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Monumento erigido en memoria de jóvenes de familias anglosajonas vinculadas con Ibicuy que murieron durante la Primera Guerra Mundial.",
+    "nameI18n": {
+        "es": "Cruz de los Ingleses",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Monumento erigido en memoria de jóvenes de familias anglosajonas vinculadas con Ibicuy que murieron durante la Primera Guerra Mundial.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Paseo de la Cruz, Ibicuy, Entre Ríos",
+    "keywords": [
+        "cruz de los ingleses",
+        "primera guerra mundial",
+        "memorial",
+        "historia local",
+        "ingleses"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://ibicuy.gob.ar/?q=content%2Fque-visitar; https://mapcarta.com/es/N4092859900",
+    "notes": "Historia confirmada por la Municipalidad; coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        }
+    ]
+}

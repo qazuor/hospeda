@@ -103,53 +103,112 @@ export interface FetchAuthMeParams {
 }
 
 /**
+ * Shared in-flight `/auth/me` request, if one is currently pending.
+ *
+ * `UserMenu.client.tsx` and `MobileMenu.client.tsx` both hydrate `client:load`
+ * and each runs its own mount effect, so on a cold page load (empty
+ * `sessionStorage` cache) they would fire two identical `GET /auth/me`
+ * requests in parallel. The post-write cache (`writeCachedAuthMe`) can't
+ * dedup them because it only populates after a response resolves. Sharing a
+ * single in-flight promise collapses concurrent callers onto one request; it
+ * is cleared once settled so a later cold call (after the cache TTL lapses)
+ * fetches fresh. (HOS-160 lever D.)
+ */
+let inFlightAuthMe: Promise<AuthMeSnapshot> | null = null;
+
+/**
+ * TEST-ONLY: clears the shared in-flight promise. Vitest reuses the module
+ * across tests, so a test that renders an island with a deliberately-pending
+ * `/auth/me` fetch would otherwise leave `inFlightAuthMe` set, making every
+ * following test reuse that stale promise (and never call `fetch`). The global
+ * `afterEach` in `test/setup.ts` calls this to isolate tests. No-op cost in prod.
+ */
+export function resetInFlightAuthMe(): void {
+    inFlightAuthMe = null;
+}
+
+/**
  * Fetches the current session from `GET /api/v1/public/auth/me` and maps it
  * to an `AuthMeSnapshot`. Never throws — a non-`ok` response resolves to a
  * guest snapshot so callers can treat network/auth failures uniformly.
  *
+ * Concurrent callers share a single in-flight request (see `inFlightAuthMe`),
+ * so two islands hydrating in the same tick issue only one network request.
+ *
  * @param params - `{ apiUrl }` (RO-RO). Defaults to `getApiUrl()` when omitted.
  * @returns The resolved `AuthMeSnapshot` (not yet cached — call `writeCachedAuthMe` to persist it).
  */
-export async function fetchAuthMe({ apiUrl }: FetchAuthMeParams = {}): Promise<AuthMeSnapshot> {
-    const resolvedApiUrl = apiUrl ?? getApiUrl();
-    const response = await fetch(`${resolvedApiUrl}/api/v1/public/auth/me`, {
-        credentials: 'include'
-    });
-    if (!response.ok) {
-        return {
-            isAuthenticated: false,
-            user: null,
-            permissions: [],
-            role: null,
-            cachedAt: Date.now()
-        };
+export async function fetchAuthMe(params: FetchAuthMeParams = {}): Promise<AuthMeSnapshot> {
+    if (inFlightAuthMe) return inFlightAuthMe;
+
+    const request = performAuthMeFetch(params);
+    inFlightAuthMe = request;
+    try {
+        return await request;
+    } finally {
+        // Only clear if still ours — guards against a later request's slot
+        // being wiped by this one's late settlement.
+        if (inFlightAuthMe === request) inFlightAuthMe = null;
     }
-    const json = (await response.json()) as AuthMeResponseBody;
+}
 
-    const actor = json.data?.actor;
-    const isAuthenticated = json.data?.isAuthenticated === true;
-
+/** Guest (unauthenticated) snapshot — the uniform result for any non-ok or failed request. */
+function guestAuthMeSnapshot(): AuthMeSnapshot {
     return {
-        isAuthenticated,
-        user:
-            isAuthenticated && actor?.id
-                ? {
-                      id: actor.id,
-                      name: actor.name ?? '',
-                      email: actor.email ?? '',
-                      // Map actor.image → avatarUrl so the navbar avatar
-                      // stays in sync after the post-mount /auth/me refresh
-                      // (otherwise OAuth users would flicker from the
-                      // SSR-provided picture back to initials after ~1s,
-                      // mirroring the name flicker fixed in PR #1111).
-                      avatarUrl:
-                          typeof actor.image === 'string' && actor.image.length > 0
-                              ? actor.image
-                              : undefined
-                  }
-                : null,
-        permissions: actor?.permissions ?? [],
-        role: isAuthenticated && actor?.role ? actor.role : null,
+        isAuthenticated: false,
+        user: null,
+        permissions: [],
+        role: null,
         cachedAt: Date.now()
     };
+}
+
+/**
+ * Performs the actual `/auth/me` request and mapping. Kept separate from
+ * `fetchAuthMe` so the in-flight dedup wrapper stays thin. Never rejects — a
+ * transport failure (network/DNS/CORS) or malformed JSON resolves to a guest
+ * snapshot, so the shared in-flight promise never fans a rejection out to every
+ * concurrent awaiter.
+ */
+async function performAuthMeFetch({ apiUrl }: FetchAuthMeParams): Promise<AuthMeSnapshot> {
+    const resolvedApiUrl = apiUrl ?? getApiUrl();
+    try {
+        const response = await fetch(`${resolvedApiUrl}/api/v1/public/auth/me`, {
+            credentials: 'include'
+        });
+        if (!response.ok) {
+            return guestAuthMeSnapshot();
+        }
+        const json = (await response.json()) as AuthMeResponseBody;
+
+        const actor = json.data?.actor;
+        const isAuthenticated = json.data?.isAuthenticated === true;
+
+        return {
+            isAuthenticated,
+            user:
+                isAuthenticated && actor?.id
+                    ? {
+                          id: actor.id,
+                          name: actor.name ?? '',
+                          email: actor.email ?? '',
+                          // Map actor.image → avatarUrl so the navbar avatar
+                          // stays in sync after the post-mount /auth/me refresh
+                          // (otherwise OAuth users would flicker from the
+                          // SSR-provided picture back to initials after ~1s,
+                          // mirroring the name flicker fixed in PR #1111).
+                          avatarUrl:
+                              typeof actor.image === 'string' && actor.image.length > 0
+                                  ? actor.image
+                                  : undefined
+                      }
+                    : null,
+            permissions: actor?.permissions ?? [],
+            role: isAuthenticated && actor?.role ? actor.role : null,
+            cachedAt: Date.now()
+        };
+    } catch {
+        // Network/DNS/CORS failure or malformed JSON — treat as guest.
+        return guestAuthMeSnapshot();
+    }
 }

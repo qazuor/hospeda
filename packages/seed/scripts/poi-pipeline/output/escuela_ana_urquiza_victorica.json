@@ -1,0 +1,45 @@
+{
+    "slug": "escuela_ana_urquiza_victorica",
+    "lat": -32.481772,
+    "long": -58.234017,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Edificio educativo histórico cuya institución fue fundada en 1893. Entre sus antiguos alumnos se encuentra el expresidente Arturo Frondizi.",
+    "nameI18n": {
+        "es": "Escuela Técnica Ana Urquiza de Victorica",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Edificio educativo histórico cuya institución fue fundada en 1893. Entre sus antiguos alumnos se encuentra el expresidente Arturo Frondizi.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urquiza y 8 de Junio, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "ana urquiza de victorica",
+        "escuela tecnica",
+        "frondizi",
+        "educacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 10,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "education",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

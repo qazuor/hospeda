@@ -1,0 +1,59 @@
+{
+    "slug": "parque_intendente_quintana",
+    "lat": -33.155006,
+    "long": -59.3085893,
+    "type": "PARK",
+    "icon": null,
+    "description": "Parque histórico de aproximadamente doce hectáreas a orillas del río Gualeguay, con arboleda, juegos, canchas, senderos y espacios de recreación.",
+    "nameI18n": {
+        "es": "Parque Intendente Quintana",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Parque histórico de aproximadamente doce hectáreas a orillas del río Gualeguay, con arboleda, juegos, canchas, senderos y espacios de recreación.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ribera del río Gualeguay, Gualeguay, Entre Ríos",
+    "keywords": [
+        "parque quintana",
+        "parque intendente quintana",
+        "rio gualeguay",
+        "juegos",
+        "senderos",
+        "arboleda"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/gualeguay; https://www.turismoentrerios.com/gualeguay/parquesypaseos.htm",
+    "notes": "Área extensa confirmada. Falta definir acceso principal y polígono. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        }
+    ]
+}

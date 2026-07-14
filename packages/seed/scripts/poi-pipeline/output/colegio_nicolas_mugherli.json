@@ -1,0 +1,50 @@
+{
+    "slug": "colegio_nicolas_mugherli",
+    "lat": -32.4624753,
+    "long": -58.4788391,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Edificio educativo histórico fundado en 1925 por iniciativa de Nicolás Mugherli y vinculado con la identidad fundacional del pueblo.",
+    "nameI18n": {
+        "es": "Colegio Nicolás Mugherli",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Edificio educativo histórico fundado en 1925 por iniciativa de Nicolás Mugherli y vinculado con la identidad fundacional del pueblo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Frente a Plaza Justo José de Urquiza, Caseros, Entre Ríos",
+    "keywords": [
+        "colegio nicolas mugherli",
+        "1925",
+        "escuela granja",
+        "patrimonio",
+        "fundador"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://caseros.gob.ar/turismo-y-cultura/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

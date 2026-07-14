@@ -61,6 +61,12 @@
             "description": "Gerencie atrações turísticas de destinos",
             "list": "Lista de Atrações"
         },
+        "pointOfInterest": {
+            "singular": "Ponto de Interesse",
+            "plural": "Pontos de Interesse",
+            "description": "Gerencie os pontos de interesse (POIs) de destinos",
+            "list": "Lista de Pontos de Interesse"
+        },
         "eventOrganizer": {
             "singular": "Organizador",
             "plural": "Organizadores",
@@ -251,6 +257,7 @@
         "placeName": "Nome do Local",
         "icon": "Ícone",
         "weight": "Peso",
+        "hasOwnPage": "Página Própria",
         "published": "Publicado",
         "readingTime": "Tempo de Leitura",
         "sponsor": "Patrocinador",

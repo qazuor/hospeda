@@ -10,6 +10,13 @@ import { createRouter } from '../../../utils/create-app';
 import { protectedAccommodationReviewRoutes } from '../reviews/protected/index.js';
 import { addFaqRoute } from './addFaq';
 import { protectedAddMediaRoute } from './addMedia';
+import { protectedAddOccupancyRoute } from './addOccupancy';
+import { protectedBatchOccupancyRoute } from './batchOccupancy';
+import { protectedCalendarConnectGoogleRoute } from './calendarConnectGoogle';
+import { protectedCalendarDisconnectRoute } from './calendarDisconnect';
+import { protectedCalendarGoogleCallbackRoute } from './calendarGoogleCallback';
+import { protectedCalendarSyncRoute } from './calendarSync';
+import { protectedCalendarSyncStatusRoute } from './calendarSyncStatus';
 import { compareAccommodationsRoute } from './compare';
 import { protectedGetContactRoute } from './contact';
 import { protectedCreateAccommodationRoute } from './create';
@@ -21,6 +28,7 @@ import {
 import { protectedGetOwnAccommodationByIdRoute } from './getById';
 import { getFaqsRoute } from './getFaqs';
 import { protectedGetMediaRoute } from './getMedia';
+import { protectedGetOccupancyRoute } from './getOccupancy';
 import { hostFavoritesBreakdownRoute } from './hostFavoritesBreakdown';
 import { hostMarketComparisonRoute } from './hostMarketComparison';
 import { protectedImportFromUrlRoute } from './import-from-url';
@@ -30,6 +38,7 @@ import { protectedPatchAccommodationRoute } from './patch';
 import { protectedPublishAccommodationRoute } from './publish';
 import { removeFaqRoute } from './removeFaq';
 import { protectedRemoveMediaRoute } from './removeMedia';
+import { protectedRemoveOccupancyRoute } from './removeOccupancy';
 import { protectedReorderMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedMediaRoute } from './setFeaturedMedia';
 import { protectedSoftDeleteAccommodationRoute } from './softDelete';
@@ -94,6 +103,30 @@ app.route('/', protectedFeaturedToggleRoute);
 // Read-side counterpart used by the web editor to decide whether to render
 // the toggle at all. Same ownership handling as the PATCH above.
 app.route('/', protectedGetFeaturedEntitlementRoute);
+
+// Occupancy calendar (auth required; ownership + MANAGE enforced inline in the service,
+// CAN_USE_CALENDAR enforced at the route via requireEntitlement middleware on the write
+// routes — mirrors the stats routes' requireEntitlement pattern) — HOS-43
+// PATCH /:id/occupancy/batch registered BEFORE DELETE /:id/occupancy/:date so "batch"
+// is never resolved as a :date param on a colliding method (defensive; the two are
+// on different HTTP methods so Hono would not actually collide, but this keeps the
+// ordering convention consistent with the reorder/featured fixed-suffix rule used
+// elsewhere in this file).
+app.route('/', protectedGetOccupancyRoute);
+app.route('/', protectedAddOccupancyRoute);
+app.route('/', protectedBatchOccupancyRoute);
+app.route('/', protectedRemoveOccupancyRoute);
+
+// Google Calendar sync (HOS-157 Phase 2). Auth required; ownership + MANAGE
+// enforced inline, CAN_SYNC_EXTERNAL_CALENDAR at the route on connect/sync.
+// The callback is a FIXED path (no :id) matching the registered Google redirect
+// URI — registered before the /:id calendar-sync routes for clarity (Hono
+// matches the all-literal path unambiguously either way).
+app.route('/', protectedCalendarGoogleCallbackRoute);
+app.route('/', protectedCalendarConnectGoogleRoute);
+app.route('/', protectedCalendarSyncRoute);
+app.route('/', protectedCalendarSyncStatusRoute);
+app.route('/', protectedCalendarDisconnectRoute);
 
 // FAQ management (auth required, no ownership)
 app.route('/', getFaqsRoute);

@@ -217,8 +217,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * +2 = HOSPEDA_INTERNAL_API_URL + HOSPEDA_INTERNAL_REQUEST_SECRET (HOS-103:
  * internal server-to-server SSR URL + shared secret that exempts SSR traffic
  * from the public rate limit). 255 + 2 = 257.
+ *
+ * +3 = HOSPEDA_GOOGLE_CALENDAR_CLIENT_ID / _CLIENT_SECRET / _REDIRECT_URI
+ * (HOS-157: Google Calendar occupancy sync OAuth client, integrations
+ * category). 257 + 3 = 260.
  */
-const EXPECTED_VAR_COUNT = 257;
+const EXPECTED_VAR_COUNT = 260;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

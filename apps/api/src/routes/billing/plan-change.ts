@@ -51,6 +51,7 @@ import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { sendNotification } from '../../utils/notification-helper';
 import { createSimpleRoute, type SimpleRouteInterface } from '../../utils/route-factory';
+import { buildNotificationUrl } from './checkout-return-urls';
 
 /**
  * Map a `SubscriptionCheckoutError` from the upgrade service to an
@@ -361,7 +362,10 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
                         // preferred locale when that propagation lands.
                         successUrl: `${env.HOSPEDA_SITE_URL}/es/suscriptores/checkout/success/`,
                         cancelUrl: `${env.HOSPEDA_SITE_URL}/es/suscriptores/checkout/failure/`,
-                        notificationUrl: `${env.HOSPEDA_API_URL}/api/v1/webhooks/mercadopago`
+                        // HOS-159: use the shared builder so the ?source_news=webhooks
+                        // marker is always present — otherwise the webhook router
+                        // drops the delivery as a legacy IPN duplicate.
+                        notificationUrl: buildNotificationUrl()
                     },
                     statementDescriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR
                 });

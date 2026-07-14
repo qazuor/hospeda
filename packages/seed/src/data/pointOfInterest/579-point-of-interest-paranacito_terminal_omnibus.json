@@ -1,0 +1,48 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "579-point-of-interest-paranacito_terminal_omnibus",
+    "slug": "paranacito_terminal_omnibus",
+    "lat": -33.71643,
+    "long": -58.65982,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Terminal terrestre de pasajeros ubicada junto al muelle público y la oficina de turismo.",
+    "nameI18n": {
+        "es": "Terminal de Ómnibus",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Terminal terrestre de pasajeros ubicada junto al muelle público y la oficina de turismo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Entre Ríos, Villa Paranacito, Entre Ríos",
+    "keywords": [
+        "terminal villa paranacito",
+        "terminal de omnibus",
+        "colectivos",
+        "transporte",
+        "avenida entre rios"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N4172031837",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "transport",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

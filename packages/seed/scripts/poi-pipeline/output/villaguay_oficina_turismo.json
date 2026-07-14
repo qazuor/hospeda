@@ -1,0 +1,50 @@
+{
+    "slug": "villaguay_oficina_turismo",
+    "lat": -31.8676271,
+    "long": -59.0270174,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Punto oficial de información sobre atractivos, eventos, alojamiento, gastronomía y circuitos de la Ciudad de Encuentros.",
+    "nameI18n": {
+        "es": "Oficina de Turismo de Villaguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Punto oficial de información sobre atractivos, eventos, alojamiento, gastronomía y circuitos de la Ciudad de Encuentros.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Villaguay, Entre Ríos",
+    "keywords": [
+        "oficina turismo villaguay",
+        "informacion turistica",
+        "mapas",
+        "agenda",
+        "ciudad de encuentros"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://www.villaguay.gob.ar/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "services",
+            "isPrimary": true
+        },
+        {
+            "slug": "government",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

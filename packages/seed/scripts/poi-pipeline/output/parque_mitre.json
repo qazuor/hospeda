@@ -1,0 +1,58 @@
+{
+    "slug": "parque_mitre",
+    "lat": -31.403813699999997,
+    "long": -58.0066698,
+    "type": "PARK",
+    "icon": null,
+    "description": "Parque recreativo integrado a la Costanera, con lagos artificiales, áreas deportivas, juegos infantiles y sectores para actividades al aire libre.",
+    "nameI18n": {
+        "es": "Parque Mitre",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Parque recreativo integrado a la Costanera, con lagos artificiales, áreas deportivas, juegos infantiles y sectores para actividades al aire libre.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Costanera, Concordia, Entre Ríos",
+    "keywords": [
+        "parque mitre",
+        "lagos artificiales",
+        "juegos",
+        "deportes",
+        "costanera"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/node/11603; https://www.concordia.gob.ar/turismo/atractivos/costanera",
+    "notes": "Existencia y servicios confirmados. Falta geocodificar el centro del parque. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        }
+    ]
+}

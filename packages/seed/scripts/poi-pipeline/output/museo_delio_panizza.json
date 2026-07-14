@@ -1,0 +1,49 @@
+{
+    "slug": "museo_delio_panizza",
+    "lat": -32.483698,
+    "long": -58.231438,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo instalado en una casona colonial construida en 1793. Conserva colecciones históricas, mobiliario, pinturas y objetos vinculados con Francisco Ramírez.",
+    "nameI18n": {
+        "es": "Museo Municipal Casa de Delio Panizza",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo instalado en una casona colonial construida en 1793. Conserva colecciones históricas, mobiliario, pinturas y objetos vinculados con Francisco Ramírez.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Supremo Entrerriano 58, Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "delio panizza",
+        "museo historico",
+        "francisco ramirez",
+        "casa colonial"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        }
+    ]
+}

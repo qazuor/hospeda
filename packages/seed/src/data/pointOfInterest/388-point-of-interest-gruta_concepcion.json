@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "388-point-of-interest-gruta_concepcion",
+    "slug": "gruta_concepcion",
+    "lat": -30.90099,
+    "long": -57.93472,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio de devoción religiosa y referencia espiritual del recorrido urbano de Santa Ana.",
+    "nameI18n": {
+        "es": "Gruta La Concepción",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio de devoción religiosa y referencia espiritual del recorrido urbano de Santa Ana.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Santa Ana, Entre Ríos",
+    "keywords": ["gruta la concepcion", "religion", "devocion", "gruta", "santa ana"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/santa-ana; https://mapcarta.com/es/N5539089596",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "monument",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

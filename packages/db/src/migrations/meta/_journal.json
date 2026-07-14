@@ -372,6 +372,41 @@
             "when": 1783896448073,
             "tag": "0052_sticky_eddie_brock",
             "breakpoints": true
+        },
+        {
+            "idx": 53,
+            "version": "7",
+            "when": 1783917902272,
+            "tag": "0053_wonderful_mojo",
+            "breakpoints": true
+        },
+        {
+            "idx": 54,
+            "version": "7",
+            "when": 1783933663073,
+            "tag": "0054_hos139_poi_category_permissions",
+            "breakpoints": true
+        },
+        {
+            "idx": 55,
+            "version": "7",
+            "when": 1783945738142,
+            "tag": "0055_ordinary_arachne",
+            "breakpoints": true
+        },
+        {
+            "idx": 56,
+            "version": "7",
+            "when": 1784037206210,
+            "tag": "0056_small_spacker_dave",
+            "breakpoints": true
+        },
+        {
+            "idx": 57,
+            "version": "7",
+            "when": 1784040144218,
+            "tag": "0057_broken_maginty",
+            "breakpoints": true
         }
     ]
 }

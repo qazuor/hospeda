@@ -1,0 +1,49 @@
+{
+    "slug": "monumento_arroyo_ceballos",
+    "lat": -33.0418437,
+    "long": -59.079435100000005,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Monumento que señala el sitio histórico del enfrentamiento de 1817.",
+    "nameI18n": {
+        "es": "Monumento al Combate de Arroyo Ceballos",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Monumento que señala el sitio histórico del enfrentamiento de 1817.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona de Arroyo Ceballos, ejido de Larroque, Entre Ríos",
+    "keywords": [
+        "monumento arroyo ceballos",
+        "francisco ramirez",
+        "combate 1817",
+        "memoria historica"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://es.wikipedia.org/wiki/Larroque_%28Argentina%29",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

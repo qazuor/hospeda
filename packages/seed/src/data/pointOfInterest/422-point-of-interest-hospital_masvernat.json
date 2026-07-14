@@ -1,0 +1,48 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "422-point-of-interest-hospital_masvernat",
+    "slug": "hospital_masvernat",
+    "lat": -31.364219700000003,
+    "long": -58.01765859999999,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Hospital público de alta complejidad y principal centro sanitario de referencia del noreste de Entre Ríos.",
+    "nameI18n": {
+        "es": "Hospital Delicia Concepción Masvernat",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Hospital público de alta complejidad y principal centro sanitario de referencia del noreste de Entre Ríos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Tavella 2000, Concordia, Entre Ríos",
+    "keywords": [
+        "hospital masvernat",
+        "delicia concepcion masvernat",
+        "guardia",
+        "emergencias",
+        "salud"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.hdcm.gov.ar/",
+    "notes": "Dirección, urgencias y servicios confirmados por el sitio oficial. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "aeroclub_escuela_vuelo",
+    "lat": -31.857325999999997,
+    "long": -59.0735289,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Área aeronáutica del complejo deportivo donde se desarrollan vuelos de bautismo, escuela de vuelo, aeromodelismo y parapente.",
+    "nameI18n": {
+        "es": "Aeroclub y Escuela de Vuelo Villaguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Área aeronáutica del complejo deportivo donde se desarrollan vuelos de bautismo, escuela de vuelo, aeromodelismo y parapente.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ejido oeste, a 5 km del centro de Villaguay, Entre Ríos",
+    "keywords": [
+        "aeroclub villaguay",
+        "escuela de vuelo",
+        "vuelos de bautismo",
+        "parapente",
+        "aeromodelismo"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://es.wikipedia.org/wiki/Villaguay",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

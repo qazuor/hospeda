@@ -292,5 +292,32 @@ describe('AttractionService destinationId search filter (HOS-125 regression — 
             // default page-1/20 (regression guard for the ignored-pagination bug).
             expect(optionsArg).toMatchObject({ page: 3, pageSize: 5 });
         });
+
+        it('should request the full relation page for the destinationCount aggregation (HOS-135)', async () => {
+            // A single page of attractions whose relations collectively exceed
+            // 20 rows: the count aggregation must fetch them all, not a default
+            // page of 20 (same-class pre-existing bug fixed alongside HOS-135).
+            asMock(model.findAll).mockResolvedValue({ items: [attractionA], total: 1 });
+            asMock(relatedModel.findAll).mockResolvedValue({
+                items: Array.from({ length: 25 }, () => ({
+                    destinationId: getMockId('destination', `d-${Math.random()}`),
+                    attractionId: attractionA.id
+                }))
+            });
+
+            const result = await service.searchForList(actor, {
+                name: 'Attraction A',
+                page: 1,
+                pageSize: 10
+            });
+
+            // No destinationId filter -> the only relation lookup is the count
+            // aggregation, which must request the full page.
+            expect(relatedModel.findAll).toHaveBeenCalledWith(
+                { attractionId: [attractionA.id] },
+                { page: 1, pageSize: 200 }
+            );
+            expect(result.data[0]?.destinationCount).toBe(25);
+        });
     });
 });

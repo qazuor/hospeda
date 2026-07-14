@@ -258,6 +258,10 @@
         "geoRadius.browserError": "Não conseguimos detectar sua localização. Verifique as permissões do navegador.",
         "geoRadius.destinationMode": "Um destino",
         "geoRadius.destinationPlaceholder": "Escolha um destino",
+        "geoRadius.poiMode": "Um ponto de interesse",
+        "geoRadius.poiPlaceholder": "Busque uma praça, praia, monumento...",
+        "geoRadius.poiSearching": "Buscando...",
+        "geoRadius.poiNoResults": "Não encontramos nenhum lugar com esse nome",
         "geoRadius.radiusUnit": "km",
         "section": {
             "location": "Localização",
@@ -545,6 +549,9 @@
         "locationDetail": {
             "title": "Localização",
             "mapPlaceholder": "Mapa em breve"
+        },
+        "nearbyPoi": {
+            "title": "O que há por perto"
         },
         "related": {
             "similar": "Alojamentos similares",

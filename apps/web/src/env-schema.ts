@@ -72,13 +72,18 @@ export const serverEnvBaseSchema = z.object({
     PUBLIC_SENTRY_DSN: z.url().optional(),
     PUBLIC_SENTRY_RELEASE: z.string().optional(),
     /**
-     * Free-text environment tag applied to all Sentry events from the web app
+     * Environment tag applied to all Sentry events from the web app
      * (SSR and browser). Takes precedence over `import.meta.env.MODE` in the
      * Sentry init. Required to separate staging from production in the Sentry
      * dashboard — without it, Astro production builds always emit MODE=production
      * regardless of which deployment they came from.
+     *
+     * Only `production` and `staging` are ever set explicitly (see
+     * `docs/runbooks/sentry-setup.md` "Values by Environment" table). Local
+     * dev never sets this var, so `development`/`test` are intentionally NOT
+     * valid explicit values here.
      */
-    PUBLIC_SENTRY_ENVIRONMENT: z.string().optional(),
+    PUBLIC_SENTRY_ENVIRONMENT: z.enum(['production', 'staging']).optional(),
     /**
      * First-party tunnel path for the Sentry browser SDK (SPEC-181 follow-up).
      * When set (e.g. `/api/event`), the SDK POSTs all envelopes to this

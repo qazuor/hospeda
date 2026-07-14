@@ -4,6 +4,8 @@
     "zoomOut": "Zoom out",
     "approximateDisclaimer": "Approximate location. The exact address will be shared with the confirmed reservation.",
     "openInExternalMap": "Open in external map",
+    "openInGoogleMaps": "View on Google Maps",
+    "openAddressInGoogleMaps": "View {{address}} on Google Maps",
     "ariaLabelAccommodation": "Map with approximate location of the accommodation",
     "ariaLabelDestination": "Map with destination location",
     "loadingMap": "Loading map…",

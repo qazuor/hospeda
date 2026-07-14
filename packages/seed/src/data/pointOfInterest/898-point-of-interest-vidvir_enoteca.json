@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "898-point-of-interest-vidvir_enoteca",
+    "slug": "vidvir_enoteca",
+    "lat": -32.1631324,
+    "long": -58.4004902,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Enoteca turística orientada a degustaciones en grupos pequeños y a la difusión de la historia vitivinícola argentina y entrerriana.",
+    "nameI18n": {
+        "es": "Vidvir Enoteca",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Enoteca turística orientada a degustaciones en grupos pequeños y a la difusión de la historia vitivinícola argentina y entrerriana.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Villa Elisa, Entre Ríos",
+    "keywords": ["vidvir", "enoteca", "degustacion", "vinos entrerrianos", "historia vitivinicola"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://villaelisa.tur.ar/atractivos/",
+    "notes": "Actividad vigente confirmada por Turismo Villa Elisa. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "winery",
+            "isPrimary": true
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        }
+    ]
+}

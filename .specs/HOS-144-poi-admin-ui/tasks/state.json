@@ -1,0 +1,485 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-144",
+    "title": "Point of Interest (POI) Admin Management UI",
+    "created": "2026-07-14T04:40:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create POI feature config (points-of-interest.config.ts)",
+            "description": "Create apps/admin/src/features/points-of-interest/config/points-of-interest.config.ts with apiEndpoint '/api/v1/admin/points-of-interest', basePath '/content/points-of-interest', entity metadata and permission keys (POINT_OF_INTEREST_VIEW/CREATE/UPDATE/DELETE), mirroring attractions.config.ts. Tests: unit assert config exports the expected apiEndpoint/basePath/permission shape.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-008"],
+            "subtasks": [],
+            "tags": ["admin", "config", "scaffolding"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Create POI DataTable columns (points-of-interest.columns.ts)",
+            "description": "Create config/points-of-interest.columns.ts per spec §6.7: name (ENTITY widget via resolveI18nText(nameI18n) linking to $id), slug, type, hasOwnPage BOOLEAN, isFeatured, displayWeight WeightBarCell, lifecycleState InlineStateSelectCell gated by POINT_OF_INTEREST_LIFECYCLE_CHANGE, createdAt TIME_AGO, actions gated by POINT_OF_INTEREST_DELETE/_UPDATE. NO destinationCount column (OQ-3). Tests: unit assert column ids/order and the nameI18n resolver never yields raw object/slug-silent-fallback (AC-1).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-012"],
+            "subtasks": [],
+            "tags": ["admin", "config", "columns"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Basic Info consolidated section (basic-info.consolidated.ts)",
+            "description": "Create config/sections/basic-info.consolidated.ts per spec §6.3: slug TEXT (regex ^[a-z0-9]+(?:[-_][a-z0-9]+)*$), nameI18n I18N_TEXT (required, maxLength), descriptionI18n I18N_TEXTAREA (optional), type SELECT from PointOfInterestTypeEnum (label notes legacy/transitional NG-5), icon TEXT. Permission-gated per field like attractions. Tests: unit assert field ids/types/required flags.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-007"],
+            "subtasks": [],
+            "tags": ["admin", "form-section"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Location consolidated section (location.consolidated.ts)",
+            "description": "Create config/sections/location.consolidated.ts per spec §6.3: address TEXT (optional), keywords TEXTAREA ('one per line' convention §6.5), coordinates COORDINATES reusing CoordinatesField unmodified with typeConfig.addressFields.street wired to address for forward geocoding. Tests: unit assert field ids/types and that coordinates maps lat/long.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-007"],
+            "subtasks": [],
+            "tags": ["admin", "form-section", "coordinates"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Curation consolidated section (curation.consolidated.ts)",
+            "description": "Create config/sections/curation.consolidated.ts: verified SWITCH, verifiedAt (read-only/date), source TEXT, notes TEXTAREA, permission-gated per field. Tests: unit assert field ids/types.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007"],
+            "subtasks": [],
+            "tags": ["admin", "form-section"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "States & Moderation consolidated section (states-moderation.consolidated.ts)",
+            "description": "Create config/sections/states-moderation.consolidated.ts mirroring attractions' createStatesModerationConsolidatedSection: lifecycleState, isFeatured, isBuiltin, hasOwnPage SWITCH, displayWeight NUMBER, permission-gated. Tests: unit assert field ids/types.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007"],
+            "subtasks": [],
+            "tags": ["admin", "form-section"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Compose consolidated config + section/config barrels",
+            "description": "Create config/poi-consolidated.config.ts composing the 4 sections (basic-info, location, curation, states-moderation) like attraction-consolidated.config.ts, plus config/sections/index.ts and config/index.ts barrels. Tests: unit assert the composed config lists all 4 sections in order.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-004", "T-005", "T-006"],
+            "blocks": ["T-013", "T-014"],
+            "subtasks": [],
+            "tags": ["admin", "config"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "POI CRUD query hooks (usePointOfInterestQuery.ts)",
+            "description": "Create hooks/usePointOfInterestQuery.ts via createEntityHooks mirroring useAttractionQuery.ts, typed against @repo/schemas POI admin types + local aliases (T-010). Tests: unit assert hook wiring (query keys, endpoint).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-010"],
+            "blocks": ["T-009"],
+            "subtasks": [],
+            "tags": ["admin", "hooks", "query"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "POI page orchestration hook (usePointOfInterestPage.ts) + barrel",
+            "description": "Create hooks/usePointOfInterestPage.ts mirroring useAttractionPage.ts (page-level orchestration, submit-payload builder seam for keywords split/trim/filter §6.5 and lat/long Number() coercion §6.3), plus hooks/index.ts. Tests: unit assert keywords transform (AC-6) and coordinate coercion (AC-7) in the payload builder.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-011", "T-012", "T-013", "T-014", "T-015", "T-020"],
+            "subtasks": [],
+            "tags": ["admin", "hooks", "page"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Admin-local POI schema aliases (points-of-interest.schemas.ts)",
+            "description": "Create schemas/points-of-interest.schemas.ts with thin local type aliases re-exporting/narrowing @repo/schemas POI admin types for the admin hooks factory, mirroring attractions.schemas.ts. No new validation logic. Tests: typecheck-only (no runtime logic).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-008", "T-016"],
+            "subtasks": [],
+            "tags": ["admin", "schemas"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "PointOfInterestSubTabLayout component",
+            "description": "Create components/PointOfInterestSubTabLayout.tsx mirroring DestinationSubTabLayout/AccommodationSubTabLayout (§6.6): breadcrumb (resolveI18nText(poi.nameI18n)) + tab nav Overview/Categories/Destinations/Edit. Per-entity, no generic abstraction. Tests: unit assert tab links render for a given id.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-014", "T-015", "T-018", "T-021"],
+            "subtasks": [],
+            "tags": ["admin", "component", "layout"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "LIST route (index.tsx)",
+            "description": "Create routes/_authed/content/points-of-interest/index.tsx: DataTable via EntityPageBase list mode using the columns (T-002) + config (T-001). Manual/e2e-style verify: renders paginated POIs, name resolves from nameI18n (AC-1).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-009"],
+            "blocks": ["T-024"],
+            "subtasks": [],
+            "tags": ["admin", "route", "list"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "CREATE route (new.tsx)",
+            "description": "Create routes/_authed/content/points-of-interest/new.tsx: EntityCreateContent with afterCreateRedirectMode 'edit' (§6.2). Basic Info + Location sections only. Applies keywords + coordinate coercion via the page submit builder (T-009). Test: assert post-create route is $id/edit (AC-2).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-009"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["admin", "route", "create"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "EDIT route ($id_.edit.tsx)",
+            "description": "Create routes/_authed/content/points-of-interest/$id_.edit.tsx: EntityPageBase edit mode + all 4 consolidated sections (Basic Info incl I18nTextField, Location, Curation, States & Moderation). Manual verify: edit round trip persists via API. (TranslationSection mount added later in T-023.)",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-009", "T-011"],
+            "blocks": ["T-023"],
+            "subtasks": [],
+            "tags": ["admin", "route", "edit"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "VIEW route ($id.tsx, Overview tab)",
+            "description": "Create routes/_authed/content/points-of-interest/$id.tsx: EntityPageBase view mode, Overview tab default, wrapped in PointOfInterestSubTabLayout. Manual verify: view renders resolved fields.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-011", "T-009"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["admin", "route", "view"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "PoiCategorySelectField + category api utils",
+            "description": "Create components/entity-form/fields/entity-selects/PoiCategorySelectField.tsx wrapping EntitySelectField (multiple, client search) + loadAllPoiCategories()/loadPoiCategoriesByIds() utils mirroring amenity-api.utils.ts. Chip labels via resolveI18nText. Tests: unit assert loaders map API rows to options.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-017"],
+            "subtasks": [],
+            "tags": ["admin", "component", "entity-select"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "PoiCategoryManager component",
+            "description": "Create components/PoiCategoryManager.tsx (§6.4): chip multi-select over poi_categories + a primary-radio list DERIVED from the current selection (invalid primary structurally impossible, AC-3), 'Save categories' calls PUT /{id}/categories with {categoryIds, primaryCategoryId} (full replace). Toast on failure, no silent revert (§8).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-016"],
+            "blocks": ["T-018", "T-019"],
+            "subtasks": [],
+            "tags": ["admin", "component", "categories"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Categories tab route ($id_.categories.tsx)",
+            "description": "Create routes/_authed/content/points-of-interest/$id_.categories.tsx rendering PoiCategoryManager inside PointOfInterestSubTabLayout, fetching current categories via GET /{id}/categories.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017", "T-011"],
+            "blocks": ["T-025", "T-026"],
+            "subtasks": [],
+            "tags": ["admin", "route", "categories"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "PoiCategoryManager component tests",
+            "description": "Component tests for PoiCategoryManager (AC-3, AC-10): happy-path render, primary-must-be-selected constraint, and one failure-path (network error) verifying toast + no silent revert.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["admin", "testing", "categories"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "PoiDestinationRelationManager component",
+            "description": "Create components/PoiDestinationRelationManager.tsx (§6.6, FaqManager per-row-persist precedent): list current relations (GET /{id}/destinations), each row = linked destination name + PRIMARY/NEARBY badge + inline relation <select> (PATCH, optimistic + rollback on error) + remove (DELETE, confirm dialog). 'Add destination' row = DestinationSelectField combobox + relation radio + Add (POST). No bulk save.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-021", "T-022"],
+            "subtasks": [],
+            "tags": ["admin", "component", "destinations", "relation-manager"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Destinations tab route ($id_.destinations.tsx)",
+            "description": "Create routes/_authed/content/points-of-interest/$id_.destinations.tsx rendering PoiDestinationRelationManager inside PointOfInterestSubTabLayout.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-020", "T-011"],
+            "blocks": ["T-025", "T-026"],
+            "subtasks": [],
+            "tags": ["admin", "route", "destinations"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "PoiDestinationRelationManager component tests",
+            "description": "Component tests for PoiDestinationRelationManager (AC-4, AC-5, AC-10): happy-path render, relation change persists + rollback on failed PATCH, remove shows confirmation before DELETE, one network-error failure path.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["admin", "testing", "destinations"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "AI-translate wiring (TranslationSection widen + edit mount)",
+            "description": "§6.8/G-7: widen TranslationSection.tsx entityType union to include 'pointOfInterest' and add pointOfInterest: ['name','description'] to TRANSLATABLE_FIELDS; mount <TranslationSection entityType=\"pointOfInterest\" entityId={id} entity={poi} /> on $id_.edit.tsx. HOS-143 G-6 backend already shipped (verified), so no feature gate needed. Verify: AC-8 translate round trip.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["admin", "ai-translate", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Navigation registration (sidebar + create-action)",
+            "description": "§6.9/G-8: add sidebar link in sidebars.ts (route /content/points-of-interest, permissions ['POINT_OF_INTEREST_VIEW']) mirroring atracciones, and newPointOfInterest entry in create-actions.ts (route /content/points-of-interest/new, permissions ['POINT_OF_INTEREST_CREATE']). Verify AC-9 permission gating.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["admin", "navigation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Docs: POI relation-manager pattern in admin CLAUDE.md",
+            "description": "§6 Phase 6: update apps/admin/CLAUDE.md (FAQ Management-adjacent section or a new one) documenting the POI relation-manager + category-manager tab pattern for future entities.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-018", "T-021"],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Quality gate + manual verification checklist",
+            "description": "Phase 7: pnpm --filter admin typecheck/lint/test all green (AC-10) — DONE. Aggregated gate ALL GREEN (3 typechecks + biome 36 files + 236 scoped tests + i18n parity). Judgment-day review in progress. REMAINING: manual verification (create/edit a POI with multilang + categories + coords-on-map via wt:up, confirm persistence via GET /api/v1/admin/points-of-interest/{id}, AC-7).",
+            "status": "in-progress",
+            "complexity": 2,
+            "blockedBy": ["T-018", "T-021", "T-023", "T-024", "T-025", "T-019", "T-022"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "quality-gate"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-14T04:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 26,
+        "pending": 0,
+        "inProgress": 1,
+        "completed": 25,
+        "blocked": 0,
+        "averageComplexity": 2.4,
+        "note": "All 7 phases implemented + 3 HOS-143 gap fixes (catalog list endpoint, adminList/adminSearchSchema 500, GET /{id}/categories isPrimary). Aggregated quality gate ALL GREEN. T-026 remainder = manual end-to-end verification via wt:up."
+    }
+}

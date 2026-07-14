@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "566-point-of-interest-papaya_beach",
+    "slug": "papaya_beach",
+    "lat": -33.0139697,
+    "long": -58.499351600000004,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Playa y parador recreativo ubicado en el sector de Parque Unzué Chico.",
+    "nameI18n": {
+        "es": "Papaya Beach",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Playa y parador recreativo ubicado en el sector de Parque Unzué Chico.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque Unzué Chico, Gualeguaychú, Entre Ríos",
+    "keywords": ["papaya beach", "parque unzue chico", "playa", "parador", "verano"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/playas",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        }
+    ]
+}

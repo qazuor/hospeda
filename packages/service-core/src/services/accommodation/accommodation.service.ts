@@ -83,6 +83,7 @@ import {
     AccommodationTopRatedParamsSchema,
     type AccommodationUpdateInput,
     AccommodationUpdateInputSchema,
+    type ApproximateLocationType,
     type CountResponse,
     DestinationTypeEnum,
     type EntityFilters,
@@ -91,6 +92,7 @@ import {
     IdOrSlugParamsSchema,
     LifecycleStatusEnum,
     ModerationStatusEnum,
+    type NearbyPoi,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode,
@@ -150,10 +152,14 @@ import {
     checkCanVerify,
     checkCanView
 } from './accommodation.permissions';
-import { resolvePoiToCoordinates } from './accommodation.poi-proximity.helper';
+import {
+    DEFAULT_POI_PROXIMITY_RADIUS_KM,
+    resolvePoiToCoordinates
+} from './accommodation.poi-proximity.helper';
 import {
     applyAccommodationLocationPrivacy,
     applyAccommodationLocationPrivacyList,
+    projectAccommodationApproximateLocation,
     projectAccommodationCityDestination,
     projectAccommodationCityDestinationList,
     projectAccommodationOwnerAvatar,
@@ -167,6 +173,25 @@ import type {
 
 /** Entity-specific filter fields for accommodation admin search. */
 type AccommodationEntityFilters = EntityFilters<typeof AccommodationAdminSearchSchema>;
+
+/**
+ * Default number of points of interest returned by
+ * {@link AccommodationService.getNearbyPois} when the caller does not supply
+ * an explicit `limit` (HOS-145 T-004).
+ */
+const NEARBY_POI_DEFAULT_LIMIT = 12;
+
+/**
+ * Input schema for {@link AccommodationService.getNearbyPois} (HOS-145 T-004).
+ * Not published as a shared `@repo/schemas` schema: it is purely a
+ * service-level RO-RO input, mirroring the local `GetNearbyPoisInputSchema`
+ * pattern already used by `PointOfInterestService.getNearby`.
+ */
+const AccommodationGetNearbyPoisParamsSchema = z.object({
+    slug: z.string().min(1),
+    radiusKm: z.number().positive().max(20).optional(),
+    limit: z.number().int().positive().max(50).optional()
+});
 
 /**
  * Provides accommodation-specific business logic, including creation, updates,
@@ -2710,6 +2735,159 @@ export class AccommodationService extends BaseCrudService<
 
                 // Return wrapped in AccommodationStatsWrapper format
                 return { stats };
+            }
+        });
+    }
+
+    /**
+     * Finds points of interest near a single accommodation's OBFUSCATED
+     * (approximate) location (HOS-145 T-004, revised 2026-07-14 judgment-day
+     * R-4). This is the privacy-preserving core of the "near POI"
+     * accommodation feature: the proximity search is centered on
+     * `approximateLocation` — never on the accommodation's real
+     * coordinates, which are not even read by this method.
+     *
+     * ### Why `approximateLocation`, not the exact coordinate (trilateration, R-4)
+     *
+     * An earlier version centered the search on the real coordinate (read via
+     * a raw `model.findOne`) on the reasoning that the coordinate itself was
+     * never echoed back. That reasoning missed a side channel: each returned
+     * POI already carries its own PUBLIC exact `lat`/`long`, and the POI
+     * proximity ordering/distance is derived from the real accommodation
+     * coordinate. Three or more POI distances from known POI coordinates are
+     * enough to trilaterate the real accommodation coordinate to
+     * near-exactness, silently defeating the SPEC-097 obfuscation the rest of
+     * the API surface enforces. Centering on `approximateLocation` instead
+     * means every distance returned already carries the same random
+     * obfuscation offset as the public location circle, so no amount of POI
+     * trilateration can recover a better fix than that circle already gives.
+     *
+     * ### Why a lightweight gated read, not `getBySlug` (R-5, performance)
+     *
+     * `getBySlug` (⇒ `getByField`) always loads `getDefaultGetByIdRelations()`
+     * (destination/owner/reviews/faqs) and runs `attachComposedMedia` (another
+     * DB read) — all just to obtain `approximateLocation`. Since the
+     * accommodation detail page already calls `getBySlug` for its own render,
+     * every page view would otherwise pay for that heavy read TWICE. This
+     * method instead does a bare `this.model.findOne({ slug })` (no relations,
+     * no media) and applies the SAME visibility gate as every other read via
+     * `this._canView(actor, entity)` — the identical `checkCanView` logic
+     * `getByField` calls internally — followed by
+     * `projectAccommodationApproximateLocation` (the same projection
+     * `_afterGetByField` uses under the hood via
+     * {@link applyAccommodationLocationPrivacy}) to compute the obfuscated
+     * circle. No relation or media data is ever loaded, and the real
+     * coordinate never leaves this method.
+     *
+     * A gated read that resolves to NOT_FOUND / FORBIDDEN / GONE (not found,
+     * not visible, soft-deleted) or that succeeds but has no
+     * `approximateLocation` (accommodation has no coordinates yet) both
+     * resolve to an empty array rather than propagating a 403/404 — the
+     * public "near POI" surface stays a uniform 200 `{ items: [] }` for
+     * anti-enumeration (AC-2, AC-8). Any OTHER error (e.g. `INTERNAL_ERROR`/
+     * `DATABASE_ERROR` from a genuine backend failure, or a raw `DbError`
+     * from the model layer) is deliberately NOT swallowed — it propagates as
+     * an error result so it surfaces as a 5xx instead of masquerading as "no
+     * POIs nearby" (judgment-day round 2 #4).
+     *
+     * @param params - `slug` (required), plus optional `radiusKm`/`limit`
+     *   overrides. Defaults: `radiusKm` = {@link DEFAULT_POI_PROXIMITY_RADIUS_KM}
+     *   (5km), `limit` = {@link NEARBY_POI_DEFAULT_LIMIT} (12).
+     * @param actor - The actor performing the search (forwarded to both the
+     *   visibility gate and `PointOfInterestService.getNearby` for its own
+     *   permission checks).
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns The nearby points of interest, nearest-first. Never includes
+     *   the accommodation's own coordinates (real or approximate) or any
+     *   other accommodation field.
+     */
+    public async getNearbyPois(
+        params: { slug: string; radiusKm?: number; limit?: number },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<NearbyPoi[]>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getNearbyPois',
+            input: { ...params, actor },
+            schema: AccommodationGetNearbyPoisParamsSchema,
+            ctx,
+            execute: async (validatedParams, validatedActor, execCtx) => {
+                let approximateLocation: ApproximateLocationType | undefined;
+
+                try {
+                    // Lightweight visibility-gated read (R-5): a bare
+                    // `findOne` (no relations, no media) instead of
+                    // `getBySlug`, since this method only needs the
+                    // obfuscated coordinate. `_canView` enforces the exact
+                    // same gate `getByField` would (DRAFT/PRIVATE/
+                    // soft-deleted/suspended/plan-restricted/RESTRICTED-
+                    // without-VIP are all excluded).
+                    const entity = await this.model.findOne(
+                        { slug: validatedParams.slug },
+                        execCtx?.tx
+                    );
+
+                    if (!entity) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            `${this.entityName} not found`
+                        );
+                    }
+
+                    await this._canView(validatedActor, entity as Accommodation);
+
+                    const salt = this.getLocationSalt();
+                    approximateLocation = salt
+                        ? projectAccommodationApproximateLocation(entity as Accommodation, {
+                              salt
+                          }).approximateLocation
+                        : undefined;
+                } catch (error) {
+                    if (
+                        error instanceof ServiceError &&
+                        (error.code === ServiceErrorCode.NOT_FOUND ||
+                            error.code === ServiceErrorCode.FORBIDDEN ||
+                            error.code === ServiceErrorCode.GONE)
+                    ) {
+                        // Not found / not visible — uniform empty result, no leak.
+                        return [];
+                    }
+                    // Any other failure (INTERNAL_ERROR, DATABASE_ERROR, a raw
+                    // DbError from the model, ...) is a genuine backend
+                    // failure, not an intended "not visible" outcome —
+                    // propagate it (judgment-day round 2 #4) instead of
+                    // silently swallowing it into `{ items: [] }`.
+                    throw error;
+                }
+
+                if (!approximateLocation) {
+                    // No coordinates on this accommodation yet — valid empty state.
+                    return [];
+                }
+
+                const radiusKm = validatedParams.radiusKm ?? DEFAULT_POI_PROXIMITY_RADIUS_KM;
+                const limit = validatedParams.limit ?? NEARBY_POI_DEFAULT_LIMIT;
+
+                const result = await this.pointOfInterestService.getNearby(
+                    {
+                        lat: approximateLocation.lat,
+                        long: approximateLocation.lng,
+                        radiusKm,
+                        limit
+                    },
+                    validatedActor,
+                    execCtx
+                );
+
+                if (result.error) {
+                    throw new ServiceError(
+                        result.error.code,
+                        result.error.message,
+                        result.error.details
+                    );
+                }
+
+                return result.data;
             }
         });
     }

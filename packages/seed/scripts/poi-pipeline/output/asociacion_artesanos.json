@@ -1,0 +1,51 @@
+{
+    "slug": "asociacion_artesanos",
+    "lat": -31.8676271,
+    "long": -59.0270174,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Espacio de exposición y comercialización de artesanías en cuero, mimbre, fibras, tejidos, macramé, pintura y piedras.",
+    "nameI18n": {
+        "es": "Asociación de Artesanos de Villaguay",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio de exposición y comercialización de artesanías en cuero, mimbre, fibras, tejidos, macramé, pintura y piedras.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Villaguay, Entre Ríos",
+    "keywords": [
+        "artesanos villaguay",
+        "cuero",
+        "mimbre",
+        "tejidos",
+        "macrame",
+        "productos artesanales"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://es.wikipedia.org/wiki/Villaguay",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "fair",
+            "isPrimary": true
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

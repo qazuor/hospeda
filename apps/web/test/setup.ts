@@ -7,6 +7,36 @@
  */
 
 import '@testing-library/jest-dom/vitest';
+import { trans } from '@repo/i18n/web';
+import { afterEach } from 'vitest';
+import { resetInFlightAuthMe } from '../src/lib/auth-cache';
+import { CLIENT_I18N_ELEMENT_ID } from '../src/lib/i18n';
+
+// HOS-160 lever D: `fetchAuthMe` shares a module-level in-flight promise to dedup
+// concurrent callers. A test that renders an island with a pending `/auth/me`
+// fetch leaves that promise set; without this reset, following tests reuse the
+// stale promise and never call `fetch`. Clear it after every test.
+afterEach(resetInFlightAuthMe);
+
+// HOS-160 lever A: the page shell (`I18nClientData.astro`) inlines the current
+// locale's dictionary as a `#hospeda-i18n` data element that client islands read
+// via `@/lib/i18n` instead of importing the full catalog. Vitest runs in client
+// mode (`import.meta.env.SSR === false`), so `createTranslations` follows that DOM
+// path; without the element every key would resolve to `[MISSING: …]`. Seed the
+// TEST-ONLY multi-locale `{ all }` form so a single element serves whichever
+// locale a test renders (production inlines just one locale per page; tests
+// exercise es/en/pt), mirroring the real translations the server would render.
+if (typeof document !== 'undefined' && !document.getElementById(CLIENT_I18N_ELEMENT_ID)) {
+    const el = document.createElement('script');
+    el.id = CLIENT_I18N_ELEMENT_ID;
+    el.type = 'application/json';
+    el.textContent = JSON.stringify({ all: trans });
+    // Append to <head>, NOT <body>: `getElementById` finds it either way, but
+    // keeping this large JSON blob out of `document.body` stops component tests
+    // that assert on `body`/container text (e.g. "output does not contain '...'")
+    // from matching translation strings inside the seed.
+    document.head.appendChild(el);
+}
 
 // jsdom does not implement IntersectionObserver; provide a minimal mock so
 // islands like AnimatedCounter can mount inside vitest without throwing.

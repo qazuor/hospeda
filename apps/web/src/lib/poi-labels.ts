@@ -23,7 +23,8 @@
  * placeholder, since a missing translation must never break the destination
  * detail page.
  */
-import type { I18nText } from '@repo/schemas';
+
+import type { I18nTextLike } from '@/lib/resolve-i18n-text';
 import { resolveI18nText } from '@/lib/resolve-i18n-text';
 
 /** Translator shape compatible with `createTranslations().t`. */
@@ -71,7 +72,7 @@ export function translatePoiName({
     locale
 }: {
     readonly slug: string;
-    readonly nameI18n?: I18nText | null;
+    readonly nameI18n?: I18nTextLike | null;
     readonly locale?: string;
 }): string {
     if (nameI18n && locale) {

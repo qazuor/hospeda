@@ -1,0 +1,54 @@
+{
+    "slug": "playa_del_puente",
+    "lat": -33.007980499999995,
+    "long": -58.501397999999995,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Playa urbana ubicada junto al puente y la Costanera, de acceso cercano al centro.",
+    "nameI18n": {
+        "es": "Playa del Puente",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Playa urbana ubicada junto al puente y la Costanera, de acceso cercano al centro.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Costanera e Ibicuy, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "playa del puente",
+        "costanera e ibicuy",
+        "puente",
+        "rio",
+        "playa urbana"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/playas",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "slug": "teatro_gualeguaychu",
+    "lat": -33.0088331,
+    "long": -58.51374930000001,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Teatro histórico de la ciudad utilizado para obras, conciertos, danza y presentaciones culturales.",
+    "nameI18n": {
+        "es": "Teatro Gualeguaychú",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Teatro histórico de la ciudad utilizado para obras, conciertos, danza y presentaciones culturales.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Urquiza 705, Gualeguaychú, Entre Ríos",
+    "keywords": [
+        "teatro gualeguaychu",
+        "urquiza 705",
+        "artes escenicas",
+        "conciertos",
+        "danza"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/cultura",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "theater",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        }
+    ]
+}

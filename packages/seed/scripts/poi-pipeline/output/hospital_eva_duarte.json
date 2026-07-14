@@ -1,0 +1,46 @@
+{
+    "slug": "hospital_eva_duarte",
+    "lat": -33.50033,
+    "long": -58.79928,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Hospital público provincial con internación general y principal referencia sanitaria de Ceibas.",
+    "nameI18n": {
+        "es": "Hospital Eva Duarte",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Hospital público provincial con internación general y principal referencia sanitaria de Ceibas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ceibas, Entre Ríos",
+    "keywords": [
+        "hospital eva duarte",
+        "hospital ceibas",
+        "guardia",
+        "emergencias",
+        "salud"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/W511367537",
+    "notes": "Función y coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "health",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        }
+    ]
+}

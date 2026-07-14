@@ -17,7 +17,8 @@ vi.mock('@repo/db/schemas', () => ({
     accommodations: { id: { name: 'id' } },
     destinations: { id: { name: 'id' } },
     events: { id: { name: 'id' } },
-    posts: { id: { name: 'id' } }
+    posts: { id: { name: 'id' } },
+    pointsOfInterest: { id: { name: 'id' } }
 }));
 
 vi.mock('../ai-service.factory.js', () => ({
@@ -30,7 +31,9 @@ vi.mock('../ai-service.factory.js', () => ({
 
 const { getDb } = await import('@repo/db');
 const { createConfiguredAiService } = await import('../ai-service.factory.js');
-const { translateEntity, persistTranslations } = await import('../ai-translate.service.js');
+const { translateEntity, persistTranslations, loadTranslatableFields } = await import(
+    '../ai-translate.service.js'
+);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -239,6 +242,78 @@ describe('translateEntity', () => {
 
             expect(result.translations).toHaveLength(6); // 3 fields × 2 locales
         });
+
+        it('should translate pointOfInterest fields (HOS-143 G-6)', async () => {
+            setupAiServiceMock('Translated');
+
+            const result = await translateEntity({
+                entityType: 'pointOfInterest',
+                entityId: 'test-uuid',
+                fields: {
+                    name: 'Puente Internacional Gral. Artigas',
+                    description: 'Une Concepción del Uruguay con Paysandú'
+                }
+            });
+
+            expect(result.translations).toHaveLength(4); // 2 fields × 2 locales
+        });
+    });
+});
+
+// ============================================================================
+// loadTranslatableFields — pointOfInterest `name` fallback (HOS-143 G-6)
+// ============================================================================
+
+describe('loadTranslatableFields — pointOfInterest name fallback (HOS-143 G-6)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('reads `name` from nameI18n.es when the row has no plain name column', async () => {
+        // Arrange — POI rows never carry a plain `name` column (HOS-138); only
+        // `description` is a plain column alongside `descriptionI18n`.
+        (getDb as Mock).mockReturnValue({
+            select: vi.fn().mockReturnValue({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockReturnValue({
+                        limit: vi.fn().mockResolvedValue([
+                            {
+                                nameI18n: { es: 'Puente Internacional', en: '', pt: '' },
+                                description: 'Une dos países'
+                            }
+                        ])
+                    })
+                })
+            })
+        });
+
+        // Act
+        const fields = await loadTranslatableFields('pointOfInterest', 'test-uuid', 'es');
+
+        // Assert — both fields resolved: name via the i18n fallback, description
+        // via its plain column, exactly like the other four entity types.
+        expect(fields).toEqual({
+            name: 'Puente Internacional',
+            description: 'Une dos países'
+        });
+    });
+
+    it('omits `name` when nameI18n is null (no crash, no empty-string field)', async () => {
+        (getDb as Mock).mockReturnValue({
+            select: vi.fn().mockReturnValue({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockReturnValue({
+                        limit: vi
+                            .fn()
+                            .mockResolvedValue([{ nameI18n: null, description: 'Solo esto' }])
+                    })
+                })
+            })
+        });
+
+        const fields = await loadTranslatableFields('pointOfInterest', 'test-uuid', 'es');
+
+        expect(fields).toEqual({ description: 'Solo esto' });
     });
 });
 

@@ -7,10 +7,12 @@ import { publicAccommodationReviewRoutes } from '../reviews/public/index.js';
 import { getByDestinationRoute } from './getByDestination';
 import { publicGetAccommodationByIdRoute } from './getById';
 import { publicGetAccommodationBySlugRoute } from './getBySlug';
+import { publicGetOccupancyRoute } from './getOccupancy';
 import { getStatsRoute } from './getStats';
 import { getSummaryRoute } from './getSummary';
 import { getTopRatedByDestinationRoute } from './getTopRatedByDestination';
 import { publicListAccommodationsRoute } from './list';
+import { publicGetAccommodationNearbyPoisRoute } from './nearbyPois';
 import { publicGetSimilarRoute } from './similar';
 
 const app = createRouter();
@@ -27,6 +29,9 @@ app.route('/', publicGetAccommodationByIdRoute);
 // GET /slug/:slug - Get by slug
 app.route('/', publicGetAccommodationBySlugRoute);
 
+// GET /:slug/nearby-pois - Points of interest near an accommodation
+app.route('/', publicGetAccommodationNearbyPoisRoute);
+
 // GET /destination/:destinationId - Get by destination
 app.route('/', getByDestinationRoute);
 
@@ -35,6 +40,9 @@ app.route('/', getTopRatedByDestinationRoute);
 
 // GET /:id/summary - Get summary
 app.route('/', getSummaryRoute);
+
+// GET /:id/occupancy - Occupancy calendar (public, blocked days only) - HOS-43
+app.route('/', publicGetOccupancyRoute);
 
 // GET /stats - Get stats
 app.route('/', getStatsRoute);

@@ -1,0 +1,42 @@
+{
+    "totalRows": 914,
+    "totalFixtures": 914,
+    "geocode": {
+        "alreadyHadCoords": 197,
+        "resolvedHigh": 597,
+        "resolvedMedium": 99,
+        "resolvedByFallback": 597,
+        "rejectedLowConfidence": 3,
+        "unresolved": 18,
+        "unresolvedSlugs": [
+            "bancos_arena_rio_uruguay",
+            "circuito_tierra_promesas",
+            "represa_salto_grande",
+            "escuela_remo",
+            "ecochacra_montecito",
+            "polo_educativo_malvinas",
+            "estancia_san_ricardo",
+            "empalme_rutas_12_14",
+            "muelle_continental",
+            "humedales_bosques_galeria",
+            "circuito_bici_natural",
+            "corsos_dona_tata",
+            "circuito_productivo_citrus",
+            "chimenea_calera",
+            "centro_cultural_atahualpa_yupanqui",
+            "la_sonada_footgolf",
+            "gaucho_paintball",
+            "sala_evocativa_miguel_britos",
+            "cabalgata_camino_real",
+            "duatlon_bike_camino_real",
+            "expo_feria_rural"
+        ]
+    },
+    "categoryCoverageUsed": 40,
+    "categoryCoverageTotal": 40,
+    "slugCollisionsResolved": 46,
+    "destinationFixupsApplied": 2,
+    "relationsPrimary": 914,
+    "relationsNearby": 646,
+    "unresolvedNearby": []
+}

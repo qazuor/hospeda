@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "027-point-of-interest-anfiteatro_juancho_garcilazo",
+    "slug": "anfiteatro_juancho_garcilazo",
+    "lat": -30.986365900000003,
+    "long": -57.916493900000006,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Anfiteatro al aire libre utilizado para la Fiesta Nacional del Lago, festivales, recitales y celebraciones comunitarias.",
+    "nameI18n": {
+        "es": "Anfiteatro Juancho Garcilazo",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Anfiteatro al aire libre utilizado para la Fiesta Nacional del Lago, festivales, recitales y celebraciones comunitarias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Costanera de Federación, Entre Ríos",
+    "keywords": [
+        "anfiteatro juancho garcilazo",
+        "fiesta nacional del lago",
+        "recitales",
+        "festival",
+        "costanera"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/fiesta-nacional-del-lago/; https://www.federacion.gob.ar/areas-noticias/secretaria-turismo",
+    "notes": "Nombre y uso actual confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "theater",
+            "isPrimary": true
+        },
+        {
+            "slug": "entertainment",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        }
+    ]
+}

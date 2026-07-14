@@ -1,0 +1,50 @@
+{
+    "slug": "encuentro_coros",
+    "lat": -32.4694115,
+    "long": -58.478538300000004,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Encuentro coral regional realizado en el Centro Cultural Margarita Thea con participación de agrupaciones invitadas.",
+    "nameI18n": {
+        "es": "Encuentro Los Coros Cantan a Caseros",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Encuentro coral regional realizado en el Centro Cultural Margarita Thea con participación de agrupaciones invitadas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro Cultural Margarita Thea, Caseros, Entre Ríos",
+    "keywords": [
+        "coros cantan a caseros",
+        "encuentro coral",
+        "musica",
+        "margarita thea",
+        "festival"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://caseros.gob.ar/este-sabado-se-realizara-el-xiv-encuentro-los-coros-cantan-a-caseros/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "entertainment",
+            "isPrimary": true
+        },
+        {
+            "slug": "fair",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

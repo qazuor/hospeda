@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "231-point-of-interest-club_nautico",
+    "slug": "club_nautico",
+    "lat": -32.1926969,
+    "long": -58.1595137,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Espacio recreativo y deportivo dedicado a actividades náuticas, navegación y propuestas vinculadas con el río Uruguay.",
+    "nameI18n": {
+        "es": "Club Náutico San José",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio recreativo y deportivo dedicado a actividades náuticas, navegación y propuestas vinculadas con el río Uruguay.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona balnearia de San José, Entre Ríos",
+    "keywords": ["club nautico san jose", "nautica", "kayak", "rio uruguay", "deportes acuaticos"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N9147097112",
+    "notes": "El club aparece cartografiado en el complejo balneario; falta recuperar coordenadas del acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "port",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

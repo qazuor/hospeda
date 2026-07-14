@@ -240,7 +240,8 @@
                 "photos": "Fotos",
                 "photosDescription": "Subí fotos de tu propiedad para atraer más huéspedes",
                 "externalReputation": "Reputación externa",
-                "featuredToggle": "Destacado"
+                "featuredToggle": "Destacado",
+                "calendar": "Calendario"
             },
             "sectionNav": {
                 "ariaLabel": "Navegación de secciones del formulario"
@@ -382,6 +383,66 @@
                 "label": "Destacar mi alojamiento",
                 "hint": "Cuando está activo, tu alojamiento aparece con prioridad en los listados y búsquedas.",
                 "toggleError": "No se pudo actualizar el destacado. Intentá de nuevo."
+            },
+            "calendar": {
+                "title": "Calendario de ocupación",
+                "description": "Marcá los días en los que tu alojamiento está ocupado. Esas fechas no aparecerán disponibles en las búsquedas.",
+                "loading": "Cargando calendario...",
+                "loadError": "No pudimos cargar el calendario. Intentá de nuevo.",
+                "prevMonth": "Mes anterior",
+                "nextMonth": "Mes siguiente",
+                "statusFree": "Libre",
+                "statusOccupied": "Ocupado",
+                "rangeHint": "Hacé clic en otro día para completar el rango, o clic de nuevo en el mismo día para elegir solo esa fecha.",
+                "selectionCount_one": "{{count}} día seleccionado",
+                "selectionCount_other": "{{count}} días seleccionados",
+                "noteLabel": "Nota (opcional)",
+                "notePlaceholder": "Ej: reservado fuera de la plataforma",
+                "blockAction": "Bloquear",
+                "blockingAction": "Bloqueando...",
+                "unblockAction": "Liberar",
+                "unblockingAction": "Liberando...",
+                "cancelSelection": "Cancelar selección",
+                "applyError": "No pudimos actualizar el calendario. Intentá de nuevo.",
+                "emptyMonth": "Ningún día bloqueado este mes",
+                "legend": {
+                    "title": "Referencias",
+                    "free": "Libre",
+                    "manual": "Bloqueado manualmente",
+                    "google": "Sincronizado — Google Calendar",
+                    "airbnb": "Sincronizado — Airbnb",
+                    "booking": "Sincronizado — Booking.com"
+                },
+                "source": {
+                    "manual": "Manual",
+                    "google": "Google Calendar",
+                    "airbnb": "Airbnb",
+                    "booking": "Booking.com"
+                }
+            },
+            "calendarSync": {
+                "title": "Sincronización con Google Calendar",
+                "description": "Conectá un Google Calendar y las fechas con eventos se bloquearán automáticamente en tu calendario de ocupación.",
+                "connect": "Conectar Google Calendar",
+                "connecting": "Conectando...",
+                "reconnect": "Reconectar",
+                "connectedBanner": "Tu Google Calendar quedó conectado. Ya vamos a sincronizar tus fechas ocupadas.",
+                "connectErrorBanner": "No pudimos conectar tu Google Calendar. Probá de nuevo.",
+                "loading": "Cargando conexión...",
+                "statusOk": "Conectado y sincronizado",
+                "statusError": "La última sincronización falló",
+                "statusPending": "Conectado, sincronización pendiente",
+                "lastSyncAt": "Última sincronización:",
+                "syncNow": "Sincronizar ahora",
+                "syncing": "Sincronizando...",
+                "syncOk": "Sincronización completa. Actualizamos tus fechas ocupadas.",
+                "syncError": "No pudimos sincronizar. Probá de nuevo en un rato.",
+                "syncReconnect": "Se perdió el acceso a tu Google Calendar. Reconectá para seguir sincronizando.",
+                "syncSkipped": "No hay una conexión activa para sincronizar.",
+                "disconnect": "Desconectar",
+                "disconnecting": "Desconectando...",
+                "disconnected": "Desconectamos tu Google Calendar. Tus fechas ya sincronizadas quedan como están.",
+                "disconnectError": "No pudimos desconectar. Probá de nuevo."
             }
         },
         "empty": {

@@ -67,7 +67,10 @@ import {
  * `pageSize` at `MAX_PAGE_SIZE` (200), so this pulls the full relation set
  * (not the default page of 20) and keeps the `destinationId` id-filter
  * complete. A single destination realistically never has this many
- * attractions.
+ * attractions; and for the `searchForList` count aggregation the worst case
+ * is `pageSize` (capped at 100 by the search schema) times the average
+ * destinations-per-attraction, so 200 covers it unless an attraction maps to
+ * more than ~2 destinations on average — not a real-world case.
  */
 const DESTINATION_RELATIONS_PAGE_SIZE = 200;
 
@@ -243,18 +246,26 @@ export class AttractionService extends BaseCrudRelatedService<
             input: { ...params, actor },
             schema: AttractionAddToDestinationInputSchema,
             ctx,
-            execute: async (validatedParams, actor) => {
+            execute: async (validatedParams, actor, execCtx) => {
                 await this._canAddAttractionToDestination(actor);
                 const { destinationId, attractionId } = validatedParams;
 
-                // Run all existence checks in parallel for better performance
+                // Run all existence checks in parallel for better performance.
+                // `execCtx?.tx` is threaded so these reads participate in a
+                // caller-provided transaction boundary (HOS-126).
                 const [attraction, destination, existing] = await Promise.all([
-                    this.model.findOne({ id: attractionId as AttractionIdType }),
-                    this.destinationModel.findOne({ id: destinationId as DestinationIdType }),
-                    this.relatedModel.findOne({
-                        destinationId: destinationId as DestinationIdType,
-                        attractionId: attractionId as AttractionIdType
-                    })
+                    this.model.findOne({ id: attractionId as AttractionIdType }, execCtx?.tx),
+                    this.destinationModel.findOne(
+                        { id: destinationId as DestinationIdType },
+                        execCtx?.tx
+                    ),
+                    this.relatedModel.findOne(
+                        {
+                            destinationId: destinationId as DestinationIdType,
+                            attractionId: attractionId as AttractionIdType
+                        },
+                        execCtx?.tx
+                    )
                 ]);
 
                 if (!attraction) {
@@ -271,18 +282,24 @@ export class AttractionService extends BaseCrudRelatedService<
                 }
 
                 // Create the relation
-                const relation = await this.relatedModel.create({
-                    destinationId: destinationId as DestinationIdType,
-                    attractionId: attractionId as AttractionIdType
-                });
+                const relation = await this.relatedModel.create(
+                    {
+                        destinationId: destinationId as DestinationIdType,
+                        attractionId: attractionId as AttractionIdType
+                    },
+                    execCtx?.tx
+                );
 
                 // If the model returns just an id or number, fetch the full relation
                 let fullRelation = relation;
                 if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
-                    const found = await this.relatedModel.findOne({
-                        destinationId: destinationId as DestinationIdType,
-                        attractionId: attractionId as AttractionIdType
-                    });
+                    const found = await this.relatedModel.findOne(
+                        {
+                            destinationId: destinationId as DestinationIdType,
+                            attractionId: attractionId as AttractionIdType
+                        },
+                        execCtx?.tx
+                    );
                     if (!found) {
                         throw new ServiceError(
                             ServiceErrorCode.INTERNAL_ERROR,
@@ -312,27 +329,34 @@ export class AttractionService extends BaseCrudRelatedService<
             input: { ...params, actor },
             schema: AttractionRemoveFromDestinationInputSchema,
             ctx,
-            execute: async (validatedParams, actor) => {
+            execute: async (validatedParams, actor, execCtx) => {
                 await this._canRemoveAttractionFromDestination(actor);
                 const { destinationId, attractionId } = validatedParams;
-                // Verify attraction exists
-                const attraction = await this.model.findOne({
-                    id: attractionId as AttractionIdType
-                });
+                // Verify attraction exists. `execCtx?.tx` is threaded so these
+                // reads/writes participate in a caller-provided transaction
+                // boundary (HOS-126).
+                const attraction = await this.model.findOne(
+                    { id: attractionId as AttractionIdType },
+                    execCtx?.tx
+                );
                 if (!attraction) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Attraction not found');
                 }
-                const destination = await this.destinationModel.findOne({
-                    id: destinationId as DestinationIdType
-                });
+                const destination = await this.destinationModel.findOne(
+                    { id: destinationId as DestinationIdType },
+                    execCtx?.tx
+                );
                 if (!destination) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
                 }
                 // Verify that the relation exists
-                const existing = await this.relatedModel.findOne({
-                    destinationId: destinationId as DestinationIdType,
-                    attractionId: attractionId as AttractionIdType
-                });
+                const existing = await this.relatedModel.findOne(
+                    {
+                        destinationId: destinationId as DestinationIdType,
+                        attractionId: attractionId as AttractionIdType
+                    },
+                    execCtx?.tx
+                );
                 if (!existing) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
@@ -340,15 +364,21 @@ export class AttractionService extends BaseCrudRelatedService<
                     );
                 }
                 // Remove the relation (soft delete or delete)
-                const relation = await this.relatedModel.softDelete({
-                    destinationId: destinationId as DestinationIdType,
-                    attractionId: attractionId as AttractionIdType
-                });
-                if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
-                    const fullRelation = await this.relatedModel.findOne({
+                const relation = await this.relatedModel.softDelete(
+                    {
                         destinationId: destinationId as DestinationIdType,
                         attractionId: attractionId as AttractionIdType
-                    });
+                    },
+                    execCtx?.tx
+                );
+                if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
+                    const fullRelation = await this.relatedModel.findOne(
+                        {
+                            destinationId: destinationId as DestinationIdType,
+                            attractionId: attractionId as AttractionIdType
+                        },
+                        execCtx?.tx
+                    );
                     if (!fullRelation) {
                         throw new ServiceError(
                             ServiceErrorCode.INTERNAL_ERROR,
@@ -680,10 +710,15 @@ export class AttractionService extends BaseCrudRelatedService<
         // Get all attraction IDs from the current page
         const attractionIds = items.map((item) => item.id as AttractionIdType);
 
-        // Fetch all relations for these attractions in a single query
-        const { items: allRelations } = await this.relatedModel.findAll({
-            attractionId: attractionIds
-        });
+        // Fetch all relations for these attractions in a single query. Request
+        // the full relation page (not the model's default of 20) so the
+        // destinationCount aggregation is not silently undercounted when the
+        // current page's attractions collectively map to more than 20 relation
+        // rows.
+        const { items: allRelations } = await this.relatedModel.findAll(
+            { attractionId: attractionIds },
+            { page: 1, pageSize: DESTINATION_RELATIONS_PAGE_SIZE }
+        );
 
         // Build a map of attraction ID to count
         const countMap = new Map<string, number>();

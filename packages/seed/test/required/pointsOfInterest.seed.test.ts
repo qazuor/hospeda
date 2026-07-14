@@ -243,4 +243,30 @@ describe('required points-of-interest seed (HOS-113 T-024)', () => {
             }
         });
     });
+
+    describe('HOS-142 AC-5 — pointOfInterestCatalog must never bloat --required', () => {
+        function readRequiredManifest(): Record<string, string[]> {
+            const manifestPath = join(SEED_SRC_DIR, 'manifest-required.json');
+            return JSON.parse(readFileSync(manifestPath, 'utf-8')) as Record<string, string[]>;
+        }
+
+        it('requiredManifest.pointsOfInterest must have exactly its pre-HOS-142 length of 12', () => {
+            const manifest = readRequiredManifest();
+            expect(manifest.pointsOfInterest).toHaveLength(12);
+        });
+
+        it('requiredManifest.pointOfInterestCatalog must exist as its own, separate key', () => {
+            const manifest = readRequiredManifest();
+            expect(manifest.pointOfInterestCatalog).toBeDefined();
+            expect(Array.isArray(manifest.pointOfInterestCatalog)).toBe(true);
+        });
+
+        it('pointsOfInterest and pointOfInterestCatalog must never declare the same filename twice', () => {
+            const manifest = readRequiredManifest();
+            const required = manifest.pointsOfInterest ?? [];
+            const catalog = manifest.pointOfInterestCatalog ?? [];
+            const overlap = required.filter((f) => catalog.includes(f));
+            expect(overlap).toEqual([]);
+        });
+    });
 });

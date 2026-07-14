@@ -1,0 +1,54 @@
+{
+    "slug": "nativo_kayak",
+    "lat": -32.3104923,
+    "long": -59.0773029,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Servicio de alquiler de kayaks y equipos de pesca en el parque balneario.",
+    "nameI18n": {
+        "es": "Nativo Kayak y Pesca",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Servicio de alquiler de kayaks y equipos de pesca en el parque balneario.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Balneario Delio Panizza, Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "nativo kayak",
+        "alquiler de kayak",
+        "equipos de pesca",
+        "balneario",
+        "rio"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=que-hacer",
+    "notes": "Prestador listado oficialmente. Requiere validación de operación actual. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        }
+    ]
+}

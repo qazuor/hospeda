@@ -1,0 +1,54 @@
+{
+    "slug": "museo_regional_historico",
+    "lat": -32.6849274,
+    "long": -58.8916416,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo dedicado a la historia local, la inmigración, el ferrocarril y la formación social de Urdinarrain.",
+    "nameI18n": {
+        "es": "Museo Regional Histórico La Estación",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo dedicado a la historia local, la inmigración, el ferrocarril y la formación social de Urdinarrain.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Complejo Cultural La Estación, Urdinarrain, Entre Ríos",
+    "keywords": [
+        "museo regional historico",
+        "historia local",
+        "inmigracion",
+        "ferrocarril",
+        "la estacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://urdinarrain.tur.ar/que-hacer/; https://urdinarrain.gov.ar/v2/wp-content/uploads/2026/03/Apertura-Sesiones-HCD-Urdinarrain.pdf",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

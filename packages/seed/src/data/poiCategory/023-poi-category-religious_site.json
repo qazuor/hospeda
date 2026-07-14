@@ -1,0 +1,29 @@
+{
+    "$schema": "../../schemas/poi-category.schema.json",
+    "id": "023-poi-category-religious_site",
+    "slug": "religious_site",
+    "nameI18n": {
+        "es": "Sitio religioso",
+        "en": "Religious site",
+        "pt": "Sítio religioso"
+    },
+    "translationMeta": {
+        "name": {
+            "es": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            },
+            "en": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            },
+            "pt": {
+                "autoTranslated": false,
+                "translatedAt": "2026-07-13T00:00:00.000Z"
+            }
+        }
+    },
+    "icon": "church",
+    "displayWeight": 70,
+    "lifecycleState": "ACTIVE"
+}

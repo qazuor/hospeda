@@ -1,0 +1,2 @@
+CREATE TYPE "public"."point_of_interest_destination_relation_enum" AS ENUM('PRIMARY', 'NEARBY');--> statement-breakpoint
+ALTER TABLE "r_destination_point_of_interest" ADD COLUMN "relation" "point_of_interest_destination_relation_enum" DEFAULT 'PRIMARY' NOT NULL;

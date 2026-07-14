@@ -9,6 +9,7 @@
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { SubscriptionDashboard } from '@/components/account/SubscriptionDashboard.client';
+import { isHostRole } from '@/lib/account-roles';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -31,12 +32,18 @@ const islandUser = {
 };
 
 /**
- * Fetch owner plans server-side so the PlanChangeFlow island has the full plan
+ * Fetch plans server-side so the PlanChangeFlow island has the full plan
  * catalog without an extra client-side request. Degrades gracefully on error
  * (island falls back to the plain pricing-page link).
+ *
+ * The plan category depends on the user's audience (BETA-173): a host sees
+ * owner plans (Basic/Professional/Premium), a tourist sees tourist plans
+ * (Plus/VIP) — matching the same `isHostRole` split used for the "Ver
+ * planes" CTA (BETA-165).
  */
+const planCategory = isHostRole(islandUser.role) ? 'owner' : 'tourist';
 const plansResult = await fetchPublicPlans();
-const ownerPlans = plansResult.ok ? filterPlansByCategory(plansResult.plans, 'owner') : [];
+const availablePlans = plansResult.ok ? filterPlansByCategory(plansResult.plans, planCategory) : [];
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="suscripcion">
@@ -45,7 +52,7 @@ const ownerPlans = plansResult.ok ? filterPlansByCategory(plansResult.plans, 'ow
 	<SubscriptionDashboard
 		locale={locale}
 		user={islandUser}
-		plans={ownerPlans}
+		plans={availablePlans}
 		client:load
 	/>
 </AccountLayout>

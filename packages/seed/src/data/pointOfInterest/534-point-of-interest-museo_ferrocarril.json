@@ -1,0 +1,55 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "534-point-of-interest-museo_ferrocarril",
+    "slug": "museo_ferrocarril",
+    "lat": -33.017953,
+    "long": -58.5195979,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo dedicado a la historia ferroviaria local y al primer ferrocarril entrerriano.",
+    "nameI18n": {
+        "es": "Museo del Ferrocarril",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo dedicado a la historia ferroviaria local y al primer ferrocarril entrerriano.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Predio ferroviario de Gualeguay, Entre Ríos",
+    "keywords": [
+        "museo del ferrocarril gualeguay",
+        "primer ferrocarril entrerriano",
+        "tren",
+        "historia ferroviaria"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://turismo.gualeguay.gob.ar/contenido-detalle.php?id=162; https://es.wikipedia.org/wiki/Ferrocarril_Primer_Entrerriano",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "790-point-of-interest-sala_evocativa_ribera",
+    "slug": "sala_evocativa_ribera",
+    "lat": -32.500228899999996,
+    "long": -58.224577,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Espacio museístico dedicado a preservar la historia del puerto, la Aduana y la relación de la ciudad con el río.",
+    "nameI18n": {
+        "es": "Sala Evocativa de la Ribera",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio museístico dedicado a preservar la historia del puerto, la Aduana y la relación de la ciudad con el río.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Portal de ingreso a la Costanera Isla del Puerto, Concepción del Uruguay, Entre Ríos",
+    "keywords": ["sala evocativa ribera", "historia portuaria", "aduana", "puerto", "rio uruguay"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/realizar%C3%A1n-el-iv-encuentro-regional-de-museos",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "port",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

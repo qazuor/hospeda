@@ -9,7 +9,7 @@
  *   `newAccommodation`, `newPost`, `newEvent`, `newCampaign` (explicitly referenced).
  *   Plus: `newDestination`, `newEventLocation`, `newEventOrganizer`, `newUser`,
  *         `newSponsor`, `newPromoCode`, `newAmenity`, `newFeature`, `newAttraction`,
- *         `newPostTag`, `newSystemTag`, `newInternalTag`.
+ *         `newPointOfInterest`, `newPostTag`, `newSystemTag`, `newInternalTag`.
  *
  * Design source of truth: `.claude/audit/admin-redesign/proposals/01-information-architecture.md` §14.
  *
@@ -69,6 +69,22 @@ export const createActions: Record<string, CreateAction> = {
         route: '/content/destination-attractions/new',
         icon: 'MapIcon',
         permissions: ['ATTRACTION_CREATE']
+    },
+
+    /**
+     * Create a new point of interest. Gated by POINT_OF_INTEREST_CREATE.
+     * Real route: apps/admin/src/routes/_authed/content/points-of-interest/new.tsx
+     */
+    newPointOfInterest: {
+        id: 'newPointOfInterest',
+        label: {
+            es: 'Nuevo punto de interés',
+            en: 'New point of interest',
+            pt: 'Novo ponto de interesse'
+        },
+        route: '/content/points-of-interest/new',
+        icon: 'LocationIcon',
+        permissions: ['POINT_OF_INTEREST_CREATE']
     },
 
     /**

@@ -212,6 +212,42 @@ describe('Point Of Interest CRUD Schemas', () => {
                     PointOfInterestAddToDestinationInputSchema.parse(invalidInput)
                 ).toThrow(ZodError);
             });
+
+            // HOS-140 — AC-3: `relation` defaults to PRIMARY, opt-in NEARBY
+            describe('relation kind (HOS-140)', () => {
+                it('should default relation to PRIMARY when omitted', () => {
+                    const input = {
+                        destinationId: faker.string.uuid(),
+                        pointOfInterestId: faker.string.uuid()
+                    };
+
+                    const result = PointOfInterestAddToDestinationInputSchema.parse(input);
+                    expect(result.relation).toBe('PRIMARY');
+                });
+
+                it('should accept an explicit relation: NEARBY', () => {
+                    const input = {
+                        destinationId: faker.string.uuid(),
+                        pointOfInterestId: faker.string.uuid(),
+                        relation: 'NEARBY'
+                    };
+
+                    const result = PointOfInterestAddToDestinationInputSchema.parse(input);
+                    expect(result.relation).toBe('NEARBY');
+                });
+
+                it('should reject an invalid relation value', () => {
+                    const input = {
+                        destinationId: faker.string.uuid(),
+                        pointOfInterestId: faker.string.uuid(),
+                        relation: 'INVALID'
+                    };
+
+                    expect(() => PointOfInterestAddToDestinationInputSchema.parse(input)).toThrow(
+                        ZodError
+                    );
+                });
+            });
         });
 
         describe('PointOfInterestRemoveFromDestinationInputSchema', () => {

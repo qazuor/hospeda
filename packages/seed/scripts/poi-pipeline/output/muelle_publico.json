@@ -1,0 +1,54 @@
+{
+    "slug": "muelle_publico",
+    "lat": -33.71658,
+    "long": -58.65956,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Puerto deportivo urbano utilizado para embarque, desembarque y acceso a paseos por el delta.",
+    "nameI18n": {
+        "es": "Muelle Público",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Puerto deportivo urbano utilizado para embarque, desembarque y acceso a paseos por el delta.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida Entre Ríos, Villa Paranacito, Entre Ríos",
+    "keywords": [
+        "muelle publico",
+        "puerto deportivo",
+        "embarcaciones",
+        "paseos en lancha",
+        "delta"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": "46214",
+    "source": "https://mapcarta.com/es/N3586472979",
+    "notes": "Coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "port",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

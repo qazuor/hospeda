@@ -1,0 +1,49 @@
+{
+    "slug": "gualeguay_parroquia_san_jose",
+    "lat": -33.14152,
+    "long": -59.3136,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Templo católico del centro urbano, situado junto a la Plaza San Martín y próximo al Museo Ambrosetti.",
+    "nameI18n": {
+        "es": "Parroquia San José",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Templo católico del centro urbano, situado junto a la Plaza San Martín y próximo al Museo Ambrosetti.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de Gualeguay, Entre Ríos",
+    "keywords": [
+        "parroquia san jose gualeguay",
+        "iglesia",
+        "plaza san martin",
+        "museo ambrosetti"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N9098632081; https://mapcarta.com/es/N5492517259",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "religious_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

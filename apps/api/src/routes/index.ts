@@ -135,8 +135,10 @@ import {
 } from './partners';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
 import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
-// Points of interest: seed-only editorial catalog, public read tier only (HOS-113 NG-5/OQ-6)
-import { publicPointOfInterestRoutes } from './point-of-interest';
+// POI category catalog: admin-only list/search endpoint (HOS-144 NG-1)
+import { adminPoiCategoryRoutes } from './poi-category';
+// Points of interest: seed-originated editorial catalog; admin CRUD added HOS-143
+import { adminPointOfInterestRoutes, publicPointOfInterestRoutes } from './point-of-interest';
 import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
 // ─── Entities with admin-only or specialized tiers ──────────────────────────
 import { adminPostSponsorRoutes } from './postSponsor';
@@ -506,6 +508,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/amenities', adminAmenityRoutes);
         app.route('/api/v1/admin/features', adminFeatureRoutes);
         app.route('/api/v1/admin/attractions', adminAttractionRoutes);
+        app.route('/api/v1/admin/points-of-interest', adminPointOfInterestRoutes);
+        app.route('/api/v1/admin/poi-categories', adminPoiCategoryRoutes);
 
         // Host-trade directory (SPEC-241) — admin-curated; host read perk
         app.route('/api/v1/admin/host-trades', adminHostTradeRoutes);

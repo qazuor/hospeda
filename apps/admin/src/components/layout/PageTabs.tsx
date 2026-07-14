@@ -112,6 +112,12 @@ export const accommodationTabs: TabConfig[] = [
         label: 'Preguntas frecuentes',
         labelKey: 'admin-tabs.faqs',
         href: '/faqs'
+    },
+    {
+        id: 'occupancy',
+        label: 'Ocupación',
+        labelKey: 'admin-tabs.occupancy',
+        href: '/occupancy'
     }
 ];
 
@@ -177,6 +183,23 @@ export const eventOrganizerTabs: TabConfig[] = [
     { id: 'overview', label: 'General', labelKey: 'admin-tabs.overview', href: '' },
     { id: 'events', label: 'Eventos', labelKey: 'admin-tabs.events', href: '/events' },
     { id: 'contact', label: 'Contacto', labelKey: 'admin-tabs.contact', href: '/contact' }
+];
+
+export const pointOfInterestTabs: TabConfig[] = [
+    { id: 'overview', label: 'General', labelKey: 'admin-tabs.overview', href: '' },
+    {
+        id: 'categories',
+        label: 'Categorías',
+        labelKey: 'admin-tabs.categories',
+        href: '/categories'
+    },
+    {
+        id: 'destinations',
+        label: 'Destinos',
+        labelKey: 'admin-tabs.destinations',
+        href: '/destinations'
+    },
+    { id: 'edit', label: 'Editar', labelKey: 'admin-tabs.edit', href: '/edit' }
 ];
 
 export const gastronomyTabs: TabConfig[] = [

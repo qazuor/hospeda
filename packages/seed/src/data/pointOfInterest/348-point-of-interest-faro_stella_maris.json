@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "348-point-of-interest-faro_stella_maris",
+    "slug": "faro_stella_maris",
+    "lat": -32.47349,
+    "long": -58.21029,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Faro fluvial situado frente al puerto sobre un islote del río Uruguay. Es uno de los símbolos paisajísticos y portuarios de la ciudad.",
+    "nameI18n": {
+        "es": "Faro Stella Maris",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Faro fluvial situado frente al puerto sobre un islote del río Uruguay. Es uno de los símbolos paisajísticos y portuarios de la ciudad.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Canal de acceso al Puerto de Concepción del Uruguay, Entre Ríos",
+    "keywords": ["faro stella maris", "faro", "rio uruguay", "puerto", "fotografia"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

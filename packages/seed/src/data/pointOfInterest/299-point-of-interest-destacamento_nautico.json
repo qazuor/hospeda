@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "299-point-of-interest-destacamento_nautico",
+    "slug": "destacamento_nautico",
+    "lat": -30.91461,
+    "long": -57.92706,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Puesto de Prefectura Naval para seguridad náutica y asistencia en el sector de playa y camping.",
+    "nameI18n": {
+        "es": "Destacamento Santa Ana",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Puesto de Prefectura Naval para seguridad náutica y asistencia en el sector de playa y camping.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Sector costero de Santa Ana, Entre Ríos",
+    "keywords": [
+        "destacamento santa ana",
+        "prefectura naval",
+        "seguridad nautica",
+        "emergencias",
+        "playa"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N5539089581",
+    "notes": "Coordenadas y operador contrastados con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "government",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        },
+        {
+            "slug": "port",
+            "isPrimary": false
+        }
+    ]
+}

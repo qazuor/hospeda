@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "377-point-of-interest-frigorifico_serviave",
+    "slug": "frigorifico_serviave",
+    "lat": -32.44712,
+    "long": -58.43063,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Complejo productivo vinculado con la identidad avícola de San Justo y con su desarrollo económico regional.",
+    "nameI18n": {
+        "es": "Planta Industrial Avícola ServiAve",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Complejo productivo vinculado con la identidad avícola de San Justo y con su desarrollo económico regional.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Avenida 1 de Mayo, San Justo, Entre Ríos",
+    "keywords": ["serviave", "industria avicola", "frigorifico", "produccion", "san justo"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N9066937266",
+    "notes": "Coordenadas contrastadas con OpenStreetMap. Instalación industrial sin acceso turístico presumido.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": true
+        },
+        {
+            "slug": "services",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

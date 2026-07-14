@@ -3,6 +3,7 @@ import type {
     DestinationType,
     DestinationWithAttractionNames,
     I18nText,
+    PointOfInterestDestinationRelationEnum,
     PointOfInterestTypeEnum
 } from '@repo/schemas';
 import {
@@ -490,14 +491,23 @@ export class DestinationModel extends BaseModelImpl<Destination> {
      * Phase 4). Uses the `r_destination_point_of_interest` many-to-many join
      * table (HOS-113 OQ-1) — a single POI row can appear under more than one
      * destinationId in the returned map.
+     *
+     * `relation` (HOS-140) is a 3-value filter — `'PRIMARY'` (default, POIs
+     * physically in the destination), `'NEARBY'` (cross-referenced from a
+     * different destination), or `'ALL'` (both, unfiltered). Defaulting to
+     * `'PRIMARY'` is a behavior-preserving no-op for every row seeded before
+     * this spec shipped. The returned row shape always includes `relation`
+     * so a caller that requests `'ALL'` can still distinguish the two kinds.
      * @param destIds - Array of destination UUIDs
      * @param tx - Optional transaction client
+     * @param relation - Relation-kind filter, default `'PRIMARY'`.
      * @returns Map of destinationId to array of POI display objects, ordered
      * by `displayWeight` descending
      */
     async getPointsOfInterestMap(
         destIds: readonly string[],
-        tx?: DrizzleClient
+        tx?: DrizzleClient,
+        relation: 'PRIMARY' | 'NEARBY' | 'ALL' = 'PRIMARY'
     ): Promise<
         Map<
             string,
@@ -517,12 +527,20 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                 readonly isFeatured: boolean;
                 readonly isBuiltin: boolean;
                 readonly displayWeight: number;
+                readonly relation: PointOfInterestDestinationRelationEnum;
             }>
         >
     > {
         if (destIds.length === 0) return new Map();
         const db = this.getClient(tx);
         try {
+            const whereConditions = [
+                inArray(rDestinationPointOfInterest.destinationId, [...destIds])
+            ];
+            if (relation !== 'ALL') {
+                whereConditions.push(eq(rDestinationPointOfInterest.relation, relation));
+            }
+
             const results = await db
                 .select({
                     destinationId: rDestinationPointOfInterest.destinationId,
@@ -538,14 +556,15 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                     hasOwnPage: pointsOfInterest.hasOwnPage,
                     isFeatured: pointsOfInterest.isFeatured,
                     isBuiltin: pointsOfInterest.isBuiltin,
-                    displayWeight: pointsOfInterest.displayWeight
+                    displayWeight: pointsOfInterest.displayWeight,
+                    relation: rDestinationPointOfInterest.relation
                 })
                 .from(rDestinationPointOfInterest)
                 .innerJoin(
                     pointsOfInterest,
                     eq(rDestinationPointOfInterest.pointOfInterestId, pointsOfInterest.id)
                 )
-                .where(inArray(rDestinationPointOfInterest.destinationId, [...destIds]))
+                .where(and(...whereConditions))
                 .orderBy(desc(pointsOfInterest.displayWeight));
 
             const map = new Map<
@@ -564,6 +583,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                     readonly isFeatured: boolean;
                     readonly isBuiltin: boolean;
                     readonly displayWeight: number;
+                    readonly relation: PointOfInterestDestinationRelationEnum;
                 }>
             >();
             for (const row of results) {
@@ -581,7 +601,8 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                     hasOwnPage: row.hasOwnPage,
                     isFeatured: row.isFeatured,
                     isBuiltin: row.isBuiltin,
-                    displayWeight: row.displayWeight
+                    displayWeight: row.displayWeight,
+                    relation: row.relation as PointOfInterestDestinationRelationEnum
                 });
                 map.set(row.destinationId, existing);
             }
