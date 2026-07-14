@@ -69,6 +69,21 @@ import {
 } from './point-of-interest.permissions';
 
 /**
+ * Upper bound for a single destination's POI-relation lookup in
+ * {@link PointOfInterestService.resolveDestinationIdFilter}, and for the
+ * per-page destination-count aggregation in
+ * {@link PointOfInterestService.searchForList}. The base model caps
+ * `pageSize` at `MAX_PAGE_SIZE` (200), so this pulls the full relation set
+ * (not the default page of 20) and keeps the `destinationId` id-filter and
+ * the `destinationCount` totals complete. A single destination realistically
+ * never has this many POIs; and for the `searchForList` count aggregation the
+ * worst case is `pageSize` (capped at 100 by the search schema) times the
+ * average destinations-per-POI, so 200 covers it unless a POI maps to more
+ * than ~2 destinations on average — not a real-world case for this catalog.
+ */
+const DESTINATION_RELATIONS_PAGE_SIZE = 200;
+
+/**
  * Upper bound for the `categoryId`/`categorySlug` filter's candidate-POI
  * lookup in {@link PointOfInterestService.resolveCategoryIdFilter} (mirrors
  * `PointOfInterestCategoryService`'s `POI_CATEGORY_RELATIONS_PAGE_SIZE`
@@ -772,10 +787,13 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         if (!destinationId) {
             return { empty: false, additionalConditions: [] };
         }
-        const { items: relations } = await this.relatedModel.findAll({
-            destinationId,
-            ...(relation !== 'ALL' && { relation })
-        });
+        const { items: relations } = await this.relatedModel.findAll(
+            {
+                destinationId,
+                ...(relation !== 'ALL' && { relation })
+            },
+            { page: 1, pageSize: DESTINATION_RELATIONS_PAGE_SIZE }
+        );
         if (relations.length === 0) {
             return { empty: true, additionalConditions: [] };
         }
@@ -1060,10 +1078,14 @@ export class PointOfInterestService extends BaseCrudRelatedService<
         // Get all POI IDs from the current page
         const poiIds = items.map((item) => item.id);
 
-        // Fetch all relations for these POIs in a single query
-        const { items: allRelations } = await this.relatedModel.findAll({
-            pointOfInterestId: poiIds
-        });
+        // Fetch all relations for these POIs in a single query. Request the
+        // full relation page (not the model's default of 20) so the
+        // destinationCount aggregation is not silently undercounted when the
+        // current page's POIs collectively map to more than 20 relation rows.
+        const { items: allRelations } = await this.relatedModel.findAll(
+            { pointOfInterestId: poiIds },
+            { page: 1, pageSize: DESTINATION_RELATIONS_PAGE_SIZE }
+        );
 
         // Build a map of POI ID to count
         const countMap = new Map<string, number>();

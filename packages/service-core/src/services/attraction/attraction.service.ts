@@ -67,7 +67,10 @@ import {
  * `pageSize` at `MAX_PAGE_SIZE` (200), so this pulls the full relation set
  * (not the default page of 20) and keeps the `destinationId` id-filter
  * complete. A single destination realistically never has this many
- * attractions.
+ * attractions; and for the `searchForList` count aggregation the worst case
+ * is `pageSize` (capped at 100 by the search schema) times the average
+ * destinations-per-attraction, so 200 covers it unless an attraction maps to
+ * more than ~2 destinations on average — not a real-world case.
  */
 const DESTINATION_RELATIONS_PAGE_SIZE = 200;
 
@@ -707,10 +710,15 @@ export class AttractionService extends BaseCrudRelatedService<
         // Get all attraction IDs from the current page
         const attractionIds = items.map((item) => item.id as AttractionIdType);
 
-        // Fetch all relations for these attractions in a single query
-        const { items: allRelations } = await this.relatedModel.findAll({
-            attractionId: attractionIds
-        });
+        // Fetch all relations for these attractions in a single query. Request
+        // the full relation page (not the model's default of 20) so the
+        // destinationCount aggregation is not silently undercounted when the
+        // current page's attractions collectively map to more than 20 relation
+        // rows.
+        const { items: allRelations } = await this.relatedModel.findAll(
+            { attractionId: attractionIds },
+            { page: 1, pageSize: DESTINATION_RELATIONS_PAGE_SIZE }
+        );
 
         // Build a map of attraction ID to count
         const countMap = new Map<string, number>();

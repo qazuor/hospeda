@@ -323,14 +323,16 @@ describe('PointOfInterestService', () => {
                 expect(result.error).toBeUndefined();
                 expect(result.data?.items).toHaveLength(2);
 
-                // The relation lookup was resolved via the join table. HOS-140:
-                // `resolveDestinationIdFilter` defaults to a PRIMARY-only
-                // constraint — a behavior-preserving no-op for every row that
-                // existed before this spec shipped.
-                expect(relatedModel.findAll).toHaveBeenCalledWith({
-                    destinationId,
-                    relation: 'PRIMARY'
-                });
+                // The relation lookup was resolved via the join table,
+                // requesting the FULL relation page (not the model's default of
+                // 20) so the id-filter is never silently truncated for a busy
+                // destination (HOS-135). HOS-140: `resolveDestinationIdFilter`
+                // defaults to a PRIMARY-only constraint — a behavior-preserving
+                // no-op for every row that existed before this spec shipped.
+                expect(relatedModel.findAll).toHaveBeenCalledWith(
+                    { destinationId, relation: 'PRIMARY' },
+                    { page: 1, pageSize: 200 }
+                );
 
                 // `where` reaching model.findAll must NOT carry `destinationId` —
                 // that column does not exist on `points_of_interest`.
@@ -470,6 +472,89 @@ describe('PointOfInterestService', () => {
                 expect(result.data).toEqual([]);
                 expect(result.pagination.total).toBe(0);
                 expect(model.findAll).not.toHaveBeenCalled();
+            });
+        });
+
+        /**
+         * HOS-135 review follow-ups (mirror of HOS-125): the join-table
+         * resolution must NOT be capped at the model's default page of 20
+         * (which would silently truncate the id-filter for a destination with
+         * many POIs), the public search path must honor caller-provided
+         * pagination (SPEC-088 ctx.pagination) rather than always returning
+         * page 1, and the `searchForList` destinationCount aggregation must not
+         * truncate its per-page relation lookup either.
+         */
+        describe('pagination robustness', () => {
+            it('should request the full relation page so >20 POIs are not truncated', async () => {
+                const manyRelations = Array.from({ length: 25 }, (_, i) => ({
+                    destinationId,
+                    pointOfInterestId: getMockId(
+                        'pointOfInterest',
+                        `poi-${i}`
+                    ) as PointOfInterestIdType
+                }));
+                asMock(relatedModel.findAll).mockResolvedValue({ items: manyRelations });
+                asMock(model.findAll).mockResolvedValue({ items: [poiA], total: 1 });
+
+                await service.search(actorNoPerms, { destinationId, page: 1, pageSize: 10 });
+
+                // The relation lookup asked for a page large enough to hold
+                // every relation (not the default 20), so all 25 ids reach the
+                // id-filter.
+                expect(relatedModel.findAll).toHaveBeenCalledWith(
+                    { destinationId, relation: 'PRIMARY' },
+                    { page: 1, pageSize: 200 }
+                );
+                const [, ids] = asMock(mockedInArray).mock.calls[0] as [unknown, string[]];
+                expect(ids).toHaveLength(25);
+            });
+
+            it('should forward caller pagination to model.findAll on a plain search (no destinationId)', async () => {
+                asMock(model.findAll).mockResolvedValue({ items: [poiA], total: 1 });
+
+                await service.search(actorNoPerms, {
+                    type: PointOfInterestTypeEnum.BEACH,
+                    page: 3,
+                    pageSize: 5
+                });
+
+                // No destinationId -> no join-table lookup at all.
+                expect(relatedModel.findAll).not.toHaveBeenCalled();
+                const [, optionsArg] = asMock(model.findAll).mock.calls[0] as [
+                    unknown,
+                    Record<string, unknown>
+                ];
+                // Caller-provided page/pageSize reach the model instead of the
+                // default page-1/20 (regression guard for the ignored-pagination
+                // bug).
+                expect(optionsArg).toMatchObject({ page: 3, pageSize: 5 });
+            });
+
+            it('should request the full relation page for the destinationCount aggregation', async () => {
+                // A single page of POIs whose relations collectively exceed 20
+                // rows: the count aggregation must fetch them all, not a default
+                // page of 20.
+                asMock(model.findAll).mockResolvedValue({ items: [poiA], total: 1 });
+                asMock(relatedModel.findAll).mockResolvedValue({
+                    items: Array.from({ length: 25 }, (_, i) => ({
+                        destinationId: getMockId('destination', `d-${i}`),
+                        pointOfInterestId: poiA.id
+                    }))
+                });
+
+                const result = await service.searchForList(actorNoPerms, {
+                    type: PointOfInterestTypeEnum.BEACH,
+                    page: 1,
+                    pageSize: 10
+                });
+
+                // No destinationId filter -> the only relation lookup is the
+                // count aggregation, which must request the full page.
+                expect(relatedModel.findAll).toHaveBeenCalledWith(
+                    { pointOfInterestId: [poiA.id] },
+                    { page: 1, pageSize: 200 }
+                );
+                expect(result.data[0]?.destinationCount).toBe(25);
             });
         });
     });
