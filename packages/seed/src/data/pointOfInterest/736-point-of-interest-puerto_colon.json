@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "736-point-of-interest-puerto_colon",
+    "slug": "puerto_colon",
+    "lat": -32.21476,
+    "long": -58.13695,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Puerto deportivo e histórico sobre el río Uruguay, utilizado como paseo turístico, punto de salida de actividades náuticas y espacio para ferias y eventos.",
+    "nameI18n": {
+        "es": "Puerto de Colón",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Puerto deportivo e histórico sobre el río Uruguay, utilizado como paseo turístico, punto de salida de actividades náuticas y espacio para ferias y eventos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona portuaria y Costanera, Colón, Entre Ríos",
+    "keywords": ["puerto de colon", "puerto", "rio uruguay", "paseos nauticos", "costanera"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N1560698900",
+    "notes": "Ubicación contrastada con OpenStreetMap mediante Mapcarta.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "port",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

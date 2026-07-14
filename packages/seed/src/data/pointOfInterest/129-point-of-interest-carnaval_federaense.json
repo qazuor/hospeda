@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "129-point-of-interest-carnaval_federaense",
+    "slug": "carnaval_federaense",
+    "lat": -30.986084599999998,
+    "long": -57.919918700000004,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Carnaval local con comparsas, música, vestuario y desfiles nocturnos en el Desfilódromo José Luis Silvestri.",
+    "nameI18n": {
+        "es": "Carnaval Federaense",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Carnaval local con comparsas, música, vestuario y desfiles nocturnos en el Desfilódromo José Luis Silvestri.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Desfilódromo José Luis Silvestri, Federación, Entre Ríos",
+    "keywords": [
+        "carnaval federacion",
+        "comparsa yasi pora",
+        "emperadora",
+        "ara mombay",
+        "desfile nocturno"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/carnaval-federaense/; https://www.federacion.gob.ar/areas-noticias/secretaria-turismo",
+    "notes": "Evento oficial vigente. Comparte ubicación con el desfilódromo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "entertainment",
+            "isPrimary": true
+        },
+        {
+            "slug": "fair",
+            "isPrimary": false
+        },
+        {
+            "slug": "nightlife",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        }
+    ]
+}

@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "545-point-of-interest-museo_quiros_casa_cultura",
+    "slug": "museo_quiros_casa_cultura",
+    "lat": -33.1464275,
+    "long": -59.315908799999995,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Espacio cultural construido en el solar ligado a Cesáreo Bernaldo de Quirós, con muestras, exposiciones, talleres y actividades comunitarias.",
+    "nameI18n": {
+        "es": "Casa de la Cultura - Museo Quirós",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio cultural construido en el solar ligado a Cesáreo Bernaldo de Quirós, con muestras, exposiciones, talleres y actividades comunitarias.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Alem 157, Gualeguay, Entre Ríos",
+    "keywords": [
+        "museo quiros",
+        "casa de la cultura",
+        "cesareo bernaldo de quiros",
+        "alem 157",
+        "exposiciones"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://turismo.gualeguay.gob.ar/contenido-detalle.php?id=162",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

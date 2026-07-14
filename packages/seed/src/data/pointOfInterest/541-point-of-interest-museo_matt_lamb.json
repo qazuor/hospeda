@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "541-point-of-interest-museo_matt_lamb",
+    "slug": "museo_matt_lamb",
+    "lat": -33.143523200000004,
+    "long": -59.3130594,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Museo de arte contemporáneo dedicado a la obra de Matt Lamb y a la difusión artística, cultural, tecnológica y científica.",
+    "nameI18n": {
+        "es": "Museo Matt Lamb",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Museo de arte contemporáneo dedicado a la obra de Matt Lamb y a la difusión artística, cultural, tecnológica y científica.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Maipú 79, Gualeguay, Entre Ríos",
+    "keywords": [
+        "museo matt lamb",
+        "maipu 79",
+        "arte contemporaneo",
+        "espacios de gualeguay",
+        "exposiciones"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.turismoentrerios.com/gualeguay/museos.htm; https://tripin.travel/museo-matt-lamb-gualeguay/; https://www.instagram.com/culturagualeguay/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "cultural_center",
+            "isPrimary": false
+        },
+        {
+            "slug": "education",
+            "isPrimary": false
+        }
+    ]
+}

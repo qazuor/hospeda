@@ -1,0 +1,61 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "062-point-of-interest-balneario_el_rocha",
+    "slug": "balneario_el_rocha",
+    "lat": -32.17488,
+    "long": -58.31011,
+    "type": "BEACH",
+    "icon": null,
+    "description": "Balneario natural sobre un arroyo de vertientes y aguas poco profundas, con entorno arbolado, camping y sectores para casas rodantes y motorhomes.",
+    "nameI18n": {
+        "es": "Balneario Camping Municipal El Rocha",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Balneario natural sobre un arroyo de vertientes y aguas poco profundas, con entorno arbolado, camping y sectores para casas rodantes y motorhomes.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ruta Nacional 130 km 7, Villa Elisa, Entre Ríos",
+    "keywords": [
+        "balneario el rocha",
+        "camping el rocha",
+        "arroyo",
+        "vertientes",
+        "motorhome",
+        "naturaleza"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://villaelisa.tur.ar/atractivos/balneario-municipal-el-rocha/; https://mapcarta.com/es/W312076350",
+    "notes": "Dirección y coordenadas contrastadas con fuentes oficiales y OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "beach",
+            "isPrimary": true
+        },
+        {
+            "slug": "campground",
+            "isPrimary": false
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

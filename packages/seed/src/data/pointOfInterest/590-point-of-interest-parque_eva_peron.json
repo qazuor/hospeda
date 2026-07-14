@@ -1,0 +1,54 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "590-point-of-interest-parque_eva_peron",
+    "slug": "parque_eva_peron",
+    "lat": -31.623705599999997,
+    "long": -58.5059597,
+    "type": "PARK",
+    "icon": null,
+    "description": "Parque urbano frente a la plaza principal, con juegos, pérgolas, fuente, mobiliario y murales que narran distintos momentos de la historia local.",
+    "nameI18n": {
+        "es": "Parque Eva Perón",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Parque urbano frente a la plaza principal, con juegos, pérgolas, fuente, mobiliario y murales que narran distintos momentos de la historia local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Frente a Plaza 25 de Mayo, San Salvador, Entre Ríos",
+    "keywords": ["parque eva peron", "murales historicos", "juegos", "fuente", "parque central"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/ciudad/; https://sansalvadorer.gob.ar/trabajos-de-mejoras-en-el-parque-eva-peron/",
+    "notes": "Existencia, uso y elementos confirmados. Falta geocodificar el centro del parque. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "park",
+            "isPrimary": true
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

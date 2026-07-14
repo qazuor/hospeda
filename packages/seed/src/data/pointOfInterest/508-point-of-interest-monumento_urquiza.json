@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "508-point-of-interest-monumento_urquiza",
+    "slug": "monumento_urquiza",
+    "lat": -31.7179736,
+    "long": -60.537909299999995,
+    "type": "MONUMENT",
+    "icon": null,
+    "description": "Obra conmemorativa próxima al centro cívico dedicada al organizador nacional y figura central de la región.",
+    "nameI18n": {
+        "es": "Monumento a Justo José de Urquiza",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Obra conmemorativa próxima al centro cívico dedicada al organizador nacional y figura central de la región.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de San Justo, Entre Ríos",
+    "keywords": [
+        "monumento urquiza",
+        "justo jose de urquiza",
+        "historia",
+        "centro civico",
+        "arte urbano"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N9066927915",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "monument",
+            "isPrimary": true
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "art",
+            "isPrimary": false
+        }
+    ]
+}

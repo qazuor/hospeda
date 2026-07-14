@@ -1,0 +1,52 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "411-point-of-interest-hipodromo_omar_ricotti",
+    "slug": "hipodromo_omar_ricotti",
+    "lat": -32.4604341,
+    "long": -58.31043759999999,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Predio hípico utilizado para carreras, actividad ecuestre y encuentros deportivos.",
+    "nameI18n": {
+        "es": "Hipódromo de Concepción del Uruguay Omar J. Ricotti",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Predio hípico utilizado para carreras, actividad ecuestre y encuentros deportivos.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Ejido de Concepción del Uruguay, Entre Ríos",
+    "keywords": [
+        "hipodromo omar ricotti",
+        "turf",
+        "carreras de caballos",
+        "deportes",
+        "actividad ecuestre"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/19201368",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        }
+    ]
+}

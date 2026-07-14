@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "360-point-of-interest-ferroclub",
+    "slug": "ferroclub",
+    "lat": -32.3015168,
+    "long": -59.131421599999996,
+    "type": "MUSEUM",
+    "icon": null,
+    "description": "Espacio de preservación ferroviaria que ofrece paseos en zorra e interpretación de la historia del tren.",
+    "nameI18n": {
+        "es": "Ferroclub Rosario del Tala",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Espacio de preservación ferroviaria que ofrece paseos en zorra e interpretación de la historia del tren.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Estación Ferroviaria Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "ferroclub rosario del tala",
+        "paseo en zorra",
+        "ferrocarril",
+        "museo ferroviario",
+        "estacion"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://www.rosariodeltala.gob.ar/?q=que-hacer",
+    "notes": "Actividad municipalmente promovida. Falta validar días, reservas y ubicación interna. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "museum",
+            "isPrimary": true
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "historic_site",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

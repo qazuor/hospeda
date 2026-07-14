@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "860-point-of-interest-tala_sup",
+    "slug": "tala_sup",
+    "lat": -32.3092515,
+    "long": -59.0771866,
+    "type": "STADIUM",
+    "icon": null,
+    "description": "Cursos básicos y salidas guiadas de stand up paddle desde Playa Grande hacia sectores naturales del río.",
+    "nameI18n": {
+        "es": "Tala SUP",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Cursos básicos y salidas guiadas de stand up paddle desde Playa Grande hacia sectores naturales del río.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Balneario Delio Panizza, Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "tala sup",
+        "stand up paddle",
+        "playa grande",
+        "rio gualeguay",
+        "excursion guiada"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=que-hacer",
+    "notes": "Prestador listado oficialmente. Falta validar vigencia, horarios y punto exacto de atención. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "sports_venue",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        }
+    ]
+}

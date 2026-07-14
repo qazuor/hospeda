@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "435-point-of-interest-ibicuy_plaza_san_martin",
+    "slug": "ibicuy_plaza_san_martin",
+    "lat": -33.7424848,
+    "long": -59.157665400000006,
+    "type": "PLAZA",
+    "icon": null,
+    "description": "Plaza principal de Ibicuy con juegos infantiles, arbolado, espacios de descanso e iluminación para paseo nocturno.",
+    "nameI18n": {
+        "es": "Plaza San Martín",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Plaza principal de Ibicuy con juegos infantiles, arbolado, espacios de descanso e iluminación para paseo nocturno.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Centro de Ibicuy, Entre Ríos",
+    "keywords": [
+        "plaza san martin ibicuy",
+        "plaza principal",
+        "juegos infantiles",
+        "espacios verdes",
+        "paseo nocturno"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://ibicuy.gob.ar/?q=content%2Fque-visitar",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "square",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

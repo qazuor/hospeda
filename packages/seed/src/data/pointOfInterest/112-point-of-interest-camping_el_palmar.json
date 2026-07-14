@@ -1,0 +1,57 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "112-point-of-interest-camping_el_palmar",
+    "slug": "camping_el_palmar",
+    "lat": -31.866703500000003,
+    "long": -58.209686,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Camping organizado con parcelas, sanitarios, duchas, parrillas, bancos, mesas, proveeduría y acceso durante todo el año.",
+    "nameI18n": {
+        "es": "Camping El Palmar",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Camping organizado con parcelas, sanitarios, duchas, parrillas, bancos, mesas, proveeduría y acceso durante todo el año.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Área de servicios del Parque Nacional El Palmar, Ubajay, Entre Ríos",
+    "keywords": [
+        "camping el palmar",
+        "acampe",
+        "carpas",
+        "parrillas",
+        "proveeduria",
+        "parque nacional"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/horarios-como-llegar; https://www.argentina.gob.ar/sites/default/files/2024/09/pn_elpalmar_-_uso_publico_-_abril2024.pdf",
+    "notes": "Servicios y funcionamiento confirmados. Falta geocodificar el acceso del camping. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "campground",
+            "isPrimary": true
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        }
+    ]
+}

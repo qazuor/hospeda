@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "374-point-of-interest-finca_el_pez",
+    "slug": "finca_el_pez",
+    "lat": -30.86829,
+    "long": -57.8654,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Complejo turístico y productivo rural del entorno de Santa Ana, registrado como espacio de recreación y venta en finca.",
+    "nameI18n": {
+        "es": "Finca El Pez",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Complejo turístico y productivo rural del entorno de Santa Ana, registrado como espacio de recreación y venta en finca.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Zona rural de Santa Ana, Entre Ríos",
+    "keywords": ["finca el pez", "turismo rural", "productos de finca", "recreacion", "santa ana"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N8949729120",
+    "notes": "Coordenadas contrastadas con OpenStreetMap; falta validar modalidad actual de visita.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "recreation",
+            "isPrimary": true
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "gastronomy",
+            "isPrimary": false
+        },
+        {
+            "slug": "shopping",
+            "isPrimary": false
+        }
+    ]
+}

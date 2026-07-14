@@ -1,0 +1,57 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "634-point-of-interest-paseo_la_manga",
+    "slug": "paseo_la_manga",
+    "lat": -32.1538932,
+    "long": -58.1899907,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Paseo histórico sobre la antigua manga por la que era conducido el ganado hacia el frigorífico y que también estructuraba la división urbana y social del pueblo.",
+    "nameI18n": {
+        "es": "Paseo de La Manga",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Paseo histórico sobre la antigua manga por la que era conducido el ganado hacia el frigorífico y que también estructuraba la división urbana y social del pueblo.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Calle 17 de Mayo, Pueblo Liebig, Entre Ríos",
+    "keywords": [
+        "paseo de la manga",
+        "la manga",
+        "calle 17 de mayo",
+        "ganado",
+        "frigorifico",
+        "historia obrera"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/capital-humano/cultura/monumentos/pueblo-liebig; https://www.turismoentrerios.com/liebig/lugares.htm",
+    "notes": "Ubicación por calle y relevancia histórica confirmadas. Falta definir un punto representativo del paseo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        },
+        {
+            "slug": "tourist_route",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        }
+    ]
+}

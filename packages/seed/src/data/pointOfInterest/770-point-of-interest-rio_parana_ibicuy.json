@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "770-point-of-interest-rio_parana_ibicuy",
+    "slug": "rio_parana_ibicuy",
+    "lat": -33.7434675,
+    "long": -59.155755299999996,
+    "type": "NATURAL",
+    "icon": null,
+    "description": "Brazo principal del Delta del Paraná que define el paisaje, la pesca, la navegación y la actividad portuaria local.",
+    "nameI18n": {
+        "es": "Río Paraná Ibicuy",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Brazo principal del Delta del Paraná que define el paisaje, la pesca, la navegación y la actividad portuaria local.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Costa de Ibicuy, Entre Ríos",
+    "keywords": ["rio parana ibicuy", "delta del parana", "pesca", "navegacion", "paisaje isleño"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/ibicuy; https://mapcarta.com/es/19205950",
+    "notes": "Curso de agua; requiere geometría lineal y puntos de acceso diferenciados. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "natural_area",
+            "isPrimary": true
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        },
+        {
+            "slug": "birdwatching",
+            "isPrimary": false
+        }
+    ]
+}

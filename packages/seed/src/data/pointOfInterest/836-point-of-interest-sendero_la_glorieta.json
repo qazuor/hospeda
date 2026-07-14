@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "836-point-of-interest-sendero_la_glorieta",
+    "slug": "sendero_la_glorieta",
+    "lat": -31.8770725,
+    "long": -58.2634837,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Sendero de 900 metros que desciende desde el mirador hacia el arroyo El Palmar, atraviesa selva ribereña y llega a una pequeña cascada.",
+    "nameI18n": {
+        "es": "Sendero La Glorieta",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Sendero de 900 metros que desciende desde el mirador hacia el arroyo El Palmar, atraviesa selva ribereña y llega a una pequeña cascada.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque Nacional El Palmar, Entre Ríos",
+    "keywords": [
+        "sendero la glorieta",
+        "cascada",
+        "arroyo el palmar",
+        "selva ribereña",
+        "palmares"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
+    "notes": "Nombre, longitud y recorrido confirmados. Falta geocodificar el inicio. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "hiking",
+            "isPrimary": true
+        },
+        {
+            "slug": "natural_area",
+            "isPrimary": false
+        },
+        {
+            "slug": "waterfront",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        }
+    ]
+}

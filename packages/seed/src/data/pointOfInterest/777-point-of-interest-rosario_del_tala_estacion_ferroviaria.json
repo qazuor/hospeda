@@ -1,0 +1,56 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "777-point-of-interest-rosario_del_tala_estacion_ferroviaria",
+    "slug": "rosario_del_tala_estacion_ferroviaria",
+    "lat": -32.29664,
+    "long": -59.14074,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Estación histórica del corredor Paraná-Concepción del Uruguay y del ramal Tala-Gualeguay, inaugurados durante la década de 1880.",
+    "nameI18n": {
+        "es": "Estación Ferroviaria Rosario del Tala",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Estación histórica del corredor Paraná-Concepción del Uruguay y del ramal Tala-Gualeguay, inaugurados durante la década de 1880.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Predio ferroviario de Rosario del Tala, Entre Ríos",
+    "keywords": [
+        "estacion rosario del tala",
+        "ferrocarril",
+        "tren",
+        "ramal tala gualeguay",
+        "patrimonio ferroviario"
+    ],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf; https://mapcarta.com/es/N1091359634",
+    "notes": "Historia confirmada por la Municipalidad; coordenadas contrastadas con OpenStreetMap.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "historic_site",
+            "isPrimary": true
+        },
+        {
+            "slug": "transport",
+            "isPrimary": false
+        },
+        {
+            "slug": "architecture",
+            "isPrimary": false
+        },
+        {
+            "slug": "industrial_heritage",
+            "isPrimary": false
+        }
+    ]
+}

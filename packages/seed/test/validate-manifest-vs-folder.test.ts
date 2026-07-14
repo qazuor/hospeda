@@ -69,7 +69,7 @@ describe('validateAllManifests end-to-end (HOS-142 regression)', () => {
         await expect(validateAllManifests(false)).resolves.not.toThrow();
     });
 
-    it('manifest-required.json declares pointOfInterestCatalog as a real (currently empty) key', () => {
+    it('manifest-required.json declares pointOfInterestCatalog as its own populated key', () => {
         const manifestPath = join(SEED_SRC_DIR, 'manifest-required.json');
         const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as Record<
             string,
@@ -77,5 +77,8 @@ describe('validateAllManifests end-to-end (HOS-142 regression)', () => {
         >;
         expect(manifest.pointOfInterestCatalog).toBeDefined();
         expect(Array.isArray(manifest.pointOfInterestCatalog)).toBe(true);
+        // 914 bulk-imported rows minus 6 that collide with a pre-HOS-142 curated
+        // slug (dropped, not renamed/duplicated — see import-poi-catalog.ts).
+        expect(manifest.pointOfInterestCatalog.length).toBe(908);
     });
 });

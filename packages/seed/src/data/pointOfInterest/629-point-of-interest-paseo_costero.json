@@ -1,0 +1,50 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "629-point-of-interest-paseo_costero",
+    "slug": "paseo_costero",
+    "lat": -33.716545499999995,
+    "long": -58.660919799999995,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Recorrido ribereño urbano con espacios verdes, muelles, embarcaciones y vistas del río.",
+    "nameI18n": {
+        "es": "Paseo Costero de Villa Paranacito",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Recorrido ribereño urbano con espacios verdes, muelles, embarcaciones y vistas del río.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Costa urbana de Villa Paranacito, Entre Ríos",
+    "keywords": ["paseo costero", "costanera villa paranacito", "rio", "atardecer", "muelles"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/villa-paranacito; https://www.villaparanacito.gob.ar/turismo",
+    "notes": "Paseo lineal. Conviene modelarlo como geometría y definir accesos principales. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "waterfront",
+            "isPrimary": true
+        },
+        {
+            "slug": "park",
+            "isPrimary": false
+        },
+        {
+            "slug": "viewpoint",
+            "isPrimary": false
+        },
+        {
+            "slug": "recreation",
+            "isPrimary": false
+        }
+    ]
+}

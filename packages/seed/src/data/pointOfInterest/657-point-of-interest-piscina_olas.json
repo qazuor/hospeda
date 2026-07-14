@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/point-of-interest.schema.json",
+    "id": "657-point-of-interest-piscina_olas",
+    "slug": "piscina_olas",
+    "lat": -30.977354499999997,
+    "long": -57.9320913,
+    "type": "OTHER",
+    "icon": null,
+    "description": "Piscina recreativa del parque acuático con distintas variantes de olas, sectores de descanso, vestuarios y patio de comidas.",
+    "nameI18n": {
+        "es": "Piscina de Olas",
+        "en": null,
+        "pt": null
+    },
+    "descriptionI18n": {
+        "es": "Piscina recreativa del parque acuático con distintas variantes de olas, sectores de descanso, vestuarios y patio de comidas.",
+        "en": null,
+        "pt": null
+    },
+    "translationMeta": {},
+    "address": "Parque Acuático Federación, Entre Ríos",
+    "keywords": ["piscina de olas", "olas artificiales", "parque acuatico", "gomones", "verano"],
+    "hasOwnPage": false,
+    "isBuiltin": true,
+    "isFeatured": true,
+    "displayWeight": 100,
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.federacion.tur.ar/parque-acuatico1/",
+    "notes": "Atractivo interno confirmado. Falta geocodificar dentro del predio. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "lifecycleState": "ACTIVE",
+    "categories": [
+        {
+            "slug": "recreation",
+            "isPrimary": true
+        },
+        {
+            "slug": "family",
+            "isPrimary": false
+        },
+        {
+            "slug": "sports_venue",
+            "isPrimary": false
+        }
+    ]
+}
