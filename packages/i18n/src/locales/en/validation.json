@@ -3037,6 +3037,21 @@
         }
     },
     "pointOfInterest": {
+        "distanceKm": {
+            "min": "Distance cannot be negative"
+        },
+        "nearby": {
+            "radius": {
+                "invalidType": "Radius must be a number",
+                "min": "Radius must be at least {{min}} km",
+                "max": "Radius cannot exceed {{max}} km"
+            },
+            "limit": {
+                "invalidType": "Limit must be a number",
+                "min": "Limit must be at least {{min}}",
+                "max": "Limit cannot exceed {{max}}"
+            }
+        },
         "address": {
             "required": "[EN] La dirección es obligatoria",
             "min": "[EN] La dirección debe tener al menos {{min}} caracteres",
