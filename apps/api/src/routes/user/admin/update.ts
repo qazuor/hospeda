@@ -3,6 +3,7 @@
  * Allows admins to update any user
  */
 import {
+    BirthDateHttpInputSchema,
     PermissionEnum,
     UserAdminSchema,
     UserIdSchema,
@@ -15,9 +16,20 @@ import { getActorFromContext } from '../../../utils/actor';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
+import { withDomainBirthDate } from '../../../utils/user-birth-date';
 import { userCache } from '../../../utils/user-cache';
 
 const userService = new UserService({ logger: apiLogger });
+
+/**
+ * Body schema for the admin PUT route. Same as `UserUpdateInputSchema`
+ * except `birthDate` is overridden with `BirthDateHttpInputSchema` (BETA-34).
+ * See that schema's JSDoc for why the domain `z.date()` field cannot be used
+ * directly on an HTTP request schema.
+ */
+const UserAdminUpdateInputSchema = UserUpdateInputSchema.extend({
+    birthDate: BirthDateHttpInputSchema
+});
 
 /**
  * PUT /api/v1/admin/users/:id
@@ -33,7 +45,7 @@ export const adminUpdateUserRoute = createAdminRoute({
     requestParams: {
         id: UserIdSchema
     },
-    requestBody: UserUpdateInputSchema,
+    requestBody: UserAdminUpdateInputSchema,
     responseSchema: UserAdminSchema,
     handler: async (
         ctx: Context,
@@ -42,7 +54,10 @@ export const adminUpdateUserRoute = createAdminRoute({
     ) => {
         const actor = getActorFromContext(ctx);
         const { id } = params;
-        const userData = body as UserUpdateInput;
+        // `birthDate` arrives as a `YYYY-MM-DD` string / `''` / `null` per
+        // `BirthDateHttpInputSchema` and is converted to the domain `Date |
+        // null` shape `UserService.update` expects (BETA-34).
+        const userData = withDomainBirthDate(body) as UserUpdateInput;
 
         // Fetch previous user state for permission change audit
         const prevResult = await userService.getById(actor, id as string);

@@ -107,6 +107,34 @@ export const UserPatchInputSchema = UserUpdateInputSchema;
 export const UserUpdateOutputSchema = UserSchema;
 
 // ============================================================================
+// HTTP-LAYER FIELD OVERRIDES
+// ============================================================================
+
+/**
+ * HTTP-layer override for `birthDate` on user write endpoints (BETA-34).
+ *
+ * The domain `UserSchema.birthDate` is `z.date().nullish()`. Left as-is on a
+ * request body schema, the API route-factory's automatic `z.date()` →
+ * `z.string().datetime()` OpenAPI conversion (`convertDateField` in
+ * `apps/api/src/utils/openapi-schema.ts`) turns it into a full ISO-8601
+ * datetime validator — which rejects the plain `YYYY-MM-DD` string every
+ * `<input type="date">` submits (e.g. `"1990-05-15"` failed with
+ * `Invalid ISO datetime`).
+ *
+ * Write routes that accept `birthDate` in the request body should override
+ * the field with this schema (`.extend({ birthDate: BirthDateHttpInputSchema
+ * })`) so Hono validates the wire format the client actually sends, then
+ * convert the parsed value to a domain `Date` before calling the service —
+ * see `withDomainBirthDate()` in `apps/api/src/utils/user-birth-date.ts`.
+ *
+ * Accepts:
+ *   - `'YYYY-MM-DD'` — a valid calendar date string
+ *   - `''` — the empty string, used by the web app to clear the field
+ *   - `null` / `undefined` — no value / field not submitted
+ */
+export const BirthDateHttpInputSchema = z.union([z.literal(''), z.string().date()]).nullish();
+
+// ============================================================================
 // DELETE SCHEMAS
 // ============================================================================
 
