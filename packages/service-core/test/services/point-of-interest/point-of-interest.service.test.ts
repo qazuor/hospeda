@@ -684,4 +684,84 @@ describe('PointOfInterestService', () => {
             });
         });
     });
+
+    describe('adminList (HOS-144 regression — HOS-143 gap: missing adminSearchSchema)', () => {
+        const actorAdmin = createActor({
+            permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.POINT_OF_INTEREST_VIEW]
+        });
+
+        const baseAdminParams = {
+            page: 1,
+            pageSize: 20,
+            sort: 'createdAt:desc',
+            status: 'all',
+            includeDeleted: false
+        };
+
+        beforeEach(() => {
+            asMock(model.getTable).mockReturnValue(pointsOfInterest);
+        });
+
+        it('should return a paginated result instead of throwing CONFIGURATION_ERROR', async () => {
+            asMock(model.findAll).mockResolvedValue({ items: [poi], total: 1 });
+
+            const result = await service.adminList(actorAdmin, baseAdminParams);
+
+            // Before the fix, this call throws ServiceError(CONFIGURATION_ERROR)
+            // because `adminSearchSchema` was unset on PointOfInterestService,
+            // and BaseCrudRead.adminList() has a hard guard that rejects any
+            // service missing it (see base.crud.read.ts ~line 452).
+            expect(result.error).toBeUndefined();
+            expect(result.data?.items).toEqual([poi]);
+            expect(result.data?.total).toBe(1);
+            expect(model.findAll).toHaveBeenCalledTimes(1);
+        });
+
+        it('should return FORBIDDEN (not CONFIGURATION_ERROR) when actor lacks admin access', async () => {
+            const result = await service.adminList(actorNoPerms, baseAdminParams);
+
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+            expect(model.findAll).not.toHaveBeenCalled();
+        });
+
+        it('should resolve destinationId/categoryId as join-table id-filters, not plain where columns', async () => {
+            const destinationId = getMockId('destination', 'admin-dest-1');
+            asMock(relatedModel.findAll).mockResolvedValue({
+                items: [{ destinationId, pointOfInterestId: poi.id }]
+            });
+            asMock(model.findAll).mockResolvedValue({ items: [poi], total: 1 });
+
+            const result = await service.adminList(actorAdmin, {
+                ...baseAdminParams,
+                destinationId
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.items).toEqual([poi]);
+            const [whereArg, , additionalConditionsArg] = asMock(model.findAll).mock.calls[0] as [
+                Record<string, unknown>,
+                unknown,
+                unknown[]
+            ];
+            // destinationId must NOT leak into the plain where clause — it has
+            // no column on `points_of_interest` (would throw DbError for an
+            // unknown column if it did).
+            expect(whereArg).not.toHaveProperty('destinationId');
+            expect(additionalConditionsArg).toHaveLength(1);
+        });
+
+        it('should short-circuit to an empty result when destinationId matches no POIs', async () => {
+            const destinationId = getMockId('destination', 'admin-dest-empty');
+            asMock(relatedModel.findAll).mockResolvedValue({ items: [] });
+
+            const result = await service.adminList(actorAdmin, {
+                ...baseAdminParams,
+                destinationId
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(result.data).toEqual({ items: [], total: 0 });
+            expect(model.findAll).not.toHaveBeenCalled();
+        });
+    });
 });
