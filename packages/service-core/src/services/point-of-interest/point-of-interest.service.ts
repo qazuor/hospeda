@@ -226,7 +226,7 @@ export class PointOfInterestService extends BaseCrudRelatedService<
             input: { ...params, actor },
             schema: PointOfInterestAddToDestinationInputSchema,
             ctx,
-            execute: async (validatedParams, actor) => {
+            execute: async (validatedParams, actor, execCtx) => {
                 await this._canAddPointOfInterestToDestination(actor);
                 const {
                     destinationId,
@@ -234,14 +234,25 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                     relation: relationKind
                 } = validatedParams;
 
-                // Run all existence checks in parallel for better performance
+                // Run all existence checks in parallel for better performance.
+                // `execCtx?.tx` is threaded so these reads participate in a
+                // caller-provided transaction boundary (HOS-126).
                 const [pointOfInterest, destination, existing] = await Promise.all([
-                    this.model.findOne({ id: pointOfInterestId as PointOfInterestIdType }),
-                    this.destinationModel.findOne({ id: destinationId as DestinationIdType }),
-                    this.relatedModel.findOne({
-                        destinationId: destinationId as DestinationIdType,
-                        pointOfInterestId: pointOfInterestId as PointOfInterestIdType
-                    })
+                    this.model.findOne(
+                        { id: pointOfInterestId as PointOfInterestIdType },
+                        execCtx?.tx
+                    ),
+                    this.destinationModel.findOne(
+                        { id: destinationId as DestinationIdType },
+                        execCtx?.tx
+                    ),
+                    this.relatedModel.findOne(
+                        {
+                            destinationId: destinationId as DestinationIdType,
+                            pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                        },
+                        execCtx?.tx
+                    )
                 ]);
 
                 if (!pointOfInterest) {
@@ -262,19 +273,25 @@ export class PointOfInterestService extends BaseCrudRelatedService<
 
                 // Create the relation (HOS-140: relationKind defaults to
                 // PRIMARY in the Zod schema when omitted)
-                const relation = await this.relatedModel.create({
-                    destinationId: destinationId as DestinationIdType,
-                    pointOfInterestId: pointOfInterestId as PointOfInterestIdType,
-                    relation: relationKind
-                });
+                const relation = await this.relatedModel.create(
+                    {
+                        destinationId: destinationId as DestinationIdType,
+                        pointOfInterestId: pointOfInterestId as PointOfInterestIdType,
+                        relation: relationKind
+                    },
+                    execCtx?.tx
+                );
 
                 // If the model returns just an id or number, fetch the full relation
                 let fullRelation = relation;
                 if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
-                    const found = await this.relatedModel.findOne({
-                        destinationId: destinationId as DestinationIdType,
-                        pointOfInterestId: pointOfInterestId as PointOfInterestIdType
-                    });
+                    const found = await this.relatedModel.findOne(
+                        {
+                            destinationId: destinationId as DestinationIdType,
+                            pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                        },
+                        execCtx?.tx
+                    );
                     if (!found) {
                         throw new ServiceError(
                             ServiceErrorCode.INTERNAL_ERROR,
@@ -304,30 +321,37 @@ export class PointOfInterestService extends BaseCrudRelatedService<
             input: { ...params, actor },
             schema: PointOfInterestRemoveFromDestinationInputSchema,
             ctx,
-            execute: async (validatedParams, actor) => {
+            execute: async (validatedParams, actor, execCtx) => {
                 await this._canRemovePointOfInterestFromDestination(actor);
                 const { destinationId, pointOfInterestId } = validatedParams;
-                // Verify point of interest exists
-                const pointOfInterest = await this.model.findOne({
-                    id: pointOfInterestId as PointOfInterestIdType
-                });
+                // Verify point of interest exists. `execCtx?.tx` is threaded so
+                // these reads/writes participate in a caller-provided
+                // transaction boundary (HOS-126).
+                const pointOfInterest = await this.model.findOne(
+                    { id: pointOfInterestId as PointOfInterestIdType },
+                    execCtx?.tx
+                );
                 if (!pointOfInterest) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'Point of interest not found'
                     );
                 }
-                const destination = await this.destinationModel.findOne({
-                    id: destinationId as DestinationIdType
-                });
+                const destination = await this.destinationModel.findOne(
+                    { id: destinationId as DestinationIdType },
+                    execCtx?.tx
+                );
                 if (!destination) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
                 }
                 // Verify that the relation exists
-                const existing = await this.relatedModel.findOne({
-                    destinationId: destinationId as DestinationIdType,
-                    pointOfInterestId: pointOfInterestId as PointOfInterestIdType
-                });
+                const existing = await this.relatedModel.findOne(
+                    {
+                        destinationId: destinationId as DestinationIdType,
+                        pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                    },
+                    execCtx?.tx
+                );
                 if (!existing) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
@@ -335,15 +359,21 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                     );
                 }
                 // Remove the relation (soft delete)
-                const relation = await this.relatedModel.softDelete({
-                    destinationId: destinationId as DestinationIdType,
-                    pointOfInterestId: pointOfInterestId as PointOfInterestIdType
-                });
-                if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
-                    const fullRelation = await this.relatedModel.findOne({
+                const relation = await this.relatedModel.softDelete(
+                    {
                         destinationId: destinationId as DestinationIdType,
                         pointOfInterestId: pointOfInterestId as PointOfInterestIdType
-                    });
+                    },
+                    execCtx?.tx
+                );
+                if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
+                    const fullRelation = await this.relatedModel.findOne(
+                        {
+                            destinationId: destinationId as DestinationIdType,
+                            pointOfInterestId: pointOfInterestId as PointOfInterestIdType
+                        },
+                        execCtx?.tx
+                    );
                     if (!fullRelation) {
                         throw new ServiceError(
                             ServiceErrorCode.INTERNAL_ERROR,
