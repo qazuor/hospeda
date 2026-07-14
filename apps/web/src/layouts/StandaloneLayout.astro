@@ -46,6 +46,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
 import FontsLoader from '@/components/shared/FontsLoader.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
+import I18nClientData from '@/components/shared/I18nClientData.astro';
 import '@/styles/global.css';
 
 interface Props {
@@ -102,6 +103,7 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 		</noscript>
 	</head>
 	<body>
+		<I18nClientData locale={locale} />
 		<main id="main-content">
 			<slot />
 		</main>
