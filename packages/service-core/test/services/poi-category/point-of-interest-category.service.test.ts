@@ -869,4 +869,200 @@ describe('PointOfInterestCategoryService', () => {
             expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
         });
     });
+
+    describe('setCategoriesForPointOfInterest (HOS-143 T-006)', () => {
+        const missingCategoryId = getMockId('poiCategory', 'cat-missing') as PoiCategoryIdType;
+
+        it('should return FORBIDDEN when actor lacks POI_CATEGORY_UPDATE', async () => {
+            const result = await service.setCategoriesForPointOfInterest(actorNoPerms, {
+                pointOfInterestId: poiId,
+                categoryIds: [categoryId],
+                primaryCategoryId: categoryId
+            });
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+            expect(relatedModel.hardDelete).not.toHaveBeenCalled();
+            expect(relatedModel.create).not.toHaveBeenCalled();
+        });
+
+        it('should return VALIDATION_ERROR when primaryCategoryId is not in categoryIds', async () => {
+            const result = await service.setCategoriesForPointOfInterest(actorWithUpdate, {
+                pointOfInterestId: poiId,
+                categoryIds: [categoryId],
+                primaryCategoryId: otherCategoryId
+            });
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(pointOfInterestModel.findOne).not.toHaveBeenCalled();
+            expect(relatedModel.hardDelete).not.toHaveBeenCalled();
+        });
+
+        it('should return NOT_FOUND when the point of interest does not exist', async () => {
+            asMock(pointOfInterestModel.findOne).mockResolvedValue(null);
+            const result = await service.setCategoriesForPointOfInterest(actorWithUpdate, {
+                pointOfInterestId: poiId,
+                categoryIds: [categoryId],
+                primaryCategoryId: categoryId
+            });
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+            expect(relatedModel.hardDelete).not.toHaveBeenCalled();
+        });
+
+        /**
+         * AC-6: a bad categoryId anywhere in the array (here, the middle
+         * position) must fail the WHOLE call before any write — the previous
+         * assignment must remain untouched (no partial delete+insert).
+         */
+        it('should return NOT_FOUND and perform zero writes when a categoryId in the middle of the array does not exist (AC-6)', async () => {
+            asMock(pointOfInterestModel.findOne).mockResolvedValue(poi);
+            asMock(model.findOne)
+                .mockResolvedValueOnce(category)
+                .mockResolvedValueOnce(null)
+                .mockResolvedValueOnce(wineryCategory);
+
+            const result = await service.setCategoriesForPointOfInterest(actorWithUpdate, {
+                pointOfInterestId: poiId,
+                categoryIds: [categoryId, missingCategoryId, otherCategoryId],
+                primaryCategoryId: categoryId
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+            expect(result.error?.message).toContain(missingCategoryId);
+            // No write of any kind happened — the previous assignment is intact.
+            expect(relatedModel.hardDelete).not.toHaveBeenCalled();
+            expect(relatedModel.create).not.toHaveBeenCalled();
+            expect(pointOfInterestModel.update).not.toHaveBeenCalled();
+            expect(mockedWithServiceTransaction).not.toHaveBeenCalled();
+        });
+
+        /**
+         * AC-5: a valid full-replace call ends with EXACTLY the submitted
+         * categories, exactly one `isPrimary: true`, and the derived `type`
+         * synced from the primary category's slug — all in one transaction.
+         */
+        it('should replace the full category set with exactly the submitted categories and one primary (AC-5)', async () => {
+            asMock(pointOfInterestModel.findOne).mockResolvedValue(poi);
+            asMock(model.findOne)
+                .mockResolvedValueOnce(category)
+                .mockResolvedValueOnce(wineryCategory);
+            asMock(relatedModel.hardDelete).mockResolvedValue(2);
+            asMock(relatedModel.create)
+                .mockResolvedValueOnce({ pointOfInterestId: poiId, categoryId, isPrimary: true })
+                .mockResolvedValueOnce({
+                    pointOfInterestId: poiId,
+                    categoryId: otherCategoryId,
+                    isPrimary: false
+                });
+            asMock(pointOfInterestModel.update).mockResolvedValue({
+                ...poi,
+                type: PointOfInterestTypeEnum.MUSEUM
+            });
+
+            const result = await service.setCategoriesForPointOfInterest(actorWithUpdate, {
+                pointOfInterestId: poiId,
+                categoryIds: [categoryId, otherCategoryId],
+                primaryCategoryId: categoryId
+            });
+
+            expect(result.error).toBeUndefined();
+            // Full replace: delete ALL existing rows for the POI first.
+            expect(relatedModel.hardDelete).toHaveBeenCalledWith({ pointOfInterestId: poiId }, {});
+            // Then re-insert exactly the submitted set, primary flag only on categoryId.
+            expect(relatedModel.create).toHaveBeenCalledWith(
+                { pointOfInterestId: poiId, categoryId, isPrimary: true },
+                {}
+            );
+            expect(relatedModel.create).toHaveBeenCalledWith(
+                { pointOfInterestId: poiId, categoryId: otherCategoryId, isPrimary: false },
+                {}
+            );
+            expect(relatedModel.create).toHaveBeenCalledTimes(2);
+            // `type` synced from the primary's slug (museum -> MUSEUM).
+            expect(pointOfInterestModel.update).toHaveBeenCalledWith(
+                { id: poiId },
+                { type: PointOfInterestTypeEnum.MUSEUM },
+                {}
+            );
+            // Resulting state: exactly the submitted categories, exactly one primary.
+            const returnedCategories = result.data?.categories ?? [];
+            expect(returnedCategories).toHaveLength(2);
+            expect(returnedCategories.filter((c) => c.isPrimary)).toHaveLength(1);
+            expect(returnedCategories.find((c) => c.isPrimary)?.id).toBe(categoryId);
+            // Sorted by displayWeight descending (winery=80 before museum=50).
+            expect(returnedCategories[0]?.id).toBe(otherCategoryId);
+            expect(returnedCategories[1]?.id).toBe(categoryId);
+        });
+
+        /**
+         * AC-6: if the insert half of the delete+insert fails partway through
+         * (simulated here by the second `create` call rejecting), the whole
+         * operation must fail — it must never surface a success result with
+         * a partially-written category set. In production this failure
+         * propagates out of the `withServiceTransaction` callback and rolls
+         * back the real Postgres transaction (including the earlier
+         * `hardDelete`); this unit test verifies the code-level contract
+         * that delete + all inserts + the `type` sync share ONE transactional
+         * callback, so a mid-array insert failure cannot leave a partial write.
+         */
+        it('should surface a failure (not a partial success) when an insert fails mid-array (AC-6)', async () => {
+            asMock(pointOfInterestModel.findOne).mockResolvedValue(poi);
+            asMock(model.findOne)
+                .mockResolvedValueOnce(category)
+                .mockResolvedValueOnce(wineryCategory);
+            asMock(relatedModel.hardDelete).mockResolvedValue(2);
+            asMock(relatedModel.create)
+                .mockResolvedValueOnce({ pointOfInterestId: poiId, categoryId, isPrimary: true })
+                .mockRejectedValueOnce(new Error('simulated insert failure'));
+
+            const result = await service.setCategoriesForPointOfInterest(actorWithUpdate, {
+                pointOfInterestId: poiId,
+                categoryIds: [categoryId, otherCategoryId],
+                primaryCategoryId: categoryId
+            });
+
+            expect(result.data).toBeUndefined();
+            expect(result.error).toBeDefined();
+            expect(pointOfInterestModel.update).not.toHaveBeenCalled();
+        });
+
+        /**
+         * HOS-139 judgment-day FIX 2 precedent: when the caller already
+         * provides an active `ctx.tx`, the full-replace path must join it
+         * instead of always opening a new, independent transaction.
+         */
+        it('should join an existing ctx.tx instead of opening a new transaction', async () => {
+            asMock(pointOfInterestModel.findOne).mockResolvedValue(poi);
+            asMock(model.findOne).mockResolvedValueOnce(category);
+            asMock(relatedModel.hardDelete).mockResolvedValue(1);
+            asMock(relatedModel.create).mockResolvedValue({
+                pointOfInterestId: poiId,
+                categoryId,
+                isPrimary: true
+            });
+
+            const result = await service.setCategoriesForPointOfInterest(
+                actorWithUpdate,
+                {
+                    pointOfInterestId: poiId,
+                    categoryIds: [categoryId],
+                    primaryCategoryId: categoryId
+                },
+                ctxWithTx
+            );
+
+            expect(result.error).toBeUndefined();
+            expect(mockedWithServiceTransaction).not.toHaveBeenCalled();
+            expect(relatedModel.hardDelete).toHaveBeenCalledWith(
+                { pointOfInterestId: poiId },
+                mockTx
+            );
+            expect(relatedModel.create).toHaveBeenCalledWith(
+                { pointOfInterestId: poiId, categoryId, isPrimary: true },
+                mockTx
+            );
+            expect(pointOfInterestModel.update).toHaveBeenCalledWith(
+                { id: poiId },
+                { type: PointOfInterestTypeEnum.MUSEUM },
+                mockTx
+            );
+        });
+    });
 });

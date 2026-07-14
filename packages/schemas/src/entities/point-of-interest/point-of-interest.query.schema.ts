@@ -37,6 +37,11 @@ export const PointOfInterestFiltersSchema = z.object({
     isFeatured: z.boolean().optional(),
     isBuiltin: z.boolean().optional(),
 
+    // Editorial-curation plain-column filters (HOS-138 columns, HOS-143 T-007
+    // admin-search filter). Same passthrough shape as `isFeatured`/`isBuiltin`.
+    hasOwnPage: z.boolean().optional(),
+    verified: z.boolean().optional(),
+
     // Lifecycle state
     lifecycleState: LifecycleStatusEnumSchema.optional(),
 
@@ -63,6 +68,12 @@ export const PointOfInterestSearchSchema = BaseSearchSchema.extend({
     type: PointOfInterestTypeEnumSchema.optional(),
     isFeatured: z.boolean().optional(),
     isBuiltin: z.boolean().optional(),
+
+    // Editorial-curation plain-column filters (HOS-138 columns, HOS-143 T-007
+    // admin-search filter). Same passthrough shape as `isFeatured`/`isBuiltin`.
+    hasOwnPage: z.boolean().optional(),
+    verified: z.boolean().optional(),
+
     lifecycleState: LifecycleStatusEnumSchema.optional(),
     destinationId: z.string().uuid().optional(),
 

@@ -233,9 +233,9 @@ mounted under `/{id}/destinations` on the same `admin/index.ts` router:
 | Method + path | Permission | Body / params | Behavior |
 | --- | --- | --- | --- |
 | `GET /{id}/destinations` | `POINT_OF_INTEREST_VIEW` | — | Calls `service.getDestinationsByPointOfInterest` (existing) plus, for each returned destination, the matching relation row's `relation` value — returned as `{ destinationId, destinationName, destinationSlug, relation }[]`. |
-| `POST /{id}/destinations` | `DESTINATION_POINT_OF_INTEREST_MANAGE` | `{ destinationId, relation }` (`relation` defaults to `PRIMARY` per HOS-140) | Calls `service.addPointOfInterestToDestination(actor, { destinationId, pointOfInterestId: id, relation })`. 409 `ALREADY_EXISTS` if the pair already exists (existing service behavior, unchanged). |
-| `PATCH /{id}/destinations/{destinationId}` | `DESTINATION_POINT_OF_INTEREST_MANAGE` | `{ relation }` | Calls the **new** `service.updatePointOfInterestDestinationRelation(actor, { destinationId, pointOfInterestId: id, relation })` (§6.3.1). |
-| `DELETE /{id}/destinations/{destinationId}` | `DESTINATION_POINT_OF_INTEREST_MANAGE` | — | Calls `service.removePointOfInterestFromDestination` (existing, unchanged). |
+| `POST /{id}/destinations` | `POINT_OF_INTEREST_CREATE` | `{ destinationId, relation }` (`relation` defaults to `PRIMARY` per HOS-140) | Calls `service.addPointOfInterestToDestination(actor, { destinationId, pointOfInterestId: id, relation })`. 409 `ALREADY_EXISTS` if the pair already exists (existing service behavior, unchanged). |
+| `PATCH /{id}/destinations/{destinationId}` | `POINT_OF_INTEREST_UPDATE` | `{ relation }` | Calls the **new** `service.updatePointOfInterestDestinationRelation(actor, { destinationId, pointOfInterestId: id, relation })` (§6.3.1). |
+| `DELETE /{id}/destinations/{destinationId}` | `POINT_OF_INTEREST_DELETE` | — | Calls `service.removePointOfInterestFromDestination` (existing, unchanged). |
 
 **Permission decision — activate the dedicated `MANAGE` permission instead of
 reusing CREATE/DELETE.** The service's `_canAddPointOfInterestToDestination`/
@@ -249,18 +249,21 @@ options:
    (small, isolated change to `point-of-interest.permissions.ts` +
    `point-of-interest.service.ts`'s two `_can*` overrides).
 
-**Chosen: (2).** The permission already exists in the enum with the exact
-doc comment "Allows managing destination points of interest" — it was added
-during HOS-113 precisely for this. Option (1) would mean an operator who can
-create/delete whole POI rows automatically gets relation-management rights
-too (coarser than necessary), while option (2) lets a future role be granted
-"manage which destinations a POI appears under" without also granting
-delete-the-POI-entirely rights — correct RBAC granularity, and it retires a
-currently-dead enum value instead of leaving it permanently unused. Impact:
-2-line change to `checkCanAddPointOfInterestToDestination`/
-`checkCanRemovePointOfInterestFromDestination` (new checker functions,
-replacing the reused Create/Delete checkers) plus updating the two
-`_can*` overrides in the service to call them.
+**Chosen at kickoff (2026-07-13): (1) — REVERSED from the spec's original
+(2).** Baseline verification found an explicit, deliberate code comment in
+`point-of-interest.permissions.ts:8-14`: *"POI uses `PermissionEnum.
+POINT_OF_INTEREST_*` CONSISTENTLY at every hook... Do not reintroduce
+attraction's inconsistency here."* The spec author had NOT seen this comment
+when originally choosing (2). Switching relation management onto
+`DESTINATION_POINT_OF_INTEREST_MANAGE` would directly reintroduce exactly the
+split-brain the POI permission layer was deliberately built to avoid. Owner
+decision at kickoff: **keep `POINT_OF_INTEREST_*` consistency**. Relation
+routes therefore gate as: `GET → POINT_OF_INTEREST_VIEW`, `POST` add →
+`POINT_OF_INTEREST_CREATE`, `PATCH` relation → `POINT_OF_INTEREST_UPDATE`,
+`DELETE` → `POINT_OF_INTEREST_DELETE`. **No change** to
+`point-of-interest.permissions.ts` or the two service `_can*` overrides (they
+already delegate to Create/Delete correctly). `DESTINATION_POINT_OF_INTEREST_MANAGE`
+stays unused. See §14.
 
 ### 6.3 New service methods
 
@@ -275,18 +278,29 @@ pointOfInterestId }, { relation })` (the HOS-140 `relation` column update is a
 plain column update, no cardinality change). Input schema:
 `PointOfInterestUpdateDestinationRelationInputSchema` (§7.2).
 
-#### 6.3.2 `getPointOfInterestCategories` / `setPointOfInterestCategories`
+#### 6.3.2 Category assignment — reuse the existing `PointOfInterestCategoryService`
 
-Two new methods, built on the HOS-139 `r_poi_category` join table (assumed to
-have its own model, e.g. `RPointOfInterestCategoryModel`, mirroring
-`RDestinationPointOfInterestModel`'s shape):
+**Kickoff correction (2026-07-13): REVERSED from the spec's original plan of
+adding these methods to `PointOfInterestService`.** Baseline verification
+found a dedicated `PointOfInterestCategoryService` already exists
+(`packages/service-core/src/services/poi-category/point-of-interest-category.service.ts`)
+that OWNS the `r_poi_category` join table (via `RPoiCategoryModel` — the real
+model name; the spec's `RPointOfInterestCategoryModel` does not exist, and it
+has no bespoke finder, so filter with generic `findAll({ pointOfInterestId })`).
+It already exposes `getCategoriesForPointOfInterest`,
+`assignCategoryToPointOfInterest`, `unassignCategoryFromPointOfInterest`, and
+`setPrimaryCategory`. Adding category methods to `PointOfInterestService`
+instead would put TWO services on the same table — an SSOT violation. Owner
+decision at kickoff: **the routes call the existing
+`PointOfInterestCategoryService`**; we only ADD one new transactional
+full-replace method there. See §14.
 
-- `getPointOfInterestCategories(actor, { pointOfInterestId })` — reads all
-  `r_poi_category` rows for the POI, joins to `poi_categories` for
-  slug/nameI18n/icon, returns `{ categories: { id, slug, nameI18n, icon,
-  isPrimary }[] }` ordered primary-first.
-- `setPointOfInterestCategories(actor, { pointOfInterestId, categoryIds,
-  primaryCategoryId })` — **full replace**, not incremental add/remove.
+- `getCategoriesForPointOfInterest(actor, { pointOfInterestId })` —
+  **already exists**; returns categories (id, slug, nameI18n, icon,
+  isPrimary) ordered primary-first. Reused as-is by `GET .../categories`.
+- `setCategoriesForPointOfInterest(actor, { pointOfInterestId, categoryIds,
+  primaryCategoryId })` — **the one new method** — **full replace**, not
+  incremental add/remove.
   Validates `primaryCategoryId ∈ categoryIds`, validates every id resolves to
   an existing, non-deleted `poi_categories` row (parallel `Promise.all`
   lookups, same style as §5's existing relation methods), then inside a
@@ -378,6 +392,7 @@ export const PointOfInterestAdminSearchSchema = AdminSearchBaseSchema.extend({
 ```
 
 ### 7.2 Relation-management schemas (extend `.crud.schema.ts` or a new
+
 `.destination-relation.schema.ts`)
 
 ```ts
@@ -438,14 +453,15 @@ handler's `requiredFields` constant must be `['id', 'slug']`, not `['id',
 'name']` — a copy-paste trap to call out explicitly (R-4).
 
 ### 7.5 Endpoint summary (new routes only, excluding the standard CRUD tier
+
 already tabulated in §6.1)
 
 | Method | Path | Permission |
 | --- | --- | --- |
 | GET | `/api/v1/admin/points-of-interest/{id}/destinations` | `POINT_OF_INTEREST_VIEW` |
-| POST | `/api/v1/admin/points-of-interest/{id}/destinations` | `DESTINATION_POINT_OF_INTEREST_MANAGE` |
-| PATCH | `/api/v1/admin/points-of-interest/{id}/destinations/{destinationId}` | `DESTINATION_POINT_OF_INTEREST_MANAGE` |
-| DELETE | `/api/v1/admin/points-of-interest/{id}/destinations/{destinationId}` | `DESTINATION_POINT_OF_INTEREST_MANAGE` |
+| POST | `/api/v1/admin/points-of-interest/{id}/destinations` | `POINT_OF_INTEREST_CREATE` |
+| PATCH | `/api/v1/admin/points-of-interest/{id}/destinations/{destinationId}` | `POINT_OF_INTEREST_UPDATE` |
+| DELETE | `/api/v1/admin/points-of-interest/{id}/destinations/{destinationId}` | `POINT_OF_INTEREST_DELETE` |
 | GET | `/api/v1/admin/points-of-interest/{id}/categories` | `POINT_OF_INTEREST_VIEW` |
 | PUT | `/api/v1/admin/points-of-interest/{id}/categories` | `POINT_OF_INTEREST_UPDATE` |
 | POST | `/api/v1/admin/ai/translate` (existing route, widened enum) | `AI_SETTINGS_MANAGE` (unchanged) |
@@ -495,10 +511,14 @@ that consumes these endpoints.
   PREVIOUS category assignment fully intact (transaction rollback verified
   by an integration test that intentionally submits one bad id among valid
   ones).
-- **AC-7** An actor holding `DESTINATION_POINT_OF_INTEREST_MANAGE` but NOT
-  `POINT_OF_INTEREST_CREATE`/`POINT_OF_INTEREST_DELETE` can add/update/remove
-  a destination relation (proves the permission switch in §6.2 actually
-  decouples relation management from full POI CRUD rights).
+- **AC-7** (rewritten at kickoff — §6.2 decision reversed) Destination-relation
+  routes enforce the standard POI CRUD permissions: an actor missing
+  `POINT_OF_INTEREST_CREATE` gets `403` on `POST .../destinations`, missing
+  `POINT_OF_INTEREST_UPDATE` gets `403` on `PATCH .../destinations/{destinationId}`,
+  and missing `POINT_OF_INTEREST_DELETE` gets `403` on `DELETE
+  .../destinations/{destinationId}`; an actor holding each respective
+  permission succeeds. (`DESTINATION_POINT_OF_INTEREST_MANAGE` is NOT wired —
+  no test asserts it.)
 - **AC-8** `POST /api/v1/admin/ai/translate` with `{ entityType:
   'pointOfInterest', entityId, sourceLocale: 'es' }` translates `nameI18n`/
   `descriptionI18n` into the missing target locale(s) and persists via
@@ -626,3 +646,47 @@ that consumes these endpoints.
 
 Canonical tracking:
 HOS-143
+
+## 14. Kickoff baseline verification & corrections (2026-07-13)
+
+Per R-1/OQ-3, §5's baseline was re-verified against the actual merged state of
+HOS-138/139/140 before implementation. Result: **all data-model prerequisites
+are present and functionally correct** (v2 columns, `translationMeta` uniform
+across all 5 tables, `poi_categories` + `r_poi_category` with `isPrimary` +
+partial-unique "one primary" index, `relation` PRIMARY/NEARBY column). No
+blockers. Two design points were reversed and several symbol names in this
+document were found wrong; both the reversals and the corrections are binding
+for implementation and override the earlier prose where they conflict.
+
+### 14.1 Symbol-name corrections (spec text was wrong)
+
+| Spec text (WRONG) | Actual symbol | Location |
+| --- | --- | --- |
+| `DestinationPointOfInterestRelationEnumSchema` | `PointOfInterestDestinationRelationEnumSchema` | `packages/schemas/src/enums/point-of-interest-destination-relation.schema.ts` |
+| `RPointOfInterestCategoryModel` | `RPoiCategoryModel` (no bespoke finder — use generic `findAll({ pointOfInterestId })`) | `packages/db/src/models/destination/rPoiCategory.model.ts` |
+| `PointOfInterestCategoryIdSchema` | `PoiCategoryIdSchema` | `packages/schemas/src/common/id.schema.ts:58` |
+
+POI DB/model files live under `packages/db/src/schemas/destination/` and
+`.../models/destination/`, NOT a top-level `point-of-interest/` folder.
+
+### 14.2 AI-translate widen count (§6.5 said "5 spots")
+
+Actually **6 edit sites across 2 files**: in `ai-translate.service.ts` — (1)
+the `TranslatableEntityType` union, (2) `ENTITY_FIELDS`, (3) `getEntityTable`'s
+`tables` map, (4) `I18N_COLUMN_MAP`; in `routes/ai/admin/translate.ts` — the
+three `z.enum([...])` literals at lines 35, 41, 52. Add `'pointOfInterest'`
+mapped to `{ name: 'nameI18n', description: 'descriptionI18n' }` and table
+`pointsOfInterest`.
+
+### 14.3 Design reversals (both owner-approved at kickoff)
+
+- **§6.2 permissions**: destination-relation routes keep `POINT_OF_INTEREST_*`
+  (VIEW/CREATE/UPDATE/DELETE), NOT `DESTINATION_POINT_OF_INTEREST_MANAGE`.
+  Honors the explicit "do not reintroduce attraction's inconsistency" comment
+  in `point-of-interest.permissions.ts:8-14`. No permissions/service-hook
+  change. AC-7 rewritten accordingly.
+- **§6.3.2 category methods**: add the one new transactional full-replace
+  `setCategoriesForPointOfInterest` to the EXISTING
+  `PointOfInterestCategoryService` (owner of `r_poi_category`), reuse its
+  `getCategoriesForPointOfInterest`. Routes call that service, not
+  `PointOfInterestService`. SSOT.

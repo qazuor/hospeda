@@ -207,6 +207,78 @@ describe('PointOfInterestService', () => {
     });
 
     /**
+     * HOS-143 T-007: `hasOwnPage`/`verified` are real plain columns on
+     * `points_of_interest` (HOS-138) — same passthrough shape as
+     * `isFeatured`/`isBuiltin`, unlike `destinationId`/`categoryId` which are
+     * resolved through join tables.
+     */
+    describe('hasOwnPage/verified search filters (HOS-143 T-007)', () => {
+        it('should pass `hasOwnPage` through to the plain where clause', async () => {
+            asMock(model.findAll).mockResolvedValue({ items: [poi], total: 1 });
+
+            const result = await service.search(actorNoPerms, {
+                hasOwnPage: true,
+                page: 1,
+                pageSize: 10
+            });
+
+            expect(result.error).toBeUndefined();
+            const [whereArg] = asMock(model.findAll).mock.calls[0] as [Record<string, unknown>];
+            expect(whereArg).toEqual({ hasOwnPage: true });
+        });
+
+        it('should pass `verified` through to the plain where clause', async () => {
+            asMock(model.findAll).mockResolvedValue({ items: [poi], total: 1 });
+
+            const result = await service.search(actorNoPerms, {
+                verified: true,
+                page: 1,
+                pageSize: 10
+            });
+
+            expect(result.error).toBeUndefined();
+            const [whereArg] = asMock(model.findAll).mock.calls[0] as [Record<string, unknown>];
+            expect(whereArg).toEqual({ verified: true });
+        });
+
+        it('should combine `hasOwnPage` and `verified` with other plain-column filters', async () => {
+            asMock(model.findAll).mockResolvedValue({ items: [poi], total: 1 });
+
+            const result = await service.search(actorNoPerms, {
+                type: PointOfInterestTypeEnum.BEACH,
+                hasOwnPage: true,
+                verified: false,
+                page: 1,
+                pageSize: 10
+            });
+
+            expect(result.error).toBeUndefined();
+            const [whereArg] = asMock(model.findAll).mock.calls[0] as [Record<string, unknown>];
+            expect(whereArg).toEqual({
+                type: PointOfInterestTypeEnum.BEACH,
+                hasOwnPage: true,
+                verified: false
+            });
+        });
+
+        it('should apply the `count()` path the same way', async () => {
+            asMock(model.count).mockResolvedValue(3);
+
+            const result = await service.count(actorNoPerms, {
+                hasOwnPage: true,
+                verified: true,
+                page: 1,
+                pageSize: 10
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.count).toBe(3);
+            const [whereArg] = asMock(model.count).mock.calls[0] as [Record<string, unknown>];
+            expect(whereArg).toEqual({ hasOwnPage: true, verified: true });
+        });
+    });
+
+    /**
      * HOS-113 CRITICAL regression coverage: `points_of_interest` has NO
      * `destinationId` column — it is M2M via `r_destination_point_of_interest`.
      * Before this fix, `_executeSearch`/`_executeCount`/`searchForList` put
