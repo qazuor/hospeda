@@ -47,6 +47,8 @@ export const publicGetAccommodationNearbyPoisRoute = createPublicRoute({
         query?: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
+        // TYPE-WORKAROUND: the route factory types `query` as Record<string, unknown>;
+        // NearbyPoiQuerySchema already validated and coerced radius/limit to numbers upstream.
         const { radius, limit } = query as unknown as { radius: number; limit: number };
 
         const result = await accommodationService.getNearbyPois(
