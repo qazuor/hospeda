@@ -984,6 +984,141 @@ describe('BookingAdapter', () => {
             // Assert — no price candidate emitted
             expect(result.price).toBeUndefined();
         });
+
+        it('should not emit price when the per-night value is implausibly high for USD (BETA-169 currency-mislabel guard)', async () => {
+            // Arrange — BETA-169 regression (sibling of the Airbnb case): the
+            // actor ignored the requested USD currency and returned a local
+            // currency (ARS) total. 40000 total ÷ 2 nights = 20000/night, far
+            // above any realistic USD nightly rate → drop rather than store a
+            // value mislabelled as USD.
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({
+                items: [{ ...BOOKING_PROBE_WITH_PRICE, price: 40000 }]
+            });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert — 20000 > PER_NIGHT_MAX_USD → no price candidate emitted
+            expect(result.price).toBeUndefined();
+        });
+
+        it('should not emit price when the actor reports a non-USD ISO currency, even at a plausible magnitude (BETA-169 currency gate)', async () => {
+            // Arrange — closes the low-magnitude gap the ceiling alone misses:
+            // the actor ignored the USD request and priced in ARS, but the total
+            // (200 ÷ 2 = 100/night) is inside the plausible USD band. The
+            // explicit `currency: 'ARS'` signal must still drop it.
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({
+                items: [{ ...BOOKING_PROBE_WITH_PRICE, price: 200, currency: 'ARS' }]
+            });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert — currency clearly non-USD → no price candidate emitted
+            expect(result.price).toBeUndefined();
+        });
+
+        it('should emit price when the actor confirms USD currency', async () => {
+            // Arrange — actor honored the USD request (currency: 'USD') and the
+            // magnitude is plausible → keep. BOOKING_PROBE_WITH_PRICE already
+            // carries currency: 'USD'; assert the happy path is not regressed.
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_PROBE_WITH_PRICE] });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert — 157.3 ÷ 2 = 78.65/night, USD confirmed → emitted
+            expect(result.price?.price).toEqual({ value: 78.65, source: 'text' });
+            expect(result.price?.currency).toEqual({ value: 'USD', source: 'text' });
+        });
+
+        it('should defer to the magnitude guard when the actor echoes an ambiguous currency symbol', async () => {
+            // Arrange — an ambiguous non-ISO symbol ("$") is inconclusive, so the
+            // currency gate must NOT drop a genuine plausible-magnitude USD value.
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({
+                items: [{ ...BOOKING_PROBE_WITH_PRICE, price: 157.3, currency: '$' }]
+            });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert — ambiguous symbol deferred → plausible value still emitted
+            expect(result.price?.price).toEqual({ value: 78.65, source: 'text' });
+            expect(result.price?.currency).toEqual({ value: 'USD', source: 'text' });
+        });
+
+        it('should drop the price for a lowercase non-USD ISO currency (case-insensitive gate)', async () => {
+            // Arrange — actor echoed 'ars' (lowercase); the gate normalizes to
+            // uppercase before comparing, so it must still drop.
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({
+                items: [{ ...BOOKING_PROBE_WITH_PRICE, price: 200, currency: 'ars' }]
+            });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert — 'ars' → 'ARS' ≠ USD → dropped
+            expect(result.price).toBeUndefined();
+        });
+
+        it('should not throw and still emit price when the actor returns a non-string currency (defensive guard)', async () => {
+            // Arrange — malformed actor payload: `currency` arrives as a number
+            // (the item is an unchecked cast over untrusted JSON). The gate must
+            // defer (not throw) so the whole extraction is not discarded.
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({
+                items: [{ ...BOOKING_PROBE_WITH_PRICE, currency: 12345 }]
+            });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert — inconclusive currency → deferred → plausible value emitted
+            expect(result.price?.price).toEqual({ value: 78.65, source: 'text' });
+            expect(result.price?.currency).toEqual({ value: 'USD', source: 'text' });
+        });
+
+        it('should not emit price when the computed per-night value is below $1 (floor guard, >0 → >=1 tightening)', async () => {
+            // Arrange — BETA-169 side effect: adopting the shared guard tightened
+            // Booking's floor from >0 to >=1. A total of 1 over 2 nights = 0.50,
+            // previously passed (>0), now correctly dropped as a mis-parse.
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({
+                items: [{ ...BOOKING_PROBE_WITH_PRICE, price: 1 }]
+            });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert — 0.50 < PER_NIGHT_MIN_USD → no price candidate emitted
+            expect(result.price).toBeUndefined();
+        });
     });
 
     // -----------------------------------------------------------------------

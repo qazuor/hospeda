@@ -1129,6 +1129,62 @@ describe('AirbnbAdapter', () => {
             // Assert — 0.50 ÷ 2 = 0.25 < 1 → rejected by floor guard
             expect(result.price).toBeUndefined();
         });
+
+        it('should not emit price when the per-night value is implausibly high for USD (BETA-169 currency-mislabel guard)', async () => {
+            // Arrange — BETA-169 regression: the actor ignored the requested USD
+            // currency and returned the host's LOCAL currency (ARS). The
+            // reported case surfaced ~15.964 ARS/night as "15964.5 USD" (~1000x).
+            // breakDown yields a per-night value of 15964.5, which is far above
+            // any realistic USD nightly rate → the currency assumption is
+            // untrustworthy → drop the price rather than pre-fill a mislabelled
+            // value + currency.
+            const item: Record<string, unknown> = {
+                name: 'Casa Quinta del Owner',
+                price: {
+                    label: '$31929 for 2 nights',
+                    price: '$31929',
+                    breakDown: {
+                        basePrice: { description: '2 nights x $15964.5', price: '$31929' },
+                        total: { description: 'Total', price: '$31929' }
+                    }
+                }
+            };
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com.ar/rooms/817515602448448452'),
+                makeCtx()
+            );
+
+            // Assert — 15964.5 > PER_NIGHT_MAX_USD → no price candidate emitted
+            expect(result.price).toBeUndefined();
+        });
+
+        it('should still emit a plausible USD per-night value well inside the band', async () => {
+            // Arrange — a genuine premium USD listing at $2,400 total over 2
+            // nights = $1,200/night, comfortably inside the plausible USD band,
+            // must NOT be dropped by the BETA-169 ceiling guard.
+            const item: Record<string, unknown> = {
+                name: 'Villa Premium',
+                price: {
+                    breakDown: {
+                        total: { description: 'Total', price: '$2,400.00' }
+                    }
+                }
+            };
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert — 2400 ÷ 2 = 1200/night → kept, tagged text/USD
+            expect(result.price?.price?.value).toBeCloseTo(1200, 2);
+            expect(result.price?.currency).toEqual({ value: 'USD', source: 'text' });
+        });
     });
 
     // -----------------------------------------------------------------------
