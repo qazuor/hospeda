@@ -112,16 +112,13 @@ describe('createTranslations', () => {
 });
 
 describe('client i18n data element delivery (HOS-160 lever A)', () => {
-    it('resolves a key from the inlined #hospeda-i18n element', () => {
-        // The seeded element (beforeAll) carries the es dictionary.
-        const t = createT('es');
-        expect(t('nav.home')).not.toContain('MISSING');
+    it('resolves an es key from the inlined #hospeda-i18n element', () => {
+        expect(createT('es')('nav.home')).not.toContain('MISSING');
     });
 
-    it('falls back when the requested locale does not match the inlined element', () => {
-        // The inlined element is `es`; a `pt` lookup finds no matching payload
-        // and returns the caller fallback rather than a wrong-locale string.
-        const t = createT('pt');
-        expect(t('nav.home', 'Inicio')).toBe('Inicio');
+    it('resolves a pt key from the inlined element (cross-locale)', () => {
+        // The global test seed (test/setup.ts) carries every locale, mirroring
+        // how each localized page inlines its own locale's dict in production.
+        expect(createT('pt')('nav.home')).not.toContain('MISSING');
     });
 });

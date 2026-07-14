@@ -85,14 +85,23 @@ export function parseAcceptLanguage(header: string | null): SupportedLocale {
  */
 export const CLIENT_I18N_ELEMENT_ID = 'hospeda-i18n';
 
-/** Shape of the payload serialized into the client i18n data element. */
+/**
+ * Shape of the payload serialized into the client i18n data element.
+ *
+ * Production emits the single-locale `{ locale, m }` form (only the current
+ * page's dictionary ships — the whole point of HOS-160 lever A). The optional
+ * `all` form (every locale at once) is a TEST-ONLY convenience seeded by
+ * `test/setup.ts`, so a single element serves whatever locale a test renders;
+ * production never emits it.
+ */
 interface ClientI18nPayload {
-    readonly locale: string;
-    readonly m: Record<string, string>;
+    readonly locale?: string;
+    readonly m?: Record<string, string>;
+    readonly all?: Record<string, Record<string, string>>;
 }
 
-/** Client-only memo of the last-read payload (one locale live at a time). */
-let clientI18nCache: ClientI18nPayload | null = null;
+/** Client-only memo of the last-resolved locale dictionary. */
+let clientI18nCache: { locale: string; m: Record<string, string> } | null = null;
 
 /**
  * Reads the current page's flattened dictionary from the inlined
@@ -109,8 +118,13 @@ function getClientLocaleDict(locale: SupportedLocale): Record<string, string> {
     if (!raw) return {};
     try {
         const parsed = JSON.parse(raw) as ClientI18nPayload;
-        clientI18nCache = parsed;
-        return parsed.locale === locale ? parsed.m : {};
+        const m = parsed.all
+            ? (parsed.all[locale] ?? {})
+            : parsed.locale === locale
+              ? (parsed.m ?? {})
+              : {};
+        clientI18nCache = { locale, m };
+        return m;
     } catch {
         return {};
     }

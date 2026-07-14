@@ -117,6 +117,17 @@ export interface FetchAuthMeParams {
 let inFlightAuthMe: Promise<AuthMeSnapshot> | null = null;
 
 /**
+ * TEST-ONLY: clears the shared in-flight promise. Vitest reuses the module
+ * across tests, so a test that renders an island with a deliberately-pending
+ * `/auth/me` fetch would otherwise leave `inFlightAuthMe` set, making every
+ * following test reuse that stale promise (and never call `fetch`). The global
+ * `afterEach` in `test/setup.ts` calls this to isolate tests. No-op cost in prod.
+ */
+export function resetInFlightAuthMe(): void {
+    inFlightAuthMe = null;
+}
+
+/**
  * Fetches the current session from `GET /api/v1/public/auth/me` and maps it
  * to an `AuthMeSnapshot`. Never throws — a non-`ok` response resolves to a
  * guest snapshot so callers can treat network/auth failures uniformly.

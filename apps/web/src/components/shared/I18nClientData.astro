@@ -12,8 +12,10 @@
  * locale automatically — a cross-locale navigation therefore delivers the new
  * locale's dictionary with no script re-execution needed.
  *
- * As a data block (`type="application/json"`) it is never executed, so it is
- * outside CSP `script-src` and needs no nonce.
+ * As a data block (`type="application/json"`) it is never executed, so CSP
+ * `script-src` does not apply to it — but it still carries the request nonce to
+ * satisfy the inline-nonce guard (`scripts/check-inline-nonce.sh`); a nonce on a
+ * non-executed script is simply ignored by the browser.
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
@@ -24,6 +26,7 @@ interface Props {
 }
 
 const { locale } = Astro.props;
+const cspNonce = Astro.locals.cspNonce ?? '';
 
 // Escape every `<` as a unicode escape so a translation value containing the
 // closing-script sequence cannot break out of the JSON data element (standard
@@ -34,4 +37,10 @@ const payload = JSON.stringify({ locale, m: getInlineLocaleMessages(locale) }).r
 );
 ---
 
-<script id={CLIENT_I18N_ELEMENT_ID} type="application/json" is:inline set:html={payload}></script>
+<script
+    id={CLIENT_I18N_ELEMENT_ID}
+    type="application/json"
+    is:inline
+    nonce={cspNonce}
+    set:html={payload}
+></script>
