@@ -2,6 +2,7 @@ import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
+import { seedPointOfInterestCatalogCategories } from './pointOfInterestCatalogCategories.js';
 import { seedPointOfInterestCatalog } from './pointsOfInterestCatalog.seed.js';
 
 /**
@@ -21,6 +22,15 @@ import { seedPointOfInterestCatalog } from './pointsOfInterestCatalog.seed.js';
  * already seeded the category catalog and the destinations these POIs
  * relate to.
  *
+ * Two steps, in order: (1) create the 914 POI rows, (2) assign each
+ * fixture's own `categories[]` (HOS-139 M2M) to its now-existing POI —
+ * mirroring the `--required` group's own two-step shape for the original 12
+ * (`pointsOfInterest.seed.ts` then `poiCategoryBackfill.seed.ts`).
+ * Destination↔POI RELATIONS are NOT seeded here — per HOS-142 spec §6.3
+ * point 3, that is Phase 2's `0010-*.ts` dual-write data-migration's
+ * responsibility (a new relation-sourcing mechanism, `destination-relations.json`,
+ * not yet wired into any seed-time step).
+ *
  * @param context - Seed context with configuration and utilities
  * @returns Promise that resolves when the POI catalog seeding completes
  *
@@ -31,6 +41,7 @@ export async function runPointOfInterestCatalogSeeds(context: SeedContext): Prom
 
     try {
         await seedPointOfInterestCatalog(context);
+        await seedPointOfInterestCatalogCategories(context);
 
         logger.success({ msg: `${STATUS_ICONS.Success} POI catalog load completed.` });
     } catch (error) {
