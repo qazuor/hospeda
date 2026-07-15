@@ -545,16 +545,29 @@ export class TrialService {
      * - provider reports `cancelled`/`paused`/`finished` → mirror it locally
      * - provider reports `pending` → undecided; leave it for the next tick
      *
-     * ## Why this cron is load-bearing, not a backstop
+     * ## This is the BACKSTOP, not the primary path
      *
-     * MercadoPago fires `subscription_authorized_payment.created` for the day-N
-     * charge, but the preapproval status does not change (`authorized` stays
-     * `authorized`), so a `subscription_preapproval.updated` webhook may never
-     * arrive. Without this reconciler a converted subscription stays locally
-     * `trialing` forever, which makes the status meaningless and silently
-     * suppresses `RENEWAL_REMINDER` (it filters on `status: 'active'`).
+     * The primary conversion happens the instant the day-N charge settles, in
+     * `subscription-payment-handler.ts` — the `subscription_authorized_payment`
+     * webhook is the only event MercadoPago fires for that charge (the
+     * preapproval status stays `authorized`, so `subscription_preapproval.updated`
+     * may never arrive). Converting there keeps the window between "MP charged"
+     * and "we know it" at seconds.
+     *
+     * This cron exists because that webhook can be lost — and has been: HOS-159
+     * saw MP webhooks silently fail to arrive in production for an entire
+     * period, with activation falling back to polling alone. Without a backstop,
+     * a converted subscription would then stay locally `trialing` forever, which
+     * makes the status meaningless, keeps the trial middleware answering writes
+     * with HTTP 402, and silently suppresses `RENEWAL_REMINDER` (it filters on
+     * `status: 'active'`).
+     *
      * `subscription-poll.job.ts` does not cover this: it only drains enqueued
      * polling jobs, which complete once the sub leaves the pending state.
+     *
+     * A subscription the webhook already converted is skipped twice over: it is
+     * no longer `trialing` (so the claim query never sees it) and it already has
+     * a `TRIAL_RECONCILED` event (so the dedup guard would catch it anyway).
      *
      * ## Concurrency safety (ADR-019) — unchanged from the job this replaces
      * - Lock + fetch (claim) happen atomically inside ONE `withServiceTransaction`.

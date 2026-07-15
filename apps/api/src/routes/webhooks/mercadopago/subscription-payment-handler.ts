@@ -15,23 +15,57 @@
  * - Always acknowledges the event so MP stops retrying, even on upstream
  *   failures (errors are logged, never re-thrown).
  *
+ * - Converts a card-first trial the moment its day-N charge settles
+ *   (HOS-171). This is the PRIMARY conversion path — see below.
+ *
  * What this handler does NOT do:
  * - Recover a `past_due` subscription back to `active` when a retry
  *   succeeds — that transition flows through the
  *   `subscription_preapproval.updated` event and is handled upstream.
+ *
+ * ## Why the trial conversion lives HERE (HOS-171)
+ *
+ * When MercadoPago charges a card-first trial at day N, the preapproval's own
+ * status does not change (`authorized` → `authorized`), so a
+ * `subscription_preapproval.updated` event may never fire. THIS event is the
+ * only signal that the charge happened at all.
+ *
+ * If the conversion waited for the daily `trial-reconcile` cron instead, the
+ * local row would stay `trialing` with an elapsed `trial_end` for up to 24h —
+ * and `middlewares/trial.ts` answers every write from that state with HTTP 402.
+ * A customer MercadoPago just charged successfully would be locked out of their
+ * own account, right after paying. Converting here closes that window to
+ * seconds; the cron stays as the backstop for when this webhook is lost or
+ * dropped (see HOS-159 — MP webhooks silently failed to arrive in production
+ * for a whole period, which is exactly why a backstop must exist and exactly
+ * why it must not be the primary path).
  *
  * @module routes/webhooks/mercadopago/subscription-payment-handler
  */
 
 import type { QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
-import { and, billingPayments, billingSubscriptions, eq, getDb, isNull, sql } from '@repo/db';
 import {
+    and,
+    billingPayments,
+    billingSubscriptionEvents,
+    billingSubscriptions,
+    eq,
+    getDb,
+    isNull,
+    sql
+} from '@repo/db';
+import { SubscriptionStatusEnum } from '@repo/schemas';
+import {
+    BILLING_EVENT_TYPES,
+    checkSubscriptionStatusTransition,
     detectExternalChargeInterference,
     resolveFullPlanPriceCentavos,
-    resolveRenewalPromoEffect
+    resolveRenewalPromoEffect,
+    withServiceTransaction
 } from '@repo/service-core';
 import { getQZPayBilling } from '../../../middlewares/billing.js';
+import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { restoreFullPriceMutation } from '../../../services/promo-renewal-mp.service.js';
 import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -92,15 +126,21 @@ function mapMpStatusToQZPayStatus(details: MPAuthorizedPaymentDetails): QZPayPay
  * preapproval ID. Returns the bare minimum needed to record a payment
  * (`id`, `customerId`).
  */
-async function findLocalSubscriptionByPreapprovalId(
-    preapprovalId: string
-): Promise<{ id: string; customerId: string; planId: string | null } | null> {
+async function findLocalSubscriptionByPreapprovalId(preapprovalId: string): Promise<{
+    id: string;
+    customerId: string;
+    planId: string | null;
+    status: string;
+    trialEnd: Date | null;
+} | null> {
     const db = getDb();
     const rows = await db
         .select({
             id: billingSubscriptions.id,
             customerId: billingSubscriptions.customerId,
-            planId: billingSubscriptions.planId
+            planId: billingSubscriptions.planId,
+            status: billingSubscriptions.status,
+            trialEnd: billingSubscriptions.trialEnd
         })
         .from(billingSubscriptions)
         .where(
@@ -111,6 +151,105 @@ async function findLocalSubscriptionByPreapprovalId(
         )
         .limit(1);
     return rows[0] ?? null;
+}
+
+/**
+ * Convert a card-first trial the moment MercadoPago's day-N charge settles
+ * (HOS-171).
+ *
+ * The provider just took the money, so the local row must stop claiming the
+ * customer is on a trial — otherwise `getTrialStatus` reports an elapsed trial
+ * and the trial middleware 402s every write from a customer who is paid up.
+ *
+ * Idempotent by construction: it only acts on a `trialing` row, and the first
+ * run leaves it `active`, so a webhook retry (or the backstop cron) finds
+ * nothing to do. Writes the same `TRIAL_RECONCILED` event the cron writes —
+ * same fact, different discoverer, distinguished by `triggerSource` — which
+ * also makes the cron's dedup guard skip this subscription.
+ *
+ * Never throws: the charge already settled and is already recorded. Failing to
+ * flip a status must not turn into a webhook retry storm.
+ *
+ * @internal
+ */
+async function convertTrialOnSettledCharge(params: {
+    subscription: { id: string; customerId: string; status: string; trialEnd: Date | null };
+    eventId: string | number;
+    requestId: string;
+}): Promise<void> {
+    const { subscription, eventId, requestId } = params;
+
+    if (subscription.status !== SubscriptionStatusEnum.TRIALING) {
+        return;
+    }
+
+    try {
+        const guard = checkSubscriptionStatusTransition({
+            from: subscription.status as `${SubscriptionStatusEnum}`,
+            to: SubscriptionStatusEnum.ACTIVE,
+            subscriptionId: subscription.id
+        });
+        if (!guard.valid) {
+            apiLogger.warn(
+                { eventId, requestId, localSubscriptionId: subscription.id, reason: guard.reason },
+                'MercadoPago webhook: trial conversion blocked by the status guard — the reconcile cron will retry'
+            );
+            return;
+        }
+
+        await withServiceTransaction(async (ctx) => {
+            // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+            const tx = ctx.tx!;
+
+            await tx
+                .update(billingSubscriptions)
+                .set({
+                    status: SubscriptionStatusEnum.ACTIVE,
+                    trialConverted: true,
+                    trialConvertedAt: new Date()
+                })
+                .where(eq(billingSubscriptions.id, subscription.id));
+
+            await tx.insert(billingSubscriptionEvents).values({
+                subscriptionId: subscription.id,
+                eventType: BILLING_EVENT_TYPES.TRIAL_RECONCILED,
+                previousStatus: subscription.status,
+                newStatus: SubscriptionStatusEnum.ACTIVE,
+                triggerSource: 'subscription-authorized-payment-webhook',
+                metadata: {
+                    trialEnd: subscription.trialEnd?.toISOString() ?? null,
+                    converted: true,
+                    reconciledAt: new Date().toISOString()
+                }
+            });
+        });
+
+        // The customer just gained a paid entitlement set — do not make them wait
+        // out the 5-minute cache to use what they paid for (INV-1).
+        clearEntitlementCache(subscription.customerId);
+
+        apiLogger.info(
+            {
+                eventId,
+                requestId,
+                localSubscriptionId: subscription.id,
+                customerId: subscription.customerId
+            },
+            'MercadoPago webhook: card-first trial converted to active on its first settled charge'
+        );
+    } catch (err) {
+        // The reconcile cron is the backstop; log and let it pick this up.
+        apiLogger.error(
+            {
+                eventId,
+                requestId,
+                localSubscriptionId: subscription.id,
+                error: err instanceof Error ? err.message : String(err)
+            },
+            'MercadoPago webhook: failed to convert a card-first trial — the reconcile cron will retry',
+            { capture: true }
+        );
+    }
 }
 
 /**
@@ -528,6 +667,16 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
         // still transition to 'rejected', so decrementing on it and again on the
         // eventual retry double-consumes a cycle. Gate strictly on 'succeeded'.
         if (status === 'succeeded') {
+            // HOS-171: the charge landed, so this is no longer a trial. Awaited
+            // rather than fire-and-forget — it is the PRIMARY conversion path,
+            // and until it commits the trial middleware 402s this (paid-up)
+            // customer on every write. The daily cron is only the backstop.
+            await convertTrialOnSettledCharge({
+                subscription: sub,
+                eventId: event.id,
+                requestId
+            });
+
             // SPEC-262 T-007: multi-cycle promo discount renewal handling.
             // Anchor the discounted-cycle countdown on this post-charge event
             // (spike doc §5.2). service-core DECIDES + persists the decremented
