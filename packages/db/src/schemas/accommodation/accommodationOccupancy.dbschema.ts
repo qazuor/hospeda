@@ -37,6 +37,14 @@ export const accommodationOccupancy = pgTable(
         source: OccupancySourcePgEnum('source').notNull(),
         /** Event/booking id in the external source (Phase 2/3). `null` for MANUAL rows. */
         externalEventId: varchar('external_event_id', { length: 255 }),
+        /**
+         * The external event's title/summary — the VEVENT `SUMMARY` for iCal
+         * feeds (Airbnb/Booking/Other) or the event summary for Google Calendar
+         * (HOS-175). Read-only, sync-sourced; `null` for `MANUAL` rows (those
+         * use `note` instead). Rendered inside the occupancy calendar's event
+         * bars, with a per-provider fallback when the feed exposes no summary.
+         */
+        eventTitle: varchar('event_title', { length: 500 }),
         /** Optional internal note the host can attach to a blocked day. */
         note: varchar('note', { length: 500 }),
         createdById: uuid('created_by_id')

@@ -1,0 +1,1 @@
+ALTER TABLE "accommodation_occupancy" ADD COLUMN "event_title" varchar(500);

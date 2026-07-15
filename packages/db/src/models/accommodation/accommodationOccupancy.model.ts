@@ -272,7 +272,12 @@ export class AccommodationOccupancyModel extends BaseModelImpl<AccommodationOccu
             accommodationId: string;
             source: OccupancySourceEnum;
             fromDate: string;
-            rows: readonly { date: string; externalEventId: string }[];
+            rows: readonly {
+                date: string;
+                externalEventId: string;
+                /** External event title/summary, if the feed exposed one (HOS-175). */
+                eventTitle?: string | null;
+            }[];
             createdById: string;
         },
         tx?: DrizzleClient
@@ -303,6 +308,7 @@ export class AccommodationOccupancyModel extends BaseModelImpl<AccommodationOccu
                 isBlocked: true,
                 source,
                 externalEventId: row.externalEventId,
+                eventTitle: row.eventTitle ?? null,
                 note: null,
                 createdById,
                 createdAt: now,
