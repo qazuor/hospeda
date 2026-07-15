@@ -45,6 +45,13 @@ vi.mock('../../src/utils/env', () => {
         API_RATE_LIMIT_ADMIN_MAX_REQUESTS: 2, // Lower limit for admin
         API_RATE_LIMIT_ADMIN_MESSAGE: 'Too many admin requests, please try again later.',
 
+        // Protected rate limiting (HOS-186) — generous IP ceiling; the real
+        // governor for this tier is the per-user sliding window in routes/index.ts
+        API_RATE_LIMIT_PROTECTED_ENABLED: true,
+        API_RATE_LIMIT_PROTECTED_WINDOW_MS: 1000,
+        API_RATE_LIMIT_PROTECTED_MAX_REQUESTS: 12,
+        API_RATE_LIMIT_PROTECTED_MESSAGE: 'Too many requests, please try again later.',
+
         // Billing rate limiting
         API_RATE_LIMIT_BILLING_ENABLED: true,
         API_RATE_LIMIT_BILLING_WINDOW_MS: 1000,
@@ -90,6 +97,12 @@ vi.mock('../../src/utils/env', () => {
         adminWindowMs: mockEnv.API_RATE_LIMIT_ADMIN_WINDOW_MS,
         adminMaxRequests: mockEnv.API_RATE_LIMIT_ADMIN_MAX_REQUESTS,
         adminMessage: mockEnv.API_RATE_LIMIT_ADMIN_MESSAGE,
+
+        // Protected-specific
+        protectedEnabled: mockEnv.API_RATE_LIMIT_PROTECTED_ENABLED,
+        protectedWindowMs: mockEnv.API_RATE_LIMIT_PROTECTED_WINDOW_MS,
+        protectedMaxRequests: mockEnv.API_RATE_LIMIT_PROTECTED_MAX_REQUESTS,
+        protectedMessage: mockEnv.API_RATE_LIMIT_PROTECTED_MESSAGE,
 
         // Billing-specific
         billingEnabled: mockEnv.API_RATE_LIMIT_BILLING_ENABLED,
@@ -1044,6 +1057,58 @@ describe('Rate Limit Middleware', () => {
 
                 // Assert
                 expect(result).toBe('make-callback');
+            });
+        });
+
+        describe('protected classification (HOS-186)', () => {
+            it('should return protected (not general) for a GET to a protected path', () => {
+                // Arrange: this is the exact path that produced 329 x 429 in
+                // production — it used to fall through to the `general`
+                // catch-all (100 req / 15 min per IP).
+                const path = '/api/v1/protected/user-bookmarks/check';
+                const method = 'GET';
+
+                // Act
+                const result = getEndpointType(path, method);
+
+                // Assert
+                expect(result).toBe('protected');
+            });
+
+            it('should return protected for a POST to a protected path', () => {
+                // Arrange
+                const path = '/api/v1/protected/user-bookmarks/check-bulk';
+                const method = 'POST';
+
+                // Act
+                const result = getEndpointType(path, method);
+
+                // Assert
+                expect(result).toBe('protected');
+            });
+
+            it('should still return auth for protected auth paths (auth check wins)', () => {
+                // Arrange: the tighter auth bucket must keep claiming these.
+                const path = '/api/v1/protected/auth/session';
+                const method = 'POST';
+
+                // Act
+                const result = getEndpointType(path, method);
+
+                // Assert
+                expect(result).toBe('auth');
+            });
+
+            it('should still return billing for a POST to a protected billing path (billing check wins)', () => {
+                // Arrange: financial POSTs keep their restrictive bucket.
+                const path = '/api/v1/protected/billing/subscriptions/start-paid';
+                const method = 'POST';
+
+                // Act
+                const result = getEndpointType(path, method);
+
+                // Assert
+                expect(result).toBe('billing');
             });
         });
 

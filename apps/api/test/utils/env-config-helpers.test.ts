@@ -80,6 +80,76 @@ describe('getCorsConfig — allowHeaders always includes X-Idempotency-Key', () 
     });
 });
 
+describe('getRateLimitConfig — protected tier (HOS-186)', () => {
+    const originalEnv = { ...process.env };
+    const PROTECTED_KEYS = [
+        'API_RATE_LIMIT_PROTECTED_ENABLED',
+        'API_RATE_LIMIT_PROTECTED_WINDOW_MS',
+        'API_RATE_LIMIT_PROTECTED_MAX_REQUESTS',
+        'API_RATE_LIMIT_PROTECTED_MESSAGE'
+    ];
+
+    beforeEach(() => {
+        // The defaults are the contract here (prod/staging set none of these),
+        // so a stray local value must not leak into the assertions below.
+        for (const key of PROTECTED_KEYS) {
+            Reflect.deleteProperty(process.env, key);
+        }
+    });
+
+    afterEach(() => {
+        for (const key of Object.keys(process.env)) {
+            if (!(key in originalEnv)) {
+                Reflect.deleteProperty(process.env, key);
+            }
+        }
+        Object.assign(process.env, originalEnv);
+    });
+
+    it('defaults the protected tier to enabled', async () => {
+        const { getRateLimitConfig } = await import(HELPER_PATH);
+        expect(getRateLimitConfig().protectedEnabled).toBe(true);
+    });
+
+    it('defaults to a generous 2000 req / 15 min IP ceiling (owner decision)', async () => {
+        const { getRateLimitConfig } = await import(HELPER_PATH);
+        const config = getRateLimitConfig();
+
+        expect(config.protectedMaxRequests).toBe(2000);
+        expect(config.protectedWindowMs).toBe(900_000);
+    });
+
+    it('lets a single user spend their full per-user burst without touching the IP ceiling', async () => {
+        // Regression guard for the bug this fixed: protected traffic fell into
+        // the `general` catch-all (100 req / 15 min per IP), so a single user's
+        // legitimate burst blew the IP bucket and the 200 req/60s per-user
+        // limiter in routes/index.ts could never fire — a signed-in user had
+        // LESS budget than an anonymous visitor.
+        //
+        // The two limits measure different things and must not be compared
+        // per-minute: `prot:user` bounds a BURST (200 in any 60s), the IP bucket
+        // bounds SUSTAINED volume (2000 over 15 min). What must hold is that one
+        // user exhausting their whole burst stays well inside the IP ceiling —
+        // it should take many distinct users bursting from one IP to trip it,
+        // which is exactly the gross-abuse case it exists to catch.
+        const PER_USER_BURST = 200;
+        const { getRateLimitConfig } = await import(HELPER_PATH);
+        const config = getRateLimitConfig();
+
+        expect(config.protectedMaxRequests).toBeGreaterThan(PER_USER_BURST);
+        // Headroom for several CGNAT-shared users bursting at once, not just one.
+        expect(config.protectedMaxRequests / PER_USER_BURST).toBeGreaterThanOrEqual(5);
+        expect(config.protectedMaxRequests).toBeGreaterThan(config.maxRequests);
+    });
+
+    it('honours an operator override', async () => {
+        process.env.API_RATE_LIMIT_PROTECTED_MAX_REQUESTS = '5000';
+
+        const { getRateLimitConfig } = await import(HELPER_PATH);
+        expect(getRateLimitConfig().protectedMaxRequests).toBe(5000);
+    });
+});
+
 describe('parseCommaSeparated', () => {
     it('returns an empty array for undefined input', async () => {
         const { parseCommaSeparated } = await import(HELPER_PATH);
