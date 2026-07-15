@@ -289,6 +289,13 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
     );
 
     // --- Manual-event edit / delete ---
+    //
+    // Known, accepted limitation (HOS-175): occupancy is fetched month-scoped,
+    // so an event is only ever known across the viewed month. A manual block
+    // that spans a month boundary (creatable only in two steps, since the grid
+    // shows one month) is edited/deleted per month — each month manages its own
+    // portion. This matches exactly what the host sees in the current view; we
+    // deliberately do NOT fetch across the boundary to reunite the two halves.
 
     const handleEditSave = useCallback(
         async ({ newStartDate, newEndDate, note: newNote }: OccupancyEventEditSave) => {
@@ -582,10 +589,29 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                                                         onClick={() =>
                                                             setEditingEvent(segment.event)
                                                         }
-                                                        aria-label={`${t(
-                                                            'host.properties.editor.calendar.editEvent.title',
-                                                            'Editar bloqueo'
-                                                        )}: ${label}`}
+                                                        // A multi-week event emits one focusable
+                                                        // button per week, all opening the same edit
+                                                        // dialog. Continuation segments get a
+                                                        // disambiguated label so AT users don't hear
+                                                        // the same name repeated as if they were
+                                                        // different events — and none is hidden from
+                                                        // AT, so an event whose start-week segment
+                                                        // lands in the "+N" overflow band is still
+                                                        // reachable via a visible continuation.
+                                                        aria-label={
+                                                            segment.isStart
+                                                                ? `${t(
+                                                                      'host.properties.editor.calendar.editEvent.title',
+                                                                      'Editar bloqueo'
+                                                                  )}: ${label}`
+                                                                : `${t(
+                                                                      'host.properties.editor.calendar.editEvent.title',
+                                                                      'Editar bloqueo'
+                                                                  )}: ${label} (${t(
+                                                                      'host.properties.editor.calendar.editEvent.continues',
+                                                                      'continúa'
+                                                                  )})`
+                                                        }
                                                     >
                                                         {segment.showLabel && (
                                                             <span className={styles.barLabel}>
@@ -746,6 +772,7 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                 isOpen={editingEvent !== null}
                 t={t}
                 event={editingEvent}
+                minDate={todayKey}
                 isSubmitting={editSubmitting}
                 error={editError}
                 onSave={handleEditSave}

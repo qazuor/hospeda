@@ -47,6 +47,12 @@ export interface OccupancyEventEditDialogProps {
     readonly t: TranslationFn;
     /** The event to edit. `null` renders nothing (dialog closed). */
     readonly event: EditableOccupancyEvent | null;
+    /**
+     * Earliest selectable date (`YYYY-MM-DD`), applied as the start input's
+     * `min`. Occupancy is future-facing, so the caller passes today's key to
+     * stop a block being moved into the past.
+     */
+    readonly minDate?: string;
     /** Whether a save/delete request is in flight. */
     readonly isSubmitting: boolean;
     /** A server-side error message to show, or null. */
@@ -63,6 +69,7 @@ export function OccupancyEventEditDialog({
     isOpen,
     t,
     event,
+    minDate,
     isSubmitting,
     error,
     onSave,
@@ -73,7 +80,7 @@ export function OccupancyEventEditDialog({
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [note, setNote] = useState('');
-    const [rangeError, setRangeError] = useState(false);
+    const [validationError, setValidationError] = useState<'range' | 'past' | null>(null);
 
     // Re-seed the form whenever a different event is opened for editing.
     useEffect(() => {
@@ -81,15 +88,23 @@ export function OccupancyEventEditDialog({
         setStartDate(event.startKey);
         setEndDate(event.endKey);
         setNote(event.title ?? '');
-        setRangeError(false);
+        setValidationError(null);
     }, [event]);
 
     const handleSave = () => {
         if (endDate < startDate) {
-            setRangeError(true);
+            setValidationError('range');
             return;
         }
-        setRangeError(false);
+        // Enforce the future-facing constraint on save, not just via the
+        // picker's `min` (which a typed value can bypass). Only guard a MOVE
+        // into the past — a block whose start is already before `minDate` (an
+        // ongoing event) can still be saved as long as it isn't pushed earlier.
+        if (minDate && startDate < minDate && startDate < (event?.startKey ?? minDate)) {
+            setValidationError('past');
+            return;
+        }
+        setValidationError(null);
         onSave({
             newStartDate: startDate,
             newEndDate: endDate,
@@ -125,6 +140,7 @@ export function OccupancyEventEditDialog({
                             type="date"
                             className={styles.editInput}
                             value={startDate}
+                            min={minDate}
                             onChange={(e) => setStartDate(e.target.value)}
                             disabled={isSubmitting}
                         />
@@ -163,15 +179,20 @@ export function OccupancyEventEditDialog({
                         />
                     </label>
 
-                    {rangeError && (
+                    {validationError && (
                         <div
                             className={styles.error}
                             role="alert"
                         >
-                            {t(
-                                'host.properties.editor.calendar.editEvent.rangeError',
-                                'La fecha de fin no puede ser anterior a la de inicio.'
-                            )}
+                            {validationError === 'past'
+                                ? t(
+                                      'host.properties.editor.calendar.editEvent.pastError',
+                                      'No podés mover el bloqueo a una fecha pasada.'
+                                  )
+                                : t(
+                                      'host.properties.editor.calendar.editEvent.rangeError',
+                                      'La fecha de fin no puede ser anterior a la de inicio.'
+                                  )}
                         </div>
                     )}
                     {error && (

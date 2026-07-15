@@ -420,7 +420,9 @@
                     "cancel": "Cancelar",
                     "rangeError": "La fecha de fin no puede ser anterior a la de inicio.",
                     "saveError": "No pudimos guardar los cambios. Intentá de nuevo.",
-                    "deleteError": "No pudimos eliminar el bloqueo. Intentá de nuevo."
+                    "deleteError": "No pudimos eliminar el bloqueo. Intentá de nuevo.",
+                    "continues": "continúa",
+                    "pastError": "No podés mover el bloqueo a una fecha pasada."
                 },
                 "legend": {
                     "title": "Referencias",

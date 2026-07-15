@@ -420,7 +420,9 @@
                     "cancel": "Cancelar",
                     "rangeError": "A data de término não pode ser anterior à data de início.",
                     "saveError": "Não conseguimos salvar as alterações. Tente novamente.",
-                    "deleteError": "Não conseguimos excluir o bloqueio. Tente novamente."
+                    "deleteError": "Não conseguimos excluir o bloqueio. Tente novamente.",
+                    "continues": "continua",
+                    "pastError": "Você não pode mover o bloqueio para uma data passada."
                 },
                 "legend": {
                     "title": "Legenda",

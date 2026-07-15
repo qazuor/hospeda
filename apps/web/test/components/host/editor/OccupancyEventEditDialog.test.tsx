@@ -94,6 +94,43 @@ describe('OccupancyEventEditDialog', () => {
         });
     });
 
+    it('applies minDate as the start input min (future-facing)', () => {
+        renderDialog({ minDate: '2026-08-01' });
+        const [startInput] = screen.getAllByDisplayValue(/2026-08-1[02]/) as HTMLInputElement[];
+        expect(startInput).toHaveAttribute('min', '2026-08-01');
+    });
+
+    it('blocks moving the start into the past (before minDate and before the current start)', async () => {
+        const { onSave } = renderDialog({ minDate: '2026-08-15' });
+        const user = userEvent.setup();
+
+        const [startInput] = screen.getAllByDisplayValue(/2026-08-1[02]/) as HTMLInputElement[];
+        fireEvent.change(startInput, { target: { value: '2026-08-05' } });
+        await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        expect(onSave).not.toHaveBeenCalled();
+        expect(
+            screen.getByText('No podés mover el bloqueo a una fecha pasada.')
+        ).toBeInTheDocument();
+    });
+
+    it('still allows saving an ongoing event whose start is already before minDate', async () => {
+        const { onSave } = renderDialog({
+            event: { startKey: '2026-08-01', endKey: '2026-08-20', title: 'x' },
+            minDate: '2026-08-15'
+        });
+        const user = userEvent.setup();
+
+        // No date change (start stays at its already-past value) — must save.
+        await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        expect(onSave).toHaveBeenCalledWith({
+            newStartDate: '2026-08-01',
+            newEndDate: '2026-08-20',
+            note: 'x'
+        });
+    });
+
     it('calls onDelete when the delete button is clicked', async () => {
         const { onDelete } = renderDialog();
         const user = userEvent.setup();

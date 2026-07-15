@@ -24,7 +24,8 @@
  * when both are absent (Airbnb/Booking feeds that expose no summary).
  */
 
-import type { AccommodationOccupancy, OccupancySourceEnum } from '@repo/schemas';
+import type { AccommodationOccupancy } from '@repo/schemas';
+import { OccupancySourceEnum } from '@repo/schemas';
 import { type DateKey, parseDateKey, toDateKey } from './occupancy-calendar-grid';
 
 /** One multi-day occupancy event (an inclusive `startKey..endKey` span). */
@@ -192,8 +193,21 @@ export function layoutWeekBars({
         });
     }
 
-    // Greedy lane packing: earliest-starting, then longest, first.
-    clipped.sort((a, b) => a.colStart - b.colStart || b.span - a.span);
+    // Greedy lane packing: MANUAL events first (so an editable bar always
+    // lands in a low, visible lane and can never be hidden behind the "+N"
+    // overflow indicator — HOS-175), then earliest-starting, then longest.
+    // Trade-off: prepending the manual-first key means the input is no longer
+    // strictly start-ordered, so packing is no longer guaranteed lane-minimal —
+    // a week can occasionally use one more lane than its true max overlap. That
+    // density cost is deliberately accepted to keep manual (editable) bars
+    // visible; lanes are still never assigned overlapping segments.
+    clipped.sort(
+        (a, b) =>
+            (a.event.source === OccupancySourceEnum.MANUAL ? 0 : 1) -
+                (b.event.source === OccupancySourceEnum.MANUAL ? 0 : 1) ||
+            a.colStart - b.colStart ||
+            b.span - a.span
+    );
     const laneRightEdge: number[] = [];
     const segments: WeekBarSegment[] = clipped.map((segment) => {
         let lane = 0;

@@ -420,7 +420,9 @@
                     "cancel": "Cancel",
                     "rangeError": "The end date can't be earlier than the start date.",
                     "saveError": "We couldn't save your changes. Please try again.",
-                    "deleteError": "We couldn't delete the block. Please try again."
+                    "deleteError": "We couldn't delete the block. Please try again.",
+                    "continues": "continued",
+                    "pastError": "You can't move the block to a past date."
                 },
                 "legend": {
                     "title": "Legend",

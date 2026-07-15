@@ -421,4 +421,39 @@ describe('resolveWeekOverflow', () => {
         expect(result.overflowByColumn[2]).toBe(2);
         expect(result.overflowByColumn[0]).toBe(0);
     });
+
+    it('keeps a MANUAL bar in a visible lane even when sync events would overflow (HOS-175)', () => {
+        // manual + 3 sync events all blocking the same day -> 4 lanes. The
+        // manual bar must land in a low visible lane (never behind the "+N").
+        const events = buildOccupancyEvents({
+            rows: [
+                row({
+                    date: '2026-08-12',
+                    source: OccupancySourceEnum.GOOGLE_CALENDAR,
+                    externalEventId: 'g'
+                }),
+                row({
+                    date: '2026-08-12',
+                    source: OccupancySourceEnum.AIRBNB,
+                    externalEventId: 'a'
+                }),
+                row({ date: '2026-08-12', source: OccupancySourceEnum.MANUAL, note: 'm' }),
+                row({
+                    date: '2026-08-12',
+                    source: OccupancySourceEnum.BOOKING,
+                    externalEventId: 'b'
+                })
+            ]
+        });
+        const { segments, laneCount } = layoutWeekBars({ week: weekOf('2026-08-10'), events });
+        expect(laneCount).toBe(4);
+
+        const manual = segments.find((s) => s.event.source === OccupancySourceEnum.MANUAL);
+        expect(manual?.lane).toBe(0); // manual-first packing → lowest lane
+
+        const { visibleSegments } = resolveWeekOverflow({ segments, laneCount });
+        expect(visibleSegments.some((s) => s.event.source === OccupancySourceEnum.MANUAL)).toBe(
+            true
+        );
+    });
 });
