@@ -1628,17 +1628,17 @@ export class AccommodationService extends BaseCrudService<
      *  5. Otherwise (regular HOST), ask the billing layer for the owner's
      *     publish eligibility (`first_publish` / `has_active_sub` /
      *     `subscription_required`).
-     *  6. `subscription_required` -> reject with FORBIDDEN.
-     *  7. `first_publish` -> call `startTrial` OUTSIDE any transaction (timeout
-     *     is enforced by the caller-supplied implementation). On failure,
-     *     return `SERVICE_UNAVAILABLE` with no DB writes.
-     *  8. Open a short transaction:
+     *  6. `subscription_required` AND `first_publish` -> reject with FORBIDDEN.
+     *     Only `has_active_sub` may publish (HOS-171): a trial is now a
+     *     MercadoPago preapproval, so it cannot exist until someone authorizes a
+     *     card, and `first_publish` therefore goes to the plans page rather than
+     *     being granted a trial here. This step used to call `startTrial` outside
+     *     the transaction and compensate with `cancelTrial` if the tx then failed;
+     *     publish no longer touches billing at all, so both are gone.
+     *  7. Open a short transaction:
      *      - update accommodation lifecycleState to ACTIVE
-     *  9. If the transaction throws AFTER `startTrial` succeeded, compensate
-     *     by calling `cancelTrial(subscriptionId)`. If the cancel itself fails,
-     *     log a CRITICAL inconsistency warning for manual reconciliation.
-     *  10. Schedule revalidation as a best-effort side effect (never rolls back
-     *      the publish on revalidation errors).
+     *  8. Schedule revalidation as a best-effort side effect (never rolls back
+     *     the publish on revalidation errors).
      *
      * @param actor - The user (or admin) performing the publish.
      * @param id - The accommodation ID to publish.
