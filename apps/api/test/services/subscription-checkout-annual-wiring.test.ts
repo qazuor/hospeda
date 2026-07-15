@@ -1,26 +1,23 @@
 /**
- * Call-site wiring regression test (HOS-123 T-002).
+ * Annual call-site wiring regression test (HOS-171 §7.2, AC-11).
  *
- * `initiatePaidAnnualSubscription`'s mechanical create-and-persist block
- * (local `pending_provider` row insert -> `billing.checkout.create({ mode:
- * 'payment' })` -> `checkoutUrl`/`MISSING_INIT_POINT` guard -> polling
- * schedule) was refactored to delegate to the shared `createAnnualSubscription`
- * helper (HOS-123 T-001). This test guards the WIRING itself — that the
- * resolved plan/price/urls/customerId/statementDescriptor are threaded
- * through to the helper unchanged, and that the helper's result is returned
- * as-is — independent of the helper's own unit tests
- * (`test/services/billing/create-annual-subscription.test.ts`), which cover
- * the helper's internal behavior in isolation with the real implementation.
+ * `initiatePaidAnnualSubscription` used to delegate to a dedicated
+ * `createAnnualSubscription` helper that built a one-time Checkout Pro charge
+ * (`billing.checkout.create({ mode: 'payment' })`). That helper is gone: annual
+ * is now a RECURRING preapproval created through the exact same
+ * `createPaidSubscription` helper the monthly path uses, differing only by
+ * `billingInterval: 'annual'`.
+ *
+ * This test guards the WIRING at the qzpay boundary — that the resolved
+ * plan/price/urls/customerId are threaded into `billing.subscriptions.create`
+ * with the right cadence and mode, and that NO hosted checkout is created. It
+ * deliberately does not mock `createPaidSubscription`: that helper IS the
+ * contract under test here, so it runs for real against a mocked qzpay.
  *
  * @module test/services/subscription-checkout-annual-wiring
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-const createAnnualSubscriptionMock = vi.fn();
-vi.mock('../../src/services/billing/create-annual-subscription', () => ({
-    createAnnualSubscription: (...args: unknown[]) => createAnnualSubscriptionMock(...args)
-}));
 
 import { initiatePaidAnnualSubscription } from '../../src/services/subscription-checkout.service';
 
@@ -32,14 +29,20 @@ const CUSTOMER_ID = 'cust_owner';
 const PLAN_ID = '00000000-0000-4000-8000-0000000000aa';
 const ANNUAL_PRICE_ID = 'price_annual_1';
 const PLAN_METADATA = { displayName: 'Premium' };
+const MP_PREAPPROVAL_ID = 'preapproval-annual-1';
 
 const ANNUAL_URLS = {
-    successUrl: 'https://hospeda.test/billing/return?ref=local',
-    cancelUrl: 'https://hospeda.test/billing/return?ref=local&cancelled=1',
+    successUrl: 'https://hospeda.test/es/suscriptores/checkout/success/',
+    cancelUrl: 'https://hospeda.test/es/suscriptores/checkout/failure/',
     notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
 };
 
-function createBillingMock() {
+/**
+ * qzpay mock. `subscriptions.create` resolves the shape
+ * `createPaidSubscription` needs to succeed: an init point plus a provider
+ * subscription id (it fails closed without either).
+ */
+function createBillingMock(planMetadata: Record<string, unknown> = PLAN_METADATA) {
     return {
         plans: {
             list: vi.fn().mockResolvedValue({
@@ -47,7 +50,7 @@ function createBillingMock() {
                     {
                         id: PLAN_ID,
                         name: 'owner-premium',
-                        metadata: PLAN_METADATA,
+                        metadata: planMetadata,
                         prices: [
                             {
                                 id: ANNUAL_PRICE_ID,
@@ -61,9 +64,18 @@ function createBillingMock() {
                 ]
             })
         },
-        // The plain (non-promo) path never reaches billing.customers.get in
-        // the caller anymore — that lookup now lives entirely inside the
-        // (mocked-away) helper — so this stub is never invoked here.
+        subscriptions: {
+            create: vi.fn().mockResolvedValue({
+                id: 'sub-annual-local-1',
+                livemode: false,
+                providerInitPoint: 'https://mp.test/checkout/annual-preapproval',
+                providerSubscriptionIds: { mercadopago: MP_PREAPPROVAL_ID }
+            }),
+            // Only reached if a trial is in play; a prior subscription would
+            // disqualify one. Empty = trial-eligible customer.
+            getByCustomerId: vi.fn().mockResolvedValue([]),
+            cancel: vi.fn()
+        },
         customers: { get: vi.fn() },
         checkout: { create: vi.fn() },
         getStorage: vi.fn(() => ({}))
@@ -74,88 +86,121 @@ function makeStubDb() {
     return {
         insert() {
             throw new Error(
-                'db.insert must not be called directly by initiatePaidAnnualSubscription anymore — it belongs to createAnnualSubscription'
+                "db.insert must not be called by initiatePaidAnnualSubscription — the local row is qzpay's to write now (mode: paid)"
             );
         }
     } as unknown as Parameters<typeof initiatePaidAnnualSubscription>[0]['db'];
+}
+
+function callAnnual(billing: ReturnType<typeof createBillingMock>) {
+    return initiatePaidAnnualSubscription({
+        customerId: CUSTOMER_ID,
+        planSlug: 'owner-premium',
+        billing: billing as unknown as Parameters<
+            typeof initiatePaidAnnualSubscription
+        >[0]['billing'],
+        urls: ANNUAL_URLS,
+        db: makeStubDb()
+    });
 }
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('initiatePaidAnnualSubscription wiring to createAnnualSubscription (HOS-123 T-002)', () => {
+describe('initiatePaidAnnualSubscription wiring to createPaidSubscription (HOS-171 AC-11)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    it('calls createAnnualSubscription with the resolved plan/price/urls/customerId and returns its result verbatim', async () => {
-        createAnnualSubscriptionMock.mockResolvedValue({
-            checkoutUrl: 'https://mp.test/checkout/annual-wired',
-            localSubscriptionId: 'sub-wired-1',
-            expiresAt: '2030-01-01T00:00:00.000Z'
-        });
-        const billing = createBillingMock();
+    it('creates a recurring preapproval at the annual cadence, not a one-time checkout', async () => {
+        // Arrange — a plan with no trial keeps this test about the cadence alone
+        const billing = createBillingMock({ ...PLAN_METADATA, hasTrial: false, trialDays: 0 });
 
-        const result = await initiatePaidAnnualSubscription({
-            customerId: CUSTOMER_ID,
-            planSlug: 'owner-premium',
-            billing: billing as unknown as Parameters<
-                typeof initiatePaidAnnualSubscription
-            >[0]['billing'],
-            urls: ANNUAL_URLS,
-            statementDescriptor: 'HOSPEDA',
-            db: makeStubDb()
-        });
+        // Act
+        const result = await callAnnual(billing);
 
-        expect(createAnnualSubscriptionMock).toHaveBeenCalledTimes(1);
-        const call = createAnnualSubscriptionMock.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(call.billing).toBe(billing);
-        expect(call.customerId).toBe(CUSTOMER_ID);
-        expect(call.plan).toMatchObject({
-            id: PLAN_ID,
-            name: 'owner-premium',
-            metadata: PLAN_METADATA
-        });
-        expect(call.priceId).toBe(ANNUAL_PRICE_ID);
-        expect(call.chargeAmountCentavos).toBe(35_000_000);
-        expect(call.urls).toEqual(ANNUAL_URLS);
-        expect(call.statementDescriptor).toBe('HOSPEDA');
-        expect(typeof call.localSubscriptionId).toBe('string');
-        const metadata = call.metadata as Record<string, unknown>;
-        expect(metadata.planSlug).toBe('owner-premium');
-        expect(metadata.source).toBe('start-paid-annual');
-
-        // The helper's result is returned verbatim (no local recomputation).
-        expect(result.checkoutUrl).toBe('https://mp.test/checkout/annual-wired');
-        expect(result.localSubscriptionId).toBe('sub-wired-1');
-        expect(result.expiresAt).toBe('2030-01-01T00:00:00.000Z');
+        // Assert — the whole point of §7.2: annual is a preapproval now
+        expect(billing.subscriptions.create).toHaveBeenCalledTimes(1);
+        expect(billing.subscriptions.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                priceId: ANNUAL_PRICE_ID,
+                mode: 'paid',
+                billingInterval: 'annual',
+                notificationUrl: ANNUAL_URLS.notificationUrl
+            })
+        );
+        expect(result.checkoutUrl).toBe('https://mp.test/checkout/annual-preapproval');
+        expect(result.localSubscriptionId).toBe('sub-annual-local-1');
         expect(result.appliedEffect).toBeUndefined();
+    });
 
-        // No customer lookup left in the caller for the plain (non-promo) path.
-        expect(billing.customers.get).not.toHaveBeenCalled();
+    it('never creates a hosted Checkout Pro session for annual', async () => {
+        // Arrange
+        const billing = createBillingMock({ ...PLAN_METADATA, hasTrial: false, trialDays: 0 });
+
+        // Act
+        await callAnnual(billing);
+
+        // Assert — the one-time charge path is gone entirely
         expect(billing.checkout.create).not.toHaveBeenCalled();
     });
 
-    it('omits statementDescriptor from the helper call when not provided', async () => {
-        createAnnualSubscriptionMock.mockResolvedValue({
-            checkoutUrl: 'https://mp.test/checkout/annual-wired-2',
-            localSubscriptionId: 'sub-wired-2',
-            expiresAt: '2030-01-01T00:00:00.000Z'
-        });
-        const billing = createBillingMock();
+    it("uses the success url as the preapproval's single back_url", async () => {
+        // Arrange — a preapproval has ONE back_url; cancelUrl has no equivalent
+        const billing = createBillingMock({ ...PLAN_METADATA, hasTrial: false, trialDays: 0 });
 
-        await initiatePaidAnnualSubscription({
-            customerId: CUSTOMER_ID,
-            planSlug: 'owner-premium',
-            billing: billing as unknown as Parameters<
-                typeof initiatePaidAnnualSubscription
-            >[0]['billing'],
-            urls: ANNUAL_URLS,
-            db: makeStubDb()
-        });
+        // Act
+        await callAnnual(billing);
 
-        const call = createAnnualSubscriptionMock.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(call.statementDescriptor).toBeUndefined();
+        // Assert
+        expect(billing.subscriptions.create).toHaveBeenCalledWith(
+            expect.objectContaining({ paymentMethodReturnUrl: ANNUAL_URLS.successUrl })
+        );
+    });
+
+    it('carries the plan trial into the annual preapproval as free_trial days', async () => {
+        // Arrange — a trial-eligible customer (no prior subscriptions) on a
+        // 14-day plan: card-first means the trial rides the SAME preapproval
+        const billing = createBillingMock({ ...PLAN_METADATA, hasTrial: true, trialDays: 14 });
+
+        // Act
+        await callAnnual(billing);
+
+        // Assert — free_trial is expressed in DAYS regardless of the 12-month cadence
+        expect(billing.subscriptions.create).toHaveBeenCalledWith(
+            expect.objectContaining({ billingInterval: 'annual', freeTrialDays: 14 })
+        );
+    });
+
+    it('grants no trial on annual when the customer already has a subscription', async () => {
+        // Arrange — one trial per customer, for life, cross-interval
+        const billing = createBillingMock({ ...PLAN_METADATA, hasTrial: true, trialDays: 14 });
+        billing.subscriptions.getByCustomerId.mockResolvedValue([
+            { id: 'sub-prior', status: 'canceled' }
+        ]);
+
+        // Act
+        await callAnnual(billing);
+
+        // Assert
+        const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(call.freeTrialDays).toBeUndefined();
+    });
+
+    it('threads the plan slug into the preapproval metadata', async () => {
+        // Arrange
+        const billing = createBillingMock({ ...PLAN_METADATA, hasTrial: false, trialDays: 0 });
+
+        // Act
+        await callAnnual(billing);
+
+        // Assert
+        const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        const metadata = call.metadata as Record<string, unknown>;
+        expect(metadata.planSlug).toBe('owner-premium');
+        expect(metadata.source).toBe('start-paid-annual');
     });
 });
