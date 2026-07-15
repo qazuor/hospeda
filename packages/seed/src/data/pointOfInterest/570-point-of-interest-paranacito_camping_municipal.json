@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "570-point-of-interest-paranacito_camping_municipal",
     "slug": "paranacito_camping_municipal",
-    "lat": -33.7146367,
-    "long": -58.658338099999995,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Área de camping integrada al balneario, con arboleda, sanitarios, parrillas, quinchos y servicios estivales.",
@@ -26,8 +26,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://es.wikipedia.org/wiki/Villa_Paranacito; https://www.airedesantafe.com.ar/turismo/un-destino-natural-dentro-la-provincia-rios-que-invita-descansar-frente-al-rio-n538446",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://es.wikipedia.org/wiki/Villa_Paranacito",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "221-point-of-interest-circuito_tierra_promesas",
     "slug": "circuito_tierra_promesas",
-    "lat": null,
-    "long": null,
+    "lat": -31.6111322,
+    "long": -58.467959,
     "type": "OTHER",
     "icon": null,
     "description": "Circuito regional que integra antiguas colonias de la Jewish Colonization Association alrededor de San Salvador, General Campos, Ubajay y Concordia.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/gobierno/turismo/",
-    "notes": "Circuito regional vigente confirmado por Turismo San Salvador. Falta digitalizar trazado y paradas.",
+    "notes": "Circuito regional vigente confirmado por Turismo San Salvador. Falta digitalizar trazado y paradas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

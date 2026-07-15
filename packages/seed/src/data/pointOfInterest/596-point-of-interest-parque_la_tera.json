@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "596-point-of-interest-parque_la_tera",
     "slug": "parque_la_tera",
-    "lat": -33.0328106,
-    "long": -59.014476099999996,
+    "lat": null,
+    "long": null,
     "type": "PARK",
     "icon": null,
     "description": "Amplio espacio verde de la casa museo, utilizado para actividades familiares, juegos educativos, recorridos y encuentros culturales.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.larroque.gob.ar/noticia/1645/la_propuesta_en_el_museo_la_tera_para_aprender_crear_y_divertirse",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

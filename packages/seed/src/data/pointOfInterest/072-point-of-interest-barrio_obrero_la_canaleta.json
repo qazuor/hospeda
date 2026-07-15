@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "072-point-of-interest-barrio_obrero_la_canaleta",
     "slug": "barrio_obrero_la_canaleta",
-    "lat": -32.152839199999995,
-    "long": -58.1874263,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Conjunto de viviendas obreras formado por dos tiras paralelas y calles de servicio, con zaguanes y arcos característicos de la arquitectura local.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/capital-humano/cultura/monumentos/pueblo-liebig",
-    "notes": "Conjunto urbano documentado como parte del patrimonio nacional. Falta delimitar ubicación precisa. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Conjunto urbano documentado como parte del patrimonio nacional. Falta delimitar ubicación precisa.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

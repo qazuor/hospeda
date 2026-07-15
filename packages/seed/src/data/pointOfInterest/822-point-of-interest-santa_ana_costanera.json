@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "822-point-of-interest-santa_ana_costanera",
     "slug": "santa_ana_costanera",
-    "lat": -30.9002829,
-    "long": -57.9360922,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Paseo costero frente al lago con espacios verdes, circulación peatonal, iluminación y vistas panorámicas.",
@@ -26,8 +26,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.santaana.gob.ar/home/2024/09/24/santa-ana-turistica-2/; https://www.entrerios.tur.ar/localidades-1/santa-ana",
-    "notes": "Paseo lineal. Conviene modelarlo como geometría. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://www.santaana.gob.ar/home/2024/09/24/santa-ana-turistica-2/",
+    "notes": "Paseo lineal. Conviene modelarlo como geometría.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

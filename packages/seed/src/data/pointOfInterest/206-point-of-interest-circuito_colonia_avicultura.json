@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "206-point-of-interest-circuito_colonia_avicultura",
     "slug": "circuito_colonia_avicultura",
-    "lat": -32.4447526,
-    "long": -58.432994699999995,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido interpretativo por el museo, la producción avícola, la inmigración y el patrimonio social de San Justo.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://munisanjusto.gob.ar/noticias?tag=Turismo; https://www.facebook.com/p/Museo-de-la-Colonia-y-la-Avicultura-100064459251934/",
-    "notes": "Circuito temático propuesto a partir de activos existentes. Falta digitalizar paradas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://munisanjusto.gob.ar/noticias?tag=Turismo",
+    "notes": "Circuito temático propuesto a partir de activos existentes. Falta digitalizar paradas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

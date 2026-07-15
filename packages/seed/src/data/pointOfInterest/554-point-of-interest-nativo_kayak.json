@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "554-point-of-interest-nativo_kayak",
     "slug": "nativo_kayak",
-    "lat": -32.3104923,
-    "long": -59.0773029,
+    "lat": null,
+    "long": null,
     "type": "STADIUM",
     "icon": null,
     "description": "Servicio de alquiler de kayaks y equipos de pesca en el parque balneario.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=que-hacer",
-    "notes": "Prestador listado oficialmente. Requiere validación de operación actual. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Prestador listado oficialmente. Requiere validación de operación actual.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

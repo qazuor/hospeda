@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": true,
     "verifiedAt": null,
-    "source": "https://www.rosariodeltala.gob.ar/; https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf; https://mapcarta.com/es/W355831563",
+    "source": "https://www.rosariodeltala.gob.ar/",
     "notes": "Dirección, historia y coordenadas contrastadas con fuentes municipales y OpenStreetMap.",
     "lifecycleState": "ACTIVE",
     "categories": [

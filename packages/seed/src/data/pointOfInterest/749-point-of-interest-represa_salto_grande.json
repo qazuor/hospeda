@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.concordia.gob.ar/turismo/atractivos/represa-salto-grande; https://www.concordia.gob.ar/mapas/represa-de-salto-grande",
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/represa-salto-grande",
     "notes": "Existencia y relevancia confirmadas. Falta geocodificar el punto de visita habilitado.",
     "lifecycleState": "ACTIVE",
     "categories": [

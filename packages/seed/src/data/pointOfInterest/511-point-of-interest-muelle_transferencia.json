@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "511-point-of-interest-muelle_transferencia",
     "slug": "muelle_transferencia",
-    "lat": -33.753298,
-    "long": -59.178332000000005,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Antiguo muelle del sistema ferroportuario que permitió transferir vagones mediante ferry y dio impulso al crecimiento de Ibicuy.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://ibicuy.gob.ar/?q=content%2Fque-visitar; https://www.entrerios.tur.ar/localidades-1/ibicuy",
-    "notes": "Estructura histórica confirmada. Falta geocodificar el punto de observación seguro. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://ibicuy.gob.ar/?q=content%2Fque-visitar",
+    "notes": "Estructura histórica confirmada. Falta geocodificar el punto de observación seguro.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

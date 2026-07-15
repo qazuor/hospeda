@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "671-point-of-interest-playa_ruinas_historicas",
     "slug": "playa_ruinas_historicas",
-    "lat": -32.4957221,
-    "long": -58.255998000000005,
+    "lat": null,
+    "long": null,
     "type": "BEACH",
     "icon": null,
     "description": "Playa de arena sobre el río Uruguay ubicada junto al sitio histórico, habilitada para recreación, pesca y baño estacional en sectores delimitados.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
-    "notes": "Uso recreativo confirmado. La habilitación para baño depende de la temporada y condiciones del río. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Uso recreativo confirmado. La habilitación para baño depende de la temporada y condiciones del río.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

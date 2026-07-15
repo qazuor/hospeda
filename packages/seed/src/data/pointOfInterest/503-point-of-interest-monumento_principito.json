@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "503-point-of-interest-monumento_principito",
     "slug": "monumento_principito",
-    "lat": -31.367576600000003,
-    "long": -57.99924399999999,
+    "lat": null,
+    "long": null,
     "type": "MONUMENT",
     "icon": null,
     "description": "Monumento dedicado a la obra de Antoine de Saint-Exupéry y a su vínculo con el Castillo San Carlos.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/noticias/castillo-san-carlos/celebramos-el-vi-aniversario-de-la-puesta-en-valor-del-castillo",
-    "notes": "Existencia y denominación confirmadas. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia y denominación confirmadas. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

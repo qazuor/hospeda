@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "090-point-of-interest-bodega_alonso_saenz",
     "slug": "bodega_alonso_saenz",
-    "lat": -31.899060400000003,
-    "long": -58.4236534,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Bodega familiar con viñedos de Tannat, Merlot, Pinot Noir y Sauvignon Blanc, abierta a visitas y experiencias vinculadas con la producción de vinos.",
@@ -34,7 +34,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://villaelisa.tur.ar/atractivos/",
-    "notes": "Actividad, varietales y dirección vial confirmados. Falta geocodificar y definir asociación territorial futura. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Actividad, varietales y dirección vial confirmados. Falta geocodificar y definir asociación territorial futura.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

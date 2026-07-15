@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "648-point-of-interest-patu_granja",
     "slug": "patu_granja",
-    "lat": -32.1631324,
-    "long": -58.4004902,
+    "lat": -32.1680734,
+    "long": -58.4068894,
     "type": "OTHER",
     "icon": null,
     "description": "Granja recreativa y vivero orientado a familias, con animales de granja, especies vegetales y actividades didácticas.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://villaelisa.tur.ar/atractivos/",
-    "notes": "Actividad, servicios y vigencia confirmados. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Actividad, servicios y vigencia confirmados. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

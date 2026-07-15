@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "148-point-of-interest-casco_historico",
     "slug": "casco_historico",
-    "lat": -33.4987683,
-    "long": -58.809814499999995,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Sector urbano donde se conservan edificios antiguos, iglesia y referencias del crecimiento de la localidad antes del desarrollo del gran nodo vial.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/ceibas",
-    "notes": "Área general confirmada. Falta inventariar edificios y trazado. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Área general confirmada. Falta inventariar edificios y trazado.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

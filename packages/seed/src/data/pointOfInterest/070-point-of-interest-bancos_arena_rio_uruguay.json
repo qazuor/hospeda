@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "070-point-of-interest-bancos_arena_rio_uruguay",
     "slug": "bancos_arena_rio_uruguay",
-    "lat": null,
-    "long": null,
+    "lat": -32.1545743,
+    "long": -58.193502599999995,
     "type": "NATURAL",
     "icon": null,
     "description": "Sectores naturales de arena frente a la costa, visitados mediante paseos náuticos y utilizados para descanso y actividades recreativas en temporada.",
@@ -26,8 +26,8 @@
     "displayWeight": 50,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.instagram.com/turismopuebloliebig/reel/DZyNz-qOnY8/; https://www.entrerios.tur.ar/localidades-1/pueblo-liebig",
-    "notes": "La propuesta náutica está confirmada, pero la posición de los bancos es variable. No debe asignarse una coordenada fija sin relevamiento.",
+    "source": "https://www.instagram.com/turismopuebloliebig/reel/DZyNz-qOnY8/",
+    "notes": "La propuesta náutica está confirmada, pero la posición de los bancos es variable. No debe asignarse una coordenada fija sin relevamiento. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

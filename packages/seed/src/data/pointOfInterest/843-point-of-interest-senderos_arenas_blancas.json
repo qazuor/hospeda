@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "843-point-of-interest-senderos_arenas_blancas",
     "slug": "senderos_arenas_blancas",
-    "lat": -32.6112415,
-    "long": -59.09829419999999,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorridos de naturaleza dentro del balneario para observar flora, fauna y el paisaje ribereño.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://urdinarrain.tur.ar/que-hacer/",
-    "notes": "Senderos confirmados dentro del balneario. Falta digitalizar recorridos. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Senderos confirmados dentro del balneario. Falta digitalizar recorridos.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

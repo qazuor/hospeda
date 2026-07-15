@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "776-point-of-interest-rosario_del_tala_comisaria",
     "slug": "rosario_del_tala_comisaria",
-    "lat": -32.3008178,
-    "long": -59.138887,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Dependencia policial de referencia para seguridad pública y emergencias.",
@@ -26,8 +26,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf; https://mapcarta.com/es/N1091359634",
-    "notes": "Ubicación relativa confirmada junto a la estación y el centro. Falta coordenada exacta. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "source": "https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf",
+    "notes": "Ubicación relativa confirmada junto a la estación y el centro. Falta coordenada exacta.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

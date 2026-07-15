@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "695-point-of-interest-plaza_nautica",
     "slug": "plaza_nautica",
-    "lat": -30.9774426,
-    "long": -57.93159929999999,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Sector central del parque acuático con piscina circular, juegos de agua, toboganes infantiles, balde volcador y patio de comidas.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/parque-acuatico1/",
-    "notes": "Sector interno documentado por el sitio oficial. Falta geocodificar dentro del complejo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Sector interno documentado por el sitio oficial. Falta geocodificar dentro del complejo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

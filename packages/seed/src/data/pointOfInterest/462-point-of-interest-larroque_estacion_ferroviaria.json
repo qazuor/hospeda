@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "462-point-of-interest-larroque_estacion_ferroviaria",
     "slug": "larroque_estacion_ferroviaria",
-    "lat": -33.034435,
-    "long": -59.005360100000004,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Estación inaugurada en 1909 alrededor de la cual se formó la localidad y que continúa vinculada al corredor ferroviario de cargas.",
@@ -26,8 +26,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://es.wikipedia.org/wiki/Estaci%C3%B3n_Larroque; https://www.larroque.gob.ar/ciudad/4/historia_de_larroque",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://es.wikipedia.org/wiki/Estaci%C3%B3n_Larroque",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

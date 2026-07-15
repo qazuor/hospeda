@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "245-point-of-interest-colon_municipalidad",
     "slug": "colon_municipalidad",
-    "lat": -32.2240366,
-    "long": -58.14196140000001,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Sede administrativa municipal y punto de referencia para trámites, información pública y servicios locales.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://colon.gov.ar/",
-    "notes": "Institución confirmada. Falta recuperar domicilio y coordenadas exactas del edificio. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Institución confirmada. Falta recuperar domicilio y coordenadas exactas del edificio.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "192-point-of-interest-chimeneas_frigorifico",
     "slug": "chimeneas_frigorifico",
-    "lat": -32.1557568,
-    "long": -58.187684499999996,
+    "lat": null,
+    "long": null,
     "type": "MONUMENT",
     "icon": null,
     "description": "Chimeneas industriales que forman parte del perfil histórico del complejo fabril y fueron durante décadas un símbolo visible de la actividad productiva del pueblo.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/capital-humano/cultura/monumentos/pueblo-liebig",
-    "notes": "Elementos patrimoniales documentados. Falta definir punto fotográfico y condiciones de acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Elementos patrimoniales documentados. Falta definir punto fotográfico y condiciones de acceso.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

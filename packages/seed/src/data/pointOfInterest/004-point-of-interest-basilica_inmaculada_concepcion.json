@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "004-point-of-interest-basilica_inmaculada_concepcion",
     "slug": "basilica_inmaculada_concepcion",
-    "lat": -32.4823,
-    "long": -58.2375,
+    "lat": -32.48513,
+    "long": -58.23303,
     "type": "MONUMENT",
     "description": "Basílica histórica que alberga los restos del General Justo José de Urquiza",
     "nameI18n": {
@@ -50,5 +50,9 @@
     "isBuiltin": true,
     "isFeatured": true,
     "displayWeight": 75,
-    "lifecycleState": "ACTIVE"
+    "lifecycleState": "ACTIVE",
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final."
 }

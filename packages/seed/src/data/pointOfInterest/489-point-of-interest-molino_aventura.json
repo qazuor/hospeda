@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "489-point-of-interest-molino_aventura",
     "slug": "molino_aventura",
-    "lat": -32.2182804,
-    "long": -58.1356171,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Parque recreativo orientado a familias y grupos, con propuestas de aventura y actividades al aire libre.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://colon.gov.ar/colon-alcanzo-el-85-de-ocupacion-en-los-primeros-dias-del-ano-2026/",
-    "notes": "Actividad vigente confirmada por la Municipalidad en enero de 2026. Falta validar domicilio y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Actividad vigente confirmada por la Municipalidad en enero de 2026. Falta validar domicilio y coordenadas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

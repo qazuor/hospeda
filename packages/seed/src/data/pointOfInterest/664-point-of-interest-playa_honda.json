@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "664-point-of-interest-playa_honda",
     "slug": "playa_honda",
-    "lat": -32.209477,
-    "long": -58.1428362,
+    "lat": null,
+    "long": null,
     "type": "BEACH",
     "icon": null,
     "description": "Sector de playa urbana sobre el río Uruguay, integrado al corredor costero y próximo a servicios turísticos y gastronómicos.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.colonturismo.tur.ar/directorio/el-silencio-2/",
-    "notes": "La zona turística Playa Honda está confirmada por Turismo Colón. Falta ubicar el acceso representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "La zona turística Playa Honda está confirmada por Turismo Colón. Falta ubicar el acceso representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "415-point-of-interest-hornos_cal",
     "slug": "hornos_cal",
-    "lat": -31.8730865,
-    "long": -58.2091714,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Vestigios industriales vinculados con la producción de cal y con una etapa importante de la economía local.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.facebook.com/municipalidadsanjustoentrerios/",
-    "notes": "Falta inventariar estructuras, ubicación y condiciones de acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Falta inventariar estructuras, ubicación y condiciones de acceso.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

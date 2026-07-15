@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "430-point-of-interest-humedales",
     "slug": "humedales",
-    "lat": -33.6524101,
-    "long": -58.727856599999996,
+    "lat": null,
+    "long": null,
     "type": "NATURAL",
     "icon": null,
     "description": "Ambientes inundables que amortiguan crecientes y sostienen una gran diversidad de flora y fauna.",
@@ -33,8 +33,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.entrerios.tur.ar/localidades-1/villa-paranacito; https://www.argentina.gob.ar/sites/default/files/078_documento_diagnostico_socioproductivo-_ambiental_en_sector_del_dp.pdf",
-    "notes": "Área natural extensa. Falta delimitar sectores visitables y zonas sensibles. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://www.entrerios.tur.ar/localidades-1/villa-paranacito",
+    "notes": "Área natural extensa. Falta delimitar sectores visitables y zonas sensibles.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

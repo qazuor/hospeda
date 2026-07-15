@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://mapcarta.com/es/19202584; https://es.wikipedia.org/wiki/Colonia_Ensanche_Sauce",
+    "source": "https://mapcarta.com/es/19202584",
     "notes": "Localidad incluida en el municipio. Falta definir punto central representativo y servicios. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

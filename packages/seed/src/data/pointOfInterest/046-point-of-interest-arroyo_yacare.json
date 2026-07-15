@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "046-point-of-interest-arroyo_yacare",
     "slug": "arroyo_yacare",
-    "lat": -30.7880205,
-    "long": -58.0262335,
+    "lat": null,
+    "long": null,
     "type": "NATURAL",
     "icon": null,
     "description": "Curso de agua del entorno rural de Chajarí, integrado a los paisajes de producción y naturaleza.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf",
-    "notes": "Curso de agua; requiere geometría lineal y definición de accesos. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Curso de agua; requiere geometría lineal y definición de accesos.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

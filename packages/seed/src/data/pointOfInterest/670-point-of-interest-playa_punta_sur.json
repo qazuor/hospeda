@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "670-point-of-interest-playa_punta_sur",
     "slug": "playa_punta_sur",
-    "lat": -33.008302,
-    "long": -58.488687899999995,
+    "lat": null,
+    "long": null,
     "type": "BEACH",
     "icon": null,
     "description": "Sector de playa urbana situado hacia el extremo sur del paseo costero.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/playas",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

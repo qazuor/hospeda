@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "576-point-of-interest-paranacito_paseos_lancha",
     "slug": "paranacito_paseos_lancha",
-    "lat": -33.863906799999995,
-    "long": -58.673942499999995,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Salidas guiadas por ríos, arroyos, islas e islotes operadas por prestadores registrados por el municipio.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.villaparanacito.gob.ar/turismo/actividades",
-    "notes": "Oferta oficial vigente. Falta asociar cada prestador con su muelle y recorrido. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Oferta oficial vigente. Falta asociar cada prestador con su muelle y recorrido.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

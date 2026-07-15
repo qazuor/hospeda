@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "839-point-of-interest-sendero_tres_cruces",
     "slug": "sendero_tres_cruces",
-    "lat": -31.8770725,
-    "long": -58.2634837,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Sendero histórico de 500 metros que interpreta enfrentamientos entre unitarios y federales dentro del paisaje natural del parque.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
-    "notes": "Nombre, longitud y temática confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Nombre, longitud y temática confirmados. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "689-point-of-interest-plaza_general_san_martin",
     "slug": "plaza_general_san_martin",
-    "lat": -32.1548546,
-    "long": -58.1913459,
+    "lat": null,
+    "long": null,
     "type": "PLAZA",
     "icon": null,
     "description": "Plaza principal del pueblo, con el busto del General San Martín y uso habitual para actos cívicos, celebraciones y actividades comunitarias.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://puebloliebig.gob.ar/noticias/homenaje-al-general-jose-de-san-martin-en-pueblo-liebig/",
-    "notes": "Nombre, monumento y uso actual confirmados. Falta geocodificar el centro de la plaza. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, monumento y uso actual confirmados. Falta geocodificar el centro de la plaza.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "643-point-of-interest-paseos_canoa",
     "slug": "paseos_canoa",
-    "lat": -33.6817697,
-    "long": -58.7069666,
+    "lat": null,
+    "long": null,
     "type": "STADIUM",
     "icon": null,
     "description": "Recorridos de baja velocidad por canales y cursos tranquilos, orientados al contacto con el paisaje isleño.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/villa-paranacito",
-    "notes": "Actividad promovida oficialmente. Falta identificar prestadores y puntos de salida. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Actividad promovida oficialmente. Falta identificar prestadores y puntos de salida.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

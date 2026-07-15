@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "031-point-of-interest-aniversario_departamento",
     "slug": "aniversario_departamento",
-    "lat": -33.7161182,
-    "long": -58.9072952,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Celebración cívica del 7 de mayo con actos, desfiles institucionales y actividades recreativas.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.villaparanacito.gob.ar/turismo/eventos",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

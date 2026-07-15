@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "601-point-of-interest-parque_pancho_ramirez",
     "slug": "parque_pancho_ramirez",
-    "lat": -31.6247717,
-    "long": -58.5051869,
+    "lat": null,
+    "long": null,
     "type": "PARK",
     "icon": null,
     "description": "Parque urbano dedicado al caudillo entrerriano Francisco Ramírez y destinado al uso recreativo de vecinos y visitantes.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/ciudad/",
-    "notes": "Nombre y vigencia confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Nombre y vigencia confirmados. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

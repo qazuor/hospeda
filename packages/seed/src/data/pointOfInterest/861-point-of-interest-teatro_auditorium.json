@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "861-point-of-interest-teatro_auditorium",
     "slug": "teatro_auditorium",
-    "lat": -31.3976021,
-    "long": -58.0183563,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Sala teatral y cultural ubicada en el centro histórico, utilizada para espectáculos, presentaciones y actividades artísticas.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/W621698511",
-    "notes": "Existencia y ubicación relativa confirmadas. Falta dirección y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia y ubicación relativa confirmadas. Falta dirección y geocodificación.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "464-point-of-interest-larroque_museo_estacion",
     "slug": "larroque_museo_estacion",
-    "lat": -33.0348821,
-    "long": -59.005246199999995,
+    "lat": null,
+    "long": null,
     "type": "MUSEUM",
     "icon": null,
     "description": "Museo ferroviario y social con objetos, documentos y fotografías que reconstruyen la historia de Larroque y su relación con el tren.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

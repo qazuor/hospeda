@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://es.wikipedia.org/wiki/Larroque_%28Argentina%29; https://www.turismoentrerios.com/larroque/sitios.htm",
+    "source": "https://es.wikipedia.org/wiki/Larroque_%28Argentina%29",
     "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

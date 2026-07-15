@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "496-point-of-interest-monumento_asociacion_veneta",
     "slug": "monumento_asociacion_veneta",
-    "lat": -32.476110399999996,
-    "long": -58.226317300000005,
+    "lat": null,
+    "long": null,
     "type": "MONUMENT",
     "icon": null,
     "description": "Monumento del parque ferroviario dedicado a la memoria y presencia de la colectividad veneta en Larroque.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.larroque.gob.ar/noticia/1995/la_rica_historia_de_larroque_y_la_conexion_de_sus_museos",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

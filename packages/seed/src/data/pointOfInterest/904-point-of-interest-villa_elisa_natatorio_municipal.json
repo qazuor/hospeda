@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "904-point-of-interest-villa_elisa_natatorio_municipal",
     "slug": "villa_elisa_natatorio_municipal",
-    "lat": -32.1631324,
-    "long": -58.4004902,
+    "lat": -32.1675945,
+    "long": -58.3977708,
     "type": "STADIUM",
     "icon": null,
     "description": "Instalación deportiva municipal destinada a natación, actividades acuáticas, recreación y propuestas de temporada.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N3283143494",
-    "notes": "Existencia y ubicación relativa confirmadas con OpenStreetMap. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Existencia y ubicación relativa confirmadas con OpenStreetMap. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

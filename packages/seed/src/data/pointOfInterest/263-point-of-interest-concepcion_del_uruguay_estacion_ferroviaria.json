@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "263-point-of-interest-concepcion_del_uruguay_estacion_ferroviaria",
     "slug": "concepcion_del_uruguay_estacion_ferroviaria",
-    "lat": -32.4794832,
-    "long": -58.24121279999999,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Estación histórica vinculada con el Ferrocarril General Urquiza y el desarrollo comercial y portuario de la ciudad.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/realizar%C3%A1n-el-iv-encuentro-regional-de-museos",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

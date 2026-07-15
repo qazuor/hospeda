@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "765-point-of-interest-reservorio_piedras_semipreciosas",
     "slug": "reservorio_piedras_semipreciosas",
-    "lat": -32.2182804,
-    "long": -58.1356171,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio de exposición y venta de artesanías en piedras semipreciosas, con contenido educativo sobre minerales y sus características.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.colonturismo.tur.ar/directorio/reservorio-de-piedras-semipreciosas/",
-    "notes": "Actividad confirmada por Turismo Colón. Falta validar dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Actividad confirmada por Turismo Colón. Falta validar dirección y coordenadas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

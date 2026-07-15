@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "880-point-of-interest-turismo_rural_estancias",
     "slug": "turismo_rural_estancias",
-    "lat": -30.9100085,
-    "long": -57.9232891,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido por campos productivos, establecimientos rurales y paisajes de citrus, forestación y ganadería.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.santaana.gob.ar/home/ciudad/",
-    "notes": "Modalidad oficial del destino. Falta identificar establecimientos que reciban visitantes. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Modalidad oficial del destino. Falta identificar establecimientos que reciban visitantes.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

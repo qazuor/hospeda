@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "287-point-of-interest-corsos_dona_tata",
     "slug": "corsos_dona_tata",
-    "lat": null,
-    "long": null,
+    "lat": -33.7162889,
+    "long": -58.6619316,
     "type": "OTHER",
     "icon": null,
     "description": "Carnaval comunitario con comparsas, disfraces, música y baile callejero sobre la Avenida Entre Ríos.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.villaparanacito.gob.ar/turismo/eventos",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

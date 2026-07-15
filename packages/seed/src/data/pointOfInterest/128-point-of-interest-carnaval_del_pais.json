@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "128-point-of-interest-carnaval_del_pais",
     "slug": "carnaval_del_pais",
-    "lat": -33.0180047,
-    "long": -58.519802899999995,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Espectáculo de carnaval a cielo abierto con comparsas, carrozas, batucadas, pasistas y producción artística comunitaria.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://gualeguaychu.tur.ar/carnaval; https://gualeguaychu.gov.ar/agenda/25900-carnaval-del-pais%3A-fin-de-semana-largo-de-carnaval",
-    "notes": "Evento confirmado; comparte ubicación general con el Corsódromo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://gualeguaychu.tur.ar/carnaval",
+    "notes": "Evento confirmado; comparte ubicación general con el Corsódromo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

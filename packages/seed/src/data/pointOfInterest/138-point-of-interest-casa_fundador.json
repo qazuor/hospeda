@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "138-point-of-interest-casa_fundador",
     "slug": "casa_fundador",
-    "lat": -31.6247717,
-    "long": -58.5051869,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Residencia construida en 1929 para el coronel Malarín, reconocible por su torre y sus rasgos pintoresquistas.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/ciudad/",
-    "notes": "Historia y arquitectura confirmadas por el municipio. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Historia y arquitectura confirmadas por el municipio. Falta dirección y coordenadas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

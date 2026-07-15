@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "073-point-of-interest-barrio_obrero_la_hilera",
     "slug": "barrio_obrero_la_hilera",
-    "lat": -32.15442,
-    "long": -58.1885572,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Sector de viviendas obreras dispuesto en una extensa hilera, representativo del urbanismo industrial y de la organización social impulsada por la compañía.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/capital-humano/cultura/monumentos/pueblo-liebig",
-    "notes": "Conjunto urbano documentado como parte del patrimonio nacional. Falta delimitar el polígono o punto central. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Conjunto urbano documentado como parte del patrimonio nacional. Falta delimitar el polígono o punto central.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

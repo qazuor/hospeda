@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://villaelisa.gov.ar/evento/tren-historico/2026-04-02/; https://villaelisa.gov.ar/local/estacion-ferroviaria-villa-elisa/",
+    "source": "https://villaelisa.gov.ar/evento/tren-historico/2026-04-02/",
     "notes": "Actividad vigente en 2026 y punto de partida confirmados. Comparte ubicación general con la estación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

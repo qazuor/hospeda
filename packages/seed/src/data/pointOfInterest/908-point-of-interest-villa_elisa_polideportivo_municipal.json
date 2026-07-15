@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "908-point-of-interest-villa_elisa_polideportivo_municipal",
     "slug": "villa_elisa_polideportivo_municipal",
-    "lat": -32.1631324,
-    "long": -58.4004902,
+    "lat": null,
+    "long": null,
     "type": "STADIUM",
     "icon": null,
     "description": "Complejo deportivo público utilizado para competencias, entrenamientos, ferias comerciales y actividades comunitarias.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://villaelisa.gov.ar/expo-feria-comercial-supero-las-expectativas-de-sus-organizadores/",
-    "notes": "Actividad y uso actual confirmados en 2025. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Actividad y uso actual confirmados en 2025. Falta dirección y coordenadas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

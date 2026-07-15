@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "101-point-of-interest-caminatas_guiadas",
     "slug": "caminatas_guiadas",
-    "lat": -33.7163973,
-    "long": -58.6620273,
+    "lat": -33.6817697,
+    "long": -58.7069666,
     "type": "OTHER",
     "icon": null,
     "description": "Recorridos a pie con interpretación ambiental e histórica por caminos, costas y sectores naturales.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.villaparanacito.gob.ar/turismo/actividades",
-    "notes": "Actividad oficial vigente. Falta definir trazados y niveles de dificultad. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Actividad oficial vigente. Falta definir trazados y niveles de dificultad. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

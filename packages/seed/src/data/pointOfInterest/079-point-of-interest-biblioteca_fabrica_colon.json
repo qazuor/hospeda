@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "079-point-of-interest-biblioteca_fabrica_colon",
     "slug": "biblioteca_fabrica_colon",
-    "lat": -32.155350399999996,
-    "long": -58.194609799999995,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Biblioteca fundada en 1905 que conserva una extensa trayectoria cultural y comunitaria vinculada con la historia del pueblo industrial.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://puebloliebig.gob.ar/noticias/120-anos-de-la-biblioteca-popular-fabrica-colon/; https://www.argentinaturismo.com.ar/pueblo-liebig/biblioteca-fabrica-colon.html",
-    "notes": "Institución activa y antigüedad confirmadas. Falta dirección postal y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://puebloliebig.gob.ar/noticias/120-anos-de-la-biblioteca-popular-fabrica-colon/",
+    "notes": "Institución activa y antigüedad confirmadas. Falta dirección postal y geocodificación.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

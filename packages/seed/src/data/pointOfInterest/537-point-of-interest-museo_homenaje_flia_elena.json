@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "537-point-of-interest-museo_homenaje_flia_elena",
     "slug": "museo_homenaje_flia_elena",
-    "lat": -32.3008178,
-    "long": -59.138887,
+    "lat": null,
+    "long": null,
     "type": "MUSEUM",
     "icon": null,
     "description": "Colección privada y espacio de memoria local incluido en el plano turístico oficial.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf",
-    "notes": "Incluido en el plano turístico oficial. Falta validar horarios, acceso y dirección. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Incluido en el plano turístico oficial. Falta validar horarios, acceso y dirección.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

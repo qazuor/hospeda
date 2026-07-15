@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "698-point-of-interest-plaza_washington",
     "slug": "plaza_washington",
-    "lat": -32.2248093,
-    "long": -58.14257019999999,
+    "lat": null,
+    "long": null,
     "type": "PLAZA",
     "icon": null,
     "description": "Plaza céntrica ubicada junto al centro cívico y a la Parroquia Santos Justo y Pastor, utilizada como espacio verde y punto de encuentro urbano.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/W334797623",
-    "notes": "Existencia confirmada en OpenStreetMap; falta recuperar coordenadas exactas del polígono. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia confirmada en OpenStreetMap; falta recuperar coordenadas exactas del polígono.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

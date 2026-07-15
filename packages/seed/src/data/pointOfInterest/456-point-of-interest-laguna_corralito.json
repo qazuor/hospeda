@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "456-point-of-interest-laguna_corralito",
     "slug": "laguna_corralito",
-    "lat": -32.9190545,
-    "long": -59.155007899999994,
+    "lat": null,
+    "long": null,
     "type": "NATURAL",
     "icon": null,
     "description": "Laguna vinculada al paraje de El Corralito y al paisaje natural de la zona rural de Talitas.",
@@ -26,8 +26,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes; https://es.wikipedia.org/wiki/Larroque_%28Argentina%29",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

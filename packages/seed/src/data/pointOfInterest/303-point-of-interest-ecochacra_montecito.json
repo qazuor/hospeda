@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "303-point-of-interest-ecochacra_montecito",
     "slug": "ecochacra_montecito",
-    "lat": null,
-    "long": null,
+    "lat": -30.7543628,
+    "long": -58.005710199999996,
     "type": "OTHER",
     "icon": null,
     "description": "Emprendimiento rural incluido en la oferta de turismo productivo y de naturaleza del entorno de Chajarí.",
@@ -26,8 +26,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf; https://termaschajari.tur.ar/ciudad/turismo-rural/",
-    "notes": "Incluida en el plano turístico rural. Falta validar condiciones actuales de visita y coordenadas.",
+    "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf",
+    "notes": "Incluida en el plano turístico rural. Falta validar condiciones actuales de visita y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

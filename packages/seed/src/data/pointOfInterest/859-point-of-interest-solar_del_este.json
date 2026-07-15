@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "859-point-of-interest-solar_del_este",
     "slug": "solar_del_este",
-    "lat": -33.0057269,
-    "long": -58.4953636,
+    "lat": null,
+    "long": null,
     "type": "BEACH",
     "icon": null,
     "description": "Balneario y complejo recreativo del sector este, con playa y servicios de temporada.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/playas",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "586-point-of-interest-parque_de_la_vida",
     "slug": "parque_de_la_vida",
-    "lat": -32.137761,
-    "long": -58.44225600000001,
+    "lat": null,
+    "long": null,
     "type": "PARK",
     "icon": null,
     "description": "Espacio verde municipal contiguo al polideportivo, destinado a recreación, encuentro comunitario y actividades al aire libre.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://villaelisa.gov.ar/wp-content/uploads/2020/02/BOLETIN-NOVIEMBRE-2019.pdf",
-    "notes": "Denominación y ubicación relativa establecidas por ordenanza municipal. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Denominación y ubicación relativa establecidas por ordenanza municipal. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

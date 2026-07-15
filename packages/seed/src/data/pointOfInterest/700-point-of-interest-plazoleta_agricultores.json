@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "700-point-of-interest-plazoleta_agricultores",
     "slug": "plazoleta_agricultores",
-    "lat": -31.6241547,
-    "long": -58.504942099999994,
+    "lat": null,
+    "long": null,
     "type": "PLAZA",
     "icon": null,
     "description": "Espacio conmemorativo dedicado a los agricultores y al trabajo rural que sostiene la identidad productiva de San Salvador.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/ciudad/",
-    "notes": "Existencia confirmada por el municipio. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia confirmada por el municipio. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

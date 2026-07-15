@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "203-point-of-interest-circuito_capillas",
     "slug": "circuito_capillas",
-    "lat": -32.1599084,
-    "long": -58.4041288,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido de 83 kilómetros por siete comunidades y capillas rurales, pensado para bicicleta, automóvil, moto o caminata y orientado a fe, cultura y paisaje.",
@@ -34,7 +34,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://villaelisa.tur.ar/circuitocapillas/",
-    "notes": "Distancia, modalidad y carácter del circuito confirmados. Falta definir coordenada del punto de partida y trazado digital. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Distancia, modalidad y carácter del circuito confirmados. Falta definir coordenada del punto de partida y trazado digital.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

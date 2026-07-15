@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "693-point-of-interest-plaza_mayo",
     "slug": "plaza_mayo",
-    "lat": -32.3008178,
-    "long": -59.138887,
+    "lat": null,
+    "long": null,
     "type": "PLAZA",
     "icon": null,
     "description": "Plaza barrial próxima al hospital y al Parque Deportivo, utilizada para recreación y encuentro comunitario.",
@@ -31,8 +31,8 @@
     "displayWeight": 50,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://mapcarta.com/es/W355830480; https://mapcarta.com/es/W1265502968",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "source": "https://mapcarta.com/es/W355830480",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

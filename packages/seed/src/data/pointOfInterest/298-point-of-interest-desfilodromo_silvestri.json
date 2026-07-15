@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "298-point-of-interest-desfilodromo_silvestri",
     "slug": "desfilodromo_silvestri",
-    "lat": -30.9856574,
-    "long": -57.9194395,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Escenario del Carnaval Federaense, preparado para el desfile de comparsas y espectáculos durante la temporada estival.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.federacion.tur.ar/carnaval-federaense/; https://www.federacion.gob.ar/areas-noticias/secretaria-turismo",
-    "notes": "Nombre y función confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "source": "https://www.federacion.tur.ar/carnaval-federaense/",
+    "notes": "Nombre y función confirmados. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

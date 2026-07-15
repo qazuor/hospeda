@@ -39,6 +39,28 @@ export const REGIONAL_QUALIFIER = ', Entre Rios, Argentina';
 export const GEOCODE_BATCH_DATE = '2026-07-13';
 
 /**
+ * Maximum allowed geocoded distance from a POI's assigned destination center.
+ *
+ * HOS-177 deliberately uses a conservative fixed radius: the measured audit
+ * showed that 15km catches the clearly-bad long-tail while preserving the
+ * genuine ~10-13km Parque Nacional El Palmar / rural-primary cases.
+ */
+export const DESTINATION_RADIUS_GUARD_KM = 15;
+
+/**
+ * Extra slack granted to rows whose own address explicitly states
+ * "a N km de <destino>". The stated distance remains the authority; this just
+ * avoids rejecting a good geocode over minor cartographic / wording drift.
+ */
+export const EXPLICIT_DISTANCE_TOLERANCE_KM = 4;
+
+/**
+ * Very small radius around the destination center that strongly suggests the
+ * geocoder matched the TOWN itself rather than the requested POI.
+ */
+export const DESTINATION_CENTROID_GUARD_METERS = 80;
+
+/**
  * Substring stamped into (and searchable within) the `notes` of any POI whose
  * coordinates were derived by the pipeline's geocoder rather than
  * cartographically verified. A future human-verification pass can find these

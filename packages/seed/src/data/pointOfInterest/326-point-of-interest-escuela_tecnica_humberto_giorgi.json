@@ -31,7 +31,7 @@
     "displayWeight": 50,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://mapcarta.com/es/N4088196388; https://ibicuy.gob.ar/",
+    "source": "https://mapcarta.com/es/N4088196388",
     "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "635-point-of-interest-paseo_madre",
     "slug": "paseo_madre",
-    "lat": -30.9856574,
-    "long": -57.9194395,
+    "lat": null,
+    "long": null,
     "type": "PARK",
     "icon": null,
     "description": "Paseo urbano dedicado a la figura materna y utilizado como espacio de descanso y recreación.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
-    "notes": "Nombre confirmado en el plano turístico. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Nombre confirmado en el plano turístico. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

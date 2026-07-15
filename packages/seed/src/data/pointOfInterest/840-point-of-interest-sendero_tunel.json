@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "840-point-of-interest-sendero_tunel",
     "slug": "sendero_tunel",
-    "lat": -32.463759599999996,
-    "long": -58.484018,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Sendero de baja dificultad sobre un antiguo ramal ferroviario cubierto por vegetación, utilizado como corredor ecológico.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://caseros.gob.ar/turismo-y-cultura/",
-    "notes": "Falta geocodificar inicio, fin y condiciones de transitabilidad. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Falta geocodificar inicio, fin y condiciones de transitabilidad.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

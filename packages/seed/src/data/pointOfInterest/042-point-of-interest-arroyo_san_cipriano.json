@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "042-point-of-interest-arroyo_san_cipriano",
     "slug": "arroyo_san_cipriano",
-    "lat": -32.4460836,
-    "long": -58.3916875,
+    "lat": null,
+    "long": null,
     "type": "NATURAL",
     "icon": null,
     "description": "Curso de agua asociado al balneario, el camping, la pesca y los paisajes naturales del entorno rural.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.turismoentrerios.com/sanjusto/",
-    "notes": "Curso de agua; requiere geometría lineal y accesos diferenciados. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Curso de agua; requiere geometría lineal y accesos diferenciados.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

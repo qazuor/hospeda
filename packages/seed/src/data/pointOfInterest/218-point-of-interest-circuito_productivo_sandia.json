@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "218-point-of-interest-circuito_productivo_sandia",
     "slug": "circuito_productivo_sandia",
-    "lat": -30.900092500000003,
-    "long": -57.934898399999994,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido rural vinculado con productores, cultivos y conocimientos que sostienen la Fiesta Nacional de la Sandía.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.santaana.gob.ar/home/2024/09/24/santa-ana-turistica-2/; https://www.entrerios.tur.ar/event-details/fiesta-nacional-de-la-sandia",
-    "notes": "Actividad productiva confirmada. Falta identificar predios visitables y condiciones de acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://www.santaana.gob.ar/home/2024/09/24/santa-ana-turistica-2/",
+    "notes": "Actividad productiva confirmada. Falta identificar predios visitables y condiciones de acceso.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {
