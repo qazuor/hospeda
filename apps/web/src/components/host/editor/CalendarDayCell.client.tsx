@@ -97,6 +97,14 @@ export interface CalendarDayCellProps {
     readonly isSelected: boolean;
     /** Whether this date is the pending range start (first click, awaiting the second). */
     readonly isPending: boolean;
+    /**
+     * Bar-layout mode (HOS-162 prototype): occupancy is drawn as spanning
+     * event bars overlaid on the week, so the cell suppresses its own occupied
+     * background + source dot and renders the number top-left to leave room for
+     * the bars. Interaction (togglable MANUAL / free, disabled sync / past) is
+     * unchanged. Defaults to `false` (legacy per-day dot rendering).
+     */
+    readonly barMode?: boolean;
     readonly onSelect: (dateKey: string) => void;
 }
 
@@ -117,6 +125,7 @@ export function CalendarDayCell({
     isPast,
     isSelected,
     isPending,
+    barMode = false,
     onSelect
 }: CalendarDayCellProps) {
     // A date is occupied if it has ANY row (HOS-162: multiple rows per date
@@ -144,8 +153,12 @@ export function CalendarDayCell({
             type="button"
             className={cn(
                 styles.day,
-                isOccupied && styles.dayOccupied,
-                isSyncOrigin && styles.daySync,
+                barMode && styles.dayBarMode,
+                // In bar mode the spanning bars carry the occupied/source
+                // signal, so suppress the per-cell occupied bg + dashed sync
+                // border to avoid a double indicator.
+                !barMode && isOccupied && styles.dayOccupied,
+                !barMode && isSyncOrigin && styles.daySync,
                 isSelected && styles.daySelected,
                 isPending && styles.dayPending,
                 isPast && styles.dayPast
@@ -156,7 +169,7 @@ export function CalendarDayCell({
             aria-label={ariaLabel}
         >
             <span className={styles.dayNumber}>{date.getDate()}</span>
-            {isSyncOrigin && row && (
+            {!barMode && isSyncOrigin && row && (
                 <span
                     className={cn(styles.sourceDot, sourceDotClass(row.source))}
                     aria-hidden="true"
