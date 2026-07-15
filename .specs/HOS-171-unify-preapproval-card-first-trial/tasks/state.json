@@ -1,0 +1,871 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-171",
+    "title": "Unify billing on preapproval + MercadoPago-native trial (card-first)",
+    "created": "2026-07-15T11:20:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add PENDING_PROVIDER -> TRIALING edge to VALID_TRANSITIONS",
+            "description": "Add the single missing state-machine edge in packages/service-core/src/services/billing/subscription/subscription-status-transitions.ts:72-77 (today PENDING_PROVIDER allows only { ACTIVE, ABANDONED }). Without it the first webhook after authorization is rejected and activation is silently skipped (HOS-108 failure mode). Tests: unit test asserting checkSubscriptionStatusTransition(PENDING_PROVIDER, TRIALING) is valid (AC-4), in packages/service-core/test/services/billing/subscription/subscription-status-transitions.test.ts.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-003"],
+            "subtasks": [
+                {
+                    "title": "Add TRIALING to the PENDING_PROVIDER transition set",
+                    "completed": true
+                },
+                {
+                    "title": "Unit test AC-4",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "state-machine"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Create deriveTrialingStatus pure helper with full truth table",
+            "description": "New pure, I/O-free helper in @repo/service-core beside the other subscription-status helpers. Signature per spec 7.1: deriveTrialingStatus({ mappedStatus, trialEnd, now }) => SubscriptionStatusEnum. Truth table: ACTIVE + future trialEnd => TRIALING; ACTIVE + null trialEnd => ACTIVE; ACTIVE + past trialEnd => ACTIVE; any other mappedStatus => unchanged (never derive off paused/cancelled/past_due/finished). Clock injected for testability. Tests: unit, the FULL truth table (future/null/past trialEnd x every mappedStatus) - AC-1/AC-3.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-003"],
+            "subtasks": [
+                {
+                    "title": "Write the truth-table unit test first",
+                    "completed": true
+                },
+                {
+                    "title": "Implement the helper",
+                    "completed": true
+                },
+                {
+                    "title": "Export from service-core barrel",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "webhook"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Wire deriveTrialingStatus into processSubscriptionUpdated",
+            "description": "In apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts. QZPAY_TO_HOSPEDA_STATUS (:98-105) MUST stay a static Record - do not make it row-aware. The derivation lands AFTER Step 5's local-row lookup (:401-410) and BEFORE Step 6's comparison (:514), so that both the Step 6b fast-path guard (:567) and the in-transaction guard (:717) see the same derived value. trialEnd comes from the already-fetched localSubscription => zero extra queries. Tests: extend apps/api/test/webhooks/subscription-logic.test.ts - arrange qzpay .get() returning status 'active' + future trialEnd, assert local row becomes trialing (AC-1).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Insert derivation between Step 5 and Step 6",
+                    "completed": true
+                },
+                {
+                    "title": "Verify both guards observe the derived value",
+                    "completed": true
+                },
+                {
+                    "title": "Update webhook test arrange step",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "webhook"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Fix getTrialStatus.isExpired lockout (status-aware)",
+            "description": "CRITICAL (spec 7.1.a, R-2). apps/api/src/services/trial.service.ts:447 computes isExpired from trialEnd ALONE with no status check. Harmless today (conversion creates a NEW row with null trialEnd) but under card-first the SAME row carries trialEnd and becomes ACTIVE => isExpired true => middlewares/trial.ts:137 throws HTTP 402 TRIAL_EXPIRED on every write for a fully paid-up customer. Fix: const isExpired = isOnTrial && trialEnd ? now > trialEnd : false. The historical-subscription branch (:392-436) keys off status 'canceled' and is unaffected; middlewares/trial.ts needs no edit. Tests: AC-5 regression guard - active + past trialEnd => isExpired === false. Write the test FIRST (it must fail).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write AC-5 regression test (RED)",
+                    "completed": true
+                },
+                {
+                    "title": "Make isExpired status-aware",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "trial", "critical"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Write AC-6/AC-7 regression guards for the trial reconciler (RED)",
+            "description": "THE MOST IMPORTANT NEW TESTS IN THE SPEC. Without them a reconciler that still cancels passes every other test in the suite. Write BEFORE touching the cron. AC-6: local trialing sub, trialEnd passed, MP preapproval authorized => transitions trialing -> active, is NEVER cancelled, no TRIAL_EXPIRED sent. AC-7: same but day-N charge failed => transitions to past_due and the existing dunning cron owns it. These must FAIL against today's blockExpiredTrials (which cancels).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "AC-6 test: authorized => active, never cancelled",
+                    "completed": true
+                },
+                {
+                    "title": "AC-7 test: failed charge => past_due",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm both FAIL against current code",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "cron", "critical", "tdd"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Invert blockExpiredTrials into a trial reconciler",
+            "description": "CRITICAL (spec 7.1.b, R-1). Today trial.service.ts:537-825 (289 LOC) lists trialing subs, filters trialEnd < now, CANCELS at :718, stamps trialConvertedAt, inserts TRIAL_BLOCKED, sends TRIAL_EXPIRED. Under card-first all five actions are wrong: it would cancel every converting customer at the exact moment they start paying. Same skeleton, inverted outcome: KEEP the advisory lock (BLOCK_EXPIRED_TRIALS_LOCK_KEY = 1004, :69), the batch bound (:82), the claim/process split (ADR-019) and the per-subscription dedup-event guard (:642-662). New body: find local trialing subs with trialEnd < now => re-retrieve() the preapproval from MP => authorized/active => TRIALING -> ACTIVE (edge exists :81); cancelled/paused => mirror (edges :79-86); charge failed => PAST_DUE. Load-bearing, not optional: MP fires subscription_authorized_payment.created on the day-N charge but the preapproval status does NOT change (authorized -> authorized), so a preapproval.updated webhook may never arrive; without this the sub stays TRIALING forever and RENEWAL_REMINDER never fires (it filters status active). subscription-poll.job.ts does NOT cover this (it only runs enqueued polling jobs).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Replace the cancel body with retrieve + reconcile",
+                    "completed": true
+                },
+                {
+                    "title": "Preserve lock, batch bound, claim/process split, dedup guard",
+                    "completed": true
+                },
+                {
+                    "title": "Route failed charge to PAST_DUE for the dunning cron",
+                    "completed": true
+                },
+                {
+                    "title": "Turn T-005 GREEN",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "cron", "critical"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Rename the cron job to reflect the inverted semantics",
+            "description": "Rename block-expired-trials to the reconciler name across the job file, cron registration, logs and any settings key. A cron named 'block' that converts is a landmine for the next reader. Keep the advisory lock key value (1004) unchanged - renaming it would let an old and new instance run concurrently during deploy.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Rename job + registration + logs",
+                    "completed": true
+                },
+                {
+                    "title": "Keep lock key 1004 numerically identical",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "cron"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Move the one-trial-per-customer-for-life guard to the checkout call site",
+            "description": "Spec 10 'Preserved'. Today the AUTHORITATIVE gate is startTrial's any-subscription check (trial.service.ts:259-271), with the checkout's :539-540 (and the annual mirror :1207-1208) as a 'cheap first-layer short-circuit'. When startTrial dies that relationship INVERTS: the checkout check becomes the single authoritative gate and must be race-safe ON ITS OWN (it no longer has a second checker behind it). Tests: AC-10 - a customer with ANY prior subscription (any status, any product domain, including cancelled) gets NO trial and goes to the normal paid preapproval.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Port the any-subscription check to the checkout call site",
+                    "completed": true
+                },
+                {
+                    "title": "Make it race-safe standalone",
+                    "completed": true
+                },
+                {
+                    "title": "AC-10 test incl. cancelled + cross-domain prior subs",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "checkout", "critical"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Reroute the trial checkout to createPaidSubscription({ freeTrialDays })",
+            "description": "Spec 7.4 - closes the 74-day leak (G-4). The summing code ALREADY EXISTS and is ALREADY CORRECT (trial.service.ts:247-248: baseTrialDays = env.HOSPEDA_TRIAL_DAYS_OVERRIDE ?? planTrialDays; trialDays = baseTrialDays + (extraTrialDays ?? 0)). It only needs REROUTING: today it feeds billing.subscriptions.create({ trialDays }) (:288-307, no-card); tomorrow it feeds createPaidSubscription({ freeTrialDays }) (paid-subscription-create.ts:54, 128-131), which qzpay maps to auto_recurring.free_trial (subscription.adapter.ts:179,196,248-253) as { frequency: N, frequency_type: 'days' } - days regardless of billing cadence; the spike's 74-day trial proves no cap. PRESERVE the HOSPEDA_TRIAL_DAYS_OVERRIDE=0 kill-switch: the base-length guard is evaluated BEFORE the extension is added (:250-256), so an extension promo can never resurrect a disabled trial. Per-effect_kind precedence is unchanged (comp wins > trial_extension lengthens > discount yields with promoCodeIgnored). Tests: AC-8 (exactly ONE free_trial of 74 days reaches the MP body, not 14+74) and AC-9 (override=0 => no trial, charged immediately).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-010", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Point the base+promo sum at createPaidSubscription",
+                    "completed": true
+                },
+                {
+                    "title": "AC-8 integration test on the MP create body",
+                    "completed": true
+                },
+                {
+                    "title": "AC-9 kill-switch test",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "checkout", "promo"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Delete TrialService.startTrial() and POST /billing/trial/start",
+            "description": "startTrial: trial.service.ts:197-341 (145 LOC, verified). Route: apps/api/src/routes/billing/trial.ts:150-219 (70 LOC, verified). GET /billing/trial/status (trial.ts:108-141) is KEPT - the read layer survives. Only delete once T-008 has moved the eligibility guard and T-009 has rerouted the sum. Deleting a test is a reviewable act: each deleted test suite must be justified in the PR, not bundled silently.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Delete startTrial",
+                    "completed": false
+                },
+                {
+                    "title": "Delete the POST /trial/start route",
+                    "completed": false
+                },
+                {
+                    "title": "Keep GET /trial/status",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "cleanup"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Remove the 'trial' variant from CheckoutAppliedEffect",
+            "description": "subscription-checkout.service.ts:382 - delete the 'trial' variant from the union; 'comp'/'discount' stay. NOTE the verified correction (spec 10): in PlanPurchaseButton.client.tsx:727-736 trial is FUSED with comp in one OR condition (=== 'trial' || === 'comp'), so removing trial deletes ~0 net lines - comp needs the identical block. Do NOT split the block 'for clarity'; that ADDS lines. Tests: apps/api/test/services/subscription-checkout-promo-branches.test.ts (977 LOC) asserts the appliedEffect==='trial' branch and needs a real rewrite.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Drop the union variant",
+                    "completed": true
+                },
+                {
+                    "title": "Collapse the fused OR in PlanPurchaseButton, keeping comp",
+                    "completed": true
+                },
+                {
+                    "title": "Rewrite the promo-branches assertions",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "web", "cleanup"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Reroute initiatePaidAnnualSubscription to the shared preapproval path",
+            "description": "Spec 7.2 (G-1, AC-11). initiatePaidAnnualSubscription (subscription-checkout.service.ts:1120) stops calling createAnnualSubscription (:1367); instead it resolves the annual price via findAnnualPrice (:256-261) and calls the SAME shared createPaidSubscription the monthly path uses (:632). ZERO qzpay changes: toMercadoPagoInterval (subscription.adapter.ts:231-246) already maps year => { intervalFrequency: count*12, intervalType: 'months' } - the mapping existed and nobody used it because annual diverted to Checkout Pro before reaching it. Prefer 12 months over 365 days (leap years + calendar alignment). frequency_type 'years' is rejected by MP (400). Tests: AC-11 integration - the create body carries frequency 12 / frequency_type 'months' and NO Checkout Pro one-time charge is created.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Resolve annual price + call createPaidSubscription",
+                    "completed": true
+                },
+                {
+                    "title": "AC-11 integration test on the create body",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "annual"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Delete create-annual-subscription.ts and its two importers",
+            "description": "Whole file: apps/api/src/services/billing/create-annual-subscription.ts (406 LOC, verified). Two importers: subscription-checkout.service.ts:43 and trial.service.ts:43. This is why HOS-123 (annual reactivation) dies - there is nothing to reactivate when it renews itself.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Delete the file",
+                    "completed": true
+                },
+                {
+                    "title": "Remove both import sites",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "annual", "cleanup"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Delete the annual payment.updated confirmation path",
+            "description": "Spec 7.2. The annual confirmation path in payment-logic.ts and its metadata.annualSubscriptionId matcher die with create-annual-subscription.ts - annual now confirms through the SAME subscription_preapproval.updated path as monthly. This is a simplification. Verify no other caller depends on the annualSubscriptionId metadata key before deleting.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-014"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Grep every reader of metadata.annualSubscriptionId",
+                    "completed": false
+                },
+                {
+                    "title": "Delete the matcher + branch",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "annual", "webhook", "cleanup"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Maintain currentPeriodEnd from MP next_payment_date",
+            "description": "Spec 7.3 item 1+2 (AC-12/AC-13). RENEWAL_REMINDER is ALREADY BUILT and already dispatches at [7,3,1] days (notification-schedule.job.ts:45, send at :627-640), anchored on subscription.currentPeriodEnd (:546-548), filtered to status 'active' (:538-540), with day-scoped idempotency (:95-103). So the work is NOT building a notification - it is anchor correctness. Annual is today a direct insert whose period semantics die with create-annual-subscription.ts. The natural anchor is MP's next_payment_date (the spike proved it is present and survives authorization). CORRECTION to the qzpay analysis: subscription-poll.job.ts calls retrieve() (:190,:533) so the field is in the response object, but NOTHING READS IT - grep for next_payment_date|nextPaymentDate|currentPeriodEnd in that 919-LOC file returns ZERO matches. A consumer must be written. Trial suppression (AC-13) comes free from the existing status 'active' filter, PROVIDED T-006's reconciler flips the row to ACTIVE at conversion. OQ-3: keep [7,3,1] as-is (spec recommendation).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write the next_payment_date consumer",
+                    "completed": false
+                },
+                {
+                    "title": "Persist currentPeriodEnd for annual + monthly preapprovals",
+                    "completed": false
+                },
+                {
+                    "title": "AC-12 test: RENEWAL_REMINDER fires once at 7 days with correct date+amount",
+                    "completed": false
+                },
+                {
+                    "title": "AC-13 test: a trialing sub gets NO renewal reminder",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "notifications", "annual"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Defensive amount-reconciliation check on subscription payments",
+            "description": "Spec 7.5 item 3 (G-6, AC-14). Ships REGARDLESS of whether MP's panel discount campaigns turn out to apply (OQ-4) - it covers us against this, against a future campaign, and against anything else MP does to the amount without telling us. In the webhook that processes subscription charges: compare incoming payment.transaction_amount against the expected amount from billing_subscriptions/billing_plans, detect non-null coupon_amount/campaign_id (the detection fields already exist and nobody reads them), and log + alert to Sentry on mismatch with expected vs actual and the campaign_id. EXPLICITLY NOT FAIL-CLOSED: a mismatch must ALERT, NEVER reject the payment - rejecting money because our expectation is stale is a worse failure than a logged discrepancy. (Contrast the signup-discount path at subscription-checkout.service.ts:696-704 which IS fail-closed, because there WE mutate the amount.) Tests: AC-14 - payment accepted, discrepancy logged + reported.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Resolve the expected amount for the subscription",
+                    "completed": true
+                },
+                {
+                    "title": "Compare + read coupon_amount/campaign_id",
+                    "completed": true
+                },
+                {
+                    "title": "Sentry alert, non-blocking",
+                    "completed": true
+                },
+                {
+                    "title": "AC-14 test: accepted AND alerted",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "webhook", "observability"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Seed data-migration 0015 for plan trial configuration",
+            "description": "NOT NEEDED — verified. §8/AC-15 is conditional: a seed data-migration is required only when a plan metadata.hasTrial/.trialDays VALUE changes. HOS-171 changes the trial MECHANISM (no-card -> MP free_trial), not the commercial values: plans.config.ts is untouched by this branch (git diff origin/staging...HEAD -- packages/billing/src/config/plans.config.ts is empty), owner-basico still declares hasTrial:true trialDays:14. The Model C DB-wins trap therefore does not bite. If the §13 rollout later retunes a plan trial length, THAT change needs its own 0015 migration.",
+            "status": "not-needed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Author 0015 from the 0006 template",
+                    "completed": false
+                },
+                {
+                    "title": "OR-PRESERVE guard + destructive:false",
+                    "completed": false
+                },
+                {
+                    "title": "AC-15 seed integration test",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "billing", "migration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Remove the trial branch from success.astro",
+            "description": "apps/web/src/pages/[lang]/suscriptores/checkout/success.astro:43, 58-60, 62-67. VERIFIED ~10 LOC, not the ~30 the Linear issue claims.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Delete the trial branch",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "cleanup"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Remove the trial UX from PublishButton",
+            "description": "apps/web/src/components/host/PublishButton.client.tsx:75, 103-105, 170-173, 223-257 (file is 341 LOC). VERIFIED ~41-45 LOC, not the ~150 the Linear issue claims. Related suites needing rewrite: packages/service-core/test/services/accommodation/publish.test.ts, apps/api/test/services/accommodation-publish-deps.test.ts, packages/service-core/test/services/accommodation/update-publish-routing.test.ts.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Strip the trial UX",
+                    "completed": false
+                },
+                {
+                    "title": "Update the three publish suites",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "cleanup"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Delete the dead billingApi.reactivateSubscription web wrapper",
+            "description": "VERIFIED CORRECTION to the Linear issue's 'already dead code': it is dead in WEB ONLY. Defined apps/web/src/lib/api/endpoints-protected.ts:657, called ONLY by its own test (apps/web/test/lib/api/endpoints-protected.test.ts:24,33,45) => deleting the web wrapper is free. But the API route (routes/billing/trial.ts:495) and service (trial.service.ts:1154) are LIVE - deleting THOSE is a separate, real decision tracked as OQ-5. Scope of this task: the web wrapper + its test only.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Delete the wrapper + its test",
+                    "completed": false
+                },
+                {
+                    "title": "Leave the live API route alone (OQ-5)",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "cleanup"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Delete the TRIAL_EXPIRED notification",
+            "description": "VERIFIED ~140 LOC, not the ~30 the Linear issue claims. Template packages/notifications/src/templates/trial/trial-expired.tsx is 138 LOC; plus the enum (notification.types.ts:15), the subject (subject-builder.ts:18) and the category (notification-categories.ts:20). TRIAL_ENDING_REMINDER is NOT deleted - it survives and becomes MORE important under card-first (we are actually going to debit; warning before charging is what prevents chargebacks). Only deletable once T-006's reconciler no longer sends TRIAL_EXPIRED.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Delete template + enum + subject + category",
+                    "completed": false
+                },
+                {
+                    "title": "Verify TRIAL_ENDING_REMINDER untouched",
+                    "completed": false
+                },
+                {
+                    "title": "Check notification-retry.service.ts references",
+                    "completed": false
+                }
+            ],
+            "tags": ["notifications", "cleanup"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Rewrite the trial-creation unit + integration suites",
+            "description": "Spec 12: of 68 test files matching trialing|startTrial|blockExpiredTrials, 58 (~85%) stay green because trialing survives as a status and they only consume it as a fixture value. These 4 call startTrial directly and need real rewrites: apps/api/test/services/trial.service.test.ts (2849 LOC, 78 matches - the primary startTrial unit suite), apps/api/test/integration/trial-lifecycle.test.ts (597 LOC), apps/api/test/services/accommodation-publish-deps.test.ts (442 LOC), apps/api/test/services/subscription-checkout-promo-branches.test.ts (977 LOC).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "trial.service.test.ts",
+                    "completed": false
+                },
+                {
+                    "title": "trial-lifecycle.test.ts (integration)",
+                    "completed": false
+                },
+                {
+                    "title": "accommodation-publish-deps.test.ts",
+                    "completed": false
+                },
+                {
+                    "title": "subscription-checkout-promo-branches.test.ts",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Rewrite the e2e flow suites that POST /billing/trial/start",
+            "description": "apps/api/test/e2e/flows/billing/trial-lifecycle.test.ts (835 LOC), apps/api/test/e2e/flows/owner/registration-trial.test.ts (822 LOC), apps/api/test/e2e/flows/billing/trial-vs-pay-checkout.test.ts (419 LOC), apps/api/test/e2e/flows/billing/annual-trial-checkout.test.ts (244 LOC - asserts 'via TrialService.startTrial(), NO MercadoPago object created', i.e. EXACTLY the deleted behavior, so it inverts). Also packages/service-core/test/services/accommodation/publish.test.ts (746 LOC) and update-publish-routing.test.ts (449 LOC).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "trial-lifecycle e2e",
+                    "completed": false
+                },
+                {
+                    "title": "registration-trial e2e",
+                    "completed": false
+                },
+                {
+                    "title": "trial-vs-pay-checkout e2e",
+                    "completed": false
+                },
+                {
+                    "title": "annual-trial-checkout e2e (inverts)",
+                    "completed": false
+                },
+                {
+                    "title": "publish.test.ts + update-publish-routing.test.ts",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "e2e"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Rework the Playwright specs that drive the no-card flow",
+            "description": "A SEPARATE surface the issue never counted: 9 Playwright .spec.ts specs touch trial (the issue's grep only matched .test.ts/.test.tsx). Primary: apps/e2e/tests/host/host-02-trial-upgrade-mp.spec.ts and host-03-trial-expired.spec.ts - both drive the no-card flow end-to-end and must become card-first.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "host-02-trial-upgrade-mp.spec.ts",
+                    "completed": false
+                },
+                {
+                    "title": "host-03-trial-expired.spec.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Audit the other 7 specs",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "e2e", "playwright"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "ADR-009 addendum + spec/docs reconciliation",
+            "description": "Spec NG-2: ADR-009 (trial is HOST-only) needs NO revision - the HOST-only rule is justified by growth economics, unrelated to WHEN the card is collected. A one-line addendum suffices. Also update packages/billing/CLAUDE.md and the root CLAUDE.md billing quick-reference where they describe the no-card trial or the annual one-time charge.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-014"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "ADR-009 one-line addendum",
+                    "completed": false
+                },
+                {
+                    "title": "Update billing CLAUDE.md references",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-15T11:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 25,
+        "pending": 11,
+        "inProgress": 0,
+        "completed": 13,
+        "blocked": 0,
+        "averageComplexity": 2.2
+    }
+}
