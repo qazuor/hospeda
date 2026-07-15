@@ -4388,6 +4388,14 @@
             "max": "The event title cannot exceed 500 characters",
             "required": "The event title is required"
         },
+        "eventUpdate": {
+            "newRange": {
+                "invalid": "The new start date must be on or before the new end date"
+            },
+            "oldRange": {
+                "invalid": "The original start date must be on or before the original end date"
+            }
+        },
         "externalEventId": {
             "max": "The external event ID cannot exceed 255 characters",
             "required": "The external event ID is required"

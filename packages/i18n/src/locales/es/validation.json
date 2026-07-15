@@ -4388,6 +4388,14 @@
             "max": "El título del evento no puede superar los 500 caracteres",
             "required": "El título del evento es obligatorio"
         },
+        "eventUpdate": {
+            "newRange": {
+                "invalid": "La fecha inicial nueva debe ser anterior o igual a la fecha final nueva"
+            },
+            "oldRange": {
+                "invalid": "La fecha inicial original debe ser anterior o igual a la fecha final original"
+            }
+        },
         "externalEventId": {
             "max": "El ID de evento externo no puede superar los 255 caracteres",
             "required": "El ID de evento externo es obligatorio"

@@ -44,6 +44,7 @@ import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
 import { hasPermission } from '../../utils/permission.js';
+import { withServiceTransaction } from '../../utils/transaction.js';
 
 /**
  * Minimal public-safe projection of an occupancy row (HOS-43 spec section 6:
@@ -386,6 +387,160 @@ export async function batchToggleOccupancy(
         accommodationId: input.accommodationId
     });
     return all.filter((row) => requestedDates.has(row.date));
+}
+
+/**
+ * Expands an inclusive `[startDate, endDate]` range into every `YYYY-MM-DD`
+ * date in between, ascending.
+ *
+ * Timezone-safe by construction: each bound is parsed as UTC midnight
+ * (`${date}T00:00:00Z`) and the cursor steps forward in fixed 24h epoch-ms
+ * increments, re-serialized via `toISOString().slice(0, 10)` — never
+ * `new Date(dateString)` local-timezone parsing followed by `setDate`, which
+ * would be vulnerable to a DST transition silently dropping or duplicating a
+ * day. UTC has no DST, so this is exact regardless of the host's local
+ * timezone.
+ *
+ * @param startDate - Inclusive lower bound, `YYYY-MM-DD`.
+ * @param endDate - Inclusive upper bound, `YYYY-MM-DD`.
+ * @returns Every date in the range, ascending, inclusive of both bounds. An
+ *   empty array if `endDate` is before `startDate` (the Zod schema layer is
+ *   responsible for rejecting that before this is ever called).
+ */
+function expandDateRangeInclusive(startDate: string, endDate: string): string[] {
+    const dates: string[] = [];
+    let cursorMs = new Date(`${startDate}T00:00:00Z`).getTime();
+    const endMs = new Date(`${endDate}T00:00:00Z`).getTime();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+
+    while (cursorMs <= endMs) {
+        dates.push(new Date(cursorMs).toISOString().slice(0, 10));
+        cursorMs += oneDayMs;
+    }
+
+    return dates;
+}
+
+/**
+ * Input for {@link updateOccupancyEvent}.
+ */
+export interface UpdateOccupancyEventInput {
+    /** The actor performing the write (must own the accommodation, or hold ACCOMMODATION_UPDATE_ANY). */
+    readonly actor: Actor;
+    /** The accommodation whose manual event is being edited. */
+    readonly accommodationId: string;
+    /** Inclusive first day of the EXISTING manual event being replaced, `YYYY-MM-DD`. */
+    readonly oldStartDate: string;
+    /** Inclusive last day of the EXISTING manual event being replaced, `YYYY-MM-DD`. */
+    readonly oldEndDate: string;
+    /** Inclusive first day of the EDITED manual event, `YYYY-MM-DD`. */
+    readonly newStartDate: string;
+    /** Inclusive last day of the EDITED manual event, `YYYY-MM-DD`. */
+    readonly newEndDate: string;
+    /** The edited event's text. `null`/omitted clears the note. */
+    readonly note?: string | null;
+}
+
+/**
+ * Atomically edits a MANUAL occupancy event — moves it from
+ * `[oldStartDate..oldEndDate]` to `[newStartDate..newEndDate]` and/or changes
+ * its note in a single DB transaction
+ * (`PATCH /api/v1/protected/accommodations/:id/occupancy/event`).
+ *
+ * Both ranges are INCLUSIVE of their end date (see
+ * {@link expandDateRangeInclusive} and the `AccommodationOccupancyEventUpdateSchema`
+ * module doc in `@repo/schemas` for why this differs from the half-open
+ * `GET .../occupancy?from&to` range).
+ *
+ * Runs as one `withServiceTransaction` boundary: deletes the `MANUAL` rows
+ * across the OLD range, then idempotently upserts `MANUAL` rows across the
+ * NEW range with the new `note` — an all-or-nothing move, never a state where
+ * the old rows are gone but the new ones failed to write. Only
+ * `source=MANUAL` rows are ever touched, in EITHER range; sync-sourced rows
+ * (`GOOGLE_CALENDAR`/`AIRBNB`/`BOOKING`/`OTHER`) on any of those dates are
+ * left completely untouched — same invariant as {@link batchToggleOccupancy}.
+ * A date already holding a MANUAL row from an unrelated event is silently
+ * skipped by the upsert's conflict target (matches the idempotent-upsert
+ * precedent of {@link addOccupancy} / {@link batchToggleOccupancy} — this
+ * function does not special-case that overlap).
+ *
+ * Re-validates `oldStartDate <= oldEndDate` and `newStartDate <= newEndDate`
+ * here, even though `AccommodationOccupancyEventUpdateSchema` (in
+ * `@repo/schemas`) already declares the same two invariants via `.refine()`.
+ * This is NOT redundant: `apps/api`'s route factory feeds every request body
+ * schema through `createOpenAPISchema` for OpenAPI doc generation, and under
+ * Zod v4 a `.refine()` on a `z.object()` no longer produces a distinct
+ * `ZodEffects` wrapper (refinements are now stored as inline `checks` on the
+ * `ZodObject` itself) — the factory's `_def.typeName === 'ZodEffects'`
+ * detection is Zod v3-only and never matches, so `createOpenAPISchema`
+ * rebuilds the object via `z.object(newShape)` and silently drops the
+ * top-level `.refine()` checks before the schema ever reaches the runtime
+ * body validator. Per-field checks (e.g. `OccupancyDateSchema`'s regex +
+ * calendar-validity refine) survive because the field instances are reused
+ * as-is; only whole-object `.refine()`s are lost. This is a pre-existing,
+ * broader route-factory/Zod-v4 compatibility gap (also affects
+ * `AccommodationOccupancyRangeQuerySchema`, unrelated to this endpoint) —
+ * out of scope to fix generically here, so this function guards the
+ * invariant itself rather than trusting the HTTP layer to have already done
+ * so.
+ *
+ * @param params - Actor, accommodation id, the OLD and NEW inclusive date
+ *   ranges, and the new note.
+ * @returns The current occupancy rows for the UNION of the old and new date
+ *   ranges after the operation (whether newly inserted, pre-existing,
+ *   deleted, or an untouched sync row) — a single re-fetch after the write,
+ *   mirroring {@link batchToggleOccupancy}'s response contract, so the caller
+ *   can merge the result into a per-date map without a second round trip.
+ * @throws {ServiceError} `NOT_FOUND` when the accommodation does not exist or
+ *   is soft-deleted. `FORBIDDEN` when the actor lacks `ACCOMMODATION_OCCUPANCY_MANAGE`
+ *   / ownership. `VALIDATION_ERROR` when `oldStartDate > oldEndDate` or
+ *   `newStartDate > newEndDate`.
+ */
+export async function updateOccupancyEvent(
+    params: UpdateOccupancyEventInput
+): Promise<AccommodationOccupancy[]> {
+    const { actor, accommodationId, oldStartDate, oldEndDate, newStartDate, newEndDate, note } =
+        params;
+    const accommodation = await getAccommodationOrThrow(accommodationId);
+    assertManageAccess(actor, accommodation);
+
+    if (oldStartDate > oldEndDate) {
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            'oldStartDate must be on or before oldEndDate'
+        );
+    }
+    if (newStartDate > newEndDate) {
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            'newStartDate must be on or before newEndDate'
+        );
+    }
+
+    const oldDates = expandDateRangeInclusive(oldStartDate, oldEndDate);
+    const newDates = expandDateRangeInclusive(newStartDate, newEndDate);
+
+    await withServiceTransaction(async (txCtx) => {
+        // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+        const tx = txCtx.tx!;
+        await accommodationOccupancyModel.deleteManualByDates(
+            { accommodationId, dates: oldDates },
+            tx
+        );
+        await accommodationOccupancyModel.batchUpsertManual(
+            {
+                accommodationId,
+                dates: newDates,
+                createdById: actor.id,
+                note: note ?? null
+            },
+            tx
+        );
+    });
+
+    const unionDates = new Set([...oldDates, ...newDates]);
+    const all = await accommodationOccupancyModel.findByAccommodation({ accommodationId });
+    return all.filter((row) => unionDates.has(row.date));
 }
 
 /**

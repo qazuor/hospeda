@@ -94,3 +94,61 @@ export const AccommodationOccupancyBatchInputSchema = z.object({
 export type AccommodationOccupancyBatchInput = z.infer<
     typeof AccommodationOccupancyBatchInputSchema
 >;
+
+/**
+ * Input for the edit-manual-event route (`PATCH .../occupancy/event`, HOS-175
+ * Phase 3 web wiring).
+ *
+ * Unlike {@link AccommodationOccupancyBatchInputSchema}, `accommodationId` is
+ * deliberately ABSENT here — the route derives it from the URL path only (see
+ * `addOccupancy.ts` / `batchOccupancy.ts` module docs for the "never trust the
+ * body" rationale), and this input shape has no other caller that would need
+ * it duplicated in the body.
+ *
+ * Both ranges are INCLUSIVE of their end date (unlike the half-open
+ * `from`/`to` of {@link AccommodationOccupancyRangeQuerySchema}, which
+ * excludes the checkout day) — this mirrors a calendar UI's "drag to select
+ * the first and last day of the event" interaction, not a stay's checkout
+ * semantics. `oldStartDate`/`oldEndDate` identify the EXISTING manual event
+ * being replaced; `newStartDate`/`newEndDate` are the edited range. Each pair
+ * independently requires `start <= end` (a single-day event is valid: start
+ * === end).
+ *
+ * @example
+ * ```ts
+ * const input: AccommodationOccupancyEventUpdateInput = {
+ *   oldStartDate: '2026-07-10',
+ *   oldEndDate: '2026-07-12',
+ *   newStartDate: '2026-07-11',
+ *   newEndDate: '2026-07-14',
+ *   note: 'Moved by two days',
+ * };
+ * ```
+ */
+export const AccommodationOccupancyEventUpdateSchema = z
+    .object({
+        oldStartDate: OccupancyDateSchema,
+        oldEndDate: OccupancyDateSchema,
+        newStartDate: OccupancyDateSchema,
+        newEndDate: OccupancyDateSchema,
+        note: z
+            .string({ message: 'zodError.accommodationOccupancy.note.required' })
+            .max(500, { message: 'zodError.accommodationOccupancy.note.max' })
+            .nullish()
+    })
+    .refine((data) => data.oldStartDate <= data.oldEndDate, {
+        message: 'zodError.accommodationOccupancy.eventUpdate.oldRange.invalid',
+        path: ['oldEndDate']
+    })
+    .refine((data) => data.newStartDate <= data.newEndDate, {
+        message: 'zodError.accommodationOccupancy.eventUpdate.newRange.invalid',
+        path: ['newEndDate']
+    });
+
+/**
+ * TypeScript type for the edit-manual-event input, inferred from
+ * {@link AccommodationOccupancyEventUpdateSchema}.
+ */
+export type AccommodationOccupancyEventUpdateInput = z.infer<
+    typeof AccommodationOccupancyEventUpdateSchema
+>;
