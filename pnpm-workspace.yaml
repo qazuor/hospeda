@@ -3,11 +3,6 @@ packages:
   - "packages/*"
   - "infra/cloudflare/*"
 
-# Explicit (matches the pnpm default). Previously set via .npmrc
-# (`engine-strict=false`), which pnpm v11 no longer reads for this key —
-# moved here per the v11 config-location migration.
-engineStrict: false
-
 publicHoistPattern:
   - "react"
   - "react-dom"
