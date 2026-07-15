@@ -1,4 +1,4 @@
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     checkCanAdminList,
@@ -11,6 +11,7 @@ import {
 } from '../../../src/services/point-of-interest/point-of-interest.permissions';
 import { ServiceError } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
+import { PointOfInterestFactoryBuilder } from '../../factories/pointOfInterestFactory';
 
 describe('PointOfInterest permissions', () => {
     const actorNoPerms = createActor({ permissions: [] });
@@ -28,9 +29,45 @@ describe('PointOfInterest permissions', () => {
     });
     const actorWithView = createActor({ permissions: [PermissionEnum.POINT_OF_INTEREST_VIEW] });
 
-    it('checkCanViewPointOfInterest always allows (public catalog)', () => {
-        expect(() => checkCanViewPointOfInterest(actorNoPerms)).not.toThrow();
-        expect(() => checkCanViewPointOfInterest(actorWithView)).not.toThrow();
+    const activePoi = PointOfInterestFactoryBuilder.create({
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        deletedAt: undefined
+    });
+    const deletedPoi = PointOfInterestFactoryBuilder.create({ deletedAt: new Date() });
+    const archivedPoi = PointOfInterestFactoryBuilder.create({
+        lifecycleState: LifecycleStatusEnum.ARCHIVED
+    });
+
+    it('checkCanViewPointOfInterest allows any actor to view an ACTIVE, non-deleted POI', () => {
+        expect(() => checkCanViewPointOfInterest(actorNoPerms, activePoi)).not.toThrow();
+        expect(() => checkCanViewPointOfInterest(actorWithView, activePoi)).not.toThrow();
+    });
+
+    it('checkCanViewPointOfInterest throws NOT_FOUND for a soft-deleted POI without POINT_OF_INTEREST_VIEW (HOS-132)', () => {
+        expect(() => checkCanViewPointOfInterest(actorNoPerms, deletedPoi)).toThrowError(
+            ServiceError
+        );
+        try {
+            checkCanViewPointOfInterest(actorNoPerms, deletedPoi);
+        } catch (err) {
+            expect((err as ServiceError).code).toBe(ServiceErrorCode.NOT_FOUND);
+        }
+    });
+
+    it('checkCanViewPointOfInterest throws NOT_FOUND for a non-ACTIVE POI without POINT_OF_INTEREST_VIEW (HOS-132)', () => {
+        expect(() => checkCanViewPointOfInterest(actorNoPerms, archivedPoi)).toThrowError(
+            ServiceError
+        );
+        try {
+            checkCanViewPointOfInterest(actorNoPerms, archivedPoi);
+        } catch (err) {
+            expect((err as ServiceError).code).toBe(ServiceErrorCode.NOT_FOUND);
+        }
+    });
+
+    it('checkCanViewPointOfInterest allows an actor with POINT_OF_INTEREST_VIEW to view a soft-deleted or non-ACTIVE POI (admin path, HOS-132)', () => {
+        expect(() => checkCanViewPointOfInterest(actorWithView, deletedPoi)).not.toThrow();
+        expect(() => checkCanViewPointOfInterest(actorWithView, archivedPoi)).not.toThrow();
     });
 
     it('checkCanListPointsOfInterest always allows (public catalog)', () => {
