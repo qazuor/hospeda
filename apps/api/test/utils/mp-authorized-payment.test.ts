@@ -54,6 +54,8 @@ describe('fetchAuthorizedPaymentDetails', () => {
         expect(result.kind).toBe('ok');
         if (result.kind !== 'ok') throw new Error('unreachable');
         expect(result.details).toEqual({
+            couponAmount: null,
+            campaignId: null,
             authorizedPaymentId: '123456789',
             preapprovalId: 'pa-abc123',
             transactionAmount: 999.5,
