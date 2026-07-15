@@ -11,7 +11,7 @@
     padding: 0.5rem 1rem;
     border: 1px solid var(--brand-primary);
     border-radius: var(--radius-button, 8px);
-    background-color: var(--brand-primary-a08, oklch(from var(--brand-primary) l c h / 0.08));
+    background-color: var(--brand-primary-a08, rgb(56 133 249 / 0.08));
     color: var(--brand-primary);
     font-family: var(--font-sans);
     font-weight: 600;
