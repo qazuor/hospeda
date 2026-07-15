@@ -25,10 +25,9 @@
  * from the array — the caller does not get a `connected: false` placeholder
  * row for every possible provider.
  *
- * `apps/web`'s `CalendarSyncPanel.client.tsx` still destructures the OLD
- * `{ connected, status }` shape and is now type-incompatible with this
- * response. This is EXPECTED — the web panel is Phase F's job, deliberately
- * NOT touched here.
+ * `apps/web`'s `CalendarSyncPanel.client.tsx` was updated in this same
+ * branch (Phase F) to consume the new `{ connections: [...] }` array shape —
+ * it no longer destructures the old `{ connected, status }` object.
  *
  * @module routes/accommodation/protected/calendarSyncStatus
  */

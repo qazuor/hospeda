@@ -21,13 +21,16 @@
  * 1. Skipped: no connection / inactive connection.
  * 2. Happy path: parsed rows → replaceFutureSyncOccupancy called with
  *    source=provider + OK sync state persisted; no host notification sent.
- * 3. Broken feed (fetch_error / parse_error / empty) → ERROR sync state,
- *    host notification dispatched with the right type/recipient/provider,
- *    no occupancy write, typed error result.
+ * 3. Broken feed (fetch_error / parse_error) → ERROR sync state, host
+ *    notification dispatched with the right type/recipient/provider, no
+ *    occupancy write, typed error result.
  * 4. A notification failure never masks the sync's own error result.
  * 5. A `replaceFutureSyncOccupancy` DB failure → ERROR state with kind unknown.
  * 6. Provider parameterization: AIRBNB / BOOKING / OTHER all flow through
  *    identically with `source` set to the given provider.
+ * 7. Fix A2 — the broken-feed notification only fires on the OK/PENDING →
+ *    ERROR transition, never on a second consecutive failure (prior status
+ *    already ERROR).
  *
  * @module test/services/ical-calendar/ical-calendar-sync.service
  */
@@ -47,6 +50,7 @@ const {
     mockGetIcalCredential,
     mockFetchAndParseIcsFeed,
     mockUpdateSyncState,
+    mockFindByAccommodationAndProvider,
     mockReplaceFutureSyncOccupancy,
     mockSendNotification,
     mockUserFindById,
@@ -55,6 +59,7 @@ const {
     mockGetIcalCredential: vi.fn(),
     mockFetchAndParseIcsFeed: vi.fn(),
     mockUpdateSyncState: vi.fn().mockResolvedValue(null),
+    mockFindByAccommodationAndProvider: vi.fn(),
     mockReplaceFutureSyncOccupancy: vi.fn(),
     mockSendNotification: vi.fn().mockResolvedValue(undefined),
     mockUserFindById: vi.fn(),
@@ -70,7 +75,10 @@ vi.mock('../../../src/services/ical-calendar/ical-parser.js', () => ({
 }));
 
 vi.mock('@repo/db', () => ({
-    accommodationCalendarSyncModel: { updateSyncState: mockUpdateSyncState },
+    accommodationCalendarSyncModel: {
+        updateSyncState: mockUpdateSyncState,
+        findByAccommodationAndProvider: mockFindByAccommodationAndProvider
+    },
     accommodationOccupancyModel: {
         replaceFutureSyncOccupancy: mockReplaceFutureSyncOccupancy
     },
@@ -123,6 +131,10 @@ describe('ical-calendar-sync.service', () => {
     beforeEach(async () => {
         vi.clearAllMocks();
         mockUpdateSyncState.mockResolvedValue(null);
+        // Default: connection was previously OK — a fresh failure is a
+        // genuine OK/PENDING → ERROR transition, so tests that don't care
+        // about Fix A2 specifically still see the notification fire.
+        mockFindByAccommodationAndProvider.mockResolvedValue({ lastSyncStatus: 'OK' });
         mockReplaceFutureSyncOccupancy.mockResolvedValue({ removed: 0, inserted: 0 });
         mockSendNotification.mockResolvedValue(undefined);
         mockUserFindById.mockResolvedValue(HOST_USER);
@@ -269,7 +281,7 @@ describe('ical-calendar-sync.service', () => {
                     accommodationName: ACCOMMODATION_ROW.name,
                     providerLabel: 'Airbnb',
                     reconnectUrl: expect.stringContaining(
-                        `/mi-cuenta/propiedades/${ACCOMMODATION_ID}/editar`
+                        `/mi-cuenta/propiedades/${ACCOMMODATION_ID}/editar#calendar-sync`
                     )
                 })
             );
@@ -320,12 +332,12 @@ describe('ical-calendar-sync.service', () => {
             expect(result).toMatchObject({ status: 'error', kind: 'parse_error' });
         });
 
-        it('should record ERROR on an empty-feed result', async () => {
+        it('should record ERROR when the feed is non-calendar garbage (parse_error)', async () => {
             mockGetIcalCredential.mockResolvedValue(buildCredential());
             mockFetchAndParseIcsFeed.mockResolvedValue({
                 ok: false,
-                kind: 'empty',
-                message: 'No events found in the calendar feed'
+                kind: 'parse_error',
+                message: 'The feed does not look like a valid iCalendar (.ics) document'
             });
 
             const result = await syncAccommodationIcalCalendar({
@@ -333,7 +345,7 @@ describe('ical-calendar-sync.service', () => {
                 provider: OccupancySourceEnum.OTHER
             });
 
-            expect(result).toMatchObject({ status: 'error', kind: 'empty' });
+            expect(result).toMatchObject({ status: 'error', kind: 'parse_error' });
         });
 
         it('should still return the ERROR result even when the host notification itself fails', async () => {
@@ -357,6 +369,107 @@ describe('ical-calendar-sync.service', () => {
                 status: 'error',
                 kind: 'fetch_error',
                 message: 'DNS resolution failed'
+            });
+        });
+    });
+
+    describe('broken-feed notification transition (Fix A2)', () => {
+        it('should notify on the first failure (prior status OK)', async () => {
+            // Arrange
+            mockGetIcalCredential.mockResolvedValue(buildCredential());
+            mockFindByAccommodationAndProvider.mockResolvedValue({ lastSyncStatus: 'OK' });
+            mockFetchAndParseIcsFeed.mockResolvedValue({
+                ok: false,
+                kind: 'fetch_error',
+                message: 'timed out'
+            });
+
+            // Act
+            await syncAccommodationIcalCalendar({
+                accommodationId: ACCOMMODATION_ID,
+                provider: OccupancySourceEnum.AIRBNB
+            });
+            await Promise.resolve();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            // Assert
+            expect(mockSendNotification).toHaveBeenCalledTimes(1);
+        });
+
+        it('should notify on the first failure (prior status PENDING — freshly connected)', async () => {
+            // Arrange
+            mockGetIcalCredential.mockResolvedValue(buildCredential());
+            mockFindByAccommodationAndProvider.mockResolvedValue({ lastSyncStatus: 'PENDING' });
+            mockFetchAndParseIcsFeed.mockResolvedValue({
+                ok: false,
+                kind: 'fetch_error',
+                message: 'timed out'
+            });
+
+            // Act
+            await syncAccommodationIcalCalendar({
+                accommodationId: ACCOMMODATION_ID,
+                provider: OccupancySourceEnum.AIRBNB
+            });
+            await Promise.resolve();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            // Assert
+            expect(mockSendNotification).toHaveBeenCalledTimes(1);
+        });
+
+        it('should NOT notify on a second consecutive failure (prior status already ERROR)', async () => {
+            // Arrange — the connection is already in ERROR from a previous
+            // cron pass; this run fails again on the still-broken feed.
+            mockGetIcalCredential.mockResolvedValue(buildCredential());
+            mockFindByAccommodationAndProvider.mockResolvedValue({ lastSyncStatus: 'ERROR' });
+            mockFetchAndParseIcsFeed.mockResolvedValue({
+                ok: false,
+                kind: 'fetch_error',
+                message: 'still unreachable'
+            });
+
+            // Act
+            const result = await syncAccommodationIcalCalendar({
+                accommodationId: ACCOMMODATION_ID,
+                provider: OccupancySourceEnum.AIRBNB
+            });
+            await Promise.resolve();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            // Assert — the failure is still recorded (status stays accurate)...
+            expect(result).toEqual({
+                status: 'error',
+                kind: 'fetch_error',
+                message: 'still unreachable'
+            });
+            expect(mockUpdateSyncState).toHaveBeenCalledWith(
+                expect.objectContaining({ lastSyncStatus: 'ERROR' })
+            );
+            // ...but the host is not re-emailed for an already-known-broken feed.
+            expect(mockSendNotification).not.toHaveBeenCalled();
+        });
+
+        it('should pass accommodationId + provider to findByAccommodationAndProvider before recording the failure', async () => {
+            mockGetIcalCredential.mockResolvedValue(buildCredential());
+            mockFindByAccommodationAndProvider.mockResolvedValue({ lastSyncStatus: 'OK' });
+            mockFetchAndParseIcsFeed.mockResolvedValue({
+                ok: false,
+                kind: 'parse_error',
+                message: 'bad ics'
+            });
+
+            await syncAccommodationIcalCalendar({
+                accommodationId: ACCOMMODATION_ID,
+                provider: OccupancySourceEnum.BOOKING
+            });
+
+            expect(mockFindByAccommodationAndProvider).toHaveBeenCalledWith({
+                accommodationId: ACCOMMODATION_ID,
+                provider: OccupancySourceEnum.BOOKING
             });
         });
     });

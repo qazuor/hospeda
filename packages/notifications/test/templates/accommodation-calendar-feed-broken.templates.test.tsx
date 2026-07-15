@@ -25,7 +25,8 @@ describe('AccommodationCalendarFeedBroken email template (HOS-162)', () => {
         recipientName: 'Juan Pérez',
         accommodationName: 'Cabañas del Río',
         providerLabel: 'Airbnb',
-        reconnectUrl: 'https://hospeda.com.ar/es/mi-cuenta/propiedades/acc-uuid/editar'
+        reconnectUrl:
+            'https://hospeda.com.ar/es/mi-cuenta/propiedades/acc-uuid/editar#calendar-sync'
     };
 
     describe('render', () => {

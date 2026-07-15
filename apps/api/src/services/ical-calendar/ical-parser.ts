@@ -73,12 +73,28 @@
  * Calendar sync requests via its `SYNC_RESPONSE_TIMEZONE`), so a
  * cross-midnight timed reservation lands on the correct AR wall-clock day.
  *
+ * ## RRULE (recurring events) are NOT expanded — known limitation
+ *
+ * `node-ical`'s `parseICS` does NOT auto-expand a `RRULE` recurring VEVENT
+ * into its individual occurrences — it hands back a single VEVENT component
+ * carrying an `.rrule` property (an `rrule.js` `RRule` instance) alongside
+ * the ORIGINAL `DTSTART`/`DTEND` of just the first occurrence. Reading only
+ * `.start`/`.end`, as this module does, would silently block just that first
+ * occurrence and miss every recurrence after it — a misleading half-applied
+ * result that looks like a successful sync but is actually wrong. Airbnb and
+ * Booking.com feeds do not emit `RRULE` (each reservation is its own
+ * VEVENT), so this only matters for a generic `OTHER`/PMS feed. Rather than
+ * enumerate recurrences (out of scope for this phase), {@link parseIcsToRows}
+ * SKIPS any VEVENT carrying an `.rrule`, logging a `warn` so the gap is
+ * visible in operational logs instead of silently under-applied.
+ *
  * @module services/ical-calendar/ical-parser
  */
 
 import { type SafeFetchInput, safeExternalFetch } from '@repo/utils/safe-fetch';
 import type { CalendarComponent, VEvent } from 'node-ical';
 import ical from 'node-ical';
+import { apiLogger } from '../../utils/logger.js';
 import {
     type DateOrDateTimeMarker,
     enumerateHalfOpenDates,
@@ -121,13 +137,14 @@ export interface IcalParseFailure {
     /**
      * - `fetch_error` — the feed URL could not be retrieved (SSRF block,
      *   timeout, non-2xx, oversized body).
-     * - `parse_error` — `node-ical` could not parse the fetched text as
-     *   iCalendar data.
-     * - `empty` — the feed parsed successfully but contains zero VEVENT
-     *   components (not the same as "zero rows after filtering", which is a
-     *   legitimate success with `rows: []`).
+     * - `parse_error` — `node-ical` either threw while parsing the fetched
+     *   text, or returned a result with NO recognizable calendar component
+     *   (no `VCALENDAR` and zero `VEVENT`s) — i.e. the input is not
+     *   iCalendar data at all. A WELL-FORMED `VCALENDAR` with zero `VEVENT`s
+     *   (e.g. a new host with no bookings yet) is explicitly NOT a failure —
+     *   see {@link parseIcsToRows}'s success case, `rows: []`.
      */
-    readonly kind: 'fetch_error' | 'parse_error' | 'empty';
+    readonly kind: 'fetch_error' | 'parse_error';
     /** Human-readable failure detail. */
     readonly message: string;
 }
@@ -148,6 +165,23 @@ export type IcalParseResult = IcalParseSuccess | IcalParseFailure;
  */
 const isVEvent = (component: CalendarComponent | undefined): component is VEvent =>
     component !== undefined && component.type === 'VEVENT';
+
+/**
+ * Type predicate identifying `node-ical`'s top-level `VCALENDAR` component
+ * (keyed `'vcalendar'` in the parsed record, carrying `PRODID`/`VERSION`/
+ * etc.). Used as the A1 discriminator: its PRESENCE, independent of whether
+ * any `VEVENT` follows, is what marks the input as a genuinely-parsed
+ * iCalendar document rather than garbage/non-calendar text (verified
+ * empirically against `node-ical` 0.26.1 — a `BEGIN:VCALENDAR` envelope with
+ * zero `VEVENT`s still yields this component; unparseable text yields an
+ * empty `{}` record with neither).
+ *
+ * @param component - A parsed calendar component (possibly `undefined` under
+ * `noUncheckedIndexedAccess`).
+ * @returns `true` when `component` is defined and `component.type === 'VCALENDAR'`.
+ */
+const isVCalendarComponent = (component: CalendarComponent | undefined): boolean =>
+    component !== undefined && component.type === 'VCALENDAR';
 
 /**
  * Converts a `node-ical` VEVENT `start`/`end` value into the shared
@@ -188,18 +222,26 @@ const toDateMarker = (value: VEvent['start'] | undefined): DateOrDateTimeMarker 
  * 1. Parse via `node-ical`'s `async.parseICS`. A thrown parse error is
  *    caught and returned as `{ ok: false, kind: 'parse_error' }` — never
  *    propagated.
- * 2. Collect every `VEVENT` component. Zero VEVENTs → `{ ok: false, kind:
- *    'empty' }` (a malformed/non-calendar feed, distinct from a valid feed
- *    that legitimately yields zero future rows).
- * 3. Skip any VEVENT whose `STATUS` is `CANCELLED` (case-insensitive, per
+ * 2. Collect every `VEVENT` component and check for a `VCALENDAR` component
+ *    (see {@link isVCalendarComponent}). If there are zero VEVENTs AND no
+ *    VCALENDAR component was found, the input is not recognizable iCalendar
+ *    data at all (garbage / non-calendar text) → `{ ok: false, kind:
+ *    'parse_error' }`. A WELL-FORMED calendar with zero VEVENTs (e.g. a new
+ *    host's feed with no bookings yet) is a legitimate SUCCESS with `rows:
+ *    []` — this is the HOS-162 judgment-day A1 fix: it must never be
+ *    rejected as an error, or `connectIcal` would 400 a perfectly valid feed.
+ * 3. Skip any VEVENT carrying an `.rrule` (a `RRULE` recurring event) — see
+ *    the module doc's "RRULE are NOT expanded" section. Logged via
+ *    `apiLogger.warn` so the gap stays visible.
+ * 4. Skip any VEVENT whose `STATUS` is `CANCELLED` (case-insensitive, per
  *    RFC 5545 §3.8.1.11 the property value is case-insensitive text).
- * 4. Skip any VEVENT missing a usable `UID`, or whose `start`/`end` do not
+ * 5. Skip any VEVENT missing a usable `UID`, or whose `start`/`end` do not
  *    resolve to usable dates.
- * 5. Map each live VEVENT to its half-open occupied dates
+ * 6. Map each live VEVENT to its half-open occupied dates
  *    (`enumerateHalfOpenDates`), collapsing to one entry per date — the
  *    FIRST VEVENT (in feed order) to cover a date wins its provenance,
  *    mirroring the Google Calendar sync's overlap-collapse behavior.
- * 6. Filter the final set to `date >= fromDate` and return.
+ * 7. Filter the final set to `date >= fromDate` and return.
  *
  * @param input.icsText - The raw `.ics` feed contents.
  * @param input.fromDate - Inclusive lower bound (`YYYY-MM-DD`) for returned rows.
@@ -230,10 +272,18 @@ export const parseIcsToRows = async (input: {
         };
     }
 
-    const events = Object.values(parsed).filter(isVEvent);
+    const components = Object.values(parsed);
+    const events = components.filter(isVEvent);
 
-    if (events.length === 0) {
-        return { ok: false, kind: 'empty', message: 'No events found in the calendar feed' };
+    if (events.length === 0 && !components.some(isVCalendarComponent)) {
+        // No VEVENTs AND no VCALENDAR wrapper — not recognizable iCalendar
+        // data at all (garbage / non-calendar text), distinct from a
+        // well-formed empty calendar (handled below as a success).
+        return {
+            ok: false,
+            kind: 'parse_error',
+            message: 'The feed does not look like a valid iCalendar (.ics) document'
+        };
     }
 
     // Desired blocked-date set: one entry per date, first live VEVENT (feed
@@ -242,6 +292,17 @@ export const parseIcsToRows = async (input: {
     const desired = new Map<string, string>();
     for (const event of events) {
         if (typeof event.uid !== 'string' || event.uid.length === 0) {
+            continue;
+        }
+        if (event.rrule !== undefined) {
+            // Recurring VEVENT — node-ical does not expand RRULE occurrences.
+            // Reading .start/.end here would only block the first occurrence
+            // and silently miss the rest. Skip and log instead of
+            // half-applying it. See module doc "RRULE are NOT expanded".
+            apiLogger.warn(
+                { uid: event.uid },
+                'ical-parser: skipping recurring VEVENT (RRULE) — recurrence expansion is not supported (HOS-162 Phase 3 known limitation)'
+            );
             continue;
         }
         if (typeof event.status === 'string' && event.status.toUpperCase() === 'CANCELLED') {

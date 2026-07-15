@@ -21,11 +21,23 @@
  * immediate, actionable 400 instead of a silently-dead connection that only
  * surfaces as an error on the next cron run. On success, the probe's parsed
  * rows are discarded (not written here) — `saveIcalConnection` persists only
- * the credential, and the actual occupancy reconcile runs later via the sync
- * cron or a manual "Sync now" call, exactly mirroring `calendarConnectGoogle.ts`
- * + its OAuth callback: neither triggers an immediate sync on connect, both
- * defer to the cron/manual-sync path. See `docs/billing/endpoint-gate-matrix.md`
- * for the gate row.
+ * the credential. See `docs/billing/endpoint-gate-matrix.md` for the gate row.
+ *
+ * ## Immediate first sync on connect (HOS-162 judgment-day Fix #5)
+ *
+ * Unlike Google's OAuth callback (which defers the first reconcile to the
+ * cron/manual-sync path), this route triggers a real
+ * {@link syncAccommodationIcalCalendar} run immediately after
+ * `saveIcalConnection` succeeds, so the host sees their occupancy populated
+ * right away instead of waiting up to 6h for the next cron pass. This is
+ * awaited so the response can reflect the fresh `lastSyncAt`/
+ * `lastSyncStatus` — but a failure of the sync itself (network hiccup, feed
+ * became unreadable between the probe and now) must NEVER fail the connect
+ * response: the connection is already validly saved, and the sync service's
+ * own ERROR state + host notification (`ical-calendar-sync.service.ts`)
+ * handle a failed first sync exactly like any later cron failure. Any
+ * unexpected throw from the sync call itself (not its own typed error
+ * result — that never throws) is caught and logged, never propagated.
  *
  * @module routes/accommodation/protected/calendarConnectIcal
  */
@@ -44,10 +56,12 @@ import { assertOccupancyManageAccess, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { requireEntitlement } from '../../../middlewares/entitlement';
 import { getTodayInMarketTimezone } from '../../../services/calendar-sync/date-range';
+import { syncAccommodationIcalCalendar } from '../../../services/ical-calendar/ical-calendar-sync.service';
 import type { IcalProvider } from '../../../services/ical-calendar/ical-credential.repository';
 import { saveIcalConnection } from '../../../services/ical-calendar/ical-credential.repository';
 import { fetchAndParseIcsFeed } from '../../../services/ical-calendar/ical-parser';
 import { getActorFromContext } from '../../../utils/actor';
+import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 /** Maps the public `provider` body token to the internal iCal occupancy source. */
@@ -114,6 +128,24 @@ export const protectedCalendarConnectIcalRoute = createProtectedRoute({
             createdById: actor.id
         });
 
+        // Immediate first sync (Fix #5): failure here never fails the
+        // connect response — the connection is already saved, and the sync
+        // service's own ERROR state + host notification handle it.
+        try {
+            await syncAccommodationIcalCalendar({ accommodationId, provider });
+        } catch (error) {
+            apiLogger.warn(
+                {
+                    accommodationId,
+                    provider,
+                    error: error instanceof Error ? error.message : String(error)
+                },
+                'calendarConnectIcal: immediate first sync threw unexpectedly (connection still saved)'
+            );
+        }
+
+        // Re-read after the sync so the response reflects the fresh
+        // lastSyncAt / lastSyncStatus, not the just-upserted PENDING row.
         const row = await accommodationCalendarSyncModel.findByAccommodationAndProvider({
             accommodationId,
             provider

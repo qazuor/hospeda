@@ -247,6 +247,63 @@ describe('POST /:id/calendar-sync/connect-ical (protected)', () => {
         );
     });
 
+    it('triggers an immediate first sync after saving the connection (Fix #5)', async () => {
+        const app = buildApp(ownerActor, [protectedCalendarConnectIcalRoute]);
+        await app.request(`/${ACCOMMODATION_ID}/calendar-sync/connect-ical`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+                provider: 'airbnb',
+                feedUrl: 'https://www.airbnb.com/calendar/ical/1.ics?s=abc'
+            })
+        });
+
+        expect(mockSyncAccommodationIcalCalendar).toHaveBeenCalledTimes(1);
+        expect(mockSyncAccommodationIcalCalendar).toHaveBeenCalledWith({
+            accommodationId: ACCOMMODATION_ID,
+            provider: 'AIRBNB'
+        });
+        // The sync ran AFTER the connection was saved, and the status row is
+        // re-read AFTER the sync so the response reflects the fresh state.
+        const saveOrder = mockSaveIcalConnection.mock.invocationCallOrder[0];
+        const syncOrder = mockSyncAccommodationIcalCalendar.mock.invocationCallOrder[0];
+        expect(saveOrder).toBeDefined();
+        expect(syncOrder).toBeDefined();
+        expect(saveOrder as number).toBeLessThan(syncOrder as number);
+    });
+
+    it('saves the connection and returns 201 for a well-formed feed with zero VEVENTs (Fix A1)', async () => {
+        mockFetchAndParseIcsFeed.mockResolvedValue({ ok: true, rows: [] });
+        const app = buildApp(ownerActor, [protectedCalendarConnectIcalRoute]);
+        const res = await app.request(`/${ACCOMMODATION_ID}/calendar-sync/connect-ical`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+                provider: 'airbnb',
+                feedUrl: 'https://www.airbnb.com/calendar/ical/1.ics?s=abc'
+            })
+        });
+
+        expect(res.status).toBe(201);
+        expect(mockSaveIcalConnection).toHaveBeenCalled();
+    });
+
+    it('does not fail the connect response when the immediate first sync throws', async () => {
+        mockSyncAccommodationIcalCalendar.mockRejectedValue(new Error('unexpected sync crash'));
+        const app = buildApp(ownerActor, [protectedCalendarConnectIcalRoute]);
+        const res = await app.request(`/${ACCOMMODATION_ID}/calendar-sync/connect-ical`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+                provider: 'airbnb',
+                feedUrl: 'https://www.airbnb.com/calendar/ical/1.ics?s=abc'
+            })
+        });
+
+        expect(res.status).toBe(201);
+        expect(mockSaveIcalConnection).toHaveBeenCalled();
+    });
+
     it('returns 400 and never saves when the feed probe fails', async () => {
         mockFetchAndParseIcsFeed.mockResolvedValue({
             ok: false,

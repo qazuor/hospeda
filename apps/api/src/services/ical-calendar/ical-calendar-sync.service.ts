@@ -49,6 +49,21 @@
  * NOT included in the host-facing email — it stays in the connection's
  * `lastErrorMessage` column and operational logs, not the host's inbox.
  *
+ * ## Notify only on the OK/PENDING → ERROR transition (HOS-162 judgment-day
+ * Fix A2)
+ *
+ * The cron re-runs every 6h. A feed that STAYS broken must not re-email the
+ * host on every single pass forever — that is spam, not a signal. Before
+ * recording the failure (which overwrites `lastSyncStatus`), this service
+ * reads the connection's CURRENT (pre-failure) `lastSyncStatus`. The
+ * broken-feed notification is only dispatched when that prior status was NOT
+ * already `ERROR` — i.e. exactly on the transition INTO the broken state.
+ * A second, third, ... Nth consecutive failure still records `ERROR` +
+ * `lastErrorMessage` (so the connection status/UI stays accurate and the
+ * cron's own outcome accounting is unaffected) but sends no further email
+ * until the feed recovers (`OK`) or the host reconnects (`PENDING`) and
+ * breaks again.
+ *
  * @module services/ical-calendar/ical-calendar-sync.service
  */
 
@@ -106,17 +121,18 @@ export type IcalCalendarSyncResult =
  * host editor (`apps/web`), used as the CTA in the broken-feed notification.
  *
  * The panel itself (`CalendarSyncPanel.client.tsx`) is mounted inside the
- * accommodation editor page at `/{locale}/mi-cuenta/propiedades/{id}/editar`
- * — there is no dedicated anchor/tab for the sync panel specifically, so the
- * link lands on the editor page as a whole (the host scrolls to the calendar
- * section, same as reaching it organically).
+ * accommodation editor page at `/{locale}/mi-cuenta/propiedades/{id}/editar`,
+ * under `id="calendar-sync"` — the URL carries the matching `#calendar-sync`
+ * fragment (HOS-162 judgment-day Fix #2) so the link scrolls the host
+ * straight to the sync panel instead of landing at the top of the editor
+ * page.
  *
  * @param accommodationId - The accommodation whose editor page to link to.
- * @returns The full reconnect URL.
+ * @returns The full reconnect URL, ending in `#calendar-sync`.
  */
 function buildReconnectUrl(accommodationId: string): string {
     const siteUrl = env.HOSPEDA_SITE_URL ?? 'https://hospeda.com.ar';
-    return `${siteUrl}/es/mi-cuenta/propiedades/${accommodationId}/editar`;
+    return `${siteUrl}/es/mi-cuenta/propiedades/${accommodationId}/editar#calendar-sync`;
 }
 
 /**
@@ -265,19 +281,30 @@ export const syncAccommodationIcalCalendar = async (params: {
     const parseResult = await fetchAndParseIcsFeed({ feedUrl: credential.feedUrl, fromDate });
 
     if (!parseResult.ok) {
+        // Read the PRE-failure status before recordFailure overwrites it —
+        // the notification only fires on the OK/PENDING → ERROR transition
+        // (Fix A2), never on every consecutive failed cron pass.
+        const priorConnection = await accommodationCalendarSyncModel.findByAccommodationAndProvider(
+            { accommodationId, provider }
+        );
+        const wasAlreadyInError = priorConnection?.lastSyncStatus === CalendarSyncStatusEnum.ERROR;
+
         const failure = await recordFailure(
             accommodationId,
             provider,
             parseResult.kind,
             parseResult.message
         );
-        notifyHostOfBrokenFeed({
-            accommodationId,
-            provider,
-            hostUserId: credential.createdById,
-            kind: parseResult.kind,
-            message: parseResult.message
-        });
+
+        if (!wasAlreadyInError) {
+            notifyHostOfBrokenFeed({
+                accommodationId,
+                provider,
+                hostUserId: credential.createdById,
+                kind: parseResult.kind,
+                message: parseResult.message
+            });
+        }
         return failure;
     }
 

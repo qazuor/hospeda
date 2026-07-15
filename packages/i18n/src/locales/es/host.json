@@ -449,7 +449,10 @@
                 "feedUrlPlaceholder": "https://ejemplo.com/calendario.ics",
                 "feedUrlHelp": "Pegá la URL de exportación del calendario en formato iCal (.ics) de esa plataforma.",
                 "connectIcal": "Conectar",
-                "connectIcalError": "No pudimos conectar ese calendario. Revisá la URL e intentá de nuevo."
+                "connectIcalError": "No pudimos conectar ese calendario. Revisá la URL e intentá de nuevo.",
+                "icalErrorPrefix": "No pudimos leer el calendario:",
+                "reconnectIcal": "Reconectar",
+                "reconnectIcalHelp": "Volvé a pegar la URL corregida del calendario para reconectarlo."
             }
         },
         "empty": {

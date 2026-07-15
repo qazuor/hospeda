@@ -18,6 +18,11 @@
  *   another provider's controls.
  * - A terminal Google sync error surfaces a reconnect banner.
  * - The ?calendarSync=connected callback flag shows a top banner on mount.
+ * - A broken iCal feed (connected + lastSyncStatus ERROR) renders the
+ *   specific lastErrorMessage plus an in-place re-paste form; resubmitting
+ *   calls connectIcal with the corrected URL (judgment-day fix A3/#3).
+ * - The panel root carries id="calendar-sync" and scrolls into view when the
+ *   URL already has that hash on mount (judgment-day fix #2, anchor half).
  */
 
 import { render, screen, waitFor, within } from '@testing-library/react';
@@ -355,6 +360,112 @@ describe('CalendarSyncPanel', () => {
         expect(airbnbConnectButton).not.toBeDisabled();
 
         resolveSync({ ok: true, data: { status: 'ok' } });
+    });
+
+    it('shows the specific error and an in-place re-paste form for a broken iCal feed', async () => {
+        mockStatus.mockResolvedValue({
+            ok: true,
+            data: {
+                connections: [connectionRow({ provider: 'AIRBNB', lastSyncStatus: 'ERROR' })]
+            }
+        });
+
+        render(
+            <CalendarSyncPanel
+                locale="es"
+                accommodationId={ACC_ID}
+            />
+        );
+
+        const airbnbRow = within(await screen.findByTestId('calendar-provider-row-AIRBNB'));
+        // Specific error from lastErrorMessage, not just the generic pill label.
+        expect(
+            airbnbRow.getByText('No pudimos leer el calendario: reconnect needed')
+        ).toBeInTheDocument();
+        // Re-paste form is available in place, alongside Sync now / Disconnect.
+        expect(
+            airbnbRow.getByPlaceholderText('https://ejemplo.com/calendario.ics')
+        ).toBeInTheDocument();
+        expect(airbnbRow.getByRole('button', { name: 'Reconectar' })).toBeInTheDocument();
+        expect(airbnbRow.getByText('Sincronizar ahora')).toBeInTheDocument();
+        expect(airbnbRow.getByText('Desconectar')).toBeInTheDocument();
+    });
+
+    it('re-submits the corrected feed URL from the broken-feed re-paste form', async () => {
+        mockStatus.mockResolvedValue({
+            ok: true,
+            data: {
+                connections: [connectionRow({ provider: 'AIRBNB', lastSyncStatus: 'ERROR' })]
+            }
+        });
+        mockConnectIcal.mockResolvedValue({
+            ok: true,
+            data: { connected: true, status: null }
+        });
+        const user = userEvent.setup();
+
+        render(
+            <CalendarSyncPanel
+                locale="es"
+                accommodationId={ACC_ID}
+            />
+        );
+
+        const airbnbRow = within(await screen.findByTestId('calendar-provider-row-AIRBNB'));
+        const input = airbnbRow.getByPlaceholderText('https://ejemplo.com/calendario.ics');
+        await user.type(input, 'https://airbnb.com/calendar/ical/fixed.ics');
+        await user.click(airbnbRow.getByRole('button', { name: 'Reconectar' }));
+
+        await waitFor(() => {
+            expect(mockConnectIcal).toHaveBeenCalledWith({
+                id: ACC_ID,
+                provider: 'airbnb',
+                feedUrl: 'https://airbnb.com/calendar/ical/fixed.ics'
+            });
+        });
+    });
+
+    it('carries id="calendar-sync" as the scroll anchor target', async () => {
+        mockStatus.mockResolvedValue(emptyStatus());
+
+        const { container } = render(
+            <CalendarSyncPanel
+                locale="es"
+                accommodationId={ACC_ID}
+            />
+        );
+        await screen.findByText('Conectar Google Calendar');
+
+        expect(container.querySelector('#calendar-sync')).toBeInTheDocument();
+    });
+
+    it('scrolls the panel into view on mount when the URL already has #calendar-sync', async () => {
+        window.history.replaceState(
+            null,
+            '',
+            '/es/mi-cuenta/propiedades/acc-uuid-123/editar/#calendar-sync'
+        );
+        mockStatus.mockResolvedValue(emptyStatus());
+        const scrollIntoViewSpy = vi.fn();
+        // jsdom does not implement scrollIntoView — install a spy so the
+        // component's optional-chained call can be observed, then remove it
+        // so the stub doesn't leak into other tests.
+        HTMLElement.prototype.scrollIntoView = scrollIntoViewSpy;
+
+        try {
+            render(
+                <CalendarSyncPanel
+                    locale="es"
+                    accommodationId={ACC_ID}
+                />
+            );
+            await screen.findByText('Conectar Google Calendar');
+
+            expect(scrollIntoViewSpy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+        } finally {
+            // Test-only cleanup of the jsdom stub so it doesn't leak into other tests.
+            delete (HTMLElement.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+        }
     });
 
     it('shows a top banner when returning from the OAuth callback with ?calendarSync=connected', async () => {

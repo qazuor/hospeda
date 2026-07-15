@@ -22,11 +22,17 @@
  * result banner (then cleans the URL). This part is Google-specific — iCal
  * providers connect inline via `connect-ical`, no redirect involved.
  *
+ * The panel's root carries `id="calendar-sync"` so the broken-feed
+ * notification email (which links to `.../editar#calendar-sync`) has a
+ * scroll target; a mount-time effect also `scrollIntoView`s it when the URL
+ * already has that hash on load (the browser's native anchor scroll can miss
+ * a client-rendered island if it hydrates after the initial scroll attempt).
+ *
  * @module components/host/editor/CalendarSyncPanel
  */
 
 import { OccupancySourceEnum } from '@repo/schemas';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
     CalendarProviderConnectionStatus,
     CalendarProviderToken
@@ -100,6 +106,19 @@ export function CalendarSyncPanel({ locale, accommodationId }: CalendarSyncPanel
     const [rowInfo, setRowInfo] = useState<
         Partial<Record<OccupancySourceEnum, RowInfoMessage | null>>
     >({});
+
+    const panelRef = useRef<HTMLElement>(null);
+
+    // --- Scroll to this panel when the URL already carries #calendar-sync
+    // (e.g. arriving from the broken-feed notification email link) ---
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        // Optional chain on the method itself, not just the ref — jsdom (test
+        // environment) does not implement `scrollIntoView`.
+        if (window.location.hash === '#calendar-sync') {
+            panelRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+        }
+    }, []);
 
     // --- Fetch connection status for every provider ---
     const refreshStatus = useCallback(async () => {
@@ -327,6 +346,8 @@ export function CalendarSyncPanel({ locale, accommodationId }: CalendarSyncPanel
 
     return (
         <section
+            id="calendar-sync"
+            ref={panelRef}
             className={styles.panel}
             aria-label={t(
                 'host.properties.editor.calendarSync.title',

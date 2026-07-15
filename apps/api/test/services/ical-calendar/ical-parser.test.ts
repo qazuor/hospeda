@@ -12,12 +12,17 @@
  * 2. Multi-day reservation enumerated across every occupied day.
  * 3. Two overlapping VEVENTs collapse to one row per date (first wins).
  * 4. A `STATUS:CANCELLED` VEVENT is excluded from the desired set.
- * 5. A feed with zero VEVENT components → typed `empty` error (not thrown).
- * 6. A feed `node-ical` cannot parse at all → typed `parse_error` (not thrown).
- * 7. Midnight-edge / timezone case — an all-day date is recovered correctly
+ * 5. A WELL-FORMED VCALENDAR with zero VEVENTs → SUCCESS with `rows: []`
+ *    (HOS-162 judgment-day Fix A1 — a new host with no bookings yet must not
+ *    be treated as an error).
+ * 6. A feed `node-ical` cannot parse at all, or genuinely non-calendar
+ *    garbage text → typed `parse_error` (not thrown).
+ * 7. A VEVENT carrying an `RRULE` is skipped, not partially enumerated
+ *    (HOS-162 judgment-day Fix B1).
+ * 8. Midnight-edge / timezone case — an all-day date is recovered correctly
  *    regardless of the process's `TZ` (the `node-ical` local-midnight quirk).
- * 8. `date >= fromDate` filtering drops past-dated occupied days.
- * 9. `fetchAndParseIcsFeed` delegates to `parseIcsToRows` on a successful
+ * 9. `date >= fromDate` filtering drops past-dated occupied days.
+ * 10. `fetchAndParseIcsFeed` delegates to `parseIcsToRows` on a successful
  *    `safeExternalFetch`, and maps a blocked/failed fetch to `fetch_error`.
  *
  * @module test/services/ical-calendar/ical-parser
@@ -29,14 +34,20 @@ vi.mock('@repo/utils/safe-fetch', () => ({
     safeExternalFetch: vi.fn()
 }));
 
+vi.mock('../../../src/utils/logger.js', () => ({
+    apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+}));
+
 // Import after vi.mock so we get the mocked version.
 import { safeExternalFetch } from '@repo/utils/safe-fetch';
 import {
     fetchAndParseIcsFeed,
     parseIcsToRows
 } from '../../../src/services/ical-calendar/ical-parser.js';
+import { apiLogger } from '../../../src/utils/logger.js';
 
 const mockFetch = vi.mocked(safeExternalFetch);
+const mockLoggerWarn = vi.mocked(apiLogger.warn);
 
 /** Wraps a set of `VEVENT` blocks in a minimal but realistic VCALENDAR envelope. */
 const buildIcs = (events: string): string =>
@@ -175,22 +186,19 @@ describe('ical-parser', () => {
             });
         });
 
-        it('should return a typed empty error for a feed with zero VEVENT components (not throw)', async () => {
-            // Arrange — a syntactically-valid VCALENDAR with no reservations.
+        it('should treat a well-formed VCALENDAR with zero VEVENTs as SUCCESS with empty rows (Fix A1)', async () => {
+            // Arrange — a syntactically-valid VCALENDAR with no reservations,
+            // e.g. a brand-new host feed with no bookings yet.
             const icsText = buildIcs('');
 
             // Act
             const result = await parseIcsToRows({ icsText, fromDate: '2026-01-01' });
 
-            // Assert
-            expect(result).toEqual({
-                ok: false,
-                kind: 'empty',
-                message: expect.any(String)
-            });
+            // Assert — NOT an error. A 0-booking feed is a legitimate success.
+            expect(result).toEqual({ ok: true, rows: [] });
         });
 
-        it('should return a typed empty error for garbage, non-calendar text (not throw)', async () => {
+        it('should return a typed parse_error for garbage, non-calendar text (not throw)', async () => {
             // Arrange
             const icsText = 'this is not an iCal feed at all, just garbage text';
 
@@ -199,7 +207,45 @@ describe('ical-parser', () => {
 
             // Assert
             expect(result.ok).toBe(false);
-            expect(result.ok === false && result.kind).toBe('empty');
+            expect(result.ok === false && result.kind).toBe('parse_error');
+        });
+
+        it('should skip a VEVENT carrying an RRULE instead of half-applying it (Fix B1)', async () => {
+            // Arrange — a recurring VEVENT (node-ical does not expand RRULE
+            // occurrences) alongside a normal, live single-occurrence VEVENT.
+            const icsText = buildIcs(
+                [
+                    [
+                        'BEGIN:VEVENT',
+                        'DTSTART;VALUE=DATE:20260710',
+                        'DTEND;VALUE=DATE:20260712',
+                        'DTSTAMP:20260701T120000Z',
+                        'UID:evt-recurring@other.com',
+                        'SUMMARY:Recurring block',
+                        'RRULE:FREQ=WEEKLY;COUNT=3',
+                        'END:VEVENT'
+                    ].join('\n'),
+                    allDayEvent({
+                        uid: 'evt-normal@other.com',
+                        dtstart: '20260801',
+                        dtend: '20260802'
+                    })
+                ].join('\n')
+            );
+
+            // Act
+            const result = await parseIcsToRows({ icsText, fromDate: '2026-01-01' });
+
+            // Assert — the recurring VEVENT contributes NO rows at all (not even
+            // its first occurrence); the normal VEVENT is unaffected.
+            expect(result).toEqual({
+                ok: true,
+                rows: [{ date: '2026-08-01', externalEventId: 'evt-normal@other.com' }]
+            });
+            expect(mockLoggerWarn).toHaveBeenCalledWith(
+                expect.objectContaining({ uid: 'evt-recurring@other.com' }),
+                expect.stringContaining('RRULE')
+            );
         });
 
         it('should return a typed parse_error when node-ical cannot parse the input at all (not throw)', async () => {
