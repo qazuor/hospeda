@@ -178,8 +178,8 @@ describe('ical-calendar-sync.service', () => {
             mockFetchAndParseIcsFeed.mockResolvedValue({
                 ok: true,
                 rows: [
-                    { date: todayFromDate, externalEventId: 'evt-1@airbnb.com' },
-                    { date: '2026-08-01', externalEventId: 'evt-2@airbnb.com' }
+                    { date: todayFromDate, externalEventId: 'evt-1@airbnb.com', title: 'Reserved' },
+                    { date: '2026-08-01', externalEventId: 'evt-2@airbnb.com', title: null }
                 ]
             });
             mockReplaceFutureSyncOccupancy.mockResolvedValue({ removed: 1, inserted: 2 });
@@ -199,9 +199,14 @@ describe('ical-calendar-sync.service', () => {
                 accommodationId: ACCOMMODATION_ID,
                 source: 'AIRBNB',
                 fromDate: todayFromDate,
+                // The service maps the parser's `title` onto the model's `eventTitle` (HOS-175).
                 rows: [
-                    { date: todayFromDate, externalEventId: 'evt-1@airbnb.com' },
-                    { date: '2026-08-01', externalEventId: 'evt-2@airbnb.com' }
+                    {
+                        date: todayFromDate,
+                        externalEventId: 'evt-1@airbnb.com',
+                        eventTitle: 'Reserved'
+                    },
+                    { date: '2026-08-01', externalEventId: 'evt-2@airbnb.com', eventTitle: null }
                 ],
                 createdById: 'host-1'
             });

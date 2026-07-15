@@ -10,10 +10,17 @@
  *   batch unblock call
  * - A sync-sourced day (Google Calendar) is disabled and never togglable
  * - i18n keys resolve to human text, never leaking a raw dotted key
+ *
+ * HOS-162 bar prototype: occupancy is drawn as source-colored spanning event
+ * bars overlaid on each week (see occupancy-bar-layout.ts), so the day cells
+ * themselves no longer carry the `dayOccupied`/`daySync` background — the
+ * occupancy assertions target the `.barManual`/`.barGoogle`/`.barBooking`
+ * bars instead, while interaction (togglable MANUAL / disabled sync) is
+ * unchanged.
  */
 
 import { OccupancySourceEnum } from '@repo/schemas';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CalendarSectionProps } from '@/components/host/editor/CalendarSection.client';
@@ -23,9 +30,10 @@ import { CalendarSection } from '@/components/host/editor/CalendarSection.client
 // Hoisted mocks
 // ---------------------------------------------------------------------------
 
-const { mockList, mockBatchToggle } = vi.hoisted(() => ({
+const { mockList, mockBatchToggle, mockUpdateEvent } = vi.hoisted(() => ({
     mockList: vi.fn(),
-    mockBatchToggle: vi.fn()
+    mockBatchToggle: vi.fn(),
+    mockUpdateEvent: vi.fn()
 }));
 
 // ---------------------------------------------------------------------------
@@ -61,8 +69,14 @@ vi.mock('@/lib/logger', () => ({
 vi.mock('@/lib/api/endpoints-protected', () => ({
     accommodationOccupancyApi: {
         list: mockList,
-        batchToggle: mockBatchToggle
+        batchToggle: mockBatchToggle,
+        updateEvent: mockUpdateEvent
     }
+}));
+
+// The edit dialog renders the real shared Dialog (portal) — stub its CSS module.
+vi.mock('@/components/shared/ui/Dialog.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
 // The Google-sync panel (HOS-157) is gated + covered by its own test; render
@@ -187,16 +201,20 @@ describe('CalendarSection', () => {
         expect(freeDay).not.toBeDisabled();
     });
 
-    it('renders a MANUAL-occupied day as enabled and labeled with its source', async () => {
+    it('renders a MANUAL-occupied day as disabled (edited via its bar, not the cell) with a manual bar', async () => {
         mockList.mockReturnValue(makeListOk([MANUAL_ROW]));
         render(<CalendarSection {...defaultProps} />);
 
         const occupiedDay = await screen.findByRole('button', {
             name: /20 de julio de 2026 — Ocupado — Manual/i
         });
-        expect(occupiedDay).not.toBeDisabled();
-        expect(occupiedDay).toHaveClass('dayOccupied');
-        expect(occupiedDay).toHaveAttribute('aria-pressed', 'true');
+        // HOS-175 interaction model: occupied days are inert at the cell — the
+        // manual event is edited/removed by clicking its bar, not the cell.
+        expect(occupiedDay).toBeDisabled();
+        expect(occupiedDay).not.toHaveAttribute('aria-pressed');
+        // Bar mode (HOS-162): occupancy renders as a source-colored span bar,
+        // not a per-cell background/dot — the cell itself stays neutral.
+        expect(document.querySelector('.barManual')).toBeInTheDocument();
     });
 
     it('renders a sync-sourced (Google Calendar) day as disabled and non-togglable', async () => {
@@ -207,7 +225,9 @@ describe('CalendarSection', () => {
             name: /22 de julio de 2026 — Ocupado — Google Calendar/i
         });
         expect(syncDay).toBeDisabled();
-        expect(syncDay).toHaveClass('daySync');
+        // Bar mode (HOS-162): the sync day is read-only (disabled) and its
+        // occupancy shows as a Google-colored span bar.
+        expect(document.querySelector('.barGoogle')).toBeInTheDocument();
 
         const user = userEvent.setup();
         await user.click(syncDay);
@@ -246,9 +266,8 @@ describe('CalendarSection', () => {
         });
     });
 
-    it('selecting an occupied MANUAL day and clicking "Liberar" issues a batch unblock call', async () => {
+    it('does not start a selection when an occupied day is clicked (occupied days are inert)', async () => {
         mockList.mockReturnValue(makeListOk([MANUAL_ROW]));
-        mockBatchToggle.mockReturnValue(makeBatchOk([]));
 
         const user = userEvent.setup();
         render(<CalendarSection {...defaultProps} />);
@@ -257,34 +276,26 @@ describe('CalendarSection', () => {
             name: /20 de julio de 2026 — Ocupado — Manual/i
         });
 
+        // HOS-175: the cell is disabled — clicking it never starts a selection,
+        // so the block/unblock action bar never appears. Removing/editing the
+        // manual event happens via its bar's edit dialog instead.
         await user.click(occupiedDay);
-        await user.click(occupiedDay);
-
-        expect(await screen.findByText('1 día seleccionado')).toBeInTheDocument();
-
-        const unblockButton = screen.getByRole('button', { name: 'Liberar' });
-        await user.click(unblockButton);
-
-        await waitFor(() => {
-            expect(mockBatchToggle).toHaveBeenCalledWith({
-                id: ACC_ID,
-                dates: ['2026-07-20'],
-                isBlocked: false,
-                note: undefined
-            });
-        });
+        expect(screen.queryByText(/1 día seleccionado/)).not.toBeInTheDocument();
+        expect(mockBatchToggle).not.toHaveBeenCalled();
     });
 
-    it('a date with MANUAL + AIRBNB rows renders occupied, shows the MANUAL source by priority, and stays togglable (HOS-162)', async () => {
+    it('a date with MANUAL + AIRBNB rows renders occupied+disabled and shows the MANUAL source by priority (HOS-162)', async () => {
         mockList.mockReturnValue(makeListOk([MANUAL_ROW, AIRBNB_ROW_SAME_DATE_AS_MANUAL]));
         render(<CalendarSection {...defaultProps} />);
 
         const occupiedDay = await screen.findByRole('button', {
             name: /20 de julio de 2026 — Ocupado — Manual/i
         });
-        expect(occupiedDay).not.toBeDisabled();
-        expect(occupiedDay).toHaveClass('dayOccupied');
-        expect(occupiedDay).toHaveAttribute('aria-pressed', 'true');
+        // HOS-175: occupied days are inert at the cell regardless of source mix.
+        expect(occupiedDay).toBeDisabled();
+        // Bar mode (HOS-162): occupancy renders as a source-colored span bar,
+        // not a per-cell background/dot — the cell itself stays neutral.
+        expect(document.querySelector('.barManual')).toBeInTheDocument();
 
         // Never shows the lower-priority Airbnb source once MANUAL wins.
         expect(
@@ -300,7 +311,68 @@ describe('CalendarSection', () => {
             name: /24 de julio de 2026 — Ocupado — Booking\.com/i
         });
         expect(syncDay).toBeDisabled();
-        expect(syncDay).toHaveClass('daySync');
+        // Bar mode (HOS-162): read-only sync day, occupancy shown as a
+        // Booking-colored span bar.
+        expect(document.querySelector('.barBooking')).toBeInTheDocument();
+    });
+
+    it('opens the edit dialog when a MANUAL event bar is clicked', async () => {
+        mockList.mockReturnValue(makeListOk([MANUAL_ROW]));
+        const user = userEvent.setup();
+        render(<CalendarSection {...defaultProps} />);
+
+        const bar = await screen.findByRole('button', { name: /Editar bloqueo/i });
+        await user.click(bar);
+
+        expect(await screen.findByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Eliminar bloqueo' })).toBeInTheDocument();
+    });
+
+    it('saving an edit calls updateEvent with the old + new range and note', async () => {
+        mockList.mockReturnValue(makeListOk([MANUAL_ROW]));
+        mockUpdateEvent.mockReturnValue(makeBatchOk([]));
+        const user = userEvent.setup();
+        render(<CalendarSection {...defaultProps} />);
+
+        await user.click(await screen.findByRole('button', { name: /Editar bloqueo/i }));
+        expect(await screen.findByRole('dialog')).toBeInTheDocument();
+
+        // Change only the text (dates untouched) for a deterministic assertion.
+        const textInput = screen.getByPlaceholderText('Ej: reservado fuera de la plataforma');
+        fireEvent.change(textInput, { target: { value: 'Reserva directa' } });
+        await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        await waitFor(() => {
+            expect(mockUpdateEvent).toHaveBeenCalledWith({
+                id: ACC_ID,
+                oldStartDate: '2026-07-20',
+                oldEndDate: '2026-07-20',
+                newStartDate: '2026-07-20',
+                newEndDate: '2026-07-20',
+                note: 'Reserva directa'
+            });
+        });
+    });
+
+    it('deleting from the edit dialog unblocks the event range', async () => {
+        mockList.mockReturnValue(makeListOk([MANUAL_ROW]));
+        mockBatchToggle.mockReturnValue(makeBatchOk([]));
+        const user = userEvent.setup();
+        render(<CalendarSection {...defaultProps} />);
+
+        await user.click(await screen.findByRole('button', { name: /Editar bloqueo/i }));
+        expect(await screen.findByRole('dialog')).toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: 'Eliminar bloqueo' }));
+
+        await waitFor(() => {
+            expect(mockBatchToggle).toHaveBeenCalledWith({
+                id: ACC_ID,
+                dates: ['2026-07-20'],
+                isBlocked: false
+            });
+        });
     });
 
     it('never leaks a raw i18n key into the rendered output', async () => {

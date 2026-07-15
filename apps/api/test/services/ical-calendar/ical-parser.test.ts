@@ -95,8 +95,8 @@ describe('ical-parser', () => {
             expect(result).toEqual({
                 ok: true,
                 rows: [
-                    { date: '2026-07-10', externalEventId: 'evt-1@airbnb.com' },
-                    { date: '2026-07-11', externalEventId: 'evt-1@airbnb.com' }
+                    { date: '2026-07-10', externalEventId: 'evt-1@airbnb.com', title: 'Reserved' },
+                    { date: '2026-07-11', externalEventId: 'evt-1@airbnb.com', title: 'Reserved' }
                 ]
             });
         });
@@ -127,6 +127,106 @@ describe('ical-parser', () => {
             expect(rows.every((r) => r.externalEventId === 'evt-multi@booking.com')).toBe(true);
         });
 
+        it('carries the VEVENT SUMMARY as the row title, and null when SUMMARY is absent (HOS-175)', async () => {
+            // Arrange — one titled event, one with no SUMMARY line at all.
+            const icsText = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//Test//EN',
+                'BEGIN:VEVENT',
+                'DTSTART;VALUE=DATE:20260710',
+                'DTEND;VALUE=DATE:20260711',
+                'DTSTAMP:20260701T120000Z',
+                'UID:evt-titled@other.com',
+                'SUMMARY:Familia García',
+                'END:VEVENT',
+                'BEGIN:VEVENT',
+                'DTSTART;VALUE=DATE:20260712',
+                'DTEND;VALUE=DATE:20260713',
+                'DTSTAMP:20260701T120000Z',
+                'UID:evt-untitled@other.com',
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ].join('\n');
+
+            // Act
+            const result = await parseIcsToRows({ icsText, fromDate: '2026-01-01' });
+
+            // Assert — titled event carries its SUMMARY; the summary-less one is null.
+            expect(result).toEqual({
+                ok: true,
+                rows: [
+                    {
+                        date: '2026-07-10',
+                        externalEventId: 'evt-titled@other.com',
+                        title: 'Familia García'
+                    },
+                    {
+                        date: '2026-07-12',
+                        externalEventId: 'evt-untitled@other.com',
+                        title: null
+                    }
+                ]
+            });
+        });
+
+        it('truncates a SUMMARY longer than 500 chars to exactly 500 chars (HOS-175 poison-pill guard)', async () => {
+            // Arrange — a 600-char SUMMARY (well past the DB's varchar(500)
+            // cap). An untruncated title would make the DB insert throw
+            // "value too long for type character varying(500)", rolling back
+            // the entire atomic sync and turning the feed into a poison pill.
+            const oversizedSummary = 'A'.repeat(600);
+            const icsText = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//Test//EN',
+                'BEGIN:VEVENT',
+                'DTSTART;VALUE=DATE:20260710',
+                'DTEND;VALUE=DATE:20260711',
+                'DTSTAMP:20260701T120000Z',
+                'UID:evt-oversized@other.com',
+                `SUMMARY:${oversizedSummary}`,
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ].join('\n');
+
+            // Act
+            const result = await parseIcsToRows({ icsText, fromDate: '2026-01-01' });
+
+            // Assert — the persisted title is truncated to exactly 500 chars.
+            expect(result.ok).toBe(true);
+            const rows = result.ok ? result.rows : [];
+            expect(rows).toHaveLength(1);
+            expect(rows[0]?.title).toHaveLength(500);
+            expect(rows[0]?.title).toBe('A'.repeat(500));
+        });
+
+        it('treats a whitespace-only SUMMARY as absent (title: null), not an empty string', async () => {
+            // Arrange
+            const icsText = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//Test//EN',
+                'BEGIN:VEVENT',
+                'DTSTART;VALUE=DATE:20260710',
+                'DTEND;VALUE=DATE:20260711',
+                'DTSTAMP:20260701T120000Z',
+                'UID:evt-blank@other.com',
+                'SUMMARY:   ',
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ].join('\n');
+
+            // Act
+            const result = await parseIcsToRows({ icsText, fromDate: '2026-01-01' });
+
+            // Assert
+            expect(result.ok).toBe(true);
+            const rows = result.ok ? result.rows : [];
+            expect(rows).toHaveLength(1);
+            expect(rows[0]?.title).toBeNull();
+        });
+
         it('should collapse two overlapping VEVENTs to one row per date, first event winning the shared date', async () => {
             // Arrange — evt-A covers Jul-10..Jul-12, evt-B covers Jul-11..Jul-13
             // (shared date: Jul-11).
@@ -148,9 +248,9 @@ describe('ical-parser', () => {
             expect(result).toEqual({
                 ok: true,
                 rows: [
-                    { date: '2026-07-10', externalEventId: 'evt-A@airbnb.com' },
-                    { date: '2026-07-11', externalEventId: 'evt-A@airbnb.com' },
-                    { date: '2026-07-12', externalEventId: 'evt-B@airbnb.com' }
+                    { date: '2026-07-10', externalEventId: 'evt-A@airbnb.com', title: 'Reserved' },
+                    { date: '2026-07-11', externalEventId: 'evt-A@airbnb.com', title: 'Reserved' },
+                    { date: '2026-07-12', externalEventId: 'evt-B@airbnb.com', title: 'Reserved' }
                 ]
             });
             const rows = result.ok ? result.rows : [];
@@ -182,7 +282,13 @@ describe('ical-parser', () => {
             // Assert
             expect(result).toEqual({
                 ok: true,
-                rows: [{ date: '2026-07-10', externalEventId: 'evt-live@airbnb.com' }]
+                rows: [
+                    {
+                        date: '2026-07-10',
+                        externalEventId: 'evt-live@airbnb.com',
+                        title: 'Reserved'
+                    }
+                ]
             });
         });
 
@@ -240,7 +346,13 @@ describe('ical-parser', () => {
             // its first occurrence); the normal VEVENT is unaffected.
             expect(result).toEqual({
                 ok: true,
-                rows: [{ date: '2026-08-01', externalEventId: 'evt-normal@other.com' }]
+                rows: [
+                    {
+                        date: '2026-08-01',
+                        externalEventId: 'evt-normal@other.com',
+                        title: 'Reserved'
+                    }
+                ]
             });
             expect(mockLoggerWarn).toHaveBeenCalledWith(
                 expect.objectContaining({ uid: 'evt-recurring@other.com' }),
@@ -286,11 +398,23 @@ describe('ical-parser', () => {
                 // Assert — both process timezones recover the SAME intended calendar day.
                 expect(tokyoResult).toEqual({
                     ok: true,
-                    rows: [{ date: '2026-07-10', externalEventId: 'evt-edge@airbnb.com' }]
+                    rows: [
+                        {
+                            date: '2026-07-10',
+                            externalEventId: 'evt-edge@airbnb.com',
+                            title: 'Reserved'
+                        }
+                    ]
                 });
                 expect(utcResult).toEqual({
                     ok: true,
-                    rows: [{ date: '2026-07-10', externalEventId: 'evt-edge@airbnb.com' }]
+                    rows: [
+                        {
+                            date: '2026-07-10',
+                            externalEventId: 'evt-edge@airbnb.com',
+                            title: 'Reserved'
+                        }
+                    ]
                 });
             } finally {
                 // Restore so this test never leaks its TZ override into siblings.
@@ -318,7 +442,13 @@ describe('ical-parser', () => {
             // Assert
             expect(result).toEqual({
                 ok: true,
-                rows: [{ date: '2026-07-12', externalEventId: 'evt-cutoff@airbnb.com' }]
+                rows: [
+                    {
+                        date: '2026-07-12',
+                        externalEventId: 'evt-cutoff@airbnb.com',
+                        title: 'Reserved'
+                    }
+                ]
             });
         });
     });
@@ -360,7 +490,13 @@ describe('ical-parser', () => {
             );
             expect(result).toEqual({
                 ok: true,
-                rows: [{ date: '2026-07-10', externalEventId: 'evt-fetched@airbnb.com' }]
+                rows: [
+                    {
+                        date: '2026-07-10',
+                        externalEventId: 'evt-fetched@airbnb.com',
+                        title: 'Reserved'
+                    }
+                ]
             });
         });
 

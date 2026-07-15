@@ -97,6 +97,14 @@ export interface CalendarDayCellProps {
     readonly isSelected: boolean;
     /** Whether this date is the pending range start (first click, awaiting the second). */
     readonly isPending: boolean;
+    /**
+     * Bar-layout mode (HOS-162 prototype): occupancy is drawn as spanning
+     * event bars overlaid on the week, so the cell suppresses its own occupied
+     * background + source dot and renders the number top-left to leave room for
+     * the bars. Interaction (togglable MANUAL / free, disabled sync / past) is
+     * unchanged. Defaults to `false` (legacy per-day dot rendering).
+     */
+    readonly barMode?: boolean;
     readonly onSelect: (dateKey: string) => void;
 }
 
@@ -117,15 +125,19 @@ export function CalendarDayCell({
     isPast,
     isSelected,
     isPending,
+    barMode = false,
     onSelect
 }: CalendarDayCellProps) {
     // A date is occupied if it has ANY row (HOS-162: multiple rows per date
     // are possible; presence, not `isBlocked`, is the occupied signal —
     // `row` is already the caller-resolved primary row for the date).
     const isOccupied = Boolean(row);
-    const isManual = row?.source === OccupancySourceEnum.MANUAL;
-    const isSyncOrigin = Boolean(row) && !isManual;
-    const isDisabled = isSyncOrigin || isPast;
+    const isSyncOrigin = isOccupied && row?.source !== OccupancySourceEnum.MANUAL;
+    // HOS-175 interaction model: cell click/hover only marks FREE days as
+    // occupied. Occupied days (manual OR sync) are never togglable from the
+    // cell — an existing event is edited/removed by clicking its bar instead
+    // (CalendarSection opens the edit dialog). Past days are always inert.
+    const isDisabled = isOccupied || isPast;
 
     const statusLabel = row
         ? `${t('host.properties.editor.calendar.statusOccupied', 'Ocupado')} — ${t(
@@ -144,19 +156,22 @@ export function CalendarDayCell({
             type="button"
             className={cn(
                 styles.day,
-                isOccupied && styles.dayOccupied,
-                isSyncOrigin && styles.daySync,
+                barMode && styles.dayBarMode,
+                // In bar mode the spanning bars carry the occupied/source
+                // signal, so suppress the per-cell occupied bg + dashed sync
+                // border to avoid a double indicator.
+                !barMode && isOccupied && styles.dayOccupied,
+                !barMode && isSyncOrigin && styles.daySync,
                 isSelected && styles.daySelected,
                 isPending && styles.dayPending,
                 isPast && styles.dayPast
             )}
             onClick={() => !isDisabled && onSelect(dateKey)}
             disabled={isDisabled}
-            aria-pressed={isManual ? isOccupied : undefined}
             aria-label={ariaLabel}
         >
             <span className={styles.dayNumber}>{date.getDate()}</span>
-            {isSyncOrigin && row && (
+            {!barMode && isSyncOrigin && row && (
                 <span
                     className={cn(styles.sourceDot, sourceDotClass(row.source))}
                     aria-hidden="true"

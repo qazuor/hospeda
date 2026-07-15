@@ -2999,6 +2999,38 @@ export const accommodationOccupancyApi = {
             path: `${PROTECTED}/accommodations/${id}/occupancy/batch`,
             body: { accommodationId: id, dates, isBlocked, note }
         });
+    },
+
+    /**
+     * Atomically edits a MANUAL occupancy event: moves its date range and/or
+     * changes its text in a single transaction (HOS-175). Only `source=MANUAL`
+     * rows across the old range are removed and re-created across the new range
+     * with `note`; sync-sourced rows are never touched.
+     *
+     * @param params - Accommodation ID, the event's current (`old*`) inclusive
+     *   range, the edited (`new*`) inclusive range, and the new text (`note`).
+     * @returns `{ occupancy: AccommodationOccupancy[] }` — the current rows for
+     *   the union of the old and new ranges after the edit.
+     */
+    updateEvent({
+        id,
+        oldStartDate,
+        oldEndDate,
+        newStartDate,
+        newEndDate,
+        note
+    }: {
+        readonly id: string;
+        readonly oldStartDate: string;
+        readonly oldEndDate: string;
+        readonly newStartDate: string;
+        readonly newEndDate: string;
+        readonly note?: string | null;
+    }): Promise<ApiResult<{ readonly occupancy: readonly AccommodationOccupancy[] }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/accommodations/${id}/occupancy/event`,
+            body: { oldStartDate, oldEndDate, newStartDate, newEndDate, note }
+        });
     }
 };
 

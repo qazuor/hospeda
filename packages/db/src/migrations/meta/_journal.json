@@ -421,6 +421,13 @@
             "when": 1784094690698,
             "tag": "0059_fluffy_ghost_rider",
             "breakpoints": true
+        },
+        {
+            "idx": 60,
+            "version": "7",
+            "when": 1784137685544,
+            "tag": "0060_flowery_nova",
+            "breakpoints": true
         }
     ]
 }

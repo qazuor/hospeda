@@ -313,14 +313,26 @@ export const syncAccommodationCalendar = async (params: {
     // 4. Build the DESIRED blocked-date set: one entry per date, first live
     //    event to cover a date wins its provenance. Overlaps collapse to a
     //    single row that stays blocked as long as EITHER event is live.
-    const desired = new Map<string, string>();
+    const desired = new Map<string, { readonly id: string; readonly title: string | null }>();
     for (const event of fetched.events) {
         if (event.status === 'cancelled') {
             continue;
         }
+        // Truncated to 500 chars (AFTER trimming) to match the DB column's
+        // `varchar(500)` cap — a Google event with an oversized summary would
+        // otherwise make `batchUpsertSync`'s insert throw "value too long for
+        // type character varying(500)", rolling back the entire atomic
+        // reconcile and turning the calendar into a poison pill that fails
+        // every future sync.
+        const trimmedSummary = typeof event.summary === 'string' ? event.summary.trim() : '';
+        // Truncate by code point (not UTF-16 unit) so an astral char (emoji)
+        // at the 500 boundary is never split into a lone surrogate. `event_title`
+        // is varchar(500) — Postgres counts code points, so this always fits.
+        const title =
+            trimmedSummary.length > 0 ? Array.from(trimmedSummary).slice(0, 500).join('') : null;
         for (const date of mapEventToDates(event, accommodationId)) {
             if (!desired.has(date)) {
-                desired.set(date, event.id);
+                desired.set(date, { id: event.id, title });
             }
         }
     }
@@ -332,7 +344,7 @@ export const syncAccommodationCalendar = async (params: {
     // invariant intact on the insert side too.
     const rows = [...desired]
         .filter(([date]) => date >= fromDate)
-        .map(([date, externalEventId]) => ({ date, externalEventId }));
+        .map(([date, { id, title }]) => ({ date, externalEventId: id, eventTitle: title }));
 
     // 5. Atomically replace all future GOOGLE_CALENDAR rows with the desired
     //    set (never touches MANUAL rows).

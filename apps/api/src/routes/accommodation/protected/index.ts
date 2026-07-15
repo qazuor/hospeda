@@ -46,6 +46,7 @@ import { protectedSoftDeleteAccommodationRoute } from './softDelete';
 import { protectedUnpublishAccommodationRoute } from './unpublish';
 import { protectedUpdateAccommodationRoute } from './update';
 import { updateFaqRoute } from './updateFaq';
+import { protectedUpdateOccupancyEventRoute } from './updateOccupancyEvent';
 
 /**
  * Sub-router for ownership-protected CRUD routes.
@@ -116,6 +117,9 @@ app.route('/', protectedGetFeaturedEntitlementRoute);
 app.route('/', protectedGetOccupancyRoute);
 app.route('/', protectedAddOccupancyRoute);
 app.route('/', protectedBatchOccupancyRoute);
+// PATCH /:id/occupancy/event registered BEFORE DELETE /:id/occupancy/:date, same
+// fixed-suffix-before-param-route ordering rationale as /batch above (HOS-175 Phase 3).
+app.route('/', protectedUpdateOccupancyEventRoute);
 app.route('/', protectedRemoveOccupancyRoute);
 
 // Google Calendar sync (HOS-157 Phase 2) + Airbnb/Booking/generic iCal feed

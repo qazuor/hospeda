@@ -38,6 +38,13 @@ import type { AccommodationOccupancy } from '@repo/schemas';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { accommodationOccupancyApi } from '@/lib/api/endpoints-protected';
 import {
+    buildOccupancyEvents,
+    layoutWeekBars,
+    MAX_VISIBLE_LANES,
+    type OccupancyEvent,
+    resolveWeekOverflow
+} from '@/lib/calendar/occupancy-bar-layout';
+import {
     addMonths,
     buildDateRangeKeys,
     buildMonthGrid,
@@ -50,15 +57,19 @@ import {
     groupOccupancyRowsByDate,
     resolvePrimaryOccupancyRow
 } from '@/lib/calendar/occupancy-row-grouping';
+import { cn } from '@/lib/cn';
 import { formatDate } from '@/lib/format-utils';
-import type { SupportedLocale } from '@/lib/i18n';
+import type { SupportedLocale, TranslationFn } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
-import { CalendarDayCell } from './CalendarDayCell.client';
+import { CalendarDayCell, sourceFallbackLabel, sourceKeySuffix } from './CalendarDayCell.client';
 import { CalendarLegend } from './CalendarLegend.client';
 import styles from './CalendarSection.module.css';
-import { CalendarSyncPanel } from './CalendarSyncPanel.client';
-import { PlanEntitlementGate } from './PlanEntitlementGate.client';
+import { CalendarSyncLauncher } from './CalendarSyncLauncher.client';
+import {
+    OccupancyEventEditDialog,
+    type OccupancyEventEditSave
+} from './OccupancyEventEditDialog.client';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -68,6 +79,56 @@ import { PlanEntitlementGate } from './PlanEntitlementGate.client';
 export interface CalendarSectionProps {
     readonly locale: SupportedLocale;
     readonly accommodationId: string;
+}
+
+// ---------------------------------------------------------------------------
+// Bar helpers (HOS-162 prototype — spanning event bars)
+// ---------------------------------------------------------------------------
+
+/** CSS-module class for an event bar, keyed by occupancy source. */
+function barSourceClass(source: OccupancyEvent['source']): string {
+    switch (sourceKeySuffix(source)) {
+        case 'google':
+            return styles.barGoogle;
+        case 'airbnb':
+            return styles.barAirbnb;
+        case 'booking':
+            return styles.barBooking;
+        case 'other':
+            return styles.barOther;
+        default:
+            return styles.barManual;
+    }
+}
+
+/**
+ * The text shown inside an event bar: the event's own title (prototype: the
+ * `note` stand-in for a future persisted `event_title`) when present, else a
+ * per-provider fallback label so Airbnb/Booking feeds that expose no useful
+ * `SUMMARY` still read as "<Provider>".
+ */
+function barLabel({
+    event,
+    t
+}: {
+    readonly event: OccupancyEvent;
+    readonly t: TranslationFn;
+}): string {
+    const title = event.title?.trim();
+    if (title) return title;
+    return t(
+        `host.properties.editor.calendar.source.${sourceKeySuffix(event.source)}`,
+        sourceFallbackLabel(event.source)
+    );
+}
+
+/** Splits a flat grid-cell list into consecutive weeks of 7 cells each. */
+function chunkWeeks(cells: readonly (Date | null)[]): readonly (readonly (Date | null)[])[] {
+    const weeks: (Date | null)[][] = [];
+    for (let i = 0; i < cells.length; i += 7) {
+        weeks.push(cells.slice(i, i + 7));
+    }
+    return weeks;
 }
 
 // ---------------------------------------------------------------------------
@@ -107,7 +168,15 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
 
+    // --- Manual-event edit dialog (HOS-175) ---
+    const [editingEvent, setEditingEvent] = useState<OccupancyEvent | null>(null);
+    const [editSubmitting, setEditSubmitting] = useState(false);
+    const [editError, setEditError] = useState<string | null>(null);
+    // Bumped after any mutation to force the viewed month to re-fetch.
+    const [reloadKey, setReloadKey] = useState(0);
+
     // --- Fetch occupancy for the viewed month ---
+    // biome-ignore lint/correctness/useExhaustiveDependencies: reloadKey is an intentional manual refetch trigger (bumped after an edit/delete), not read inside the effect body
     useEffect(() => {
         let cancelled = false;
         setIsLoading(true);
@@ -139,7 +208,7 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
         return () => {
             cancelled = true;
         };
-    }, [accommodationId, viewedMonth]);
+    }, [accommodationId, viewedMonth, reloadKey]);
 
     // --- Month navigation ---
 
@@ -219,9 +288,93 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
         [selection, accommodationId, note, t]
     );
 
+    // --- Manual-event edit / delete ---
+    //
+    // Known, accepted limitation (HOS-175): occupancy is fetched month-scoped,
+    // so an event is only ever known across the viewed month. A manual block
+    // that spans a month boundary (creatable only in two steps, since the grid
+    // shows one month) is edited/deleted per month — each month manages its own
+    // portion. This matches exactly what the host sees in the current view; we
+    // deliberately do NOT fetch across the boundary to reunite the two halves.
+
+    const handleEditSave = useCallback(
+        async ({ newStartDate, newEndDate, note: newNote }: OccupancyEventEditSave) => {
+            if (!editingEvent) return;
+            setEditSubmitting(true);
+            setEditError(null);
+
+            const result = await accommodationOccupancyApi.updateEvent({
+                id: accommodationId,
+                oldStartDate: editingEvent.startKey,
+                oldEndDate: editingEvent.endKey,
+                newStartDate,
+                newEndDate,
+                note: newNote
+            });
+
+            if (result.ok) {
+                setEditingEvent(null);
+                setReloadKey((k) => k + 1);
+            } else {
+                setEditError(
+                    result.error.message ||
+                        t(
+                            'host.properties.editor.calendar.editEvent.saveError',
+                            'No pudimos guardar los cambios. Intentá de nuevo.'
+                        )
+                );
+            }
+            setEditSubmitting(false);
+        },
+        [editingEvent, accommodationId, t]
+    );
+
+    const handleEditDelete = useCallback(async () => {
+        if (!editingEvent) return;
+        setEditSubmitting(true);
+        setEditError(null);
+
+        // Deleting a manual event = unblocking its full date range (only the
+        // MANUAL rows are removed server-side; any sync rows are left in place).
+        const result = await accommodationOccupancyApi.batchToggle({
+            id: accommodationId,
+            dates: buildDateRangeKeys({
+                startKey: editingEvent.startKey,
+                endKey: editingEvent.endKey
+            }),
+            isBlocked: false
+        });
+
+        if (result.ok) {
+            setEditingEvent(null);
+            setReloadKey((k) => k + 1);
+        } else {
+            setEditError(
+                result.error.message ||
+                    t(
+                        'host.properties.editor.calendar.editEvent.deleteError',
+                        'No pudimos eliminar el bloqueo. Intentá de nuevo.'
+                    )
+            );
+        }
+        setEditSubmitting(false);
+    }, [editingEvent, accommodationId, t]);
+
+    const handleEditClose = useCallback(() => {
+        setEditingEvent(null);
+        setEditError(null);
+    }, []);
+
     // --- Derived rendering data ---
 
     const gridCells = useMemo(() => buildMonthGrid({ month: viewedMonth }), [viewedMonth]);
+    const weeks = useMemo(() => chunkWeeks(gridCells), [gridCells]);
+    // Collapse the per-date occupancy rows into multi-day event spans for the
+    // bar layout (HOS-162 prototype).
+    const occupancyEvents = useMemo(
+        () => buildOccupancyEvents({ rows: Object.values(occupancyByDate).flat() }),
+        [occupancyByDate]
+    );
     const todayKey = useMemo(() => toDateKey({ date: new Date() }), []);
     const monthLabel = formatDate({
         date: viewedMonth,
@@ -236,6 +389,17 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
         );
     }, [locale]);
     const hasAnyOccupiedDayInMonth = Object.keys(occupancyByDate).length > 0;
+    // Which occupancy sources actually appear this month — drives the legend so
+    // it never lists a sync source the host never connected (HOS-175).
+    const presentSources = useMemo(
+        () =>
+            new Set(
+                Object.values(occupancyByDate)
+                    .flat()
+                    .map((r) => r.source)
+            ),
+        [occupancyByDate]
+    );
 
     return (
         <div className={styles.section}>
@@ -250,22 +414,16 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
             </p>
 
             {/*
-             * Google Calendar sync panel — only for hosts whose plan grants
-             * can_sync_external_calendar. The empty-fragment fallback suppresses
-             * the gate's default upgrade box (passing `null` would fall through
-             * to it), so hosts without the entitlement simply see the manual
-             * calendar below with no clutter.
+             * External calendar sync, collapsed behind a button that opens the
+             * connect/sync panel in a modal (CalendarSyncLauncher). The button
+             * is ALWAYS shown; the launcher itself checks the
+             * can_sync_external_calendar entitlement and opens an upgrade nudge
+             * instead of the panel when the plan lacks it (HOS-175).
              */}
-            <PlanEntitlementGate
-                entitlementKey="can_sync_external_calendar"
+            <CalendarSyncLauncher
                 locale={locale}
-                fallback={<></>}
-            >
-                <CalendarSyncPanel
-                    locale={locale}
-                    accommodationId={accommodationId}
-                />
-            </PlanEntitlementGate>
+                accommodationId={accommodationId}
+            />
 
             <div className={styles.monthHeader}>
                 <button
@@ -345,39 +503,167 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                      * accessibility promise, not an improvement.
                      */}
                     <div className={styles.grid}>
-                        {gridCells.map((date, i) => {
-                            if (!date) {
-                                return (
-                                    <div
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length padding cells, never reordered
-                                        key={`pad-${i}`}
-                                        className={styles.pad}
-                                        aria-hidden="true"
-                                    />
-                                );
-                            }
-
-                            const dateKey = toDateKey({ date });
-                            const row = resolvePrimaryOccupancyRow({
-                                rows: occupancyByDate[dateKey] ?? []
+                        {weeks.map((week, weekIndex) => {
+                            const { segments, laneCount } = layoutWeekBars({
+                                week,
+                                events: occupancyEvents
                             });
-                            const isPast = dateKey < todayKey;
-                            const isSelected = selection?.includes(dateKey) ?? false;
-                            const isPending = pendingStart === dateKey;
-
+                            const { visibleSegments, overflowByColumn } = resolveWeekOverflow({
+                                segments,
+                                laneCount
+                            });
                             return (
-                                <CalendarDayCell
-                                    key={dateKey}
-                                    date={date}
-                                    dateKey={dateKey}
-                                    locale={locale}
-                                    t={t}
-                                    row={row}
-                                    isPast={isPast}
-                                    isSelected={isSelected}
-                                    isPending={isPending}
-                                    onSelect={handleDayClick}
-                                />
+                                <div
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: fixed month grid, weeks never reordered
+                                    key={`week-${weekIndex}`}
+                                    className={styles.week}
+                                >
+                                    <div className={styles.weekDays}>
+                                        {week.map((date, dayIndex) => {
+                                            if (!date) {
+                                                return (
+                                                    <div
+                                                        // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length padding cells
+                                                        key={`pad-${weekIndex}-${dayIndex}`}
+                                                        className={styles.pad}
+                                                        aria-hidden="true"
+                                                    />
+                                                );
+                                            }
+                                            const dateKey = toDateKey({ date });
+                                            const row = resolvePrimaryOccupancyRow({
+                                                rows: occupancyByDate[dateKey] ?? []
+                                            });
+                                            return (
+                                                <CalendarDayCell
+                                                    key={dateKey}
+                                                    date={date}
+                                                    dateKey={dateKey}
+                                                    locale={locale}
+                                                    t={t}
+                                                    row={row}
+                                                    isPast={dateKey < todayKey}
+                                                    isSelected={
+                                                        selection?.includes(dateKey) ?? false
+                                                    }
+                                                    isPending={pendingStart === dateKey}
+                                                    barMode
+                                                    onSelect={handleDayClick}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                    {segments.length > 0 && (
+                                        <div className={styles.weekBars}>
+                                            {visibleSegments.map((segment) => {
+                                                const insetStart = segment.isStart ? 3 : 0;
+                                                const insetEnd = segment.isEnd ? 3 : 0;
+                                                const label = barLabel({ event: segment.event, t });
+                                                // Only MANUAL events are editable — their bar is a
+                                                // real button that opens the edit dialog; sync bars
+                                                // stay decorative (their occupancy is announced by
+                                                // the disabled day cell's aria-label).
+                                                const isManualBar =
+                                                    sourceKeySuffix(segment.event.source) ===
+                                                    'manual';
+                                                const barClass = cn(
+                                                    styles.bar,
+                                                    barSourceClass(segment.event.source),
+                                                    segment.isStart && styles.barStart,
+                                                    segment.isEnd && styles.barEnd,
+                                                    isManualBar && styles.barButton
+                                                );
+                                                const barStyle = {
+                                                    left: `calc(${segment.colStart} / 7 * 100% + ${insetStart}px)`,
+                                                    width: `calc(${segment.span} / 7 * 100% - ${insetStart + insetEnd}px)`,
+                                                    top: `calc(${segment.lane} * (var(--bar-height) + var(--bar-gap)))`
+                                                };
+                                                const key = `${segment.event.source}-${segment.event.startKey}-${segment.lane}-${segment.colStart}`;
+
+                                                return isManualBar ? (
+                                                    <button
+                                                        key={key}
+                                                        type="button"
+                                                        className={barClass}
+                                                        style={barStyle}
+                                                        onClick={() =>
+                                                            setEditingEvent(segment.event)
+                                                        }
+                                                        // A multi-week event emits one focusable
+                                                        // button per week, all opening the same edit
+                                                        // dialog. Continuation segments get a
+                                                        // disambiguated label so AT users don't hear
+                                                        // the same name repeated as if they were
+                                                        // different events — and none is hidden from
+                                                        // AT, so an event whose start-week segment
+                                                        // lands in the "+N" overflow band is still
+                                                        // reachable via a visible continuation.
+                                                        aria-label={
+                                                            segment.isStart
+                                                                ? `${t(
+                                                                      'host.properties.editor.calendar.editEvent.title',
+                                                                      'Editar bloqueo'
+                                                                  )}: ${label}`
+                                                                : `${t(
+                                                                      'host.properties.editor.calendar.editEvent.title',
+                                                                      'Editar bloqueo'
+                                                                  )}: ${label} (${t(
+                                                                      'host.properties.editor.calendar.editEvent.continues',
+                                                                      'continúa'
+                                                                  )})`
+                                                        }
+                                                    >
+                                                        {segment.showLabel && (
+                                                            <span className={styles.barLabel}>
+                                                                {label}
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                ) : (
+                                                    <div
+                                                        key={key}
+                                                        className={barClass}
+                                                        style={barStyle}
+                                                        title={label}
+                                                        aria-hidden="true"
+                                                    >
+                                                        {segment.showLabel && (
+                                                            <span className={styles.barLabel}>
+                                                                {label}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                            {overflowByColumn.map((count, col) =>
+                                                count > 0 ? (
+                                                    <div
+                                                        // biome-ignore lint/suspicious/noArrayIndexKey: fixed 7-column week, index IS the day column
+                                                        key={`more-${col}`}
+                                                        className={styles.barMore}
+                                                        style={{
+                                                            left: `calc(${col} / 7 * 100% + 3px)`,
+                                                            width: `calc(1 / 7 * 100% - 6px)`,
+                                                            top: `calc(${MAX_VISIBLE_LANES - 1} * (var(--bar-height) + var(--bar-gap)))`
+                                                        }}
+                                                        title={t(
+                                                            'host.properties.editor.calendar.moreEvents',
+                                                            '+{{count}} más',
+                                                            { count }
+                                                        )}
+                                                        aria-hidden="true"
+                                                    >
+                                                        {t(
+                                                            'host.properties.editor.calendar.moreEventsShort',
+                                                            '+{{count}}',
+                                                            { count }
+                                                        )}
+                                                    </div>
+                                                ) : null
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             );
                         })}
                     </div>
@@ -455,19 +741,6 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                         </button>
                         <button
                             type="button"
-                            className={styles.unblockButton}
-                            onClick={() => handleApply(false)}
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting
-                                ? t(
-                                      'host.properties.editor.calendar.unblockingAction',
-                                      'Liberando...'
-                                  )
-                                : t('host.properties.editor.calendar.unblockAction', 'Liberar')}
-                        </button>
-                        <button
-                            type="button"
                             className={styles.cancelButton}
                             onClick={handleCancelSelection}
                             disabled={isSubmitting}
@@ -490,7 +763,22 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                 </section>
             )}
 
-            <CalendarLegend t={t} />
+            <CalendarLegend
+                t={t}
+                presentSources={presentSources}
+            />
+
+            <OccupancyEventEditDialog
+                isOpen={editingEvent !== null}
+                t={t}
+                event={editingEvent}
+                minDate={todayKey}
+                isSubmitting={editSubmitting}
+                error={editError}
+                onSave={handleEditSave}
+                onDelete={handleEditDelete}
+                onClose={handleEditClose}
+            />
         </div>
     );
 }

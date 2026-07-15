@@ -202,6 +202,7 @@ describe('google-calendar-sync.service', () => {
                     {
                         id: 'ev',
                         status: 'confirmed',
+                        summary: 'Familia García',
                         start: { date: todayFromDate },
                         end: { date: addDaysUtc(todayFromDate, 2) }
                     }
@@ -218,8 +219,12 @@ describe('google-calendar-sync.service', () => {
                 source: 'GOOGLE_CALENDAR',
                 fromDate: todayFromDate,
                 rows: [
-                    { date: todayFromDate, externalEventId: 'ev' },
-                    { date: addDaysUtc(todayFromDate, 1), externalEventId: 'ev' }
+                    { date: todayFromDate, externalEventId: 'ev', eventTitle: 'Familia García' },
+                    {
+                        date: addDaysUtc(todayFromDate, 1),
+                        externalEventId: 'ev',
+                        eventTitle: 'Familia García'
+                    }
                 ],
                 createdById: 'host-1'
             });
@@ -273,9 +278,9 @@ describe('google-calendar-sync.service', () => {
             // Assert — exactly one row per date; the shared date wins ev-A (first).
             const callArg = mockReplaceFutureSyncOccupancy.mock.calls[0]?.[0];
             expect(callArg.rows).toEqual([
-                { date: todayFromDate, externalEventId: 'ev-A' },
-                { date: addDaysUtc(todayFromDate, 1), externalEventId: 'ev-A' },
-                { date: addDaysUtc(todayFromDate, 2), externalEventId: 'ev-B' }
+                { date: todayFromDate, externalEventId: 'ev-A', eventTitle: null },
+                { date: addDaysUtc(todayFromDate, 1), externalEventId: 'ev-A', eventTitle: null },
+                { date: addDaysUtc(todayFromDate, 2), externalEventId: 'ev-B', eventTitle: null }
             ]);
             // No duplicate dates.
             const dates = callArg.rows.map((r: { date: string }) => r.date);
@@ -299,7 +304,9 @@ describe('google-calendar-sync.service', () => {
             await syncAccommodationCalendar({ accommodationId: ACCOMMODATION_ID });
 
             const callArg = mockReplaceFutureSyncOccupancy.mock.calls[0]?.[0];
-            expect(callArg.rows).toEqual([{ date: todayFromDate, externalEventId: 'ev-live' }]);
+            expect(callArg.rows).toEqual([
+                { date: todayFromDate, externalEventId: 'ev-live', eventTitle: null }
+            ]);
         });
 
         it('should contribute no rows for a same-day timed event (< 1 day → empty range)', async () => {
@@ -339,8 +346,12 @@ describe('google-calendar-sync.service', () => {
 
             const callArg = mockReplaceFutureSyncOccupancy.mock.calls[0]?.[0];
             expect(callArg.rows).toEqual([
-                { date: todayFromDate, externalEventId: 'ev-timed' },
-                { date: addDaysUtc(todayFromDate, 1), externalEventId: 'ev-timed' }
+                { date: todayFromDate, externalEventId: 'ev-timed', eventTitle: null },
+                {
+                    date: addDaysUtc(todayFromDate, 1),
+                    externalEventId: 'ev-timed',
+                    eventTitle: null
+                }
             ]);
         });
 
@@ -370,7 +381,7 @@ describe('google-calendar-sync.service', () => {
             // Assert — only today survives; yesterday is dropped.
             const callArg = mockReplaceFutureSyncOccupancy.mock.calls[0]?.[0];
             expect(callArg.rows).toEqual([
-                { date: todayFromDate, externalEventId: 'ev-in-progress' }
+                { date: todayFromDate, externalEventId: 'ev-in-progress', eventTitle: null }
             ]);
         });
     });
@@ -408,8 +419,8 @@ describe('google-calendar-sync.service', () => {
             expect(mockListEvents.mock.calls[1]?.[0].pageToken).toBe('page-2');
             const callArg = mockReplaceFutureSyncOccupancy.mock.calls[0]?.[0];
             expect(callArg.rows).toEqual([
-                { date: todayFromDate, externalEventId: 'ev-1' },
-                { date: addDaysUtc(todayFromDate, 5), externalEventId: 'ev-2' }
+                { date: todayFromDate, externalEventId: 'ev-1', eventTitle: null },
+                { date: addDaysUtc(todayFromDate, 5), externalEventId: 'ev-2', eventTitle: null }
             ]);
             expect(result).toMatchObject({ status: 'ok', eventsProcessed: 2 });
         });
