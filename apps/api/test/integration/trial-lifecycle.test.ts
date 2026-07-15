@@ -106,11 +106,12 @@ vi.mock('../../src/middlewares/entitlement', () => ({
     clearEntitlementCache: vi.fn()
 }));
 
-// Mock notifications (fire-and-forget side effect)
+// Mock notifications (fire-and-forget side effect). TRIAL_EXPIRED is gone with
+// the cancel-at-expiry cron (HOS-171) — an elapsed card-first trial is a customer
+// MercadoPago is about to charge, not one to email about a dead trial.
 vi.mock('@repo/notifications', () => ({
     NotificationType: {
-        TRIAL_EXPIRED: 'TRIAL_EXPIRED',
-        TRIAL_ENDING: 'TRIAL_ENDING'
+        TRIAL_ENDING_REMINDER: 'trial_ending_reminder'
     }
 }));
 

@@ -92,22 +92,18 @@ const BLOCK_EXPIRED_TRIALS_BATCH_SIZE = 200;
 const TRIAL_UPGRADE_PATH = '/es/suscriptores/planes/';
 
 /**
- * Builds the trial→paid conversion nudge URL sent on both trial-lifecycle
- * notifications that link to the pricing page — `TRIAL_EXPIRED` (HOS-115 §5,
- * nudge delivery path 1) and `TRIAL_ENDING_REMINDER` (the pre-expiry
- * reminder, same nudge design). Appends `?interval=<intendedInterval>` when
- * the trial recorded a valid intent, so the pricing page can pre-select the
- * same toggle the customer started from instead of defaulting to monthly.
- * Degrades gracefully — the query param is simply omitted — when
- * `intendedInterval` is missing or not one of the two known values (e.g. a
- * trial started via the accommodation-publish auto-start flow, which records
- * no interval choice at all).
+ * Builds the trial→paid conversion nudge URL sent on the `TRIAL_ENDING_REMINDER`
+ * notification (HOS-115 §5). Appends `?interval=<intendedInterval>` when the
+ * trial recorded a valid intent, so the pricing page can pre-select the same
+ * toggle the customer started from instead of defaulting to monthly. Degrades
+ * gracefully — the query param is simply omitted — when `intendedInterval` is
+ * missing or not one of the two known values.
  *
- * Single source of truth for this URL for the two ACTIVE notification call
- * sites: `blockExpiredTrials` below (`TRIAL_EXPIRED`) and
- * `notification-schedule.job.ts`'s `TRIAL_ENDING_REMINDER` sends. Both call
- * this same function rather than building the link inline, so the nudge
- * target/shape never drifts between the two.
+ * Single source of truth for this URL, with one live sender left:
+ * `notification-schedule.job.ts`'s `TRIAL_ENDING_REMINDER`. It used to be shared
+ * with `blockExpiredTrials`'s `TRIAL_EXPIRED` email, which HOS-171 deleted along
+ * with the cancel-at-expiry cron — an elapsed card-first trial is a customer
+ * MercadoPago is about to charge, not one to nudge into paying.
  *
  * A third sender once existed — `trial-pre-end-notif.job.ts` (SPEC-126 D5)
  * also sent `TRIAL_ENDING_REMINDER`, duplicating `notification-schedule`'s

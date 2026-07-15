@@ -184,19 +184,6 @@ describe('processDbNotificationRetries', () => {
             expect(mockSendNotification).toHaveBeenCalledTimes(1);
         });
 
-        it('should retry TRIAL_EXPIRED notifications', async () => {
-            const notification = createFailedNotification({
-                type: NotificationType.TRIAL_EXPIRED,
-                metadata: { retryCount: 0, planName: 'Pro', trialEndDate: '2026-02-01' }
-            });
-            mockLimit.mockResolvedValue([notification]);
-            mockSendNotification.mockResolvedValue(undefined);
-
-            const stats = await processDbNotificationRetries();
-
-            expect(stats.succeeded).toBe(1);
-        });
-
         it('should retry TRIAL_ENDING_REMINDER notifications', async () => {
             const notification = createFailedNotification({
                 type: NotificationType.TRIAL_ENDING_REMINDER,
@@ -496,8 +483,13 @@ describe('processDbNotificationRetries', () => {
                 }),
                 createFailedNotification({
                     id: 'notif-2',
-                    type: NotificationType.TRIAL_EXPIRED,
-                    metadata: { retryCount: 0, planName: 'Basic', trialEndDate: '2026-02-01' }
+                    type: NotificationType.TRIAL_ENDING_REMINDER,
+                    metadata: {
+                        retryCount: 0,
+                        planName: 'Basic',
+                        trialEndDate: '2026-02-01',
+                        daysRemaining: 3
+                    }
                 }),
                 createFailedNotification({
                     id: 'notif-3',

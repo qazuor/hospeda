@@ -169,9 +169,6 @@ function NotificationLogsPage() {
                                     <option value="trial_ending">
                                         {t('admin-billing.notificationLogs.types.trialEnding')}
                                     </option>
-                                    <option value="trial_expired">
-                                        {t('admin-billing.notificationLogs.types.trialExpired')}
-                                    </option>
                                     <option value="subscription_cancelled">
                                         {t(
                                             'admin-billing.notificationLogs.types.subscriptionCancelled'

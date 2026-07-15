@@ -31,7 +31,6 @@ const RETRY_CONFIG = {
     RETRY_COOLDOWN_MINUTES: 60,
     /** Critical notification types that should be retried */
     CRITICAL_TYPES: [
-        NotificationType.TRIAL_EXPIRED,
         NotificationType.TRIAL_ENDING_REMINDER,
         NotificationType.PAYMENT_FAILURE,
         NotificationType.ADDON_EXPIRED,
@@ -330,7 +329,6 @@ function reconstructPayload(record: FailedNotificationRecord): NotificationPaylo
 
     // Add type-specific fields from metadata
     switch (record.type) {
-        case NotificationType.TRIAL_EXPIRED:
         case NotificationType.TRIAL_ENDING_REMINDER:
             return {
                 ...basePayload,

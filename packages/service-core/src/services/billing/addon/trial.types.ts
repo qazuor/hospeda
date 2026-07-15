@@ -456,7 +456,7 @@ export function resolveCheckoutFreeTrialDays(
  * not narrow subscription metadata — so this is the single source of truth
  * for turning that raw value into a trusted {@link TrialIntendedInterval},
  * used both by `buildTrialUpgradeUrl` (nudge delivery path 1, the
- * `TRIAL_EXPIRED` notification link) and `TrialService.getTrialStatus`
+ * `TRIAL_ENDING_REMINDER` notification link) and `TrialService.getTrialStatus`
  * (nudge delivery path 2, the logged-in lookup for direct navigation).
  *
  * @param rawValue - The raw `metadata.intendedInterval` value (or `undefined`

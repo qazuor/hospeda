@@ -654,10 +654,9 @@ export const TEST_DAILY_PLAN: PlanDefinition = {
     monthlyPriceArs: TEST_DAILY_PLAN_UNIT_AMOUNT_CENTAVOS,
     annualPriceArs: null,
     monthlyPriceUsdRef: 0,
-    // HOS-110: 1-day no-card trial so the full trial→expiry lifecycle
-    // (trialing subscription created no-card, then the daily
-    // `blockExpiredTrials` cron cancels it and fires the TRIAL_EXPIRED
-    // notification once the 1-day trial elapses) is exercisable end-to-end
+    // 1-day trial so the full trial lifecycle (a trialing subscription, then
+    // the daily `trial-reconcile` cron mirroring whatever MercadoPago decided
+    // once the 1-day trial elapses) is exercisable end-to-end
     // on a fast cadence. A no-card trial carries NO MercadoPago preapproval
     // (`mp_subscription_id` stays NULL) — nothing auto-charges when the
     // trial ends; converting to paid requires the user to go through a

@@ -581,7 +581,6 @@
             "paymentSuccess": "Payment Success",
             "paymentFailed": "Payment Failed",
             "trialEnding": "Trial Ending",
-            "trialExpired": "Trial Expired",
             "subscriptionCancelled": "Subscription Cancelled",
             "paymentReminder": "Payment Reminder",
             "paymentReceipt": "Payment Receipt"
