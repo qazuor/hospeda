@@ -171,15 +171,15 @@ describe('theme exports', () => {
         // dark-refresh + SPEC-308 + HOS-84 header tokens, then to 220 after the
         // toast/popover contrast fix (z-popover, surface-overlay, overlay-ring,
         // shadow-overlay, popover-scrim), then to 221 after z-popover-in-overlay
-        // (SortPopover-in-drawer z fix), then to 227 after HOS-182 added the 6
-        // poi-category bucket tokens.
-        expect(Object.keys(webLight)).toHaveLength(227);
+        // (SortPopover-in-drawer z fix), then to 233 after HOS-182 added the 6 poi-category
+        // bucket tokens + their 6 -on companions.
+        expect(Object.keys(webLight)).toHaveLength(233);
         expect(Object.keys(webDark)).toHaveLength(69);
         // Admin: 39 was prior count (17 core + 12 brand + 10 per-accommodation-type).
         // Grew to 92 after the same SSOT passes added event-category/post-category/
         // user-role/auth-provider/amenity-type/sponsor-type families to admin-light,
-        // then to 98 after HOS-182's 6 poi-category bucket tokens.
-        expect(Object.keys(adminLight)).toHaveLength(98); // post-SSOT sponsors/amenities/auth/post-categories
+        // then to 104 after HOS-182's 6 poi-category bucket tokens + 6 -on companions.
+        expect(Object.keys(adminLight)).toHaveLength(104); // post-SSOT sponsors/amenities/auth/post-categories
         // Admin dark: 14 core color-* overrides + 8 web brand dark overrides.
         // Per-type tokens are NOT redeclared in dark — they inherit via cascade.
         expect(Object.keys(adminDark)).toHaveLength(22);

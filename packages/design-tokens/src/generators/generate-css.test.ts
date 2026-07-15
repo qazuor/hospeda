@@ -99,10 +99,10 @@ describe('buildCSS — :root web-light declarations', () => {
         }
     });
 
-    it('total :root declarations = 150 palettes + 227 webLight = 377', () => {
+    it('total :root declarations = 150 palettes + 233 webLight = 383', () => {
         const total = countDeclarations(rootBlock);
         expect(total).toBe(150 + Object.keys(webLight).length);
-        expect(total).toBe(377); // 150 palettes + 227 webLight
+        expect(total).toBe(383); // 150 palettes + 233 webLight
     });
 
     it('emits --core-background byte-for-byte from the seed value', () => {
@@ -197,7 +197,7 @@ describe('buildCSS — admin light theme block', () => {
             expect(block).toContain(`--${key}:`);
         }
         expect(countDeclarations(block)).toBe(Object.keys(adminLight).length);
-        expect(countDeclarations(block)).toBe(98); // + HOS-182 poi-category buckets
+        expect(countDeclarations(block)).toBe(104); // + HOS-182 poi-category buckets + -on
     });
 
     it('exposes the web brand tokens (cross-app badge support) in the admin scope', () => {
