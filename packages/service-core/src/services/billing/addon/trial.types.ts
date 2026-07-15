@@ -337,6 +337,120 @@ export function resolvePlanTrialConfig(metadata: unknown): PlanTrialConfig {
 }
 
 /**
+ * Input for {@link resolveCheckoutFreeTrialDays}.
+ */
+export interface ResolveCheckoutFreeTrialDaysInput {
+    /** Whether the resolved plan declares a trial at all. */
+    readonly planHasTrial: boolean;
+    /** The plan's declared trial length in days. */
+    readonly planTrialDays: number;
+    /**
+     * `HOSPEDA_TRIAL_DAYS_OVERRIDE` — the ops kill-switch / QA knob. When set it
+     * REPLACES the plan's base length (including `0`, which disables trials
+     * outright). `undefined` when unset.
+     */
+    readonly trialDaysOverride: number | undefined;
+    /** Extra days from a `trial_extension` promo code, when one was supplied. */
+    readonly extraTrialDays: number | undefined;
+    /**
+     * Whether the customer has ANY prior subscription — any status, any product
+     * domain, including cancelled. One trial per customer, for life.
+     */
+    readonly hasPriorSubscription: boolean;
+}
+
+/**
+ * The trial decision for a single checkout.
+ */
+export interface CheckoutFreeTrialDays {
+    /**
+     * Days to send to MercadoPago as `auto_recurring.free_trial`, or `undefined`
+     * when no trial is granted and the customer is charged immediately.
+     */
+    readonly freeTrialDays: number | undefined;
+    /**
+     * `true` when a `trial_extension` promo was supplied but no trial was
+     * granted, so its days went nowhere. Surface this to the customer rather
+     * than silently pocketing their code.
+     */
+    readonly promoExtensionIgnored: boolean;
+}
+
+/**
+ * Decides, in ONE place, how many free days a checkout grants (HOS-171 §7.4).
+ *
+ * ## Why this exists
+ *
+ * The free trial used to be granted at two different moments: a no-card trial
+ * when the plan declared one, and then — separately, later, at checkout — a
+ * `trial_extension` promo's days. Nothing summed the two, so a customer could
+ * collect both. Card-first collapses them into a single decision made once, at
+ * checkout, whose result is a single `free_trial` on a single preapproval.
+ *
+ * ## The rules, in precedence order
+ *
+ * 1. **The kill-switch wins first.** `HOSPEDA_TRIAL_DAYS_OVERRIDE=0` disables
+ *    every trial. It is evaluated against the BASE length, before any extension
+ *    is added, so an extension promo can never resurrect a disabled trial.
+ * 2. **A plan that declares no trial gets none**, regardless of any promo. An
+ *    override never forces a trial onto such a plan.
+ * 3. **One trial per customer, for life.** ANY prior subscription — any status,
+ *    any product domain, including cancelled — disqualifies. This guard used to
+ *    live inside `TrialService.startTrial`; with that gone, the checkout call
+ *    site is the single authoritative gate, so it must be right here.
+ * 4. Otherwise the customer gets `base + extension`, as one number.
+ *
+ * A `trial_extension` promo LENGTHENS a trial. When rules 1-3 grant no trial
+ * there is nothing to lengthen, so the promo yields nothing and
+ * `promoExtensionIgnored` is set — mirroring how a `discount` code is discarded
+ * when the trial wins.
+ *
+ * Pure and I/O-free: the caller resolves the plan config, the override and the
+ * prior-subscription check, so this stays trivially testable.
+ *
+ * @param input - Plan trial config, ops override, promo extension, and eligibility.
+ * @returns The single free-trial length for this checkout, plus whether a supplied
+ *   extension promo was ignored.
+ *
+ * @example
+ * ```ts
+ * // Trial-eligible, 14-day plan, 60-day extension promo → ONE 74-day free_trial
+ * resolveCheckoutFreeTrialDays({
+ *   planHasTrial: true, planTrialDays: 14, trialDaysOverride: undefined,
+ *   extraTrialDays: 60, hasPriorSubscription: false,
+ * }); // => { freeTrialDays: 74, promoExtensionIgnored: false }
+ *
+ * // The ops kill-switch beats the extension promo
+ * resolveCheckoutFreeTrialDays({
+ *   planHasTrial: true, planTrialDays: 14, trialDaysOverride: 0,
+ *   extraTrialDays: 60, hasPriorSubscription: false,
+ * }); // => { freeTrialDays: undefined, promoExtensionIgnored: true }
+ * ```
+ */
+export function resolveCheckoutFreeTrialDays(
+    input: ResolveCheckoutFreeTrialDaysInput
+): CheckoutFreeTrialDays {
+    const { planHasTrial, planTrialDays, trialDaysOverride, extraTrialDays, hasPriorSubscription } =
+        input;
+
+    const hasExtension = extraTrialDays !== undefined && extraTrialDays > 0;
+    const baseTrialDays = trialDaysOverride ?? planTrialDays;
+
+    // Evaluated against the BASE length, before the extension is added — this
+    // ordering is what keeps the kill-switch absolute.
+    const grantsTrial = planHasTrial && baseTrialDays > 0 && !hasPriorSubscription;
+
+    if (!grantsTrial) {
+        return { freeTrialDays: undefined, promoExtensionIgnored: hasExtension };
+    }
+
+    return {
+        freeTrialDays: baseTrialDays + (extraTrialDays ?? 0),
+        promoExtensionIgnored: false
+    };
+}
+
+/**
  * Validates a raw `metadata.intendedInterval` value read off a trial
  * subscription (HOS-115 §5). Untyped/raw at the source — the QZPay SDK does
  * not narrow subscription metadata — so this is the single source of truth
