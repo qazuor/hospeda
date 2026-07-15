@@ -97,3 +97,9 @@ allowBuilds:
   # Direct dependency of hospeda-web (image optimization) and a root
   # devDependency; needs its native libvips binary to function.
   sharp: true
+
+# pnpm >=10 changed `pnpm deploy` to require inject-workspace-packages=true.
+# The web and api Dockerfiles use `pnpm deploy --filter=X --prod` in their prune
+# stage; keep the pre-v10 deploy behavior instead of switching the whole
+# workspace to injected packages (which would change @repo/* resolution in dev too).
+forceLegacyDeploy: true
