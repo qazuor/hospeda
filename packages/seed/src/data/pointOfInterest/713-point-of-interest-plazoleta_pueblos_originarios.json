@@ -32,7 +32,7 @@
     "displayWeight": 50,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://sansalvadorer.gob.ar/ciudad/; https://mapcarta.com/es/W448499240",
+    "source": "https://sansalvadorer.gob.ar/ciudad/",
     "notes": "Existencia confirmada por el municipio y cartografía abierta. Falta recuperar coordenadas exactas.",
     "lifecycleState": "ACTIVE",
     "categories": [

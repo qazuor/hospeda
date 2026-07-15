@@ -26,7 +26,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.concordia.gob.ar/turismo/atractivos/lago-salto-grande; https://www.entrerios.tur.ar/localidades-1/concordia",
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/lago-salto-grande",
     "notes": "Atractivo regional oficial. Debe definirse un punto representativo o polígono.",
     "lifecycleState": "ACTIVE",
     "categories": [

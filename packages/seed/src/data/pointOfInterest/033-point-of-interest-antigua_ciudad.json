@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.federacion.tur.ar/la-ciudad/; https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
+    "source": "https://www.federacion.tur.ar/la-ciudad/",
     "notes": "Área histórica confirmada. Requiere definir un punto representativo y, en el futuro, un polígono.",
     "lifecycleState": "ACTIVE",
     "categories": [

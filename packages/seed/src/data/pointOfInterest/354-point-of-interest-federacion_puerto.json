@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf; https://www.federacion.tur.ar/otros-atractivos/",
+    "source": "https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
     "notes": "Existencia y función confirmadas. Falta geocodificar el acceso.",
     "lifecycleState": "ACTIVE",
     "categories": [

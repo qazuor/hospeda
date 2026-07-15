@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes; https://portallarroque.com/larroque-reabre-sus-puertas-el-museo-de-la-estacion/; https://www.larroque.gob.ar/noticia/1995/la_rica_historia_de_larroque_y_la_conexion_de_sus_museos",
+    "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes",
     "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [

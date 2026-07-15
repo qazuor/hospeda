@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.federacion.tur.ar/otros-atractivos/; https://www.federacion.tur.ar/reserva-natural-chaviyu/",
+    "source": "https://www.federacion.tur.ar/otros-atractivos/",
     "notes": "Longitud y función confirmadas. Falta geocodificar inicio y final.",
     "lifecycleState": "ACTIVE",
     "categories": [

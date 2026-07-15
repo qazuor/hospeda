@@ -31,8 +31,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://www.villaparanacito.gob.ar/; https://mapcarta.com/es/N4418543858",
+    "verifiedAt": null,
+    "source": "https://www.villaparanacito.gob.ar/",
     "notes": "Dirección y coordenadas contrastadas con fuente municipal y OpenStreetMap.",
     "lifecycleState": "ACTIVE",
     "categories": [

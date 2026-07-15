@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "224-point-of-interest-city_tour_audioguiado",
     "slug": "city_tour_audioguiado",
-    "lat": null,
-    "long": null,
+    "lat": -32.4645167,
+    "long": -58.4774491,
     "type": "OTHER",
     "icon": null,
     "description": "Circuito urbano accesible mediante códigos QR por edificios, monumentos y sitios fundamentales de la historia local.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://caseros.gob.ar/turismo-y-cultura/",
-    "notes": "Falta digitalizar el recorrido y sus paradas.",
+    "notes": "Falta digitalizar el recorrido y sus paradas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

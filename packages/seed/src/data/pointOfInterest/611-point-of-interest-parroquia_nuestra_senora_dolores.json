@@ -32,8 +32,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://www.entrerios.tur.ar/localidades-1/san-justo; https://mapcarta.com/",
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/san-justo",
     "notes": "Relevancia histórica confirmada por Turismo Entre Ríos y ubicación contrastada con OpenStreetMap.",
     "lifecycleState": "ACTIVE",
     "categories": [

@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf; https://mapcarta.com/es/W838004876",
+    "source": "https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf",
     "notes": "Terminal identificada en cartografía y plano turístico. Falta recuperar coordenadas exactas.",
     "lifecycleState": "ACTIVE",
     "categories": [

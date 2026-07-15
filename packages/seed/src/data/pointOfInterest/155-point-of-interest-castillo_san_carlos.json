@@ -31,8 +31,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://www.concordia.gob.ar/turismo/atractivos/castillo-san-carlos; https://en.wikipedia.org/wiki/San_Carlos_Castle",
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/castillo-san-carlos",
     "notes": "Coordenadas contrastadas con Wikidata/Wikipedia y relevancia confirmada por Turismo Concordia.",
     "lifecycleState": "ACTIVE",
     "categories": [

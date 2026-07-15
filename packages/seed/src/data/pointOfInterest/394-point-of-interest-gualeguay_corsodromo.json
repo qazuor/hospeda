@@ -26,7 +26,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://corso.gualeguay.gob.ar/; https://www.entrerios.tur.ar/localidades-1/gualeguay; https://es.wikipedia.org/wiki/Gualeguay",
+    "source": "https://corso.gualeguay.gob.ar/",
     "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [

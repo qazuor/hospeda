@@ -31,8 +31,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://mapcarta.com/es/W444344618; https://www.villaparanacito.gob.ar/turismo/eventos",
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W444344618",
     "notes": "Coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",
     "categories": [

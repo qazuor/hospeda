@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes; https://www.larroque.gob.ar/noticia/1645/la_propuesta_en_el_museo_la_tera_para_aprender_crear_y_divertirse",
+    "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes",
     "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [

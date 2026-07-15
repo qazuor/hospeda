@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.concordia.gob.ar/turismo/atractivos/museos; https://mapcarta.com/es/W627635367",
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/museos",
     "notes": "Nombre y ubicación relativa confirmados. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

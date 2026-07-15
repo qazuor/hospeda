@@ -25,7 +25,7 @@
     "isFeatured": false,
     "displayWeight": 50,
     "verified": true,
-    "verifiedAt": "46214",
+    "verifiedAt": null,
     "source": "https://mapcarta.com/es/N4093374653",
     "notes": "Coordenadas y clasificación turística contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",

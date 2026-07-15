@@ -33,7 +33,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades; https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar",
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
     "notes": "Relevancia histórica confirmada por Parques Nacionales. Falta geocodificar el centro del sitio.",
     "lifecycleState": "ACTIVE",
     "categories": [

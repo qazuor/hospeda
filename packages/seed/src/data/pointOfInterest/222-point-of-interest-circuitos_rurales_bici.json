@@ -33,7 +33,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://urdinarrain.tur.ar/que-hacer/; https://www.argentina.gob.ar/jefatura/turismo/best-tourism-villages-argentina/urdinarrain-entre-rios",
+    "source": "https://urdinarrain.tur.ar/que-hacer/",
     "notes": "Oferta oficial confirmada. Falta incorporar cada circuito como geometría separada.",
     "lifecycleState": "ACTIVE",
     "categories": [

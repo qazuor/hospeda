@@ -31,7 +31,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
+    "verifiedAt": null,
     "source": "https://mapcarta.com/es/N4369878179",
     "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",

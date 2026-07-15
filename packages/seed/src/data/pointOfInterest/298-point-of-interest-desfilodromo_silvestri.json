@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.federacion.tur.ar/carnaval-federaense/; https://www.federacion.gob.ar/areas-noticias/secretaria-turismo",
+    "source": "https://www.federacion.tur.ar/carnaval-federaense/",
     "notes": "Nombre y función confirmados. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [

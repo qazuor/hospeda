@@ -32,8 +32,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://mapcarta.com/es/W307824618",
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay",
     "notes": "Coordenadas y operador municipal contrastados con OpenStreetMap.",
     "lifecycleState": "ACTIVE",
     "categories": [

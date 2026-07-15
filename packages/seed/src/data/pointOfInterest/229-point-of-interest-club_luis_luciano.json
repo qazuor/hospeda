@@ -25,7 +25,7 @@
     "isFeatured": false,
     "displayWeight": 50,
     "verified": true,
-    "verifiedAt": "46214",
+    "verifiedAt": null,
     "source": "https://mapcarta.com/es/N5688670080",
     "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",

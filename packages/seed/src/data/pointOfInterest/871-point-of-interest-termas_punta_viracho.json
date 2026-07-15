@@ -26,7 +26,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.concordia.gob.ar/turismo/atractivos/termas/termas-de-punta-viracho; https://www.concordia.gob.ar/mapas/termas-de-punta-viracho",
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/termas/termas-de-punta-viracho",
     "notes": "Servicios y ubicación general confirmados. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [

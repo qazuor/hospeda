@@ -25,7 +25,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
+    "verifiedAt": null,
     "source": "https://mapcarta.com/es/N9066937266",
     "notes": "Coordenadas contrastadas con OpenStreetMap. Instalación industrial sin acceso turístico presumido.",
     "lifecycleState": "ACTIVE",

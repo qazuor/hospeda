@@ -25,8 +25,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://mapcarta.com/es/W679355178; https://www.rosariodeltala.gob.ar/?q=areas-noticias%2Fturismo",
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W679355178",
     "notes": "Coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",
     "categories": [

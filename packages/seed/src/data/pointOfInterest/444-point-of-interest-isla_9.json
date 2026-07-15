@@ -25,7 +25,7 @@
     "isFeatured": false,
     "displayWeight": 50,
     "verified": true,
-    "verifiedAt": "46214",
+    "verifiedAt": null,
     "source": "https://mapcarta.com/es/W444858913",
     "notes": "Coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",

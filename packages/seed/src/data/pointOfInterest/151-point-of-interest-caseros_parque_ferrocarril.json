@@ -32,7 +32,7 @@
     "isFeatured": false,
     "displayWeight": 50,
     "verified": true,
-    "verifiedAt": "46214",
+    "verifiedAt": null,
     "source": "https://mapcarta.com/es/N1040020047",
     "notes": "Comparte ubicación general con la estación y el museo; el predio completo abarca una superficie mayor.",
     "lifecycleState": "ACTIVE",

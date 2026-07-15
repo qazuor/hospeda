@@ -26,7 +26,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.turismoentrerios.com/larroque/sitios.htm; https://www.larroque.gob.ar/larroque/storage/public/transparency/456/1732530489_09-_BO_SEPTIEMBRE_2024.pdf",
+    "source": "https://www.turismoentrerios.com/larroque/sitios.htm",
     "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

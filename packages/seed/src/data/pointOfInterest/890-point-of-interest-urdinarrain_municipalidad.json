@@ -31,8 +31,8 @@
     "isFeatured": false,
     "displayWeight": 50,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://urdinarrain.gov.ar/v2/; https://mapcarta.com/es/W597083874",
+    "verifiedAt": null,
+    "source": "https://urdinarrain.gov.ar/v2/",
     "notes": "Dirección y coordenadas contrastadas con fuente municipal y OpenStreetMap.",
     "lifecycleState": "ACTIVE",
     "categories": [

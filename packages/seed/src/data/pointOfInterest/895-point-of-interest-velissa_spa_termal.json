@@ -25,8 +25,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://mapcarta.com/es/W296734564; https://villaelisa.tur.ar/turismo-accesible/",
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W296734564",
     "notes": "Coordenadas contrastadas con OpenStreetMap mediante Mapcarta.",
     "lifecycleState": "ACTIVE",
     "categories": [

@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.concordia.gob.ar/turismo/atractivos/art-nouveau; https://es.wikipedia.org/wiki/Concordia_%28Argentina%29",
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/art-nouveau",
     "notes": "Corredor urbano reconocido. Falta definir punto central o geometría lineal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://es.wikipedia.org/wiki/Ceibas; https://aica.org/noticia-nueva-parroquia-en-la-diocesis-de-gualeguaychu",
+    "source": "https://es.wikipedia.org/wiki/Ceibas",
     "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

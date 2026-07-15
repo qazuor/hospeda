@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.rosariodeltala.gob.ar/?q=areas-noticias%2Fturismo; https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf; https://www.entrerios.tur.ar/localidades-1/rosario-del-tala",
+    "source": "https://www.rosariodeltala.gob.ar/?q=areas-noticias%2Fturismo",
     "notes": "Servicio oficial confirmado. Falta validar dirección exacta y horarios vigentes.",
     "lifecycleState": "ACTIVE",
     "categories": [

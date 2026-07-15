@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://sansalvadorer.gob.ar/ciudad/; https://sansalvadorer.gob.ar/gobierno/turismo/; https://mapcarta.com/es/W448499240",
+    "source": "https://sansalvadorer.gob.ar/ciudad/",
     "notes": "Historia y rol productivo confirmados. Falta geocodificar el acceso administrativo.",
     "lifecycleState": "ACTIVE",
     "categories": [

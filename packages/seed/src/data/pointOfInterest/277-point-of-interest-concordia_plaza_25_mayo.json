@@ -31,8 +31,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://www.concordia.gob.ar/mapas/plaza-25-de-mayo; https://wikimapia.org/6347328/Plaza-25-de-Mayo-principal",
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/mapas/plaza-25-de-mayo",
     "notes": "Ubicación por calles y coordenadas contrastadas.",
     "lifecycleState": "ACTIVE",
     "categories": [

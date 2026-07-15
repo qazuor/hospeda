@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades; https://www.argentina.gob.ar/sites/default/files/2024/09/pn_elpalmar_-_uso_publico_-_abril2024.pdf",
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
     "notes": "Existencia y función confirmadas. Falta geocodificar el mirador.",
     "lifecycleState": "ACTIVE",
     "categories": [

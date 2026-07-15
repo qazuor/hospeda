@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "578-point-of-interest-paranacito_polideportivo_municipal",
     "slug": "paranacito_polideportivo_municipal",
-    "lat": -33.7131078,
-    "long": -58.6596604,
+    "lat": null,
+    "long": null,
     "type": "STADIUM",
     "icon": null,
     "description": "Complejo deportivo público utilizado para actividades físicas, torneos y propuestas recreativas.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://mapcarta.com/es/N5189660750; https://mapcarta.com/es/37670096",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://mapcarta.com/es/N5189660750",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

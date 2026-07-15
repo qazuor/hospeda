@@ -30,8 +30,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://mapcarta.com/es/N3539797444; https://es.wikipedia.org/wiki/Estaci%C3%B3n_Libertador_General_San_Mart%C3%ADn_(Entre_R%C3%ADos)",
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N3539797444",
     "notes": "Coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",
     "categories": [

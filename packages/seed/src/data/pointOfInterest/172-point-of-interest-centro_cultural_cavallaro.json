@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://termaschajari.tur.ar/centro-cultural/; https://chajari.gob.ar/wp-content/uploads/2018/12/GCCH-Programa-1%C2%BA-Foro-de-Ciudades.pdf",
+    "source": "https://termaschajari.tur.ar/centro-cultural/",
     "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

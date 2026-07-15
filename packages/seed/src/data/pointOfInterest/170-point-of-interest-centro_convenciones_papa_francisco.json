@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://www.villaguay.gob.ar/app/noticias/nueva_capacitacion_gratuita_en_villaguay_; https://www.villaguay.gob.ar/app/noticias/unas_vacaciones_a_puro_teatro",
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay",
     "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

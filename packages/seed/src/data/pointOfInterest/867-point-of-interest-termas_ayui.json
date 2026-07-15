@@ -26,7 +26,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.concordia.gob.ar/turismo/atractivos/termas/termas-del-ayu%C3%AD; https://www.concordia.gob.ar/mapas/termas-del-ayui",
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/termas/termas-del-ayu%C3%AD",
     "notes": "Complejo vigente y ubicación general confirmados. Falta geocodificar el acceso.",
     "lifecycleState": "ACTIVE",
     "categories": [

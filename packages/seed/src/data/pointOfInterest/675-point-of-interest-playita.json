@@ -26,7 +26,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://mapcarta.com/es/19200450; https://mapcarta.com/es/N4172031837",
+    "source": "https://mapcarta.com/es/19200450",
     "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [

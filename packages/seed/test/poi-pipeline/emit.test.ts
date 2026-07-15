@@ -61,9 +61,32 @@ describe('buildPoiFixture — provenance (G-5)', () => {
         expect(fx.lat).toBe(-32.48);
         expect(fx.long).toBe(-58.23);
         expect(fx.verified).toBe(true);
-        expect(fx.verifiedAt).toBe('2026-07-01T00:00:00.000Z');
+        expect(fx.verifiedAt).toBeNull();
         expect(fx.notes).toBe('Verificado en campo.');
         expect(fx.notes).not.toContain(AUTO_GEOCODE_MARKER);
+    });
+
+    it('keeps verifiedAt null and picks the first source entry within the schema limit', () => {
+        const row = makeRow({
+            lat: '-32.48',
+            lng: '-58.23',
+            verified: 'True',
+            verifiedAt: '46214',
+            source:
+                'https://example.com/this-source-is-way-too-long/'.repeat(6) +
+                '; https://short.example/'
+        });
+
+        const fx = buildPoiFixture({
+            row,
+            slug: 'plaza_x',
+            categories: CATS,
+            geocoded: null,
+            geocodeIsoDate: DATE
+        });
+
+        expect(fx.verifiedAt).toBeNull();
+        expect(fx.source).toBe('https://short.example/');
     });
 
     it('forces verified:false and appends the auto-geocode marker for a geocoded row (AC-5/AC-6)', () => {

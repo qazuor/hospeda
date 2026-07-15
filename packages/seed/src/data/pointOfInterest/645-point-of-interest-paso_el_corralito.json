@@ -33,7 +33,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes; https://es.wikipedia.org/wiki/Larroque_%28Argentina%29",
+    "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes",
     "notes": "Paraje confirmado. Falta geocodificar el acceso seguro y el sector de uso público.",
     "lifecycleState": "ACTIVE",
     "categories": [

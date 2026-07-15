@@ -31,8 +31,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://www.entrerios.tur.ar/localidades-1/san-justo; https://mapcarta.com/es/N9066937278",
+    "verifiedAt": null,
+    "source": "https://www.entrerios.tur.ar/localidades-1/san-justo",
     "notes": "El museo figura en la oferta turística provincial y su ubicación fue contrastada con OpenStreetMap.",
     "lifecycleState": "ACTIVE",
     "categories": [

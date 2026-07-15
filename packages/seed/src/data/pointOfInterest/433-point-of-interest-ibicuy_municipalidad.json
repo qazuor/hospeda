@@ -31,8 +31,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://ibicuy.gob.ar/; https://mapcarta.com/es/N4092848628",
+    "verifiedAt": null,
+    "source": "https://ibicuy.gob.ar/",
     "notes": "Dirección y coordenadas contrastadas con fuente municipal y OpenStreetMap.",
     "lifecycleState": "ACTIVE",
     "categories": [

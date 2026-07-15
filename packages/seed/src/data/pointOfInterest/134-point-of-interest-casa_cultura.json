@@ -26,7 +26,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf; https://www.federacion.gob.ar/areas-noticias/secretaria-turismo",
+    "source": "https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
     "notes": "Existencia confirmada en el plano turístico. Falta dirección y geocodificación.",
     "lifecycleState": "ACTIVE",
     "categories": [

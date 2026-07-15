@@ -25,7 +25,7 @@
     "isFeatured": false,
     "displayWeight": 50,
     "verified": true,
-    "verifiedAt": "46214",
+    "verifiedAt": null,
     "source": "https://mapcarta.com/es/W704414820",
     "notes": "Coordenadas contrastadas con OpenStreetMap; no se presume acceso turístico.",
     "lifecycleState": "ACTIVE",

@@ -26,7 +26,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.concordia.gob.ar/turismo/atractivos/playas; https://www.concordia.gob.ar/turismo/atractivos/mas",
+    "source": "https://www.concordia.gob.ar/turismo/atractivos/playas",
     "notes": "Nombre y uso turístico confirmados. Falta geocodificar el acceso principal.",
     "lifecycleState": "ACTIVE",
     "categories": [

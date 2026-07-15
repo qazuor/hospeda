@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/horarios-como-llegar; https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/mapa-del-area-protegida",
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/horarios-como-llegar",
     "notes": "Función y ubicación vial confirmadas. Falta geocodificar el edificio de informes.",
     "lifecycleState": "ACTIVE",
     "categories": [

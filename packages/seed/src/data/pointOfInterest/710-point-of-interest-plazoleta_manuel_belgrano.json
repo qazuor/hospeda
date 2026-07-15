@@ -32,7 +32,7 @@
     "displayWeight": 50,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://mapcarta.com/es/W621698511; https://egob.concordia.gob.ar/servicios/digesto.do?idNormativa=987&opcion=idNormativa",
+    "source": "https://mapcarta.com/es/W621698511",
     "notes": "Existencia y ubicación relativa confirmadas. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [

@@ -26,7 +26,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.turismoentrerios.com/santaana/pesca.htm; https://www.turismoentrerios.com/santaana/playas.htm",
+    "source": "https://www.turismoentrerios.com/santaana/pesca.htm",
     "notes": "Estructura confirmada visualmente y por la oferta turística. Falta geocodificar el acceso.",
     "lifecycleState": "ACTIVE",
     "categories": [

@@ -32,8 +32,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://hsm-ss.ar/; https://mapcarta.com/es/W448499240",
+    "verifiedAt": null,
+    "source": "https://hsm-ss.ar/",
     "notes": "Nombre, función, dirección y coordenadas contrastados.",
     "lifecycleState": "ACTIVE",
     "categories": [

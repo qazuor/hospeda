@@ -32,8 +32,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://mapcarta.com/es/N1040020047; https://www.instagram.com/museos_caseros/",
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N1040020047",
     "notes": "La geolocalización corresponde a la antigua estación ferroviaria donde funciona el museo.",
     "lifecycleState": "ACTIVE",
     "categories": [

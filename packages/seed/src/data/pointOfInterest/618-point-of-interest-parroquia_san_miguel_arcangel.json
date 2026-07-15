@@ -25,7 +25,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
+    "verifiedAt": null,
     "source": "https://mapcarta.com/es/N4097203058",
     "notes": "Ubicación contrastada con OpenStreetMap mediante Mapcarta. Dirección postal exacta no publicada.",
     "lifecycleState": "ACTIVE",

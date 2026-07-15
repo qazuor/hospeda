@@ -31,8 +31,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://mapcarta.com/es/37670096; https://es.wikipedia.org/wiki/Villa_Paranacito",
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/37670096",
     "notes": "Coordenadas del centro poblado contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",
     "categories": [

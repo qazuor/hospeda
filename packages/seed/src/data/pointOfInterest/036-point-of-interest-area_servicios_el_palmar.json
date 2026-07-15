@@ -33,7 +33,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/horarios-como-llegar; https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/servicios",
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/horarios-como-llegar",
     "notes": "Ubicación relativa y servicios confirmados. Falta definir un punto central cartográfico.",
     "lifecycleState": "ACTIVE",
     "categories": [

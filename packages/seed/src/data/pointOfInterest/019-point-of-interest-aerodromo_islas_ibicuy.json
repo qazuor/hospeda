@@ -25,8 +25,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://mapcarta.com/es/N1042021927; https://www.facebook.com/aeroclub.islasdelibicuy/",
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N1042021927",
     "notes": "Coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",
     "categories": [

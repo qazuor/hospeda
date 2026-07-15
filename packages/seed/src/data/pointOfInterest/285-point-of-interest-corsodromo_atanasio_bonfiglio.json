@@ -31,8 +31,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://www.concordia.gob.ar/carnaval; https://mapcarta.com/es/W224803420",
+    "verifiedAt": null,
+    "source": "https://www.concordia.gob.ar/carnaval",
     "notes": "Coordenadas contrastadas con OpenStreetMap; vigencia confirmada por el sitio oficial del Carnaval.",
     "lifecycleState": "ACTIVE",
     "categories": [

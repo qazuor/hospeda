@@ -32,7 +32,7 @@
     "displayWeight": 50,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.concordia.gob.ar/noticias/secretar%C3%ADa-de-comunicaci%C3%B3n-y-desarrollo-cultural/un-domingo-diferente-en-el-parque; https://www.concordia.gob.ar/noticias/gesti%C3%B3n/se-inauguraron-nuevos-juegos-y-espacios-saludables-en-el-parque-liquidambar",
+    "source": "https://www.concordia.gob.ar/noticias/secretar%C3%ADa-de-comunicaci%C3%B3n-y-desarrollo-cultural/un-domingo-diferente-en-el-parque",
     "notes": "Ubicación por avenida y equipamiento confirmados. Falta geocodificar y verificar accesibilidad tras las obras aeroportuarias. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

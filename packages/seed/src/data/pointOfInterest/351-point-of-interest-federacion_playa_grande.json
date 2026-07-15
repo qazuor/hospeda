@@ -26,7 +26,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.federacion.tur.ar/nuestras-playas/; https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
+    "source": "https://www.federacion.tur.ar/nuestras-playas/",
     "notes": "Nombre y ubicación general confirmados. Falta geocodificar el acceso principal.",
     "lifecycleState": "ACTIVE",
     "categories": [

@@ -31,7 +31,7 @@
     "displayWeight": 50,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://mapcarta.com/es/W355830480; https://mapcarta.com/es/W1265502968",
+    "source": "https://mapcarta.com/es/W355830480",
     "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [

@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://ibicuy.gob.ar/?q=content%2Fque-visitar; https://www.entrerios.tur.ar/localidades-1/ibicuy",
+    "source": "https://ibicuy.gob.ar/?q=content%2Fque-visitar",
     "notes": "Paseo lineal. Conviene modelarlo como geometría y definir un acceso principal.",
     "lifecycleState": "ACTIVE",
     "categories": [

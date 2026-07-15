@@ -33,7 +33,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://ubajay.gob.ar/turismo/; https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
+    "source": "https://ubajay.gob.ar/turismo/",
     "notes": "Existencia, cercanía y propuestas confirmadas. Falta geocodificar acceso principal.",
     "lifecycleState": "ACTIVE",
     "categories": [

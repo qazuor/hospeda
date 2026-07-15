@@ -52,7 +52,7 @@
     "displayWeight": 90,
     "lifecycleState": "ACTIVE",
     "verified": true,
-    "verifiedAt": "46214",
+    "verifiedAt": null,
     "source": "https://museourquiza.cultura.gob.ar/info/visita/",
     "notes": "Coordenadas contrastadas con Wikimedia Commons/Wikidata y descripción con el sitio oficial del museo."
 }

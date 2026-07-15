@@ -32,8 +32,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://mapcarta.com/es/W202761730; https://sanjose.gob.ar/el-verano-mas-largo-de-entre-rios-se-vive-en-san-jose/",
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/W202761730",
     "notes": "Coordenadas contrastadas con OpenStreetMap; vigencia turística confirmada por el municipio en 2026.",
     "lifecycleState": "ACTIVE",
     "categories": [

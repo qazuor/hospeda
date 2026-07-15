@@ -32,8 +32,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://sansalvadorer.gob.ar/museodelarroz/; https://mapcarta.com/es/W448500538",
+    "verifiedAt": null,
+    "source": "https://sansalvadorer.gob.ar/museodelarroz/",
     "notes": "Existencia y contenido confirmados por el municipio; coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",
     "categories": [

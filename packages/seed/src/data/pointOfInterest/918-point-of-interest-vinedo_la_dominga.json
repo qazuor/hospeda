@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://gualeguaychu.tur.ar/detalle?id=431; https://gualeguaychu.tur.ar/caminodelvino",
+    "source": "https://gualeguaychu.tur.ar/detalle?id=431",
     "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

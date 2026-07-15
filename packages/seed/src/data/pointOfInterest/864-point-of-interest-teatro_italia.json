@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.entrerios.tur.ar/localidades-1/gualeguay; https://gualeguay.jimdofree.com/puerto-ruiz/mas-lugares-interesantes/",
+    "source": "https://www.entrerios.tur.ar/localidades-1/gualeguay",
     "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [

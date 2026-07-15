@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.conabip.gob.ar/user/1267; https://www.entrerios.gov.ar/cultura/el-ciclo-entre-rios-cantada-llega-a-gualeguay/",
+    "source": "https://www.conabip.gob.ar/user/1267",
     "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

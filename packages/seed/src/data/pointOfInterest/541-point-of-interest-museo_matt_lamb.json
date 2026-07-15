@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.turismoentrerios.com/gualeguay/museos.htm; https://tripin.travel/museo-matt-lamb-gualeguay/; https://www.instagram.com/culturagualeguay/",
+    "source": "https://www.turismoentrerios.com/gualeguay/museos.htm",
     "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

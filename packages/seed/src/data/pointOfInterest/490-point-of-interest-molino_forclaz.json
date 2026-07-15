@@ -32,8 +32,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://mapcarta.com/es/N512926538; https://sanjose.gob.ar/se-firmaron-convenios-para-fortalecer-el-observatorio-economico-turistico-en-la-microrregion-tierra-de-palmares/",
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N512926538",
     "notes": "Coordenadas contrastadas con OpenStreetMap; vigencia institucional confirmada por el municipio.",
     "lifecycleState": "ACTIVE",
     "categories": [

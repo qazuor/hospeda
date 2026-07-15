@@ -26,7 +26,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://villaelisa.gov.ar/?eventDisplay=list&post_type=tribe_venue&tribe_venue=hospital-san-roque-maria-aguer-de-francou; https://villaelisa.gov.ar/reconocimiento-para-el-hospital-san-roque/",
+    "source": "https://villaelisa.gov.ar/?eventDisplay=list&post_type=tribe_venue&tribe_venue=hospital-san-roque-maria-aguer-de-francou",
     "notes": "Nombre, dirección y vigencia confirmados por la Municipalidad. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

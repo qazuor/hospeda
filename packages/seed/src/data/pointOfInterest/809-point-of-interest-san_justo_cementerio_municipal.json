@@ -25,7 +25,7 @@
     "isFeatured": false,
     "displayWeight": 10,
     "verified": true,
-    "verifiedAt": "46214",
+    "verifiedAt": null,
     "source": "https://mapcarta.com/es/W311743808",
     "notes": "Ubicación contrastada con OpenStreetMap. No se encontró numeración postal publicada.",
     "lifecycleState": "ACTIVE",

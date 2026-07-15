@@ -26,7 +26,7 @@
     "displayWeight": 50,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.colonturismo.tur.ar/directorio/paseo-del-sol/; https://colon.gov.ar/turismo-difunde-el-calendario-de-eventos-para-el-mes-de-julio/",
+    "source": "https://www.colonturismo.tur.ar/directorio/paseo-del-sol/",
     "notes": "Nombre, actividad y cruce de calles confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

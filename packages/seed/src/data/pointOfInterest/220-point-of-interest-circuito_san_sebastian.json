@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/agenda-de-actividades-en-la-ciudad-para-semana-santa; https://www.cdeluruguay.gob.ar/gobierno/noticias/toda-la-oferta-para-este-fin-de-semana-largo-en-concepcion-del-uruguay",
+    "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/agenda-de-actividades-en-la-ciudad-para-semana-santa",
     "notes": "Falta digitalizar el trazado y las paradas vigentes. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

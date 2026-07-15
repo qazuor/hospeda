@@ -31,8 +31,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://urdinarrain.tur.ar/la-ciudad/; https://mapcarta.com/es/N2592202540",
+    "verifiedAt": null,
+    "source": "https://urdinarrain.tur.ar/la-ciudad/",
     "notes": "Función cultural y coordenadas contrastadas con fuentes turísticas y OpenStreetMap.",
     "lifecycleState": "ACTIVE",
     "categories": [

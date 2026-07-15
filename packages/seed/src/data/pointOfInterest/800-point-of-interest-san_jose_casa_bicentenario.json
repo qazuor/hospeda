@@ -33,7 +33,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://sanjose.gob.ar/inscripciones-abiertas-a-los-talleres-anuales-culturales/; https://sanjose.gob.ar/la-casa-del-bicentenario-como-un-espacio-de-inclusion-social/",
+    "source": "https://sanjose.gob.ar/inscripciones-abiertas-a-los-talleres-anuales-culturales/",
     "notes": "Domicilio y actividad confirmados por el municipio; falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

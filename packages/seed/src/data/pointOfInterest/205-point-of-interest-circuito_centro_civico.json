@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://www.villaguay.gob.ar/app/villaguay/historia",
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay",
     "notes": "Recorrido confirmado como producto cultural. Falta digitalizar paradas y trazado. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

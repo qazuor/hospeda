@@ -25,8 +25,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://www.santaana.gob.ar/home/2024/09/24/santa-ana-turistica-2/; https://mapcarta.com/es/N9393235622",
+    "verifiedAt": null,
+    "source": "https://www.santaana.gob.ar/home/2024/09/24/santa-ana-turistica-2/",
     "notes": "Coordenadas del centro del sector Playa 52 contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",
     "categories": [

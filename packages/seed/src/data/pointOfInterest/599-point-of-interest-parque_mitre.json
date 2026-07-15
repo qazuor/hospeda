@@ -26,7 +26,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.concordia.gob.ar/node/11603; https://www.concordia.gob.ar/turismo/atractivos/costanera",
+    "source": "https://www.concordia.gob.ar/node/11603",
     "notes": "Existencia y servicios confirmados. Falta geocodificar el centro del parque.",
     "lifecycleState": "ACTIVE",
     "categories": [

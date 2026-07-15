@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://es.wikipedia.org/wiki/Puerto_Ruiz; https://es.wikipedia.org/wiki/Ferrocarril_Primer_Entrerriano",
+    "source": "https://es.wikipedia.org/wiki/Puerto_Ruiz",
     "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [

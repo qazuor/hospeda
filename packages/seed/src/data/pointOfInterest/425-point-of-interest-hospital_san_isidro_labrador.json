@@ -31,8 +31,8 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": "46214",
-    "source": "https://mapcarta.com/es/N2900151222; https://www.facebook.com/p/Hospital-Larroque-100009964540143/",
+    "verifiedAt": null,
+    "source": "https://mapcarta.com/es/N2900151222",
     "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",
     "categories": [

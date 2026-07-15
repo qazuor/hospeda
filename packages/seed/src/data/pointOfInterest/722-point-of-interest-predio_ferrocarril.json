@@ -33,7 +33,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades; https://ubajay.gob.ar/category/obras/espacios-verdes/",
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
     "notes": "Servicios y uso comunitario confirmados. Falta geocodificar el polígono.",
     "lifecycleState": "ACTIVE",
     "categories": [
