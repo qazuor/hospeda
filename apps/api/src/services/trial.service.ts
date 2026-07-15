@@ -444,7 +444,13 @@ export class TrialService {
             const trialEnd = activeSubscription.trialEnd
                 ? new Date(activeSubscription.trialEnd)
                 : null;
-            const isExpired = trialEnd ? now > trialEnd : false;
+            // Must be status-aware (HOS-171): under the card-first design a single
+            // row carries `trialEnd` AND becomes `active` once MercadoPago charges
+            // at day N. Keying expiry off `trialEnd` alone would report a paying
+            // customer as expired forever, and `middlewares/trial.ts` would answer
+            // every write with HTTP 402. Only a subscription that is still
+            // `trialing` can have an expired trial.
+            const isExpired = isOnTrial && trialEnd ? now > trialEnd : false;
 
             // Calculate days remaining
             const daysRemaining =

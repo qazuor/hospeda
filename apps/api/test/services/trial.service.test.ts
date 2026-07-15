@@ -751,6 +751,47 @@ describe('TrialService', () => {
             expect(result.planSlug).toBe('owner-basico');
         });
 
+        it('should NOT report expired for a converted card-first subscription (AC-5, HOS-171)', async () => {
+            // Arrange — the card-first shape: ONE row that carries trialEnd (qzpay
+            // writes it on mode:'paid' regardless of status) AND has since become
+            // `active` because MercadoPago charged at day N. Computing isExpired
+            // from trialEnd alone would mark this paid-up customer as expired and
+            // middlewares/trial.ts would throw HTTP 402 on every write.
+            const customerId = 'customer-converted';
+            const now = new Date();
+            const trialStart = new Date(now);
+            trialStart.setDate(trialStart.getDate() - 19);
+            const trialEnd = new Date(now);
+            trialEnd.setDate(trialEnd.getDate() - 5); // trial elapsed 5 days ago
+
+            const mockSubscription = {
+                id: 'sub-converted',
+                customerId,
+                planId: 'plan-owner-basico',
+                status: 'active', // MP charged; the customer is paying
+                trialStart: trialStart.toISOString(),
+                trialEnd: trialEnd.toISOString()
+            };
+
+            const mockPlan = {
+                id: 'plan-owner-basico',
+                name: 'owner-basico'
+            };
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                mockSubscription
+            ] as never);
+            vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+            // Act
+            const result = await trialService.getTrialStatus({ customerId });
+
+            // Assert — not on trial, and crucially NOT locked out
+            expect(result.isOnTrial).toBe(false);
+            expect(result.isExpired).toBe(false);
+            expect(result.daysRemaining).toBe(0);
+        });
+
         it('should return not on trial if no subscription', async () => {
             // Arrange
             const customerId = 'customer-789';
