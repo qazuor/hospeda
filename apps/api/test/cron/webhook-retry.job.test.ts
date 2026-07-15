@@ -718,14 +718,17 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
                 currencyId: 'ARS',
                 status: 'processed',
                 paymentStatus: 'approved',
-                debitDate: '2026-06-05'
+                debitDate: '2026-06-05',
+                couponAmount: null,
+                campaignId: null
             }
         });
 
         // Subscription found (M2 fix: subscription is resolved from preapprovalId)
         vi.mocked(findLocalSubscriptionByPreapprovalId).mockResolvedValue({
             id: 'sub-local-1',
-            customerId: 'cust-resolved-1'
+            customerId: 'cust-resolved-1',
+            planId: 'plan-1'
         });
         vi.mocked(paymentAlreadyRecorded).mockResolvedValue(false);
 
@@ -786,13 +789,16 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
                 currencyId: 'ARS',
                 status: 'processed',
                 paymentStatus: 'approved',
-                debitDate: null
+                debitDate: null,
+                couponAmount: null,
+                campaignId: null
             }
         });
 
         vi.mocked(findLocalSubscriptionByPreapprovalId).mockResolvedValue({
             id: 'sub-local-2',
-            customerId: 'cust-2'
+            customerId: 'cust-2',
+            planId: 'plan-1'
         });
         // Already recorded — must NOT call billing.payments.record
         vi.mocked(paymentAlreadyRecorded).mockResolvedValue(true);
@@ -840,7 +846,9 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
                 currencyId: 'ARS',
                 status: 'processed',
                 paymentStatus: 'approved',
-                debitDate: null
+                debitDate: null,
+                couponAmount: null,
+                campaignId: null
             }
         });
 

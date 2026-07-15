@@ -26,7 +26,11 @@
 import type { QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
 import { and, billingPayments, billingSubscriptions, eq, getDb, isNull, sql } from '@repo/db';
-import { resolveRenewalPromoEffect } from '@repo/service-core';
+import {
+    detectExternalChargeInterference,
+    resolveFullPlanPriceCentavos,
+    resolveRenewalPromoEffect
+} from '@repo/service-core';
 import { getQZPayBilling } from '../../../middlewares/billing.js';
 import { restoreFullPriceMutation } from '../../../services/promo-renewal-mp.service.js';
 import { env } from '../../../utils/env.js';
@@ -90,12 +94,13 @@ function mapMpStatusToQZPayStatus(details: MPAuthorizedPaymentDetails): QZPayPay
  */
 async function findLocalSubscriptionByPreapprovalId(
     preapprovalId: string
-): Promise<{ id: string; customerId: string } | null> {
+): Promise<{ id: string; customerId: string; planId: string | null } | null> {
     const db = getDb();
     const rows = await db
         .select({
             id: billingSubscriptions.id,
-            customerId: billingSubscriptions.customerId
+            customerId: billingSubscriptions.customerId,
+            planId: billingSubscriptions.planId
         })
         .from(billingSubscriptions)
         .where(
@@ -106,6 +111,84 @@ async function findLocalSubscriptionByPreapprovalId(
         )
         .limit(1);
     return rows[0] ?? null;
+}
+
+/**
+ * Report a charge that MercadoPago's own campaign engine altered (HOS-171 §7.5).
+ *
+ * Deliberately NOT fail-closed: the card was already debited and MP considers
+ * the matter closed, so rejecting the charge here would only desynchronise us
+ * from reality. We record the money that actually arrived and shout about the
+ * gap.
+ *
+ * Never throws — an accounting alert must not break payment recording.
+ *
+ * @internal
+ */
+async function reportExternalChargeInterference(params: {
+    details: MPAuthorizedPaymentDetails;
+    localSubscriptionId: string;
+    planId: string | null;
+    chargedAmountCentavos: number;
+    eventId: string | number;
+    requestId: string;
+}): Promise<void> {
+    const { details, localSubscriptionId, planId, chargedAmountCentavos, eventId, requestId } =
+        params;
+
+    try {
+        // Cheap pre-check: the plan price lookup below is only worth a query when
+        // MP actually reported a campaign, which is the rare case.
+        if (
+            (details.couponAmount === null || details.couponAmount <= 0) &&
+            (details.campaignId === null || details.campaignId.length === 0)
+        ) {
+            return;
+        }
+
+        const expectedAmountCentavos = await resolveFullPlanPriceCentavos(getDb(), planId);
+
+        const interference = detectExternalChargeInterference({
+            couponAmount: details.couponAmount,
+            campaignId: details.campaignId,
+            chargedAmountCentavos,
+            expectedAmountCentavos
+        });
+
+        if (!interference) {
+            return;
+        }
+
+        const detail = {
+            eventId,
+            requestId,
+            localSubscriptionId,
+            mpPaymentId: details.paymentId,
+            campaignId: interference.campaignId,
+            couponAmountCentavos: interference.couponAmountCentavos,
+            chargedAmountCentavos: interference.chargedAmountCentavos,
+            expectedAmountCentavos: interference.expectedAmountCentavos,
+            shortfallCentavos: interference.shortfallCentavos
+        };
+
+        // Actionable: someone configured an account-level discount campaign in the
+        // MercadoPago panel and it is silently eating subscription revenue.
+        apiLogger.error(
+            detail,
+            'MercadoPago webhook: subscription charge was altered by a MercadoPago discount campaign — payment accepted, revenue does not match the plan',
+            { capture: true }
+        );
+    } catch (err) {
+        apiLogger.warn(
+            {
+                eventId,
+                requestId,
+                localSubscriptionId,
+                error: err instanceof Error ? err.message : String(err)
+            },
+            'MercadoPago webhook: charge-interference check failed — payment recording unaffected'
+        );
+    }
 }
 
 /**
@@ -422,6 +505,20 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
             },
             'MercadoPago webhook: recurring payment recorded in billing_payments'
         );
+
+        // Accounting defense (HOS-171 §7.5): the money that arrived is now on
+        // record; check whether MercadoPago's own campaign engine is the reason
+        // it is not the amount we asked for. Fire-and-forget so an accounting
+        // alert never delays the webhook ACK, and never fail-closed — the charge
+        // already settled.
+        void reportExternalChargeInterference({
+            details,
+            localSubscriptionId: sub.id,
+            planId: sub.planId,
+            chargedAmountCentavos: amountInCentavos,
+            eventId: event.id,
+            requestId
+        });
 
         // SPEC-262 T-007 (B2 fix): Only decrement the cycle counter when the
         // charge SUCCEEDED. A rejected/failed/pending charge must not consume a
