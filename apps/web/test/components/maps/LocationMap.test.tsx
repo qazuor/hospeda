@@ -67,10 +67,17 @@ import { LocationMap } from '../../../src/components/maps/LocationMap.client';
 // alone. There is one chunk PER MODE (HOS-146 review): the multi-marker POI map
 // is split out so its react-dom/server + icon-table cost never reaches the
 // approximate/exact maps.
+//
+// The explicit timeout is required, not defensive: transforming the multi chunk
+// (leaflet + react-dom/server + the icon table) exceeds vitest's 10s default
+// hookTimeout on a cold CI runner, which fails the whole FILE even though every
+// test in it passes. Local runs stay well under it — this only bites in CI.
+const PREWARM_TIMEOUT_MS = 60_000;
+
 beforeAll(async () => {
     await import('../../../src/components/maps/LocationMapInner.client');
     await import('../../../src/components/maps/MultiMarkerMapInner.client');
-});
+}, PREWARM_TIMEOUT_MS);
 
 const approximateI18n = {
     attribution: '© OSM',
