@@ -4412,12 +4412,24 @@
         "accessTokenIv": {
             "required": "The access token IV is required"
         },
+        "calendarProviderToken": {
+            "invalid": "The calendar provider is invalid"
+        },
         "createdAt": {
             "required": "The creation date is required"
         },
         "externalCalendarId": {
             "max": "The external calendar ID cannot exceed 255 characters",
             "required": "The external calendar ID is required"
+        },
+        "feedUrl": {
+            "httpsRequired": "The feed URL must use HTTPS",
+            "invalid": "The feed URL is invalid",
+            "max": "The feed URL cannot exceed 2048 characters",
+            "required": "The feed URL is required"
+        },
+        "icalProviderToken": {
+            "invalid": "The iCal calendar provider is invalid"
         },
         "isActive": {
             "required": "The active status is required"
