@@ -65,6 +65,23 @@ const GOOGLE_ROW = {
     updatedAt: '2026-07-01T00:00:00.000Z'
 };
 
+/**
+ * Same `date` as MANUAL_ROW, different `source` — a valid state under the
+ * HOS-162 source-scoped unique index `(accommodationId, date, source)`.
+ */
+const AIRBNB_ROW_SAME_DATE = {
+    id: 'occ-3',
+    accommodationId: 'acc-1',
+    date: '2026-07-10',
+    isBlocked: true,
+    source: 'AIRBNB',
+    externalEventId: 'airbnb-evt-1',
+    note: null,
+    createdById: 'system',
+    createdAt: '2026-07-01T00:00:00.000Z',
+    updatedAt: '2026-07-01T00:00:00.000Z'
+};
+
 describe('AccommodationOccupancyList — loading state', () => {
     it('renders a skeleton while loading', () => {
         mockQueryResult.isLoading = true;
@@ -139,5 +156,16 @@ describe('AccommodationOccupancyList — populated state', () => {
 
         // es locale, dateStyle: 'medium', timeZone: 'UTC' → "10 jul 2026"
         expect(screen.getByText(/10 jul\.? 2026/)).toBeInTheDocument();
+    });
+
+    it('renders one row per (date, source) pair — a date can carry rows from multiple sources (HOS-162)', () => {
+        mockQueryResult.data = [MANUAL_ROW, AIRBNB_ROW_SAME_DATE];
+
+        render(<AccommodationOccupancyList accommodationId="acc-1" />);
+
+        const rows = screen.getAllByRole('row').slice(1); // drop header row
+        expect(rows).toHaveLength(2);
+        expect(rows.some((row) => row.textContent?.includes('Manual'))).toBe(true);
+        expect(rows.some((row) => row.textContent?.includes('Airbnb'))).toBe(true);
     });
 });
