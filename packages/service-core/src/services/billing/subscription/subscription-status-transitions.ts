@@ -56,7 +56,7 @@ export type SubscriptionStatusFull = `${SubscriptionStatusEnum}`;
  *                    cancelled ◄──────────────────────────────────── expired
  *                  (terminal)                                       (terminal)
  *
- * trialing ──► active
+ * pending_provider ──► trialing ──► active
  *     │ └────► cancelled
  *     └──────► expired
  *
@@ -72,6 +72,7 @@ const VALID_TRANSITIONS: ReadonlyMap<
         SubscriptionStatusEnum.PENDING_PROVIDER,
         new Set<SubscriptionStatusFull>([
             SubscriptionStatusEnum.ACTIVE, // webhook/poll: payment confirmed (payment-logic.ts confirmAnnualSubscription)
+            SubscriptionStatusEnum.TRIALING, // webhook: provider authorized a card-first trial, first charge deferred (subscription-logic.ts deriveTrialingStatus — HOS-171)
             SubscriptionStatusEnum.ABANDONED // abandoned-pending-subs cron: TTL elapsed (abandoned-pending-subs.job.ts)
         ])
     ],

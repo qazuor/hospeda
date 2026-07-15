@@ -47,7 +47,11 @@ const LEGAL_TRANSITIONS: ReadonlyMap<
 > = new Map([
     [
         SubscriptionStatusEnum.PENDING_PROVIDER,
-        new Set([SubscriptionStatusEnum.ACTIVE, SubscriptionStatusEnum.ABANDONED])
+        new Set([
+            SubscriptionStatusEnum.ACTIVE,
+            SubscriptionStatusEnum.TRIALING,
+            SubscriptionStatusEnum.ABANDONED
+        ])
     ],
     [
         SubscriptionStatusEnum.TRIALING,
@@ -365,8 +369,19 @@ describe('getAllowedTransitions — utility', () => {
         // Assert
         expect(result).toBeDefined();
         expect(result?.has(SubscriptionStatusEnum.ACTIVE)).toBe(true);
+        expect(result?.has(SubscriptionStatusEnum.TRIALING)).toBe(true);
         expect(result?.has(SubscriptionStatusEnum.ABANDONED)).toBe(true);
-        expect(result?.size).toBe(2);
+        expect(result?.size).toBe(3);
+    });
+
+    it('permits pending_provider → trialing (AC-4 — card-first authorization)', () => {
+        // Arrange & Act
+        const result = checkSubscriptionStatusTransition({
+            from: SubscriptionStatusEnum.PENDING_PROVIDER,
+            to: SubscriptionStatusEnum.TRIALING
+        });
+        // Assert
+        expect(result.valid).toBe(true);
     });
 
     it('returns the correct set for trialing', () => {
