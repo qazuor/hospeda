@@ -120,7 +120,6 @@ import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction.js';
-import { DEFAULT_TRIAL_PLAN_SLUG } from '../billing/addon/trial.types.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
 import { PointOfInterestService } from '../point-of-interest/point-of-interest.service';
@@ -1721,8 +1720,6 @@ export class AccommodationService extends BaseCrudService<
                 const ownerIsBillingExempt =
                     !!owner && AccommodationService.BILLING_EXEMPT_ROLES.has(owner.role);
 
-                let trialSubscriptionId: string | null = null;
-
                 if (!ownerIsBillingExempt) {
                     if (!this._publishDeps) {
                         throw new ServiceError(
@@ -1734,47 +1731,22 @@ export class AccommodationService extends BaseCrudService<
                         accommodation.ownerId,
                         execCtx
                     );
-                    if (eligibility === 'subscription_required') {
+                    // Publishing requires a live subscription — and that now
+                    // includes the owner's very first publish (HOS-171).
+                    //
+                    // `first_publish` used to grant a no-card trial right here,
+                    // mid-publish, so the owner went live without ever seeing a
+                    // checkout. Card-first has no such thing: a trial IS a
+                    // MercadoPago preapproval, so the payer must authorize a card
+                    // before any free days exist. Both states therefore reject to
+                    // the plans page, where the card is collected and the trial
+                    // starts. Creating the accommodation stays free — it simply
+                    // stays a draft until then.
+                    if (
+                        eligibility === 'subscription_required' ||
+                        eligibility === 'first_publish'
+                    ) {
                         throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
-                    }
-                    if (eligibility === 'first_publish') {
-                        try {
-                            const result = await this._publishDeps.startTrial({
-                                ownerId: accommodation.ownerId,
-                                accommodationId: id
-                            });
-                            trialSubscriptionId = result.subscriptionId;
-                            // SPEC-222 Part 1: emit a single structured linkage line
-                            // tying the trial subscription to the accommodation that
-                            // triggered it and its owner. Searching the observability
-                            // stack by ANY of these ids surfaces the whole linkage,
-                            // even though trials are per-owner. Logging only — no extra
-                            // remote call, no change to publish timing/compensation.
-                            this.logger.info(
-                                {
-                                    subscriptionId: trialSubscriptionId,
-                                    accommodationId: id,
-                                    ownerId: accommodation.ownerId,
-                                    // The publish flow always starts the trial on the
-                                    // default plan (`AccommodationPublishDeps.startTrial`
-                                    // never threads a `planSlug`), so this constant IS the
-                                    // actual slug used — shared single source of truth
-                                    // with `TrialService.startTrial`'s own default (HOS-110).
-                                    planSlug: DEFAULT_TRIAL_PLAN_SLUG,
-                                    eligibility
-                                },
-                                '[accommodation.publish] trial subscription linkage'
-                            );
-                        } catch (error) {
-                            this.logger.error(
-                                { error, ownerId: accommodation.ownerId, accommodationId: id },
-                                '[accommodation.publish] Trial subscription creation failed'
-                            );
-                            throw new ServiceError(
-                                ServiceErrorCode.SERVICE_UNAVAILABLE,
-                                'service_unavailable'
-                            );
-                        }
                     }
                 }
 
@@ -1791,60 +1763,33 @@ export class AccommodationService extends BaseCrudService<
                     !opts?.callerSetVisibility &&
                     accommodation.visibility === VisibilityEnum.PRIVATE;
 
-                let updated: Accommodation;
-                try {
-                    updated = await withServiceTransaction(
-                        async (txCtx) => {
-                            const next = await this.model.update(
-                                { id },
-                                {
-                                    lifecycleState: LifecycleStatusEnum.ACTIVE,
-                                    ...(shouldPromoteVisibility
-                                        ? { visibility: VisibilityEnum.PUBLIC }
-                                        : {}),
-                                    updatedById: validatedActor.id
-                                },
-                                txCtx.tx
-                            );
-                            if (!next) {
-                                throw new ServiceError(
-                                    ServiceErrorCode.INTERNAL_ERROR,
-                                    'Failed to flip accommodation lifecycleState to ACTIVE'
-                                );
-                            }
-                            return next;
-                        },
-                        undefined,
-                        { timeoutMs: 5000 }
-                    );
-                } catch (txError) {
-                    if (trialSubscriptionId && this._publishDeps) {
-                        try {
-                            await this._publishDeps.cancelTrial(trialSubscriptionId);
-                            this.logger.warn(
-                                {
-                                    trialSubscriptionId,
-                                    ownerId: accommodation.ownerId,
-                                    accommodationId: id,
-                                    txError
-                                },
-                                '[accommodation.publish] Local tx failed after trial creation; trial cancelled as compensation'
-                            );
-                        } catch (cancelError) {
-                            this.logger.error(
-                                {
-                                    cancelError,
-                                    txError,
-                                    trialSubscriptionId,
-                                    ownerId: accommodation.ownerId,
-                                    accommodationId: id
-                                },
-                                '[accommodation.publish] CRITICAL: trial subscription was created but local tx failed AND cancel compensation also failed; manual reconciliation required'
+                // No compensation wrapper any more: publish no longer creates a
+                // trial subscription before this write, so there is no external
+                // side effect left to undo if the transaction fails (HOS-171).
+                const updated: Accommodation = await withServiceTransaction(
+                    async (txCtx) => {
+                        const next = await this.model.update(
+                            { id },
+                            {
+                                lifecycleState: LifecycleStatusEnum.ACTIVE,
+                                ...(shouldPromoteVisibility
+                                    ? { visibility: VisibilityEnum.PUBLIC }
+                                    : {}),
+                                updatedById: validatedActor.id
+                            },
+                            txCtx.tx
+                        );
+                        if (!next) {
+                            throw new ServiceError(
+                                ServiceErrorCode.INTERNAL_ERROR,
+                                'Failed to flip accommodation lifecycleState to ACTIVE'
                             );
                         }
-                    }
-                    throw txError;
-                }
+                        return next;
+                    },
+                    undefined,
+                    { timeoutMs: 5000 }
+                );
 
                 const destinationSlug = updated.destinationId
                     ? await this._resolveDestinationSlug(updated.destinationId)

@@ -30,7 +30,6 @@ import {
     type ReactivateSubscriptionInput,
     type ReactivateSubscriptionResult,
     resolveIntendedInterval,
-    resolvePlanTrialConfig,
     type StartTrialInput,
     type TrialEndingSubscription,
     type TrialStatus,
@@ -39,7 +38,6 @@ import {
 import * as Sentry from '@sentry/node';
 import { and, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
-import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
 import { createPaidSubscription } from './billing/paid-subscription-create.js';
 import { resolveReactivationPlan } from './billing/reactivation-plan-guard.js';
@@ -166,188 +164,6 @@ export class TrialService {
      * than left dangling for callers to dutifully wire into nothing.
      */
     constructor(private readonly billing: QZPayBilling | null) {}
-
-    /**
-     * Start a trial for a user (HOS-110).
-     *
-     * Creates a trial subscription on the plan identified by
-     * `input.planSlug` (defaults to {@link DEFAULT_TRIAL_PLAN_SLUG},
-     * `'owner-basico'`, when omitted — preserving the original
-     * accommodation-publish behavior, where the accommodation type is an
-     * attribute of the accommodation entity, not the trial plan).
-     *
-     * The trial length is read from the RESOLVED plan's own declared trial
-     * config (`billing_plans.metadata.trialDays` / `.hasTrial`), not a
-     * hardcoded constant — different plans can declare different trial
-     * lengths (e.g. `owner-test-daily`: 1 day vs `owner-basico`: 14 days).
-     * If the resolved plan does not declare a trial (`hasTrial !== true` or
-     * `trialDays <= 0`), this is a no-op that returns `null` — starting a
-     * 0-day "trial" on a no-trial plan would be a bug, not a feature.
-     *
-     * `input.extraTrialDays` (HOS-110 W1) adds on top of the resolved base
-     * length (plan `trialDays`, or `HOSPEDA_TRIAL_DAYS_OVERRIDE` when set) —
-     * sourced from a `trial_extension` promo code applied by a trial-eligible
-     * customer at checkout. The base-length guard above is evaluated BEFORE
-     * the extension is added, so the ops kill-switch
-     * (`HOSPEDA_TRIAL_DAYS_OVERRIDE=0`) still disables every trial regardless
-     * of any extension promo supplied.
-     *
-     * `input.intendedInterval` (HOS-115) is stamped as-is into the created
-     * subscription's `metadata.intendedInterval` — the trial object itself
-     * carries no price/interval, so this is the sole record of which
-     * checkout toggle (monthly/annual) the customer started from, read back
-     * later to nudge the pricing page at conversion.
-     *
-     * @param input - Trial start parameters
-     * @returns Trial subscription ID, or `null` if billing is disabled, the
-     *   resolved plan has no trial, or the customer already has a
-     *   subscription (one trial per customer, for life).
-     */
-    async startTrial(input: StartTrialInput): Promise<string | null> {
-        if (!this.billing) {
-            apiLogger.debug('Billing not enabled, skipping trial creation');
-            return null;
-        }
-
-        const { customerId, accommodationId, extraTrialDays, intendedInterval } = input;
-        const planSlug = input.planSlug ?? DEFAULT_TRIAL_PLAN_SLUG;
-
-        try {
-            apiLogger.info({ customerId, planSlug }, 'Starting trial for user');
-
-            // Get plan by slug
-            const plansResult = await this.billing.plans.list();
-
-            if (!plansResult.data) {
-                apiLogger.error({ planSlug }, 'Failed to fetch plans list');
-                throw new Error('Failed to fetch plans list');
-            }
-
-            // QZPay plans use 'name' not 'slug'
-            const plan = plansResult.data.find((p) => p.name === planSlug);
-
-            if (!plan) {
-                apiLogger.error({ planSlug }, 'Trial plan not found');
-                throw new Error(`Trial plan not found: ${planSlug}`);
-            }
-
-            // Trial config lives on the plan's metadata JSONB (seeded from
-            // `PlanDefinition.hasTrial` / `.trialDays`).
-            const { hasTrial: planHasTrial, trialDays: planTrialDays } = resolvePlanTrialConfig(
-                plan.metadata
-            );
-
-            // Testing-only override (HOSPEDA_TRIAL_DAYS_OVERRIDE): when set to a
-            // positive integer, shorten the trial so QA can exercise trial expiry
-            // without waiting the plan's full trial length. Deliberately NOT gated
-            // by environment: NODE_ENV is 'production' on BOTH the prod and staging
-            // deployments, so it cannot distinguish them, and testing must be
-            // possible against production (the MP sandbox on staging is unreliable).
-            // This is an explicit ops knob — it affects EVERY trial started while it
-            // is set, so the operator sets it, runs the test, then UNSETS it. Unset
-            // by default in every environment. The override only shortens/lengthens
-            // an ALREADY-trial-eligible plan — it never forces a trial onto a plan
-            // that does not declare one (the `planHasTrial` guard below still applies).
-            // HOS-110 W1: a `trial_extension` promo code (SPEC-262) supplied by a
-            // trial-eligible customer at checkout adds its `extraDays` on top of
-            // the (possibly overridden) base length — e.g. base 14 + code's 7 = 21.
-            // Applied AFTER the override so a QA override still shortens the base
-            // length; the extension is additive on top of whatever base applies.
-            const baseTrialDays = env.HOSPEDA_TRIAL_DAYS_OVERRIDE ?? planTrialDays;
-            const trialDays = baseTrialDays + (extraTrialDays ?? 0);
-
-            if (!planHasTrial || baseTrialDays <= 0) {
-                apiLogger.warn(
-                    { customerId, planSlug, planHasTrial, trialDays },
-                    'Plan does not declare a trial — skipping trial creation'
-                );
-                return null;
-            }
-
-            // Check if user already has a subscription
-            const existingSubscriptions =
-                await this.billing.subscriptions.getByCustomerId(customerId);
-
-            if (existingSubscriptions && existingSubscriptions.length > 0) {
-                apiLogger.warn(
-                    {
-                        customerId,
-                        existingSubscriptions: existingSubscriptions.length
-                    },
-                    'User already has subscriptions, skipping trial creation'
-                );
-                return null;
-            }
-
-            // Create trial subscription
-            const now = new Date();
-            const trialEnd = new Date(now);
-            trialEnd.setDate(trialEnd.getDate() + trialDays);
-
-            // SPEC-222 Part 2: enrich the MercadoPago creation payload AT
-            // creation time (no follow-up update, no extra MP call) with:
-            //  - an environment marker so MP-side records can be filtered by
-            //    deployment (prod / staging / development), reusing the same
-            //    convention as Sentry (HOSPEDA_SENTRY_ENVIRONMENT ?? NODE_ENV);
-            //  - the accommodation that triggered the trial, clearly labelled as
-            //    referential ("triggered_by") since trials are PER-OWNER and the
-            //    subscription does NOT belong to a single accommodation.
-            // Only env marker + internal UUIDs go to MP — no PII (no names/emails).
-            const environmentMarker = env.HOSPEDA_SENTRY_ENVIRONMENT ?? env.NODE_ENV;
-            const subscription = await this.billing.subscriptions.create({
-                customerId,
-                planId: plan.id,
-                trialDays,
-                metadata: {
-                    autoStarted: 'true',
-                    createdBy: 'trial-service',
-                    environment: environmentMarker,
-                    ...(accommodationId ? { triggeredByAccommodationId: accommodationId } : {}),
-                    // HOS-110 W1: audit trail for a trial_extension promo code that
-                    // lengthened this trial beyond the plan's base trialDays.
-                    ...(extraTrialDays ? { extraTrialDaysFromPromo: String(extraTrialDays) } : {}),
-                    // HOS-115 §5: the checkout entry interval the customer originally
-                    // chose (monthly/annual), stamped as-is so the post-trial
-                    // conversion nudge can pre-select the same toggle. Omitted for
-                    // trial-start paths with no interval choice (e.g. the
-                    // accommodation-publish auto-start flow).
-                    ...(intendedInterval ? { intendedInterval } : {})
-                }
-            });
-
-            // Clear entitlement cache to reflect the new trial subscription
-            // immediately (HOS-110). Previously only the accommodation-publish
-            // wrapper cleared this cache itself; other callers of `startTrial`
-            // (e.g. the paid-checkout trial branch) would otherwise leak a
-            // stale "no entitlements" cache entry until the TTL expired.
-            clearEntitlementCache(customerId);
-
-            apiLogger.info(
-                {
-                    customerId,
-                    subscriptionId: subscription.id,
-                    planSlug,
-                    trialEnd: trialEnd.toISOString(),
-                    ...(extraTrialDays ? { extraTrialDays } : {})
-                },
-                'Trial subscription created successfully'
-            );
-
-            return subscription.id;
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-
-            apiLogger.error(
-                {
-                    customerId,
-                    error: errorMessage
-                },
-                'Failed to start trial'
-            );
-
-            throw error;
-        }
-    }
 
     /**
      * Get trial status for a customer

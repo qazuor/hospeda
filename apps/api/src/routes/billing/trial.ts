@@ -65,16 +65,6 @@ const trialStatusResponseSchema = z.object({
  * Start trial request schema.
  * No body required.. all HOST users receive the same trial.
  */
-const _startTrialRequestSchema = z.object({});
-
-/**
- * Start trial response schema
- */
-const startTrialResponseSchema = z.object({
-    success: z.boolean(),
-    subscriptionId: z.string().nullable(),
-    message: z.string().optional()
-});
 
 /**
  * Extend trial request schema
@@ -139,84 +129,6 @@ export const getTrialStatusRoute = createSimpleRoute({
         });
 
         return status;
-    }
-});
-
-/**
- * POST /api/v1/protected/billing/trial/start
- * Start trial for authenticated user
- *
- * This endpoint starts a trial subscription for the authenticated user.
- * The billing customer ID is obtained from the user's billing context.
- */
-export const startTrialRoute = createSimpleRoute({
-    method: 'post',
-    path: '/start',
-    summary: 'Start trial',
-    description: 'Start a trial subscription for the authenticated user',
-    tags: ['Billing', 'Trial'],
-    responseSchema: startTrialResponseSchema,
-    handler: async (c) => {
-        const billingEnabled = c.get('billingEnabled');
-
-        if (!billingEnabled) {
-            throw new HTTPException(503, {
-                message: 'Billing service is not configured'
-            });
-        }
-
-        // Get billing customer ID from authenticated user context
-        const billingCustomerId = c.get('billingCustomerId');
-
-        if (!billingCustomerId) {
-            throw new HTTPException(400, {
-                message: 'No billing account found'
-            });
-        }
-
-        const customerId = billingCustomerId;
-        const billing = getQZPayBilling();
-        const trialService = new TrialService(billing);
-
-        try {
-            const subscriptionId = await trialService.startTrial({
-                customerId
-            });
-
-            if (!subscriptionId) {
-                throw new HTTPException(409, {
-                    message: 'User already has a subscription or trial could not be created'
-                });
-            }
-
-            return {
-                success: true,
-                subscriptionId,
-                message: 'Trial started successfully'
-            };
-        } catch (error) {
-            if (error instanceof HTTPException) {
-                throw error;
-            }
-
-            const errorMessage = error instanceof Error ? error.message : String(error);
-
-            apiLogger.error(
-                {
-                    customerId,
-                    error: errorMessage
-                },
-                'Failed to start trial'
-            );
-
-            const safeMessage = env.HOSPEDA_API_DEBUG_ERRORS
-                ? `Failed to start trial: ${errorMessage}`
-                : 'Failed to start trial';
-
-            throw new HTTPException(500, {
-                message: safeMessage
-            });
-        }
     }
 });
 
@@ -606,7 +518,6 @@ export const reactivateSubscriptionRoute = createSimpleRoute({
 const trialRouter = createRouter();
 
 trialRouter.route('/', getTrialStatusRoute);
-trialRouter.route('/', startTrialRoute);
 trialRouter.route('/', reactivateTrialRoute);
 trialRouter.route('/', reactivateSubscriptionRoute);
 trialRouter.route('/', extendTrialRoute);
