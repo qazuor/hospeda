@@ -197,7 +197,7 @@
             "timeoutSubtitle": "Your payment may still be processing. Check your account in a few minutes to confirm your subscription.",
             "cta": "Go to my account",
             "pageTitle": "Payment approved",
-            "promoIgnoredNote": "Your discount code was not applied because you started your free trial instead."
+            "promoIgnoredNote": "Your code was not applied: it extends a free trial, and this subscription does not have one."
         },
         "pending": {
             "title": "Your payment is being processed",

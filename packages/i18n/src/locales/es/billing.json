@@ -197,7 +197,7 @@
             "timeoutSubtitle": "El pago puede seguir procesándose. Revisá tu cuenta en unos minutos para confirmar tu suscripción.",
             "cta": "Ir a mi cuenta",
             "pageTitle": "Pago aprobado",
-            "promoIgnoredNote": "Tu código de descuento no se aplicó porque activaste la prueba gratis."
+            "promoIgnoredNote": "Tu código no se aplicó: es para extender una prueba gratis y esta suscripción no tiene una."
         },
         "pending": {
             "title": "Tu pago está siendo procesado",
