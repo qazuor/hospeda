@@ -92,7 +92,15 @@ interface IcalFeedFormProps {
     readonly provider: OccupancySourceEnum;
     readonly feedUrl: string;
     readonly onFeedUrlChange: (value: string) => void;
-    readonly onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+    /**
+     * Invoked when the host confirms the feed URL (button click or Enter).
+     * This is intentionally NOT a form `onSubmit`: the whole provider row is
+     * rendered inside the accommodation editor's `<form>`, and a nested
+     * `<form>` is invalid HTML — the browser drops it and the inner submit
+     * falls through to a native GET on the outer form, reloading the page
+     * without ever connecting. See the `<div>` (not `<form>`) below.
+     */
+    readonly onSubmitFeed: () => void;
     readonly busy: ProviderRowBusy;
     readonly submitLabel: string;
     readonly submitBusyLabel: string;
@@ -105,17 +113,17 @@ function IcalFeedForm({
     provider,
     feedUrl,
     onFeedUrlChange,
-    onSubmit,
+    onSubmitFeed,
     busy,
     submitLabel,
     submitBusyLabel,
     helpText
 }: IcalFeedFormProps) {
+    // A plain <div>, not a <form>: this markup is nested inside the editor's
+    // own <form>, and nested forms are invalid HTML. Enter-to-submit is
+    // preserved manually via the input's onKeyDown below.
     return (
-        <form
-            className={styles.icalForm}
-            onSubmit={onSubmit}
-        >
+        <div className={styles.icalForm}>
             <label htmlFor={`ical-feed-url-${provider}`}>
                 <span className={styles.fieldLabel}>
                     {t('host.properties.editor.calendarSync.feedUrlLabel', 'URL del feed .ics')}
@@ -128,6 +136,12 @@ function IcalFeedForm({
                 className={styles.fieldInput}
                 value={feedUrl}
                 onChange={(event) => onFeedUrlChange(event.target.value)}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        onSubmitFeed();
+                    }
+                }}
                 placeholder={t(
                     'host.properties.editor.calendarSync.feedUrlPlaceholder',
                     'https://ejemplo.com/calendario.ics'
@@ -137,13 +151,14 @@ function IcalFeedForm({
             />
             <p className={styles.fieldHelp}>{helpText}</p>
             <button
-                type="submit"
+                type="button"
                 className={styles.primaryButton}
+                onClick={onSubmitFeed}
                 disabled={busy !== null}
             >
                 {busy === 'connecting' ? submitBusyLabel : submitLabel}
             </button>
-        </form>
+        </div>
     );
 }
 
@@ -186,8 +201,7 @@ export function CalendarProviderRow({
           })
         : null;
 
-    const handleConnectIcalSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const handleConnectIcal = () => {
         if (feedUrl.trim()) {
             onConnectIcal(feedUrl.trim());
         }
@@ -339,7 +353,7 @@ export function CalendarProviderRow({
                             provider={provider}
                             feedUrl={feedUrl}
                             onFeedUrlChange={setFeedUrl}
-                            onSubmit={handleConnectIcalSubmit}
+                            onSubmitFeed={handleConnectIcal}
                             busy={busy}
                             submitLabel={t(
                                 'host.properties.editor.calendarSync.reconnectIcal',
@@ -381,7 +395,7 @@ export function CalendarProviderRow({
                     provider={provider}
                     feedUrl={feedUrl}
                     onFeedUrlChange={setFeedUrl}
-                    onSubmit={handleConnectIcalSubmit}
+                    onSubmitFeed={handleConnectIcal}
                     busy={busy}
                     submitLabel={t('host.properties.editor.calendarSync.connectIcal', 'Conectar')}
                     submitBusyLabel={t(

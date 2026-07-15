@@ -134,6 +134,30 @@ describe('CalendarSyncPanel', () => {
         expect(mockStatus).toHaveBeenCalledTimes(1);
     });
 
+    it('renders no nested <form> and uses type="button" connect controls (HOS-162 nested-form regression)', async () => {
+        // The whole panel mounts INSIDE the accommodation editor's <form>.
+        // A nested <form> is invalid HTML — the browser drops it and the inner
+        // submit falls through to a native GET on the outer form, reloading the
+        // page without ever connecting. This asserts the panel never introduces
+        // a <form> and that every connect control is type="button".
+        mockStatus.mockResolvedValue(emptyStatus());
+
+        const { container } = render(
+            <CalendarSyncPanel
+                locale="es"
+                accommodationId={ACC_ID}
+            />
+        );
+        await screen.findByText('Conectar Google Calendar');
+
+        expect(container.querySelectorAll('form')).toHaveLength(0);
+        const connectButtons = screen.getAllByRole('button', { name: 'Conectar' });
+        expect(connectButtons.length).toBeGreaterThan(0);
+        for (const button of connectButtons) {
+            expect(button).toHaveAttribute('type', 'button');
+        }
+    });
+
     it('calls connectGoogle with the current path as returnTo when connecting', async () => {
         mockStatus.mockResolvedValue(emptyStatus());
         mockConnectGoogle.mockResolvedValue({ ok: true, data: { authorizeUrl: '' } });
