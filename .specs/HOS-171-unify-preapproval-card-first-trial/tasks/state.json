@@ -314,23 +314,23 @@
         {
             "id": "T-010",
             "title": "Delete TrialService.startTrial() and POST /billing/trial/start",
-            "description": "PARTIAL — startTrial is no longer called from EITHER checkout path (monthly or annual); its import is gone from subscription-checkout.service.ts. It survives for ONE caller: accommodation-publish-deps.ts:137, which auto-grants a no-card trial when an owner publishes their first accommodation. Deleting it requires an OWNER DECISION on what Publish does for an owner with no subscription (send to card-first checkout, or block) — filed as a comment on HOS-171. POST /billing/trial/start also still exists. No 74-day leak in the meantime: a prior trial makes hasPriorSubscription true at checkout, so no base and no extension are granted.",
-            "status": "blocked",
+            "description": "DONE. startTrial + POST /trial/start deleted (-1102 LOC with the publish change). The last caller was the accommodation-publish flow, which the owner decided (2026-07-15) must now send an owner with no live subscription to the plans page to enter a card — first_publish rejects with subscription_required, a path the web already had. GET /trial/status kept: the read layer survives.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Delete startTrial",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Delete the POST /trial/start route",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Keep GET /trial/status",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "cleanup"],
@@ -477,8 +477,8 @@
         {
             "id": "T-016",
             "title": "Maintain currentPeriodEnd from MP next_payment_date",
-            "description": "Spec 7.3 item 1+2 (AC-12/AC-13). RENEWAL_REMINDER is ALREADY BUILT and already dispatches at [7,3,1] days (notification-schedule.job.ts:45, send at :627-640), anchored on subscription.currentPeriodEnd (:546-548), filtered to status 'active' (:538-540), with day-scoped idempotency (:95-103). So the work is NOT building a notification - it is anchor correctness. Annual is today a direct insert whose period semantics die with create-annual-subscription.ts. The natural anchor is MP's next_payment_date (the spike proved it is present and survives authorization). CORRECTION to the qzpay analysis: subscription-poll.job.ts calls retrieve() (:190,:533) so the field is in the response object, but NOTHING READS IT - grep for next_payment_date|nextPaymentDate|currentPeriodEnd in that 919-LOC file returns ZERO matches. A consumer must be written. Trial suppression (AC-13) comes free from the existing status 'active' filter, PROVIDED T-006's reconciler flips the row to ACTIVE at conversion. OQ-3: keep [7,3,1] as-is (spec recommendation).",
-            "status": "pending",
+            "description": "SUPERSEDED by the webhook flip. The point of anchoring currentPeriodEnd was to make RENEWAL_REMINDER fire and to know when the day-N charge landed. The subscription_authorized_payment webhook now tells us the moment it settles and flips trialing -> active there, so the status filter RENEWAL_REMINDER already uses (status: active) starts working with no anchor work. Re-open only if annual renewal reminders prove to need currentPeriodEnd specifically.",
+            "status": "not-needed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": [],
@@ -862,10 +862,10 @@
     ],
     "summary": {
         "total": 25,
-        "pending": 6,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 17,
-        "blocked": 1,
+        "completed": 19,
+        "blocked": 0,
         "averageComplexity": 2.2
     }
 }
