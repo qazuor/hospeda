@@ -83,10 +83,10 @@ export const protectedCalendarConnectIcalRoute = createProtectedRoute({
     path: '/{id}/calendar-sync/connect-ical',
     summary: 'Connect an Airbnb/Booking/generic iCal feed (owner)',
     description:
-        'Validates the supplied .ics feed URL by fetching and parsing it live, then persists ' +
-        'the connection (no immediate sync — reconcile runs on the next cron pass or an explicit ' +
-        '"sync now" call, mirroring the Google connect flow). Requires ACCOMMODATION_OCCUPANCY_MANAGE, ' +
-        'ownership, and a live CAN_SYNC_EXTERNAL_CALENDAR entitlement.',
+        'Validates the supplied .ics feed URL by fetching and parsing it live, persists the ' +
+        'connection, and triggers an immediate first sync so occupancy appears right away. A ' +
+        'failed first sync is swallowed (the connection stays saved and the 6-hourly cron retries). ' +
+        'Requires ACCOMMODATION_OCCUPANCY_MANAGE, ownership, and a live CAN_SYNC_EXTERNAL_CALENDAR entitlement.',
     tags: ['Accommodations'],
     requestParams: {
         id: AccommodationIdSchema
