@@ -20,6 +20,7 @@ import type {
     OccupancySourceEnum,
     PlanChangeResponse,
     PriceAlertResponse,
+    StartPaidSubscriptionResponse,
     SubscriptionStatusResponse,
     UserBookmark,
     UserCancelSubscriptionResponse,
@@ -652,45 +653,7 @@ export const billingApi = {
         readonly planSlug: string;
         readonly billingInterval: 'monthly' | 'annual';
         readonly promoCode?: string;
-    }): Promise<
-        ApiResult<{
-            readonly checkoutUrl: string;
-            /**
-             * HOS-151 Bug A: the UUID of the locally-created subscription row.
-             * PlanPurchaseButton persists this in sessionStorage before
-             * redirecting to MercadoPago so the checkout success page can poll
-             * `GET /billing/subscriptions/:localId/status` on return (a recurring
-             * preapproval redirect never carries a `collection_status`, so the
-             * page has no other way to know the local sub id). Always present in
-             * the `/start-paid` response body.
-             */
-            readonly localSubscriptionId: string;
-            /**
-             * `'trial'` is DEPRECATED and never emitted since HOS-171 (card-first
-             * moved the trial onto the paid checkout's own preapproval). It is kept
-             * because the API and this app deploy as separate Coolify resources, so
-             * an old API can still answer with it mid-rollout — and PlanPurchaseButton
-             * must keep skipping the MP redirect for it, or that customer lands on the
-             * poller waiting for a payment that never existed.
-             *
-             * NOTE: this duplicates `StartPaidSubscriptionResponseSchema` in
-             * `@repo/schemas` by hand instead of importing it — a Single-Source-of-Truth
-             * violation that predates HOS-171 and is why the two can (and did) drift.
-             * Tracked in HOS-185.
-             */
-            readonly appliedEffect?: 'comp' | 'discount' | 'trial';
-            /**
-             * `true` when a promo code was accepted but had no effect, so the user is
-             * told rather than silently losing it. PlanPurchaseButton forwards it to
-             * the success page as a query param.
-             *
-             * Since HOS-171 this means exactly one thing: a `trial_extension` code
-             * with no trial to lengthen. It is NOT "a discount was discarded in favour
-             * of the trial" — a discount and a trial now coexist.
-             */
-            readonly promoCodeIgnored?: true;
-        }>
-    > {
+    }): Promise<ApiResult<StartPaidSubscriptionResponse>> {
         const body: Record<string, unknown> = { planSlug, billingInterval };
         if (promoCode) {
             body.promoCode = promoCode;

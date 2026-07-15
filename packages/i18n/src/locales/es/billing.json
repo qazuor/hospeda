@@ -187,8 +187,6 @@
         "success": {
             "title": "¡Tu suscripción está activa!",
             "subtitle": "Tu pago fue aprobado correctamente",
-            "trialTitle": "¡Tu prueba gratis arrancó!",
-            "trialSubtitle": "Ya podés empezar a usar tu plan. No te cobramos nada: tu prueba gratuita está activa y no registramos ninguna tarjeta.",
             "planDetails": "Plan: {{planName}}",
             "amountDetails": "Monto: {{amount}}",
             "verifyingStatus": "Verificando estado del pago...",

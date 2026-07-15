@@ -73,6 +73,12 @@ type MockUseSession = ReturnType<typeof vi.fn>;
 // Helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * sessionStorage key PlanPurchaseButton stashes the local subscription id under
+ * before an MP redirect, so the success page can poll it on return (HOS-151 Bug A).
+ */
+const PENDING_KEY = 'hospeda:checkout:pendingSubscriptionId';
+
 /** Default props used across most tests. */
 const defaultProps = {
     planSlug: 'plan_starter',
@@ -1638,12 +1644,15 @@ describe('PlanPurchaseButton', () => {
             });
         });
 
-        it('navigates to trial sentinel URL with ?effect=trial&promoIgnored=1 when a trial is granted and a discount code was ignored', async () => {
-            // Arrange — server grants a no-card trial and discards the discount
-            // code the user typed in (HOS-110 W1: trial takes priority over a
-            // discount promo on a not-yet-charged subscription).
+        it('flags an ignored promo code on an ordinary MP redirect', async () => {
+            // Arrange — the server accepted a trial_extension code on a checkout with
+            // no trial to lengthen, so it did nothing and says so (promoCodeIgnored).
+            // This is the ONLY thing promoCodeIgnored means since HOS-171. It used to
+            // mean "a discount was discarded because the trial took priority" — that
+            // precedence is gone: a discount and a trial coexist now, so a discount is
+            // never discarded in favour of a trial.
             mockAuthenticated();
-            const sentinelUrl = 'https://hospeda.com.ar/es/suscriptores/trial-success';
+            const mpUrl = 'https://mp.test/checkout/preapproval-abc';
 
             let callCount = 0;
             const fetchMock = vi.fn().mockImplementation(() => {
@@ -1654,21 +1663,20 @@ describe('PlanPurchaseButton', () => {
                               data: {
                                   valid: true,
                                   effectPreview: {
-                                      effectKind: 'discount',
-                                      valueKind: 'percentage',
-                                      value: 50,
-                                      durationCycles: 1,
-                                      extraDays: null,
-                                      finalAmount: 60000
+                                      effectKind: 'trial_extension',
+                                      valueKind: null,
+                                      value: null,
+                                      durationCycles: null,
+                                      extraDays: 30,
+                                      finalAmount: 120000
                                   }
                               }
                           }
                         : {
                               data: {
-                                  checkoutUrl: sentinelUrl,
-                                  localSubscriptionId: 'trial-sub-uuid',
+                                  checkoutUrl: mpUrl,
+                                  localSubscriptionId: 'paid-sub-uuid',
                                   expiresAt: new Date(Date.now() + 86400000).toISOString(),
-                                  appliedEffect: 'trial',
                                   promoCodeIgnored: true
                               }
                           };
@@ -1685,16 +1693,19 @@ describe('PlanPurchaseButton', () => {
             await user.click(
                 screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
             );
-            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'SUMMER50');
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FREEMONTH');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
             await waitFor(() => screen.getByRole('status'));
 
             await user.click(screen.getByRole('button', { name: /Contratar/ }));
 
-            // Assert — both query params are present (order: effect, then promoIgnored)
+            // Assert — a real MP redirect carrying only the promoIgnored flag. There
+            // is no `?effect=` param: a trial is not an effect any more.
             await waitFor(() => {
-                expect(window.location.href).toBe(`${sentinelUrl}?effect=trial&promoIgnored=1`);
+                expect(window.location.href).toBe(`${mpUrl}?promoIgnored=1`);
             });
+            // It is a real preapproval, so the success page must be able to poll it.
+            expect(window.sessionStorage.getItem(PENDING_KEY)).toBe('paid-sub-uuid');
         });
 
         it('does not include promoCode in checkout body when no promo was applied', async () => {
@@ -1731,8 +1742,6 @@ describe('PlanPurchaseButton', () => {
     // -----------------------------------------------------------------------
 
     describe('HOS-151 Bug A: sessionStorage pending-subscription id', () => {
-        const PENDING_KEY = 'hospeda:checkout:pendingSubscriptionId';
-
         beforeEach(() => {
             window.sessionStorage.clear();
         });
@@ -1765,17 +1774,22 @@ describe('PlanPurchaseButton', () => {
             expect(window.sessionStorage.getItem(PENDING_KEY)).toBe('paid-sub-uuid');
         });
 
-        it('does NOT stash the id for a granted trial (in-app sentinel, resolves instantly)', async () => {
+        it('DOES stash the id for a trial — it redirects to MP like any paid checkout', async () => {
+            // Card-first (HOS-171): a trial is `free_trial` on the paid preapproval,
+            // so the server returns a real MercadoPago redirect and NO appliedEffect
+            // marker. It therefore needs the id stashed for the success page to poll,
+            // exactly like a plain paid checkout. This used to be the opposite: a
+            // trial was granted without a card, returned an in-app sentinel, and
+            // skipped the poller entirely.
             mockAuthenticated();
-            const sentinelUrl = 'https://hospeda.com.ar/es/suscriptores/checkout/success/';
+            const mpUrl = 'https://mp.test/checkout/trial-preapproval';
             const fetchMock = buildFetchMock({
                 ok: true,
                 body: {
                     data: {
-                        checkoutUrl: sentinelUrl,
+                        checkoutUrl: mpUrl,
                         localSubscriptionId: 'trial-sub-uuid',
-                        expiresAt: new Date(Date.now() + 86400000).toISOString(),
-                        appliedEffect: 'trial'
+                        expiresAt: new Date(Date.now() + 86400000).toISOString()
                     }
                 }
             });
@@ -1786,9 +1800,10 @@ describe('PlanPurchaseButton', () => {
             await user.click(screen.getByRole('button', { name: /Contratar/ }));
 
             await waitFor(() => {
-                expect(window.location.href).toBe(`${sentinelUrl}?effect=trial`);
+                // No `?effect=` param — nothing to flag, it is an ordinary redirect.
+                expect(window.location.href).toBe(mpUrl);
             });
-            expect(window.sessionStorage.getItem(PENDING_KEY)).toBeNull();
+            expect(window.sessionStorage.getItem(PENDING_KEY)).toBe('trial-sub-uuid');
         });
 
         it('does NOT stash the id for a comp grant (in-app sentinel)', async () => {

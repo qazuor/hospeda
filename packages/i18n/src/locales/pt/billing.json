@@ -187,8 +187,6 @@
         "success": {
             "title": "Sua assinatura está ativa!",
             "subtitle": "Seu pagamento foi aprovado com sucesso",
-            "trialTitle": "Seu período de teste grátis começou!",
-            "trialSubtitle": "Você já pode começar a usar seu plano. Não cobramos nada: seu período de teste grátis está ativo e nenhum cartão foi cobrado.",
             "planDetails": "Plano: {{planName}}",
             "amountDetails": "Valor: {{amount}}",
             "verifyingStatus": "Verificando o status do pagamento...",

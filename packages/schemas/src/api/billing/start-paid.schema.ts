@@ -90,22 +90,19 @@ export const StartPaidSubscriptionResponseSchema = z.object({
      * - `'discount'` — a discount was applied (the monthly preapproval amount was
      *   lowered, or the annual line-item was reduced). A normal MP redirect to
      *   `checkoutUrl` still follows; the marker is informational.
-     * - `'trial'` — **DEPRECATED, never emitted since HOS-171.** It meant the
-     *   plan's no-card trial was granted instead of a paid checkout, with no
-     *   MercadoPago preapproval and an in-app sentinel `checkoutUrl`. Card-first
-     *   deleted that path: a trial is now `free_trial` on the same preapproval a
-     *   paid checkout creates, so it returns a normal MP redirect and no marker.
-     *   The API's own `CheckoutAppliedEffect` is already `'comp' | 'discount'`.
+     * There is no `'trial'` variant. Card-first (HOS-171) deleted the no-card
+     * trial that used to be granted INSTEAD of a paid checkout: a trial is now
+     * `free_trial` on the very preapproval a paid checkout creates, so it is a
+     * normal MP redirect and carries no marker of its own.
      *
-     *   Retained here on purpose. Removing it narrows a published enum, which the
-     *   schema-compat policy forbids without the full three-phase migration, and
-     *   the value can still be in flight: `hospeda-api-prod` and `hospeda-web-prod`
-     *   deploy separately, so an old API can still answer a new web with `'trial'`
-     *   during the rollout window. Drop it in a later cleanup, once no deployed API
-     *   can emit it.
+     * Narrowing this enum is a deliberate exception to the additive-only
+     * schema-compat policy, taken while the platform has no real customers and the
+     * API and web release together. The policy guards stored JSONB, cached
+     * responses and queued messages; `appliedEffect` is a transient response field
+     * that nothing persists, so no old value can be in flight to fail parsing.
      */
     appliedEffect: z
-        .enum(['comp', 'discount', 'trial'], {
+        .enum(['comp', 'discount'], {
             message: 'zodError.billing.startPaid.appliedEffect.invalid'
         })
         .optional(),

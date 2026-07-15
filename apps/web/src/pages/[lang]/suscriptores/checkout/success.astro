@@ -35,25 +35,20 @@ const { t } = createTranslations(locale);
 
 const collectionStatus = Astro.url.searchParams.get('collection_status');
 
-// PlanPurchaseButton appends `?effect=comp` (or, only from an API that predates
-// HOS-171, `?effect=trial`) to this in-app success sentinel URL when the granted
-// effect has NO MercadoPago preapproval to verify (see
-// StartPaidSubscriptionResponse `appliedEffect`). Those resolve immediately with
+// PlanPurchaseButton appends `?effect=comp` to this in-app success sentinel URL.
+// A comp grant has NO MercadoPago preapproval to verify (see
+// StartPaidSubscriptionResponse `appliedEffect`), so it resolves immediately with
 // no payment in flight.
 //
-// `trial` is retained deliberately even though card-first no longer grants a
-// no-card trial: the API and the web deploy as separate Coolify resources, so an
-// old API can still answer with it mid-rollout, and dropping the branch would
-// send that customer to the poller to wait on a payment that never existed
-// (HOS-151 Bug A's exact symptom). Remove it with the enum, in a later cleanup.
-const effectParam = Astro.url.searchParams.get('effect');
-const isTrial = effectParam === 'trial';
-const isComp = effectParam === 'comp';
+// A trial does NOT come through here: since HOS-171 it is `free_trial` on the
+// paid preapproval, so it takes the normal MercadoPago redirect and resolves
+// through the polling island like any other checkout.
+const isComp = Astro.url.searchParams.get('effect') === 'comp';
 
-// IMMEDIATE success: an approved annual Checkout-Pro charge, or a no-card
-// trial / comp grant. Anything else is a recurring preapproval return that the
-// polling island resolves (HOS-151 Bug A).
-const isImmediateSuccess = collectionStatus === 'approved' || isTrial || isComp;
+// IMMEDIATE success: an approved annual Checkout-Pro charge, or a comp grant.
+// Anything else is a recurring preapproval return that the polling island
+// resolves (HOS-151 Bug A).
+const isImmediateSuccess = collectionStatus === 'approved' || isComp;
 
 // PlanPurchaseButton appends `?promoIgnored=1` when the server accepted a promo
 // code that ended up doing nothing. Since HOS-171 that means only one thing: a
@@ -63,21 +58,14 @@ const promoIgnored = Astro.url.searchParams.get('promoIgnored') === '1';
 
 const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
 
-const title = isTrial
-	? t('billing.checkout.success.trialTitle', '¡Tu prueba gratis arrancó!')
-	: t('billing.checkout.success.title', '¡Tu suscripción está activa!');
+const title = t('billing.checkout.success.title', '¡Tu suscripción está activa!');
 
-const body = isTrial
-	? t(
-			'billing.checkout.success.trialSubtitle',
-			'Ya podés empezar a usar tu plan. No te cobramos nada: tu prueba gratuita está activa y no registramos ninguna tarjeta.'
-		)
-	: t('billing.checkout.success.subtitle', 'Tu pago fue aprobado correctamente');
+const body = t('billing.checkout.success.subtitle', 'Tu pago fue aprobado correctamente');
 
 const promoIgnoredNote = promoIgnored
 	? t(
 			'billing.checkout.success.promoIgnoredNote',
-			'Tu código de descuento no se aplicó porque activaste la prueba gratis.'
+			'Tu código no se aplicó: es para extender una prueba gratis y esta suscripción no tiene una.'
 		)
 	: undefined;
 ---
