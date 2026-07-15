@@ -314,8 +314,8 @@
         {
             "id": "T-010",
             "title": "Delete TrialService.startTrial() and POST /billing/trial/start",
-            "description": "startTrial: trial.service.ts:197-341 (145 LOC, verified). Route: apps/api/src/routes/billing/trial.ts:150-219 (70 LOC, verified). GET /billing/trial/status (trial.ts:108-141) is KEPT - the read layer survives. Only delete once T-008 has moved the eligibility guard and T-009 has rerouted the sum. Deleting a test is a reviewable act: each deleted test suite must be justified in the PR, not bundled silently.",
-            "status": "pending",
+            "description": "PARTIAL — startTrial is no longer called from EITHER checkout path (monthly or annual); its import is gone from subscription-checkout.service.ts. It survives for ONE caller: accommodation-publish-deps.ts:137, which auto-grants a no-card trial when an owner publishes their first accommodation. Deleting it requires an OWNER DECISION on what Publish does for an owner with no subscription (send to card-first checkout, or block) — filed as a comment on HOS-171. POST /billing/trial/start also still exists. No 74-day leak in the meantime: a prior trial makes hasPriorSubscription true at checkout, so no base and no extension are granted.",
+            "status": "blocked",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": [],
@@ -649,18 +649,18 @@
             "id": "T-022",
             "title": "Delete the dead billingApi.reactivateSubscription web wrapper",
             "description": "VERIFIED CORRECTION to the Linear issue's 'already dead code': it is dead in WEB ONLY. Defined apps/web/src/lib/api/endpoints-protected.ts:657, called ONLY by its own test (apps/web/test/lib/api/endpoints-protected.test.ts:24,33,45) => deleting the web wrapper is free. But the API route (routes/billing/trial.ts:495) and service (trial.service.ts:1154) are LIVE - deleting THOSE is a separate, real decision tracked as OQ-5. Scope of this task: the web wrapper + its test only.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Delete the wrapper + its test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Leave the live API route alone (OQ-5)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "cleanup"],
@@ -715,26 +715,26 @@
             "id": "T-024",
             "title": "Rewrite the trial-creation unit + integration suites",
             "description": "Spec 12: of 68 test files matching trialing|startTrial|blockExpiredTrials, 58 (~85%) stay green because trialing survives as a status and they only consume it as a fixture value. These 4 call startTrial directly and need real rewrites: apps/api/test/services/trial.service.test.ts (2849 LOC, 78 matches - the primary startTrial unit suite), apps/api/test/integration/trial-lifecycle.test.ts (597 LOC), apps/api/test/services/accommodation-publish-deps.test.ts (442 LOC), apps/api/test/services/subscription-checkout-promo-branches.test.ts (977 LOC).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "trial.service.test.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "trial-lifecycle.test.ts (integration)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "accommodation-publish-deps.test.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "subscription-checkout-promo-branches.test.ts",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing"],
@@ -832,18 +832,18 @@
             "id": "T-027",
             "title": "ADR-009 addendum + spec/docs reconciliation",
             "description": "Spec NG-2: ADR-009 (trial is HOST-only) needs NO revision - the HOST-only rule is justified by growth economics, unrelated to WHEN the card is collected. A one-line addendum suffices. Also update packages/billing/CLAUDE.md and the root CLAUDE.md billing quick-reference where they describe the no-card trial or the annual one-time charge.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-014"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "ADR-009 one-line addendum",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update billing CLAUDE.md references",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
@@ -862,10 +862,10 @@
     ],
     "summary": {
         "total": 25,
-        "pending": 11,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 13,
-        "blocked": 0,
+        "completed": 17,
+        "blocked": 1,
         "averageComplexity": 2.2
     }
 }

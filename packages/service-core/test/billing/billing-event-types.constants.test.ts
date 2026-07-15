@@ -5,8 +5,8 @@
  * persisted in billing_subscription_events rows, so any rename would corrupt
  * historical data. Pin the literals here so a rename fails CI immediately.
  *
- * All 22 types are asserted (16 pre-existing + 3 added by SPEC-147 T-002/T-009
- * + 1 added by SPEC-147 T-010 + 2 added by SPEC-148 T-004).
+ * All 23 types are asserted (16 pre-existing + 3 added by SPEC-147 T-002/T-009
+ * + 1 added by SPEC-147 T-010 + 2 added by SPEC-148 T-004 + 1 added by HOS-171).
  */
 
 import { describe, expect, it } from 'vitest';
@@ -69,6 +69,10 @@ describe('BILLING_EVENT_TYPES', () => {
             expect(BILLING_EVENT_TYPES.TRIAL_BLOCKED).toBe('TRIAL_BLOCKED');
         });
 
+        it('TRIAL_RECONCILED has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.TRIAL_RECONCILED).toBe('TRIAL_RECONCILED');
+        });
+
         it('REACTIVATION_AUDIT_FAILED has the expected string value', () => {
             expect(BILLING_EVENT_TYPES.REACTIVATION_AUDIT_FAILED).toBe('REACTIVATION_AUDIT_FAILED');
         });
@@ -128,8 +132,8 @@ describe('BILLING_EVENT_TYPES', () => {
             expect(value).toBe('PLAN_DISABLED_MIGRATION');
         });
 
-        it('the total number of event types is 22', () => {
-            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(22);
+        it('the total number of event types is 23', () => {
+            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(23);
         });
     });
 
