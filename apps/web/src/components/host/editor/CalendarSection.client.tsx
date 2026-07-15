@@ -35,8 +35,13 @@
 
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@repo/icons';
 import type { AccommodationOccupancy } from '@repo/schemas';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { type CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
 import { accommodationOccupancyApi } from '@/lib/api/endpoints-protected';
+import {
+    buildOccupancyEvents,
+    layoutWeekBars,
+    type OccupancyEvent
+} from '@/lib/calendar/occupancy-bar-layout';
 import {
     addMonths,
     buildDateRangeKeys,
@@ -50,11 +55,12 @@ import {
     groupOccupancyRowsByDate,
     resolvePrimaryOccupancyRow
 } from '@/lib/calendar/occupancy-row-grouping';
+import { cn } from '@/lib/cn';
 import { formatDate } from '@/lib/format-utils';
-import type { SupportedLocale } from '@/lib/i18n';
+import type { SupportedLocale, TranslationFn } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
-import { CalendarDayCell } from './CalendarDayCell.client';
+import { CalendarDayCell, sourceFallbackLabel, sourceKeySuffix } from './CalendarDayCell.client';
 import { CalendarLegend } from './CalendarLegend.client';
 import styles from './CalendarSection.module.css';
 import { CalendarSyncPanel } from './CalendarSyncPanel.client';
@@ -68,6 +74,56 @@ import { PlanEntitlementGate } from './PlanEntitlementGate.client';
 export interface CalendarSectionProps {
     readonly locale: SupportedLocale;
     readonly accommodationId: string;
+}
+
+// ---------------------------------------------------------------------------
+// Bar helpers (HOS-162 prototype — spanning event bars)
+// ---------------------------------------------------------------------------
+
+/** CSS-module class for an event bar, keyed by occupancy source. */
+function barSourceClass(source: OccupancyEvent['source']): string {
+    switch (sourceKeySuffix(source)) {
+        case 'google':
+            return styles.barGoogle;
+        case 'airbnb':
+            return styles.barAirbnb;
+        case 'booking':
+            return styles.barBooking;
+        case 'other':
+            return styles.barOther;
+        default:
+            return styles.barManual;
+    }
+}
+
+/**
+ * The text shown inside an event bar: the event's own title (prototype: the
+ * `note` stand-in for a future persisted `event_title`) when present, else a
+ * per-provider fallback label so Airbnb/Booking feeds that expose no useful
+ * `SUMMARY` still read as "<Provider>".
+ */
+function barLabel({
+    event,
+    t
+}: {
+    readonly event: OccupancyEvent;
+    readonly t: TranslationFn;
+}): string {
+    const title = event.title?.trim();
+    if (title) return title;
+    return t(
+        `host.properties.editor.calendar.source.${sourceKeySuffix(event.source)}`,
+        sourceFallbackLabel(event.source)
+    );
+}
+
+/** Splits a flat grid-cell list into consecutive weeks of 7 cells each. */
+function chunkWeeks(cells: readonly (Date | null)[]): readonly (readonly (Date | null)[])[] {
+    const weeks: (Date | null)[][] = [];
+    for (let i = 0; i < cells.length; i += 7) {
+        weeks.push(cells.slice(i, i + 7));
+    }
+    return weeks;
 }
 
 // ---------------------------------------------------------------------------
@@ -222,6 +278,13 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
     // --- Derived rendering data ---
 
     const gridCells = useMemo(() => buildMonthGrid({ month: viewedMonth }), [viewedMonth]);
+    const weeks = useMemo(() => chunkWeeks(gridCells), [gridCells]);
+    // Collapse the per-date occupancy rows into multi-day event spans for the
+    // bar layout (HOS-162 prototype).
+    const occupancyEvents = useMemo(
+        () => buildOccupancyEvents({ rows: Object.values(occupancyByDate).flat() }),
+        [occupancyByDate]
+    );
     const todayKey = useMemo(() => toDateKey({ date: new Date() }), []);
     const monthLabel = formatDate({
         date: viewedMonth,
@@ -345,39 +408,94 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                      * accessibility promise, not an improvement.
                      */}
                     <div className={styles.grid}>
-                        {gridCells.map((date, i) => {
-                            if (!date) {
-                                return (
-                                    <div
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length padding cells, never reordered
-                                        key={`pad-${i}`}
-                                        className={styles.pad}
-                                        aria-hidden="true"
-                                    />
-                                );
-                            }
-
-                            const dateKey = toDateKey({ date });
-                            const row = resolvePrimaryOccupancyRow({
-                                rows: occupancyByDate[dateKey] ?? []
+                        {weeks.map((week, weekIndex) => {
+                            const { segments, laneCount } = layoutWeekBars({
+                                week,
+                                events: occupancyEvents
                             });
-                            const isPast = dateKey < todayKey;
-                            const isSelected = selection?.includes(dateKey) ?? false;
-                            const isPending = pendingStart === dateKey;
-
                             return (
-                                <CalendarDayCell
-                                    key={dateKey}
-                                    date={date}
-                                    dateKey={dateKey}
-                                    locale={locale}
-                                    t={t}
-                                    row={row}
-                                    isPast={isPast}
-                                    isSelected={isSelected}
-                                    isPending={isPending}
-                                    onSelect={handleDayClick}
-                                />
+                                <div
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: fixed month grid, weeks never reordered
+                                    key={`week-${weekIndex}`}
+                                    className={styles.week}
+                                    style={{ '--lane-count': laneCount } as CSSProperties}
+                                >
+                                    <div className={styles.weekDays}>
+                                        {week.map((date, dayIndex) => {
+                                            if (!date) {
+                                                return (
+                                                    <div
+                                                        // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length padding cells
+                                                        key={`pad-${weekIndex}-${dayIndex}`}
+                                                        className={styles.pad}
+                                                        aria-hidden="true"
+                                                    />
+                                                );
+                                            }
+                                            const dateKey = toDateKey({ date });
+                                            const row = resolvePrimaryOccupancyRow({
+                                                rows: occupancyByDate[dateKey] ?? []
+                                            });
+                                            return (
+                                                <CalendarDayCell
+                                                    key={dateKey}
+                                                    date={date}
+                                                    dateKey={dateKey}
+                                                    locale={locale}
+                                                    t={t}
+                                                    row={row}
+                                                    isPast={dateKey < todayKey}
+                                                    isSelected={
+                                                        selection?.includes(dateKey) ?? false
+                                                    }
+                                                    isPending={pendingStart === dateKey}
+                                                    barMode
+                                                    onSelect={handleDayClick}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                    {segments.length > 0 && (
+                                        <div
+                                            className={styles.weekBars}
+                                            aria-hidden="true"
+                                        >
+                                            {segments.map((segment) => {
+                                                const insetStart = segment.isStart ? 3 : 0;
+                                                const insetEnd = segment.isEnd ? 3 : 0;
+                                                return (
+                                                    <div
+                                                        key={`${segment.event.source}-${segment.event.startKey}-${segment.lane}-${segment.colStart}`}
+                                                        className={cn(
+                                                            styles.bar,
+                                                            barSourceClass(segment.event.source),
+                                                            segment.isStart && styles.barStart,
+                                                            segment.isEnd && styles.barEnd
+                                                        )}
+                                                        style={{
+                                                            left: `calc(${segment.colStart} / 7 * 100% + ${insetStart}px)`,
+                                                            width: `calc(${segment.span} / 7 * 100% - ${insetStart + insetEnd}px)`,
+                                                            top: `calc(${segment.lane} * (var(--bar-height) + var(--bar-gap)))`
+                                                        }}
+                                                        title={barLabel({
+                                                            event: segment.event,
+                                                            t
+                                                        })}
+                                                    >
+                                                        {segment.showLabel && (
+                                                            <span className={styles.barLabel}>
+                                                                {barLabel({
+                                                                    event: segment.event,
+                                                                    t
+                                                                })}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
                             );
                         })}
                     </div>

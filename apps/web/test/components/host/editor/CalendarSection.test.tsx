@@ -10,6 +10,13 @@
  *   batch unblock call
  * - A sync-sourced day (Google Calendar) is disabled and never togglable
  * - i18n keys resolve to human text, never leaking a raw dotted key
+ *
+ * HOS-162 bar prototype: occupancy is drawn as source-colored spanning event
+ * bars overlaid on each week (see occupancy-bar-layout.ts), so the day cells
+ * themselves no longer carry the `dayOccupied`/`daySync` background — the
+ * occupancy assertions target the `.barManual`/`.barGoogle`/`.barBooking`
+ * bars instead, while interaction (togglable MANUAL / disabled sync) is
+ * unchanged.
  */
 
 import { OccupancySourceEnum } from '@repo/schemas';
@@ -195,8 +202,10 @@ describe('CalendarSection', () => {
             name: /20 de julio de 2026 — Ocupado — Manual/i
         });
         expect(occupiedDay).not.toBeDisabled();
-        expect(occupiedDay).toHaveClass('dayOccupied');
         expect(occupiedDay).toHaveAttribute('aria-pressed', 'true');
+        // Bar mode (HOS-162): occupancy renders as a source-colored span bar,
+        // not a per-cell background/dot — the cell itself stays neutral.
+        expect(document.querySelector('.barManual')).toBeInTheDocument();
     });
 
     it('renders a sync-sourced (Google Calendar) day as disabled and non-togglable', async () => {
@@ -207,7 +216,9 @@ describe('CalendarSection', () => {
             name: /22 de julio de 2026 — Ocupado — Google Calendar/i
         });
         expect(syncDay).toBeDisabled();
-        expect(syncDay).toHaveClass('daySync');
+        // Bar mode (HOS-162): the sync day is read-only (disabled) and its
+        // occupancy shows as a Google-colored span bar.
+        expect(document.querySelector('.barGoogle')).toBeInTheDocument();
 
         const user = userEvent.setup();
         await user.click(syncDay);
@@ -283,8 +294,10 @@ describe('CalendarSection', () => {
             name: /20 de julio de 2026 — Ocupado — Manual/i
         });
         expect(occupiedDay).not.toBeDisabled();
-        expect(occupiedDay).toHaveClass('dayOccupied');
         expect(occupiedDay).toHaveAttribute('aria-pressed', 'true');
+        // Bar mode (HOS-162): occupancy renders as a source-colored span bar,
+        // not a per-cell background/dot — the cell itself stays neutral.
+        expect(document.querySelector('.barManual')).toBeInTheDocument();
 
         // Never shows the lower-priority Airbnb source once MANUAL wins.
         expect(
@@ -300,7 +313,9 @@ describe('CalendarSection', () => {
             name: /24 de julio de 2026 — Ocupado — Booking\.com/i
         });
         expect(syncDay).toBeDisabled();
-        expect(syncDay).toHaveClass('daySync');
+        // Bar mode (HOS-162): read-only sync day, occupancy shown as a
+        // Booking-colored span bar.
+        expect(document.querySelector('.barBooking')).toBeInTheDocument();
     });
 
     it('never leaks a raw i18n key into the rendered output', async () => {
