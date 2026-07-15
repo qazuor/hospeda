@@ -53,6 +53,15 @@ import {
     getEventCategoryVisual
 } from '../src/domain/event-category';
 
+// ---------- poi-category ----------
+import {
+    getPoiCategoryColorScheme,
+    getPoiCategoryIcon,
+    getPoiCategoryVisual,
+    POI_CATEGORY_FALLBACK_VISUAL,
+    POI_CATEGORY_VISUALS
+} from '../src/domain/poi-category';
+
 // ---------- post-category ----------
 import {
     getPostCategoryColorScheme,
@@ -496,6 +505,145 @@ describe('event-category', () => {
 // ---------------------------------------------------------------------------
 // post-category
 // ---------------------------------------------------------------------------
+describe('poi-category', () => {
+    /**
+     * The 40 category slugs seeded from `packages/seed/src/data/poiCategory/`.
+     * Locked here on purpose: if seed grows a category without a visual entry,
+     * its marker silently degrades to the generic fallback — this list is what
+     * makes that a failing test instead of a shrug on a map.
+     */
+    const SEEDED_SLUGS = [
+        'beach',
+        'waterfront',
+        'port',
+        'thermal_complex',
+        'park',
+        'natural_area',
+        'reserve',
+        'hiking',
+        'birdwatching',
+        'viewpoint',
+        'campground',
+        'historic_site',
+        'museum',
+        'monument',
+        'religious_site',
+        'cultural_center',
+        'art',
+        'theater',
+        'architecture',
+        'industrial_heritage',
+        'gastronomy',
+        'winery',
+        'nightlife',
+        'casino',
+        'entertainment',
+        'fair',
+        'sports_venue',
+        'recreation',
+        'wellness',
+        'family',
+        'shopping',
+        'square',
+        'tourist_route',
+        'transport',
+        'services',
+        'health',
+        'government',
+        'community_center',
+        'education',
+        'other'
+    ] as const;
+
+    describe('getPoiCategoryVisual', () => {
+        it('should return correct visual for a known category (beach)', () => {
+            const visual = getPoiCategoryVisual({ slug: 'beach' });
+            expect(visual).toBe(POI_CATEGORY_VISUALS.beach);
+            expect(visual.bucket).toBe('water');
+            expect(visual.colorToken).toBe('poi-category-water');
+        });
+
+        it('should be case-insensitive (BEACH → beach)', () => {
+            expect(getPoiCategoryVisual({ slug: 'BEACH' })).toBe(POI_CATEGORY_VISUALS.beach);
+        });
+
+        it('should return fallback for unknown category', () => {
+            expect(getPoiCategoryVisual({ slug: 'nonexistent' })).toBe(
+                POI_CATEGORY_FALLBACK_VISUAL
+            );
+        });
+
+        it.each([
+            ['null', null],
+            ['undefined', undefined]
+        ])('should return fallback for %s slug (POI with no primary category)', (_label, slug) => {
+            expect(getPoiCategoryVisual({ slug })).toBe(POI_CATEGORY_FALLBACK_VISUAL);
+        });
+
+        it('should cover every seeded category', () => {
+            for (const slug of SEEDED_SLUGS) {
+                expect(POI_CATEGORY_VISUALS[slug]).toBeDefined();
+                expect(getPoiCategoryVisual({ slug })).toBe(POI_CATEGORY_VISUALS[slug]);
+            }
+        });
+
+        it('should map every seeded category to one of the 6 bucket tokens', () => {
+            const buckets = new Set(
+                SEEDED_SLUGS.map((s) => getPoiCategoryVisual({ slug: s }).bucket)
+            );
+            expect(buckets).toEqual(
+                new Set(['water', 'nature', 'culture', 'food', 'leisure', 'services'])
+            );
+        });
+
+        it('should keep colorToken derived from bucket for every entry', () => {
+            for (const visual of Object.values(POI_CATEGORY_VISUALS)) {
+                expect(visual.colorToken).toBe(`poi-category-${visual.bucket}`);
+            }
+        });
+
+        it('should not contain entries beyond the seeded catalog', () => {
+            expect(Object.keys(POI_CATEGORY_VISUALS).sort()).toEqual([...SEEDED_SLUGS].sort());
+        });
+    });
+
+    describe('getPoiCategoryIcon', () => {
+        it('should return an icon component for a known category', () => {
+            expect(typeof getPoiCategoryIcon({ slug: 'museum' })).toBe('function');
+        });
+
+        it('should return fallback icon for unknown category', () => {
+            expect(getPoiCategoryIcon({ slug: 'unknown_cat' })).toBe(
+                POI_CATEGORY_FALLBACK_VISUAL.icon
+            );
+        });
+    });
+
+    describe('getPoiCategoryColorScheme', () => {
+        it('should derive both values from the same bucket token', () => {
+            const scheme = getPoiCategoryColorScheme({ slug: 'gastronomy' });
+            expect(scheme.fill).toBe('var(--poi-category-food)');
+            expect(scheme.onFill).toContain('var(--poi-category-food)');
+        });
+
+        it('should return the services bucket for a nullish slug', () => {
+            expect(getPoiCategoryColorScheme({ slug: null }).fill).toBe(
+                'var(--poi-category-services)'
+            );
+        });
+
+        it('should never emit a hardcoded color (tokens only)', () => {
+            for (const slug of SEEDED_SLUGS) {
+                const { fill, onFill } = getPoiCategoryColorScheme({ slug });
+                for (const value of [fill, onFill]) {
+                    expect(value).toContain('var(--poi-category-');
+                    expect(value).not.toMatch(/#[0-9a-f]{3,8}\b|\brgb\(|\bhsl\(/i);
+                }
+            }
+        });
+    });
+});
+
 describe('post-category', () => {
     describe('getPostCategoryVisual', () => {
         it('should return correct visual for a known category (culture)', () => {
