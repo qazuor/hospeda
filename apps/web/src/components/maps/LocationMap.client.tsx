@@ -92,8 +92,16 @@ export interface LocationMapMultiMarker {
     readonly id: string;
     readonly lat: number;
     readonly long: number;
-    /** POI type — resolves the pin glyph via the same mapping the grid uses. */
+    /** POI type — resolves the pin glyph via the same mapping the grid uses when there is no category. */
     readonly type: string;
+    /**
+     * The POI's primary category slug (HOS-182); `null`/undefined when the
+     * POI has none (expected, known-dirty data — HOS-177). Drives the pin
+     * glyph + hue via `@repo/icons`' `getPoiCategoryIcon`/
+     * `getPoiCategoryColorScheme`, falling back to `type` + `--brand-primary`
+     * when absent.
+     */
+    readonly categorySlug?: string | null;
     /** PRIMARY (city-core) vs NEARBY (far-out) — drives the pin style and the initial viewport. */
     readonly relation: 'PRIMARY' | 'NEARBY';
     /** Popup title. */

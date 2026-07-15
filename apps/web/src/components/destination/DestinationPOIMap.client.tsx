@@ -168,6 +168,7 @@ export function DestinationPOIMap({
                 lat: poi.lat,
                 long: poi.long,
                 type: poi.type,
+                categorySlug: poi.primaryCategory?.slug ?? null,
                 relation: poi.relation,
                 label: translatePoiName({ slug: poi.slug, nameI18n: poi.nameI18n, locale }),
                 typeLabel: translatePoiTypeLabel({ t, type: poi.type })
