@@ -14,10 +14,18 @@
  * @module billing/adapters/qzpay-test-control
  */
 
-/** Operations that can be intercepted by failNext / delayNext. */
+/**
+ * Operations that can be intercepted by failNext / delayNext.
+ *
+ * `createSubscription` is the preapproval create in `createPaidSubscription`
+ * (HOS-171) — the single call every paid checkout funnels through, monthly,
+ * annual and reactivation alike. It replaced `startTrial`/`cancelTrial`, which
+ * were the publish flow's calls into billing back when publishing granted a
+ * no-card trial. Publishing now requires a card and never reaches billing, so
+ * those two operations had no call site left and no method to name.
+ */
 export type ControllableOperation =
-    | 'startTrial'
-    | 'cancelTrial'
+    | 'createSubscription'
     | 'createPaymentPreference'
     | 'capturePayment'
     | 'refundPayment'
@@ -136,30 +144,40 @@ export function resetTestControl(): void {
  * `failNext` / `delayNext` entry against the specific caller that armed it.
  *
  * Rules:
- *  - `args` is a string (e.g. cancelTrial receives `subscriptionId`) → that string.
- *  - `args` is an object with a string `ownerId` (e.g. startTrial receives
- *    `{ ownerId, accommodationId }`) → that ownerId (extra fields are ignored).
- *  - otherwise (null, number, object without a string `ownerId`, etc.) → undefined.
+ *  - `args` is a string (a bare id, e.g. `cancelSubscription`'s subscriptionId)
+ *    → that string.
+ *  - `args` is an object with a string `customerId` (e.g. `createSubscription`
+ *    receives `{ customerId, planId }`) → that customerId.
+ *  - `args` is an object with a string `ownerId` → that ownerId.
+ *  - otherwise (null, number, object with neither key as a string, ...) → undefined.
  *
- * EXTENSIBILITY: this only understands the two arg shapes used by the operations
- * currently wired through {@link applyTestControl} — `startTrial`
- * (`{ ownerId, accommodationId }`, scoped by `ownerId`) and `cancelTrial` (bare
- * `subscriptionId` string). The other
- * {@link ControllableOperation}s (createPaymentPreference, capturePayment,
- * refundPayment, cancelSubscription, updateSubscription) are declared but NOT yet
- * wired. When you wire one whose args carry their scope key under a different
- * field (e.g. `{ subscriptionId }` or `{ paymentId }`), extend this resolver to
- * read that field — otherwise a scoped entry for that operation silently never
- * matches (it falls back to `undefined`, so only UNSCOPED entries match it). Add
- * a unit case proving the new operation's scope key is extracted.
+ * EXTENSIBILITY: this only understands the arg shapes of the operations actually
+ * wired through {@link applyTestControl} — currently just `createSubscription`
+ * (`{ customerId, planId }`, scoped by `customerId`). The others
+ * (createPaymentPreference, capturePayment, refundPayment, cancelSubscription,
+ * updateSubscription) are declared but NOT yet wired. When you wire one whose args
+ * carry their scope key under a different field (e.g. `{ paymentId }`), extend this
+ * resolver to read that field — otherwise a scoped entry for that operation
+ * silently never matches (it falls back to `undefined`, so only UNSCOPED entries
+ * match it) and parallel E2E workers start consuming each other's failures. Add a
+ * unit case proving the new operation's scope key is extracted.
+ *
+ * The `ownerId` branch is kept because it costs nothing and an accommodation- or
+ * owner-scoped operation is the likeliest next one to be wired; no live operation
+ * uses it today.
  */
 function extractScope(args: unknown): string | undefined {
     if (typeof args === 'string') {
         return args;
     }
-    if (args !== null && typeof args === 'object' && 'ownerId' in args) {
-        const ownerId = (args as { ownerId?: unknown }).ownerId;
-        return typeof ownerId === 'string' ? ownerId : undefined;
+    if (args !== null && typeof args === 'object') {
+        const { customerId, ownerId } = args as { customerId?: unknown; ownerId?: unknown };
+        if (typeof customerId === 'string') {
+            return customerId;
+        }
+        if (typeof ownerId === 'string') {
+            return ownerId;
+        }
     }
     return undefined;
 }
