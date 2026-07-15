@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "332-point-of-interest-espigon_camping",
     "slug": "espigon_camping",
-    "lat": -30.9132853,
-    "long": -57.926673599999994,
+    "lat": null,
+    "long": null,
     "type": "VIEWPOINT",
     "icon": null,
     "description": "Paseo que se interna en el lago y funciona como punto panorámico, de caminata y pesca costera.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.turismoentrerios.com/santaana/pesca.htm; https://www.turismoentrerios.com/santaana/playas.htm",
-    "notes": "Estructura confirmada visualmente y por la oferta turística. Falta geocodificar el acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Estructura confirmada visualmente y por la oferta turística. Falta geocodificar el acceso.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "842-point-of-interest-sendero_yatay",
     "slug": "sendero_yatay",
-    "lat": -31.8770725,
-    "long": -58.2634837,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Sendero de 500 metros que atraviesa un bosque denso de palmeras y conduce al mirador La Glorieta.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
-    "notes": "Nombre y longitud confirmados. Falta geocodificar el punto de inicio. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Nombre y longitud confirmados. Falta geocodificar el punto de inicio.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

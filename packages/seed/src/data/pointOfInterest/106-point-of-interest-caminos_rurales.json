@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "106-point-of-interest-caminos_rurales",
     "slug": "caminos_rurales",
-    "lat": -33.4912493,
-    "long": -58.6798977,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Red de caminos de ripio y tierra entre humedales, campos y montes, utilizada para recorrer el paisaje y observar fauna.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/ceibas; https://www.lanacion.com.ar/revista-lugares/meca-internacional-el-pueblo-que-convoca-gente-del-mundo-entero-para-ver-y-fotografiar-aves-nid03082025/",
-    "notes": "La transitabilidad cambia según lluvias. Requiere rutas verificadas y avisos de seguridad. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "La transitabilidad cambia según lluvias. Requiere rutas verificadas y avisos de seguridad.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

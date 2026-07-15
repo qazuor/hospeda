@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "666-point-of-interest-playa_los_sauces",
     "slug": "playa_los_sauces",
-    "lat": -31.407680700000004,
-    "long": -58.011749699999996,
+    "lat": null,
+    "long": null,
     "type": "BEACH",
     "icon": null,
     "description": "Playa urbana sobre el río Uruguay, con arena, sectores recreativos y acceso cercano a la Costanera.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/turismo/atractivos/playas; https://www.concordia.gob.ar/turismo/atractivos/mas",
-    "notes": "Nombre y uso turístico confirmados. Falta geocodificar el acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre y uso turístico confirmados. Falta geocodificar el acceso principal.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -31,7 +31,7 @@
     "isFeatured": false,
     "displayWeight": 50,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://mapcarta.com/es/W1101824521; https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
     "notes": "Coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",

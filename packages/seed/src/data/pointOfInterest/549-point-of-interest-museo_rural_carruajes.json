@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "549-point-of-interest-museo_rural_carruajes",
     "slug": "museo_rural_carruajes",
-    "lat": -32.6870085,
-    "long": -58.8918263,
+    "lat": null,
+    "long": null,
     "type": "MUSEUM",
     "icon": null,
     "description": "Museo que conserva carruajes, herramientas y objetos vinculados con el trabajo rural y la movilidad de otras épocas.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://urdinarrain.tur.ar/que-hacer/; https://urdinarrain.gov.ar/v2/wp-content/uploads/2026/03/Apertura-Sesiones-HCD-Urdinarrain.pdf",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

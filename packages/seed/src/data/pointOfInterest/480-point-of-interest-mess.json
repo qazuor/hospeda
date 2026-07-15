@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "480-point-of-interest-mess",
     "slug": "mess",
-    "lat": -32.15442,
-    "long": -58.1885572,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Edificio utilizado como hostería y alojamiento para empresarios y hombres de paso vinculados con la actividad del frigorífico.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/capital-humano/cultura/monumentos/pueblo-liebig",
-    "notes": "Edificio histórico documentado; falta confirmar estado, acceso y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Edificio histórico documentado; falta confirmar estado, acceso y coordenadas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

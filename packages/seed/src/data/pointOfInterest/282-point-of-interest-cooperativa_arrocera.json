@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "282-point-of-interest-cooperativa_arrocera",
     "slug": "cooperativa_arrocera",
-    "lat": -31.6247717,
-    "long": -58.5051869,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Cooperativa fundada en 1952 y reconocida como la primera cooperativa arrocera de América Latina, pieza central de la identidad productiva local.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/ciudad/; https://sansalvadorer.gob.ar/gobierno/turismo/; https://mapcarta.com/es/W448499240",
-    "notes": "Historia y rol productivo confirmados. Falta geocodificar el acceso administrativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Historia y rol productivo confirmados. Falta geocodificar el acceso administrativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

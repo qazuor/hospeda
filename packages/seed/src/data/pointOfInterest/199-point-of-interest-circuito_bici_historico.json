@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "199-point-of-interest-circuito_bici_historico",
     "slug": "circuito_bici_historico",
-    "lat": -33.7424848,
-    "long": -59.157665400000006,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido ciclístico por la estación, la Cruz de los Ingleses, el vagón y otros elementos de la memoria ferroportuaria.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ibicuy.gob.ar/?q=content%2Fibicuy-en-bici",
-    "notes": "Circuito municipal confirmado. Falta digitalizar paradas y recorrido. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Circuito municipal confirmado. Falta digitalizar paradas y recorrido.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

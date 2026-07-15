@@ -31,7 +31,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://www.federacion.tur.ar/nuestras-playas/; https://mapcarta.com/es/W1245062864",
     "notes": "Coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",

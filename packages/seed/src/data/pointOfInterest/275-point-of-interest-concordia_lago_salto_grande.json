@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "275-point-of-interest-concordia_lago_salto_grande",
     "slug": "concordia_lago_salto_grande",
-    "lat": -31.2710088,
-    "long": -58.1079873,
+    "lat": null,
+    "long": null,
     "type": "NATURAL",
     "icon": null,
     "description": "Embalse binacional formado por la represa de Salto Grande, con playas, pesca, navegación y deportes acuáticos.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/turismo/atractivos/lago-salto-grande; https://www.entrerios.tur.ar/localidades-1/concordia",
-    "notes": "Atractivo regional oficial. Debe definirse un punto representativo o polígono. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Atractivo regional oficial. Debe definirse un punto representativo o polígono.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

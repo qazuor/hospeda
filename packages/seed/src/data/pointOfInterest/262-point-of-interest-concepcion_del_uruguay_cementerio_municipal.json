@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "262-point-of-interest-concepcion_del_uruguay_cementerio_municipal",
     "slug": "concepcion_del_uruguay_cementerio_municipal",
-    "lat": -32.4851849,
-    "long": -58.2320232,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Necrópolis histórica con panteones, esculturas, sepulturas de personalidades y recorridos de patrimonio funerario.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/concepcion-del-uruguay-tendra-su-noche-de-los-museos",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/concepcion-del-uruguay-tendra-su-noche-de-los-museos; https://www.unoentrerios.com.ar/el-cementerio-concepcion-del-uruguay-es-patrimonio-historico-artistico-y-simbolico-n2658359.html",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "775-point-of-interest-rosario_del_tala_carnaval",
     "slug": "rosario_del_tala_carnaval",
-    "lat": -32.3008178,
-    "long": -59.138887,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Celebración centenaria con comparsas, música, desfiles y festejos populares de ambiente familiar.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/rosario-del-tala; https://www.rosariodeltala.gob.ar/?q=areas-noticias%2Fturismo",
-    "notes": "Evento tradicional confirmado. Falta geocodificar sede y recorrido de cada edición. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Evento tradicional confirmado. Falta geocodificar sede y recorrido de cada edición.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

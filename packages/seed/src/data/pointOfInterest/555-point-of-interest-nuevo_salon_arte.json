@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "555-point-of-interest-nuevo_salon_arte",
     "slug": "nuevo_salon_arte",
-    "lat": -32.4851849,
-    "long": -58.2320232,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Galería y atelier dedicado a exposiciones, producción artística y actividades culturales.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://es.wikipedia.org/wiki/Concepci%C3%B3n_del_Uruguay",
-    "notes": "Espacio cultural documentado; falta validar sede y actividad actual. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Espacio cultural documentado; falta validar sede y actividad actual.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

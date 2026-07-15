@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "334-point-of-interest-estacion_ferrocarril",
     "slug": "estacion_ferrocarril",
-    "lat": -30.7622064,
-    "long": -57.98040030000001,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Estación histórica alrededor de la cual creció la ciudad y que dio origen a su denominación actual.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://chajari.gob.ar/historia/; https://termaschajari.tur.ar/arco-de-entrada/; https://es.wikipedia.org/wiki/Estaci%C3%B3n_Chajar%C3%AD",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

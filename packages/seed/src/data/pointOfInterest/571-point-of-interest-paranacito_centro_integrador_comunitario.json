@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "571-point-of-interest-paranacito_centro_integrador_comunitario",
     "slug": "paranacito_centro_integrador_comunitario",
-    "lat": -33.7163973,
-    "long": -58.6620273,
+    "lat": -33.71397040000001,
+    "long": -58.6603299,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio municipal y comunitario para atención social, programas públicos y actividades de integración.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N5189660750",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

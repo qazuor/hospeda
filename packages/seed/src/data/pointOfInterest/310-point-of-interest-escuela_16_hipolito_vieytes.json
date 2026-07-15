@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "310-point-of-interest-escuela_16_hipolito_vieytes",
     "slug": "escuela_16_hipolito_vieytes",
-    "lat": -32.155575,
-    "long": -58.192745800000004,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Institución educativa histórica de Pueblo Liebig, estrechamente vinculada con la vida comunitaria y con la fundación de la Biblioteca Fábrica Colón.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://puebloliebig.gob.ar/noticias/acto-y-promesa-de-lealtad-a-la-bandera-en-pueblo-liebig/; https://www.turismoentrerios.com/liebig/lugares.htm",
-    "notes": "Institución activa e historia comunitaria confirmadas. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Institución activa e historia comunitaria confirmadas. Falta dirección y coordenadas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

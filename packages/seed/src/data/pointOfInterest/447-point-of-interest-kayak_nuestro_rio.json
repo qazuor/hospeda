@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "447-point-of-interest-kayak_nuestro_rio",
     "slug": "kayak_nuestro_rio",
-    "lat": -33.4555497,
-    "long": -59.4760542,
+    "lat": null,
+    "long": null,
     "type": "STADIUM",
     "icon": null,
     "description": "Programa recreativo de salidas en kayak por el río y sectores costeros, sujeto a temporada y condiciones de navegación.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.ibicuy.gob.ar/?page=4&q=area-noticias%2Fcultura",
-    "notes": "Programa municipal documentado. Falta validar vigencia, punto de salida y reservas actuales. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Programa municipal documentado. Falta validar vigencia, punto de salida y reservas actuales.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

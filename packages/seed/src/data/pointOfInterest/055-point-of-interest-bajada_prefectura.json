@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "055-point-of-interest-bajada_prefectura",
     "slug": "bajada_prefectura",
-    "lat": -31.527250300000002,
-    "long": -58.014700399999995,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Rampa habilitada para acceder al río Uruguay con lanchas, botes, kayaks y canoas dentro del parque.",
@@ -34,7 +34,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/servicios",
-    "notes": "Uso habilitado confirmado. El estado del camino debe consultarse antes de la visita. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Uso habilitado confirmado. El estado del camino debe consultarse antes de la visita.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

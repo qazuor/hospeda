@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "747-point-of-interest-refugio_aurora_palmar",
     "slug": "refugio_aurora_palmar",
-    "lat": -31.816523399999994,
-    "long": -58.321273100000006,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Reserva privada cercana a Ubajay dedicada a conservación y educación ambiental, con excursiones, canotaje, cabalgatas y actividades de naturaleza.",
@@ -34,7 +34,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ubajay.gob.ar/turismo/; https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
-    "notes": "Existencia, cercanía y propuestas confirmadas. Falta geocodificar acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia, cercanía y propuestas confirmadas. Falta geocodificar acceso principal.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

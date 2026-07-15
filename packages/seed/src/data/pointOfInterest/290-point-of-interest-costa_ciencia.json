@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "290-point-of-interest-costa_ciencia",
     "slug": "costa_ciencia",
-    "lat": -31.402525899999997,
-    "long": -58.004530100000004,
+    "lat": null,
+    "long": null,
     "type": "MUSEUM",
     "icon": null,
     "description": "Espacio interactivo de la Costanera dedicado a física, tecnología y ciencia mediante experiencias participativas para familias y escuelas.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/turismo/atractivos/museos",
-    "notes": "Existencia y temática confirmadas. Falta dirección y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia y temática confirmadas. Falta dirección y geocodificación.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

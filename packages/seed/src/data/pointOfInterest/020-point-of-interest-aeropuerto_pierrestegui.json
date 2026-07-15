@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "020-point-of-interest-aeropuerto_pierrestegui",
     "slug": "aeropuerto_pierrestegui",
-    "lat": -31.299772599999994,
-    "long": -58.0022006,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Aeropuerto de Concordia y principal infraestructura aérea del noreste entrerriano.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://es.wikipedia.org/wiki/Concordia_%28Argentina%29; https://www.concordia.gob.ar/paginas/caracter%C3%ADsticas",
-    "notes": "Existencia y ubicación general confirmadas. Falta validar acceso y coordenadas actuales después de las obras. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia y ubicación general confirmadas. Falta validar acceso y coordenadas actuales después de las obras.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

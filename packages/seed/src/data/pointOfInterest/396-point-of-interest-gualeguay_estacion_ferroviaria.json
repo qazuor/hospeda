@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "396-point-of-interest-gualeguay_estacion_ferroviaria",
     "slug": "gualeguay_estacion_ferroviaria",
-    "lat": -33.1488192,
-    "long": -59.329031699999994,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Estación histórica vinculada con el primer ferrocarril provincial y con el desarrollo comercial de Gualeguay y Puerto Ruiz.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://es.wikipedia.org/wiki/Ferrocarril_Primer_Entrerriano; https://turismo.gualeguay.gob.ar/contenido-detalle.php?id=162",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

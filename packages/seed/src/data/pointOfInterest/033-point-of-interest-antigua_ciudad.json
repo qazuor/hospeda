@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "033-point-of-interest-antigua_ciudad",
     "slug": "antigua_ciudad",
-    "lat": -31.0010608,
-    "long": -57.8857827,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Sector histórico correspondiente al antiguo emplazamiento de la ciudad, parcialmente afectado por el embalse de Salto Grande y fundamental para comprender su relocalización.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/la-ciudad/; https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
-    "notes": "Área histórica confirmada. Requiere definir un punto representativo y, en el futuro, un polígono. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Área histórica confirmada. Requiere definir un punto representativo y, en el futuro, un polígono.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

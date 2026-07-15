@@ -31,7 +31,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://mapcarta.com/es/N8285059511",
     "notes": "Coordenadas y tipo de establecimiento contrastados con OpenStreetMap.",
     "lifecycleState": "ACTIVE",

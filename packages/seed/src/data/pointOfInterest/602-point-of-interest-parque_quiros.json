@@ -32,7 +32,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://mapcarta.com/es/W209285868",
     "notes": "Coordenadas contrastadas con OpenStreetMap mediante Mapcarta.",
     "lifecycleState": "ACTIVE",

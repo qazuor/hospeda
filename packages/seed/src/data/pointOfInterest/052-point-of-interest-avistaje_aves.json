@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "052-point-of-interest-avistaje_aves",
     "slug": "avistaje_aves",
-    "lat": -33.4912493,
-    "long": -58.6798977,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Experiencia guiada de observación de aves en senderos, costas, humedales y ambientes forestados.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.villaparanacito.gob.ar/turismo/actividades",
-    "notes": "Actividad oficial vigente. Falta digitalizar los recorridos utilizados. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Actividad oficial vigente. Falta digitalizar los recorridos utilizados.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

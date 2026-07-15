@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "213-point-of-interest-circuito_monumentos",
     "slug": "circuito_monumentos",
-    "lat": -32.6849274,
-    "long": -58.8916416,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido por trece esculturas, plazoletas e intervenciones urbanas distribuidas en la ciudad.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://urdinarrain.tur.ar/que-hacer/",
-    "notes": "Circuito oficial confirmado. Falta inventariar y geocodificar los trece monumentos. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Circuito oficial confirmado. Falta inventariar y geocodificar los trece monumentos.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

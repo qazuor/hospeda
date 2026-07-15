@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "449-point-of-interest-la_angelica",
     "slug": "la_angelica",
-    "lat": -31.263435700000002,
-    "long": -57.99161839999999,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Establecimiento rural histórico con experiencias de día de campo, gastronomía, granja educativa, senderismo, cabalgatas y observación de aves.",
@@ -34,7 +34,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/node/11943; https://www.concordia.gob.ar/turismo/agenda/d%C3%ADa-de-campo-en-la-ang%C3%A9lica-15",
-    "notes": "Actividad y propuesta actual confirmadas. Falta dirección exacta y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Actividad y propuesta actual confirmadas. Falta dirección exacta y geocodificación.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

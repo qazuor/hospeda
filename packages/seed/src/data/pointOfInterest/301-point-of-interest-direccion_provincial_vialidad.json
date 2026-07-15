@@ -31,7 +31,7 @@
     "isFeatured": false,
     "displayWeight": 50,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://mapcarta.com/es/N4092752299",
     "notes": "Coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",

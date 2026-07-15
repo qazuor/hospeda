@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "584-point-of-interest-parque_centenario",
     "slug": "parque_centenario",
-    "lat": -31.6247717,
-    "long": -58.5051869,
+    "lat": null,
+    "long": null,
     "type": "PARK",
     "icon": null,
     "description": "Parque urbano renovado para actividades recreativas, descanso y encuentro comunitario.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/ciudad/",
-    "notes": "Nombre y vigencia confirmados por la Municipalidad. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Nombre y vigencia confirmados por la Municipalidad. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

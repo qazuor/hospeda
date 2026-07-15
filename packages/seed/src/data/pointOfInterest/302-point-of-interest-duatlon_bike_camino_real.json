@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "302-point-of-interest-duatlon_bike_camino_real",
     "slug": "duatlon_bike_camino_real",
-    "lat": null,
-    "long": null,
+    "lat": -32.4296383,
+    "long": -58.5108525,
     "type": "STADIUM",
     "icon": null,
     "description": "Competencia deportiva por caminos rurales vinculados con el corredor histórico y natural de San Justo.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://munisanjusto.gob.ar/noticias/del-camino-real-duatlon-bike-2024-04-08t00-00-00-000z-se-vi?tag=Turismo",
-    "notes": "Evento recurrente; falta digitalizar circuito y calendario.",
+    "notes": "Evento recurrente; falta digitalizar circuito y calendario. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

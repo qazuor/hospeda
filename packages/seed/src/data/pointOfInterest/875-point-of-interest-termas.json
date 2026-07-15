@@ -32,7 +32,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://www.termasdevillaguay.com/; https://www.entrerios.tur.ar/localidades-1/villaguay; https://mapcarta.com/es/W191264633",
     "notes": "Actividad vigente confirmada; coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",

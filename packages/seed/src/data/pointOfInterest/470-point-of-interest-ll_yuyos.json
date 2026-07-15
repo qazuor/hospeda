@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "470-point-of-interest-ll_yuyos",
     "slug": "ll_yuyos",
-    "lat": -32.1631324,
-    "long": -58.4004902,
+    "lat": -32.1581003,
+    "long": -58.3900212,
     "type": "NATURAL",
     "icon": null,
     "description": "Jardín interpretativo dedicado a hierbas nativas y especies introducidas por inmigrantes, con visitas guiadas, infusiones y venta de plantas.",
@@ -34,7 +34,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://villaelisa.tur.ar/atractivos/",
-    "notes": "Propuesta y servicios confirmados. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Propuesta y servicios confirmados. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

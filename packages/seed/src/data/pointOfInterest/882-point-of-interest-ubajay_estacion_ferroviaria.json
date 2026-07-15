@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "882-point-of-interest-ubajay_estacion_ferroviaria",
     "slug": "ubajay_estacion_ferroviaria",
-    "lat": -31.7954778,
-    "long": -58.312284,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Edificio ferroviario inaugurado en 1915 y declarado patrimonio histórico, cultural, arquitectónico y testimonial de la localidad.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ubajay.gob.ar/escudo-bandera-y-plano/; https://www.colonturismo.tur.ar/directorio/museo-historico-municipal-alcides-m-coulleri/",
-    "notes": "Historia, fecha y protección patrimonial confirmadas. Comparte edificio con el museo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Historia, fecha y protección patrimonial confirmadas. Comparte edificio con el museo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

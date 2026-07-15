@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "040-point-of-interest-arroyo_martinez",
     "slug": "arroyo_martinez",
-    "lat": -33.7146367,
-    "long": -58.658338099999995,
+    "lat": null,
+    "long": null,
     "type": "NATURAL",
     "icon": null,
     "description": "Curso fluvial y localidad isleña situada a pocos kilómetros de la desembocadura sobre el río Uruguay.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/37670096",
-    "notes": "Curso de agua; requiere geometría lineal. La localidad de Arroyo Martínez se registra por separado con coordenadas verificadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Curso de agua; requiere geometría lineal. La localidad de Arroyo Martínez se registra por separado con coordenadas verificadas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

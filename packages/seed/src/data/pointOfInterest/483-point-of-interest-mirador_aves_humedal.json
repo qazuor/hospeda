@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "483-point-of-interest-mirador_aves_humedal",
     "slug": "mirador_aves_humedal",
-    "lat": -31.3994127,
-    "long": -58.0024394,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Punto de observación de aves y paisaje húmedo en el corredor rural próximo a Piedras Finas.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/W706820034; https://mapcarta.com/es/N8949729120",
-    "notes": "Existencia y ubicación relativa confirmadas. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia y ubicación relativa confirmadas. Falta recuperar coordenadas exactas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

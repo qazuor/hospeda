@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "264-point-of-interest-concepcion_del_uruguay_museo_ferroviario",
     "slug": "concepcion_del_uruguay_museo_ferroviario",
-    "lat": -32.4800172,
-    "long": -58.243522,
+    "lat": null,
+    "long": null,
     "type": "MUSEUM",
     "icon": null,
     "description": "Espacio dedicado a la historia del ferrocarril, su personal, herramientas, material rodante y vínculo con el desarrollo regional.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/realizar%C3%A1n-el-iv-encuentro-regional-de-museos",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

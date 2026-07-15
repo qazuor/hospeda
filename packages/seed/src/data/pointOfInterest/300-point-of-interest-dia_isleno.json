@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "300-point-of-interest-dia_isleno",
     "slug": "dia_isleno",
-    "lat": -33.7163973,
-    "long": -58.6620273,
+    "lat": -33.7152245,
+    "long": -58.6635013,
     "type": "OTHER",
     "icon": null,
     "description": "Jornada dedicada a reconocer la cultura, el trabajo y la vida de quienes habitan las islas del delta.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.villaparanacito.gob.ar/turismo/eventos",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

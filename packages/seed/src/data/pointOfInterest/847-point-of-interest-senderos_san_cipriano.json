@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "847-point-of-interest-senderos_san_cipriano",
     "slug": "senderos_san_cipriano",
-    "lat": -32.4460836,
-    "long": -58.3916875,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorridos de naturaleza asociados al balneario y al monte ribereño del arroyo.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.turismoentrerios.com/sanjusto/",
-    "notes": "Falta verificar trazados, señalización y nivel de dificultad. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Falta verificar trazados, señalización y nivel de dificultad.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

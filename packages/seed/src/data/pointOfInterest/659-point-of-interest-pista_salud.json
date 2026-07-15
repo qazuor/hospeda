@@ -25,7 +25,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://urdinarrain.tur.ar/que-hacer/; https://mapcarta.com/es/W597110897",
     "notes": "Función confirmada por Turismo Urdinarrain; coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",

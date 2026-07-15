@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "759-point-of-interest-reserva_parque_floristico",
     "slug": "reserva_parque_floristico",
-    "lat": -33.0112999,
-    "long": -58.4832235,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Reserva urbana del sector Los Talas destinada a conservar flora nativa y ambientes naturales dentro de Parque Unzué.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/naturaleza",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

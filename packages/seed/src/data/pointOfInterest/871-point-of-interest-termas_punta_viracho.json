@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "871-point-of-interest-termas_punta_viracho",
     "slug": "termas_punta_viracho",
-    "lat": -31.246260399999997,
-    "long": -57.9516586,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Complejo termal junto al lago con piscinas y una playa de piedras, abierto durante todo el año.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/turismo/atractivos/termas/termas-de-punta-viracho; https://www.concordia.gob.ar/mapas/termas-de-punta-viracho",
-    "notes": "Servicios y ubicación general confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Servicios y ubicación general confirmados. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

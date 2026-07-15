@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "639-point-of-interest-paseo_perilago",
     "slug": "paseo_perilago",
-    "lat": -30.9100085,
-    "long": -57.9232891,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido escénico por la costa y los sectores Playa 52, La Muela y Piedras Finas, con vistas del lago y paisaje productivo.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.santaana.gob.ar/home/ciudad/; https://www.entrerios.tur.ar/localidades-1/santa-ana; https://mapcarta.com/es/19202584",
-    "notes": "Recorrido conceptual confirmado por la continuidad territorial. Falta digitalizar tramos y accesos públicos. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Recorrido conceptual confirmado por la continuidad territorial. Falta digitalizar tramos y accesos públicos.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

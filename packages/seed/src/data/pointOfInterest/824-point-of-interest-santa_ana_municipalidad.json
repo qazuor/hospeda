@@ -31,7 +31,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://www.santaana.gob.ar/home/; https://mapcarta.com/es/N2612018372",
     "notes": "Dirección y coordenadas contrastadas con fuente municipal y OpenStreetMap.",
     "lifecycleState": "ACTIVE",

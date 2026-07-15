@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "629-point-of-interest-paseo_costero",
     "slug": "paseo_costero",
-    "lat": -33.716545499999995,
-    "long": -58.660919799999995,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido ribereño urbano con espacios verdes, muelles, embarcaciones y vistas del río.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/villa-paranacito; https://www.villaparanacito.gob.ar/turismo",
-    "notes": "Paseo lineal. Conviene modelarlo como geometría y definir accesos principales. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Paseo lineal. Conviene modelarlo como geometría y definir accesos principales.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

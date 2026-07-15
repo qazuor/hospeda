@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "591-point-of-interest-parque_ferre",
     "slug": "parque_ferre",
-    "lat": -31.3972539,
-    "long": -58.0173305,
+    "lat": null,
+    "long": null,
     "type": "PARK",
     "icon": null,
     "description": "Parque tradicional de la ciudad, utilizado para recreación, ferias, actividades culturales y encuentros comunitarios.",
@@ -26,8 +26,8 @@
     "displayWeight": 50,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.concordia.gob.ar/noticias/servicios/puesta-en-valor-del-parque-ferr%C3%A9",
-    "notes": "Existencia y uso actual confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "source": "https://www.concordia.gob.ar/noticias/servicios/puesta-en-valor-del-parque-ferr%C3%A9; https://www.concordia.gob.ar/video/secretaria-de-desarrollo-urbano/recuperaci%C3%B3n-y-mejoras-en-el-parque-ferr%C3%A9",
+    "notes": "Existencia y uso actual confirmados. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

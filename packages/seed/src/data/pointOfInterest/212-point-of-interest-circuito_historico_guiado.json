@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "212-point-of-interest-circuito_historico_guiado",
     "slug": "circuito_historico_guiado",
-    "lat": -32.1538932,
-    "long": -58.1899907,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido guiado por el casco histórico que integra el complejo fabril, los barrios obreros, los chalets, La Manga y otros elementos del patrimonio industrial.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.colonturismo.tur.ar/directorio/visitas-guiadas-por-el-pueblo-liebig/; https://www.entrerios.tur.ar/localidades-1/pueblo-liebig",
-    "notes": "Recorrido turístico vigente confirmado en 2026. Debe definirse la coordenada del punto de inicio. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Recorrido turístico vigente confirmado en 2026. Debe definirse la coordenada del punto de inicio.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

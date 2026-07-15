@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "782-point-of-interest-rosario_del_tala_playa_grande",
     "slug": "rosario_del_tala_playa_grande",
-    "lat": -32.309773799999995,
-    "long": -59.076364299999995,
+    "lat": null,
+    "long": null,
     "type": "BEACH",
     "icon": null,
     "description": "Principal playa de arena blanca del balneario y punto de salida para actividades de SUP, kayak y canotaje.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://www.rosariodeltala.gob.ar/?q=que-hacer; https://es.wikipedia.org/wiki/Rosario_del_Tala",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

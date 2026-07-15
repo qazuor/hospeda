@@ -31,7 +31,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://mapcarta.com/es/W361716098",
     "notes": "Historia confirmada por el municipio; coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",

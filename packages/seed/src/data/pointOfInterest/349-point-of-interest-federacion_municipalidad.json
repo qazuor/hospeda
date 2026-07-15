@@ -31,7 +31,7 @@
     "isFeatured": false,
     "displayWeight": 50,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://www.federacion.gob.ar/; https://mapcarta.com/es/W762738652",
     "notes": "Dirección y coordenadas contrastadas con fuentes municipales y OpenStreetMap.",
     "lifecycleState": "ACTIVE",

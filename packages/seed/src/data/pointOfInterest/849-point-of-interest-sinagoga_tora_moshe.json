@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "849-point-of-interest-sinagoga_tora_moshe",
     "slug": "sinagoga_tora_moshe",
-    "lat": -31.6258995,
-    "long": -58.5046414,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Templo de la comunidad judía local y parte del circuito regional Tierra de Promesas, vinculado con las colonias de la Jewish Colonization Association.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/gobierno/turismo/; https://sansalvadorer.gob.ar/ciudad/; https://mapcarta.com/es/W448504132",
-    "notes": "Existencia, denominación y relación con el circuito regional confirmadas. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia, denominación y relación con el circuito regional confirmadas. Falta recuperar coordenadas exactas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

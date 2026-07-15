@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "864-point-of-interest-teatro_italia",
     "slug": "teatro_italia",
-    "lat": -33.1478387,
-    "long": -59.3152772,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Teatro histórico y centro artístico-cultural de la ciudad, utilizado para obras, música, talleres y presentaciones.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/gualeguay; https://gualeguay.jimdofree.com/puerto-ruiz/mas-lugares-interesantes/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

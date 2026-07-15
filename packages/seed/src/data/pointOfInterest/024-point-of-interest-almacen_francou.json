@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "024-point-of-interest-almacen_francou",
     "slug": "almacen_francou",
-    "lat": -32.041179299999996,
-    "long": -58.390917599999995,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Almacén rural en funcionamiento desde 1907, conservado por la misma familia y abierto a visitas guiadas, gastronomía y experiencias vinculadas con la vida de colonia.",
@@ -34,7 +34,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://villaelisa.tur.ar/atractivos/",
-    "notes": "Antigüedad, funcionamiento y ubicación general confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Antigüedad, funcionamiento y ubicación general confirmados. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

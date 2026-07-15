@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "304-point-of-interest-empalme_rutas_12_14",
     "slug": "empalme_rutas_12_14",
-    "lat": null,
-    "long": null,
+    "lat": -33.502735,
+    "long": -58.798979,
     "type": "OTHER",
     "icon": null,
     "description": "Nodo vial estratégico donde la Ruta Nacional 12 continúa hacia el oeste y comienza la Ruta Nacional 14 hacia el corredor del Uruguay.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.entrerios.tur.ar/localidades-1/ceibas",
-    "notes": "Intersección vial extensa. Falta definir punto representativo seguro.",
+    "source": "https://www.entrerios.tur.ar/localidades-1/ceibas; https://www.lanacion.com.ar/revista-lugares/meca-internacional-el-pueblo-que-convoca-gente-del-mundo-entero-para-ver-y-fotografiar-aves-nid03082025/; https://es.wikipedia.org/wiki/Ceibas",
+    "notes": "Intersección vial extensa. Falta definir punto representativo seguro. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "804-point-of-interest-san_jose_museo_historico_regional",
     "slug": "san_jose_museo_historico_regional",
-    "lat": -32.212656599999995,
-    "long": -58.219954400000006,
+    "lat": null,
+    "long": null,
     "type": "MUSEUM",
     "icon": null,
     "description": "Museo dedicado a la historia de una de las primeras colonias agrícolas del país, sus inmigrantes, su vida cotidiana y su desarrollo productivo.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sanjose.gob.ar/inicio-el-ciclo-de-charlas-la-colonia-cuenta/; https://mapcarta.com/es/28447862",
-    "notes": "Institución y ubicación urbana confirmadas; falta geocodificar el acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Institución y ubicación urbana confirmadas; falta geocodificar el acceso principal.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

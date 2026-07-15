@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "538-point-of-interest-museo_ivy_mara_ey",
     "slug": "museo_ivy_mara_ey",
-    "lat": -30.753769000000002,
-    "long": -57.982196699999996,
+    "lat": null,
+    "long": null,
     "type": "MUSEUM",
     "icon": null,
     "description": "Museo dedicado a la historia, la etnografía y los pueblos originarios, con objetos culturales y actividades educativas.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://chajari.gob.ar/se-realizara-un-taller-de-pensamiento-y-creacion-de-mascaras-con-distintas-tecnicas-y-materiales/; https://termaschajari.tur.ar/arco-de-entrada/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

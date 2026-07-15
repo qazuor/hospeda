@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "317-point-of-interest-escuela_municipal_musica",
     "slug": "escuela_municipal_musica",
-    "lat": -33.1504259,
-    "long": -59.3106789,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Institución cultural y educativa dedicada a la formación musical y a actividades artísticas abiertas a la comunidad.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://turismo.gualeguay.gob.ar/contenido-detalle.php?id=162",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

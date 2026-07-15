@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "057-point-of-interest-balneario_arenas_blancas",
     "slug": "balneario_arenas_blancas",
-    "lat": -32.6112415,
-    "long": -59.09829419999999,
+    "lat": null,
+    "long": null,
     "type": "BEACH",
     "icon": null,
     "description": "Balneario y camping sobre el río Gualeguay con parrillas, senderos, pesca, naturaleza, juegos y servicios estivales.",
@@ -34,7 +34,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://urdinarrain.tur.ar/que-hacer/; https://www.argentina.gob.ar/jefatura/turismo/best-tourism-villages-argentina/urdinarrain-entre-rios; https://www.turismoentrerios.com/urdinarrain/playas.htm",
-    "notes": "Actividad y distancia confirmadas. Falta geocodificar el acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Actividad y distancia confirmadas. Falta geocodificar el acceso principal.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

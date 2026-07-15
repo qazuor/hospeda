@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "064-point-of-interest-balneario_municipal",
     "slug": "balneario_municipal",
-    "lat": -32.152839199999995,
-    "long": -58.1874263,
+    "lat": null,
+    "long": null,
     "type": "BEACH",
     "icon": null,
     "description": "Balneario público sobre el río Uruguay, con sectores de playa y propuestas de descanso, recreación y paseos náuticos durante la temporada.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://puebloliebig.gob.ar/turismo/balneario-municipal-pueblo-liebig/; https://www.colonturismo.tur.ar/directorio/balneario-municipal-de-pueblo-liebig/",
-    "notes": "Existencia y uso turístico actuales confirmados. Falta geocodificar el acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia y uso turístico actuales confirmados. Falta geocodificar el acceso principal.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

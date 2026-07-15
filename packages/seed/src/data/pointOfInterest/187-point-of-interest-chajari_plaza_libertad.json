@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "187-point-of-interest-chajari_plaza_libertad",
     "slug": "chajari_plaza_libertad",
-    "lat": -30.7471148,
-    "long": -57.97446559999999,
+    "lat": null,
+    "long": null,
     "type": "PLAZA",
     "icon": null,
     "description": "Plaza histórica vinculada con el antiguo nombre Villa Libertad y con el segundo núcleo de crecimiento urbano de Chajarí.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://chajari.gob.ar/historia/; https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

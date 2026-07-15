@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "043-point-of-interest-arroyo_santa_ana",
     "slug": "arroyo_santa_ana",
-    "lat": -30.9132853,
-    "long": -57.926673599999994,
+    "lat": null,
+    "long": null,
     "type": "NATURAL",
     "icon": null,
     "description": "Curso de agua del entorno local que complementa el sistema hidrográfico del lago y los paisajes rurales.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.santaana.gob.ar/home/ciudad/",
-    "notes": "Curso de agua; requiere geometría lineal y accesos diferenciados. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Curso de agua; requiere geometría lineal y accesos diferenciados.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "583-point-of-interest-parque_balneario_municipal",
     "slug": "parque_balneario_municipal",
-    "lat": -31.865035600000002,
-    "long": -59.002894299999994,
+    "lat": null,
+    "long": null,
     "type": "BEACH",
     "icon": null,
     "description": "Predio recreativo de aproximadamente dieciséis hectáreas a orillas del arroyo Villaguay, con áreas verdes, quinchos, parrillas y deportes.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://www.villaguay.gob.ar/app/noticias/el_verano_ya_se_vive_en_villaguay",
-    "notes": "Temporada 2025/2026 confirmada por la Municipalidad. Falta geocodificar el acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Temporada 2025/2026 confirmada por la Municipalidad. Falta geocodificar el acceso principal.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

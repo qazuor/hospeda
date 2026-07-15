@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "163-point-of-interest-ceibas_pesca_deportiva",
     "slug": "ceibas_pesca_deportiva",
-    "lat": -33.500718299999996,
-    "long": -58.80455779999999,
+    "lat": null,
+    "long": null,
     "type": "STADIUM",
     "icon": null,
     "description": "Actividad recreativa destacada en ríos, arroyos y zonas de humedal del municipio.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/ceibas",
-    "notes": "Actividad regional confirmada. Falta relevar bajadas, permisos y puntos seguros. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Actividad regional confirmada. Falta relevar bajadas, permisos y puntos seguros.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

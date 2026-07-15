@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "826-point-of-interest-santa_ana_pesca_deportiva",
     "slug": "santa_ana_pesca_deportiva",
-    "lat": -30.9132853,
-    "long": -57.926673599999994,
+    "lat": null,
+    "long": null,
     "type": "STADIUM",
     "icon": null,
     "description": "Actividad de pesca desde costa, espigones y embarcaciones en el lago Salto Grande y arroyos cercanos.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/santa-ana; https://www.turismoentrerios.com/santaana/pesca.htm",
-    "notes": "Actividad confirmada. Falta relevar bajadas, permisos, guías y puntos seguros. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Actividad confirmada. Falta relevar bajadas, permisos, guías y puntos seguros.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

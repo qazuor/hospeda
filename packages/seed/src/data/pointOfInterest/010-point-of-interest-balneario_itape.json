@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "010-point-of-interest-balneario_itape",
     "slug": "balneario_itape",
-    "lat": -32.24,
-    "long": -58.115,
+    "lat": null,
+    "long": null,
     "type": "BEACH",
     "description": "Balneario sobre el río Uruguay cercano a la ciudad de Colón",
     "nameI18n": {
@@ -50,5 +50,9 @@
     "isBuiltin": true,
     "isFeatured": false,
     "displayWeight": 55,
-    "lifecycleState": "ACTIVE"
+    "lifecycleState": "ACTIVE",
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/agenda-de-actividades-en-la-ciudad-para-semana-santa",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo."
 }

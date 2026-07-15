@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "539-point-of-interest-museo_judio",
     "slug": "museo_judio",
-    "lat": -31.3972539,
-    "long": -58.0173305,
+    "lat": null,
+    "long": null,
     "type": "MUSEUM",
     "icon": null,
     "description": "Museo dedicado a recuperar la memoria de la inmigración judía, las colonias agrícolas y su aporte a la historia provincial.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/turismo/atractivos/museos/museo-jud%C3%ADo-de-entre-r%C3%ADos",
-    "notes": "Existencia y temática confirmadas por Turismo Concordia. Falta dirección y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Existencia y temática confirmadas por Turismo Concordia. Falta dirección y geocodificación.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

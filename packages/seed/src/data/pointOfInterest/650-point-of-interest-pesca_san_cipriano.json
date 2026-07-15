@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "650-point-of-interest-pesca_san_cipriano",
     "slug": "pesca_san_cipriano",
-    "lat": -32.4460836,
-    "long": -58.3916875,
+    "lat": null,
+    "long": null,
     "type": "STADIUM",
     "icon": null,
     "description": "Actividad recreativa desde sectores habilitados del arroyo y del balneario.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.turismoentrerios.com/sanjusto/",
-    "notes": "Falta relevar puntos seguros, permisos y condiciones estacionales. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Falta relevar puntos seguros, permisos y condiciones estacionales.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

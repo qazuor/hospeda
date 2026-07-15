@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "917-point-of-interest-villaguay_plaza_25_mayo",
     "slug": "villaguay_plaza_25_mayo",
-    "lat": -31.867673399999997,
-    "long": -59.02698319999999,
+    "lat": null,
+    "long": null,
     "type": "PLAZA",
     "icon": null,
     "description": "Plaza principal y núcleo del centro cívico, rodeada por edificios históricos y espacios gastronómicos y culturales.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://www.villaguay.gob.ar/app/villaguay/historia",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

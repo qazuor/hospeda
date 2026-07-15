@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "389-point-of-interest-gruta_padre_pio",
     "slug": "gruta_padre_pio",
-    "lat": -30.7603828,
-    "long": -57.9852672,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio de devoción religiosa incluido entre los sitios de referencia del circuito urbano.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

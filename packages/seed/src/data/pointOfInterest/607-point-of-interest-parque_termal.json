@@ -32,7 +32,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://www.federacion.tur.ar/tarifas-descuentos-2/; https://mapcarta.com/es/W294268034",
     "notes": "Servicios y características confirmados por Turismo Federación; coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",

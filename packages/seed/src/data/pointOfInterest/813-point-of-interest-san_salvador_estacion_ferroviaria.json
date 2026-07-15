@@ -32,7 +32,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://sansalvadorer.gob.ar/ciudad/; https://mapcarta.com/es/N1039998131",
     "notes": "Historia confirmada por el municipio y coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",

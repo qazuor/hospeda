@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "038-point-of-interest-arroyo_la_tinta",
     "slug": "arroyo_la_tinta",
-    "lat": -33.7163973,
-    "long": -58.6620273,
+    "lat": -33.725231199999996,
+    "long": -58.6201538,
     "type": "NATURAL",
     "icon": null,
     "description": "Curso de agua del casco urbano y referencia territorial de instituciones sanitarias, religiosas y náuticas.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N3849356728",
-    "notes": "Curso de agua; requiere geometría lineal. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Curso de agua; requiere geometría lineal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

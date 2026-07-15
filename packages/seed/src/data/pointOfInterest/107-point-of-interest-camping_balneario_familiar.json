@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "107-point-of-interest-camping_balneario_familiar",
     "slug": "camping_balneario_familiar",
-    "lat": -31.5390248,
-    "long": -58.0077056,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio recreativo local para pasar el día, acampar y disfrutar de actividades familiares en un entorno natural.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
-    "notes": "Existencia y horario general confirmados por Parques Nacionales. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia y horario general confirmados por Parques Nacionales. Falta dirección y coordenadas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

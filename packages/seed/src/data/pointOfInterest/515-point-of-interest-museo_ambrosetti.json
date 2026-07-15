@@ -31,7 +31,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://turismo.gualeguay.gob.ar/contenido-detalle.php?id=162; https://mapcarta.com/es/N5492517259; https://gualeguay.jimdofree.com/puerto-ruiz/mas-lugares-interesantes/",
     "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",

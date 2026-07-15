@@ -25,7 +25,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://www.entrerios.tur.ar/localidades-1/santa-ana; https://mapcarta.com/es/N5539089596",
     "notes": "Coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",

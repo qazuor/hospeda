@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "011-point-of-interest-parque_nacional_el_palmar",
     "slug": "parque_nacional_el_palmar",
-    "lat": -31.8667,
-    "long": -58.2833,
+    "lat": -31.8568623,
+    "long": -58.324538600000004,
     "type": "PARK",
     "description": "Parque nacional famoso por sus palmares de yatay centenarios",
     "nameI18n": {
@@ -50,5 +50,9 @@
     "isBuiltin": true,
     "isFeatured": true,
     "displayWeight": 78,
-    "lifecycleState": "ACTIVE"
+    "lifecycleState": "ACTIVE",
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar",
+    "notes": "Destino natural principal de Ubajay. Falta definir una coordenada representativa oficial para el parque completo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification."
 }

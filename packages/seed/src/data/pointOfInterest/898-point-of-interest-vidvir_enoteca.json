@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "898-point-of-interest-vidvir_enoteca",
     "slug": "vidvir_enoteca",
-    "lat": -32.1631324,
-    "long": -58.4004902,
+    "lat": -32.1654986,
+    "long": -58.399271799999994,
     "type": "OTHER",
     "icon": null,
     "description": "Enoteca turística orientada a degustaciones en grupos pequeños y a la difusión de la historia vitivinícola argentina y entrerriana.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://villaelisa.tur.ar/atractivos/",
-    "notes": "Actividad vigente confirmada por Turismo Villa Elisa. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Actividad vigente confirmada por Turismo Villa Elisa. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

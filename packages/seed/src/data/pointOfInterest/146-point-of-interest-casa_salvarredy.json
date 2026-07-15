@@ -25,7 +25,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://chajari.gob.ar/events/cultura/; https://mapcarta.com/es/N5006112710",
     "notes": "Dirección y coordenadas contrastadas con fuente municipal y OpenStreetMap.",
     "lifecycleState": "ACTIVE",

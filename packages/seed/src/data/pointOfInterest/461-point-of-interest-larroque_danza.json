@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "461-point-of-interest-larroque_danza",
     "slug": "larroque_danza",
-    "lat": -32.4814836,
-    "long": -58.2285752,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Certamen cultural de danza realizado en el Salón de Usos Múltiples del Parque La Estación.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.larroque.gob.ar/larroque/storage/public/transparency/444/1727697905_07-_BO_JULIO_2024.pdf",
-    "notes": "Evento recurrente documentado. La fecha y edición deben actualizarse en agenda. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Evento recurrente documentado. La fecha y edición deben actualizarse en agenda.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

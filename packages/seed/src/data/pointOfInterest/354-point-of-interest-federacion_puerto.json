@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "354-point-of-interest-federacion_puerto",
     "slug": "federacion_puerto",
-    "lat": -30.985898900000002,
-    "long": -57.9202185,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Puerto deportivo sobre el lago Salto Grande, utilizado como punto de salida de paseos náuticos, pesca y actividades acuáticas.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf; https://www.federacion.tur.ar/otros-atractivos/",
-    "notes": "Existencia y función confirmadas. Falta geocodificar el acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia y función confirmadas. Falta geocodificar el acceso.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

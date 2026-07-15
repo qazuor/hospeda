@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "542-point-of-interest-museo_memoria_popular",
     "slug": "museo_memoria_popular",
-    "lat": -33.0093464,
-    "long": -58.51390849999999,
+    "lat": null,
+    "long": null,
     "type": "MUSEUM",
     "icon": null,
     "description": "Museo dedicado a relatos, objetos y expresiones de la memoria social y comunitaria de la ciudad.",
@@ -32,7 +32,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/cultura",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

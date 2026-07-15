@@ -3,6 +3,7 @@ import { createCachedGeocoder } from '../../scripts/poi-pipeline/cache.js';
 import { AUTO_GEOCODE_MARKER } from '../../scripts/poi-pipeline/constants.js';
 import type { Geocoder, RawGeocodeHit } from '../../scripts/poi-pipeline/geocoder.js';
 import { runPipeline } from '../../scripts/poi-pipeline/pipeline.js';
+import type { RealDestinationRecord } from '../../scripts/poi-pipeline/reconcile.js';
 import { geocodeAttempts } from '../../scripts/poi-pipeline/report.js';
 import type { RawCsvRow } from '../../scripts/poi-pipeline/types.js';
 
@@ -33,8 +34,8 @@ function makeRow(overrides: Partial<RawCsvRow>): RawCsvRow {
 }
 
 const HIT: RawGeocodeHit = {
-    lat: -31.4,
-    long: -58,
+    lat: -32.2174,
+    long: -58.1326,
     importance: 0.8,
     featureClass: 'place',
     featureType: 'town',
@@ -43,6 +44,24 @@ const HIT: RawGeocodeHit = {
 };
 
 const realDestinationSlugs = new Set(['colon', 'concordia']);
+const realDestinations = new Map<string, RealDestinationRecord>([
+    [
+        'colon',
+        {
+            slug: 'colon',
+            name: 'Colón',
+            center: { lat: -32.217, long: -58.133 }
+        }
+    ],
+    [
+        'concordia',
+        {
+            slug: 'concordia',
+            name: 'Concordia',
+            center: { lat: -31.39296, long: -58.02089 }
+        }
+    ]
+]);
 const realCategorySlugs = new Set(['square', 'historic_site', 'park']);
 
 describe('runPipeline (e2e machinery)', () => {
@@ -71,6 +90,7 @@ describe('runPipeline (e2e machinery)', () => {
             rows,
             geocoder,
             realDestinationSlugs,
+            realDestinations,
             realCategorySlugs
         });
 
@@ -91,11 +111,12 @@ describe('runPipeline (e2e machinery)', () => {
             rows,
             geocoder,
             realDestinationSlugs,
+            realDestinations,
             realCategorySlugs
         });
 
         // Assert
-        expect(fixtures[0]?.lat).toBe(-31.4);
+        expect(fixtures[0]?.lat).toBe(-32.2174);
         expect(fixtures[0]?.verified).toBe(false);
         expect(fixtures[0]?.notes).toContain(AUTO_GEOCODE_MARKER);
         expect(stats.geocode.resolvedHigh).toBe(1);
@@ -114,6 +135,7 @@ describe('runPipeline (e2e machinery)', () => {
             rows,
             geocoder,
             realDestinationSlugs,
+            realDestinations,
             realCategorySlugs
         });
 
@@ -135,6 +157,7 @@ describe('runPipeline (e2e machinery)', () => {
             rows,
             geocoder,
             realDestinationSlugs,
+            realDestinations,
             realCategorySlugs
         });
 
@@ -158,15 +181,17 @@ describe('runPipeline (e2e machinery)', () => {
             geocoder: primary,
             fallbackGeocoder: fallback,
             realDestinationSlugs,
+            realDestinations,
             realCategorySlugs
         });
 
         // Assert
         expect(primary.resolve).toHaveBeenCalledTimes(1);
         expect(fallback.resolve).toHaveBeenCalledTimes(1);
-        expect(fixtures[0]?.lat).toBe(-31.4);
+        expect(fixtures[0]?.lat).toBe(-32.2174);
         expect(stats.geocode.resolvedHigh).toBe(1);
         expect(stats.geocode.resolvedByFallback).toBe(1);
+        expect(fallback.resolve).toHaveBeenCalledWith('Calle 1, Colon, Entre Rios, Argentina');
     });
 
     it('does NOT call the fallback when the primary already resolves', async () => {
@@ -181,6 +206,7 @@ describe('runPipeline (e2e machinery)', () => {
             geocoder: primary,
             fallbackGeocoder: fallback,
             realDestinationSlugs,
+            realDestinations,
             realCategorySlugs
         });
 
@@ -207,6 +233,7 @@ describe('runPipeline (e2e machinery)', () => {
             rows,
             geocoder: cached1,
             realDestinationSlugs,
+            realDestinations,
             realCategorySlugs
         });
 
@@ -216,6 +243,7 @@ describe('runPipeline (e2e machinery)', () => {
             rows,
             geocoder: cached2,
             realDestinationSlugs,
+            realDestinations,
             realCategorySlugs
         });
 
@@ -223,5 +251,125 @@ describe('runPipeline (e2e machinery)', () => {
         expect(JSON.stringify(second.fixtures)).toBe(JSON.stringify(first.fixtures));
         expect(cached2.networkCalls).toBe(0);
         expect(inner.resolve).toHaveBeenCalledTimes(1); // only the first run hit the provider
+    });
+
+    it('rejects a far geocode hit and leaves coordinates null', async () => {
+        const rows = [
+            makeRow({ id: 'colon__monumento', address: 'Laprida 86, Colón, Entre Ríos' })
+        ];
+        const geocoder: Geocoder = {
+            resolve: vi.fn(async () => ({
+                ...HIT,
+                lat: -31.7179736,
+                long: -60.537909299999995,
+                displayName: 'Monumento a Justo José de Urquiza'
+            }))
+        };
+
+        const { fixtures, stats } = await runPipeline({
+            rows,
+            geocoder,
+            realDestinationSlugs,
+            realDestinations,
+            realCategorySlugs
+        });
+
+        expect(fixtures[0]?.lat).toBeNull();
+        expect(fixtures[0]?.long).toBeNull();
+        expect(stats.geocode.unresolved).toBe(1);
+    });
+
+    it('rejects a town-centroid fallback hit for a destination-only address', async () => {
+        const rows = [
+            makeRow({
+                id: 'concordia__centro',
+                destinationSlug: 'concordia',
+                destinationName: 'Concordia',
+                address: 'Concordia, Entre Ríos'
+            })
+        ];
+        const primary: Geocoder = { resolve: vi.fn(async () => null) };
+        const fallback: Geocoder = {
+            resolve: vi.fn(async () => ({
+                ...HIT,
+                lat: -31.39296,
+                long: -58.02089,
+                displayName: 'Concordia'
+            }))
+        };
+
+        const { fixtures, stats } = await runPipeline({
+            rows,
+            geocoder: primary,
+            fallbackGeocoder: fallback,
+            realDestinationSlugs,
+            realDestinations,
+            realCategorySlugs
+        });
+
+        expect(fixtures[0]?.lat).toBeNull();
+        expect(fixtures[0]?.long).toBeNull();
+        expect(stats.geocode.unresolved).toBe(1);
+        expect(fallback.resolve).toHaveBeenCalledWith('X, Concordia, Entre Ríos, Argentina');
+    });
+
+    it('does not overwrite a verified row that already has coordinates', async () => {
+        const rows = [
+            makeRow({
+                id: 'colon__verified',
+                lat: '-32.217',
+                lng: '-58.133',
+                verified: 'True',
+                notes: 'Human-verified.'
+            })
+        ];
+        const geocoder: Geocoder = { resolve: vi.fn(async () => HIT) };
+
+        const { fixtures } = await runPipeline({
+            rows,
+            geocoder,
+            realDestinationSlugs,
+            realDestinations,
+            realCategorySlugs
+        });
+
+        expect(geocoder.resolve).not.toHaveBeenCalled();
+        expect(fixtures[0]).toMatchObject({
+            lat: -32.217,
+            long: -58.133,
+            verified: true,
+            notes: 'Human-verified.'
+        });
+    });
+
+    it('nulls exact duplicate auto-geocoded coordinates instead of keeping stacked pins', async () => {
+        const rows = [
+            makeRow({ id: 'colon__a', name: 'A', address: 'Laprida 86, Colón, Entre Ríos' }),
+            makeRow({ id: 'colon__b', name: 'B', address: '12 de Abril 100, Colón, Entre Ríos' })
+        ];
+        const geocoder: Geocoder = {
+            resolve: vi.fn(async () => ({
+                ...HIT,
+                lat: -32.2174,
+                long: -58.1326,
+                displayName: 'Colón'
+            }))
+        };
+
+        const { fixtures } = await runPipeline({
+            rows,
+            geocoder,
+            realDestinationSlugs,
+            realDestinations,
+            realCategorySlugs
+        });
+
+        expect(fixtures).toHaveLength(2);
+        expect(fixtures.every((fixture) => fixture.lat === null && fixture.long === null)).toBe(
+            true
+        );
+        expect(
+            fixtures.every((fixture) => fixture.notes?.includes(AUTO_GEOCODE_MARKER) === false)
+        ).toBe(true);
     });
 });

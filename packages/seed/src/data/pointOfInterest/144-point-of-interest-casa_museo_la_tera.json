@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "144-point-of-interest-casa_museo_la_tera",
     "slug": "casa_museo_la_tera",
-    "lat": -33.0328106,
-    "long": -59.014476099999996,
+    "lat": null,
+    "long": null,
     "type": "MUSEUM",
     "icon": null,
     "description": "Casa museo legada a la comunidad por la escritora María Esther de Miguel, con patrimonio literario, objetos, espacios de memoria y actividades educativas.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes; https://www.larroque.gob.ar/noticia/1645/la_propuesta_en_el_museo_la_tera_para_aprender_crear_y_divertirse",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

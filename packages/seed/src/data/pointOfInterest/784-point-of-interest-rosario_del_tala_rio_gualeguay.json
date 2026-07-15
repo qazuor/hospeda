@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "784-point-of-interest-rosario_del_tala_rio_gualeguay",
     "slug": "rosario_del_tala_rio_gualeguay",
-    "lat": -32.3008178,
-    "long": -59.138887,
+    "lat": null,
+    "long": null,
     "type": "NATURAL",
     "icon": null,
     "description": "Curso de agua central para el paisaje, la pesca, el balneario, la navegación y la identidad natural de Rosario del Tala.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://www.entrerios.tur.ar/localidades-1/rosario-del-tala",
-    "notes": "Curso de agua; requiere geometría lineal y puntos de acceso diferenciados. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Curso de agua; requiere geometría lineal y puntos de acceso diferenciados.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

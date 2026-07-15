@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "191-point-of-interest-chimenea_calera",
     "slug": "chimenea_calera",
-    "lat": null,
-    "long": null,
+    "lat": -32.3032928,
+    "long": -59.1443327,
     "type": "MONUMENT",
     "icon": null,
     "description": "Chimenea de ladrillo de casi treinta metros y principal vestigio visual del complejo industrial Osinalde-Izaguirre.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

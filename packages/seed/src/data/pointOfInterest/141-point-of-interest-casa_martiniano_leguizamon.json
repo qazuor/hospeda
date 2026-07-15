@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "141-point-of-interest-casa_martiniano_leguizamon",
     "slug": "casa_martiniano_leguizamon",
-    "lat": -32.3008178,
-    "long": -59.138887,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Una de las viviendas más antiguas de la ciudad, vinculada con la infancia del escritor Martiniano Leguizamón y declarada Monumento Histórico Provincial.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf; https://www.entrerios.tur.ar/localidades-1/rosario-del-tala",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

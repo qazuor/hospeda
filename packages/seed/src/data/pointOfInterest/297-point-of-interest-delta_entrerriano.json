@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "297-point-of-interest-delta_entrerriano",
     "slug": "delta_entrerriano",
-    "lat": -33.7076593,
-    "long": -58.6671298,
+    "lat": null,
+    "long": null,
     "type": "NATURAL",
     "icon": null,
     "description": "Paisaje de islas, riachos, canales, albardones y humedales que define la identidad natural y cultural del destino.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/villa-paranacito; https://www.villaparanacito.gob.ar/turismo",
-    "notes": "Área regional extensa. Requiere polígonos, corredores y accesos públicos verificados. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Área regional extensa. Requiere polígonos, corredores y accesos públicos verificados.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

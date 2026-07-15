@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "171-point-of-interest-centro_cultural_atahualpa_yupanqui",
     "slug": "centro_cultural_atahualpa_yupanqui",
-    "lat": null,
-    "long": null,
+    "lat": -32.3025245,
+    "long": -59.1414079,
     "type": "OTHER",
     "icon": null,
     "description": "Centro cultural instalado en el antiguo Mercado de Abasto de 1880, con colecciones históricas y actividades artísticas y comunitarias.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir; https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

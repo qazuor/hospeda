@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "582-point-of-interest-parque_balneario_delio_panizza",
     "slug": "parque_balneario_delio_panizza",
-    "lat": -32.3080087,
-    "long": -59.0797007,
+    "lat": null,
+    "long": null,
     "type": "BEACH",
     "icon": null,
     "description": "Balneario municipal sobre el río Gualeguay, con playa, sombra, servicios recreativos y sectores para disfrutar el verano.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.instagram.com/reel/DTEJm4JD1zj/; https://www.argentinaviajera.com.ar/entrerios/gualeguay.html",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

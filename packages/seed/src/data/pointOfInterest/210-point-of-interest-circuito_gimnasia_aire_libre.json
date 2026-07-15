@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "210-point-of-interest-circuito_gimnasia_aire_libre",
     "slug": "circuito_gimnasia_aire_libre",
-    "lat": -30.7603828,
-    "long": -57.9852672,
+    "lat": -30.758315500000002,
+    "long": -57.98175929999999,
     "type": "STADIUM",
     "icon": null,
     "description": "Recorrido urbano equipado para actividad física, entrenamiento y recreación al aire libre.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf",
-    "notes": "Circuito incluido en el plano turístico. Falta digitalizar su recorrido. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Circuito incluido en el plano turístico. Falta digitalizar su recorrido. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

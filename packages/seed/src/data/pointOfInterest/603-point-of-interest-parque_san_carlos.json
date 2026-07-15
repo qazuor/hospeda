@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "603-point-of-interest-parque_san_carlos",
     "slug": "parque_san_carlos",
-    "lat": -31.3711607,
-    "long": -57.9976588,
+    "lat": null,
+    "long": null,
     "type": "PARK",
     "icon": null,
     "description": "Área protegida municipal de 98 hectáreas con selva en galería, lomadas, costa del río Uruguay, senderos y patrimonio histórico.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/turismo/atractivos/parque-san-carlos",
-    "notes": "Área protegida y servicios turísticos confirmados. Falta definir centroide o acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Área protegida y servicios turísticos confirmados. Falta definir centroide o acceso principal.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

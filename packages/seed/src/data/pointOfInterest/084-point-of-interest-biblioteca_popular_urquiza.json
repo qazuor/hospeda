@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "084-point-of-interest-biblioteca_popular_urquiza",
     "slug": "biblioteca_popular_urquiza",
-    "lat": -30.7603828,
-    "long": -57.9852672,
+    "lat": -30.757234200000003,
+    "long": -57.9819709,
     "type": "OTHER",
     "icon": null,
     "description": "Biblioteca popular y espacio cultural dedicado a lectura, consulta, formación y actividades comunitarias.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf; https://termaschajari.tur.ar/ciudad/atractivos/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

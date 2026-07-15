@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "475-point-of-interest-maraton_ciudad",
     "slug": "maraton_ciudad",
-    "lat": -30.9132853,
-    "long": -57.926673599999994,
+    "lat": null,
+    "long": null,
     "type": "STADIUM",
     "icon": null,
     "description": "Carrera regional con distancias de 5 y 10 kilómetros y largada habitual desde Plaza San Martín.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.santaana.gob.ar/home/2025/10/09/maraton-ciudad-de-santa-ana-4/; https://www.santaana.gob.ar/home/2025/08/19/10-maraton-ciudad-de-santa-ana/",
-    "notes": "Evento recurrente confirmado; falta digitalizar recorrido y actualizar calendario anual. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Evento recurrente confirmado; falta digitalizar recorrido y actualizar calendario anual.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

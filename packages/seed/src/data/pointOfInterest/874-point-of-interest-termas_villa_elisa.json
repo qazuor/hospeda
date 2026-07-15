@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "874-point-of-interest-termas_villa_elisa",
     "slug": "termas_villa_elisa",
-    "lat": -32.129781,
-    "long": -58.440202500000005,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Complejo termal de 41 hectáreas con piscinas de distintas temperaturas, alojamiento, gastronomía, spa, deportes, actividades recreativas, espacios verdes y un lago artificial.",
@@ -34,7 +34,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://termasvillaelisa.com/; https://villaelisa.tur.ar/atractivos/",
-    "notes": "Complejo, servicios y dirección confirmados en fuentes oficiales. Falta geocodificar el acceso principal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Complejo, servicios y dirección confirmados en fuentes oficiales. Falta geocodificar el acceso principal.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

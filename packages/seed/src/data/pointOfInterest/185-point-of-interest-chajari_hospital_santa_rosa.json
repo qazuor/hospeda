@@ -25,7 +25,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf; https://mapcarta.com/es/W466441688",
     "notes": "Dirección y coordenadas contrastadas con OpenStreetMap.",
     "lifecycleState": "ACTIVE",

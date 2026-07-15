@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "386-point-of-interest-grupo_scout_karol_wojtyla",
     "slug": "grupo_scout_karol_wojtyla",
-    "lat": -32.5018337,
-    "long": -58.281497599999994,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Centro comunitario scout con actividades educativas, recreativas y de contacto con la naturaleza.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N11132368105",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

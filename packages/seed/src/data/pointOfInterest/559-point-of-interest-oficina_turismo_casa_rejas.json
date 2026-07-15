@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "559-point-of-interest-oficina_turismo_casa_rejas",
     "slug": "oficina_turismo_casa_rejas",
-    "lat": -33.149670199999996,
-    "long": -59.309800300000006,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Punto municipal de información turística instalado en uno de los edificios patrimoniales más reconocibles de la ciudad.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.instagram.com/reel/DKXGexsu5GO/; https://www.facebook.com/gualeguayteespera/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

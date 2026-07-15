@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "888-point-of-interest-universidad_concepcion_uruguay",
     "slug": "universidad_concepcion_uruguay",
-    "lat": -32.4851849,
-    "long": -58.2320232,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Universidad privada histórica con actividad académica, cultural y de extensión en el centro urbano.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.ucu.edu.ar/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

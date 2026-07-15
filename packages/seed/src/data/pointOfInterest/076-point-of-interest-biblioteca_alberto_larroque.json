@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "076-point-of-interest-biblioteca_alberto_larroque",
     "slug": "biblioteca_alberto_larroque",
-    "lat": -32.4854718,
-    "long": -58.2333126,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Biblioteca histórica del Colegio del Uruguay, integrada a su circuito cultural y educativo.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/concepcion-del-uruguay-tendra-su-noche-de-los-museos",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

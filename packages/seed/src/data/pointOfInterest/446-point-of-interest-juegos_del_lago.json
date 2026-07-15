@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "446-point-of-interest-juegos_del_lago",
     "slug": "juegos_del_lago",
-    "lat": -30.9856574,
-    "long": -57.9194395,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio recreativo infantil ubicado cerca de la terminal, con juegos y sectores de descanso para familias.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/W999053866",
-    "notes": "Existencia y ubicación relativa confirmadas. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Existencia y ubicación relativa confirmadas. Falta recuperar coordenadas exactas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

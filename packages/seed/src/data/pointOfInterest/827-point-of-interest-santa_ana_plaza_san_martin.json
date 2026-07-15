@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "827-point-of-interest-santa_ana_plaza_san_martin",
     "slug": "santa_ana_plaza_san_martin",
-    "lat": -30.899253299999998,
-    "long": -57.930918,
+    "lat": null,
+    "long": null,
     "type": "PLAZA",
     "icon": null,
     "description": "Plaza principal y núcleo cívico de la localidad, próxima al municipio, la comisaría y espacios culturales.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/19202584; https://mapcarta.com/es/N2612018372",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

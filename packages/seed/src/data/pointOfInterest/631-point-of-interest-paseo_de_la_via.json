@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "631-point-of-interest-paseo_de_la_via",
     "slug": "paseo_de_la_via",
-    "lat": -30.764741800000003,
-    "long": -57.98244330000001,
+    "lat": null,
+    "long": null,
     "type": "PARK",
     "icon": null,
     "description": "Paseo público del predio ferroviario utilizado para ferias, gastronomía, espectáculos, aniversarios y actividades familiares.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://chajari.gob.ar/este-domingo-el-dia-del-nino-se-celebra-en-el-paseo-de-la-via/; https://chajari.gob.ar/se-venderan-porciones-de-locro-a-precios-populares-en-el-paseo-de-la-via/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

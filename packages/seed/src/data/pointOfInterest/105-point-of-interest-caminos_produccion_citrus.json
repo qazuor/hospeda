@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "105-point-of-interest-caminos_produccion_citrus",
     "slug": "caminos_produccion_citrus",
-    "lat": -30.7586056,
-    "long": -57.966520900000006,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Circuito rural por quintas citrícolas que permite conocer el paisaje, la producción regional, los senderos y la observación de aves.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://termaschajari.tur.ar/ciudad/turismo-rural/; https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf",
-    "notes": "Circuito productivo confirmado. Falta digitalizar el trazado y validar establecimientos visitables. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Circuito productivo confirmado. Falta digitalizar el trazado y validar establecimientos visitables.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

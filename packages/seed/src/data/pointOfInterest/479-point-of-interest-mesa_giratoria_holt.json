@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "479-point-of-interest-mesa_giratoria_holt",
     "slug": "mesa_giratoria_holt",
-    "lat": -33.747011,
-    "long": -59.15447,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Mesa giratoria metálica conservada dentro del conjunto ferroviario y utilizada históricamente para maniobras de locomotoras.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ibicuy.gob.ar/?q=content%2Fque-visitar",
-    "notes": "Elemento interno del complejo ferroviario. Falta geocodificar dentro del predio y confirmar acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Elemento interno del complejo ferroviario. Falta geocodificar dentro del predio y confirmar acceso.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

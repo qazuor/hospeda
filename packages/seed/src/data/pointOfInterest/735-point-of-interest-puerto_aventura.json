@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "735-point-of-interest-puerto_aventura",
     "slug": "puerto_aventura",
-    "lat": -30.9924816,
-    "long": -57.9166866,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Prestador de paseos náuticos y actividades acuáticas para recorrer el lago Salto Grande durante todo el año.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/otros-atractivos/; https://mapcarta.com/es/W762738652",
-    "notes": "Actividad y ubicación relativa al municipio y puerto confirmadas. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Actividad y ubicación relativa al municipio y puerto confirmadas. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

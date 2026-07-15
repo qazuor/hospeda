@@ -31,7 +31,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://sansalvadorer.gob.ar/ciudad/; https://mapcarta.com/es/W215493579",
     "notes": "Nombre, elementos y coordenadas confirmados.",
     "lifecycleState": "ACTIVE",

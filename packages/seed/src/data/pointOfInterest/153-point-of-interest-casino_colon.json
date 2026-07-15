@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "153-point-of-interest-casino_colon",
     "slug": "casino_colon",
-    "lat": -32.2209511,
-    "long": -58.136291799999995,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio de entretenimiento nocturno situado en la zona costera y próximo al corredor turístico central y a Piedras Coloradas.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.colonturismo.tur.ar/directorio/camping-club-piedras-coloradas/",
-    "notes": "La cercanía y funcionamiento del casino se mencionan en el directorio oficial. Falta confirmar denominación comercial, domicilio y coordenadas actuales. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "La cercanía y funcionamiento del casino se mencionan en el directorio oficial. Falta confirmar denominación comercial, domicilio y coordenadas actuales.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

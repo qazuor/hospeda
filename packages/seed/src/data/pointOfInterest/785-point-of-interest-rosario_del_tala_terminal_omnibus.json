@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "785-point-of-interest-rosario_del_tala_terminal_omnibus",
     "slug": "rosario_del_tala_terminal_omnibus",
-    "lat": -32.3008178,
-    "long": -59.138887,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Principal terminal terrestre de pasajeros con conexiones regionales y provinciales.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf; https://mapcarta.com/es/W838004876",
-    "notes": "Terminal identificada en cartografía y plano turístico. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Terminal identificada en cartografía y plano turístico. Falta recuperar coordenadas exactas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

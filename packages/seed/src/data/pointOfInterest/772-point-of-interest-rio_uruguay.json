@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "772-point-of-interest-rio_uruguay",
     "slug": "rio_uruguay",
-    "lat": -33.7146367,
-    "long": -58.658338099999995,
+    "lat": null,
+    "long": null,
     "type": "NATURAL",
     "icon": null,
     "description": "Gran curso fluvial que limita sectores del municipio y se conecta con arroyos, islas y paisajes del delta.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/villa-paranacito; https://es.wikipedia.org/wiki/Villa_Paranacito",
-    "notes": "Curso de agua regional. Requiere geometría lineal y accesos concretos. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Curso de agua regional. Requiere geometría lineal y accesos concretos.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

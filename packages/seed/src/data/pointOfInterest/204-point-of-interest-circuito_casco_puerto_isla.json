@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "204-point-of-interest-circuito_casco_puerto_isla",
     "slug": "circuito_casco_puerto_isla",
-    "lat": -32.4851849,
-    "long": -58.2320232,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido combinado por monumentos urbanos, patrimonio portuario y senderos de la reserva.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.cdeluruguay.gob.ar/gobierno/noticias/la-ciudad-se-prepara-para-un-fin-de-semana-extra-largo",
-    "notes": "Producto guiado confirmado. Falta digitalizar el recorrido permanente. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Producto guiado confirmado. Falta digitalizar el recorrido permanente.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "095-point-of-interest-buzon_postal_historico",
     "slug": "buzon_postal_historico",
-    "lat": -31.624177,
-    "long": -58.501865499999994,
+    "lat": null,
+    "long": null,
     "type": "MONUMENT",
     "icon": null,
     "description": "Buzón patrimonial conservado sobre el recorrido de calle San Martín como testimonio de los antiguos servicios postales de la ciudad.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/ciudad/",
-    "notes": "Elemento incluido por el municipio en el eje histórico. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Elemento incluido por el municipio en el eje histórico. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

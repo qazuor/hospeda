@@ -25,7 +25,7 @@
     "isFeatured": true,
     "displayWeight": 100,
     "verified": true,
-    "verifiedAt": null,
+    "verifiedAt": "46214",
     "source": "https://www.larroque.gob.ar/; https://mapcarta.com/es/N2900151227",
     "notes": "Dirección y coordenadas contrastadas con fuente municipal y OpenStreetMap.",
     "lifecycleState": "ACTIVE",

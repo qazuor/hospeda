@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "708-point-of-interest-plazoleta_jubilados",
     "slug": "plazoleta_jubilados",
-    "lat": -30.7603828,
-    "long": -57.9852672,
+    "lat": -30.758631299999994,
+    "long": -57.9887976,
     "type": "PLAZA",
     "icon": null,
     "description": "Espacio verde urbano dedicado a las personas mayores y utilizado para descanso y encuentro comunitario.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {
