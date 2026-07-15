@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import { PoiCategoryPrimarySchema } from '../poi-category/poi-category.schema.js';
 import { PointOfInterestSchema } from './point-of-interest.schema.js';
 
 /**
@@ -33,6 +34,20 @@ export const PointOfInterestPublicSchema = PointOfInterestSchema.pick({
     isFeatured: true,
     isBuiltin: true,
     displayWeight: true
+}).extend({
+    /**
+     * HOS-182: the POI's primary category (`{ slug, nameI18n }`), or `null`
+     * when it has none — see `PointOfInterestSummarySchema`'s doc comment for
+     * the full rationale. Public data, same tier as `type`.
+     *
+     * `.nullish()`, not `.nullable()`: only the nearby-POI endpoint
+     * (`NearbyPoiSchema`, backed by `findWithinRadius`) populates this field.
+     * The generic public list/getById/getBySlug routes also respond with
+     * this exact schema but read via `BaseCrudService`'s plain queries, which
+     * never set the key — a required `.nullable()` field would fail
+     * `stripWithSchema`'s `safeParse` and 500 those routes.
+     */
+    primaryCategory: PoiCategoryPrimarySchema.nullish()
 });
 
 export type PointOfInterestPublic = z.infer<typeof PointOfInterestPublicSchema>;
