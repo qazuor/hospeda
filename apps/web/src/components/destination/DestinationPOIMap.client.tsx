@@ -48,7 +48,12 @@ import { toDestinationPointOfInterestListProps } from '@/lib/api/transforms';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { translatePoiName, translatePoiTypeLabel } from '@/lib/poi-labels';
-import { computeBounds, computeBoundsAround, computeFrameRadiusKm } from '@/lib/poi-map-bounds';
+import {
+    computeBounds,
+    computeBoundsAround,
+    computeFrameRadiusKm,
+    computeSurroundingsBounds
+} from '@/lib/poi-map-bounds';
 
 export interface DestinationPOIMapProps {
     /**
@@ -190,7 +195,18 @@ export function DestinationPOIMap({
         }
         return computeBounds({ points: primaryMarkers.length > 0 ? primaryMarkers : markers });
     }, [center, primaryMarkers, markers]);
-    const fullBounds = useMemo(() => computeBounds({ points: markers }), [markers]);
+    // "Ver alrededores" is a short step out from the city view, not a jump to
+    // the whole province: capped at 50km around the destination. An uncapped
+    // bbox of every marker reaches 256km on ceibas and 214km on san-justo,
+    // where the destination is a dot (HOS-146 review). Falls back to the plain
+    // bbox only when the destination has no coordinates to cap around.
+    const fullBounds = useMemo(
+        () =>
+            center
+                ? computeSurroundingsBounds({ center, points: markers })
+                : computeBounds({ points: markers }),
+        [center, markers]
+    );
 
     if (markers.length === 0 || !initialBounds) return null;
 

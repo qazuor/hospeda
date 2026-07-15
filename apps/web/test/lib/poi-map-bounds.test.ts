@@ -7,6 +7,7 @@ import {
     computeBounds,
     computeBoundsAround,
     computeFrameRadiusKm,
+    computeSurroundingsBounds,
     haversineKm
 } from '../../src/lib/poi-map-bounds';
 
@@ -349,5 +350,115 @@ describe('computeBoundsAround', () => {
 
         // Assert
         expect(result).toBeNull();
+    });
+});
+
+describe('computeSurroundingsBounds', () => {
+    const colon = { lat: -32.217, long: -58.133 };
+
+    /** Half the frame's height, in km — i.e. its radius on the ground. */
+    const radiusKmOf = (bounds: readonly [readonly [number, number], readonly [number, number]]) =>
+        ((bounds[1][0] - bounds[0][0]) / 2) * 111;
+
+    it('returns null when there are no points', () => {
+        // Act
+        const result = computeSurroundingsBounds({ center: colon, points: [] });
+
+        // Assert
+        expect(result).toBeNull();
+    });
+
+    it('returns null for a non-finite centre', () => {
+        // Act
+        const result = computeSurroundingsBounds({
+            center: { lat: Number.NaN, long: -58.133 },
+            points: [{ lat: -32.3, long: -58.2 }]
+        });
+
+        // Assert
+        expect(result).toBeNull();
+    });
+
+    it('hugs the markers when they are close, rather than always opening to the cap', () => {
+        // Arrange — NEARBY POIs about 10km out.
+        const points = [
+            { lat: colon.lat + 0.09, long: colon.long },
+            { lat: colon.lat - 0.05, long: colon.long }
+        ];
+
+        // Act
+        const result = computeSurroundingsBounds({ center: colon, points });
+
+        // Assert — ~10km, nowhere near the 50km cap.
+        expect(result).not.toBeNull();
+        if (!result) return;
+        expect(radiusKmOf(result)).toBeGreaterThan(8);
+        expect(radiusKmOf(result)).toBeLessThan(13);
+    });
+
+    it('caps at 50km instead of fitting a far-flung marker', () => {
+        // Arrange — mirrors ceibas/san-justo, whose NEARBY POIs reach 134km. An
+        // uncapped bbox opened a 256km viewport where the destination is a dot
+        // and the pins are indistinguishable (HOS-146 review).
+        const points = [
+            { lat: colon.lat + 0.02, long: colon.long },
+            { lat: colon.lat + 1.2, long: colon.long } // ~133km away
+        ];
+
+        // Act
+        const result = computeSurroundingsBounds({ center: colon, points });
+
+        // Assert
+        expect(result).not.toBeNull();
+        if (!result) return;
+        expect(radiusKmOf(result)).toBeCloseTo(50, 0);
+    });
+
+    it('stays centred on the destination', () => {
+        // Arrange — every marker sits north-east of the destination.
+        const points = [
+            { lat: colon.lat + 0.2, long: colon.long + 0.2 },
+            { lat: colon.lat + 0.4, long: colon.long + 0.1 }
+        ];
+
+        // Act
+        const result = computeSurroundingsBounds({ center: colon, points });
+
+        // Assert — the destination stays in the middle, never pushed to an edge.
+        expect(result).not.toBeNull();
+        if (!result) return;
+        const [[south, west], [north, east]] = result;
+        expect((south + north) / 2).toBeCloseTo(colon.lat, 6);
+        expect((west + east) / 2).toBeCloseTo(colon.long, 6);
+    });
+
+    it('never collapses below the city frame, which would zoom IN instead of out', () => {
+        // Arrange — a single marker practically on top of the destination.
+        const points = [{ lat: colon.lat + 0.0001, long: colon.long }];
+
+        // Act
+        const result = computeSurroundingsBounds({ center: colon, points });
+
+        // Assert
+        expect(result).not.toBeNull();
+        if (!result) return;
+        expect(radiusKmOf(result)).toBeCloseTo(1.5, 1);
+    });
+
+    it('ignores non-finite points when sizing the frame', () => {
+        // Arrange
+        const points = [
+            { lat: colon.lat + 0.09, long: colon.long },
+            { lat: Number.NaN, long: Number.NaN }
+        ];
+
+        // Act
+        const result = computeSurroundingsBounds({ center: colon, points });
+
+        // Assert — a NaN must not poison Math.max into a NaN radius.
+        expect(result).not.toBeNull();
+        if (!result) return;
+        expect(Number.isFinite(radiusKmOf(result))).toBe(true);
+        expect(radiusKmOf(result)).toBeLessThan(13);
     });
 });

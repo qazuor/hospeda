@@ -72,6 +72,16 @@ const MIN_FRAME_RADIUS_KM = 1.5;
 const MAX_FRAME_RADIUS_KM = 8;
 /** Share of PRIMARY POIs the initial frame aims to contain. */
 const FRAME_COVERAGE_PERCENTILE = 0.9;
+/**
+ * Largest radius the "surroundings" view opens to, in km.
+ *
+ * The surroundings view is meant to read as "the city plus what's around it",
+ * so it stays a short zoom out from the city frame. Without this cap it fits
+ * the bbox of every marker, and NEARBY POIs reach 134km out — on ceibas that
+ * is a 256km viewport and on san-justo 214km, where the destination is a dot
+ * and the pins are indistinguishable.
+ */
+const MAX_SURROUNDINGS_RADIUS_KM = 50;
 
 const KM_PER_LAT_DEGREE = 111;
 const EARTH_RADIUS_KM = 6371;
@@ -176,4 +186,40 @@ export function computeBoundsAround({
         [center.lat - latDelta, center.long - longDelta],
         [center.lat + latDelta, center.long + longDelta]
     ];
+}
+
+/**
+ * Builds the "surroundings" frame: the city plus what's around it, never the
+ * whole province.
+ *
+ * Sized to the farthest marker but capped at {@link MAX_SURROUNDINGS_RADIUS_KM},
+ * so a destination whose NEARBY POIs are tightly grouped gets a snug frame while
+ * one with a 134km outlier still only zooms out to 50km. The cap is what keeps
+ * this a short step out from the city view rather than a jump to a viewport
+ * where the destination is a dot (HOS-146 review).
+ *
+ * @param params.center - The destination's coordinates, the frame's anchor
+ * @param params.points - Every marker the surroundings view should try to reach
+ * @returns The bounds tuple, or `null` when `center` is not finite or `points`
+ *   holds no finite point.
+ */
+export function computeSurroundingsBounds({
+    center,
+    points
+}: {
+    readonly center: PoiMapBoundsPoint;
+    readonly points: ReadonlyArray<PoiMapBoundsPoint>;
+}): LatLngBoundsTuple | null {
+    if (!isFinitePoint(center)) return null;
+
+    const distances = points
+        .filter(isFinitePoint)
+        .map((point) => haversineKm({ from: center, to: point }));
+    if (distances.length === 0) return null;
+
+    const radiusKm = Math.min(MAX_SURROUNDINGS_RADIUS_KM, Math.max(...distances));
+    return computeBoundsAround({
+        center,
+        radiusKm: Math.max(radiusKm, MIN_FRAME_RADIUS_KM)
+    });
 }
