@@ -21,6 +21,7 @@ import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
     checkSubscriptionStatusTransition,
+    deriveTrialingStatus,
     normalizeStoredSubscriptionStatus,
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner,
@@ -370,9 +371,14 @@ export async function processSubscriptionUpdated({
     const qzpayStatus = mpSubscription.status;
 
     // Step 4: Map to internal status
-    const mappedStatus = QZPAY_TO_HOSPEDA_STATUS[qzpayStatus];
+    //
+    // This is the raw provider-reported status. It is NOT the value written to
+    // the DB — Step 5c derives the final target status from it once the local
+    // row (and therefore the trial window) is known. Use `mappedStatus` below,
+    // never `providerStatus`.
+    const providerStatus = QZPAY_TO_HOSPEDA_STATUS[qzpayStatus];
 
-    if (mappedStatus === null) {
+    if (providerStatus === null) {
         // pending status - no action needed
         apiLogger.info(
             { mpPreapprovalId: maskId(mpPreapprovalId), qzpayStatus, source },
@@ -381,7 +387,7 @@ export async function processSubscriptionUpdated({
         return { success: true, statusChanged: false };
     }
 
-    if (mappedStatus === undefined) {
+    if (providerStatus === undefined) {
         // Unknown status
         apiLogger.warn(
             { mpPreapprovalId: maskId(mpPreapprovalId), qzpayStatus, source },
@@ -416,6 +422,24 @@ export async function processSubscriptionUpdated({
         );
         return { success: true, statusChanged: false };
     }
+
+    // Step 5c: Derive TRIALING from the provider status + the local trial window
+    // (HOS-171).
+    //
+    // MercadoPago has no trial status: a card-first trial is an `authorized`
+    // preapproval whose first charge is deferred, which arrives here as `active`.
+    // `trialEnd` comes from the row already fetched above, so this costs no extra
+    // query, and the clock is passed explicitly to keep the helper pure.
+    //
+    // This deliberately lands BEFORE every consumer of `mappedStatus` — the
+    // planId safety net, the Step 6 fast-path guard and the in-transaction guard
+    // must all observe the SAME target status, or the row is written with one
+    // value while the guards reason about another.
+    const mappedStatus = deriveTrialingStatus({
+        mappedStatus: providerStatus,
+        trialEnd: localSubscription.trialEnd,
+        now: new Date()
+    });
 
     // Step 5b: Detect planId change (webhook safety net for AC-3.7)
     //
