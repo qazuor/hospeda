@@ -180,6 +180,22 @@ export const getRateLimitConfig = () => ({
         'API_RATE_LIMIT_ADMIN_MESSAGE',
         'Too many admin requests, please try again later.'
     ),
+    // HOS-186: `/api/v1/protected/*` used to fall through to the `general`
+    // catch-all (100 req / 15 min per IP). That ceiling was ~30x tighter than
+    // the 200 req / 60s per-user budget (`prot:user`, see routes/index.ts) meant
+    // to govern authenticated traffic, so the per-user limiter could never fire
+    // and a signed-in user had a smaller budget than an anonymous visitor.
+    // This IP ceiling is deliberately generous: it only catches gross abuse
+    // (many accounts scripted from one host). Any IP-keyed limit on
+    // authenticated traffic is hostile to CGNAT — Argentine mobile carriers put
+    // thousands of users behind one IP — so `prot:user` is the real governor.
+    protectedEnabled: _safe.getBoolean('API_RATE_LIMIT_PROTECTED_ENABLED', true),
+    protectedWindowMs: _safe.getNumber('API_RATE_LIMIT_PROTECTED_WINDOW_MS', 900000),
+    protectedMaxRequests: _safe.getNumber('API_RATE_LIMIT_PROTECTED_MAX_REQUESTS', 2000),
+    protectedMessage: _safe.get(
+        'API_RATE_LIMIT_PROTECTED_MESSAGE',
+        'Too many requests, please try again later.'
+    ),
     billingEnabled: _safe.getBoolean('API_RATE_LIMIT_BILLING_ENABLED', true),
     billingWindowMs: _safe.getNumber('API_RATE_LIMIT_BILLING_WINDOW_MS', 900000),
     billingMaxRequests: _safe.getNumber('API_RATE_LIMIT_BILLING_MAX_REQUESTS', 10),

@@ -841,6 +841,66 @@ export const API_CONFIG_ENV_VARS = [
         howToObtain: 'Free text returned when the admin limiter trips.',
         howToObtainEs: 'Texto libre que se devuelve cuando salta el limiter de admin.'
     },
+    {
+        name: 'API_RATE_LIMIT_PROTECTED_ENABLED',
+        description: 'Enable the per-IP anti-abuse limiter for protected endpoints',
+        descriptionEs: 'Activa el limiter anti-abuso por IP para endpoints protected',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'true',
+        exampleValue: 'true',
+        apps: ['api'],
+        category: 'api-config',
+        howToObtain:
+            'Default true. Coarse IP ceiling on /api/v1/protected/*. The real governor is the per-user sliding window (200/60s) in routes/index.ts.',
+        howToObtainEs:
+            'Por defecto true. Techo grueso por IP en /api/v1/protected/*. El que gobierna de verdad es el sliding window por usuario (200/60s) en routes/index.ts.'
+    },
+    {
+        name: 'API_RATE_LIMIT_PROTECTED_WINDOW_MS',
+        description: 'Protected rate-limit window duration in milliseconds',
+        descriptionEs: 'Duración de la ventana de rate-limit de protected, en ms',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '900000',
+        exampleValue: '900000',
+        apps: ['api'],
+        category: 'api-config',
+        howToObtain: 'Window for the protected IP counter (ms). Default 900000 (15 min).',
+        howToObtainEs: 'Ventana del contador por IP de protected (ms). Por defecto 900000 (15 min).'
+    },
+    {
+        name: 'API_RATE_LIMIT_PROTECTED_MAX_REQUESTS',
+        description: 'Maximum requests allowed per window for the protected IP limiter',
+        descriptionEs: 'Máximo de requests por ventana en el limiter por IP de protected',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '2000',
+        exampleValue: '2000',
+        apps: ['api'],
+        category: 'api-config',
+        howToObtain:
+            'Max protected requests per IP per window. Default 2000/15min — deliberately generous so it only catches gross abuse. Lowering it penalises CGNAT users (Argentine mobile carriers share one IP across thousands of users).',
+        howToObtainEs:
+            'Máximo de requests protected por IP por ventana. Por defecto 2000/15min: generoso a propósito, solo atrapa abuso grosero. Bajarlo penaliza a usuarios detrás de CGNAT (los carriers móviles argentinos comparten una IP entre miles de usuarios).'
+    },
+    {
+        name: 'API_RATE_LIMIT_PROTECTED_MESSAGE',
+        description: 'Error message returned when the protected rate limit is exceeded',
+        descriptionEs: 'Mensaje de error cuando se excede el rate limit de protected',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: 'Too many requests, please try again later.',
+        exampleValue: 'Too many requests, please try again later.',
+        apps: ['api'],
+        category: 'api-config',
+        howToObtain: 'Free text returned when the protected IP limiter trips.',
+        howToObtainEs: 'Texto libre que se devuelve cuando salta el limiter por IP de protected.'
+    },
 
     // -------------------------------------------------------------------------
     // Security Headers

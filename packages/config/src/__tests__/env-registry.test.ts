@@ -221,8 +221,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * +3 = HOSPEDA_GOOGLE_CALENDAR_CLIENT_ID / _CLIENT_SECRET / _REDIRECT_URI
  * (HOS-157: Google Calendar occupancy sync OAuth client, integrations
  * category). 257 + 3 = 260.
+ *
+ * +4 = API_RATE_LIMIT_PROTECTED_ENABLED / _WINDOW_MS / _MAX_REQUESTS / _MESSAGE
+ * (HOS-186: dedicated rate-limit tier for /api/v1/protected/*, which used to
+ * fall through to the `general` catch-all). 260 + 4 = 264.
  */
-const EXPECTED_VAR_COUNT = 260;
+const EXPECTED_VAR_COUNT = 264;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

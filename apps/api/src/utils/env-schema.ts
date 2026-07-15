@@ -251,7 +251,7 @@ export const ApiEnvBaseSchema = z.object({
      */
     HOSPEDA_INTERNAL_REQUEST_SECRET: z.string().default(''),
 
-    // Rate Limiting - auth / public / admin tiers
+    // Rate Limiting - auth / public / admin / protected tiers
     API_RATE_LIMIT_AUTH_ENABLED: boolEnv(true),
     API_RATE_LIMIT_AUTH_WINDOW_MS: z.coerce.number().default(300000),
     API_RATE_LIMIT_AUTH_MAX_REQUESTS: z.coerce.number().default(50),
@@ -270,6 +270,21 @@ export const ApiEnvBaseSchema = z.object({
     API_RATE_LIMIT_ADMIN_MESSAGE: z
         .string()
         .default('Too many admin requests, please try again later.'),
+    /*
+     * HOS-186: `/api/v1/protected/*` used to fall through to the `general`
+     * catch-all (100 req / 15 min per IP), which strangled the 200 req/60s
+     * per-user limiter (`prot:user`) meant to govern it. This IP ceiling is
+     * deliberately generous — it only catches gross abuse. Keep it well above
+     * the per-user burst: any IP-keyed limit on authenticated traffic is
+     * hostile to CGNAT (Argentine mobile carriers share one IP across
+     * thousands of users).
+     */
+    API_RATE_LIMIT_PROTECTED_ENABLED: boolEnv(true),
+    API_RATE_LIMIT_PROTECTED_WINDOW_MS: z.coerce.number().default(900000),
+    API_RATE_LIMIT_PROTECTED_MAX_REQUESTS: z.coerce.number().default(2000),
+    API_RATE_LIMIT_PROTECTED_MESSAGE: z
+        .string()
+        .default('Too many requests, please try again later.'),
 
     // Security
     API_SECURITY_ENABLED: boolEnv(true),

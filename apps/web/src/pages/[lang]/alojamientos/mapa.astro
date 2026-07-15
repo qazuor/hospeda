@@ -19,7 +19,9 @@ import { AccommodationsListingMap } from '@/components/maps/AccommodationsListin
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
 import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi } from '@/lib/api/endpoints';
+import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
+import { webLogger } from '@/lib/logger';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -155,7 +157,52 @@ const mapExtraSearchParams: Record<string, unknown> = {
 	includeNoReviews,
 };
 
-const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+const baseCards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+
+// HOS-186: single SSR bulk favorite check, same as the list view
+// (alojamientos/index.astro). Without it `toAccommodationCardProps` leaves
+// `isFavorited === undefined`, so each of the up-to-MAP_FETCH_CAP
+// FavoriteButtons (sidebar cards + map popups) fired its own /check on mount —
+// ~100 protected requests in ~2s, which is what tripped the rate limiter in
+// production. Guests skip the call entirely (they never fetch).
+//
+// On any failure we degrade silently: each FavoriteButton can still hydrate
+// itself via its own /check fallback, so the page render is never blocked.
+type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
+let favoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
+if (isAuthenticated && baseCards.length > 0) {
+	try {
+		const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+		const bulkResult = await userBookmarksApi.checkBulk({
+			entityType: 'ACCOMMODATION',
+			entityIds: baseCards.map((card) => card.id),
+			cookieHeader
+		});
+		if (bulkResult.ok) {
+			favoriteChecks = bulkResult.data.checks;
+		} else {
+			webLogger.warn(
+				'Bulk bookmark check failed; falling back to per-card hydration',
+				{ error: bulkResult.error }
+			);
+		}
+	} catch (error) {
+		webLogger.warn(
+			'Bulk bookmark check threw; falling back to per-card hydration',
+			{ error: error instanceof Error ? error.message : String(error) }
+		);
+	}
+}
+
+const cards = baseCards.map((card) => {
+	const entry = favoriteChecks[card.id];
+	if (!entry) return card;
+	return {
+		...card,
+		isFavorited: entry.isBookmarked,
+		favoriteBookmarkId: entry.bookmarkId
+	};
+});
 
 const LITORAL_CENTER: [number, number] = [-31.8, -58.5];
 const LITORAL_ZOOM = 8;

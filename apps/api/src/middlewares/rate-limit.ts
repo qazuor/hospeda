@@ -568,6 +568,7 @@ export type RateLimitEndpointType =
     | 'auth'
     | 'public'
     | 'admin'
+    | 'protected'
     | 'billing'
     | 'webhook'
     | 'ai-inbound'
@@ -590,7 +591,8 @@ export type RateLimitEndpointType =
  *   5. `auth`         — auth paths
  *   6. `admin`        — `/api/v1/admin/*`
  *   7. `public`       — `/api/v1/public/*`
- *   8. `general`      — everything else
+ *   8. `protected`    — `/api/v1/protected/*`
+ *   9. `general`      — everything else
  *
  * @param path - The request path
  * @param method - The HTTP method (uppercase)
@@ -629,6 +631,14 @@ export const getEndpointType = (path: string, method: string): RateLimitEndpoint
     if (path.startsWith('/api/v1/public/')) {
         return 'public';
     }
+    // HOS-186: authenticated user traffic. Falls here only after the `auth` and
+    // `billing` checks above have claimed `/protected/auth/*` and billing POSTs,
+    // which keep their own tighter buckets. The real governor for this tier is
+    // the per-user sliding window (`prot:user`, 200/60s) applied in
+    // routes/index.ts — this IP bucket is only a coarse anti-abuse ceiling.
+    if (path.startsWith('/api/v1/protected/')) {
+        return 'protected';
+    }
     return 'general';
 };
 
@@ -664,6 +674,14 @@ const getRateLimitConfig = (endpointType: RateLimitEndpointType) => {
                 windowMs: baseConfig.adminWindowMs,
                 maxRequests: baseConfig.adminMaxRequests,
                 message: baseConfig.adminMessage,
+                headers: baseConfig.headers
+            };
+        case 'protected':
+            return {
+                enabled: baseConfig.protectedEnabled,
+                windowMs: baseConfig.protectedWindowMs,
+                maxRequests: baseConfig.protectedMaxRequests,
+                message: baseConfig.protectedMessage,
                 headers: baseConfig.headers
             };
         case 'billing':
