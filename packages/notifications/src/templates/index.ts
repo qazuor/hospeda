@@ -6,6 +6,7 @@ export * from './addon/index.js';
 export * from './admin/index.js';
 export * from './alerts/index.js';
 export * from './billing/index.js';
+export * from './calendar-sync/index.js';
 export * from './commerce/index.js';
 export * from './components/index.js';
 export * from './contact/index.js';

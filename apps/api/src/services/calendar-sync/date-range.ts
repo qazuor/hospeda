@@ -24,6 +24,42 @@
 export const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
+ * IANA timezone shared by every calendar-sync provider (Google Calendar,
+ * iCal/Airbnb/Booking/OTHER) for anchoring "today" — the platform targets
+ * only the AR market (Litoral) and accommodations carry no per-property
+ * timezone. AR is a fixed UTC-3 offset (no DST since 2009), so this is safe
+ * to hardcode; revisit only if non-AR accommodations are onboarded.
+ */
+export const MARKET_TIMEZONE = 'America/Argentina/Buenos_Aires';
+
+/**
+ * Reused across calls — `Intl.DateTimeFormat` construction is not free and
+ * this formatter is stateless (safe to share across every caller).
+ */
+const marketDayFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: MARKET_TIMEZONE });
+
+/**
+ * Returns "today" as `YYYY-MM-DD` in {@link MARKET_TIMEZONE}, the AR market
+ * zone — NOT UTC. This is the canonical `fromDate` anchor for every
+ * declarative full-window occupancy reconcile (Google Calendar sync, iCal
+ * import sync): using UTC here would, during the ~3h UTC-vs-AR daily
+ * overlap, place `fromDate` a day ahead of an event's AR date and let a past
+ * date slip through.
+ *
+ * Extracted verbatim from `google-calendar-sync.service.ts` (HOS-157 Phase 2,
+ * already in production) so both providers share one implementation instead
+ * of two independently-drifting copies of the same one-liner.
+ *
+ * @returns Today's date, `YYYY-MM-DD`, in the AR market timezone.
+ *
+ * @example
+ * ```ts
+ * getTodayInMarketTimezone(); // '2026-07-14'
+ * ```
+ */
+export const getTodayInMarketTimezone = (): string => marketDayFormatter.format(new Date());
+
+/**
  * Defensive cap on the number of days a single event/reservation may occupy.
  * Guards against a pathological multi-year event exploding into tens of
  * thousands of rows.

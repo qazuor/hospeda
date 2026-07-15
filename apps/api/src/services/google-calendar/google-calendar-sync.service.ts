@@ -67,6 +67,8 @@ import { CalendarSyncStatusEnum, OccupancySourceEnum } from '@repo/schemas';
 import { apiLogger } from '../../utils/logger.js';
 import {
     enumerateHalfOpenDates,
+    getTodayInMarketTimezone,
+    MARKET_TIMEZONE,
     MAX_EVENT_DAYS,
     markerToDate
 } from '../calendar-sync/date-range.js';
@@ -92,8 +94,13 @@ const PROVIDER = OccupancySourceEnum.GOOGLE_CALENDAR;
  * Hardcoded because the platform targets the AR market (Litoral) and
  * accommodations carry no per-property timezone. Revisit (env var or a
  * per-accommodation zone) only if non-AR accommodations are onboarded.
+ *
+ * Aliases the shared {@link MARKET_TIMEZONE} (`../calendar-sync/date-range.js`)
+ * under this module's own established name — every existing reference below
+ * stays valid, and the value can never drift from the one `getTodayInMarketTimezone`
+ * uses for `fromDate`.
  */
-const SYNC_RESPONSE_TIMEZONE = 'America/Argentina/Buenos_Aires';
+const SYNC_RESPONSE_TIMEZONE = MARKET_TIMEZONE;
 
 /**
  * Outcome of a single {@link syncAccommodationCalendar} run.
@@ -280,13 +287,9 @@ export const syncAccommodationCalendar = async (params: {
 
     // 2. Compute the reconcile window ONCE: start-of-today forward, in the AR
     //    market zone (NOT UTC) so `fromDate` is consistent with how event dates
-    //    are extracted (both in SYNC_RESPONSE_TIMEZONE). Using UTC here would,
-    //    during the ~3h UTC-vs-AR daily overlap, place `fromDate` a day ahead of
-    //    an event's AR date and let a past date slip through. AR is a fixed
-    //    UTC-3 offset (no DST since 2009).
-    const fromDate = new Intl.DateTimeFormat('en-CA', {
-        timeZone: SYNC_RESPONSE_TIMEZONE
-    }).format(new Date());
+    //    are extracted (both in SYNC_RESPONSE_TIMEZONE). See
+    //    `getTodayInMarketTimezone`'s doc for why UTC would be wrong here.
+    const fromDate = getTodayInMarketTimezone();
     const timeMin = new Date(`${fromDate}T00:00:00-03:00`).toISOString();
 
     // 3. FULL fetch of every live event from `timeMin` forward.

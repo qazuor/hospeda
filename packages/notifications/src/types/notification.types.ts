@@ -78,7 +78,22 @@ export enum NotificationType {
      * This is a TRANSACTIONAL notification: it is always sent, cannot be
      * opted out of, and is required for the owner to access their account.
      */
-    COMMERCE_OWNER_CREDENTIALS = 'commerce_owner_credentials'
+    COMMERCE_OWNER_CREDENTIALS = 'commerce_owner_credentials',
+    /**
+     * HOS-162 Phase 3 (spec §14.4) — sent to the host who connected an
+     * external iCal feed (Airbnb / Booking.com / other) when a sync run
+     * detects the feed is unreadable (fetch error, unparseable response, or
+     * an empty/non-calendar body).
+     *
+     * While the feed stays broken, dates that are actually booked on the
+     * external platform may keep showing as available on Hospeda, risking a
+     * double booking. The email explains this in plain terms and links to
+     * the accommodation's calendar-sync panel so the host can reconnect.
+     *
+     * This is a TRANSACTIONAL notification: it is operationally important
+     * (overbooking risk) and always sent, never opted out of.
+     */
+    ACCOMMODATION_CALENDAR_FEED_BROKEN = 'accommodation_calendar_feed_broken'
 }
 
 /**
@@ -605,6 +620,41 @@ export interface CommerceOwnerCredentialsPayload extends BaseNotificationPayload
     readonly changePasswordUrl: string;
 }
 
+/**
+ * Payload for the ACCOMMODATION_CALENDAR_FEED_BROKEN notification
+ * (HOS-162 Phase 3, spec §14.4).
+ *
+ * Sent to the host who connected an external iCal feed when a sync run
+ * determines the feed is broken/unreadable. Carries only display-friendly
+ * data (no raw fetch/parse error detail — that stays in the connection's
+ * `lastErrorMessage` column and operational logs, not the host's inbox).
+ *
+ * @example
+ * ```ts
+ * const payload: AccommodationCalendarFeedBrokenPayload = {
+ *   type: NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN,
+ *   recipientEmail: 'host@example.com',
+ *   recipientName: 'Juan',
+ *   userId: 'host-uuid',
+ *   accommodationName: 'Cabañas del Río',
+ *   providerLabel: 'Airbnb',
+ *   reconnectUrl: 'https://hospeda.com.ar/es/mi-cuenta/propiedades/acc-uuid/editar',
+ * };
+ * ```
+ */
+export interface AccommodationCalendarFeedBrokenPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN;
+    /** Human-readable name of the accommodation whose feed broke. */
+    readonly accommodationName: string;
+    /** Human-readable label of the external provider (e.g. "Airbnb", "Booking.com"). */
+    readonly providerLabel: string;
+    /**
+     * Full URL to the accommodation's calendar-sync panel in the host editor,
+     * where the host can paste a corrected feed URL to reconnect.
+     */
+    readonly reconnectUrl: string;
+}
+
 /** Union of all notification payloads */
 export type NotificationPayload =
     | PurchaseConfirmationPayload
@@ -623,4 +673,5 @@ export type NotificationPayload =
     | SubscriptionCancelConfirmedPayload
     | SubscriptionAccessEndingSoonPayload
     | PlanBeingRetiredPayload
-    | CommerceOwnerCredentialsPayload;
+    | CommerceOwnerCredentialsPayload
+    | AccommodationCalendarFeedBrokenPayload;
