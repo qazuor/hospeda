@@ -23,6 +23,7 @@ import {
     checkSubscriptionStatusTransition,
     deriveTrialingStatus,
     normalizeStoredSubscriptionStatus,
+    QZPAY_TO_HOSPEDA_STATUS,
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner,
     withServiceTransaction
@@ -79,31 +80,14 @@ import {
 } from './notifications.js';
 
 /**
- * Maps QZPay subscription statuses (returned by retrieve()) to internal SubscriptionStatusEnum.
+ * Re-exported from `@repo/service-core`, where the map now lives so that this
+ * webhook and the trial reconciler cron cannot drift on what a provider status
+ * means. Kept exported here for the existing importers of this module.
  *
- * - A non-null value means "update the local subscription to this status".
- * - A null value means "no status change, log only".
- * - If the status is not in this map, it is unknown (WARN + Sentry).
- *
- * @remarks
- * QZPay uses "canceled" (1 L) while Hospeda uses "cancelled" (2 L's).
- * The mapStatus() in @qazuor/qzpay-mercadopago passes through unknown statuses,
- * so "finished" arrives as-is.
- *
- * NOT the same map as `normalizeStoredSubscriptionStatus` (@repo/service-core):
- * this one maps the INCOMING status returned by `retrieve()` (has `finished`,
- * `pending` → null; never `incomplete`), whereas the normalizer maps the STORED
- * DB `from` status (has `incomplete`, `unpaid`, `incomplete_expired`). They
- * serve different inputs — do NOT merge them.
+ * @see {@link QZPAY_TO_HOSPEDA_STATUS} in `@repo/service-core` for the semantics
+ *   of a null value (no status change) vs an absent key (unknown status).
  */
-export const QZPAY_TO_HOSPEDA_STATUS: Record<string, SubscriptionStatusEnum | null> = {
-    active: SubscriptionStatusEnum.ACTIVE,
-    paused: SubscriptionStatusEnum.PAUSED,
-    canceled: SubscriptionStatusEnum.CANCELLED,
-    finished: SubscriptionStatusEnum.EXPIRED,
-    past_due: SubscriptionStatusEnum.PAST_DUE,
-    pending: null
-} as const;
+export { QZPAY_TO_HOSPEDA_STATUS };
 
 /**
  * Determines if a reactivation email should be sent based on a subscription status transition.

@@ -57,6 +57,7 @@ export type SubscriptionStatusFull = `${SubscriptionStatusEnum}`;
  *                  (terminal)                                       (terminal)
  *
  * pending_provider ──► trialing ──► active
+ *     │ ├────► past_due (card-first: the day-N charge failed → dunning)
  *     │ └────► cancelled
  *     └──────► expired
  *
@@ -79,9 +80,10 @@ const VALID_TRANSITIONS: ReadonlyMap<
     [
         SubscriptionStatusEnum.TRIALING,
         new Set<SubscriptionStatusFull>([
-            SubscriptionStatusEnum.ACTIVE, // trial conversion: user pays (trial.service.ts blockExpiredTrials via QZPay cancel+reactivate, subscription-logic.ts webhook)
-            SubscriptionStatusEnum.CANCELLED, // trial expiry: cron cancels via QZPay (trial.service.ts blockExpiredTrials)
-            SubscriptionStatusEnum.EXPIRED, // trial-expiry cron: direct status expiry without QZPay cancel (trial-expiry.ts)
+            SubscriptionStatusEnum.ACTIVE, // trial conversion: the day-N charge landed (trial.service.ts reconcileExpiredTrials, subscription-logic.ts webhook)
+            SubscriptionStatusEnum.PAST_DUE, // card-first: the day-N charge FAILED — dunning takes over (trial.service.ts reconcileExpiredTrials — HOS-171). Unreachable before card-first: a no-card trial had no charge that could fail
+            SubscriptionStatusEnum.CANCELLED, // user/provider cancelled during or at the end of the trial
+            SubscriptionStatusEnum.EXPIRED, // direct status expiry without a provider cancel
             SubscriptionStatusEnum.PAUSED // self-serve pause while trialing (subscription-pause.ts handleSelfServePause)
         ])
     ],
