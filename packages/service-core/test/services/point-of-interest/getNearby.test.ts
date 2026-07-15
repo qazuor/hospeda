@@ -39,6 +39,9 @@ const buildPoiRow = (overrides: Record<string, unknown> = {}) => ({
     deletedById: null,
     adminNotes: null,
     distanceKm: 1.23,
+    // HOS-182: always present on a real model row (object or null) — see
+    // `PointOfInterestModel.findWithinRadius`.
+    primaryCategory: null,
     ...overrides
 });
 
@@ -90,13 +93,49 @@ describe('PointOfInterestService.getNearby', () => {
                 isFeatured: row.isFeatured,
                 isBuiltin: row.isBuiltin,
                 displayWeight: row.displayWeight,
-                distanceKm: 2.5
+                distanceKm: 2.5,
+                primaryCategory: null
             }
         ]);
         // Admin/internal-only fields must NOT leak into the projected shape.
         expect(result.data?.[0]).not.toHaveProperty('lifecycleState');
         expect(result.data?.[0]).not.toHaveProperty('createdAt');
         expect(result.data?.[0]).not.toHaveProperty('adminNotes');
+    });
+
+    // ========================================================================
+    // HOS-182: primaryCategory pass-through
+    // ========================================================================
+    it('passes a non-null primaryCategory straight through NearbyPoiSchema', async () => {
+        const nameI18n = { es: 'Recinto deportivo', en: 'Sports venue', pt: 'Recinto esportivo' };
+        const row = buildPoiRow({
+            primaryCategory: { slug: 'sports_venue', nameI18n }
+        });
+        asMock(model.findWithinRadius).mockResolvedValue([row]);
+
+        const result = await service.getNearby(
+            { lat: -32.4825, long: -58.2372, radiusKm: 5, limit: 12 },
+            actorWithPerms
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.[0]?.primaryCategory).toEqual({
+            slug: 'sports_venue',
+            nameI18n
+        });
+    });
+
+    it('passes a null primaryCategory straight through NearbyPoiSchema (no primary category row)', async () => {
+        const row = buildPoiRow({ primaryCategory: null });
+        asMock(model.findWithinRadius).mockResolvedValue([row]);
+
+        const result = await service.getNearby(
+            { lat: -32.4825, long: -58.2372, radiusKm: 5, limit: 12 },
+            actorWithPerms
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.[0]?.primaryCategory).toBeNull();
     });
 
     it('returns an empty array when the model finds no points of interest', async () => {

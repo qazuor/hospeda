@@ -38,6 +38,9 @@ const buildPoi = (overrides: Record<string, unknown> = {}) => ({
     isBuiltin: false,
     displayWeight: 80,
     relation: 'PRIMARY',
+    // HOS-182: always present on a real model row (object or null) — see
+    // `DestinationModel.getPointsOfInterestMap`.
+    primaryCategory: null,
     ...overrides
 });
 
@@ -163,6 +166,61 @@ describe('DestinationService.getPointsOfInterest', () => {
         // Assert
         expectSuccess(result);
         expect(result.data?.pointsOfInterest).toEqual([]);
+    });
+
+    // ========================================================================
+    // HOS-182: primaryCategory pass-through (no explicit pick/mapper strips it)
+    // ========================================================================
+    it('passes a non-null primaryCategory straight through from the model row', async () => {
+        // Arrange
+        const destination = new DestinationFactoryBuilder()
+            .with({ visibility: VisibilityEnum.PUBLIC })
+            .build();
+        const nameI18n = { es: 'Recinto deportivo', en: 'Sports venue', pt: 'Recinto esportivo' };
+        const poiWithCategory = buildPoi({
+            primaryCategory: { slug: 'sports_venue', nameI18n }
+        });
+        asMock(modelMock.findById).mockResolvedValue(destination);
+        asMock((modelMock as any).getPointsOfInterestMap).mockResolvedValue(
+            new Map([[destination.id, [poiWithCategory]]])
+        );
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params: GetDestinationPointsOfInterestInput = {
+            destinationId: destination.id
+        } as GetDestinationPointsOfInterestInput;
+
+        // Act
+        const result = await service.getPointsOfInterest(actor, params);
+
+        // Assert
+        expectSuccess(result);
+        expect(result.data?.pointsOfInterest?.[0]?.primaryCategory).toEqual({
+            slug: 'sports_venue',
+            nameI18n
+        });
+    });
+
+    it('passes a null primaryCategory straight through when the POI has no primary category', async () => {
+        // Arrange
+        const destination = new DestinationFactoryBuilder()
+            .with({ visibility: VisibilityEnum.PUBLIC })
+            .build();
+        const poiWithoutCategory = buildPoi({ primaryCategory: null });
+        asMock(modelMock.findById).mockResolvedValue(destination);
+        asMock((modelMock as any).getPointsOfInterestMap).mockResolvedValue(
+            new Map([[destination.id, [poiWithoutCategory]]])
+        );
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params: GetDestinationPointsOfInterestInput = {
+            destinationId: destination.id
+        } as GetDestinationPointsOfInterestInput;
+
+        // Act
+        const result = await service.getPointsOfInterest(actor, params);
+
+        // Assert
+        expectSuccess(result);
+        expect(result.data?.pointsOfInterest?.[0]?.primaryCategory).toBeNull();
     });
 
     it('should return NOT_FOUND if destination does not exist', async () => {

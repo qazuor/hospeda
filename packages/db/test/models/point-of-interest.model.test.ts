@@ -288,4 +288,157 @@ describe('PointOfInterestModel', () => {
             expect(logError).toHaveBeenCalled();
         });
     });
+
+    // ========================================================================
+    // HOS-145 T-002 / HOS-182: findWithinRadius (geo query + primaryCategory)
+    // ========================================================================
+    describe('findWithinRadius', () => {
+        const PARAMS = { lat: -32.48, long: -58.24, radiusKm: 5, limit: 12 };
+
+        /**
+         * Builds a chainable mock for
+         * `db.select().from().leftJoin().leftJoin().where().orderBy().limit()`
+         * (HOS-182 added the two `leftJoin`s that resolve each POI's primary
+         * category via `r_poi_category` / `poi_categories`).
+         */
+        function buildSelectChain(finalRows: unknown[], shouldReject = false) {
+            const limitMock = vi
+                .fn()
+                .mockImplementation(() =>
+                    shouldReject
+                        ? Promise.reject(new Error('connection failed'))
+                        : Promise.resolve(finalRows)
+                );
+            const orderByMock = vi.fn().mockReturnValue({ limit: limitMock });
+            const whereMock = vi.fn().mockReturnValue({ orderBy: orderByMock });
+            const leftJoinMock2 = vi.fn().mockReturnValue({ where: whereMock });
+            const leftJoinMock1 = vi.fn().mockReturnValue({ leftJoin: leftJoinMock2 });
+            const fromMock = vi.fn().mockReturnValue({ leftJoin: leftJoinMock1 });
+            const selectMock = vi.fn().mockReturnValue({ from: fromMock });
+            return {
+                selectMock,
+                fromMock,
+                leftJoinMock1,
+                leftJoinMock2,
+                whereMock,
+                orderByMock,
+                limitMock
+            };
+        }
+
+        it('resolves primaryCategory to {slug, nameI18n} for a POI with a primary category row', async () => {
+            const rows = [
+                {
+                    id: 'poi-1',
+                    slug: 'autodromo',
+                    lat: -32.48,
+                    long: -58.24,
+                    type: 'STADIUM',
+                    icon: null,
+                    displayWeight: 80,
+                    distanceKm: '1.23',
+                    primaryCategorySlug: 'sports_venue',
+                    primaryCategoryNameI18n: {
+                        es: 'Recinto deportivo',
+                        en: 'Sports venue',
+                        pt: 'Recinto esportivo'
+                    }
+                }
+            ];
+            const { selectMock } = buildSelectChain(rows);
+            getDb.mockReturnValue({ select: selectMock });
+
+            const result = await model.findWithinRadius(PARAMS);
+
+            expect(result).toHaveLength(1);
+            expect(result[0]?.primaryCategory).toEqual({
+                slug: 'sports_venue',
+                nameI18n: { es: 'Recinto deportivo', en: 'Sports venue', pt: 'Recinto esportivo' }
+            });
+            // distanceKm is still coerced to a number alongside primaryCategory.
+            expect(result[0]?.distanceKm).toBe(1.23);
+        });
+
+        it('resolves primaryCategory to null for a POI with no category rows at all', async () => {
+            const rows = [
+                {
+                    id: 'poi-no-categories',
+                    slug: 'plaza-sin-categoria',
+                    lat: -32.0,
+                    long: -58.0,
+                    type: 'PLAZA',
+                    icon: null,
+                    displayWeight: 50,
+                    distanceKm: '2.5',
+                    primaryCategorySlug: null,
+                    primaryCategoryNameI18n: null
+                }
+            ];
+            const { selectMock } = buildSelectChain(rows);
+            getDb.mockReturnValue({ select: selectMock });
+
+            const result = await model.findWithinRadius(PARAMS);
+
+            expect(result[0]?.primaryCategory).toBeNull();
+        });
+
+        it('resolves primaryCategory to null for a POI with category rows but none marked primary (dirty data, HOS-177)', async () => {
+            // The LEFT JOIN's ON condition filters r_poi_category to
+            // isPrimary = true — a POI whose category rows are all
+            // isPrimary = false never matches that join, so the DB layer
+            // returns the same null-slug shape as "no categories at all".
+            const rows = [
+                {
+                    id: 'poi-no-primary',
+                    slug: 'museo-sin-primaria',
+                    lat: -32.1,
+                    long: -58.1,
+                    type: 'MUSEUM',
+                    icon: null,
+                    displayWeight: 40,
+                    distanceKm: '3.1',
+                    primaryCategorySlug: null,
+                    primaryCategoryNameI18n: null
+                }
+            ];
+            const { selectMock } = buildSelectChain(rows);
+            getDb.mockReturnValue({ select: selectMock });
+
+            const result = await model.findWithinRadius(PARAMS);
+
+            expect(result[0]?.primaryCategory).toBeNull();
+        });
+
+        it('chains two leftJoin calls (r_poi_category, poi_categories) after from()', async () => {
+            const { selectMock, fromMock, leftJoinMock1 } = buildSelectChain([]);
+            getDb.mockReturnValue({ select: selectMock });
+
+            await model.findWithinRadius(PARAMS);
+
+            expect(fromMock).toHaveBeenCalledTimes(1);
+            expect(leftJoinMock1).toHaveBeenCalledTimes(1);
+        });
+
+        it('projects primaryCategorySlug/primaryCategoryNameI18n into the select() call', async () => {
+            const { selectMock } = buildSelectChain([]);
+            getDb.mockReturnValue({ select: selectMock });
+
+            await model.findWithinRadius(PARAMS);
+
+            expect(selectMock).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    primaryCategorySlug: expect.anything(),
+                    primaryCategoryNameI18n: expect.anything()
+                })
+            );
+        });
+
+        it('should throw DbError when the query fails', async () => {
+            const { selectMock } = buildSelectChain([], true);
+            getDb.mockReturnValue({ select: selectMock });
+
+            await expect(model.findWithinRadius(PARAMS)).rejects.toThrow('connection failed');
+            expect(logError).toHaveBeenCalled();
+        });
+    });
 });

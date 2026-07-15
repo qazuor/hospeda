@@ -74,7 +74,9 @@ const POI_PRIMARY = {
     isFeatured: false,
     isBuiltin: false,
     displayWeight: 80,
-    relation: 'PRIMARY'
+    relation: 'PRIMARY',
+    // HOS-182: always present on a real POI summary row (object or null).
+    primaryCategory: null
 };
 
 const POI_NEARBY = {
@@ -130,6 +132,41 @@ describe('publicGetDestinationPointsOfInterestRoute — HOS-146', () => {
         expect(items).toHaveLength(2);
         expect(items[0]).toMatchObject({ slug: 'autodromo', relation: 'PRIMARY' });
         expect(items[1]).toMatchObject({ slug: 'termas', relation: 'NEARBY' });
+    });
+
+    it('preserves a non-null primaryCategory on an item (HOS-182, survives stripWithSchema)', async () => {
+        const nameI18n = { es: 'Recinto deportivo', en: 'Sports venue', pt: 'Recinto esportivo' };
+        const poiWithCategory = {
+            ...POI_PRIMARY,
+            primaryCategory: { slug: 'sports_venue', nameI18n }
+        };
+        mockGetPointsOfInterest.mockResolvedValue({
+            data: { pointsOfInterest: [poiWithCategory] },
+            error: null
+        });
+
+        const app = await buildApp();
+        const res = await app.request(`/${DEST_ID}/points-of-interest`);
+        expect(res.status).toBe(200);
+
+        const body = await res.json();
+        const items = body.data as Array<Record<string, unknown>>;
+        expect(items[0]?.primaryCategory).toEqual({ slug: 'sports_venue', nameI18n });
+    });
+
+    it('returns primaryCategory: null when the POI has no primary category (HOS-182)', async () => {
+        mockGetPointsOfInterest.mockResolvedValue({
+            data: { pointsOfInterest: [POI_PRIMARY] },
+            error: null
+        });
+
+        const app = await buildApp();
+        const res = await app.request(`/${DEST_ID}/points-of-interest`);
+        expect(res.status).toBe(200);
+
+        const body = await res.json();
+        const items = body.data as Array<Record<string, unknown>>;
+        expect(items[0]?.primaryCategory).toBeNull();
     });
 
     it('returns an empty array when the destination has no points of interest', async () => {
