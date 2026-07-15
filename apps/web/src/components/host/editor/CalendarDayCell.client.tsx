@@ -22,7 +22,7 @@ import styles from './CalendarSection.module.css';
 /** Maps an occupancy source to its i18n sub-key suffix under `calendar.source.*`. */
 export function sourceKeySuffix(
     source: OccupancySourceEnum
-): 'manual' | 'google' | 'airbnb' | 'booking' {
+): 'manual' | 'google' | 'airbnb' | 'booking' | 'other' {
     switch (source) {
         case OccupancySourceEnum.GOOGLE_CALENDAR:
             return 'google';
@@ -30,6 +30,8 @@ export function sourceKeySuffix(
             return 'airbnb';
         case OccupancySourceEnum.BOOKING:
             return 'booking';
+        case OccupancySourceEnum.OTHER:
+            return 'other';
         default:
             return 'manual';
     }
@@ -48,6 +50,8 @@ export function sourceFallbackLabel(source: OccupancySourceEnum): string {
             return 'Airbnb';
         case OccupancySourceEnum.BOOKING:
             return 'Booking.com';
+        case OccupancySourceEnum.OTHER:
+            return 'Otro calendario';
         default:
             return 'Manual';
     }
@@ -62,6 +66,8 @@ function sourceDotClass(source: OccupancySourceEnum): string {
             return styles.dotAirbnb;
         case OccupancySourceEnum.BOOKING:
             return styles.dotBooking;
+        case OccupancySourceEnum.OTHER:
+            return styles.dotOther;
         default:
             return styles.dotManual;
     }
