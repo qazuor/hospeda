@@ -30,7 +30,7 @@
  */
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { translatePoiName, translatePoiTypeLabel } from '@/lib/poi-labels';
+import { translatePoiCategoryLabel, translatePoiName } from '@/lib/poi-labels';
 import { getPointOfInterestTypeIcon } from '@/lib/poi-type-icons';
 import type { I18nTextLike } from '@/lib/resolve-i18n-text';
 import { resolveI18nText } from '@/lib/resolve-i18n-text';
@@ -65,10 +65,14 @@ export interface DestinationPOIItem {
 	readonly long?: number | null;
 	/**
 	 * The POI's primary category (HOS-182); `null`/absent when it has none
-	 * (expected, known-dirty data — HOS-177). Drives the card icon + icon
-	 * color, falling back to the legacy `type`-based mapping when absent.
+	 * (expected, known-dirty data — HOS-177). `slug` drives the card icon +
+	 * icon color and `nameI18n` the badge label, both falling back to the
+	 * legacy `type`-based mapping when absent.
 	 */
-	readonly primaryCategory?: { readonly slug: string } | null;
+	readonly primaryCategory?: {
+		readonly slug: string;
+		readonly nameI18n?: I18nTextLike | null;
+	} | null;
 }
 
 interface Props {
@@ -123,7 +127,12 @@ const sorted = [...primaryOnly]
 			const iconColor = categorySlug
 				? getPoiCategoryColorScheme({ slug: categorySlug }).fill
 				: 'var(--brand-primary)';
-			const typeLabel = translatePoiTypeLabel({ t, type: poi.type });
+			const typeLabel = translatePoiCategoryLabel({
+				t,
+				type: poi.type,
+				primaryCategory: poi.primaryCategory,
+				locale
+			});
 			return (
 				<div class="poi-section__card">
 					<span class="poi-section__icon" aria-hidden="true">

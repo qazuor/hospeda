@@ -26,7 +26,7 @@
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { formatDistanceKm } from '@/lib/format-distance';
-import { translatePoiName, translatePoiTypeLabel } from '@/lib/poi-labels';
+import { translatePoiCategoryLabel, translatePoiName } from '@/lib/poi-labels';
 import { getPointOfInterestTypeIcon } from '@/lib/poi-type-icons';
 import { getPoiCategoryColorScheme, getPoiCategoryIcon } from '@repo/icons';
 import type { NearbyPoi } from '@repo/schemas';
@@ -67,7 +67,12 @@ const sorted = [...pointsOfInterest]
 			const iconColor = categorySlug
 				? getPoiCategoryColorScheme({ slug: categorySlug }).fill
 				: 'var(--brand-primary)';
-			const typeLabel = translatePoiTypeLabel({ t, type: poi.type });
+			const typeLabel = translatePoiCategoryLabel({
+				t,
+				type: poi.type,
+				primaryCategory: poi.primaryCategory,
+				locale
+			});
 			return (
 				<div class="nearby-poi-section__card">
 					<span class="nearby-poi-section__icon" aria-hidden="true">
