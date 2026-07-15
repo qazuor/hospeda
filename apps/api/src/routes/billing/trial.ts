@@ -14,6 +14,7 @@
  * @module routes/billing/trial
  */
 
+import { createMercadoPagoAdapter } from '@repo/billing';
 import {
     PermissionEnum,
     ReactivateSubscriptionRequestSchema,
@@ -23,6 +24,7 @@ import {
 } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
+import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { SubscriptionCheckoutError } from '../../services/billing/subscription-checkout-error';
@@ -97,7 +99,7 @@ const extendTrialResponseSchema = z.object({
  */
 const checkExpiryResponseSchema = z.object({
     success: z.boolean(),
-    blockedCount: z.number(),
+    reconciledCount: z.number(),
     message: z.string()
 });
 
@@ -401,11 +403,15 @@ export const reactivateTrialRoute = createSimpleRoute({
 });
 
 /**
- * Handler for checking and blocking expired trials
- * Extracted for testability
+ * Handler for reconciling elapsed trials against the payment provider.
+ * Extracted for testability.
+ *
+ * Manually triggers the same work as the `trial-reconcile` cron. Note this
+ * CONVERTS elapsed trials whose provider charge landed — it does not cancel
+ * them (HOS-171); see `TrialService.reconcileExpiredTrials`.
  *
  * @param c - Hono context
- * @returns Response with blocked trial count
+ * @returns Response with the number of trials reconciled
  * @throws HTTPException 503 if billing not configured
  * @throws HTTPException 500 if service fails
  */
@@ -425,7 +431,11 @@ export const handleCheckExpiry = async (
     const trialService = new TrialService(billing);
 
     try {
-        const blockedCount = await trialService.blockExpiredTrials();
+        // Build the MP adapter here, mirroring the cron jobs: qzpay-core's
+        // `getPaymentAdapter()` returns the generic adapter interface, and this
+        // path needs the MercadoPago-typed `subscriptions.retrieve()`.
+        const paymentAdapter = createMercadoPagoAdapter({ logger: qzpayLogger });
+        const reconciledCount = await trialService.reconcileExpiredTrials({ paymentAdapter });
 
         auditLog({
             auditEvent: AuditEventType.BILLING_MUTATION,
@@ -437,8 +447,8 @@ export const handleCheckExpiry = async (
 
         return {
             success: true,
-            blockedCount,
-            message: `Successfully blocked ${blockedCount} expired trial(s)`
+            reconciledCount,
+            message: `Successfully reconciled ${reconciledCount} elapsed trial(s)`
         };
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);

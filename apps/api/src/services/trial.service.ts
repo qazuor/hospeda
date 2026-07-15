@@ -16,14 +16,15 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
-import { NotificationType, type TrialEventPayload } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
     BILLING_EVENT_TYPES,
     calculateTrialDaysRemaining,
     checkSubscriptionStatusTransition,
     DEFAULT_TRIAL_PLAN_SLUG,
+    QZPAY_TO_HOSPEDA_STATUS,
     type ReactivateFromTrialInput,
     type ReactivateFromTrialResult,
     type ReactivateSubscriptionInput,
@@ -36,7 +37,7 @@ import {
     withServiceTransaction
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
@@ -153,10 +154,19 @@ export interface ReconcileResult {
  * Service for managing trial lifecycle
  */
 export class TrialService {
-    constructor(
-        private readonly billing: QZPayBilling | null,
-        private readonly sendNotification?: (payload: TrialEventPayload) => void
-    ) {}
+    /**
+     * @param billing - QZPay billing instance, or `null` when billing is disabled.
+     *
+     * @remarks
+     * This service used to take a `sendNotification` sender, whose only consumer
+     * was the `TRIAL_EXPIRED` email the cancel-at-expiry cron sent. Card-first
+     * reconciliation sends nothing (HOS-171): a converting customer was already
+     * warned by `TRIAL_ENDING_REMINDER` before the charge, and a failed charge is
+     * the dunning cron's story. `TRIAL_ENDING_REMINDER` is dispatched by
+     * `notification-schedule.job.ts`, not from here, so the sender is gone rather
+     * than left dangling for callers to dutifully wire into nothing.
+     */
+    constructor(private readonly billing: QZPayBilling | null) {}
 
     /**
      * Start a trial for a user (HOS-110).
@@ -513,22 +523,52 @@ export class TrialService {
     }
 
     /**
-     * Block expired trials (batch operation)
-     * Finds all expired trials and updates their status.
-     * This is typically called by a cron job.
+     * Reconcile elapsed trials against the payment provider (batch operation).
+     * Typically called by a cron job.
      *
-     * Concurrency safety (ADR-019):
+     * ## ⚠️ This job CONVERTS. It does not cancel. (HOS-171)
+     *
+     * It replaces `blockExpiredTrials`, which cancelled every trial whose window
+     * had elapsed. That was correct while trials were no-card: an elapsed trial
+     * had no payment method behind it, so cancelling was the only option.
+     *
+     * Under card-first trials the customer authorized a card on day 1 and
+     * MercadoPago charges automatically at day N. An elapsed trial is therefore
+     * a customer the provider is about to charge, or already has. Cancelling
+     * them here would terminate every converting customer at the exact moment
+     * they start paying — silently, and while every existing test still passed.
+     * If you are tempted to restore the cancel call, read AC-6 first.
+     *
+     * The provider, not the clock, decides the outcome:
+     * - provider reports `active` → the charge landed → `trialing → active`
+     * - provider reports `past_due` → the first charge failed → `past_due`, and
+     *   the existing dunning cron owns the retries from there
+     * - provider reports `cancelled`/`paused`/`finished` → mirror it locally
+     * - provider reports `pending` → undecided; leave it for the next tick
+     *
+     * ## Why this cron is load-bearing, not a backstop
+     *
+     * MercadoPago fires `subscription_authorized_payment.created` for the day-N
+     * charge, but the preapproval status does not change (`authorized` stays
+     * `authorized`), so a `subscription_preapproval.updated` webhook may never
+     * arrive. Without this reconciler a converted subscription stays locally
+     * `trialing` forever, which makes the status meaningless and silently
+     * suppresses `RENEWAL_REMINDER` (it filters on `status: 'active'`).
+     * `subscription-poll.job.ts` does not cover this: it only drains enqueued
+     * polling jobs, which complete once the sub leaves the pending state.
+     *
+     * ## Concurrency safety (ADR-019) — unchanged from the job this replaces
      * - Lock + fetch (claim) happen atomically inside ONE `withServiceTransaction`.
      *   `pg_try_advisory_xact_lock(1004)` is acquired, then `subscriptions.list()`
      *   is called while the transaction (and therefore the lock) is still open.
      *   When the transaction commits both the lock is released AND the claimed list
      *   is in hand. A concurrent invocation that arrives while this tx is open will
      *   get `pg_try_advisory_xact_lock = false` and skip without fetching.
-     * - External calls (QZPay cancel, notifications) happen OUTSIDE the lock-holding
+     * - External calls (the provider `retrieve()`) happen OUTSIDE the lock-holding
      *   tx, per ADR-019 ("external calls are not rollback-able; external call first,
      *   then transaction").
      * - Per-subscription idempotency: before processing each subscription a
-     *   `TRIAL_BLOCKED` event is checked in `billing_subscription_events`. This
+     *   `TRIAL_RECONCILED` event is checked in `billing_subscription_events`. This
      *   re-check guard protects against the window between the claim commit and
      *   the per-sub processing (SPEC-064 T-041).
      *
@@ -538,11 +578,19 @@ export class TrialService {
      * cadence drains the backlog over successive runs without ever holding the
      * advisory lock while fetching an unbounded result set.
      *
-     * @returns Number of trials blocked in this run
+     * @param input.paymentAdapter - MercadoPago adapter used to re-read each
+     *   preapproval. Supplied by the caller (the cron builds its own, mirroring
+     *   `subscription-poll.job.ts`) rather than injected into the constructor,
+     *   so the many call sites that only need the read paths stay unchanged.
+     * @returns Number of trials whose local status this run reconciled.
      */
-    async blockExpiredTrials(): Promise<number> {
+    async reconcileExpiredTrials(input: {
+        readonly paymentAdapter: QZPayMercadoPagoAdapter;
+    }): Promise<number> {
+        const { paymentAdapter } = input;
+
         if (!this.billing) {
-            apiLogger.debug('Billing not enabled, skipping expired trial blocking');
+            apiLogger.debug('Billing not enabled, skipping trial reconciliation');
             return 0;
         }
 
@@ -553,12 +601,10 @@ export class TrialService {
         // fetching will get false and skip immediately. Once this tx commits, the
         // lock auto-releases and the fetched list is in hand for processing.
         //
-        // External API calls (QZPay cancel, notifications) are NOT allowed inside
+        // External API calls (the provider retrieve()) are NOT allowed inside
         // a lock-holding transaction (ADR-019 §Negative). They run in the process
         // phase below, after the claim tx has committed.
-        let claimedSubscriptions:
-            | Awaited<ReturnType<typeof this.billing.subscriptions.list>>['data']
-            | null = null;
+        let claimedSubscriptions: (typeof billingSubscriptions.$inferSelect)[] | null = null;
 
         try {
             claimedSubscriptions = await withServiceTransaction(async (ctx) => {
@@ -573,29 +619,42 @@ export class TrialService {
                     return null;
                 }
 
-                // Fetch candidate list while the lock is still held.
-                // When the tx commits the lock is released, but we already have the list.
+                // Fetch the candidate list while the lock is still held. When the tx
+                // commits the lock is released, but we already have the list.
+                //
+                // Read straight from the local table rather than through
+                // `billing.subscriptions.list()` (which the cancel-at-expiry job this
+                // replaced used). Three reasons, in order of weight:
+                //  1. `mp_subscription_id` is the whole input to reconciliation and the
+                //     qzpay SDK's `QZPaySubscription` does not expose it.
+                //  2. Both filters (`trialing` AND elapsed window) run in SQL, so a
+                //     batch of 200 is 200 rows worth reconciling — not 200 rows of
+                //     which most get skipped in JS, starving the real backlog.
+                //  3. It removes this claim's standing ADR-019 exception: there is no
+                //     longer an external call inside the lock-holding transaction.
+                //
                 // Capped at BLOCK_EXPIRED_TRIALS_BATCH_SIZE to bound lock-hold duration
                 // (T-016). Remaining subs are processed on the next cron tick.
-                //
-                // ADR-019 exception (item 9d / SPEC-194 adversarial review):
-                // Calling the external QZPay subscriptions.list() inside the lock-holding
-                // tx is intentional here. The atomic claim requires reading the candidate
-                // list under the advisory lock so a concurrent invocation that acquires
-                // the lock next sees an empty (or different) batch — preventing duplicate
-                // processing. The batch size (BLOCK_EXPIRED_TRIALS_BATCH_SIZE = 200)
-                // bounds the maximum lock-hold duration per run.
-                const result = await this.billing?.subscriptions.list({
-                    filters: { status: 'trialing' },
-                    limit: BLOCK_EXPIRED_TRIALS_BATCH_SIZE
-                });
+                // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+                const tx = ctx.tx!;
 
-                return result?.data ?? [];
+                return await tx
+                    .select()
+                    .from(billingSubscriptions)
+                    .where(
+                        and(
+                            eq(billingSubscriptions.status, SubscriptionStatusEnum.TRIALING),
+                            isNotNull(billingSubscriptions.trialEnd),
+                            lt(billingSubscriptions.trialEnd, new Date()),
+                            isNull(billingSubscriptions.deletedAt)
+                        )
+                    )
+                    .limit(BLOCK_EXPIRED_TRIALS_BATCH_SIZE);
             });
         } catch (lockErr) {
             apiLogger.error(
                 { error: lockErr instanceof Error ? lockErr.message : String(lockErr) },
-                'blockExpiredTrials: failed to acquire advisory lock — skipping run'
+                'reconcileExpiredTrials: failed to acquire advisory lock — skipping run'
             );
             return 0;
         }
@@ -603,40 +662,33 @@ export class TrialService {
         // null means another instance holds the lock — skip silently
         if (claimedSubscriptions === null) {
             apiLogger.warn(
-                'blockExpiredTrials is already running (advisory lock held by another process), skipping concurrent invocation'
+                'reconcileExpiredTrials is already running (advisory lock held by another process), skipping concurrent invocation'
             );
             return 0;
         }
 
         if (claimedSubscriptions.length === 0) {
-            apiLogger.info('No trialing subscriptions found');
+            apiLogger.info('No elapsed trials to reconcile');
             return 0;
         }
 
         // ── PROCESS PHASE ─────────────────────────────────────────────────────────
         // Lock has been released. Process each claimed subscription individually.
-        // Per ADR-019, external API calls (QZPay, notifications) run here, outside
-        // any lock-holding transaction. Each sub is re-checked for the TRIAL_BLOCKED
+        // Per ADR-019, external API calls (the provider retrieve()) run here, outside
+        // any lock-holding transaction. Each sub is re-checked for the TRIAL_RECONCILED
         // dedup event to guard against the window between claim commit and processing.
 
         try {
-            apiLogger.info('Starting expired trial blocking batch job');
+            apiLogger.info('Starting trial reconciliation batch job');
 
-            const now = new Date();
             const db = getDb();
-            let blockedCount = 0;
+            let reconciledCount = 0;
 
-            // Check each trial subscription
             for (const subscription of claimedSubscriptions) {
-                const trialEnd = subscription.trialEnd ? new Date(subscription.trialEnd) : null;
-
-                // Skip if no trial end date
+                // The claim query already filtered to a non-null, elapsed trialEnd;
+                // this only narrows the nullable column type.
+                const trialEnd = subscription.trialEnd;
                 if (!trialEnd) {
-                    continue;
-                }
-
-                // Skip if not yet expired
-                if (now <= trialEnd) {
                     continue;
                 }
 
@@ -644,8 +696,8 @@ export class TrialService {
                     // ── Re-check guard (ADR-019 + SPEC-064 T-041) ─────────────────
                     // Between the claim commit and now, another instance or a prior run
                     // may have already processed this subscription. Re-verify by checking
-                    // for a TRIAL_BLOCKED event before making any external calls.
-                    const existingBlock = await db
+                    // for a TRIAL_RECONCILED event before making any external calls.
+                    const existingReconcile = await db
                         .select({ id: billingSubscriptionEvents.id })
                         .from(billingSubscriptionEvents)
                         .where(
@@ -653,29 +705,106 @@ export class TrialService {
                                 eq(billingSubscriptionEvents.subscriptionId, subscription.id),
                                 eq(
                                     billingSubscriptionEvents.eventType,
-                                    BILLING_EVENT_TYPES.TRIAL_BLOCKED
+                                    BILLING_EVENT_TYPES.TRIAL_RECONCILED
                                 )
                             )
                         )
                         .limit(1);
 
-                    if (existingBlock.length > 0) {
+                    if (existingReconcile.length > 0) {
                         apiLogger.debug(
                             { subscriptionId: subscription.id },
-                            'blockExpiredTrials: TRIAL_BLOCKED event already exists, skipping (idempotent)'
+                            'reconcileExpiredTrials: TRIAL_RECONCILED event already exists, skipping (idempotent)'
                         );
                         continue;
                     }
 
-                    // ── Pre-cancel status guard (item 4 / SPEC-194 adversarial review) ──
+                    // A trialing subscription with no preapproval cannot be
+                    // reconciled — there is no provider record to ask. Under
+                    // card-first this should not exist (every trial is created as a
+                    // preapproval), so surface it instead of guessing an outcome.
+                    // Guessing here means either cancelling a paying customer or
+                    // granting a free one; both are worse than an alert.
+                    if (!subscription.mpSubscriptionId) {
+                        Sentry.captureException(
+                            new Error(
+                                `Trialing subscription has no provider id: ${subscription.id}`
+                            ),
+                            {
+                                extra: {
+                                    subscriptionId: subscription.id,
+                                    customerId: subscription.customerId,
+                                    trialEnd: trialEnd.toISOString()
+                                },
+                                tags: {
+                                    module: 'trial-service',
+                                    operation: 'reconcileExpiredTrials'
+                                }
+                            }
+                        );
+                        apiLogger.warn(
+                            { subscriptionId: subscription.id },
+                            'reconcileExpiredTrials: trialing subscription has no mpSubscriptionId — cannot reconcile, skipping'
+                        );
+                        continue;
+                    }
+
+                    // ── Ask the provider what actually happened ───────────────────
+                    // This is the whole point of the job: the provider, not our
+                    // clock, decides whether an elapsed trial converted. A failure
+                    // here must leave the row untouched for the next tick — never
+                    // fall back to a local assumption.
+                    const providerSubscription = await paymentAdapter.subscriptions.retrieve(
+                        subscription.mpSubscriptionId
+                    );
+
+                    const targetStatus = QZPAY_TO_HOSPEDA_STATUS[providerSubscription.status];
+
+                    if (targetStatus === null) {
+                        // `pending` — the provider has not settled it yet. Leave the
+                        // row trialing and re-check on the next tick.
+                        apiLogger.info(
+                            {
+                                subscriptionId: subscription.id,
+                                providerStatus: providerSubscription.status
+                            },
+                            'reconcileExpiredTrials: provider status still pending — deferring to next run'
+                        );
+                        continue;
+                    }
+
+                    if (targetStatus === undefined) {
+                        apiLogger.warn(
+                            {
+                                subscriptionId: subscription.id,
+                                providerStatus: providerSubscription.status
+                            },
+                            `reconcileExpiredTrials: unknown provider subscription status: ${providerSubscription.status}`
+                        );
+                        Sentry.captureException(
+                            new Error(
+                                `Unknown provider subscription status during trial reconciliation: ${providerSubscription.status}`
+                            ),
+                            {
+                                extra: {
+                                    subscriptionId: subscription.id,
+                                    providerStatus: providerSubscription.status
+                                },
+                                tags: {
+                                    module: 'trial-service',
+                                    operation: 'reconcileExpiredTrials'
+                                }
+                            }
+                        );
+                        continue;
+                    }
+
+                    // ── Status transition guard ───────────────────────────────────
                     // The claimed subscription object may be stale (fetched inside the
-                    // claim tx that has since committed). Re-validate the status transition
-                    // before calling the external QZPay cancel API to avoid erroring on
-                    // subscriptions that were already cancelled/expired/abandoned between
-                    // the claim and the process phases.
+                    // claim tx that has since committed). Re-validate before writing.
                     const transitionGuard = checkSubscriptionStatusTransition({
                         from: subscription.status as `${SubscriptionStatusEnum}`,
-                        to: SubscriptionStatusEnum.CANCELLED,
+                        to: targetStatus,
                         subscriptionId: subscription.id
                     });
                     if (!transitionGuard.valid) {
@@ -683,123 +812,72 @@ export class TrialService {
                             {
                                 subscriptionId: subscription.id,
                                 currentStatus: subscription.status,
+                                targetStatus,
                                 reason: transitionGuard.reason
                             },
-                            'blockExpiredTrials: claimed subscription is in a terminal state — skipping cancel call'
+                            'reconcileExpiredTrials: illegal status transition — skipping write'
                         );
                         continue;
                     }
 
-                    // Get customer details for notification
-                    const customer = await this.billing.customers.get(subscription.customerId);
-                    const plan = await this.billing.plans.get(subscription.planId);
+                    const converted = targetStatus === SubscriptionStatusEnum.ACTIVE;
 
-                    // Capture to Sentry if customer lookup fails so we can investigate
-                    if (!customer) {
-                        const lookupError = new Error(
-                            `Customer not found during blockExpiredTrials: ${subscription.customerId}`
-                        );
-                        Sentry.captureException(lookupError, {
-                            extra: {
-                                subscriptionId: subscription.id,
-                                customerId: subscription.customerId,
-                                planId: subscription.planId,
-                                trialEnd: trialEnd.toISOString()
-                            },
-                            tags: {
-                                module: 'trial-service',
-                                operation: 'blockExpiredTrials'
+                    // ── Local writes, atomically ──────────────────────────────────
+                    // Status + conversion stamp + dedup event must land together: a
+                    // status write without its dedup event would let the next tick
+                    // reprocess the subscription.
+                    await withServiceTransaction(async (ctx) => {
+                        // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+                        const tx = ctx.tx!;
+
+                        await tx
+                            .update(billingSubscriptions)
+                            .set({
+                                status: targetStatus,
+                                // `trial_converted` / `trial_converted_at` record how
+                                // the trial ENDED. Under card-first the provider's
+                                // verdict decides that, so this is now the only
+                                // place either column is written.
+                                trialConverted: converted,
+                                trialConvertedAt: new Date()
+                            })
+                            .where(eq(billingSubscriptions.id, subscription.id));
+
+                        await tx.insert(billingSubscriptionEvents).values({
+                            subscriptionId: subscription.id,
+                            eventType: BILLING_EVENT_TYPES.TRIAL_RECONCILED,
+                            previousStatus: subscription.status,
+                            newStatus: targetStatus,
+                            triggerSource: 'trial-reconcile-cron',
+                            metadata: {
+                                trialEnd: trialEnd.toISOString(),
+                                providerStatus: providerSubscription.status,
+                                converted,
+                                reconciledAt: new Date().toISOString()
                             }
                         });
-                        apiLogger.warn(
-                            {
-                                subscriptionId: subscription.id,
-                                customerId: subscription.customerId
-                            },
-                            'Customer not found during blockExpiredTrials, proceeding with cancellation'
-                        );
-                    }
-
-                    // Update subscription to cancel (QZPay doesn't support 'expired' status)
-                    await this.billing.subscriptions.cancel(subscription.id);
-
-                    // ── SPEC-143 Block 3 / Finding #30: stamp trial_converted_at ─
-                    // The schema carries `trial_converted` (boolean, default false)
-                    // and `trial_converted_at` (timestamp, nullable) as first-class
-                    // columns. For a trial that expired WITHOUT conversion, the
-                    // canonical record is `trial_converted=false` (already the
-                    // default) and `trial_converted_at=<expiry timestamp>` so
-                    // analytics and the admin dashboard can distinguish
-                    // "trial expired without converting" from a manual cancel.
-                    // The qzpay-hono SDK cancel() doesn't write these columns,
-                    // so we do it here directly. Trial cancel is the only path
-                    // that should ever set trial_converted_at; conversion-to-paid
-                    // flips trial_converted=true via a different path.
-                    await db
-                        .update(billingSubscriptions)
-                        .set({ trialConvertedAt: new Date() })
-                        .where(eq(billingSubscriptions.id, subscription.id));
-
-                    // ── T-041: Insert TRIAL_BLOCKED dedup event after successful cancel ─
-                    // This must be written after the QZPay cancel call so we only mark
-                    // a subscription as processed once it has actually been cancelled.
-                    // Follows the operational-event row convention: eventType is set,
-                    // previousStatus/newStatus are omitted (null).
-                    await db.insert(billingSubscriptionEvents).values({
-                        subscriptionId: subscription.id,
-                        eventType: BILLING_EVENT_TYPES.TRIAL_BLOCKED,
-                        triggerSource: 'block-expired-trials-cron',
-                        metadata: {
-                            trialEnd: trialEnd.toISOString(),
-                            blockedAt: new Date().toISOString()
-                        }
                     });
 
-                    // Clear entitlement cache to reflect trial expiry immediately
+                    // The entitlement set changes on every one of these outcomes
+                    // (converted → keeps access, cancelled/past_due → loses it), so
+                    // the 5-minute cache must be dropped regardless (INV-1).
                     clearEntitlementCache(subscription.customerId);
 
-                    blockedCount++;
+                    reconciledCount++;
 
                     apiLogger.info(
                         {
                             subscriptionId: subscription.id,
                             customerId: subscription.customerId,
+                            previousStatus: subscription.status,
+                            newStatus: targetStatus,
+                            converted,
                             trialEnd: trialEnd.toISOString()
                         },
-                        'Blocked expired trial subscription'
+                        converted
+                            ? 'Trial converted to paid subscription'
+                            : 'Reconciled elapsed trial to provider status'
                     );
-
-                    // Send TRIAL_EXPIRED notification (fire-and-forget)
-                    if (this.sendNotification && customer && plan) {
-                        // HOS-115 §5: nudge delivery path 1 — read back the interval the
-                        // customer originally chose (stamped by `startTrial` at grant
-                        // time) and append it to the upgrade link so the pricing page
-                        // can pre-select the same toggle instead of defaulting to monthly.
-                        const intendedInterval = (
-                            subscription.metadata as Record<string, string> | undefined
-                        )?.intendedInterval;
-                        this.sendNotification({
-                            type: NotificationType.TRIAL_EXPIRED,
-                            recipientEmail: customer.email,
-                            recipientName: String(customer.metadata?.name || customer.email),
-                            userId: String(customer.metadata?.userId || null),
-                            customerId: customer.id,
-                            planName: plan.name,
-                            trialEndDate: trialEnd.toISOString(),
-                            upgradeUrl: buildTrialUpgradeUrl({
-                                siteUrl: env.HOSPEDA_SITE_URL,
-                                intendedInterval
-                            })
-                        });
-
-                        apiLogger.debug(
-                            {
-                                customerId: customer.id,
-                                emailDomain: customer.email.split('@')[1]
-                            },
-                            'Trial expired notification queued'
-                        );
-                    }
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -808,14 +886,14 @@ export class TrialService {
                             subscriptionId: subscription.id,
                             error: errorMessage
                         },
-                        'Failed to block expired trial subscription'
+                        'Failed to reconcile expired trial subscription'
                     );
                 }
             }
 
-            apiLogger.info({ blockedCount }, 'Expired trial blocking batch job completed');
+            apiLogger.info({ reconciledCount }, 'Trial reconciliation batch job completed');
 
-            return blockedCount;
+            return reconciledCount;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -823,7 +901,7 @@ export class TrialService {
                 {
                     error: errorMessage
                 },
-                'Failed to run expired trial blocking batch job'
+                'Failed to run trial reconciliation batch job'
             );
 
             return 0;
