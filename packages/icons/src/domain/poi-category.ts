@@ -148,16 +148,19 @@ export const POI_CATEGORY_VISUALS: Readonly<Record<string, PoiCategoryVisual>> =
     theater: visual(AmphitheaterIcon, 'culture'),
     architecture: visual(HistoricPalaceIcon, 'culture'),
     industrial_heritage: visual(BuildingIcon, 'culture'),
+    // `fair` ("Feria") is a CRAFTS fair, not a food one — every seeded instance
+    // is artisan/handicraft (Feria Costanera, Manos del Puerto, Paseo de
+    // Artesanías...). It belongs next to `art`, not next to `gastronomy`.
+    fair: visual(CraftsFairIcon, 'culture'),
 
-    // Food & nightlife
+    // Food & nightlife — eating, drinking, and going out at night
     gastronomy: visual(RestaurantIcon, 'food'),
     winery: visual(BarServiceIcon, 'food'),
     nightlife: visual(LocalDiscoIcon, 'food'),
     casino: visual(CasinoIcon, 'food'),
-    entertainment: visual(EventCenterIcon, 'food'),
-    fair: visual(CraftsFairIcon, 'food'),
 
     // Leisure & sport
+    entertainment: visual(EventCenterIcon, 'leisure'),
     sports_venue: visual(SportsComplexIcon, 'leisure'),
     recreation: visual(SportsCenterIcon, 'leisure'),
     wellness: visual(WellnessCenterIcon, 'leisure'),
@@ -215,12 +218,15 @@ export function getPoiCategoryIcon({ slug }: PoiCategoryParams): ComponentType<I
 }
 
 /**
- * Build a {@link PoiCategoryColorScheme} for a POI category. Both values derive
- * from the SAME bucket token, so the hue stays the single source of truth.
+ * Build a {@link PoiCategoryColorScheme} for a POI category. Both values come
+ * from the SAME bucket's token pair, so the hue stays the single source of truth.
  *
- * `onFill` lightens the bucket hue to near-white while keeping a trace of its
- * chroma, so a glyph drawn on a solid `fill` pin stays legible in light and dark
- * without hardcoding a color.
+ * Both are plain `var()` references, never `oklch(from ...)` relative-color
+ * expressions: Chrome 109 does not support relative color, and a failed marker
+ * fill would leave the destination map covered in transparent/black pins. The
+ * shades behind these tokens are pre-tuned in `@repo/design-tokens` to clear 3:1
+ * against both the light and the dark card surface — see `tokens/poi-categories.ts`
+ * for the measured ratios.
  *
  * @param params.slug - Category slug. Comparison is case-insensitive.
  * @returns The bucket's {@link PoiCategoryColorScheme}.
@@ -230,6 +236,6 @@ export function getPoiCategoryColorScheme({ slug }: PoiCategoryParams): PoiCateg
     const cssToken = getPoiCategoryVisual({ slug }).colorToken;
     return {
         fill: `var(--${cssToken})`,
-        onFill: `oklch(from var(--${cssToken}) 0.98 calc(c * 0.2) h)`
+        onFill: `var(--${cssToken}-on)`
     };
 }

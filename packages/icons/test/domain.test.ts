@@ -596,6 +596,16 @@ describe('poi-category', () => {
             );
         });
 
+        it.each([
+            ['fair', 'culture'],
+            ['entertainment', 'leisure']
+        ])('should not put %s in the food bucket — it is not food (HOS-182 browser review)', (slug, expected) => {
+            // `fair` ("Feria") is a CRAFTS fair: every seeded instance is
+            // artisan (Feria Costanera, Manos del Puerto...). It rendered in
+            // the food hue on the destination map until this was corrected.
+            expect(getPoiCategoryVisual({ slug }).bucket).toBe(expected);
+        });
+
         it('should keep colorToken derived from bucket for every entry', () => {
             for (const visual of Object.values(POI_CATEGORY_VISUALS)) {
                 expect(visual.colorToken).toBe(`poi-category-${visual.bucket}`);
@@ -623,7 +633,17 @@ describe('poi-category', () => {
         it('should derive both values from the same bucket token', () => {
             const scheme = getPoiCategoryColorScheme({ slug: 'gastronomy' });
             expect(scheme.fill).toBe('var(--poi-category-food)');
-            expect(scheme.onFill).toContain('var(--poi-category-food)');
+            expect(scheme.onFill).toBe('var(--poi-category-food-on)');
+        });
+
+        it('should never emit a relative-color expression (Chrome 109 renders those black)', () => {
+            for (const slug of SEEDED_SLUGS) {
+                const { fill, onFill } = getPoiCategoryColorScheme({ slug });
+                for (const value of [fill, onFill]) {
+                    expect(value).not.toContain('oklch');
+                    expect(value).not.toContain('from ');
+                }
+            }
         });
 
         it('should return the services bucket for a nullish slug', () => {
