@@ -18,9 +18,10 @@
  * `occupancy-calendar-grid.ts` and `occupancy-row-grouping.ts`, so the span and
  * lane math is unit-testable in isolation.
  *
- * Prototype note: the bar's `title` currently comes from the row `note` column
- * (used as a stand-in for a future persisted `event_title` — the iCal parser
- * already has the VEVENT `SUMMARY` available but does not yet persist it).
+ * The bar's `title` is the sync-sourced `eventTitle` (the persisted VEVENT
+ * `SUMMARY` / Google event summary — HOS-175), falling back to the host's
+ * `note` for `MANUAL` blocks, and finally to a per-provider label in the UI
+ * when both are absent (Airbnb/Booking feeds that expose no summary).
  */
 
 import type { AccommodationOccupancy, OccupancySourceEnum } from '@repo/schemas';
@@ -31,7 +32,7 @@ export interface OccupancyEvent {
     readonly source: OccupancySourceEnum;
     /** The sync provider's event id, or `null` for `MANUAL` blocks. */
     readonly externalEventId: string | null;
-    /** Event title (prototype: from `note`; future: persisted `event_title`). */
+    /** Event title — sync `eventTitle`, else `MANUAL` note, else `null`. */
     readonly title: string | null;
     /** First occupied day, `YYYY-MM-DD`. */
     readonly startKey: DateKey;
@@ -105,7 +106,7 @@ export function buildOccupancyEvents({
             events.push({
                 source: runStart.source,
                 externalEventId: runStart.externalEventId,
-                title: runStart.note,
+                title: runStart.eventTitle ?? runStart.note,
                 startKey: runStart.date,
                 endKey: runPrev.date
             });
@@ -117,7 +118,7 @@ export function buildOccupancyEvents({
         events.push({
             source: runStart.source,
             externalEventId: runStart.externalEventId,
-            title: runStart.note,
+            title: runStart.eventTitle ?? runStart.note,
             startKey: runStart.date,
             endKey: runPrev.date
         });

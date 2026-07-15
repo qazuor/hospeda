@@ -18,12 +18,14 @@ function row({
     date,
     source,
     externalEventId = null,
-    note = null
+    note = null,
+    eventTitle = null
 }: {
     date: string;
     source: OccupancySourceEnum;
     externalEventId?: string | null;
     note?: string | null;
+    eventTitle?: string | null;
 }): AccommodationOccupancy {
     return {
         id: `occ-${source}-${date}`,
@@ -32,6 +34,7 @@ function row({
         isBlocked: true,
         source,
         externalEventId,
+        eventTitle,
         note,
         createdById: 'user-1',
         createdAt: new Date('2026-01-01T00:00:00Z'),
@@ -158,6 +161,35 @@ describe('buildOccupancyEvents', () => {
         expect(events.map((e) => e.source).sort()).toEqual(
             [OccupancySourceEnum.AIRBNB, OccupancySourceEnum.MANUAL].sort()
         );
+    });
+
+    it('prefers the sync eventTitle over note for the bar title (HOS-175)', () => {
+        const events = buildOccupancyEvents({
+            rows: [
+                row({
+                    date: '2026-08-13',
+                    source: OccupancySourceEnum.GOOGLE_CALENDAR,
+                    externalEventId: 'g1',
+                    eventTitle: 'Familia Pérez',
+                    note: 'ignored note'
+                })
+            ]
+        });
+        expect(events).toHaveLength(1);
+        expect(events[0]?.title).toBe('Familia Pérez');
+    });
+
+    it('falls back to note when eventTitle is absent (MANUAL blocks)', () => {
+        const events = buildOccupancyEvents({
+            rows: [
+                row({
+                    date: '2026-08-04',
+                    source: OccupancySourceEnum.MANUAL,
+                    note: 'Bloqueo por mantenimiento'
+                })
+            ]
+        });
+        expect(events[0]?.title).toBe('Bloqueo por mantenimiento');
     });
 });
 
