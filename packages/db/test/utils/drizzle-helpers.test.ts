@@ -1,4 +1,4 @@
-import { integer, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { integer, PgDialect, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 import {
     buildSearchCondition,
@@ -28,6 +28,29 @@ const testTable = pgTable('test_items', {
     createdAt: timestamp('created_at'),
     updatedAt: timestamp('updated_at')
 });
+
+/**
+ * Real Drizzle table for testing the array vs. scalar column disambiguation
+ * introduced for HOS-156: a scalar `uuid` primary key alongside a native
+ * `text[]` array column, mirroring `points_of_interest.id` /
+ * `amenities.applicableVerticals`-style shapes.
+ */
+const arrayAwareTable = pgTable('array_aware_items', {
+    id: uuid('id'),
+    tags: text('tags').array()
+});
+
+const dialect = new PgDialect();
+
+/**
+ * Renders a Drizzle SQL clause to its raw SQL text for assertions.
+ * Only the `.sql` string is used (never the bound params), since these
+ * tests only care about which operator was generated (`in` vs `=`).
+ */
+function toSqlText(clause: ReturnType<typeof buildWhereClause>): string {
+    if (!clause) return '';
+    return dialect.sqlToQuery(clause).sql;
+}
 
 describe('escapeLikePattern', () => {
     it('should escape percent character', () => {
@@ -149,6 +172,77 @@ describe('buildWhereClause', () => {
 
         // Assert -- all keys unknown = likely programming error
         expect(() => buildWhereClause(filters, testTable)).toThrow(DbError);
+    });
+
+    describe('array values (HOS-156: inArray vs eq disambiguation)', () => {
+        it('produces an IN condition for a scalar column with an array value', () => {
+            // Arrange -- { id: [uuid, uuid] } on a scalar uuid column must
+            // become an IN filter, not eq(scalarColumn, array) (invalid SQL).
+            const filters = { id: ['id-1', 'id-2', 'id-3'] };
+
+            // Act
+            const clause = buildWhereClause(filters, arrayAwareTable);
+            const sqlText = toSqlText(clause);
+
+            // Assert -- generated SQL uses "in", never "="
+            expect(sqlText).toMatch(/\bin\b/i);
+            expect(sqlText).not.toMatch(/=/);
+        });
+
+        it('produces an eq (equality) condition for an array-typed column with an array value', () => {
+            // Arrange -- { tags: ['a', 'b'] } on a native text[] column must
+            // stay a full-array equality comparison (existing behavior).
+            const filters = { tags: ['a', 'b'] };
+
+            // Act
+            const clause = buildWhereClause(filters, arrayAwareTable);
+            const sqlText = toSqlText(clause);
+
+            // Assert -- generated SQL uses "=", never "in"
+            expect(sqlText).toMatch(/=/);
+            expect(sqlText).not.toMatch(/\bin\b/i);
+        });
+
+        it('produces an eq (equality) condition for a scalar column with a single (non-array) value', () => {
+            // Arrange -- regression guard: unchanged behavior for non-array values
+            const filters = { id: 'single-id' };
+
+            // Act
+            const clause = buildWhereClause(filters, arrayAwareTable);
+            const sqlText = toSqlText(clause);
+
+            // Assert
+            expect(sqlText).toMatch(/=/);
+            expect(sqlText).not.toMatch(/\bin\b/i);
+        });
+
+        it('does not throw for an empty array on a scalar column and matches zero rows', () => {
+            // Arrange -- an empty id-set should match zero rows, not throw
+            // or produce broken SQL. Drizzle's inArray(col, []) resolves to
+            // the literal `false` fragment.
+            const filters = { id: [] as string[] };
+
+            // Act
+            const clause = buildWhereClause(filters, arrayAwareTable);
+            const sqlText = toSqlText(clause);
+
+            // Assert
+            expect(clause).toBeDefined();
+            expect(sqlText.trim().toLowerCase()).toBe('false');
+        });
+
+        it('combines a scalar-array IN filter with a plain eq filter via and()', () => {
+            // Arrange
+            const filters = { id: ['id-1', 'id-2'], tags: ['x'] };
+
+            // Act
+            const clause = buildWhereClause(filters, arrayAwareTable);
+            const sqlText = toSqlText(clause);
+
+            // Assert -- both the IN branch and the eq branch are present
+            expect(sqlText).toMatch(/\bin\b/i);
+            expect(sqlText).toMatch(/=/);
+        });
     });
 
     describe('_like suffix (ILIKE comparison)', () => {

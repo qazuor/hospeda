@@ -121,6 +121,64 @@ describe('PointOfInterestService', () => {
         });
     });
 
+    /**
+     * HOS-132 regression coverage: `getById`/`getBySlug` (via
+     * `BaseCrudRead.getByField` → `BaseModel.findOne`) return rows regardless
+     * of `deletedAt`/`lifecycleState`. Before this fix, `_canView` was an
+     * unconditional no-op, so a soft-deleted or non-ACTIVE (DRAFT/ARCHIVED)
+     * POI leaked through the PUBLIC `getById`/`getBySlug` routes
+     * (`apps/api/src/routes/point-of-interest/public/{getById,getBySlug}.ts`).
+     * `checkCanViewPointOfInterest(actor, entity)` now enforces ACTIVE +
+     * non-deleted for callers without `POINT_OF_INTEREST_VIEW`, exempting the
+     * ADMIN `getById` route which reuses this exact same service method.
+     */
+    describe('getById / getBySlug — public-read lifecycle gating (HOS-132)', () => {
+        const actorAdmin = createActor({ permissions: [PermissionEnum.POINT_OF_INTEREST_VIEW] });
+
+        it('should return NOT_FOUND for a soft-deleted POI when the actor lacks POINT_OF_INTEREST_VIEW', async () => {
+            const deletedPoi = { ...poi, deletedAt: new Date() };
+            asMock(model.findOne).mockResolvedValue(deletedPoi);
+            const result = await service.getById(actorNoPerms, poiId);
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+
+        it('should return NOT_FOUND for a non-ACTIVE (ARCHIVED) POI when the actor lacks POINT_OF_INTEREST_VIEW', async () => {
+            const archivedPoi = { ...poi, lifecycleState: LifecycleStatusEnum.ARCHIVED };
+            asMock(model.findOne).mockResolvedValue(archivedPoi);
+            const result = await service.getById(actorNoPerms, poiId);
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+
+        it('should return NOT_FOUND for a non-ACTIVE (DRAFT) POI via getBySlug when the actor lacks POINT_OF_INTEREST_VIEW', async () => {
+            const draftPoi = { ...poi, lifecycleState: LifecycleStatusEnum.DRAFT };
+            asMock(model.findOne).mockResolvedValue(draftPoi);
+            const result = await service.getBySlug(actorNoPerms, poi.slug);
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+
+        it('should still return an ACTIVE, non-deleted POI for an anonymous actor (happy-path regression guard)', async () => {
+            asMock(model.findOne).mockResolvedValue(poi);
+            const result = await service.getById(actorNoPerms, poiId);
+            expect(result.error).toBeUndefined();
+            expect(result.data?.id).toBe(poiId);
+        });
+
+        it('should let an actor with POINT_OF_INTEREST_VIEW see a soft-deleted POI (admin getById shares this method)', async () => {
+            const deletedPoi = { ...poi, deletedAt: new Date() };
+            asMock(model.findOne).mockResolvedValue(deletedPoi);
+            const result = await service.getById(actorAdmin, poiId);
+            expect(result.error).toBeUndefined();
+            expect(result.data?.id).toBe(poiId);
+        });
+
+        it('should let an actor with POINT_OF_INTEREST_VIEW see a non-ACTIVE POI', async () => {
+            const draftPoi = { ...poi, lifecycleState: LifecycleStatusEnum.DRAFT };
+            asMock(model.findOne).mockResolvedValue(draftPoi);
+            const result = await service.getById(actorAdmin, poiId);
+            expect(result.error).toBeUndefined();
+        });
+    });
+
     describe('update', () => {
         it('should update when actor has POINT_OF_INTEREST_UPDATE', async () => {
             asMock(model.findById).mockResolvedValue(poi);
@@ -207,6 +265,70 @@ describe('PointOfInterestService', () => {
     });
 
     /**
+     * HOS-132 regression coverage: `_executeSearch`/`_executeCount` (public
+     * `search()`/`count()`, reached by the PUBLIC list route) and
+     * `searchForList` share `buildSearchWhere`. Before this fix, that where
+     * builder never filtered `deletedAt`/`lifecycleState` at all — an
+     * anonymous caller could list soft-deleted or DRAFT/ARCHIVED POIs simply
+     * by hitting `GET /api/v1/public/points-of-interest`. Asserts ACTIVE +
+     * non-deleted is now forced unconditionally, mirroring
+     * `ExperienceService._executeSearch`/`_executeCount`.
+     */
+    describe('public search/count/searchForList force ACTIVE + non-deleted (HOS-132)', () => {
+        it('search(): should force deletedAt=null and lifecycleState=ACTIVE even with no other filters', async () => {
+            asMock(model.findAll).mockResolvedValue({ items: [poi], total: 1 });
+
+            await service.search(actorNoPerms, { page: 1, pageSize: 10 });
+
+            const [whereArg] = asMock(model.findAll).mock.calls[0] as [Record<string, unknown>];
+            expect(whereArg).toEqual({
+                deletedAt: null,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
+        });
+
+        it('search(): a caller-supplied `lifecycleState` filter must not override the forced ACTIVE-only gate', async () => {
+            asMock(model.findAll).mockResolvedValue({ items: [], total: 0 });
+
+            await service.search(actorNoPerms, {
+                lifecycleState: LifecycleStatusEnum.ARCHIVED,
+                page: 1,
+                pageSize: 10
+            });
+
+            const [whereArg] = asMock(model.findAll).mock.calls[0] as [Record<string, unknown>];
+            // `buildSearchWhere` does not read `params.lifecycleState` at all —
+            // the forced ACTIVE value always wins.
+            expect(whereArg.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+        });
+
+        it('count(): should force deletedAt=null and lifecycleState=ACTIVE', async () => {
+            asMock(model.count).mockResolvedValue(0);
+
+            await service.count(actorNoPerms, { page: 1, pageSize: 10 });
+
+            const [whereArg] = asMock(model.count).mock.calls[0] as [Record<string, unknown>];
+            expect(whereArg).toEqual({
+                deletedAt: null,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
+        });
+
+        it('searchForList(): should force deletedAt=null and lifecycleState=ACTIVE', async () => {
+            asMock(model.findAll).mockResolvedValue({ items: [poi], total: 1 });
+            asMock(relatedModel.findAll).mockResolvedValue({ items: [] });
+
+            await service.searchForList(actorNoPerms, { page: 1, pageSize: 10 });
+
+            const [whereArg] = asMock(model.findAll).mock.calls[0] as [Record<string, unknown>];
+            expect(whereArg).toEqual({
+                deletedAt: null,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
+        });
+    });
+
+    /**
      * HOS-143 T-007: `hasOwnPage`/`verified` are real plain columns on
      * `points_of_interest` (HOS-138) — same passthrough shape as
      * `isFeatured`/`isBuiltin`, unlike `destinationId`/`categoryId` which are
@@ -224,7 +346,13 @@ describe('PointOfInterestService', () => {
 
             expect(result.error).toBeUndefined();
             const [whereArg] = asMock(model.findAll).mock.calls[0] as [Record<string, unknown>];
-            expect(whereArg).toEqual({ hasOwnPage: true });
+            // HOS-132: public search/count always force ACTIVE + non-deleted
+            // (see `buildSearchWhere`) alongside the caller's plain filters.
+            expect(whereArg).toEqual({
+                deletedAt: null,
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
+                hasOwnPage: true
+            });
         });
 
         it('should pass `verified` through to the plain where clause', async () => {
@@ -238,7 +366,11 @@ describe('PointOfInterestService', () => {
 
             expect(result.error).toBeUndefined();
             const [whereArg] = asMock(model.findAll).mock.calls[0] as [Record<string, unknown>];
-            expect(whereArg).toEqual({ verified: true });
+            expect(whereArg).toEqual({
+                deletedAt: null,
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
+                verified: true
+            });
         });
 
         it('should combine `hasOwnPage` and `verified` with other plain-column filters', async () => {
@@ -255,6 +387,8 @@ describe('PointOfInterestService', () => {
             expect(result.error).toBeUndefined();
             const [whereArg] = asMock(model.findAll).mock.calls[0] as [Record<string, unknown>];
             expect(whereArg).toEqual({
+                deletedAt: null,
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
                 type: PointOfInterestTypeEnum.BEACH,
                 hasOwnPage: true,
                 verified: false
@@ -274,7 +408,12 @@ describe('PointOfInterestService', () => {
             expect(result.error).toBeUndefined();
             expect(result.data?.count).toBe(3);
             const [whereArg] = asMock(model.count).mock.calls[0] as [Record<string, unknown>];
-            expect(whereArg).toEqual({ hasOwnPage: true, verified: true });
+            expect(whereArg).toEqual({
+                deletedAt: null,
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
+                hasOwnPage: true,
+                verified: true
+            });
         });
     });
 
@@ -339,7 +478,11 @@ describe('PointOfInterestService', () => {
                 const [whereArg, , additionalConditionsArg] = asMock(model.findAll).mock
                     .calls[0] as [Record<string, unknown>, unknown, unknown[]];
                 expect(whereArg).not.toHaveProperty('destinationId');
-                expect(whereArg).toEqual({});
+                // HOS-132: public search always forces ACTIVE + non-deleted.
+                expect(whereArg).toEqual({
+                    deletedAt: null,
+                    lifecycleState: LifecycleStatusEnum.ACTIVE
+                });
 
                 // The id filter is a real `inArray(pointsOfInterest.id, ids)`
                 // condition — asserted via the spied real `inArray`.
@@ -370,7 +513,11 @@ describe('PointOfInterestService', () => {
                 // `type` is a real column and stays in `where`; `destinationId`
                 // must NOT be — both constraints are still applied, just via
                 // different mechanisms.
-                expect(whereArg).toEqual({ type: PointOfInterestTypeEnum.BEACH });
+                expect(whereArg).toEqual({
+                    deletedAt: null,
+                    lifecycleState: LifecycleStatusEnum.ACTIVE,
+                    type: PointOfInterestTypeEnum.BEACH
+                });
                 expect(mockedInArray).toHaveBeenCalledWith(pointsOfInterest.id, [poiA.id]);
                 expect(additionalConditionsArg).toHaveLength(1);
             });
@@ -411,7 +558,10 @@ describe('PointOfInterestService', () => {
                     Record<string, unknown>,
                     { additionalConditions?: unknown[] }
                 ];
-                expect(whereArg).toEqual({});
+                expect(whereArg).toEqual({
+                    deletedAt: null,
+                    lifecycleState: LifecycleStatusEnum.ACTIVE
+                });
                 expect(optionsArg?.additionalConditions).toHaveLength(1);
                 expect(mockedInArray).toHaveBeenCalledWith(pointsOfInterest.id, [poiA.id]);
             });
@@ -685,7 +835,11 @@ describe('PointOfInterestService', () => {
                 // `type` is a real column and stays in `where`; `categoryId`
                 // must NOT be — both constraints are still applied, just via
                 // different mechanisms.
-                expect(whereArg).toEqual({ type: PointOfInterestTypeEnum.MUSEUM });
+                expect(whereArg).toEqual({
+                    deletedAt: null,
+                    lifecycleState: LifecycleStatusEnum.ACTIVE,
+                    type: PointOfInterestTypeEnum.MUSEUM
+                });
                 expect(additionalConditionsArg).toHaveLength(1);
             });
         });
@@ -709,7 +863,10 @@ describe('PointOfInterestService', () => {
                     Record<string, unknown>,
                     { additionalConditions?: unknown[] }
                 ];
-                expect(whereArg).toEqual({});
+                expect(whereArg).toEqual({
+                    deletedAt: null,
+                    lifecycleState: LifecycleStatusEnum.ACTIVE
+                });
                 expect(optionsArg?.additionalConditions).toHaveLength(1);
             });
         });
