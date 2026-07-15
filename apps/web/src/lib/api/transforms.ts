@@ -490,6 +490,65 @@ export function toDestinationCardProps({
 }
 
 /**
+ * Result item type for `toDestinationPointOfInterestListProps` (HOS-146).
+ * Single canonical shape consumed by BOTH the POI grid
+ * (`DestinationPOISection.astro`, PRIMARY-only) and the POI map
+ * (`DestinationPOIMap.client.tsx`, all POIs with coordinates) — one
+ * transform per entity, per `apps/web/CLAUDE.md`.
+ */
+export interface DestinationPointOfInterestItem {
+    readonly id: string;
+    readonly slug: string;
+    readonly type: string;
+    /** `null` when the POI has no coordinates (HOS-138 — coords are nullable). */
+    readonly lat: number | null;
+    /** `null` when the POI has no coordinates (HOS-138 — coords are nullable). */
+    readonly long: number | null;
+    /** PRIMARY (city-core) vs NEARBY (far-out) — HOS-146. */
+    readonly relation: 'PRIMARY' | 'NEARBY';
+    readonly description?: string | null;
+    readonly descriptionI18n?: I18nTextLike | null;
+    readonly nameI18n?: I18nTextLike | null;
+    readonly isFeatured?: boolean;
+    readonly displayWeight?: number;
+}
+
+/**
+ * Converts the raw `dest.pointsOfInterest` API payload (HOS-138 nullable
+ * coords, HOS-146 PRIMARY/NEARBY `relation`) into the single shape both
+ * `DestinationPOISection.astro` (grid, PRIMARY-only) and `DestinationPOIMap`
+ * (map, all POIs with coordinates) consume. Never passes raw API data to
+ * components (project rule) — missing/malformed fields degrade to safe
+ * defaults instead of throwing.
+ *
+ * @param pointsOfInterest - Raw `dest.pointsOfInterest` array from the public destination endpoint
+ * @returns The normalized POI list, one entry per input item
+ */
+export function toDestinationPointOfInterestListProps({
+    pointsOfInterest
+}: {
+    readonly pointsOfInterest: ReadonlyArray<Record<string, unknown>>;
+}): ReadonlyArray<DestinationPointOfInterestItem> {
+    return pointsOfInterest.map((poi) => {
+        const lat = typeof poi.lat === 'number' && Number.isFinite(poi.lat) ? poi.lat : null;
+        const long = typeof poi.long === 'number' && Number.isFinite(poi.long) ? poi.long : null;
+        return {
+            id: String(poi.id ?? ''),
+            slug: String(poi.slug ?? ''),
+            type: String(poi.type ?? ''),
+            lat,
+            long,
+            relation: poi.relation === 'NEARBY' ? 'NEARBY' : 'PRIMARY',
+            description: (poi.description as string | null | undefined) ?? null,
+            descriptionI18n: (poi.descriptionI18n as I18nTextLike | null | undefined) ?? null,
+            nameI18n: (poi.nameI18n as I18nTextLike | null | undefined) ?? null,
+            isFeatured: Boolean(poi.isFeatured),
+            displayWeight: typeof poi.displayWeight === 'number' ? poi.displayWeight : 0
+        };
+    });
+}
+
+/**
  * Transforms a raw API event item to EventCard props.
  *
  * @param item - Raw event object from the API
