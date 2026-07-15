@@ -665,17 +665,28 @@ export const billingApi = {
              * the `/start-paid` response body.
              */
             readonly localSubscriptionId: string;
-            // 'trial' (HOS-110): the plan's no-card trial was granted instead of a
-            // paid checkout — no MercadoPago redirect, same as 'comp'. Type-only
-            // widening; PlanPurchaseButton's unconditional redirect already handles
-            // this shape (see subscription-checkout.service.ts CheckoutAppliedEffect).
+            /**
+             * `'trial'` is DEPRECATED and never emitted since HOS-171 (card-first
+             * moved the trial onto the paid checkout's own preapproval). It is kept
+             * because the API and this app deploy as separate Coolify resources, so
+             * an old API can still answer with it mid-rollout — and PlanPurchaseButton
+             * must keep skipping the MP redirect for it, or that customer lands on the
+             * poller waiting for a payment that never existed.
+             *
+             * NOTE: this duplicates `StartPaidSubscriptionResponseSchema` in
+             * `@repo/schemas` by hand instead of importing it — a Single-Source-of-Truth
+             * violation that predates HOS-171 and is why the two can (and did) drift.
+             * Tracked in HOS-185.
+             */
             readonly appliedEffect?: 'comp' | 'discount' | 'trial';
             /**
-             * HOS-110 W1: `true` when a `discount` promo code was supplied
-             * alongside a trial-eligible checkout and was DISCARDED because the
-             * free trial takes priority. Only ever present together with
-             * `appliedEffect: 'trial'` — PlanPurchaseButton uses it to flag the
-             * dropped code to the user via the success-page query param.
+             * `true` when a promo code was accepted but had no effect, so the user is
+             * told rather than silently losing it. PlanPurchaseButton forwards it to
+             * the success page as a query param.
+             *
+             * Since HOS-171 this means exactly one thing: a `trial_extension` code
+             * with no trial to lengthen. It is NOT "a discount was discarded in favour
+             * of the trial" — a discount and a trial now coexist.
              */
             readonly promoCodeIgnored?: true;
         }>

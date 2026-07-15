@@ -90,10 +90,19 @@ export const StartPaidSubscriptionResponseSchema = z.object({
      * - `'discount'` — a discount was applied (the monthly preapproval amount was
      *   lowered, or the annual line-item was reduced). A normal MP redirect to
      *   `checkoutUrl` still follows; the marker is informational.
-     * - `'trial'` (HOS-110) — the plan's no-card trial was granted instead of a
-     *   paid checkout. There is NO MercadoPago preapproval: like `'comp'`,
-     *   `checkoutUrl` is an in-app success sentinel URL and the front-end should
-     *   go straight to success rather than redirecting to a payment provider.
+     * - `'trial'` — **DEPRECATED, never emitted since HOS-171.** It meant the
+     *   plan's no-card trial was granted instead of a paid checkout, with no
+     *   MercadoPago preapproval and an in-app sentinel `checkoutUrl`. Card-first
+     *   deleted that path: a trial is now `free_trial` on the same preapproval a
+     *   paid checkout creates, so it returns a normal MP redirect and no marker.
+     *   The API's own `CheckoutAppliedEffect` is already `'comp' | 'discount'`.
+     *
+     *   Retained here on purpose. Removing it narrows a published enum, which the
+     *   schema-compat policy forbids without the full three-phase migration, and
+     *   the value can still be in flight: `hospeda-api-prod` and `hospeda-web-prod`
+     *   deploy separately, so an old API can still answer a new web with `'trial'`
+     *   during the rollout window. Drop it in a later cleanup, once no deployed API
+     *   can emit it.
      */
     appliedEffect: z
         .enum(['comp', 'discount', 'trial'], {
@@ -101,12 +110,20 @@ export const StartPaidSubscriptionResponseSchema = z.object({
         })
         .optional(),
     /**
-     * HOS-110 W1: `true` when a `discount` promo code was supplied alongside a
-     * trial-eligible checkout and was DISCARDED (never persisted) because the
-     * free trial (`appliedEffect: 'trial'`) takes priority over a discount on
-     * a not-yet-charged subscription. Only ever present together with
-     * `appliedEffect: 'trial'`. Absent (not `false`) in every other case —
-     * the front-end should treat "absent" and "false" identically.
+     * `true` when a promo code was supplied but had no effect, so the customer is
+     * told rather than silently losing it. Absent (not `false`) otherwise — the
+     * front-end should treat "absent" and "false" identically.
+     *
+     * Since HOS-171 this means exactly ONE thing: a `trial_extension` code was
+     * applied to a checkout that grants no trial to lengthen (the plan declares
+     * none, or the customer already had a subscription — one trial per customer,
+     * for life).
+     *
+     * It no longer means "a discount was discarded in favour of a trial". That
+     * precedence is gone: a discount now COEXISTS with a trial, because the trial
+     * defers the first charge while the discount lowers what that charge will be.
+     * The old rule left a first-time owner — the only customer who gets a trial —
+     * unable to use a discount code at all.
      */
     promoCodeIgnored: z
         .literal(true, {

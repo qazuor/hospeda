@@ -35,10 +35,17 @@ const { t } = createTranslations(locale);
 
 const collectionStatus = Astro.url.searchParams.get('collection_status');
 
-// HOS-110 F1: PlanPurchaseButton appends `?effect=trial` (or `?effect=comp`)
-// to this in-app success sentinel URL when the granted effect has NO
-// MercadoPago preapproval to verify (see StartPaidSubscriptionResponse
-// `appliedEffect`). Those resolve immediately with no payment in flight.
+// PlanPurchaseButton appends `?effect=comp` (or, only from an API that predates
+// HOS-171, `?effect=trial`) to this in-app success sentinel URL when the granted
+// effect has NO MercadoPago preapproval to verify (see
+// StartPaidSubscriptionResponse `appliedEffect`). Those resolve immediately with
+// no payment in flight.
+//
+// `trial` is retained deliberately even though card-first no longer grants a
+// no-card trial: the API and the web deploy as separate Coolify resources, so an
+// old API can still answer with it mid-rollout, and dropping the branch would
+// send that customer to the poller to wait on a payment that never existed
+// (HOS-151 Bug A's exact symptom). Remove it with the enum, in a later cleanup.
 const effectParam = Astro.url.searchParams.get('effect');
 const isTrial = effectParam === 'trial';
 const isComp = effectParam === 'comp';
@@ -48,9 +55,10 @@ const isComp = effectParam === 'comp';
 // polling island resolves (HOS-151 Bug A).
 const isImmediateSuccess = collectionStatus === 'approved' || isTrial || isComp;
 
-// HOS-110 W1: PlanPurchaseButton appends `?promoIgnored=1` when the server
-// discarded a discount code in favor of a granted no-card trial. Only ever
-// present on the immediate (trial) path.
+// PlanPurchaseButton appends `?promoIgnored=1` when the server accepted a promo
+// code that ended up doing nothing. Since HOS-171 that means only one thing: a
+// trial_extension code with no trial to lengthen. It is NOT "a discount was
+// discarded in favour of the trial" — a discount and a trial now coexist.
 const promoIgnored = Astro.url.searchParams.get('promoIgnored') === '1';
 
 const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
