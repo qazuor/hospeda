@@ -70,6 +70,41 @@ export async function pickOne<T>(
 }
 
 /**
+ * Ask the operator to type free-form text, with an optional validator.
+ * Used for typed-confirmation guards (e.g. "type the customer email
+ * exactly to confirm a production delete") where a yes/no `confirm()`
+ * is not strong enough. Cancellation (Ctrl+C) aborts the process — the
+ * caller does NOT need to check for cancellation itself.
+ *
+ * @param input - Prompt configuration.
+ * @returns The trimmed text the operator typed.
+ *
+ * @example
+ * ```ts
+ * const typed = await promptText({
+ *   message: 'Type the customer email exactly to confirm',
+ * });
+ * if (typed !== expectedEmail) { ... abort ... }
+ * ```
+ */
+export async function promptText(input: {
+    readonly message: string;
+    readonly placeholder?: string;
+    readonly validate?: (value: string) => string | undefined;
+}): Promise<string> {
+    const answer = await p.text({
+        message: input.message,
+        placeholder: input.placeholder,
+        validate: input.validate
+    });
+    if (p.isCancel(answer)) {
+        log.warn('Cancelled.');
+        process.exit(0);
+    }
+    return answer.trim();
+}
+
+/**
  * Resolve "the user typed `--N` or a number on the command line" to an
  * index into the given list. Returns `null` when no such argument was
  * supplied; callers fall through to the interactive picker. Throws when
