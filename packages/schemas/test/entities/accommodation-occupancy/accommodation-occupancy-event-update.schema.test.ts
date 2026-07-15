@@ -98,6 +98,74 @@ describe('AccommodationOccupancyEventUpdateSchema', () => {
         }
     });
 
+    it('accepts a new range spanning exactly 366 days', () => {
+        const result = AccommodationOccupancyEventUpdateSchema.safeParse({
+            ...validInput,
+            newStartDate: '2026-01-01',
+            newEndDate: '2027-01-01'
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects a new range spanning more than 366 days', () => {
+        const result = AccommodationOccupancyEventUpdateSchema.safeParse({
+            ...validInput,
+            newStartDate: '2026-01-01',
+            newEndDate: '2027-01-02'
+        });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(
+                result.error.issues.some(
+                    (issue) =>
+                        issue.message ===
+                        'zodError.accommodationOccupancy.eventUpdate.newRange.tooLong'
+                )
+            ).toBe(true);
+            expect(
+                result.error.issues.find(
+                    (issue) =>
+                        issue.message ===
+                        'zodError.accommodationOccupancy.eventUpdate.newRange.tooLong'
+                )?.path
+            ).toEqual(['newEndDate']);
+        }
+    });
+
+    it('accepts an old range spanning exactly 366 days', () => {
+        const result = AccommodationOccupancyEventUpdateSchema.safeParse({
+            ...validInput,
+            oldStartDate: '2026-01-01',
+            oldEndDate: '2027-01-01'
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects an old range spanning more than 366 days', () => {
+        const result = AccommodationOccupancyEventUpdateSchema.safeParse({
+            ...validInput,
+            oldStartDate: '2026-01-01',
+            oldEndDate: '2027-01-02'
+        });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(
+                result.error.issues.some(
+                    (issue) =>
+                        issue.message ===
+                        'zodError.accommodationOccupancy.eventUpdate.oldRange.tooLong'
+                )
+            ).toBe(true);
+            expect(
+                result.error.issues.find(
+                    (issue) =>
+                        issue.message ===
+                        'zodError.accommodationOccupancy.eventUpdate.oldRange.tooLong'
+                )?.path
+            ).toEqual(['oldEndDate']);
+        }
+    });
+
     it('rejects a note over 500 characters', () => {
         const result = AccommodationOccupancyEventUpdateSchema.safeParse({
             ...validInput,

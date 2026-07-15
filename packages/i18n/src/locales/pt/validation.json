@@ -4390,10 +4390,12 @@
         },
         "eventUpdate": {
             "newRange": {
-                "invalid": "A data inicial nova deve ser anterior ou igual à data final nova"
+                "invalid": "A data inicial nova deve ser anterior ou igual à data final nova",
+                "tooLong": "O novo intervalo de datas não pode ultrapassar 366 dias"
             },
             "oldRange": {
-                "invalid": "A data inicial original deve ser anterior ou igual à data final original"
+                "invalid": "A data inicial original deve ser anterior ou igual à data final original",
+                "tooLong": "O intervalo de datas original não pode ultrapassar 366 dias"
             }
         },
         "externalEventId": {

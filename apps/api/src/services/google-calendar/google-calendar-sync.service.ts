@@ -318,10 +318,18 @@ export const syncAccommodationCalendar = async (params: {
         if (event.status === 'cancelled') {
             continue;
         }
+        // Truncated to 500 chars (AFTER trimming) to match the DB column's
+        // `varchar(500)` cap — a Google event with an oversized summary would
+        // otherwise make `batchUpsertSync`'s insert throw "value too long for
+        // type character varying(500)", rolling back the entire atomic
+        // reconcile and turning the calendar into a poison pill that fails
+        // every future sync.
+        const trimmedSummary = typeof event.summary === 'string' ? event.summary.trim() : '';
+        // Truncate by code point (not UTF-16 unit) so an astral char (emoji)
+        // at the 500 boundary is never split into a lone surrogate. `event_title`
+        // is varchar(500) — Postgres counts code points, so this always fits.
         const title =
-            typeof event.summary === 'string' && event.summary.trim().length > 0
-                ? event.summary.trim()
-                : null;
+            trimmedSummary.length > 0 ? Array.from(trimmedSummary).slice(0, 500).join('') : null;
         for (const date of mapEventToDates(event, accommodationId)) {
             if (!desired.has(date)) {
                 desired.set(date, { id: event.id, title });

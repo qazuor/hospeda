@@ -4390,10 +4390,12 @@
         },
         "eventUpdate": {
             "newRange": {
-                "invalid": "The new start date must be on or before the new end date"
+                "invalid": "The new start date must be on or before the new end date",
+                "tooLong": "The new date range cannot span more than 366 days"
             },
             "oldRange": {
-                "invalid": "The original start date must be on or before the original end date"
+                "invalid": "The original start date must be on or before the original end date",
+                "tooLong": "The original date range cannot span more than 366 days"
             }
         },
         "externalEventId": {

@@ -119,8 +119,11 @@ export interface IcalOccupancyRow {
     /** The VEVENT's `UID`, used as the row's external event id. */
     readonly externalEventId: string;
     /**
-     * The VEVENT's `SUMMARY`, trimmed — the event title shown in the occupancy
-     * calendar's event bars (HOS-175). `null` when the feed exposes no summary
+     * The VEVENT's `SUMMARY`, trimmed and truncated to 500 chars — the event
+     * title shown in the occupancy calendar's event bars (HOS-175). Truncated
+     * to match the `accommodation_occupancy.event_title` `varchar(500)`
+     * column so an oversized SUMMARY from an external feed can never poison
+     * the atomic sync reconcile. `null` when the feed exposes no summary
      * (Airbnb/Booking public feeds often omit or genericize it), in which case
      * the UI falls back to a per-provider label.
      */
@@ -323,10 +326,19 @@ export const parseIcsToRows = async (input: {
             continue;
         }
 
+        // Truncated to 500 chars (AFTER trimming) to match the DB column's
+        // `varchar(500)` cap — an external feed (Airbnb/Booking/arbitrary
+        // "Other" iCal) with an oversized SUMMARY would otherwise make
+        // `batchUpsertSync`'s insert throw "value too long for type
+        // character varying(500)", rolling back the entire atomic reconcile
+        // and turning the feed into a poison pill that fails every future
+        // sync.
+        const trimmedSummary = typeof event.summary === 'string' ? event.summary.trim() : '';
+        // Truncate by code point (not UTF-16 unit) so an astral char (emoji)
+        // at the 500 boundary is never split into a lone surrogate. `event_title`
+        // is varchar(500) — Postgres counts code points, so this always fits.
         const title =
-            typeof event.summary === 'string' && event.summary.trim().length > 0
-                ? event.summary.trim()
-                : null;
+            trimmedSummary.length > 0 ? Array.from(trimmedSummary).slice(0, 500).join('') : null;
 
         for (const date of enumerateHalfOpenDates(startDate, endDate)) {
             if (!desired.has(date)) {

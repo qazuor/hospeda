@@ -170,6 +170,63 @@ describe('ical-parser', () => {
             });
         });
 
+        it('truncates a SUMMARY longer than 500 chars to exactly 500 chars (HOS-175 poison-pill guard)', async () => {
+            // Arrange — a 600-char SUMMARY (well past the DB's varchar(500)
+            // cap). An untruncated title would make the DB insert throw
+            // "value too long for type character varying(500)", rolling back
+            // the entire atomic sync and turning the feed into a poison pill.
+            const oversizedSummary = 'A'.repeat(600);
+            const icsText = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//Test//EN',
+                'BEGIN:VEVENT',
+                'DTSTART;VALUE=DATE:20260710',
+                'DTEND;VALUE=DATE:20260711',
+                'DTSTAMP:20260701T120000Z',
+                'UID:evt-oversized@other.com',
+                `SUMMARY:${oversizedSummary}`,
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ].join('\n');
+
+            // Act
+            const result = await parseIcsToRows({ icsText, fromDate: '2026-01-01' });
+
+            // Assert — the persisted title is truncated to exactly 500 chars.
+            expect(result.ok).toBe(true);
+            const rows = result.ok ? result.rows : [];
+            expect(rows).toHaveLength(1);
+            expect(rows[0]?.title).toHaveLength(500);
+            expect(rows[0]?.title).toBe('A'.repeat(500));
+        });
+
+        it('treats a whitespace-only SUMMARY as absent (title: null), not an empty string', async () => {
+            // Arrange
+            const icsText = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//Test//EN',
+                'BEGIN:VEVENT',
+                'DTSTART;VALUE=DATE:20260710',
+                'DTEND;VALUE=DATE:20260711',
+                'DTSTAMP:20260701T120000Z',
+                'UID:evt-blank@other.com',
+                'SUMMARY:   ',
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ].join('\n');
+
+            // Act
+            const result = await parseIcsToRows({ icsText, fromDate: '2026-01-01' });
+
+            // Assert
+            expect(result.ok).toBe(true);
+            const rows = result.ok ? result.rows : [];
+            expect(rows).toHaveLength(1);
+            expect(rows[0]?.title).toBeNull();
+        });
+
         it('should collapse two overlapping VEVENTs to one row per date, first event winning the shared date', async () => {
             // Arrange — evt-A covers Jul-10..Jul-12, evt-B covers Jul-11..Jul-13
             // (shared date: Jul-11).

@@ -383,7 +383,9 @@ describe('updateOccupancyEvent', () => {
         expect(mockDeleteManualByDates).toHaveBeenCalledWith(
             {
                 accommodationId: ACCOMMODATION_ID,
-                dates: ['2026-07-10', '2026-07-11', '2026-07-12']
+                // Union of old (07-10..07-12) and new (07-11..07-13) ranges,
+                // deduped — the new range is authoritative (see Fix 2 doc).
+                dates: ['2026-07-10', '2026-07-11', '2026-07-12', '2026-07-13']
             },
             { execute: expect.any(Function) }
         );
@@ -425,7 +427,8 @@ describe('updateOccupancyEvent', () => {
         });
 
         expect(mockDeleteManualByDates).toHaveBeenCalledWith(
-            { accommodationId: ACCOMMODATION_ID, dates: ['2026-07-10'] },
+            // Union of old (07-10) and new (07-11) — both single-day ranges.
+            { accommodationId: ACCOMMODATION_ID, dates: ['2026-07-10', '2026-07-11'] },
             { execute: expect.any(Function) }
         );
         const syncRow = result.find((row) => row.date === '2026-07-10');
@@ -476,7 +479,8 @@ describe('updateOccupancyEvent', () => {
         });
 
         expect(mockDeleteManualByDates).toHaveBeenCalledWith(
-            { accommodationId: ACCOMMODATION_ID, dates: ['2026-07-14'] },
+            // Union of old (07-14) and new (07-15) — both single-day ranges.
+            { accommodationId: ACCOMMODATION_ID, dates: ['2026-07-14', '2026-07-15'] },
             { execute: expect.any(Function) }
         );
         expect(mockBatchUpsertManual).toHaveBeenCalledWith(
@@ -507,6 +511,105 @@ describe('updateOccupancyEvent', () => {
 
         expect(result).toHaveLength(1);
         expect(result[0]?.date).toBe('2026-07-11');
+    });
+
+    it('authoritative overwrite: extending the new range over a pre-existing adjacent MANUAL row rewrites its note', async () => {
+        // The event being edited only covers 07-10 (oldRange). An UNRELATED
+        // MANUAL row already sits on 07-11 with its own note. The edit grows
+        // the new range to 07-10..07-11, swallowing that adjacent day — the
+        // new range is authoritative, so the pre-existing row's note must be
+        // overwritten, not silently left untouched by an upsert conflict-skip.
+        mockFindByAccommodation.mockResolvedValue([
+            makeRow({ date: '2026-07-10', note: 'moved and merged' }),
+            makeRow({ date: '2026-07-11', note: 'moved and merged' })
+        ]);
+
+        const result = await updateOccupancyEvent({
+            actor: ownerActor,
+            accommodationId: ACCOMMODATION_ID,
+            oldStartDate: '2026-07-10',
+            oldEndDate: '2026-07-10',
+            newStartDate: '2026-07-10',
+            newEndDate: '2026-07-11',
+            note: 'moved and merged'
+        });
+
+        // The pre-existing adjacent row's date (07-11) MUST be included in the
+        // pre-upsert delete, even though it was never part of the OLD range —
+        // this is what makes the upsert's conflict-skip a non-issue.
+        expect(mockDeleteManualByDates).toHaveBeenCalledWith(
+            { accommodationId: ACCOMMODATION_ID, dates: ['2026-07-10', '2026-07-11'] },
+            { execute: expect.any(Function) }
+        );
+        expect(mockBatchUpsertManual).toHaveBeenCalledWith(
+            {
+                accommodationId: ACCOMMODATION_ID,
+                dates: ['2026-07-10', '2026-07-11'],
+                createdById: OWNER_ID,
+                note: 'moved and merged'
+            },
+            { execute: expect.any(Function) }
+        );
+        const adjacentRow = result.find((row) => row.date === '2026-07-11');
+        expect(adjacentRow?.note).toBe('moved and merged');
+    });
+
+    it('throws VALIDATION_ERROR when the new range spans more than 366 days', async () => {
+        await expectServiceError(
+            () =>
+                updateOccupancyEvent({
+                    actor: ownerActor,
+                    accommodationId: ACCOMMODATION_ID,
+                    oldStartDate: '2026-07-10',
+                    oldEndDate: '2026-07-10',
+                    newStartDate: '2026-01-01',
+                    newEndDate: '2027-06-01'
+                }),
+            ServiceErrorCode.VALIDATION_ERROR
+        );
+        expect(mockDeleteManualByDates).not.toHaveBeenCalled();
+        expect(mockBatchUpsertManual).not.toHaveBeenCalled();
+    });
+
+    it('throws VALIDATION_ERROR when the old range spans more than 366 days', async () => {
+        await expectServiceError(
+            () =>
+                updateOccupancyEvent({
+                    actor: ownerActor,
+                    accommodationId: ACCOMMODATION_ID,
+                    oldStartDate: '2026-01-01',
+                    oldEndDate: '2027-06-01',
+                    newStartDate: '2026-07-10',
+                    newEndDate: '2026-07-10'
+                }),
+            ServiceErrorCode.VALIDATION_ERROR
+        );
+        expect(mockDeleteManualByDates).not.toHaveBeenCalled();
+        expect(mockBatchUpsertManual).not.toHaveBeenCalled();
+    });
+
+    it('rejects a huge unbounded old range BEFORE expanding it into a date array (DoS guard)', async () => {
+        // A body like `{ oldStartDate: '1970-01-01', oldEndDate: '9999-12-31' }`
+        // spans ~2.9M days. If the day-diff guard did not run before
+        // `expandDateRangeInclusive`, this would allocate a multi-million-entry
+        // array before ever throwing. Asserting the model methods were never
+        // called is the DoS-relevant assertion here (allocation happens
+        // synchronously before any model call, so a non-throw would hang the
+        // test on the array-building loop long before reaching the mocks).
+        await expectServiceError(
+            () =>
+                updateOccupancyEvent({
+                    actor: ownerActor,
+                    accommodationId: ACCOMMODATION_ID,
+                    oldStartDate: '1970-01-01',
+                    oldEndDate: '9999-12-31',
+                    newStartDate: '2026-07-10',
+                    newEndDate: '2026-07-10'
+                }),
+            ServiceErrorCode.VALIDATION_ERROR
+        );
+        expect(mockDeleteManualByDates).not.toHaveBeenCalled();
+        expect(mockBatchUpsertManual).not.toHaveBeenCalled();
     });
 
     it('throws VALIDATION_ERROR when oldStartDate is after oldEndDate', async () => {

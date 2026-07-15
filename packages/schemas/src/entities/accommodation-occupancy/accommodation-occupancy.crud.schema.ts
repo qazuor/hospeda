@@ -96,6 +96,31 @@ export type AccommodationOccupancyBatchInput = z.infer<
 >;
 
 /**
+ * Max inclusive day-span allowed for the edited event's NEW and OLD ranges.
+ * Matches {@link AccommodationOccupancyBatchInputSchema}'s `dates` array
+ * `.max(366)` cap on the batch-toggle endpoint.
+ */
+const MAX_EVENT_UPDATE_RANGE_DAYS = 366;
+
+/**
+ * Counts the days in the inclusive range `[startDate, endDate]`.
+ *
+ * UTC-midnight epoch-ms diffing, same approach as
+ * `expandDateRangeInclusive` in `accommodation.occupancy.ts` (service layer)
+ * — avoids DST-related day-count drift. Duplicated here rather than
+ * imported: this schema module has no dependency on `@repo/service-core`.
+ *
+ * @param startDate - Inclusive lower bound, `YYYY-MM-DD`.
+ * @param endDate - Inclusive upper bound, `YYYY-MM-DD`.
+ * @returns The number of days spanned, inclusive of both bounds.
+ */
+function daysBetweenInclusive(startDate: string, endDate: string): number {
+    const startMs = new Date(`${startDate}T00:00:00Z`).getTime();
+    const endMs = new Date(`${endDate}T00:00:00Z`).getTime();
+    return Math.round((endMs - startMs) / (24 * 60 * 60 * 1000)) + 1;
+}
+
+/**
  * Input for the edit-manual-event route (`PATCH .../occupancy/event`, HOS-175
  * Phase 3 web wiring).
  *
@@ -113,6 +138,17 @@ export type AccommodationOccupancyBatchInput = z.infer<
  * being replaced; `newStartDate`/`newEndDate` are the edited range. Each pair
  * independently requires `start <= end` (a single-day event is valid: start
  * === end).
+ *
+ * BOTH the NEW range (`newStartDate..newEndDate`) AND the OLD range
+ * (`oldStartDate..oldEndDate`) are additionally capped at 366 inclusive days
+ * — mirroring {@link AccommodationOccupancyBatchInputSchema}'s `dates` array
+ * `.max(366)` cap — so a single edit request cannot expand into an unbounded
+ * number of rows in one transaction (e.g. a typo'd end-date year decades in
+ * the future, or an out-of-range OLD bound sent alongside a valid NEW range).
+ * These caps are enforced HERE for direct `.safeParse()` callers and OpenAPI
+ * documentation, AND separately inside `updateOccupancyEvent` (in
+ * `@repo/service-core`) — see that function's JSDoc for why the
+ * service-level guard is not redundant with this one.
  *
  * @example
  * ```ts
@@ -143,7 +179,23 @@ export const AccommodationOccupancyEventUpdateSchema = z
     .refine((data) => data.newStartDate <= data.newEndDate, {
         message: 'zodError.accommodationOccupancy.eventUpdate.newRange.invalid',
         path: ['newEndDate']
-    });
+    })
+    .refine(
+        (data) =>
+            daysBetweenInclusive(data.newStartDate, data.newEndDate) <= MAX_EVENT_UPDATE_RANGE_DAYS,
+        {
+            message: 'zodError.accommodationOccupancy.eventUpdate.newRange.tooLong',
+            path: ['newEndDate']
+        }
+    )
+    .refine(
+        (data) =>
+            daysBetweenInclusive(data.oldStartDate, data.oldEndDate) <= MAX_EVENT_UPDATE_RANGE_DAYS,
+        {
+            message: 'zodError.accommodationOccupancy.eventUpdate.oldRange.tooLong',
+            path: ['oldEndDate']
+        }
+    );
 
 /**
  * TypeScript type for the edit-manual-event input, inferred from

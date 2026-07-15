@@ -441,6 +441,32 @@ export interface UpdateOccupancyEventInput {
     readonly note?: string | null;
 }
 
+/** Max inclusive day-span allowed for the edited event's NEW and OLD ranges —
+ * mirrors {@link AccommodationOccupancyBatchInputSchema}'s `dates` array
+ * `.max(366)` cap on the batch-toggle endpoint. See the `VALIDATION_ERROR`
+ * guard below for why this is enforced here in addition to the schema's own
+ * `.refine()`.
+ */
+const MAX_EVENT_UPDATE_RANGE_DAYS = 366;
+
+/**
+ * Counts the days in the inclusive range `[startDate, endDate]`, WITHOUT
+ * allocating the intermediate date array — used to reject an oversized OLD
+ * or NEW range before {@link expandDateRangeInclusive} ever runs. Same
+ * UTC-midnight epoch-ms diffing approach as
+ * `daysBetweenInclusive` in `AccommodationOccupancyEventUpdateSchema`
+ * (`@repo/schemas`).
+ *
+ * @param startDate - Inclusive lower bound, `YYYY-MM-DD`.
+ * @param endDate - Inclusive upper bound, `YYYY-MM-DD`.
+ * @returns The number of days spanned, inclusive of both bounds.
+ */
+function daysBetweenInclusive(startDate: string, endDate: string): number {
+    const startMs = new Date(`${startDate}T00:00:00Z`).getTime();
+    const endMs = new Date(`${endDate}T00:00:00Z`).getTime();
+    return Math.round((endMs - startMs) / (24 * 60 * 60 * 1000)) + 1;
+}
+
 /**
  * Atomically edits a MANUAL occupancy event — moves it from
  * `[oldStartDate..oldEndDate]` to `[newStartDate..newEndDate]` and/or changes
@@ -452,21 +478,28 @@ export interface UpdateOccupancyEventInput {
  * module doc in `@repo/schemas` for why this differs from the half-open
  * `GET .../occupancy?from&to` range).
  *
- * Runs as one `withServiceTransaction` boundary: deletes the `MANUAL` rows
- * across the OLD range, then idempotently upserts `MANUAL` rows across the
- * NEW range with the new `note` — an all-or-nothing move, never a state where
- * the old rows are gone but the new ones failed to write. Only
- * `source=MANUAL` rows are ever touched, in EITHER range; sync-sourced rows
- * (`GOOGLE_CALENDAR`/`AIRBNB`/`BOOKING`/`OTHER`) on any of those dates are
- * left completely untouched — same invariant as {@link batchToggleOccupancy}.
- * A date already holding a MANUAL row from an unrelated event is silently
- * skipped by the upsert's conflict target (matches the idempotent-upsert
- * precedent of {@link addOccupancy} / {@link batchToggleOccupancy} — this
- * function does not special-case that overlap).
+ * The NEW range is authoritative: this deletes the `MANUAL` rows across the
+ * UNION of the OLD and NEW ranges (deduped) BEFORE upserting the NEW range,
+ * all inside one `withServiceTransaction` boundary — an all-or-nothing move,
+ * never a state where rows are gone but the new ones failed to write.
+ * Including the NEW range in the pre-upsert delete (not just the OLD range)
+ * matters when the new range overlaps a PRE-EXISTING, unrelated MANUAL event:
+ * without it, `batchUpsertManual`'s `onConflictDoNothing` would silently skip
+ * writing the new note on that overlapping date, while the endpoint still
+ * reported success. Deleting the union first makes every date in the NEW
+ * range unconditionally end up with the requested note, at the cost of
+ * discarding whatever unrelated MANUAL event previously occupied that
+ * overlap — an explicit, deliberate "last edit wins" contract for this
+ * endpoint. Only `source=MANUAL` rows are ever touched, across the ENTIRE
+ * union; sync-sourced rows (`GOOGLE_CALENDAR`/`AIRBNB`/`BOOKING`/`OTHER`) on
+ * any of those dates are left completely untouched — same invariant as
+ * {@link batchToggleOccupancy}.
  *
- * Re-validates `oldStartDate <= oldEndDate` and `newStartDate <= newEndDate`
- * here, even though `AccommodationOccupancyEventUpdateSchema` (in
- * `@repo/schemas`) already declares the same two invariants via `.refine()`.
+ * Re-validates `oldStartDate <= oldEndDate`, `newStartDate <= newEndDate`,
+ * AND that BOTH the OLD and NEW ranges span at most
+ * {@link MAX_EVENT_UPDATE_RANGE_DAYS} days here, even though
+ * `AccommodationOccupancyEventUpdateSchema` (in `@repo/schemas`) already
+ * declares the same invariants via `.refine()`.
  * This is NOT redundant: `apps/api`'s route factory feeds every request body
  * schema through `createOpenAPISchema` for OpenAPI doc generation, and under
  * Zod v4 a `.refine()` on a `z.object()` no longer produces a distinct
@@ -480,9 +513,17 @@ export interface UpdateOccupancyEventInput {
  * as-is; only whole-object `.refine()`s are lost. This is a pre-existing,
  * broader route-factory/Zod-v4 compatibility gap (also affects
  * `AccommodationOccupancyRangeQuerySchema`, unrelated to this endpoint) —
- * out of scope to fix generically here, so this function guards the
- * invariant itself rather than trusting the HTTP layer to have already done
- * so.
+ * out of scope to fix generically here, so this function guards every
+ * invariant itself (including the 366-day cap on BOTH ranges) rather than
+ * trusting the HTTP layer to have already done so — without it, an
+ * unbounded/typo'd `newEndDate` (e.g. a year decades out) would expand into
+ * tens of thousands of rows written in a single transaction, and an
+ * unbounded OLD range (e.g. `oldStartDate:'1970-01-01'`,
+ * `oldEndDate:'9999-12-31'`) would allocate a ~2.9M-entry date array before
+ * any other guard runs — a memory-exhaustion DoS reachable by any
+ * authenticated owner. Both day-span checks use a cheap day-diff
+ * ({@link daysBetweenInclusive}) computed BEFORE either range is expanded
+ * into an array via {@link expandDateRangeInclusive}.
  *
  * @param params - Actor, accommodation id, the OLD and NEW inclusive date
  *   ranges, and the new note.
@@ -493,8 +534,9 @@ export interface UpdateOccupancyEventInput {
  *   can merge the result into a per-date map without a second round trip.
  * @throws {ServiceError} `NOT_FOUND` when the accommodation does not exist or
  *   is soft-deleted. `FORBIDDEN` when the actor lacks `ACCOMMODATION_OCCUPANCY_MANAGE`
- *   / ownership. `VALIDATION_ERROR` when `oldStartDate > oldEndDate` or
- *   `newStartDate > newEndDate`.
+ *   / ownership. `VALIDATION_ERROR` when `oldStartDate > oldEndDate`,
+ *   `newStartDate > newEndDate`, or either the OLD or NEW range spans more
+ *   than {@link MAX_EVENT_UPDATE_RANGE_DAYS} days.
  */
 export async function updateOccupancyEvent(
     params: UpdateOccupancyEventInput
@@ -517,14 +559,36 @@ export async function updateOccupancyEvent(
         );
     }
 
+    // Day-diff (NOT array expansion) BEFORE calling `expandDateRangeInclusive`
+    // on either range — a huge span (e.g. `oldStartDate:'1970-01-01'`,
+    // `oldEndDate:'9999-12-31'`) must be rejected before it is ever
+    // allocated into a ~2.9M-entry array. The NEW range is re-checked the
+    // same way immediately below for the same reason.
+    const oldRangeDays = daysBetweenInclusive(oldStartDate, oldEndDate);
+    if (oldRangeDays > MAX_EVENT_UPDATE_RANGE_DAYS) {
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            `oldStartDate..oldEndDate must span at most ${MAX_EVENT_UPDATE_RANGE_DAYS} days (got ${oldRangeDays})`
+        );
+    }
+    const newRangeDays = daysBetweenInclusive(newStartDate, newEndDate);
+    if (newRangeDays > MAX_EVENT_UPDATE_RANGE_DAYS) {
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            `newStartDate..newEndDate must span at most ${MAX_EVENT_UPDATE_RANGE_DAYS} days (got ${newRangeDays})`
+        );
+    }
+
     const oldDates = expandDateRangeInclusive(oldStartDate, oldEndDate);
     const newDates = expandDateRangeInclusive(newStartDate, newEndDate);
+
+    const unionDates = Array.from(new Set([...oldDates, ...newDates])).sort();
 
     await withServiceTransaction(async (txCtx) => {
         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
         const tx = txCtx.tx!;
         await accommodationOccupancyModel.deleteManualByDates(
-            { accommodationId, dates: oldDates },
+            { accommodationId, dates: unionDates },
             tx
         );
         await accommodationOccupancyModel.batchUpsertManual(
@@ -538,9 +602,9 @@ export async function updateOccupancyEvent(
         );
     });
 
-    const unionDates = new Set([...oldDates, ...newDates]);
+    const unionDatesSet = new Set(unionDates);
     const all = await accommodationOccupancyModel.findByAccommodation({ accommodationId });
-    return all.filter((row) => unionDates.has(row.date));
+    return all.filter((row) => unionDatesSet.has(row.date));
 }
 
 /**

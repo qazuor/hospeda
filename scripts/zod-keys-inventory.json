@@ -90,7 +90,9 @@
         "zodError.accommodationOccupancy.eventTitle.max",
         "zodError.accommodationOccupancy.eventTitle.required",
         "zodError.accommodationOccupancy.eventUpdate.newRange.invalid",
+        "zodError.accommodationOccupancy.eventUpdate.newRange.tooLong",
         "zodError.accommodationOccupancy.eventUpdate.oldRange.invalid",
+        "zodError.accommodationOccupancy.eventUpdate.oldRange.tooLong",
         "zodError.accommodationOccupancy.externalEventId.max",
         "zodError.accommodationOccupancy.externalEventId.required",
         "zodError.accommodationOccupancy.isBlocked.required",
@@ -1704,7 +1706,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1703,
+    "total": 1705,
     "byNamespace": {
         "accommodation": 55,
         "accommodationAmenity": 4,
@@ -1712,7 +1714,7 @@
         "accommodationExternalListing": 1,
         "accommodationExternalReputation": 2,
         "accommodationFeature": 4,
-        "accommodationOccupancy": 18,
+        "accommodationOccupancy": 20,
         "accommodationReview": 3,
         "admin": 50,
         "adminView": 3,
