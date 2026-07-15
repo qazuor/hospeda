@@ -140,8 +140,14 @@
 }
 
 .week {
-    /* Overridden per-week via an inline style with the week's real lane count. */
-    --lane-count: 0;
+    /*
+     * A FIXED number of bar lanes is reserved per week so every day cell is the
+     * same height regardless of how busy the week is. Events beyond `--max-lanes`
+     * collapse into a per-day "+N" indicator (see `.barMore`) — the cell never
+     * grows. Keep `--max-lanes` in sync with `MAX_VISIBLE_LANES` in
+     * `lib/calendar/occupancy-bar-layout.ts`.
+     */
+    --max-lanes: 3;
     --bar-height: 1.15rem;
     --bar-gap: 0.25rem;
     position: relative;
@@ -160,9 +166,13 @@
 
 .day {
     position: relative;
-    /* Grows with the busiest lane in this week so bars never overflow. */
+    /*
+     * FIXED height: the day-number band (1.75rem, matching `.weekBars` top)
+     * plus a constant `--max-lanes` rows. Every cell is identical; busier weeks
+     * spill into the "+N" indicator instead of stretching the cell.
+     */
     min-height: calc(
-        2.75rem + var(--lane-count, 0) * (var(--bar-height) + var(--bar-gap))
+        1.75rem + var(--max-lanes) * (var(--bar-height) + var(--bar-gap))
     );
     display: flex;
     align-items: center;
@@ -208,6 +218,11 @@
     left: 0;
     right: 0;
     top: 1.75rem;
+    /* Fixed band: exactly `--max-lanes` rows tall. Anything positioned below is
+     * clipped — but the layout never does that, it collapses extras into
+     * `.barMore` before they reach here. */
+    height: calc(var(--max-lanes) * (var(--bar-height) + var(--bar-gap)));
+    overflow: hidden;
     pointer-events: none;
 }
 
@@ -243,6 +258,25 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+/* Per-day "+N" indicator for events that overflow the fixed lane band. */
+.barMore {
+    position: absolute;
+    height: var(--bar-height);
+    display: flex;
+    align-items: center;
+    padding: 0 0.4375rem;
+    font-family: var(--font-sans);
+    font-size: 0.625rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--core-muted-foreground);
+    background-color: var(--muted);
+    border-radius: var(--radius-pill, 9999px);
+    box-sizing: border-box;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .barManual {

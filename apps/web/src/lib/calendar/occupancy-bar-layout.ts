@@ -40,6 +40,14 @@ export interface OccupancyEvent {
     readonly endKey: DateKey;
 }
 
+/**
+ * Maximum number of bar lanes rendered per week before the rest collapse into
+ * a per-day "+N" overflow indicator. Day cells reserve a FIXED height for this
+ * many lanes so every week — and therefore every day cell — is the same height,
+ * regardless of how many events that week actually holds.
+ */
+export const MAX_VISIBLE_LANES = 3;
+
 /** One event clipped to a single week row, positioned by grid column + lane. */
 export interface WeekBarSegment {
     readonly event: OccupancyEvent;
@@ -197,4 +205,57 @@ export function layoutWeekBars({
     });
 
     return { segments, laneCount: laneRightEdge.length };
+}
+
+/** The visible bar segments for a week plus its per-day overflow counts. */
+export interface WeekBarOverflow {
+    /** Segments that fit inside the visible lane band (rendered as bars). */
+    readonly visibleSegments: readonly WeekBarSegment[];
+    /**
+     * Per-column (0 = Monday .. 6 = Sunday) count of events hidden below the
+     * visible band, surfaced as a "+N" indicator on that day. Empty when the
+     * week has no overflow.
+     */
+    readonly overflowByColumn: readonly number[];
+}
+
+/**
+ * Splits a week's laid-out segments into what fits in the fixed visible lane
+ * band and a per-day count of what overflows.
+ *
+ * When a week uses no more lanes than `maxLanes`, every segment is shown and
+ * there is no overflow. When it uses more, the lowest `maxLanes - 1` lanes are
+ * shown and the final visible row is reserved for a per-day "+N" indicator that
+ * counts every segment pushed below the band. This keeps every day cell the
+ * same fixed height (it always reserves `maxLanes` rows) instead of growing
+ * with the busiest week.
+ *
+ * @param params.segments - The week's positioned segments (from {@link layoutWeekBars}).
+ * @param params.laneCount - The week's total lane count (from {@link layoutWeekBars}).
+ * @param params.maxLanes - Reserved visible lanes. Defaults to {@link MAX_VISIBLE_LANES}.
+ * @returns The visible segments and the per-day overflow counts.
+ */
+export function resolveWeekOverflow({
+    segments,
+    laneCount,
+    maxLanes = MAX_VISIBLE_LANES
+}: {
+    readonly segments: readonly WeekBarSegment[];
+    readonly laneCount: number;
+    readonly maxLanes?: number;
+}): WeekBarOverflow {
+    if (laneCount <= maxLanes) {
+        return { visibleSegments: segments, overflowByColumn: [] };
+    }
+    // Reserve the last visible row for the "+N" indicator.
+    const visibleLaneLimit = maxLanes - 1;
+    const visibleSegments = segments.filter((segment) => segment.lane < visibleLaneLimit);
+    const overflowByColumn = new Array<number>(7).fill(0);
+    for (const segment of segments) {
+        if (segment.lane < visibleLaneLimit) continue;
+        for (let c = segment.colStart; c < segment.colStart + segment.span; c++) {
+            overflowByColumn[c] = (overflowByColumn[c] ?? 0) + 1;
+        }
+    }
+    return { visibleSegments, overflowByColumn };
 }

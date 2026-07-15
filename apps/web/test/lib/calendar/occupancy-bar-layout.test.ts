@@ -8,7 +8,13 @@
 import type { AccommodationOccupancy } from '@repo/schemas';
 import { OccupancySourceEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { buildOccupancyEvents, layoutWeekBars } from '@/lib/calendar/occupancy-bar-layout';
+import {
+    buildOccupancyEvents,
+    layoutWeekBars,
+    MAX_VISIBLE_LANES,
+    resolveWeekOverflow,
+    type WeekBarSegment
+} from '@/lib/calendar/occupancy-bar-layout';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -311,5 +317,108 @@ describe('layoutWeekBars', () => {
         });
         expect(segments).toHaveLength(0);
         expect(laneCount).toBe(0);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// resolveWeekOverflow
+// ---------------------------------------------------------------------------
+
+/** Builds a minimal segment; only the fields overflow logic reads matter. */
+function segment({
+    lane,
+    colStart,
+    span
+}: {
+    lane: number;
+    colStart: number;
+    span: number;
+}): WeekBarSegment {
+    return {
+        event: {
+            source: OccupancySourceEnum.MANUAL,
+            externalEventId: null,
+            title: null,
+            startKey: '2026-08-10',
+            endKey: '2026-08-10'
+        },
+        colStart,
+        span,
+        isStart: true,
+        isEnd: true,
+        showLabel: true,
+        lane
+    };
+}
+
+describe('resolveWeekOverflow', () => {
+    it('shows every segment and reports no overflow when lanes fit', () => {
+        const segments = [
+            segment({ lane: 0, colStart: 1, span: 2 }),
+            segment({ lane: 1, colStart: 3, span: 1 })
+        ];
+        const result = resolveWeekOverflow({ segments, laneCount: 2 });
+        expect(result.visibleSegments).toEqual(segments);
+        expect(result.overflowByColumn).toEqual([]);
+    });
+
+    it('shows exactly the top MAX lanes when the week fills them exactly', () => {
+        const segments = [
+            segment({ lane: 0, colStart: 2, span: 1 }),
+            segment({ lane: 1, colStart: 2, span: 1 }),
+            segment({ lane: 2, colStart: 2, span: 1 })
+        ];
+        const result = resolveWeekOverflow({ segments, laneCount: MAX_VISIBLE_LANES });
+        expect(result.visibleSegments).toHaveLength(MAX_VISIBLE_LANES);
+        expect(result.overflowByColumn).toEqual([]);
+    });
+
+    it('collapses events beyond MAX into a per-day "+N" count on each covered day', () => {
+        // 5 overlapping single-day events on Wednesday (col 2) -> lanes 0..4.
+        const events = buildOccupancyEvents({
+            rows: [
+                row({ date: '2026-08-12', source: OccupancySourceEnum.MANUAL, note: 'm' }),
+                row({
+                    date: '2026-08-12',
+                    source: OccupancySourceEnum.GOOGLE_CALENDAR,
+                    externalEventId: 'g'
+                }),
+                row({
+                    date: '2026-08-12',
+                    source: OccupancySourceEnum.AIRBNB,
+                    externalEventId: 'a'
+                }),
+                row({
+                    date: '2026-08-12',
+                    source: OccupancySourceEnum.BOOKING,
+                    externalEventId: 'b'
+                }),
+                row({ date: '2026-08-12', source: OccupancySourceEnum.OTHER, externalEventId: 'o' })
+            ]
+        });
+        const { segments, laneCount } = layoutWeekBars({ week: weekOf('2026-08-10'), events });
+        expect(laneCount).toBe(5);
+
+        const result = resolveWeekOverflow({ segments, laneCount });
+        // Reserves the last visible row -> shows MAX-1 bars.
+        expect(result.visibleSegments).toHaveLength(MAX_VISIBLE_LANES - 1);
+        expect(result.visibleSegments.every((s) => s.lane < MAX_VISIBLE_LANES - 1)).toBe(true);
+        // 5 total - (MAX-1) shown = 3 hidden, all on Wednesday (col 2).
+        expect(result.overflowByColumn[2]).toBe(5 - (MAX_VISIBLE_LANES - 1));
+        expect(result.overflowByColumn.filter((n) => n > 0)).toHaveLength(1);
+    });
+
+    it('counts a multi-day hidden segment on every column it covers', () => {
+        const segments = [
+            segment({ lane: 0, colStart: 0, span: 7 }),
+            segment({ lane: 1, colStart: 0, span: 7 }),
+            segment({ lane: 2, colStart: 1, span: 2 }), // hidden, covers cols 1-2
+            segment({ lane: 3, colStart: 2, span: 1 }) // hidden, covers col 2
+        ];
+        const result = resolveWeekOverflow({ segments, laneCount: 4 });
+        expect(result.visibleSegments).toHaveLength(MAX_VISIBLE_LANES - 1);
+        expect(result.overflowByColumn[1]).toBe(1);
+        expect(result.overflowByColumn[2]).toBe(2);
+        expect(result.overflowByColumn[0]).toBe(0);
     });
 });
