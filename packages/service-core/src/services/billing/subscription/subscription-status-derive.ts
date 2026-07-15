@@ -46,8 +46,14 @@ export interface DeriveTrialingStatusInput {
      * The local `billing_subscriptions.trial_end`. `null` when the subscription
      * carries no trial. qzpay writes this on `mode: 'paid'` regardless of
      * whether the row is `incomplete`, so it is populated before authorization.
+     *
+     * `undefined` is accepted and treated exactly like `null`. This helper sits
+     * on the webhook's hot path, where throwing would dead-letter the event and
+     * leave the subscription permanently unactivated — far too high a price for
+     * a nullish distinction that carries no meaning here. Absent and null both
+     * mean "no known trial window", so neither derives a trial.
      */
-    readonly trialEnd: Date | null;
+    readonly trialEnd: Date | null | undefined;
     /** Injected clock, so the derivation is deterministic under test. */
     readonly now: Date;
 }
@@ -107,7 +113,7 @@ export function deriveTrialingStatus(input: DeriveTrialingStatusInput): Subscrip
         return mappedStatus;
     }
 
-    if (trialEnd === null) {
+    if (trialEnd === null || trialEnd === undefined) {
         return mappedStatus;
     }
 

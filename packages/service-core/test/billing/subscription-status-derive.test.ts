@@ -87,6 +87,20 @@ describe('deriveTrialingStatus — AC-3: null or past trialEnd stays ACTIVE', ()
         expect(result).toBe(SubscriptionStatusEnum.ACTIVE);
     });
 
+    it('returns ACTIVE unchanged when trialEnd is undefined, never throws', () => {
+        // Arrange — this helper runs on the webhook hot path; throwing here would
+        // dead-letter the event and leave the subscription unactivated forever.
+        const input = {
+            mappedStatus: SubscriptionStatusEnum.ACTIVE,
+            trialEnd: undefined,
+            now: NOW
+        };
+        // Act
+        const result = deriveTrialingStatus(input);
+        // Assert
+        expect(result).toBe(SubscriptionStatusEnum.ACTIVE);
+    });
+
     it('returns ACTIVE unchanged when the trial has elapsed (MP has charged)', () => {
         // Arrange
         const input = {
@@ -136,9 +150,10 @@ describe('deriveTrialingStatus — never derives from a non-ACTIVE status', () =
 // ─── Full matrix exhaustion ──────────────────────────────────────────────────
 
 describe('deriveTrialingStatus — full truth table (every status × every window)', () => {
-    const WINDOWS: ReadonlyArray<{ label: string; trialEnd: Date | null }> = [
+    const WINDOWS: ReadonlyArray<{ label: string; trialEnd: Date | null | undefined }> = [
         { label: 'future trialEnd', trialEnd: FUTURE_TRIAL_END },
         { label: 'null trialEnd', trialEnd: null },
+        { label: 'undefined trialEnd', trialEnd: undefined },
         { label: 'past trialEnd', trialEnd: PAST_TRIAL_END }
     ];
 
