@@ -423,11 +423,11 @@ describe('HOS-110 W1 / HOS-171 §7.4 — promo effect_kind branching within the 
         expect(firstCreateInput(calls[0]).freeTrialDays).toBe(21);
     });
 
-    it('discount code is discarded for a trial-eligible customer: preapproval still created at FULL price with the trial, promoCodeIgnored=true', async () => {
+    it('discount code applies ALONGSIDE the trial for a trial-eligible customer (HOS-171)', async () => {
         // ARRANGE — a 50%-off discount code on the trial-declaring plan.
         const seed = await seedBillingTestPlans();
         const promo = await createTestPromoCode({
-            code: `DROPPED-${Date.now()}`,
+            code: `COMBINED-${Date.now()}`,
             effectKind: 'discount',
             valueKind: 'percentage',
             value: 50,
@@ -441,11 +441,21 @@ describe('HOS-110 W1 / HOS-171 §7.4 — promo effect_kind branching within the 
             providerCustomerIds: { mercadopago: `mp_cust_test_${user.id.slice(0, 8)}` }
         });
 
-        const expectedCheckoutUrl = 'https://stub.example/preapproval/sub_trial_dropped_discount';
+        const expectedCheckoutUrl = 'https://stub.example/preapproval/sub_trial_with_discount';
         mpStub.config.setSuccess(
             'subscriptions.create',
             providerResponseFixtures.subscription({
-                id: 'sub_trial_dropped_discount',
+                id: 'sub_trial_with_discount',
+                status: 'pending',
+                initPoint: expectedCheckoutUrl
+            })
+        );
+        // The discount is applied by mutating the live preapproval's amount
+        // down — the trial no longer swallows it (HOS-171).
+        mpStub.config.setSuccess(
+            'subscriptions.update',
+            providerResponseFixtures.subscription({
+                id: 'sub_trial_with_discount',
                 status: 'pending',
                 initPoint: expectedCheckoutUrl
             })
@@ -461,11 +471,10 @@ describe('HOS-110 W1 / HOS-171 §7.4 — promo effect_kind branching within the 
             promoCode: promo.code
         });
 
-        // ASSERT — the trial wins outright; the discount is flagged as
-        // ignored, never applied, never persisted anywhere on the sub row.
-        // Card-first: a preapproval IS created (the trial does not skip MP),
-        // it just carries the plan's base free_trial (14 days, no extension)
-        // and is NEVER mutated down — the discount never reaches MercadoPago.
+        // ASSERT — the customer gets BOTH. The trial defers the first charge;
+        // the discount lowers what that charge will be. They stopped being
+        // mutually exclusive when the trial became a real preapproval: there is
+        // now an amount to discount, and one row carries both.
         expect(response.status).toBe(201);
         const body = (await response.json()) as {
             readonly data: {
@@ -475,10 +484,13 @@ describe('HOS-110 W1 / HOS-171 §7.4 — promo effect_kind branching within the 
                 readonly checkoutUrl: string;
             };
         };
-        expect(body.data.appliedEffect).toBeUndefined();
-        expect(body.data.promoCodeIgnored).toBe(true);
+        expect(body.data.appliedEffect).toBe('discount');
+        expect(body.data.promoCodeIgnored).toBeUndefined();
         expect(body.data.checkoutUrl).toBe(expectedCheckoutUrl);
 
+        // The promo is really persisted against the subscription now — it is no
+        // longer discarded, so the cycle counter must be seeded for the renewal
+        // engine to count it down.
         const rows = await testDb
             .getDb()
             .select()
@@ -486,14 +498,12 @@ describe('HOS-110 W1 / HOS-171 §7.4 — promo effect_kind branching within the 
             .where(eq(billingSubscriptions.id, body.data.localSubscriptionId));
         expect(rows).toHaveLength(1);
         expect(rows[0]?.customerId).toBe(customer.customerId);
-        expect(rows[0]?.promoCodeId ?? null).toBeNull();
-        expect(rows[0]?.promoEffectRemainingCycles ?? null).toBeNull();
+        expect(rows[0]?.promoCodeId).toBe(promo.promoCodeId);
 
-        // ONE preapproval call, carrying the base trial length, unmutated —
-        // the discount machinery never touches this subscription.
+        // ONE preapproval, carrying the base trial length, THEN mutated down.
         const calls = mpStub.config.getCalls('subscriptions.create');
         expect(calls).toHaveLength(1);
         expect(firstCreateInput(calls[0]).freeTrialDays).toBe(14);
-        expect(mpStub.config.getCalls('subscriptions.update')).toHaveLength(0);
+        expect(mpStub.config.getCalls('subscriptions.update')).toHaveLength(1);
     });
 });

@@ -351,15 +351,24 @@ describe('HOS-110 W1 / HOS-171: promo effect_kind precedence before the preappro
         expect(expiresAtMs).toBeLessThanOrEqual(after + PENDING_PROVIDER_TTL_MS + 5000);
     });
 
-    it('discount: the trial wins outright and the discount is discarded (promoCodeIgnored=true)', async () => {
+    it('discount: applies ALONGSIDE the trial — the customer gets both (HOS-171)', async () => {
+        // Arrange — a trial-eligible customer on a 14-day plan, with a 50%-off code
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'discount',
             promoCodeId: 'pc-1',
             code: 'LANZA50',
             effect: { kind: 'discount', valueKind: 'percentage', value: 50, durationCycles: 3 }
         });
+        calculatePromoCodeEffectMock.mockReturnValue({
+            type: 'apply-discount',
+            discountAmount: 5000,
+            finalAmount: 5000,
+            remainingCycles: 3
+        });
+        applySignupDiscountToMonthlyMock.mockResolvedValue({ success: true, data: {} });
         const billing = makeTrialBilling();
 
+        // Act
         const result = await initiatePaidMonthlySubscription({
             ...MONTHLY_BASE,
             // biome-ignore lint/suspicious/noExplicitAny: test billing stub
@@ -367,17 +376,16 @@ describe('HOS-110 W1 / HOS-171: promo effect_kind precedence before the preappro
             promoCode: 'LANZA50'
         });
 
-        expect(result.appliedEffect).toBeUndefined();
-        expect(result.promoCodeIgnored).toBe(true);
-        // No extension — the trial is granted at its base length, unchanged.
-        const createArg = createCallArg(billing);
-        expect(createArg.freeTrialDays).toBe(14);
-        // The discount machinery is never invoked — the code was discarded,
-        // not persisted anywhere, and it NEVER mutates the MP amount (no
-        // post-trial discount, per owner decision).
-        expect(applySignupDiscountToMonthlyMock).not.toHaveBeenCalled();
-        expect(calculatePromoCodeEffectMock).not.toHaveBeenCalled();
-        expect(resolveFullPlanPriceCentavosMock).not.toHaveBeenCalled();
+        // Assert — the trial defers the first charge; the discount lowers what
+        // that charge will be. They are no longer mutually exclusive: a no-card
+        // trial had no preapproval to discount, a card-first one IS the
+        // preapproval (verified by the HOS-171 production spike).
+        expect(result.promoCodeIgnored).toBeUndefined();
+        expect(result.appliedEffect).toBe('discount');
+        // The trial is untouched, at its base length.
+        expect(createCallArg(billing).freeTrialDays).toBe(14);
+        // And the discount really was applied to the live preapproval.
+        expect(applySignupDiscountToMonthlyMock).toHaveBeenCalledOnce();
         expect(billing.subscriptions.create).toHaveBeenCalledOnce();
     });
 
@@ -990,15 +998,24 @@ describe('HOS-115/HOS-171: annual TRIAL-eligible checkout (mirrors monthly HOS-1
         expect(createArg.freeTrialDays).toBe(24);
     });
 
-    it('discount is discarded on the annual trial branch (promoCodeIgnored=true), preapproval created at FULL price with the base trial', async () => {
+    it('discount applies ALONGSIDE the annual trial, exactly like monthly (HOS-171)', async () => {
+        // Arrange
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'discount',
             promoCodeId: 'pc-1',
             code: 'LANZA50',
             effect: { kind: 'discount', valueKind: 'percentage', value: 50, durationCycles: 3 }
         });
+        calculatePromoCodeEffectMock.mockReturnValue({
+            type: 'apply-discount',
+            discountAmount: 17_500_000,
+            finalAmount: 17_500_000,
+            remainingCycles: 3
+        });
+        applySignupDiscountToMonthlyMock.mockResolvedValue({ success: true, data: {} });
         const billing = makeTrialBilling();
 
+        // Act
         const result = await initiatePaidAnnualSubscription({
             ...ANNUAL_BASE,
             // biome-ignore lint/suspicious/noExplicitAny: test billing stub
@@ -1006,16 +1023,15 @@ describe('HOS-115/HOS-171: annual TRIAL-eligible checkout (mirrors monthly HOS-1
             promoCode: 'LANZA50'
         });
 
-        expect(result.appliedEffect).toBeUndefined();
-        expect(result.promoCodeIgnored).toBe(true);
-        // No extension — the trial is granted at its base length, unchanged.
+        // Assert — annual has no promo behavior of its own any more
+        expect(result.promoCodeIgnored).toBeUndefined();
+        expect(result.appliedEffect).toBe('discount');
         const createArg = createCallArg(billing);
         expect(createArg.billingInterval).toBe('annual');
         expect(createArg.freeTrialDays).toBe(14);
-        // The discount/redemption machinery is never invoked — discarded, not
-        // persisted anywhere (mirrors monthly HOS-110 W1; no post-trial discount).
-        expect(calculatePromoCodeEffectMock).not.toHaveBeenCalled();
-        expect(applySignupDiscountToMonthlyMock).not.toHaveBeenCalled();
+        // Mutated down on the live preapproval, not baked into a one-time line
+        // item — the hosted checkout is never touched.
+        expect(applySignupDiscountToMonthlyMock).toHaveBeenCalledOnce();
         expect(billing.checkout.create).not.toHaveBeenCalled();
     });
 });
