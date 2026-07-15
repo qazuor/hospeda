@@ -42,6 +42,21 @@ import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 const START_PAID_URL = `${API_URL}/api/v1/protected/billing/subscriptions/start-paid`;
 
+/**
+ * Headers for one checkout attempt.
+ *
+ * `/start-paid` is wrapped by `idempotencyKeyMiddleware` and 400s with
+ * IDEMPOTENCY_KEY_REQUIRED without the header — before it reaches billing at all,
+ * which would make an armed failure look like it never fired.
+ *
+ * A FRESH key per call is what the retry needs to be a real second attempt rather
+ * than a replay of the first, and it mirrors the front end: PlanPurchaseButton
+ * sends `crypto.randomUUID()` on every click (endpoints-protected.ts).
+ */
+function checkoutHeaders(sessionCookie: string): Record<string, string> {
+    return { cookie: sessionCookie, 'X-Idempotency-Key': crypto.randomUUID() };
+}
+
 /** Counts subscriptions belonging to the user's billing customer. */
 async function countSubscriptions(userId: string): Promise<number> {
     const rows = await execSQL(
@@ -98,7 +113,7 @@ test.describe('RES-01: MP down during checkout → retry, no duplicates @p0 @res
 
         // ── 1. First checkout fails, no subscription row created ────────────
         const firstAttempt = await page.request.post(START_PAID_URL, {
-            headers: { cookie: host.sessionCookie },
+            headers: checkoutHeaders(host.sessionCookie),
             data: { planSlug: 'owner-basico', billingInterval: 'monthly' }
         });
         expect(
@@ -113,7 +128,7 @@ test.describe('RES-01: MP down during checkout → retry, no duplicates @p0 @res
 
         // ── 2. Retry: the queue is drained, so the call runs for real ────────
         const retry = await page.request.post(START_PAID_URL, {
-            headers: { cookie: host.sessionCookie },
+            headers: checkoutHeaders(host.sessionCookie),
             data: { planSlug: 'owner-basico', billingInterval: 'monthly' }
         });
 

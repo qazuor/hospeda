@@ -83,7 +83,10 @@ test.describe('HOST-07c: MP timeout during checkout @p0 @host @billing @resilien
 
         // ── Checkout: must fail, not hang or half-commit ────────────────────
         const response = await page.request.post(START_PAID_URL, {
-            headers: { cookie: host.sessionCookie },
+            // `/start-paid` is wrapped by idempotencyKeyMiddleware: without this
+            // header it 400s before reaching billing, and the armed timeout would
+            // look like it never fired. The front end sends a fresh uuid per click.
+            headers: { cookie: host.sessionCookie, 'X-Idempotency-Key': crypto.randomUUID() },
             data: { planSlug: 'owner-basico', billingInterval: 'monthly' }
         });
         expect(
