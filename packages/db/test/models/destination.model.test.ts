@@ -818,4 +818,70 @@ describe('DestinationModel.getPointsOfInterestMap', () => {
             expect(entries[0]?.relation).toBe('NEARBY');
         });
     });
+
+    // ========================================================================
+    // HOS-146 review: public-read gate (ACTIVE, non-soft-deleted only)
+    // ========================================================================
+    describe('public-read gate (HOS-146 review, mirrors HOS-132)', () => {
+        /**
+         * Walks a drizzle `SQL` tree and collects the names of every column it
+         * references plus every bound parameter value, so a `where` clause built
+         * with `and(...)` can be asserted structurally (drizzle wraps the
+         * conditions into one opaque SQL object — see the AC-6 test above).
+         */
+        function inspectSql(
+            node: unknown,
+            acc: { columns: string[]; params: unknown[] }
+        ): {
+            columns: string[];
+            params: unknown[];
+        } {
+            if (!node || typeof node !== 'object') return acc;
+            if (Array.isArray(node)) {
+                for (const child of node) inspectSql(child, acc);
+                return acc;
+            }
+            const rec = node as Record<string, unknown>;
+            if (typeof rec.name === 'string' && 'table' in rec) acc.columns.push(rec.name);
+            if ('value' in rec && !('queryChunks' in rec)) acc.params.push(rec.value);
+            if ('queryChunks' in rec) inspectSql(rec.queryChunks, acc);
+            return acc;
+        }
+
+        it('filters out soft-deleted and non-ACTIVE POIs (a DRAFT/deleted POI must never reach a public response)', async () => {
+            // Arrange
+            const { selectMock, whereMock } = buildSelectChain([]);
+            getDbMock.mockReturnValue({ select: selectMock });
+
+            // Act
+            await model.getPointsOfInterestMap(['dest-1'], undefined, 'ALL');
+
+            // Assert — the where clause constrains the POI's own deletedAt and
+            // lifecycleState columns, not just the join row's destinationId.
+            const { columns, params } = inspectSql(whereMock.mock.calls[0]?.[0], {
+                columns: [],
+                params: []
+            });
+            expect(columns).toContain('deleted_at');
+            expect(columns).toContain('lifecycle_state');
+            expect(params).toContain('ACTIVE');
+        });
+
+        it('applies the gate on the default (PRIMARY) relation path too — both callers are public reads', async () => {
+            // Arrange
+            const { selectMock, whereMock } = buildSelectChain([]);
+            getDbMock.mockReturnValue({ select: selectMock });
+
+            // Act — no relation arg: the `_withPointsOfInterest` detail-payload path.
+            await model.getPointsOfInterestMap(['dest-1']);
+
+            // Assert
+            const { columns } = inspectSql(whereMock.mock.calls[0]?.[0], {
+                columns: [],
+                params: []
+            });
+            expect(columns).toContain('deleted_at');
+            expect(columns).toContain('lifecycle_state');
+        });
+    });
 });

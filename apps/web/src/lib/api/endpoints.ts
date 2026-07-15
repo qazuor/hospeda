@@ -8,6 +8,7 @@ import type {
     AmenityPublic,
     AnnouncementItem,
     CommerceLeadCreateInput,
+    DestinationPointOfInterestSummary,
     DestinationPublic,
     EventPublic,
     EventSummary,
@@ -727,6 +728,39 @@ export const destinationsApi = {
     /** Get aggregated stats for a destination (counts + averageRating). */
     getStats({ id }: { readonly id: string }): Promise<ApiResult<DestinationStatsItem>> {
         return apiClient.get({ path: `${BASE}/destinations/${id}/stats` });
+    },
+
+    /**
+     * Get a destination's points of interest, optionally filtered by relation
+     * kind (HOS-146).
+     *
+     * The destination detail payload (`getBySlug`/`getById`) carries only the
+     * PRIMARY POIs — the ones physically in the destination — because that is
+     * all the SSR grid renders. The POI map calls this with
+     * `relation: 'NEARBY'` after mount to pull in the far-out landmarks it
+     * reveals behind the "ver alrededores" toggle, so the extra rows never
+     * inflate the detail response for the pages/consumers that don't need them.
+     *
+     * @param params - Destination ID and optional relation filter (server default: `ALL`)
+     * @returns The (possibly empty) list of POIs for that destination
+     *
+     * @example
+     * ```ts
+     * const result = await destinationsApi.getPointsOfInterest({ id, relation: 'NEARBY' });
+     * if (result.ok) { renderExtraPins(result.data); }
+     * ```
+     */
+    getPointsOfInterest({
+        id,
+        relation
+    }: {
+        readonly id: string;
+        readonly relation?: 'PRIMARY' | 'NEARBY' | 'ALL';
+    }): Promise<ApiResult<ReadonlyArray<DestinationPointOfInterestSummary>>> {
+        return apiClient.get({
+            path: `${BASE}/destinations/${id}/points-of-interest`,
+            params: { relation }
+        });
     }
 };
 

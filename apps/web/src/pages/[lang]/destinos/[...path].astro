@@ -19,6 +19,7 @@ import { LocationMap } from '@/components/maps/LocationMap.client';
 import DestinationDetailHeader from '@/components/destination/DestinationDetailHeader.astro';
 import DestinationGallery from '@/components/destination/DestinationGallery.astro';
 import DestinationPOISection from '@/components/destination/DestinationPOISection.astro';
+import { DestinationPOIMap } from '@/components/destination/DestinationPOIMap.client';
 import DestinationMiniMap from '@/components/destination/DestinationMiniMap.astro';
 import DestinationSidebarCtas from '@/components/destination/DestinationSidebarCtas.astro';
 import DestinationStatsCard from '@/components/destination/DestinationStatsCard.astro';
@@ -38,11 +39,11 @@ import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { DestinationReviewSidebarCard } from '@/components/destination/DestinationReviewSidebarCard.client';
 import DestinationReviewSignInCta from '@/components/destination/DestinationReviewSignInCta.astro';
 import { getApiUrl } from '@/lib/env';
-import type { I18nText } from '@repo/schemas';
 import {
 	faqSetInLanguage,
 	toAccommodationCardProps,
 	toDestinationFaqs,
+	toDestinationPointOfInterestListProps,
 	toEventCardProps
 } from '@/lib/api/transforms';
 import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
@@ -132,21 +133,23 @@ const attractions = (dest.attractions as ReadonlyArray<{
 }>) ?? [];
 
 // HOS-113 Phase 4: destination points of interest (POIs), hydrated by
-// DestinationService._withPointsOfInterest. List/grid rendering only — NOT
-// map pins (NG-3 / OQ-4). HOS-138: nameI18n/descriptionI18n carry the
-// admin-editable multilang content when a POI has been migrated (nullable —
-// DestinationPOISection.astro falls back to the legacy i18n-by-slug lookup
-// and the plain `description` column when they are null).
-const pointsOfInterest = (dest.pointsOfInterest as ReadonlyArray<{
-	readonly id: string;
-	readonly slug: string;
-	readonly type: string;
-	readonly description?: string | null;
-	readonly isFeatured?: boolean;
-	readonly displayWeight?: number;
-	readonly nameI18n?: I18nText | null;
-	readonly descriptionI18n?: I18nText | null;
-}>) ?? [];
+// DestinationService._withPointsOfInterest. HOS-146 added PRIMARY/NEARBY
+// `relation` + nullable lat/long, consumed by both the SSR grid
+// (DestinationPOISection.astro, PRIMARY-only, the indexable content source)
+// and the multi-marker map (DestinationPOIMap, enrichment only) below.
+const pointsOfInterest = toDestinationPointOfInterestListProps({
+	pointsOfInterest: (dest.pointsOfInterest as ReadonlyArray<Record<string, unknown>>) ?? []
+});
+
+// HOS-146: mirrors DestinationPOIMap's own `markers.length === 0` guard —
+// "at least one POI has coordinates". The island returns null in that case, but
+// its wrapper reserves 560px of height (see the .dest-detail__poi-map style
+// below), so without this server-side gate the 6 POI-less destinations
+// (argentina, litoral-argentino, entre-rios, departamento-uruguay,
+// pueblo-liebig, villa-paranacito) render a ~592px hole. Gating here also skips
+// the pointless NEARBY fetch and island mount on those pages. Same shape as
+// `hasDestCoords` guarding <DestinationMiniMap> further down.
+const hasGeolocatedPois = pointsOfInterest.some((poi) => poi.lat != null && poi.long != null);
 
 const ratingBreakdown = dest.rating as Record<string, number | undefined> | null | undefined;
 
@@ -432,6 +435,15 @@ const placeGeo =
 		? { latitude: destLat, longitude: destLng }
 		: undefined;
 
+// HOS-146: the POI map frames on the destination's own coordinates rather than
+// on its POIs' bbox — see DestinationPOIMap's file docs for why. Reuses the
+// same parsed values as the JSON-LD above (the destination stores coordinates
+// as strings, unlike a POI's doublePrecision lat/long).
+const poiMapCenter =
+	hasDestCoords && destLat !== null && destLng !== null
+		? { lat: destLat, long: destLng }
+		: null;
+
 const placeUrl = `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`;
 const placeImage =
 	featuredImageObj.url && !featuredImageObj.url.includes('placeholder')
@@ -589,10 +601,35 @@ const isThinContent = isThinDestination({
 		</div>
 
 		<!-- Points of interest (HOS-113 Phase 4): list/grid, self-guards when
-		     empty (renders nothing), so no conditional wrapper needed here. -->
+		     empty (renders nothing), so no conditional wrapper needed here.
+		     HOS-146: the multi-marker map right below is enrichment on top of
+		     this SSR grid (which stays the indexable content source) — it
+		     self-guards on the client the same way when no POI has coords. -->
 		<div class="dest-detail__section">
 			<DestinationPOISection pointsOfInterest={pointsOfInterest} locale={locale} />
 		</div>
+
+		<!-- The wrapper reserves the map's height explicitly: `client:only` emits
+		     NO SSR HTML, so without this the div is 0px tall until Leaflet
+		     hydrates and then jumps to LocationMap.module.css's 560px min-height,
+		     shifting every section below it (~560px of CLS). Same reservation the
+		     DestinationMiniMap viewport makes for the same reason; the
+		     breakpoints mirror the module's 560/480/400.
+		     That reservation is why the wrapper itself MUST be gated on
+		     `hasGeolocatedPois` (the island's own guard, evaluated server-side):
+		     an unconditional wrapper around an island that renders null is a
+		     592px hole, not a placeholder. -->
+		{hasGeolocatedPois && (
+			<div class="dest-detail__section dest-detail__poi-map">
+				<DestinationPOIMap
+					client:only="react"
+					pointsOfInterest={pointsOfInterest}
+					destinationId={destId}
+					center={poiMapCenter}
+					locale={locale}
+				/>
+			</div>
+		)}
 
 		<!-- Reviews + per-dimension rating (combined) -->
 		<div class="dest-detail__section">
@@ -837,6 +874,22 @@ const isThinContent = isThinDestination({
 
 	.dest-detail__section {
 		margin-bottom: 2rem;
+	}
+	/* HOS-146: reserve the POI map's height so the client:only island (no SSR
+	 * HTML) does not collapse to 0px and then push the page down on hydration.
+	 * Values track LocationMap.module.css's .container min-height per breakpoint. */
+	.dest-detail__poi-map {
+		min-height: 560px;
+	}
+	@media (max-width: 1024px) {
+		.dest-detail__poi-map {
+			min-height: 480px;
+		}
+	}
+	@media (max-width: 768px) {
+		.dest-detail__poi-map {
+			min-height: 400px;
+		}
 	}
 	.dest-detail__section-header {
 		display: flex;
