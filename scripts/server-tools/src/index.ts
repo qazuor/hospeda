@@ -174,8 +174,10 @@ const COMMANDS: ReadonlyArray<Command> = [
     {
         name: 'billing-test-reset',
         summary:
-            'Wipe billing transactional data for a user so a fresh smoke iteration can start (staging only).',
+            'Wipe billing transactional data for a user so a fresh smoke iteration can start. Dry-run by default (pass --execute to write); prod requires typed-email confirmation.',
         // Deletes rows across many billing tables — write/destroy operation.
+        // Prod is allowed (unlike before) but gated hard: dry-run default,
+        // --execute required to write, and --yes is rejected on prod.
         targetPolicy: 'explicit-required',
         run: billingTestReset
     },
