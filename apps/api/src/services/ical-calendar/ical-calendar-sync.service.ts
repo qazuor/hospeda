@@ -315,7 +315,12 @@ export const syncAccommodationIcalCalendar = async (params: {
             accommodationId,
             source: provider,
             fromDate,
-            rows: parseResult.rows,
+            // Map the parser's `title` onto the model's `eventTitle` column (HOS-175).
+            rows: parseResult.rows.map((row) => ({
+                date: row.date,
+                externalEventId: row.externalEventId,
+                eventTitle: row.title
+            })),
             createdById: credential.createdById
         }));
     } catch (error) {

@@ -118,6 +118,13 @@ export interface IcalOccupancyRow {
     readonly date: string;
     /** The VEVENT's `UID`, used as the row's external event id. */
     readonly externalEventId: string;
+    /**
+     * The VEVENT's `SUMMARY`, trimmed — the event title shown in the occupancy
+     * calendar's event bars (HOS-175). `null` when the feed exposes no summary
+     * (Airbnb/Booking public feeds often omit or genericize it), in which case
+     * the UI falls back to a per-provider label.
+     */
+    readonly title: string | null;
 }
 
 /** Returned when the feed was fetched/parsed successfully. */
@@ -288,8 +295,9 @@ export const parseIcsToRows = async (input: {
 
     // Desired blocked-date set: one entry per date, first live VEVENT (feed
     // order) to cover a date wins its provenance — same collapse rule as the
-    // Google Calendar sync.
-    const desired = new Map<string, string>();
+    // Google Calendar sync. Each entry carries the winning VEVENT's UID and
+    // (HOS-175) its trimmed SUMMARY title, or `null` when absent.
+    const desired = new Map<string, { readonly uid: string; readonly title: string | null }>();
     for (const event of events) {
         if (typeof event.uid !== 'string' || event.uid.length === 0) {
             continue;
@@ -315,16 +323,21 @@ export const parseIcsToRows = async (input: {
             continue;
         }
 
+        const title =
+            typeof event.summary === 'string' && event.summary.trim().length > 0
+                ? event.summary.trim()
+                : null;
+
         for (const date of enumerateHalfOpenDates(startDate, endDate)) {
             if (!desired.has(date)) {
-                desired.set(date, event.uid);
+                desired.set(date, { uid: event.uid, title });
             }
         }
     }
 
     const rows: IcalOccupancyRow[] = [...desired]
         .filter(([date]) => date >= fromDate)
-        .map(([date, externalEventId]) => ({ date, externalEventId }));
+        .map(([date, { uid, title }]) => ({ date, externalEventId: uid, title }));
 
     return { ok: true, rows };
 };

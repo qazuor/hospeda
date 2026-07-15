@@ -313,14 +313,18 @@ export const syncAccommodationCalendar = async (params: {
     // 4. Build the DESIRED blocked-date set: one entry per date, first live
     //    event to cover a date wins its provenance. Overlaps collapse to a
     //    single row that stays blocked as long as EITHER event is live.
-    const desired = new Map<string, string>();
+    const desired = new Map<string, { readonly id: string; readonly title: string | null }>();
     for (const event of fetched.events) {
         if (event.status === 'cancelled') {
             continue;
         }
+        const title =
+            typeof event.summary === 'string' && event.summary.trim().length > 0
+                ? event.summary.trim()
+                : null;
         for (const date of mapEventToDates(event, accommodationId)) {
             if (!desired.has(date)) {
-                desired.set(date, event.id);
+                desired.set(date, { id: event.id, title });
             }
         }
     }
@@ -332,7 +336,7 @@ export const syncAccommodationCalendar = async (params: {
     // invariant intact on the insert side too.
     const rows = [...desired]
         .filter(([date]) => date >= fromDate)
-        .map(([date, externalEventId]) => ({ date, externalEventId }));
+        .map(([date, { id, title }]) => ({ date, externalEventId: id, eventTitle: title }));
 
     // 5. Atomically replace all future GOOGLE_CALENDAR rows with the desired
     //    set (never touches MANUAL rows).
