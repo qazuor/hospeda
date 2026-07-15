@@ -40,8 +40,9 @@ describe('webLight — coverage', () => {
         // companions, bringing it to 215. The toast/popover contrast fix added
         // z-popover, surface-overlay, overlay-ring, shadow-overlay, and
         // popover-scrim → 220, then z-popover-in-overlay (SortPopover-in-drawer
-        // z fix) → 221. Adding or removing entries should be intentional.
-        expect(Object.keys(webLight)).toHaveLength(221);
+        // z fix) → 221, then HOS-182's 6 poi-category bucket tokens → 227.
+        // Adding or removing entries should be intentional.
+        expect(Object.keys(webLight)).toHaveLength(227);
     });
 
     it('declares the 10 per-accommodation-type tokens referencing palette primitives', () => {
