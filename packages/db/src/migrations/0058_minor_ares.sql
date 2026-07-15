@@ -1,0 +1,1 @@
+ALTER TYPE "public"."occupancy_source_enum" ADD VALUE 'OTHER';

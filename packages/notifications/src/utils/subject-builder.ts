@@ -53,7 +53,11 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
 
     // Commerce owner credentials (SPEC-239 T-050)
     [NotificationType.COMMERCE_OWNER_CREDENTIALS]:
-        'Tus credenciales de acceso a Hospeda — activá tu cuenta'
+        'Tus credenciales de acceso a Hospeda — activá tu cuenta',
+
+    // Broken iCal feed alert to the host (HOS-162 Phase 3)
+    [NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN]:
+        'Tu calendario de {providerLabel} dejó de sincronizarse — {accommodationName}'
 };
 
 /**

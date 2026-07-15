@@ -407,6 +407,20 @@
             "when": 1784040144218,
             "tag": "0057_broken_maginty",
             "breakpoints": true
+        },
+        {
+            "idx": 58,
+            "version": "7",
+            "when": 1784066828404,
+            "tag": "0058_minor_ares",
+            "breakpoints": true
+        },
+        {
+            "idx": 59,
+            "version": "7",
+            "when": 1784094690698,
+            "tag": "0059_fluffy_ghost_rider",
+            "breakpoints": true
         }
     ]
 }

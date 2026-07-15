@@ -8,8 +8,11 @@
  *   2. OVERLAP — a date covered by two events stays blocked when only one of
  *      them is removed from the desired set on a second reconcile.
  *   3. A `MANUAL` row on a date in the desired set is NOT deleted by the
- *      replace and NOT overwritten (stays `MANUAL` via `ON CONFLICT DO
- *      NOTHING`).
+ *      replace and NOT overwritten by the sync insert (stays `MANUAL`,
+ *      unaffected by the `ON CONFLICT DO NOTHING`). Since HOS-162 the
+ *      conflict target is `(accommodationId, date, source)`, so the sync
+ *      source's OWN row for that same date is inserted alongside it — the
+ *      two rows coexist rather than the sync insert being silently dropped.
  *   4. A pre-existing `GOOGLE_CALENDAR` row with `date < fromDate` is left
  *      untouched — only `date >= fromDate` is replaced.
  */
@@ -154,12 +157,23 @@ describe('AccommodationOccupancyModel.replaceFutureSyncOccupancy (HOS-157 Phase 
             );
 
             // The MANUAL row is not a GOOGLE_CALENDAR row so the DELETE never
-            // touches it, and the conflicting INSERT for 10-05 is a no-op.
-            expect(result).toEqual({ removed: 0, inserted: 1 });
+            // touches it. Since HOS-162 the conflict target is source-scoped
+            // (accommodationId, date, source), so the GOOGLE_CALENDAR insert
+            // for 10-05 does NOT conflict with the MANUAL row on that same
+            // date — both rows are inserted, and both dates end up with a
+            // GOOGLE_CALENDAR row.
+            expect(result).toEqual({ removed: 0, inserted: 2 });
 
             const rows = await model.findByAccommodation({ accommodationId: accommodation.id }, tx);
-            const manualRow = rows.find((row) => row.date === '2026-10-05');
-            expect(manualRow?.source).toBe('MANUAL');
+            const rowsOn1005 = rows.filter((row) => row.date === '2026-10-05');
+            // The MANUAL row survives untouched, AND the sync source gets
+            // its own row for the same date — they coexist rather than one
+            // silently dropping the other.
+            expect(rowsOn1005).toHaveLength(2);
+            expect(rowsOn1005.map((row) => row.source).sort()).toEqual([
+                'GOOGLE_CALENDAR',
+                'MANUAL'
+            ]);
             const syncRow = rows.find((row) => row.date === '2026-10-06');
             expect(syncRow?.source).toBe('GOOGLE_CALENDAR');
         });

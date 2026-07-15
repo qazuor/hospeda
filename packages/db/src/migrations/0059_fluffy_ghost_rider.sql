@@ -1,0 +1,2 @@
+DROP INDEX "accommodationOccupancy_accommodationId_date_uq";--> statement-breakpoint
+CREATE UNIQUE INDEX "accommodationOccupancy_accommodationId_date_source_uq" ON "accommodation_occupancy" USING btree ("accommodation_id","date","source");

@@ -411,24 +411,26 @@
                     "manual": "Manually blocked",
                     "google": "Synced — Google Calendar",
                     "airbnb": "Synced — Airbnb",
-                    "booking": "Synced — Booking.com"
+                    "booking": "Synced — Booking.com",
+                    "other": "Synced — Other calendar"
                 },
                 "source": {
                     "manual": "Manual",
                     "google": "Google Calendar",
                     "airbnb": "Airbnb",
-                    "booking": "Booking.com"
+                    "booking": "Booking.com",
+                    "other": "Other calendar"
                 }
             },
             "calendarSync": {
-                "title": "Google Calendar sync",
-                "description": "Connect a Google Calendar and dates with events will be automatically blocked on your occupancy calendar.",
+                "title": "External calendar sync",
+                "description": "Connect your external calendars (Google, Airbnb, Booking.com, or another one) and busy dates will be automatically blocked on your occupancy calendar.",
                 "connect": "Connect Google Calendar",
                 "connecting": "Connecting...",
                 "reconnect": "Reconnect",
                 "connectedBanner": "Your Google Calendar is connected. We'll sync your busy dates shortly.",
                 "connectErrorBanner": "We couldn't connect your Google Calendar. Please try again.",
-                "loading": "Loading connection...",
+                "loading": "Loading connections...",
                 "statusOk": "Connected and synced",
                 "statusError": "The last sync failed",
                 "statusPending": "Connected, sync pending",
@@ -441,8 +443,16 @@
                 "syncSkipped": "There's no active connection to sync.",
                 "disconnect": "Disconnect",
                 "disconnecting": "Disconnecting...",
-                "disconnected": "We disconnected your Google Calendar. Your already-synced dates stay as they are.",
-                "disconnectError": "We couldn't disconnect. Please try again."
+                "disconnected": "We disconnected the calendar. Your already-synced dates stay as they are.",
+                "disconnectError": "We couldn't disconnect. Please try again.",
+                "feedUrlLabel": ".ics feed URL",
+                "feedUrlPlaceholder": "https://example.com/calendar.ics",
+                "feedUrlHelp": "Paste that platform's calendar export URL in iCal (.ics) format.",
+                "connectIcal": "Connect",
+                "connectIcalError": "We couldn't connect that calendar. Double-check the URL and try again.",
+                "icalErrorPrefix": "We couldn't read that calendar:",
+                "reconnectIcal": "Reconnect",
+                "reconnectIcalHelp": "Paste the corrected calendar URL to reconnect it."
             }
         },
         "empty": {

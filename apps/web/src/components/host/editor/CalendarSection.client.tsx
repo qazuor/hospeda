@@ -26,6 +26,11 @@
  * equivalent, and is harder to drive from tests. Click-start/click-end works
  * identically with mouse, touch, and keyboard (Enter/Space on a focused
  * cell), and a single day is just a range collapsed to one cell.
+ *
+ * Source-scoped occupancy (HOS-162 Phase 3): a date can carry MULTIPLE rows
+ * (one per source — unique index `(accommodationId, date, source)`). Rows are
+ * grouped by date and a single "primary" row is resolved per date by source
+ * priority — see `lib/calendar/occupancy-row-grouping.ts`.
  */
 
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@repo/icons';
@@ -41,6 +46,10 @@ import {
     getStartOfMonth,
     toDateKey
 } from '@/lib/calendar/occupancy-calendar-grid';
+import {
+    groupOccupancyRowsByDate,
+    resolvePrimaryOccupancyRow
+} from '@/lib/calendar/occupancy-row-grouping';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -83,9 +92,10 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
     const minMonth = useMemo(() => getStartOfMonth({ date: new Date() }), []);
     const canGoPrev = compareMonths({ a: viewedMonth, b: minMonth }) > 0;
 
-    // --- Occupancy data for the viewed month ---
+    // --- Occupancy data for the viewed month, grouped by date (HOS-162: a
+    //     date may carry multiple rows, one per source) ---
     const [occupancyByDate, setOccupancyByDate] = useState<
-        Readonly<Record<DateKey, AccommodationOccupancy>>
+        Readonly<Record<DateKey, readonly AccommodationOccupancy[]>>
     >({});
     const [isLoading, setIsLoading] = useState(true);
     const [loadError, setLoadError] = useState(false);
@@ -116,11 +126,7 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                     setIsLoading(false);
                     return;
                 }
-                const next: Record<DateKey, AccommodationOccupancy> = {};
-                for (const row of result.data.occupancy) {
-                    next[row.date] = row;
-                }
-                setOccupancyByDate(next);
+                setOccupancyByDate(groupOccupancyRowsByDate({ rows: result.data.occupancy }));
                 setIsLoading(false);
             })
             .catch((err: unknown) => {
@@ -186,15 +192,15 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
             });
 
             if (result.ok) {
+                // Response covers EVERY row (any source) for the requested
+                // dates, so delete-then-repopulate per date stays accurate.
+                const grouped = groupOccupancyRowsByDate({ rows: result.data.occupancy });
                 setOccupancyByDate((prev) => {
                     const next = { ...prev };
                     for (const dateKey of selection) {
                         delete next[dateKey];
                     }
-                    for (const row of result.data.occupancy) {
-                        next[row.date] = row;
-                    }
-                    return next;
+                    return { ...next, ...grouped };
                 });
                 setSelection(null);
                 setPendingStart(null);
@@ -352,7 +358,9 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                             }
 
                             const dateKey = toDateKey({ date });
-                            const row = occupancyByDate[dateKey];
+                            const row = resolvePrimaryOccupancyRow({
+                                rows: occupancyByDate[dateKey] ?? []
+                            });
                             const isPast = dateKey < todayKey;
                             const isSelected = selection?.includes(dateKey) ?? false;
                             const isPending = pendingStart === dateKey;

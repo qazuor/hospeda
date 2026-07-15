@@ -51,6 +51,13 @@ export function CalendarLegend({ t }: CalendarLegendProps) {
                 <span className={cn(styles.legendDot, styles.dotBooking)} />
                 {t('host.properties.editor.calendar.legend.booking', 'Sincronizado — Booking.com')}
             </span>
+            <span className={styles.legendItem}>
+                <span className={cn(styles.legendDot, styles.dotOther)} />
+                {t(
+                    'host.properties.editor.calendar.legend.other',
+                    'Sincronizado — Otro calendario'
+                )}
+            </span>
         </div>
     );
 }

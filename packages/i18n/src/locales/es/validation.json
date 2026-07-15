@@ -4412,12 +4412,24 @@
         "accessTokenIv": {
             "required": "El IV del token de acceso es obligatorio"
         },
+        "calendarProviderToken": {
+            "invalid": "El proveedor de calendario no es válido"
+        },
         "createdAt": {
             "required": "La fecha de creación es obligatoria"
         },
         "externalCalendarId": {
             "max": "El ID del calendario externo no puede superar los 255 caracteres",
             "required": "El ID del calendario externo es obligatorio"
+        },
+        "feedUrl": {
+            "httpsRequired": "La URL del feed debe usar HTTPS",
+            "invalid": "La URL del feed no es válida",
+            "max": "La URL del feed no puede superar los 2048 caracteres",
+            "required": "La URL del feed es obligatoria"
+        },
+        "icalProviderToken": {
+            "invalid": "El proveedor de calendario iCal no es válido"
         },
         "isActive": {
             "required": "El estado activo es obligatorio"

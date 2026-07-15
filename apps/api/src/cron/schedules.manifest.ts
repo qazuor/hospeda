@@ -139,6 +139,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Sync occupancy dates from every active Google Calendar connection (HOS-157 Phase 2).'
     },
     {
+        name: 'calendar-sync-ical',
+        displayName: 'Sync de calendarios iCal',
+        category: 'content',
+        schedule: '0 */6 * * *',
+        description:
+            'Sync occupancy dates from every active Airbnb/Booking/other iCal feed (HOS-162 Phase 3).'
+    },
+    {
         name: 'dunning',
         displayName: 'Reintentos de cobro',
         category: 'billing',

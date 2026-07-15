@@ -411,24 +411,26 @@
                     "manual": "Bloqueado manualmente",
                     "google": "Sincronizado — Google Calendar",
                     "airbnb": "Sincronizado — Airbnb",
-                    "booking": "Sincronizado — Booking.com"
+                    "booking": "Sincronizado — Booking.com",
+                    "other": "Sincronizado — Outro calendário"
                 },
                 "source": {
                     "manual": "Manual",
                     "google": "Google Calendar",
                     "airbnb": "Airbnb",
-                    "booking": "Booking.com"
+                    "booking": "Booking.com",
+                    "other": "Outro calendário"
                 }
             },
             "calendarSync": {
-                "title": "Sincronização com Google Calendar",
-                "description": "Conecte um Google Calendar e as datas com eventos serão bloqueadas automaticamente no seu calendário de ocupação.",
+                "title": "Sincronização de calendários externos",
+                "description": "Conecte seus calendários externos (Google, Airbnb, Booking.com ou outro) e as datas ocupadas serão bloqueadas automaticamente no seu calendário.",
                 "connect": "Conectar Google Calendar",
                 "connecting": "Conectando...",
                 "reconnect": "Reconectar",
                 "connectedBanner": "Seu Google Calendar foi conectado. Vamos sincronizar suas datas ocupadas em breve.",
                 "connectErrorBanner": "Não conseguimos conectar seu Google Calendar. Tente novamente.",
-                "loading": "Carregando conexão...",
+                "loading": "Carregando conexões...",
                 "statusOk": "Conectado e sincronizado",
                 "statusError": "A última sincronização falhou",
                 "statusPending": "Conectado, sincronização pendente",
@@ -441,8 +443,16 @@
                 "syncSkipped": "Não há uma conexão ativa para sincronizar.",
                 "disconnect": "Desconectar",
                 "disconnecting": "Desconectando...",
-                "disconnected": "Desconectamos seu Google Calendar. Suas datas já sincronizadas permanecem como estão.",
-                "disconnectError": "Não conseguimos desconectar. Tente novamente."
+                "disconnected": "Desconectamos o calendário. Suas datas já sincronizadas permanecem como estão.",
+                "disconnectError": "Não conseguimos desconectar. Tente novamente.",
+                "feedUrlLabel": "URL do feed .ics",
+                "feedUrlPlaceholder": "https://exemplo.com/calendario.ics",
+                "feedUrlHelp": "Cole a URL de exportação do calendário no formato iCal (.ics) dessa plataforma.",
+                "connectIcal": "Conectar",
+                "connectIcalError": "Não conseguimos conectar esse calendário. Verifique a URL e tente novamente.",
+                "icalErrorPrefix": "Não conseguimos ler esse calendário:",
+                "reconnectIcal": "Reconectar",
+                "reconnectIcalHelp": "Cole novamente a URL corrigida do calendário para reconectá-lo."
             }
         },
         "empty": {

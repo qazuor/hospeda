@@ -22,7 +22,7 @@ import styles from './CalendarSection.module.css';
 /** Maps an occupancy source to its i18n sub-key suffix under `calendar.source.*`. */
 export function sourceKeySuffix(
     source: OccupancySourceEnum
-): 'manual' | 'google' | 'airbnb' | 'booking' {
+): 'manual' | 'google' | 'airbnb' | 'booking' | 'other' {
     switch (source) {
         case OccupancySourceEnum.GOOGLE_CALENDAR:
             return 'google';
@@ -30,6 +30,8 @@ export function sourceKeySuffix(
             return 'airbnb';
         case OccupancySourceEnum.BOOKING:
             return 'booking';
+        case OccupancySourceEnum.OTHER:
+            return 'other';
         default:
             return 'manual';
     }
@@ -48,6 +50,8 @@ export function sourceFallbackLabel(source: OccupancySourceEnum): string {
             return 'Airbnb';
         case OccupancySourceEnum.BOOKING:
             return 'Booking.com';
+        case OccupancySourceEnum.OTHER:
+            return 'Otro calendario';
         default:
             return 'Manual';
     }
@@ -62,6 +66,8 @@ function sourceDotClass(source: OccupancySourceEnum): string {
             return styles.dotAirbnb;
         case OccupancySourceEnum.BOOKING:
             return styles.dotBooking;
+        case OccupancySourceEnum.OTHER:
+            return styles.dotOther;
         default:
             return styles.dotManual;
     }
@@ -77,7 +83,13 @@ export interface CalendarDayCellProps {
     readonly dateKey: string;
     readonly locale: SupportedLocale;
     readonly t: TranslationFn;
-    /** The occupancy row for this date, if any (undefined = free). */
+    /**
+     * The date's PRIMARY occupancy row, if any (undefined = free). When a
+     * date carries rows from multiple sources (HOS-162), the caller has
+     * already resolved this to the highest-priority one
+     * (`resolvePrimaryOccupancyRow`, `MANUAL > GOOGLE_CALENDAR > AIRBNB >
+     * BOOKING > OTHER`) — this component only ever renders one row per day.
+     */
     readonly row: AccommodationOccupancy | undefined;
     /** Whether this date is strictly before today — occupancy is future-facing. */
     readonly isPast: boolean;
@@ -107,7 +119,10 @@ export function CalendarDayCell({
     isPending,
     onSelect
 }: CalendarDayCellProps) {
-    const isOccupied = Boolean(row?.isBlocked);
+    // A date is occupied if it has ANY row (HOS-162: multiple rows per date
+    // are possible; presence, not `isBlocked`, is the occupied signal —
+    // `row` is already the caller-resolved primary row for the date).
+    const isOccupied = Boolean(row);
     const isManual = row?.source === OccupancySourceEnum.MANUAL;
     const isSyncOrigin = Boolean(row) && !isManual;
     const isDisabled = isSyncOrigin || isPast;

@@ -5,6 +5,7 @@ import type { ReactElement } from 'react';
 import { NOTIFICATION_CATEGORY_MAP } from '../config/notification-categories.js';
 import { NOTIFICATION_CONSTANTS } from '../constants/notification.constants.js';
 import {
+    AccommodationCalendarFeedBroken,
     AddonCancellation,
     AddonExpirationWarning,
     AddonExpired,
@@ -35,6 +36,7 @@ import { formatDate } from '../templates/utils/index.js';
 import type { EmailTransport } from '../transports/email/email-transport.interface.js';
 import type { DeliveryResult, DeliveryStatus } from '../types/delivery.types.js';
 import type {
+    AccommodationCalendarFeedBrokenPayload,
     AddonCancellationPayload,
     AddonEventPayload,
     AdminNotificationPayload,
@@ -593,6 +595,16 @@ export class NotificationService {
                 });
             }
 
+            case 'accommodation_calendar_feed_broken': {
+                const p = payload as AccommodationCalendarFeedBrokenPayload;
+                return AccommodationCalendarFeedBroken({
+                    recipientName,
+                    accommodationName: p.accommodationName,
+                    providerLabel: p.providerLabel,
+                    reconnectUrl: p.reconnectUrl
+                });
+            }
+
             default:
                 throw new Error(`No template found for notification type: ${type}`);
         }
@@ -679,6 +691,12 @@ export class NotificationService {
         // subject does not embed a raw ISO timestamp.
         if (payload.type === 'plan_being_retired' && 'accessUntil' in payload) {
             subjectData.accessUntil = formatDate({ dateString: payload.accessUntil });
+        }
+
+        // Broken iCal feed alert specific fields (HOS-162 Phase 3)
+        if (payload.type === 'accommodation_calendar_feed_broken' && 'providerLabel' in payload) {
+            subjectData.providerLabel = payload.providerLabel;
+            subjectData.accommodationName = payload.accommodationName;
         }
 
         return getSubject(payload.type, subjectData);

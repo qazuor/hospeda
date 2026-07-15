@@ -217,6 +217,10 @@
     background-color: var(--palette-cyan-600, #2f8fa8);
 }
 
+.dotOther {
+    background-color: var(--palette-purple-500, #8b5cf6);
+}
+
 .dotFree {
     background-color: transparent;
     border: 1px solid var(--border);

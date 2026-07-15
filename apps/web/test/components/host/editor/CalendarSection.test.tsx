@@ -107,6 +107,34 @@ const GOOGLE_ROW = {
     updatedAt: new Date('2026-07-01T00:00:00Z')
 };
 
+// Same `date` as MANUAL_ROW, different `source` — a valid state under the
+// HOS-162 source-scoped unique index `(accommodationId, date, source)`.
+const AIRBNB_ROW_SAME_DATE_AS_MANUAL = {
+    id: 'occ-airbnb-1',
+    accommodationId: ACC_ID,
+    date: '2026-07-20',
+    isBlocked: true,
+    source: OccupancySourceEnum.AIRBNB,
+    externalEventId: 'airbnb-evt-1',
+    note: null,
+    createdById: 'system',
+    createdAt: new Date('2026-07-01T00:00:00Z'),
+    updatedAt: new Date('2026-07-01T00:00:00Z')
+};
+
+const BOOKING_ROW = {
+    id: 'occ-booking-1',
+    accommodationId: ACC_ID,
+    date: '2026-07-24',
+    isBlocked: true,
+    source: OccupancySourceEnum.BOOKING,
+    externalEventId: 'booking-evt-1',
+    note: null,
+    createdById: 'system',
+    createdAt: new Date('2026-07-01T00:00:00Z'),
+    updatedAt: new Date('2026-07-01T00:00:00Z')
+};
+
 const defaultProps: CalendarSectionProps = {
     locale: 'es',
     accommodationId: ACC_ID
@@ -245,6 +273,34 @@ describe('CalendarSection', () => {
                 note: undefined
             });
         });
+    });
+
+    it('a date with MANUAL + AIRBNB rows renders occupied, shows the MANUAL source by priority, and stays togglable (HOS-162)', async () => {
+        mockList.mockReturnValue(makeListOk([MANUAL_ROW, AIRBNB_ROW_SAME_DATE_AS_MANUAL]));
+        render(<CalendarSection {...defaultProps} />);
+
+        const occupiedDay = await screen.findByRole('button', {
+            name: /20 de julio de 2026 — Ocupado — Manual/i
+        });
+        expect(occupiedDay).not.toBeDisabled();
+        expect(occupiedDay).toHaveClass('dayOccupied');
+        expect(occupiedDay).toHaveAttribute('aria-pressed', 'true');
+
+        // Never shows the lower-priority Airbnb source once MANUAL wins.
+        expect(
+            screen.queryByRole('button', { name: /20 de julio de 2026 — Ocupado — Airbnb/i })
+        ).not.toBeInTheDocument();
+    });
+
+    it('a date with only a BOOKING row renders occupied and disabled (read-only, no MANUAL row)', async () => {
+        mockList.mockReturnValue(makeListOk([BOOKING_ROW]));
+        render(<CalendarSection {...defaultProps} />);
+
+        const syncDay = await screen.findByRole('button', {
+            name: /24 de julio de 2026 — Ocupado — Booking\.com/i
+        });
+        expect(syncDay).toBeDisabled();
+        expect(syncDay).toHaveClass('daySync');
     });
 
     it('never leaks a raw i18n key into the rendered output', async () => {

@@ -17,6 +17,7 @@ import type {
     DestinationReviewListItem,
     DowngradePreview,
     KeepSelections,
+    OccupancySourceEnum,
     PlanChangeResponse,
     PriceAlertResponse,
     ReactivateSubscriptionResponse,
@@ -3001,36 +3002,86 @@ export const accommodationOccupancyApi = {
     }
 };
 
-// --- Accommodation Calendar Sync (Protected — HOS-157 Phase 2) ---
+// --- Accommodation Calendar Sync (Protected — HOS-157 Phase 2, widened HOS-162 Phase 3) ---
+
+/**
+ * Public provider token accepted by the `sync` and `disconnect` endpoints —
+ * every connectable provider (Google OAuth + the three iCal feed providers).
+ * Mirrors `@repo/schemas`' `CalendarProviderTokenSchema`, hand-declared here
+ * (this file's convention) so the client-facing shape stays independent of
+ * the internal `OccupancySourceEnum` values the API returns.
+ */
+export type CalendarProviderToken = 'google' | 'airbnb' | 'booking' | 'other';
+
+/**
+ * Public provider token accepted by `connectIcal` — excludes `google`
+ * (OAuth-only, handled by `connectGoogle`).
+ */
+export type IcalProviderToken = 'airbnb' | 'booking' | 'other';
+
+/**
+ * One provider's connection state, as returned inside the multi-provider
+ * `GET .../calendar-sync/status` response array (HOS-162 Phase 3). Mirrors
+ * `@repo/schemas`' `CalendarProviderConnectionSchema`.
+ */
+export interface CalendarProviderConnectionStatus {
+    /**
+     * Which provider this row describes. Reuses `OccupancySourceEnum` (the
+     * same enum backing `accommodation_occupancy.source`) rather than a
+     * hand-rolled string union — it's a value the API returns verbatim and
+     * needs to round-trip as a `Record` key elsewhere in this panel.
+     */
+    readonly provider: OccupancySourceEnum;
+    /** Whether this connection is currently active. */
+    readonly connected: boolean;
+    /** Timestamp of the most recent sync attempt (success or failure), if any. */
+    readonly lastSyncAt: string | null;
+    /** Outcome of the most recent sync attempt. */
+    readonly lastSyncStatus: 'PENDING' | 'OK' | 'ERROR';
+    /** Error detail from the most recent failed sync attempt, if any. */
+    readonly lastErrorMessage: string | null;
+}
 
 /**
  * Result of an on-demand calendar sync, mirroring the API's `CalendarSyncResult`
- * discriminated union (not exported from `@repo/schemas` — it lives in apps/api,
- * so the shape is re-declared here for the client).
+ * discriminated union (widened by HOS-162 Phase 3 to cover both the Google
+ * Calendar sync service's result shape and the iCal sync service's result
+ * shape — see `CalendarSyncResultSchema` in `@repo/schemas`).
  */
 export type CalendarSyncResult =
     | {
           readonly status: 'ok';
-          readonly eventsProcessed: number;
-          readonly datesUpserted: number;
-          readonly datesRemoved: number;
-          readonly fullSync: boolean;
+          readonly eventsProcessed?: number;
+          readonly datesUpserted?: number;
+          readonly datesRemoved?: number;
+          readonly fullSync?: boolean;
+          readonly removed?: number;
+          readonly inserted?: number;
       }
     | { readonly status: 'skipped'; readonly reason: string }
     | {
           readonly status: 'error';
-          readonly kind: 'terminal' | 'transient' | 'api' | 'unknown';
+          readonly kind:
+              | 'terminal'
+              | 'transient'
+              | 'api'
+              | 'unknown'
+              | 'fetch_error'
+              | 'parse_error'
+              | 'empty';
           readonly message: string;
       };
 
 /**
- * Owner-facing protected endpoints for the Google Calendar occupancy sync
- * (`CalendarSyncPanel.client.tsx`).
+ * Owner-facing protected endpoints for the external calendar occupancy sync
+ * (`CalendarSyncPanel.client.tsx`) — Google Calendar (OAuth) plus Airbnb/
+ * Booking.com/generic iCal feeds (HOS-162 Phase 3).
  *
- * The connect flow is a full-page OAuth round-trip: `connectGoogle` returns the
- * Google authorize URL the panel navigates to; after consent the API callback
- * returns the browser to `returnTo` (the editor page) with a `?calendarSync`
- * result flag the panel reads on mount.
+ * The Google connect flow is a full-page OAuth round-trip: `connectGoogle`
+ * returns the Google authorize URL the panel navigates to; after consent the
+ * API callback returns the browser to `returnTo` (the editor page) with a
+ * `?calendarSync` result flag the panel reads on mount. iCal providers connect
+ * inline via `connectIcal` — no redirect, the feed URL is probed synchronously.
  */
 export const accommodationCalendarSyncApi = {
     /**
@@ -3054,16 +3105,48 @@ export const accommodationCalendarSyncApi = {
     },
 
     /**
-     * Reads the accommodation's Google Calendar connection status (safe
-     * projection — no tokens).
+     * Connects an Airbnb/Booking.com/generic iCal feed. The feed URL is
+     * fetched and parsed live before persisting — an unreadable feed returns a
+     * 400 `VALIDATION_ERROR` with an actionable `error.message` instead of a
+     * silently-dead connection.
      *
-     * @param params - Accommodation ID and optional SSR cookie header.
-     * @returns `{ connected, status }` — `status` is `null` when never connected.
+     * @param params - Accommodation ID, the iCal provider token, and the
+     *   feed's HTTPS `.ics` URL.
+     * @returns `{ connected, status }` for the newly-created connection.
      */
-    status({ id, cookieHeader }: { readonly id: string; readonly cookieHeader?: string }): Promise<
+    connectIcal({
+        id,
+        provider,
+        feedUrl
+    }: {
+        readonly id: string;
+        readonly provider: IcalProviderToken;
+        readonly feedUrl: string;
+    }): Promise<
         ApiResult<{
             readonly connected: boolean;
             readonly status: AccommodationCalendarSyncStatus | null;
+        }>
+    > {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/accommodations/${id}/calendar-sync/connect-ical`,
+            body: { provider, feedUrl }
+        });
+    },
+
+    /**
+     * Reads every external calendar connection's sync status for an
+     * accommodation (safe projection — no tokens). One row per provider the
+     * accommodation has EVER connected (active or soft-disconnected); a
+     * provider never connected is simply absent from the array (HOS-162
+     * Phase 3 — widened from the old single-object Google-only shape).
+     *
+     * @param params - Accommodation ID and optional SSR cookie header.
+     * @returns `{ connections }` — the array of per-provider connection rows.
+     */
+    status({ id, cookieHeader }: { readonly id: string; readonly cookieHeader?: string }): Promise<
+        ApiResult<{
+            readonly connections: readonly CalendarProviderConnectionStatus[];
         }>
     > {
         return apiClient.getProtected({
@@ -3076,18 +3159,25 @@ export const accommodationCalendarSyncApi = {
      * Triggers an on-demand sync. Operational failures come back as
      * `{ status: 'error', ... }` (HTTP 200), not a rejected request.
      *
-     * @param params - Accommodation ID.
+     * @param params - Accommodation ID and provider token (defaults to
+     *   `google` server-side when omitted — preserves the pre-Phase-3 contract).
      * @returns The {@link CalendarSyncResult}.
      */
-    sync({ id }: { readonly id: string }): Promise<ApiResult<CalendarSyncResult>> {
+    sync({
+        id,
+        provider
+    }: {
+        readonly id: string;
+        readonly provider?: CalendarProviderToken;
+    }): Promise<ApiResult<CalendarSyncResult>> {
         return apiClient.postProtected({
-            path: `${PROTECTED}/accommodations/${id}/calendar-sync/sync`
+            path: `${PROTECTED}/accommodations/${id}/calendar-sync/sync`,
+            body: provider ? { provider } : {}
         });
     },
 
     /**
-     * Soft-disconnects the accommodation's calendar connection for a provider
-     * (Phase 2: `google`).
+     * Soft-disconnects the accommodation's calendar connection for a provider.
      *
      * @param params - Accommodation ID and provider token (defaults to `google`).
      * @returns `{ disconnected }`.
@@ -3097,7 +3187,7 @@ export const accommodationCalendarSyncApi = {
         provider = 'google'
     }: {
         readonly id: string;
-        readonly provider?: 'google';
+        readonly provider?: CalendarProviderToken;
     }): Promise<ApiResult<{ readonly disconnected: boolean }>> {
         return apiClient.delete({
             path: `${PROTECTED}/accommodations/${id}/calendar-sync/${provider}`

@@ -81,7 +81,8 @@ describe('accommodationCalendarSyncApi credentialed mutations (HOS-157 regressio
         await accommodationCalendarSyncApi.sync({ id: 'acc-1' });
 
         expect(postProtected).toHaveBeenCalledWith({
-            path: '/api/v1/protected/accommodations/acc-1/calendar-sync/sync'
+            path: '/api/v1/protected/accommodations/acc-1/calendar-sync/sync',
+            body: {}
         });
         expect(post).not.toHaveBeenCalled();
     });
