@@ -41,7 +41,6 @@ import { and, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
-import { createAnnualSubscription } from './billing/create-annual-subscription.js';
 import { createPaidSubscription } from './billing/paid-subscription-create.js';
 import { resolveReactivationPlan } from './billing/reactivation-plan-guard.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
@@ -1007,12 +1006,12 @@ export class TrialService {
      *    free plan, or a plan with no active price for the requested
      *    interval ({@link resolveReactivationPlan}).
      * 2. Ensures the billing customer exists.
-     * 3. For `billingInterval: 'monthly'` (the default), creates a real
-     *    `mode: 'paid'` MercadoPago preapproval via the shared
-     *    {@link createPaidSubscription} helper (also used by `/start-paid`).
-     *    For `billingInterval: 'annual'`, creates a one-time hosted-checkout
-     *    charge via `createAnnualSubscription` instead (HOS-123 T-006) — both
-     *    paths fail-closed if the provider returns no checkout URL.
+     * 3. Creates a real `mode: 'paid'` MercadoPago preapproval via the shared
+     *    {@link createPaidSubscription} helper (also used by `/start-paid`),
+     *    for BOTH intervals — annual simply passes `billingInterval: 'annual'`,
+     *    which qzpay maps to a 12-month cadence (HOS-171 §7.2). Annual used to
+     *    take a one-time hosted-checkout charge here instead; it no longer
+     *    exists. Fails closed if the provider returns no checkout URL.
      * 4. Returns a `checkoutUrl` the caller MUST redirect the user to. The
      *    created subscription is `incomplete`/`pending_provider`, not
      *    `active`, until the corresponding webhook confirms it.
@@ -1089,26 +1088,27 @@ export class TrialService {
                     );
                 }
 
-                const annualPrice = plan.prices.find((price) => price.id === priceId);
-                const chargeAmountCentavos = annualPrice?.unitAmount ?? 0;
-
-                const { localSubscriptionId, checkoutUrl } = await createAnnualSubscription({
+                // HOS-171 §7.2: annual reactivation is now a recurring
+                // preapproval, exactly like monthly — same helper, same
+                // card-collecting checkout. `urls.successUrl` is MP's single
+                // `back_url`; a preapproval has no cancel redirect, so
+                // `urls.cancelUrl` is unused here.
+                const { subscription, checkoutUrl } = await createPaidSubscription({
                     billing: this.billing,
                     customerId,
-                    plan: { id: plan.id, name: plan.name, metadata: plan.metadata },
+                    planId: plan.id,
                     priceId,
-                    chargeAmountCentavos,
-                    urls: {
-                        successUrl: urls.successUrl,
-                        cancelUrl: urls.cancelUrl,
-                        notificationUrl: urls.notificationUrl
-                    },
+                    billingInterval: 'annual',
+                    paymentMethodReturnUrl: urls.successUrl,
+                    notificationUrl: urls.notificationUrl,
                     metadata: {
+                        source: 'reactivate-from-trial-annual',
                         convertedFromTrial: 'true',
                         convertedAt: new Date().toISOString(),
                         ...(supersedesSubscriptionId ? { supersedesSubscriptionId } : {})
                     }
                 });
+                const localSubscriptionId = subscription.id;
 
                 // Deferred to webhook (HOS-114 T-007, mirrored for the annual
                 // `payment.updated` confirmation path): cancel superseded sub +
@@ -1328,27 +1328,28 @@ export class TrialService {
                     );
                 }
 
-                const annualPrice = plan.prices.find((price) => price.id === priceId);
-                const chargeAmountCentavos = annualPrice?.unitAmount ?? 0;
-
-                const { localSubscriptionId, checkoutUrl } = await createAnnualSubscription({
+                // HOS-171 §7.2: annual reactivation is now a recurring
+                // preapproval, exactly like monthly — same helper, same
+                // card-collecting checkout. `urls.successUrl` is MP's single
+                // `back_url`; a preapproval has no cancel redirect, so
+                // `urls.cancelUrl` is unused here.
+                const { subscription, checkoutUrl } = await createPaidSubscription({
                     billing: this.billing,
                     customerId,
-                    plan: { id: plan.id, name: plan.name, metadata: plan.metadata },
+                    planId: plan.id,
                     priceId,
-                    chargeAmountCentavos,
-                    urls: {
-                        successUrl: urls.successUrl,
-                        cancelUrl: urls.cancelUrl,
-                        notificationUrl: urls.notificationUrl
-                    },
+                    billingInterval: 'annual',
+                    paymentMethodReturnUrl: urls.successUrl,
+                    notificationUrl: urls.notificationUrl,
                     metadata: {
+                        source: 'reactivate-subscription-annual',
                         reactivatedFromCanceled: 'true',
                         reactivatedAt: new Date().toISOString(),
                         ...(previousPlanId ? { previousPlanId } : {}),
                         supersedesSubscriptionId: canceledSub.id
                     }
                 });
+                const localSubscriptionId = subscription.id;
 
                 // Deferred to webhook (HOS-114 T-007, mirrored for the annual
                 // `payment.updated` confirmation path): `canceledSub` is already

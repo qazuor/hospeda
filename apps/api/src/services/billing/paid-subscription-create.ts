@@ -41,8 +41,19 @@ export interface CreatePaidSubscriptionInput {
      * helper never looks a plan up itself.
      */
     readonly planId: string;
-    /** Resolved qzpay monthly price ID (`billing_prices.id`) for {@link planId}. */
+    /** Resolved qzpay price ID (`billing_prices.id`) for {@link planId}. */
     readonly priceId: string;
+    /**
+     * Billing cadence for the preapproval. Defaults to `'monthly'`.
+     *
+     * `'annual'` is mapped by qzpay to MercadoPago's
+     * `frequency: 12, frequency_type: 'months'` — NOT `frequency_type: 'years'`,
+     * which MercadoPago rejects outright. 12 months is also preferable to the
+     * 365 days that would otherwise work: it handles leap years and keeps the
+     * renewal aligned to the calendar instead of drifting a day every four
+     * years (HOS-171 §7.2).
+     */
+    readonly billingInterval?: 'monthly' | 'annual';
     /** MercadoPago `back_url` for the preapproval. */
     readonly paymentMethodReturnUrl: string;
     /** Webhook destination for this preapproval. */
@@ -114,6 +125,7 @@ export async function createPaidSubscription(
         paymentMethodReturnUrl,
         notificationUrl,
         freeTrialDays,
+        billingInterval = 'monthly',
         metadata
     } = input;
 
@@ -122,7 +134,7 @@ export async function createPaidSubscription(
         planId,
         priceId,
         mode: 'paid',
-        billingInterval: 'monthly',
+        billingInterval,
         paymentMethodReturnUrl,
         notificationUrl,
         // SPEC-126 D9: extra free-trial days are forwarded to the MP
