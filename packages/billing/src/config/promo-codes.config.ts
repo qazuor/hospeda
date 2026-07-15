@@ -94,15 +94,28 @@ export const BIENVENIDO_30_CODE: PromoCodeDefinition = {
 };
 
 /**
- * SPEC-126 D9: free-trial extension promo (30 extra days on the MP
- * preapproval). Applies only to monthly paid subscriptions started via
- * the `/start-paid` flow. The MP preapproval is created normally; MP
- * delays the first charge by `extraTrialDays` so the user gets a free
- * month before the recurring billing kicks in.
+ * Free-trial extension promo: 30 days ADDED to the trial the plan already
+ * grants (SPEC-126 D9, re-grounded by HOS-171).
+ *
+ * This lengthens an existing trial. It does not create one. Since card-first,
+ * the trial is `auto_recurring.free_trial` on the same MercadoPago preapproval
+ * the checkout creates, and `resolveCheckoutFreeTrialDays` decides its length
+ * ONCE by summing the plan's base trial and these extra days. Consequences
+ * worth knowing before handing this code to someone:
+ *
+ * - It applies to monthly AND annual — both intervals are the same preapproval
+ *   now. The trial stays expressed in days regardless of the cadence.
+ * - On a plan that declares no trial (tourist tiers) it grants nothing and the
+ *   checkout reports `promoCodeIgnored`. Trials are host-only (ADR-009), and an
+ *   extension has nothing to lengthen there.
+ * - It cannot gift a free month to an existing paying subscriber:
+ *   `applyPromoCode` rejects a trial_extension unless the subscription is
+ *   `trialing`, and a trial is one-per-customer for life. See HOS-180 for the
+ *   missing "comp a single cycle" mechanism.
  */
 export const FREEMONTH_CODE: PromoCodeDefinition = {
     code: 'FREEMONTH',
-    description: '30 extra free-trial days on monthly paid subscriptions.',
+    description: '30 extra free-trial days, added to the plan trial at checkout. New users only.',
     type: 'free_trial_extension',
     discountPercent: 0,
     extraTrialDays: 30,
