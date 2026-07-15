@@ -188,6 +188,10 @@
             "title": "Simple and fast planning",
             "description": "Book your accommodation in just a few steps"
         },
+        "feature4": {
+            "title": "Google Calendar sync",
+            "description": "Connect your Google Calendar to sync your property's availability and avoid double bookings"
+        },
         "statsLabel": "viajeros satisfechos"
     },
     "partners": {
