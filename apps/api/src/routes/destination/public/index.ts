@@ -12,6 +12,7 @@ import { publicGetDestinationByPathRoute } from './getByPath';
 import { publicGetDestinationBySlugRoute } from './getBySlug';
 import { publicGetDestinationChildrenRoute } from './getChildren';
 import { publicGetDestinationDescendantsRoute } from './getDescendants';
+import { publicGetDestinationPointsOfInterestRoute } from './getPointsOfInterest';
 import { publicGetDestinationStatsRoute } from './getStats';
 import { publicGetDestinationSummaryRoute } from './getSummary';
 import { publicGetDestinationWeatherRoute } from './getWeather';
@@ -27,6 +28,7 @@ app.route('/', publicGetDestinationByIdRoute);
 app.route('/', publicGetDestinationSummaryRoute);
 app.route('/', publicGetDestinationStatsRoute);
 app.route('/', publicGetDestinationAccommodationsRoute);
+app.route('/', publicGetDestinationPointsOfInterestRoute);
 
 app.route('/', publicGetDestinationWeatherRoute);
 
