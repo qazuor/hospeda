@@ -1,42 +1,10 @@
-import { failNext, getRecordedCalls, resetTestControl } from '@repo/billing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-    ensureCustomerExists: vi.fn(),
-    startTrial: vi.fn(),
-    findUserById: vi.fn(),
-    clearEntitlementCache: vi.fn(),
-    getDb: vi.fn(),
-    addPublishLinkageContext: vi.fn()
-}));
-
-vi.mock('../../src/middlewares/entitlement', () => ({
-    clearEntitlementCache: mocks.clearEntitlementCache
-}));
-
-// SPEC-222 Part 1: mock the Sentry linkage helper so AC-2 can assert the scope
-// enrichment is invoked with the full linkage. The real helper is a no-op when
-// Sentry is disabled (as in tests), so mocking is the only way to observe it.
-vi.mock('../../src/lib/sentry', () => ({
-    addPublishLinkageContext: mocks.addPublishLinkageContext
-}));
-
-vi.mock('../../src/services/billing-customer-sync', () => ({
-    BillingCustomerSyncService: class BillingCustomerSyncService {
-        ensureCustomerExists = mocks.ensureCustomerExists;
-    }
-}));
-
-vi.mock('../../src/services/trial.service', () => ({
-    TrialService: class TrialService {
-        startTrial = mocks.startTrial;
-    }
+    getDb: vi.fn()
 }));
 
 vi.mock('@repo/db', () => ({
-    UserModel: class UserModel {
-        findById = mocks.findUserById;
-    },
     billingCustomers: {},
     billingSubscriptions: {},
     desc: vi.fn(),
@@ -97,67 +65,20 @@ function setupDbMock(customerRows: unknown[], subscriptionRows: unknown[]) {
 }
 
 // ---------------------------------------------------------------------------
-// startTrial tests (pre-existing)
-// ---------------------------------------------------------------------------
-
-describe('buildAccommodationPublishDeps.startTrial', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        mocks.findUserById.mockResolvedValue({
-            id: 'owner-1',
-            email: 'owner@example.com',
-            displayName: 'Owner One'
-        });
-        mocks.ensureCustomerExists.mockResolvedValue('cust_123');
-        mocks.startTrial.mockResolvedValue('sub_123');
-    });
-
-    it('clears the entitlement cache after creating the first-publish trial', async () => {
-        const deps = buildAccommodationPublishDeps(() => ({}) as never);
-
-        const result = await deps.startTrial({ ownerId: 'owner-1', accommodationId: 'acc-1' });
-
-        expect(result).toEqual({ subscriptionId: 'sub_123' });
-        expect(mocks.clearEntitlementCache).toHaveBeenCalledTimes(1);
-        expect(mocks.clearEntitlementCache).toHaveBeenCalledWith('cust_123');
-    });
-
-    // SPEC-222 Part 2 (AC-3 at the dep boundary): the triggering accommodationId
-    // is forwarded to TrialService.startTrial so the MP creation metadata can
-    // carry the referential marker. No extra MP call is made here — the dep only
-    // threads the id into the single existing create path.
-    it('forwards the triggering accommodationId to TrialService.startTrial', async () => {
-        const deps = buildAccommodationPublishDeps(() => ({}) as never);
-
-        await deps.startTrial({ ownerId: 'owner-1', accommodationId: 'acc-42' });
-
-        expect(mocks.startTrial).toHaveBeenCalledTimes(1);
-        expect(mocks.startTrial).toHaveBeenCalledWith({
-            customerId: 'cust_123',
-            accommodationId: 'acc-42'
-        });
-    });
-
-    // SPEC-222 Part 1 (AC-2): the trial↔accommodation↔owner linkage is attached
-    // to the Sentry scope after the trial subscription is created.
-    it('enriches the Sentry scope with the publish linkage', async () => {
-        const deps = buildAccommodationPublishDeps(() => ({}) as never);
-
-        await deps.startTrial({ ownerId: 'owner-1', accommodationId: 'acc-7' });
-
-        expect(mocks.addPublishLinkageContext).toHaveBeenCalledTimes(1);
-        expect(mocks.addPublishLinkageContext).toHaveBeenCalledWith({
-            subscriptionId: 'sub_123',
-            accommodationId: 'acc-7',
-            ownerId: 'owner-1',
-            customerId: 'cust_123',
-            planSlug: 'owner-basico'
-        });
-    });
-});
-
-// ---------------------------------------------------------------------------
 // checkEligibility tests
+//
+// HOS-171 removed `startTrial` / `cancelTrial` from this factory entirely —
+// publishing an accommodation no longer creates anything at MercadoPago, so
+// `buildAccommodationPublishDeps()` now takes zero arguments and returns a
+// single `checkEligibility` member. `checkEligibility`'s own logic (reading
+// the local billing tables + `isSubscriptionLive`) is unchanged by HOS-171,
+// so this coverage carries over as-is, only updated for the new zero-arg
+// factory signature. The behavioral consequence of `first_publish` /
+// `subscription_required` — that `AccommodationService.publish()` now
+// rejects BOTH with FORBIDDEN `subscription_required` — is covered at the
+// service layer (`packages/service-core/test/services/accommodation/
+// publish.test.ts`), not here: this file only tests the dependency factory
+// that resolves eligibility, not what the caller does with the result.
 // ---------------------------------------------------------------------------
 
 describe('buildAccommodationPublishDeps.checkEligibility', () => {
@@ -177,7 +98,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
     it('returns first_publish when no billing customer row exists', async () => {
         // Arrange: customer query returns empty
         setupDbMock([], []);
-        const deps = buildAccommodationPublishDeps(() => null);
+        const deps = buildAccommodationPublishDeps();
 
         // Act
         const result = await deps.checkEligibility('owner-1');
@@ -189,7 +110,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
     it('returns first_publish when customer exists but has zero subscriptions', async () => {
         // Arrange
         setupDbMock([CUSTOMER], []);
-        const deps = buildAccommodationPublishDeps(() => null);
+        const deps = buildAccommodationPublishDeps();
 
         // Act
         const result = await deps.checkEligibility('owner-1');
@@ -205,7 +126,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
             [CUSTOMER],
             [{ status: 'active', trialEnd: null, currentPeriodEnd: futureEnd }]
         );
-        const deps = buildAccommodationPublishDeps(() => null);
+        const deps = buildAccommodationPublishDeps();
 
         // Act
         const result = await deps.checkEligibility('owner-1');
@@ -221,7 +142,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
             [CUSTOMER],
             [{ status: 'active', trialEnd: null, currentPeriodEnd: recentPast }]
         );
-        const deps = buildAccommodationPublishDeps(() => null);
+        const deps = buildAccommodationPublishDeps();
 
         // Act
         const result = await deps.checkEligibility('owner-1');
@@ -238,7 +159,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
             [CUSTOMER],
             [{ status: 'active', trialEnd: null, currentPeriodEnd: expiredEnd }]
         );
-        const deps = buildAccommodationPublishDeps(() => null);
+        const deps = buildAccommodationPublishDeps();
 
         // Act — pass nowMs so the predicate uses the same fixed clock
         // isSubscriptionLive uses Date.now() by default; we must control it
@@ -259,7 +180,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
             [CUSTOMER],
             [{ status: 'trialing', trialEnd: recentTrialEnd, currentPeriodEnd: null }]
         );
-        const deps = buildAccommodationPublishDeps(() => null);
+        const deps = buildAccommodationPublishDeps();
 
         vi.useFakeTimers();
         vi.setSystemTime(NOW_MS);
@@ -280,7 +201,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
             [CUSTOMER],
             [{ status: 'trialing', trialEnd: expiredTrialEnd, currentPeriodEnd: null }]
         );
-        const deps = buildAccommodationPublishDeps(() => null);
+        const deps = buildAccommodationPublishDeps();
 
         vi.useFakeTimers();
         vi.setSystemTime(NOW_MS);
@@ -306,137 +227,12 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
                 }
             ]
         );
-        const deps = buildAccommodationPublishDeps(() => null);
+        const deps = buildAccommodationPublishDeps();
 
         // Act
         const result = await deps.checkEligibility('owner-1');
 
         // Assert
         expect(result).toBe('subscription_required');
-    });
-});
-
-// ---------------------------------------------------------------------------
-// Test-control wrapping (SPEC-217 T-006 Option B)
-// ---------------------------------------------------------------------------
-
-describe('buildAccommodationPublishDeps — test-control wrapping', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        resetTestControl();
-        mocks.findUserById.mockResolvedValue({
-            id: 'owner-1',
-            email: 'owner@example.com',
-            displayName: 'Owner One'
-        });
-        mocks.ensureCustomerExists.mockResolvedValue('cust_123');
-        mocks.startTrial.mockResolvedValue('sub_123');
-    });
-
-    afterEach(() => {
-        process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED = undefined;
-        resetTestControl();
-    });
-
-    describe('startTrial', () => {
-        it('should reject with queued fault and NOT invoke inner work when flag ON + failNext', async () => {
-            // Arrange
-            process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED = 'true';
-            failNext({
-                operation: 'startTrial',
-                errorCode: 'TIMEOUT',
-                errorMessage: 'simulated start-trial timeout'
-            });
-            const deps = buildAccommodationPublishDeps(() => ({}) as never);
-
-            // Act & Assert
-            await expect(
-                deps.startTrial({ ownerId: 'owner-1', accommodationId: 'acc-1' })
-            ).rejects.toThrow('simulated start-trial timeout');
-
-            // Inner work must NOT have been invoked — fault short-circuits before the body.
-            expect(mocks.findUserById).not.toHaveBeenCalled();
-            expect(mocks.ensureCustomerExists).not.toHaveBeenCalled();
-            expect(mocks.startTrial).not.toHaveBeenCalled();
-        });
-
-        it('should run body normally and record ok when flag ON + no fault', async () => {
-            // Arrange
-            process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED = 'true';
-            const deps = buildAccommodationPublishDeps(() => ({}) as never);
-
-            // Act
-            const result = await deps.startTrial({ ownerId: 'owner-1', accommodationId: 'acc-1' });
-
-            // Assert — body executed normally
-            expect(result).toEqual({ subscriptionId: 'sub_123' });
-            expect(mocks.ensureCustomerExists).toHaveBeenCalledTimes(1);
-            expect(mocks.startTrial).toHaveBeenCalledTimes(1);
-
-            // Call recorded with outcome ok
-            const calls = getRecordedCalls('startTrial');
-            expect(calls).toHaveLength(1);
-            expect(calls[0]?.outcome).toBe('ok');
-        });
-
-        it('should run body normally and NOT record calls when flag OFF', async () => {
-            // Arrange — gate disabled (env var absent)
-            process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED = undefined;
-            const deps = buildAccommodationPublishDeps(() => ({}) as never);
-
-            // Act
-            const result = await deps.startTrial({ ownerId: 'owner-1', accommodationId: 'acc-1' });
-
-            // Assert — no interception, body ran
-            expect(result).toEqual({ subscriptionId: 'sub_123' });
-            expect(mocks.ensureCustomerExists).toHaveBeenCalledTimes(1);
-
-            // getRecordedCalls returns [] when gate is off
-            expect(getRecordedCalls('startTrial')).toHaveLength(0);
-        });
-    });
-
-    describe('cancelTrial', () => {
-        it('should reject with queued fault when flag ON + failNext(cancelTrial)', async () => {
-            // Arrange
-            process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED = 'true';
-            failNext({
-                operation: 'cancelTrial',
-                errorCode: 'MP_CANCEL_FAIL',
-                errorMessage: 'simulated cancel failure'
-            });
-            const mockCancel = vi.fn();
-            const billingStub = { subscriptions: { cancel: mockCancel } };
-            const deps = buildAccommodationPublishDeps(() => billingStub as never);
-
-            // Act & Assert
-            await expect(deps.cancelTrial('sub_999')).rejects.toThrow('simulated cancel failure');
-
-            // Real billing.subscriptions.cancel must NOT have been called.
-            expect(mockCancel).not.toHaveBeenCalled();
-
-            // Recorded as failed
-            const calls = getRecordedCalls('cancelTrial');
-            expect(calls).toHaveLength(1);
-            expect(calls[0]?.outcome).toBe('failed');
-        });
-
-        it('should invoke billing.subscriptions.cancel and record ok when flag ON + no fault', async () => {
-            // Arrange
-            process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED = 'true';
-            const mockCancel = vi.fn().mockResolvedValue(undefined);
-            const billingStub = { subscriptions: { cancel: mockCancel } };
-            const deps = buildAccommodationPublishDeps(() => billingStub as never);
-
-            // Act
-            await deps.cancelTrial('sub_456');
-
-            // Assert — billing.cancel called with the subscription id
-            expect(mockCancel).toHaveBeenCalledWith('sub_456');
-
-            const calls = getRecordedCalls('cancelTrial');
-            expect(calls).toHaveLength(1);
-            expect(calls[0]?.outcome).toBe('ok');
-        });
     });
 });

@@ -728,7 +728,9 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
         vi.mocked(findLocalSubscriptionByPreapprovalId).mockResolvedValue({
             id: 'sub-local-1',
             customerId: 'cust-resolved-1',
-            planId: 'plan-1'
+            planId: 'plan-1',
+            status: 'active',
+            trialEnd: null
         });
         vi.mocked(paymentAlreadyRecorded).mockResolvedValue(false);
 
@@ -798,7 +800,9 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
         vi.mocked(findLocalSubscriptionByPreapprovalId).mockResolvedValue({
             id: 'sub-local-2',
             customerId: 'cust-2',
-            planId: 'plan-1'
+            planId: 'plan-1',
+            status: 'active',
+            trialEnd: null
         });
         // Already recorded — must NOT call billing.payments.record
         vi.mocked(paymentAlreadyRecorded).mockResolvedValue(true);
