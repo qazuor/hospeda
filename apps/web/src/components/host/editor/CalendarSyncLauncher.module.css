@@ -1,0 +1,33 @@
+/* CalendarSyncLauncher.module.css — button that opens the sync panel dialog. */
+
+.launcher {
+    margin-bottom: var(--space-4, 1.5rem);
+}
+
+.openButton {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--brand-primary);
+    border-radius: var(--radius-button, 8px);
+    background-color: var(--brand-primary-a08, oklch(from var(--brand-primary) l c h / 0.08));
+    color: var(--brand-primary);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition:
+        background-color var(--duration-fast, 0.2s) ease-in-out,
+        color var(--duration-fast, 0.2s) ease-in-out;
+}
+
+.openButton:hover {
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+}
+
+.openButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}

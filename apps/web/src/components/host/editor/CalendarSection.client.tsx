@@ -35,12 +35,14 @@
 
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@repo/icons';
 import type { AccommodationOccupancy } from '@repo/schemas';
-import { type CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { accommodationOccupancyApi } from '@/lib/api/endpoints-protected';
 import {
     buildOccupancyEvents,
     layoutWeekBars,
-    type OccupancyEvent
+    MAX_VISIBLE_LANES,
+    type OccupancyEvent,
+    resolveWeekOverflow
 } from '@/lib/calendar/occupancy-bar-layout';
 import {
     addMonths,
@@ -63,7 +65,7 @@ import { webLogger } from '@/lib/logger';
 import { CalendarDayCell, sourceFallbackLabel, sourceKeySuffix } from './CalendarDayCell.client';
 import { CalendarLegend } from './CalendarLegend.client';
 import styles from './CalendarSection.module.css';
-import { CalendarSyncPanel } from './CalendarSyncPanel.client';
+import { CalendarSyncLauncher } from './CalendarSyncLauncher.client';
 import { PlanEntitlementGate } from './PlanEntitlementGate.client';
 
 // ---------------------------------------------------------------------------
@@ -313,8 +315,10 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
             </p>
 
             {/*
-             * Google Calendar sync panel — only for hosts whose plan grants
-             * can_sync_external_calendar. The empty-fragment fallback suppresses
+             * External calendar sync — only for hosts whose plan grants
+             * can_sync_external_calendar. Collapsed behind a button that opens
+             * the connect/sync panel in a modal (CalendarSyncLauncher) so the
+             * calendar stays uncluttered. The empty-fragment fallback suppresses
              * the gate's default upgrade box (passing `null` would fall through
              * to it), so hosts without the entitlement simply see the manual
              * calendar below with no clutter.
@@ -324,7 +328,7 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                 locale={locale}
                 fallback={<></>}
             >
-                <CalendarSyncPanel
+                <CalendarSyncLauncher
                     locale={locale}
                     accommodationId={accommodationId}
                 />
@@ -413,12 +417,15 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                                 week,
                                 events: occupancyEvents
                             });
+                            const { visibleSegments, overflowByColumn } = resolveWeekOverflow({
+                                segments,
+                                laneCount
+                            });
                             return (
                                 <div
                                     // biome-ignore lint/suspicious/noArrayIndexKey: fixed month grid, weeks never reordered
                                     key={`week-${weekIndex}`}
                                     className={styles.week}
-                                    style={{ '--lane-count': laneCount } as CSSProperties}
                                 >
                                     <div className={styles.weekDays}>
                                         {week.map((date, dayIndex) => {
@@ -460,7 +467,7 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                                             className={styles.weekBars}
                                             aria-hidden="true"
                                         >
-                                            {segments.map((segment) => {
+                                            {visibleSegments.map((segment) => {
                                                 const insetStart = segment.isStart ? 3 : 0;
                                                 const insetEnd = segment.isEnd ? 3 : 0;
                                                 return (
@@ -493,6 +500,31 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                                                     </div>
                                                 );
                                             })}
+                                            {overflowByColumn.map((count, col) =>
+                                                count > 0 ? (
+                                                    <div
+                                                        // biome-ignore lint/suspicious/noArrayIndexKey: fixed 7-column week, index IS the day column
+                                                        key={`more-${col}`}
+                                                        className={styles.barMore}
+                                                        style={{
+                                                            left: `calc(${col} / 7 * 100% + 3px)`,
+                                                            width: `calc(1 / 7 * 100% - 6px)`,
+                                                            top: `calc(${MAX_VISIBLE_LANES - 1} * (var(--bar-height) + var(--bar-gap)))`
+                                                        }}
+                                                        title={t(
+                                                            'host.properties.editor.calendar.moreEvents',
+                                                            '+{{count}} más',
+                                                            { count }
+                                                        )}
+                                                    >
+                                                        {t(
+                                                            'host.properties.editor.calendar.moreEventsShort',
+                                                            '+{{count}}',
+                                                            { count }
+                                                        )}
+                                                    </div>
+                                                ) : null
+                                            )}
                                         </div>
                                     )}
                                 </div>

@@ -354,15 +354,6 @@ export function CalendarSyncPanel({ locale, accommodationId }: CalendarSyncPanel
                 'Sincronización de calendarios externos'
             )}
         >
-            <div className={styles.header}>
-                <h4 className={styles.title}>
-                    {t(
-                        'host.properties.editor.calendarSync.title',
-                        'Sincronización de calendarios externos'
-                    )}
-                </h4>
-            </div>
-
             <p className={styles.description}>
                 {t(
                     'host.properties.editor.calendarSync.description',
