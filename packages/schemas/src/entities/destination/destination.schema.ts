@@ -14,7 +14,7 @@ import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { DestinationTypeEnumSchema } from '../../enums/destination-type.schema.js';
 import { AttractionSummarySchema } from '../attraction/attraction.schema.js';
 import { DestinationReviewSchema } from '../destinationReview/destinationReview.schema.js';
-import { PointOfInterestSummarySchema } from '../point-of-interest/point-of-interest.schema.js';
+import { DestinationPointOfInterestSummarySchema } from '../point-of-interest/point-of-interest.destination-relation.schema.js';
 import { TagSchema } from '../tag/tag.schema.js';
 import { DestinationClimateSchema } from './subtypes/destination.climate.schema.js';
 import { DestinationRatingSchema } from './subtypes/destination.rating.schema.js';
@@ -102,7 +102,15 @@ export const DestinationSchema = z.object({
     // Points of interest (HOS-113 Phase 4): lightweight summary array,
     // hydrated by `DestinationService._withPointsOfInterest` for the
     // destination detail response. Mirrors `attractions` above.
-    pointsOfInterest: z.array(PointOfInterestSummarySchema).optional(),
+    //
+    // HOS-146: uses `DestinationPointOfInterestSummarySchema` (POI summary +
+    // `relation`), NOT the bare `PointOfInterestSummarySchema` — `relation`
+    // (PRIMARY | NEARBY) is a join-row field from
+    // `r_destination_point_of_interest` that the web map needs to distinguish
+    // "physically in this destination" from "nearby cross-reference". Without
+    // it declared here, `stripWithSchema` silently drops `relation` from every
+    // public/protected destination response.
+    pointsOfInterest: z.array(DestinationPointOfInterestSummarySchema).optional(),
     reviews: z.array(DestinationReviewSchema).optional(),
     rating: DestinationRatingSchema.nullish(),
 
