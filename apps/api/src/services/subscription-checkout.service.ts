@@ -609,6 +609,13 @@ export async function initiatePaidMonthlySubscription(
         metadata: {
             source: 'start-paid-monthly',
             createdBy: 'subscription-flow',
+            // HOS-115 §5: the checkout toggle the customer came from, stamped so
+            // the trial-ending reminder can link back to the same interval
+            // instead of defaulting to monthly. Redundant now that the
+            // subscription carries a real billingInterval of its own (card-first
+            // trials are ordinary preapprovals) — but four readers still key off
+            // this metadata, so dropping it here silently degrades their nudge.
+            intendedInterval: 'monthly',
             ...(promoCode === undefined ? {} : { promoCode })
         }
     });
@@ -1214,6 +1221,8 @@ export async function initiatePaidAnnualSubscription(
             source: 'start-paid-annual',
             createdBy: 'subscription-flow',
             planSlug,
+            // HOS-115 §5 — see the monthly path's note.
+            intendedInterval: 'annual',
             ...(promoCode === undefined ? {} : { promoCode })
         }
     });
