@@ -132,9 +132,12 @@ export function CalendarDayCell({
     // are possible; presence, not `isBlocked`, is the occupied signal —
     // `row` is already the caller-resolved primary row for the date).
     const isOccupied = Boolean(row);
-    const isManual = row?.source === OccupancySourceEnum.MANUAL;
-    const isSyncOrigin = Boolean(row) && !isManual;
-    const isDisabled = isSyncOrigin || isPast;
+    const isSyncOrigin = isOccupied && row?.source !== OccupancySourceEnum.MANUAL;
+    // HOS-175 interaction model: cell click/hover only marks FREE days as
+    // occupied. Occupied days (manual OR sync) are never togglable from the
+    // cell — an existing event is edited/removed by clicking its bar instead
+    // (CalendarSection opens the edit dialog). Past days are always inert.
+    const isDisabled = isOccupied || isPast;
 
     const statusLabel = row
         ? `${t('host.properties.editor.calendar.statusOccupied', 'Ocupado')} — ${t(
@@ -165,7 +168,6 @@ export function CalendarDayCell({
             )}
             onClick={() => !isDisabled && onSelect(dateKey)}
             disabled={isDisabled}
-            aria-pressed={isManual ? isOccupied : undefined}
             aria-label={ariaLabel}
         >
             <span className={styles.dayNumber}>{date.getDate()}</span>

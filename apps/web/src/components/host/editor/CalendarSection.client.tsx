@@ -66,7 +66,10 @@ import { CalendarDayCell, sourceFallbackLabel, sourceKeySuffix } from './Calenda
 import { CalendarLegend } from './CalendarLegend.client';
 import styles from './CalendarSection.module.css';
 import { CalendarSyncLauncher } from './CalendarSyncLauncher.client';
-import { PlanEntitlementGate } from './PlanEntitlementGate.client';
+import {
+    OccupancyEventEditDialog,
+    type OccupancyEventEditSave
+} from './OccupancyEventEditDialog.client';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -165,7 +168,15 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
 
+    // --- Manual-event edit dialog (HOS-175) ---
+    const [editingEvent, setEditingEvent] = useState<OccupancyEvent | null>(null);
+    const [editSubmitting, setEditSubmitting] = useState(false);
+    const [editError, setEditError] = useState<string | null>(null);
+    // Bumped after any mutation to force the viewed month to re-fetch.
+    const [reloadKey, setReloadKey] = useState(0);
+
     // --- Fetch occupancy for the viewed month ---
+    // biome-ignore lint/correctness/useExhaustiveDependencies: reloadKey is an intentional manual refetch trigger (bumped after an edit/delete), not read inside the effect body
     useEffect(() => {
         let cancelled = false;
         setIsLoading(true);
@@ -197,7 +208,7 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
         return () => {
             cancelled = true;
         };
-    }, [accommodationId, viewedMonth]);
+    }, [accommodationId, viewedMonth, reloadKey]);
 
     // --- Month navigation ---
 
@@ -277,6 +288,76 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
         [selection, accommodationId, note, t]
     );
 
+    // --- Manual-event edit / delete ---
+
+    const handleEditSave = useCallback(
+        async ({ newStartDate, newEndDate, note: newNote }: OccupancyEventEditSave) => {
+            if (!editingEvent) return;
+            setEditSubmitting(true);
+            setEditError(null);
+
+            const result = await accommodationOccupancyApi.updateEvent({
+                id: accommodationId,
+                oldStartDate: editingEvent.startKey,
+                oldEndDate: editingEvent.endKey,
+                newStartDate,
+                newEndDate,
+                note: newNote
+            });
+
+            if (result.ok) {
+                setEditingEvent(null);
+                setReloadKey((k) => k + 1);
+            } else {
+                setEditError(
+                    result.error.message ||
+                        t(
+                            'host.properties.editor.calendar.editEvent.saveError',
+                            'No pudimos guardar los cambios. Intentá de nuevo.'
+                        )
+                );
+            }
+            setEditSubmitting(false);
+        },
+        [editingEvent, accommodationId, t]
+    );
+
+    const handleEditDelete = useCallback(async () => {
+        if (!editingEvent) return;
+        setEditSubmitting(true);
+        setEditError(null);
+
+        // Deleting a manual event = unblocking its full date range (only the
+        // MANUAL rows are removed server-side; any sync rows are left in place).
+        const result = await accommodationOccupancyApi.batchToggle({
+            id: accommodationId,
+            dates: buildDateRangeKeys({
+                startKey: editingEvent.startKey,
+                endKey: editingEvent.endKey
+            }),
+            isBlocked: false
+        });
+
+        if (result.ok) {
+            setEditingEvent(null);
+            setReloadKey((k) => k + 1);
+        } else {
+            setEditError(
+                result.error.message ||
+                    t(
+                        'host.properties.editor.calendar.editEvent.deleteError',
+                        'No pudimos eliminar el bloqueo. Intentá de nuevo.'
+                    )
+            );
+        }
+        setEditSubmitting(false);
+    }, [editingEvent, accommodationId, t]);
+
+    const handleEditClose = useCallback(() => {
+        setEditingEvent(null);
+        setEditError(null);
+    }, []);
+
     // --- Derived rendering data ---
 
     const gridCells = useMemo(() => buildMonthGrid({ month: viewedMonth }), [viewedMonth]);
@@ -301,6 +382,17 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
         );
     }, [locale]);
     const hasAnyOccupiedDayInMonth = Object.keys(occupancyByDate).length > 0;
+    // Which occupancy sources actually appear this month — drives the legend so
+    // it never lists a sync source the host never connected (HOS-175).
+    const presentSources = useMemo(
+        () =>
+            new Set(
+                Object.values(occupancyByDate)
+                    .flat()
+                    .map((r) => r.source)
+            ),
+        [occupancyByDate]
+    );
 
     return (
         <div className={styles.section}>
@@ -315,24 +407,16 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
             </p>
 
             {/*
-             * External calendar sync — only for hosts whose plan grants
-             * can_sync_external_calendar. Collapsed behind a button that opens
-             * the connect/sync panel in a modal (CalendarSyncLauncher) so the
-             * calendar stays uncluttered. The empty-fragment fallback suppresses
-             * the gate's default upgrade box (passing `null` would fall through
-             * to it), so hosts without the entitlement simply see the manual
-             * calendar below with no clutter.
+             * External calendar sync, collapsed behind a button that opens the
+             * connect/sync panel in a modal (CalendarSyncLauncher). The button
+             * is ALWAYS shown; the launcher itself checks the
+             * can_sync_external_calendar entitlement and opens an upgrade nudge
+             * instead of the panel when the plan lacks it (HOS-175).
              */}
-            <PlanEntitlementGate
-                entitlementKey="can_sync_external_calendar"
+            <CalendarSyncLauncher
                 locale={locale}
-                fallback={<></>}
-            >
-                <CalendarSyncLauncher
-                    locale={locale}
-                    accommodationId={accommodationId}
-                />
-            </PlanEntitlementGate>
+                accommodationId={accommodationId}
+            />
 
             <div className={styles.monthHeader}>
                 <button
@@ -463,38 +547,63 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                                         })}
                                     </div>
                                     {segments.length > 0 && (
-                                        <div
-                                            className={styles.weekBars}
-                                            aria-hidden="true"
-                                        >
+                                        <div className={styles.weekBars}>
                                             {visibleSegments.map((segment) => {
                                                 const insetStart = segment.isStart ? 3 : 0;
                                                 const insetEnd = segment.isEnd ? 3 : 0;
-                                                return (
-                                                    <div
-                                                        key={`${segment.event.source}-${segment.event.startKey}-${segment.lane}-${segment.colStart}`}
-                                                        className={cn(
-                                                            styles.bar,
-                                                            barSourceClass(segment.event.source),
-                                                            segment.isStart && styles.barStart,
-                                                            segment.isEnd && styles.barEnd
-                                                        )}
-                                                        style={{
-                                                            left: `calc(${segment.colStart} / 7 * 100% + ${insetStart}px)`,
-                                                            width: `calc(${segment.span} / 7 * 100% - ${insetStart + insetEnd}px)`,
-                                                            top: `calc(${segment.lane} * (var(--bar-height) + var(--bar-gap)))`
-                                                        }}
-                                                        title={barLabel({
-                                                            event: segment.event,
-                                                            t
-                                                        })}
+                                                const label = barLabel({ event: segment.event, t });
+                                                // Only MANUAL events are editable — their bar is a
+                                                // real button that opens the edit dialog; sync bars
+                                                // stay decorative (their occupancy is announced by
+                                                // the disabled day cell's aria-label).
+                                                const isManualBar =
+                                                    sourceKeySuffix(segment.event.source) ===
+                                                    'manual';
+                                                const barClass = cn(
+                                                    styles.bar,
+                                                    barSourceClass(segment.event.source),
+                                                    segment.isStart && styles.barStart,
+                                                    segment.isEnd && styles.barEnd,
+                                                    isManualBar && styles.barButton
+                                                );
+                                                const barStyle = {
+                                                    left: `calc(${segment.colStart} / 7 * 100% + ${insetStart}px)`,
+                                                    width: `calc(${segment.span} / 7 * 100% - ${insetStart + insetEnd}px)`,
+                                                    top: `calc(${segment.lane} * (var(--bar-height) + var(--bar-gap)))`
+                                                };
+                                                const key = `${segment.event.source}-${segment.event.startKey}-${segment.lane}-${segment.colStart}`;
+
+                                                return isManualBar ? (
+                                                    <button
+                                                        key={key}
+                                                        type="button"
+                                                        className={barClass}
+                                                        style={barStyle}
+                                                        onClick={() =>
+                                                            setEditingEvent(segment.event)
+                                                        }
+                                                        aria-label={`${t(
+                                                            'host.properties.editor.calendar.editEvent.title',
+                                                            'Editar bloqueo'
+                                                        )}: ${label}`}
                                                     >
                                                         {segment.showLabel && (
                                                             <span className={styles.barLabel}>
-                                                                {barLabel({
-                                                                    event: segment.event,
-                                                                    t
-                                                                })}
+                                                                {label}
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                ) : (
+                                                    <div
+                                                        key={key}
+                                                        className={barClass}
+                                                        style={barStyle}
+                                                        title={label}
+                                                        aria-hidden="true"
+                                                    >
+                                                        {segment.showLabel && (
+                                                            <span className={styles.barLabel}>
+                                                                {label}
                                                             </span>
                                                         )}
                                                     </div>
@@ -516,6 +625,7 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                                                             '+{{count}} más',
                                                             { count }
                                                         )}
+                                                        aria-hidden="true"
                                                     >
                                                         {t(
                                                             'host.properties.editor.calendar.moreEventsShort',
@@ -605,19 +715,6 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                         </button>
                         <button
                             type="button"
-                            className={styles.unblockButton}
-                            onClick={() => handleApply(false)}
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting
-                                ? t(
-                                      'host.properties.editor.calendar.unblockingAction',
-                                      'Liberando...'
-                                  )
-                                : t('host.properties.editor.calendar.unblockAction', 'Liberar')}
-                        </button>
-                        <button
-                            type="button"
                             className={styles.cancelButton}
                             onClick={handleCancelSelection}
                             disabled={isSubmitting}
@@ -640,7 +737,21 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                 </section>
             )}
 
-            <CalendarLegend t={t} />
+            <CalendarLegend
+                t={t}
+                presentSources={presentSources}
+            />
+
+            <OccupancyEventEditDialog
+                isOpen={editingEvent !== null}
+                t={t}
+                event={editingEvent}
+                isSubmitting={editSubmitting}
+                error={editError}
+                onSave={handleEditSave}
+                onDelete={handleEditDelete}
+                onClose={handleEditClose}
+            />
         </div>
     );
 }

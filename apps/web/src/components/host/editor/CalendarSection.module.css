@@ -171,9 +171,7 @@
      * plus a constant `--max-lanes` rows. Every cell is identical; busier weeks
      * spill into the "+N" indicator instead of stretching the cell.
      */
-    min-height: calc(
-        1.75rem + var(--max-lanes) * (var(--bar-height) + var(--bar-gap))
-    );
+    min-height: calc(1.75rem + var(--max-lanes) * (var(--bar-height) + var(--bar-gap)));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -223,6 +221,10 @@
      * `.barMore` before they reach here. */
     height: calc(var(--max-lanes) * (var(--bar-height) + var(--bar-gap)));
     overflow: hidden;
+    /* Sit above a hovered cell (which raises itself to z-index 1) so the hover
+     * highlight never paints over an event bar. Bars stay click-through; the
+     * clickable bar itself opts back into pointer events (see `.bar`). */
+    z-index: 2;
     pointer-events: none;
 }
 
@@ -258,6 +260,27 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+/* A manual event bar is an interactive button that opens the edit dialog. It
+ * opts back into the pointer events `.weekBars` disables and resets the native
+ * button chrome so it looks identical to a decorative `.bar`. */
+.barButton {
+    appearance: none;
+    -webkit-appearance: none;
+    margin: 0;
+    pointer-events: auto;
+    cursor: pointer;
+    text-align: left;
+}
+
+.barButton:hover {
+    filter: brightness(0.95);
+}
+
+.barButton:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--brand-primary);
 }
 
 /* Per-day "+N" indicator for events that overflow the fixed lane band. */
@@ -438,6 +461,68 @@
 .blockButton:disabled,
 .unblockButton:disabled,
 .cancelButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* --- Edit-event dialog (HOS-175) --- */
+
+.editForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.editInput {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button, 8px);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+}
+
+.editFooterSpread {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    width: 100%;
+}
+
+.editFooterActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.saveButton {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+}
+
+.deleteButton {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    border: 1px solid var(--destructive);
+    background-color: transparent;
+    color: var(--destructive);
+}
+
+.saveButton:disabled,
+.deleteButton:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
