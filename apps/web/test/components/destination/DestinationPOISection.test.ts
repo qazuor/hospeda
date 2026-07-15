@@ -77,4 +77,25 @@ describe('DestinationPOISection.astro', () => {
     it('does NOT import Tailwind utility classes or CSS Modules — vanilla scoped <style> per web conventions', () => {
         expect(sectionSrc).not.toContain('.module.css');
     });
+
+    // HOS-146: the payload now carries PRIMARY + NEARBY POIs; the grid must
+    // keep showing PRIMARY only (zero visual regression from pre-HOS-146).
+    //
+    // These three assert on identifiers and structure, NOT on verbatim
+    // statements: a `biome check` reformat must never fail them. What they pin
+    // down is the causal chain that keeps NEARBY POIs out of the grid —
+    // filter → guard on the FILTERED list → sort the FILTERED list. Asserting
+    // the same three facts against the raw `pointsOfInterest` prop is exactly
+    // the regression they exist to catch.
+    it('filters NEARBY out before rendering (PRIMARY-only grid, HOS-146)', () => {
+        expect(sectionSrc).toMatch(/\.filter\(\s*\(poi\)\s*=>\s*poi\.relation\s*!==\s*'NEARBY'/);
+    });
+
+    it('guards on the NEARBY-filtered list, so a POI set that is entirely NEARBY renders nothing', () => {
+        expect(sectionSrc).toMatch(/if\s*\(\s*primaryOnly\.length\s*===\s*0\s*\)\s*return/);
+    });
+
+    it('sorts the PRIMARY-filtered list, not the raw pointsOfInterest prop', () => {
+        expect(sectionSrc).toMatch(/const\s+sorted\s*=\s*\[\s*\.\.\.primaryOnly\s*\]/);
+    });
 });
