@@ -129,17 +129,8 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
-// Mock the annual-subscription-create helper (HOS-123 T-008/T-009). It has
-// its own dedicated unit-test coverage (`test/services/billing/
-// create-annual-subscription.test.ts`) — here we only assert that
-// `TrialService` calls it with the right arguments on the annual branch.
-vi.mock('../../src/services/billing/create-annual-subscription', () => ({
-    createAnnualSubscription: vi.fn()
-}));
-
 import * as Sentry from '@sentry/node';
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
-import { createAnnualSubscription } from '../../src/services/billing/create-annual-subscription';
 import { buildTrialUpgradeUrl, TrialService } from '../../src/services/trial.service';
 import { env } from '../../src/utils/env';
 
@@ -1839,10 +1830,14 @@ describe('TrialService', () => {
             });
         });
 
-        // ── HOS-123 T-008: annual reactivation routes through
-        // `createAnnualSubscription` (one-time hosted checkout) instead of
-        // `createPaidSubscription` (monthly preapproval).
-        describe('annual billingInterval (HOS-123 T-008)', () => {
+        // ── HOS-171 §7.2: annual reactivation is now a recurring MercadoPago
+        // preapproval routed through the SAME `createPaidSubscription`
+        // helper as monthly (`billingInterval: 'annual'` is the only
+        // difference) — the old one-time-charge `createAnnualSubscription`
+        // helper no longer exists. These assertions target the shared
+        // boundary the monthly tests already use: `mockBilling.subscriptions
+        // .create` (never mocked at the `createPaidSubscription` level).
+        describe('annual billingInterval (HOS-171 §7.2)', () => {
             const ANNUAL_PRICE_ID = 'price_annual_pro';
             const ANNUAL_URLS = {
                 successUrl: 'https://hospeda.test/es/suscriptores/checkout/success/',
@@ -1875,11 +1870,25 @@ describe('TrialService', () => {
                 };
             }
 
-            beforeEach(() => {
-                vi.mocked(createAnnualSubscription).mockReset();
-            });
+            function mockAnnualCreateHappyPath(customerId: string) {
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [paidPlanWithAnnual()]
+                } as never);
+                vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                    id: customerId,
+                    email: 'owner@example.com'
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                    id: 'sub-annual-local',
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    status: 'incomplete',
+                    providerInitPoint: 'https://mp.test/checkout/annual-reactivate-abc',
+                    providerSubscriptionIds: { mercadopago: 'mp_preapproval_annual_reactivate' }
+                } as never);
+            }
 
-            it('routes annual reactivation through createAnnualSubscription and returns a pending_provider result', async () => {
+            it('routes annual reactivation through createPaidSubscription (billingInterval: annual) and returns a pending_provider result', async () => {
                 // Arrange
                 vi.mocked(clearEntitlementCache).mockClear();
                 const customerId = 'customer-annual-reactivate';
@@ -1892,18 +1901,7 @@ describe('TrialService', () => {
                 vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
                     existingTrialSub
                 ] as never);
-                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                    data: [paidPlanWithAnnual()]
-                } as never);
-                vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
-                    id: customerId,
-                    email: 'owner@example.com'
-                } as never);
-                vi.mocked(createAnnualSubscription).mockResolvedValue({
-                    localSubscriptionId: 'sub-annual-local',
-                    checkoutUrl: 'https://mp.test/checkout/annual-reactivate-abc',
-                    expiresAt: '2026-01-01T00:00:00.000Z'
-                });
+                mockAnnualCreateHappyPath(customerId);
 
                 // Act
                 const result = await trialService.reactivateFromTrial({
@@ -1922,12 +1920,18 @@ describe('TrialService', () => {
                     message: expect.any(String)
                 });
 
-                expect(createAnnualSubscription).toHaveBeenCalledWith(
+                // The preapproval-create call must carry `billingInterval:
+                // 'annual'` — a preapproval has a single `back_url`
+                // (`urls.successUrl`), not the annual hosted-checkout shape.
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
                     expect.objectContaining({
                         customerId,
+                        planId: PAID_PLAN_ID,
                         priceId: ANNUAL_PRICE_ID,
-                        chargeAmountCentavos: 35_000_000,
-                        urls: ANNUAL_URLS,
+                        mode: 'paid',
+                        billingInterval: 'annual',
+                        paymentMethodReturnUrl: ANNUAL_URLS.successUrl,
+                        notificationUrl: ANNUAL_URLS.notificationUrl,
                         metadata: expect.objectContaining({
                             convertedFromTrial: 'true',
                             supersedesSubscriptionId: 'sub-trial-annual'
@@ -1935,8 +1939,6 @@ describe('TrialService', () => {
                     })
                 );
 
-                // Never falls through to the monthly preapproval path.
-                expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
                 // Still deferred to the webhook — never touched synchronously.
                 expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
                 expect(clearEntitlementCache).not.toHaveBeenCalled();
@@ -1972,7 +1974,6 @@ describe('TrialService', () => {
                     status: 'incomplete',
                     message: expect.any(String)
                 });
-                expect(createAnnualSubscription).not.toHaveBeenCalled();
                 expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
                 expect(clearEntitlementCache).not.toHaveBeenCalled();
                 expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
@@ -2016,7 +2017,6 @@ describe('TrialService', () => {
                 });
 
                 expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
-                expect(createAnnualSubscription).not.toHaveBeenCalled();
             });
         });
     });
@@ -2310,14 +2310,15 @@ describe('TrialService', () => {
             });
         });
 
-        // ── HOS-123 T-009: annual reactivation routes through
-        // `createAnnualSubscription` (one-time hosted checkout) instead of
-        // `createPaidSubscription` (monthly preapproval). Mirrors the
-        // `reactivateFromTrial` annual sub-describe above, except this
-        // method's supersession marker is `reactivatedFromCanceled`, never
-        // `convertedFromTrial`, and `previousPlanId` must survive for both
-        // intervals.
-        describe('annual billingInterval (HOS-123 T-009)', () => {
+        // ── HOS-171 §7.2: annual reactivation is now a recurring MercadoPago
+        // preapproval routed through the SAME `createPaidSubscription`
+        // helper as monthly (`billingInterval: 'annual'` is the only
+        // difference) — the old one-time-charge `createAnnualSubscription`
+        // helper no longer exists. Mirrors the `reactivateFromTrial` annual
+        // sub-describe above, except this method's supersession marker is
+        // `reactivatedFromCanceled`, never `convertedFromTrial`, and
+        // `previousPlanId` must survive for both intervals.
+        describe('annual billingInterval (HOS-171 §7.2)', () => {
             const ANNUAL_PRICE_ID = 'price_annual_pro_sub';
             const ANNUAL_URLS = {
                 successUrl: 'https://hospeda.test/es/suscriptores/checkout/success/',
@@ -2350,11 +2351,27 @@ describe('TrialService', () => {
                 };
             }
 
-            beforeEach(() => {
-                vi.mocked(createAnnualSubscription).mockReset();
-            });
+            function mockAnnualCreateHappyPath(customerId: string) {
+                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                    data: [paidPlanWithAnnual()]
+                } as never);
+                vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                    id: customerId,
+                    email: 'owner@example.com'
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                    id: 'sub-annual-local-reactivated',
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    status: 'incomplete',
+                    providerInitPoint: 'https://mp.test/checkout/annual-reactivate-sub-abc',
+                    providerSubscriptionIds: {
+                        mercadopago: 'mp_preapproval_annual_reactivate_sub'
+                    }
+                } as never);
+            }
 
-            it('routes annual reactivation through createAnnualSubscription, preserves previousPlanId, and returns a pending_provider result', async () => {
+            it('routes annual reactivation through createPaidSubscription (billingInterval: annual), preserves previousPlanId, and returns a pending_provider result', async () => {
                 // Arrange
                 vi.mocked(clearEntitlementCache).mockClear();
                 const customerId = 'customer-canceled-annual';
@@ -2368,18 +2385,7 @@ describe('TrialService', () => {
                 vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
                     canceledSub
                 ] as never);
-                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                    data: [paidPlanWithAnnual()]
-                } as never);
-                vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
-                    id: customerId,
-                    email: 'owner@example.com'
-                } as never);
-                vi.mocked(createAnnualSubscription).mockResolvedValue({
-                    localSubscriptionId: 'sub-annual-local-reactivated',
-                    checkoutUrl: 'https://mp.test/checkout/annual-reactivate-sub-abc',
-                    expiresAt: '2026-01-01T00:00:00.000Z'
-                });
+                mockAnnualCreateHappyPath(customerId);
 
                 // Act
                 const result = await trialService.reactivateSubscription({
@@ -2399,12 +2405,15 @@ describe('TrialService', () => {
                     message: expect.any(String)
                 });
 
-                expect(createAnnualSubscription).toHaveBeenCalledWith(
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
                     expect.objectContaining({
                         customerId,
+                        planId: PAID_PLAN_ID,
                         priceId: ANNUAL_PRICE_ID,
-                        chargeAmountCentavos: 35_000_000,
-                        urls: ANNUAL_URLS,
+                        mode: 'paid',
+                        billingInterval: 'annual',
+                        paymentMethodReturnUrl: ANNUAL_URLS.successUrl,
+                        notificationUrl: ANNUAL_URLS.notificationUrl,
                         metadata: expect.objectContaining({
                             reactivatedFromCanceled: 'true',
                             previousPlanId: 'plan-old-annual',
@@ -2416,12 +2425,11 @@ describe('TrialService', () => {
                 // Must NOT stamp convertedFromTrial — that marker belongs only
                 // to `reactivateFromTrial`'s trigger source; this method's is
                 // `reactivatedFromCanceled` (subscription-reactivation).
-                const call = vi.mocked(createAnnualSubscription).mock.calls[0]?.[0] as {
+                const call = vi.mocked(mockBilling.subscriptions.create).mock.calls[0]?.[0] as {
                     metadata?: Record<string, unknown>;
                 };
                 expect(call.metadata).not.toHaveProperty('convertedFromTrial');
 
-                expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
                 expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
                 expect(clearEntitlementCache).not.toHaveBeenCalled();
             });
@@ -2458,7 +2466,6 @@ describe('TrialService', () => {
                     status: 'incomplete',
                     message: expect.any(String)
                 });
-                expect(createAnnualSubscription).not.toHaveBeenCalled();
                 expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
                 expect(clearEntitlementCache).not.toHaveBeenCalled();
                 expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
@@ -2509,7 +2516,6 @@ describe('TrialService', () => {
                 });
 
                 expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
-                expect(createAnnualSubscription).not.toHaveBeenCalled();
             });
         });
     });

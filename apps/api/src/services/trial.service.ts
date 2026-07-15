@@ -1102,7 +1102,6 @@ export class TrialService {
                     paymentMethodReturnUrl: urls.successUrl,
                     notificationUrl: urls.notificationUrl,
                     metadata: {
-                        source: 'reactivate-from-trial-annual',
                         convertedFromTrial: 'true',
                         convertedAt: new Date().toISOString(),
                         ...(supersedesSubscriptionId ? { supersedesSubscriptionId } : {})
@@ -1342,7 +1341,6 @@ export class TrialService {
                     paymentMethodReturnUrl: urls.successUrl,
                     notificationUrl: urls.notificationUrl,
                     metadata: {
-                        source: 'reactivate-subscription-annual',
                         reactivatedFromCanceled: 'true',
                         reactivatedAt: new Date().toISOString(),
                         ...(previousPlanId ? { previousPlanId } : {}),
