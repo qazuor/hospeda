@@ -23,6 +23,7 @@ import type {
     DestinationFaqSingleOutput,
     DestinationFaqUpdateInput,
     DestinationIdType,
+    DestinationPointOfInterestSummary,
     DestinationRatingInput,
     DestinationSearchForListOutput,
     DestinationSearchInput,
@@ -37,6 +38,7 @@ import type {
     GetDestinationChildrenInput,
     GetDestinationDescendantsInput,
     GetDestinationNearbyInput,
+    GetDestinationPointsOfInterestInput,
     GetDestinationStatsInput,
     GetDestinationSummaryInput,
     Success
@@ -58,6 +60,7 @@ import {
     GetDestinationChildrenInputSchema,
     GetDestinationDescendantsInputSchema,
     GetDestinationNearbyInputSchema,
+    GetDestinationPointsOfInterestInputSchema,
     GetDestinationStatsInputSchema,
     GetDestinationSummaryInputSchema,
     ServiceErrorCode
@@ -705,6 +708,55 @@ export class DestinationService extends BaseCrudService<
                     path: destination.path
                 };
                 return { summary };
+            }
+        });
+    }
+
+    /**
+     * Returns the points of interest (POIs) associated with a destination
+     * (HOS-146), optionally filtered by relation kind.
+     *
+     * Sourced directly from `DestinationModel.getPointsOfInterestMap` — the
+     * same non-paginated, `relation`-aware batch loader `_withPointsOfInterest`
+     * uses for the destination detail response — NOT from
+     * `PointOfInterestService.getPointsOfInterestForDestination`, whose
+     * `findAll`-based implementation silently truncates results to the
+     * default page size (HOS-135, a separate known bug). This method exists
+     * to power the public "map of the destination" endpoint, which needs the
+     * full, unpaginated set (worst case ~99 POIs for a single destination).
+     *
+     * @param actor - The actor performing the action
+     * @param params - Input containing destinationId and an optional relation filter (default `'ALL'`)
+     * @param ctx - Optional service context. When provided with a transaction, model queries run within it.
+     * @returns ServiceOutput with the (possibly empty) pointsOfInterest array, or error
+     */
+    public async getPointsOfInterest(
+        actor: Actor,
+        params: GetDestinationPointsOfInterestInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ pointsOfInterest: DestinationPointOfInterestSummary[] }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getPointsOfInterest',
+            input: { ...params, actor },
+            schema: GetDestinationPointsOfInterestInputSchema,
+            ctx,
+            execute: async (validated, actor, resolvedCtx) => {
+                const { destinationId, relation } = validated;
+                const destination = await this.model.findById(destinationId, resolvedCtx.tx);
+                if (!destination) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Destination with id '${destinationId}' not found.`
+                    );
+                }
+                checkCanViewDestination(actor, destination);
+                const map = await this.model.getPointsOfInterestMap(
+                    [destinationId],
+                    resolvedCtx.tx,
+                    relation
+                );
+                const pointsOfInterest = map.get(destinationId) ?? [];
+                return { pointsOfInterest };
             }
         });
     }
@@ -1529,6 +1581,16 @@ export class DestinationService extends BaseCrudService<
      * exactly) and merges them onto the destination object. If the
      * destination already carries a `pointsOfInterest` array (e.g. loaded by
      * a future relations query), we leave it untouched.
+     *
+     * Stays on the loader's `'PRIMARY'`-only default (HOS-146 review): the
+     * destination detail payload keeps carrying exactly the POIs that are
+     * physically in the destination, unchanged from HOS-113. NEARBY POIs are
+     * NOT bundled here — a destination can have dozens of them (Colón: 41
+     * PRIMARY + 57 NEARBY) and every consumer of this payload except the map
+     * renders PRIMARY only, so bundling them would inflate every destination
+     * response for one optional, below-the-fold widget. The map fetches them
+     * on demand from `GET /destinations/:id/points-of-interest?relation=NEARBY`
+     * instead (see `DestinationPOIMap.client.tsx` in apps/web).
      *
      * @param destination - Destination to enrich
      * @param ctx - Optional service context for transaction propagation

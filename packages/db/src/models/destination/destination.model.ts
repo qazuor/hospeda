@@ -498,6 +498,14 @@ export class DestinationModel extends BaseModelImpl<Destination> {
      * `'PRIMARY'` is a behavior-preserving no-op for every row seeded before
      * this spec shipped. The returned row shape always includes `relation`
      * so a caller that requests `'ALL'` can still distinguish the two kinds.
+     *
+     * Only ACTIVE, non-soft-deleted POIs are returned (HOS-146 review). Both
+     * callers of this loader are public reads — the destination detail payload
+     * (`DestinationService._withPointsOfInterest`) and the public
+     * `/destinations/:id/points-of-interest` endpoint — so the gate holds the
+     * same invariant `PointOfInterestService` establishes for its own public
+     * reads (HOS-132). A DRAFT or soft-deleted POI must never surface on a
+     * public surface just because it still has a join row.
      * @param destIds - Array of destination UUIDs
      * @param tx - Optional transaction client
      * @param relation - Relation-kind filter, default `'PRIMARY'`.
@@ -535,7 +543,12 @@ export class DestinationModel extends BaseModelImpl<Destination> {
         const db = this.getClient(tx);
         try {
             const whereConditions = [
-                inArray(rDestinationPointOfInterest.destinationId, [...destIds])
+                inArray(rDestinationPointOfInterest.destinationId, [...destIds]),
+                // Public-read gate (HOS-146 review, mirrors HOS-132): a POI that
+                // is soft-deleted or not ACTIVE must never reach a public
+                // response, even though its join row still exists.
+                isNull(pointsOfInterest.deletedAt),
+                eq(pointsOfInterest.lifecycleState, 'ACTIVE')
             ];
             if (relation !== 'ALL') {
                 whereConditions.push(eq(rDestinationPointOfInterest.relation, relation));

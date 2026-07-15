@@ -192,7 +192,7 @@ describe('DestinationSchema', () => {
             });
         });
 
-        describe('pointsOfInterest field (HOS-113 T-047)', () => {
+        describe('pointsOfInterest field (HOS-113 T-047, relation added HOS-146)', () => {
             it('should accept a valid pointsOfInterest array', () => {
                 const validData = createValidDestination();
                 const dataWithPois = {
@@ -208,7 +208,8 @@ describe('DestinationSchema', () => {
                             icon: 'flag-checkered',
                             isFeatured: true,
                             isBuiltin: true,
-                            displayWeight: 80
+                            displayWeight: 80,
+                            relation: 'PRIMARY'
                         }
                     ]
                 };
@@ -236,6 +237,65 @@ describe('DestinationSchema', () => {
                 } as Record<string, unknown>;
 
                 expect(() => DestinationSchema.parse(withoutPois)).not.toThrow();
+            });
+
+            it('should keep the relation kind (PRIMARY/NEARBY) on each item (HOS-146)', () => {
+                const validData = createValidDestination();
+                const dataWithPois = {
+                    ...validData,
+                    pointsOfInterest: [
+                        {
+                            id: '550e8400-e29b-41d4-a716-446655440099',
+                            slug: 'autodromo',
+                            lat: -32.48,
+                            long: -58.24,
+                            type: 'STADIUM',
+                            displayWeight: 80,
+                            relation: 'PRIMARY'
+                        },
+                        {
+                            id: '550e8400-e29b-41d4-a716-446655440098',
+                            slug: 'termas',
+                            lat: -31.9,
+                            long: -58.0,
+                            type: 'PARK',
+                            displayWeight: 60,
+                            relation: 'NEARBY'
+                        }
+                    ]
+                };
+
+                const result = DestinationSchema.parse(dataWithPois);
+                expect(result.pointsOfInterest?.[0]?.relation).toBe('PRIMARY');
+                expect(result.pointsOfInterest?.[1]?.relation).toBe('NEARBY');
+            });
+
+            it('should ACCEPT a pointsOfInterest item missing relation (HOS-146 — optional, per the additive-only schema compat policy)', () => {
+                // A POI summary that shipped before HOS-146 has no `relation`.
+                // Requiring it would be a "tighten a rule" breaking change
+                // (packages/schemas/CLAUDE.md → Schema Compatibility Policy) and
+                // would make an entire destination response fail to parse over a
+                // single legacy/cached item. Declaring it optional is what makes
+                // `stripWithSchema` keep the key when it IS present — which is
+                // the only thing this schema needs to achieve.
+                const validData = createValidDestination();
+                const dataWithPois = {
+                    ...validData,
+                    pointsOfInterest: [
+                        {
+                            id: '550e8400-e29b-41d4-a716-446655440099',
+                            slug: 'autodromo',
+                            lat: -32.48,
+                            long: -58.24,
+                            type: 'STADIUM',
+                            displayWeight: 80
+                            // relation intentionally omitted
+                        }
+                    ]
+                };
+
+                const result = DestinationSchema.parse(dataWithPois);
+                expect(result.pointsOfInterest?.[0]?.relation).toBeUndefined();
             });
         });
     });

@@ -7,6 +7,7 @@ import {
 import { createAverageRatingField } from '../../common/helpers.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { DestinationTypeEnumSchema } from '../../enums/destination-type.schema.js';
+import { PointOfInterestDestinationRelationEnumSchema } from '../../enums/point-of-interest-destination-relation.schema.js';
 import { applyOpenApiMetadata, type OpenApiSchemaMetadata } from '../../utils/openapi.utils.js';
 import { DestinationSchema } from './destination.schema.js';
 
@@ -266,6 +267,27 @@ export const GetDestinationSummaryInputSchema = z.object({
     destinationId: z.string().uuid()
 });
 export type GetDestinationSummaryInput = z.infer<typeof GetDestinationSummaryInputSchema>;
+
+/**
+ * Input for `DestinationService.getPointsOfInterest` (HOS-146).
+ *
+ * `relation` is an optional 3-value filter — `'PRIMARY'` (POIs physically in
+ * the destination), `'NEARBY'` (cross-referenced from a different
+ * destination), or `'ALL'` (both, default). Unlike
+ * `PointsOfInterestByDestinationSchema` (whose default is `'PRIMARY'` for
+ * pre-HOS-140 behavior preservation), this endpoint is new (HOS-146) and
+ * defaults to `'ALL'` so the destination map can render both relation kinds
+ * without a caller having to know to ask for it explicitly.
+ */
+export const GetDestinationPointsOfInterestInputSchema = z.object({
+    destinationId: z.string().uuid(),
+    relation: z
+        .union([PointOfInterestDestinationRelationEnumSchema, z.literal('ALL')])
+        .default('ALL')
+});
+export type GetDestinationPointsOfInterestInput = z.infer<
+    typeof GetDestinationPointsOfInterestInputSchema
+>;
 export const DestinationFilterInputSchema = DestinationFiltersSchema;
 export type DestinationFilterInput = z.infer<typeof DestinationFilterInputSchema>;
 export const DestinationSummaryExtendedSchema = DestinationSchema.pick({

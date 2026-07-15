@@ -1,13 +1,19 @@
 /**
  * @file LocationMapInner.client.tsx
- * @description Inner Leaflet implementation for LocationMap, extracted so it
- * can be async-chunked via React.lazy (SPEC-269 T-269-02b).
+ * @description Inner Leaflet implementation for LocationMap's single-point
+ * modes (`approximate` / `exact`), extracted so it can be async-chunked via
+ * React.lazy (SPEC-269 T-269-02b).
  *
- * This module is the ONLY place that statically imports `leaflet` and
- * `react-leaflet` for the detail-page map. The outer `LocationMap.client.tsx`
- * lazy-imports this file so Leaflet is never included in the eager island
- * bundle — it loads as a separate async chunk when the Suspense boundary
- * resolves.
+ * The outer `LocationMap.client.tsx` lazy-imports this file so Leaflet is never
+ * included in the eager island bundle — it loads as a separate async chunk when
+ * the Suspense boundary resolves.
+ *
+ * `mode: 'multi'` (the HOS-146 destination POI map) lives in its OWN chunk,
+ * `MultiMarkerMapInner.client.tsx`, and is dispatched by mode in
+ * `LocationMap.client.tsx`. Keeping it out of this file is deliberate: POI pins
+ * need `react-dom/server` + the `@repo/icons` POI-type table, which the
+ * accommodation detail map and the destination mini-map (this file's only
+ * callers) would otherwise download for nothing.
  *
  * Do NOT import this file directly from Astro pages or other components;
  * use the `LocationMap` re-export from `LocationMap.client.tsx` instead.
@@ -23,6 +29,7 @@ import { Circle, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-le
 
 import type { LocationMapProps } from './LocationMap.client';
 import styles from './LocationMap.module.css';
+import { ScrollWheelZoomController, TILE_URL } from './map-controls.client';
 
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: iconRetinaUrl.src ?? iconRetinaUrl,
@@ -32,7 +39,6 @@ L.Icon.Default.mergeOptions({
 
 const APPROXIMATE_MAX_ZOOM = 17;
 const EXACT_MAX_ZOOM = 19;
-const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 /**
  * Tiny inner component that fits the map view to the requested center after
@@ -53,30 +59,22 @@ function MapView({ lat, lng, zoom }: { lat: number; lng: number; zoom: number })
 }
 
 /**
- * Toggles Leaflet's scrollWheelZoom handler based on whether the map is
- * "active". When inactive, the page scrolls normally over the map; when
- * active, mouse-wheel zooms the map.
- */
-function ScrollWheelZoomController({ active }: { active: boolean }) {
-    const map = useMap();
-    useEffect(() => {
-        if (active) {
-            map.scrollWheelZoom.enable();
-        } else {
-            map.scrollWheelZoom.disable();
-        }
-    }, [map, active]);
-    return null;
-}
-
-/**
- * Full Leaflet implementation of LocationMap. Loaded as an async chunk via
- * React.lazy in LocationMap.client.tsx — never imported eagerly.
+ * Approximate (`Circle`) / exact (`Marker`) single-point map. Loaded as an
+ * async chunk via React.lazy in LocationMap.client.tsx — never imported
+ * eagerly.
  *
- * @param props - {@link LocationMapProps}
+ * @param props - the `mode: 'approximate' | 'exact'` members of {@link LocationMapProps}
  */
-export function LocationMapInner(props: LocationMapProps) {
-    const { lat, lng, zoom = 14, ariaLabel, i18nStrings, className } = props;
+export function LocationMapInner(
+    props: Extract<LocationMapProps, { mode: 'approximate' | 'exact' }>
+) {
+    const { lat, lng, zoom = 14, ariaLabel, className } = props;
+    // `i18nStrings` is read through `props` (not destructured) wherever a
+    // mode-specific string is needed: destructuring it up here would detach it
+    // from the `props.mode` discriminant, collapsing it to the union of both
+    // string shapes and losing the per-mode requirements the union encodes.
+    // Only the fields common to every mode are safe to read off the union.
+    const { attribution, interactionHint: interactionHintOverride } = props.i18nStrings;
     const isApproximate = props.mode === 'approximate';
     const maxZoom = isApproximate ? APPROXIMATE_MAX_ZOOM : EXACT_MAX_ZOOM;
 
@@ -101,8 +99,7 @@ export function LocationMapInner(props: LocationMapProps) {
         return () => document.removeEventListener('pointerdown', handlePointerDown);
     }, [isActive]);
 
-    const interactionHint =
-        i18nStrings.interactionHint ?? 'Hacé click en el mapa para activar el zoom';
+    const interactionHint = interactionHintOverride ?? 'Hacé click en el mapa para activar el zoom';
 
     const handleActivate = (): void => {
         if (!isActive) setIsActive(true);
@@ -125,7 +122,7 @@ export function LocationMapInner(props: LocationMapProps) {
                     className={styles.container}
                 >
                     <TileLayer
-                        attribution={i18nStrings.attribution}
+                        attribution={attribution}
                         url={TILE_URL}
                         maxZoom={maxZoom}
                     />
@@ -135,7 +132,7 @@ export function LocationMapInner(props: LocationMapProps) {
                         zoom={zoom}
                     />
                     <ScrollWheelZoomController active={isActive} />
-                    {isApproximate ? (
+                    {props.mode === 'approximate' ? (
                         <Circle
                             center={[lat, lng]}
                             radius={props.radiusMeters}
@@ -148,12 +145,14 @@ export function LocationMapInner(props: LocationMapProps) {
                         />
                     ) : (
                         <Marker position={[lat, lng]}>
-                            <Popup>{props.markerLabel ?? i18nStrings.markerLabel}</Popup>
+                            <Popup>{props.markerLabel ?? props.i18nStrings.markerLabel}</Popup>
                         </Marker>
                     )}
                 </MapContainer>
                 {!isActive && (
-                    // biome-ignore lint/a11y/useKeyWithClickEvents: hint is purely visual; map remains operable via Leaflet's own +/- controls and keyboard nav.
+                    // Purely visual hint (aria-hidden): the map remains fully operable
+                    // via Leaflet's own +/- controls and keyboard nav without it, so
+                    // no keyboard-equivalent handler is needed on this non-interactive div.
                     <div
                         className={styles.activationHint}
                         onClick={handleActivate}
@@ -163,8 +162,8 @@ export function LocationMapInner(props: LocationMapProps) {
                     </div>
                 )}
             </div>
-            {isApproximate && (
-                <p className={styles.disclaimer}>{i18nStrings.approximateDisclaimer}</p>
+            {props.mode === 'approximate' && (
+                <p className={styles.disclaimer}>{props.i18nStrings.approximateDisclaimer}</p>
             )}
         </div>
     );

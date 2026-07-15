@@ -8,10 +8,13 @@
     "openAddressInGoogleMaps": "Ver {{address}} no Google Maps",
     "ariaLabelAccommodation": "Mapa com localização aproximada da acomodação",
     "ariaLabelDestination": "Mapa com localização do destino",
+    "ariaLabelPointsOfInterest": "Mapa de pontos de interesse",
     "loadingMap": "Carregando mapa…",
     "markerLabel": "Localização",
     "viewDetails": "Ver mais",
     "featuredBadge": "Destaque",
+    "showSurroundings": "Ver arredores",
+    "hideSurroundings": "Voltar à cidade",
     "sidebar": {
         "resultsHeading": "Resultados no mapa",
         "resultsCount_one": "{{count}} acomodação",

@@ -127,6 +127,13 @@ export class DestinationService {
     async getAccommodations(_actor: unknown, _params: { destinationId: string }) {
         return { data: { accommodations: [] } };
     }
+
+    async getPointsOfInterest(
+        _actor: unknown,
+        _params: { destinationId: string; relation?: 'PRIMARY' | 'NEARBY' | 'ALL' }
+    ) {
+        return { data: { pointsOfInterest: [] } };
+    }
 }
 
 /**
