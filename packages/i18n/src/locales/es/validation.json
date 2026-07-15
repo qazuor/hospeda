@@ -4384,6 +4384,10 @@
             "min": "Debe indicar al menos una fecha",
             "required": "Las fechas son obligatorias"
         },
+        "eventTitle": {
+            "max": "El título del evento no puede superar los 500 caracteres",
+            "required": "El título del evento es obligatorio"
+        },
         "externalEventId": {
             "max": "El ID de evento externo no puede superar los 255 caracteres",
             "required": "El ID de evento externo es obligatorio"

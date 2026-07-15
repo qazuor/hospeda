@@ -4384,6 +4384,10 @@
             "min": "At least one date is required",
             "required": "Dates are required"
         },
+        "eventTitle": {
+            "max": "The event title cannot exceed 500 characters",
+            "required": "The event title is required"
+        },
         "externalEventId": {
             "max": "The external event ID cannot exceed 255 characters",
             "required": "The external event ID is required"
