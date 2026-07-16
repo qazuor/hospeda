@@ -210,20 +210,29 @@ a plan sync to associated subscriptions. Design the write path so the DB and the
 MP plan cannot silently drift (update both in one operation; reconcile on the
 provision sync as a backstop). See OQ-6 for PUT-in-place vs new-plan-version.
 
-### 6.6 Discounts (SPEC-262) — spike-gated
+### 6.6 Discounts (SPEC-262) — spike resolved: per-sub mutation (GO)
 
-Owner decision: **spike first.** Before committing the discount design, run
-**SP-1** (§11 OQ-1): empirically test whether a **plan-based** subscription's
-individual `transaction_amount` can be mutated via `PUT /preapproval/{id}` (the
-same mutation SPEC-262 proved for *direct* preapprovals). Decision tree:
+Owner decision was **spike first**. **SP-1 ran in prod (2026-07-16) and passed:**
+a plan-based subscription's individual `transaction_amount` **can** be mutated via
+`PUT /preapproval/{id}`, in both directions, without unlinking it from its plan.
 
-- **If YES** → discounts stay per-sub: subscribe via the plan, then mutate the
-  individual sub's amount for the discounted cycles (existing SPEC-262 renewal
-  countdown logic mostly carries over). No plan proliferation.
-- **If NO** → fall back to one of: (a) pre-created discounted plan variants
-  (plan proliferation), or (b) MP's **native coupon** mechanism — the hosted
-  checkout already renders "Ingresar un cupón"; investigate whether MP coupons
-  can model our promo codes (SP-2, OQ-2).
+Evidence (raw MP API, prod token): created a `preapproval_plan` ($15000/mo, trial
+14d), authorized a sub from its `init_point` with a real Visa (`authorized`,
+`payment_method_id: visa`, $0 validation). Then `PUT /preapproval/{sub}` amount
+`15000 → 12000` = **HTTP 200**, sub stayed `authorized`, still carried
+`preapproval_plan_id`, `free_trial` preserved; GET confirmed `12000` persisted;
+restore `12000 → 15000` = **HTTP 200**. Sub + plan cancelled afterward.
+
+**Design (settled):** discounts stay **per-sub**. Subscribe via
+`preapproval_plan_id`, then mutate the individual sub's `transaction_amount` for
+the discounted cycles (lower on apply, restore when the countdown exhausts). The
+existing SPEC-262 renewal-countdown logic (`resolveRenewalPromoEffect`,
+`promo_effect_remaining_cycles`) carries over almost unchanged — the only
+difference from today is that the sub being mutated was born from a plan instead
+of a direct preapproval, which SP-1 proved MP treats identically for this write.
+
+**Not needed:** SP-2 (MP native coupon, OQ-2) and discount-plan-variant
+proliferation are both off the table — kept only as historical fallbacks.
 
 ## 7. Data model / contracts
 
@@ -297,12 +306,12 @@ same mutation SPEC-262 proved for *direct* preapprovals). Decision tree:
 
 ## 11. Open questions
 
-- **OQ-1 (SP-1, spike — do first):** Can a **plan-based** subscription's
-  individual `transaction_amount` be mutated via `PUT /preapproval/{id}`? Decides
-  the discount design (§6.6). Testable empirically in prod (create plan →
-  authorize a $0-validation sub → attempt amount mutate → observe → cancel).
-- **OQ-2 (SP-2):** Can MP's **native coupon** ("Ingresar un cupón" on the hosted
-  checkout) model our SPEC-262 promo codes? Fallback path if SP-1 fails.
+- **OQ-1 (SP-1, spike) — RESOLVED 2026-07-16: YES.** A plan-based sub's individual
+  `transaction_amount` **can** be mutated via `PUT /preapproval/{id}` (both
+  directions, sub stays `authorized` + linked to its plan; HTTP 200). Prod A/B
+  sealed. Discount design settled → per-sub mutation (§6.6). No fallback needed.
+- **OQ-2 (SP-2) — moot (SP-1 passed).** MP's native coupon path is unneeded; kept
+  only as a historical fallback had per-sub mutation failed.
 - **OQ-3:** How to extend a **live** trial on a plan-based sub (HOS-171 carried
   risk). Possibly out of scope for v1 (admin-only edge).
 - **OQ-4:** Plan registry shape — `billing_mp_plans` table (6.2.a, recommended)
