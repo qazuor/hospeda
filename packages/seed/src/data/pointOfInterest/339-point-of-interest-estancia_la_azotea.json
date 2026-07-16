@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "339-point-of-interest-estancia_la_azotea",
     "slug": "estancia_la_azotea",
-    "lat": -33.500718299999996,
-    "long": -58.80455779999999,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Estancia rural promocionada como espacio de tranquilidad y conexión con la naturaleza en el entorno de Ceibas.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/detalle/460-ceibas",
-    "notes": "Establecimiento privado promocionado turísticamente. Falta validar modalidad actual de visita y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Establecimiento privado promocionado turísticamente. Falta validar modalidad actual de visita y coordenadas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -364,6 +364,10 @@ function makeLocalSubscription(overrides: Record<string, unknown> = {}): Record<
         mpSubscriptionId: 'preapproval-mp-001',
         cancelAtPeriodEnd: false,
         canceledAt: null,
+        // A real `select()` always returns these columns, so the fixture carries
+        // them explicitly — the card-first derivation (HOS-171) reads trialEnd.
+        trialStart: null,
+        trialEnd: null,
         deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -1644,6 +1648,122 @@ describe('processSubscriptionUpdated', () => {
     // -----------------------------------------------------------------------
     // SPEC-194 T-002: Transition guard tests
     // -----------------------------------------------------------------------
+    describe('card-first trial derivation (HOS-171)', () => {
+        // AC-1: MP authorized a card-first trial. MercadoPago has no trial status —
+        // it reports `authorized`, which qzpay maps to `active`. The local trial
+        // window is what makes it a trial, so the row must land on `trialing`.
+        it('should write trialing when MP reports active and trialEnd is in the future (AC-1)', async () => {
+            // Arrange
+            mockedExtract.mockReturnValue({ subscriptionId: 'preapproval-mp-001' });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const trialEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                trialStart: new Date(),
+                trialEnd
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos171-ac1'
+            });
+
+            // Assert — the derived status, not the provider's raw `active`
+            expect(result.success).toBe(true);
+            expect(result.statusChanged).toBe(true);
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.TRIALING);
+            expect(dbMock.tx.update).toHaveBeenCalled();
+        });
+
+        // AC-3: a null trial window means an ordinary paid subscription.
+        it('should write active when MP reports active and trialEnd is null (AC-3)', async () => {
+            // Arrange
+            mockedExtract.mockReturnValue({ subscriptionId: 'preapproval-mp-001' });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                trialEnd: null
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos171-ac3-null'
+            });
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.ACTIVE);
+        });
+
+        // AC-3: an elapsed trial window means MP has charged — the correct end state
+        // is `active`, and crucially NOT `trialing` (which would be a lie the
+        // renewal reminder then acts on).
+        it('should write active when MP reports active and trialEnd is in the past (AC-3)', async () => {
+            // Arrange
+            mockedExtract.mockReturnValue({ subscriptionId: 'preapproval-mp-001' });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                trialStart: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
+                trialEnd: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos171-ac3-past'
+            });
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.ACTIVE);
+        });
+
+        // The derivation must never resurrect a dead subscription into a live
+        // status just because its trial window happens to still be open.
+        it('should NOT derive trialing when MP reports cancelled, open trial window or not', async () => {
+            // Arrange
+            mockedExtract.mockReturnValue({ subscriptionId: 'preapproval-mp-001' });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('canceled'));
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.ACTIVE,
+                trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos171-cancelled'
+            });
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.CANCELLED);
+        });
+    });
+
     describe('transition guard (SPEC-194 T-002)', () => {
         // TC-SPEC-194-T002-A: Illegal transition → logs error, skips write, returns statusChanged:false
         it('should log error and skip status write when transition is invalid', async () => {

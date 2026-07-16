@@ -188,6 +188,10 @@
             "title": "Sin comisiones ocultas",
             "description": "Planes claros con precio fijo mensual. Sin porcentaje por reserva ni sorpresas en la facturación"
         },
+        "feature4": {
+            "title": "Sincronización con Google Calendar",
+            "description": "Conectá tu Google Calendar para sincronizar la disponibilidad de tu alojamiento y evitar reservas superpuestas"
+        },
         "statsLabel": "viajeros satisfechos"
     },
     "partners": {

@@ -1,32 +1,32 @@
 /**
- * HOS-115 T-011 — annual trial-vs-pay branch, route-level integration test.
+ * HOS-115 / HOS-171 T-011 — annual trial-vs-pay branch, route-level integration test.
  *
- * HOS-110 unified the no-card trial for the MONTHLY entry path only.
- * HOS-115 closes that follow-up: `initiatePaidAnnualSubscription`
- * (subscription-checkout.service.ts) now inserts the SAME trial branch
- * (after the COMP early-return, before the discount/upfront-charge path) so
- * a first-time, trial-eligible customer who selects the ANNUAL toggle is
- * granted the interval-agnostic no-card trial instead of being routed to an
- * upfront MercadoPago Checkout.
+ * HOS-110 unified the no-card trial for the MONTHLY entry path; HOS-115
+ * extended the same decision to ANNUAL. HOS-171 (card-first) then removed the
+ * no-card trial entirely: `initiatePaidAnnualSubscription`
+ * (subscription-checkout.service.ts) no longer branches into a separate
+ * MP-less trial object. Instead it is now ALWAYS a real MercadoPago
+ * preapproval — `billingInterval: 'annual'` maps to
+ * `frequency: 12, frequency_type: 'months'` — and a trial-eligible customer
+ * simply gets that SAME preapproval with `freeTrialDays` forwarded, deferring
+ * the first (annual) charge instead of skipping MercadoPago altogether.
+ * `create-annual-subscription.ts` (the old one-time-charge insert path) no
+ * longer exists; annual is not a "different kind of thing" any more — it is
+ * the same preapproval flow as monthly at a different cadence.
  *
  * This mirrors the harness `trial-vs-pay-checkout.test.ts` established for
- * the monthly branch (HOS-110) — full app + real test DB + MP adapter stub —
- * but drives `billingInterval: 'annual'` and asserts against the ANNUAL
- * paid-path provider call (`checkout.create`, not `subscriptions.create`).
+ * the monthly branch, but drives `billingInterval: 'annual'` and asserts the
+ * create call carries `billingInterval: 'annual'` (mapped by qzpay to MP's
+ * 12-month cadence) alongside `freeTrialDays`.
  *
- * AC-1 (spec.md): trial-eligible + annual toggle -> `trialing` subscription
- * via `TrialService.startTrial()`, NO MercadoPago object created, response
- * carries `appliedEffect: 'trial'` with an in-app success URL.
+ * AC-1 (spec.md, HOS-171 §11): trial-eligible + annual toggle -> a real
+ * preapproval carrying `freeTrialDays`, no `appliedEffect` marker (the
+ * `'trial'` variant was deleted from `CheckoutAppliedEffect`), an MP
+ * checkoutUrl (redirect required — the card IS collected).
  *
  * AC-3 (expiry cancel-only for an annual-originated trial) is intentionally
- * NOT re-tested here — it is already covered at the service-unit level by
- * `apps/api/test/services/trial.service.test.ts`'s `blockExpiredTrials`
- * suite, which lists/cancels ALL `trialing` subscriptions regardless of
- * origin (interval-agnostic by construction) and additionally has a
- * dedicated "TRIAL_EXPIRED notification upgradeUrl nudge (HOS-115 T-004)"
- * block that exercises an annual-intent (`metadata.intendedInterval:
- * 'annual'`) trial through `blockExpiredTrials()` end-to-end. Duplicating
- * that here would add DB/cron-timing complexity without new coverage.
+ * NOT re-tested here — it is a webhook/cron-timing concern covered at the
+ * service-unit level elsewhere, orthogonal to this route-level branch test.
  *
  * @module test/e2e/flows/billing/annual-trial-checkout
  */
@@ -66,14 +66,28 @@ import {
     createTestSubscription
 } from '../../helpers/billing-factories.js';
 import { providerResponseFixtures } from '../../helpers/billing-fixtures.js';
-import { createMpStubAdapter } from '../../helpers/mp-stub.js';
+import { createMpStubAdapter, type MpStubCall } from '../../helpers/mp-stub.js';
 import { createTestUser, seedBillingTestPlans } from '../../setup/seed-helpers.js';
 import { testDb } from '../../setup/test-database.js';
 
 const mpStub = createMpStubAdapter();
 stubRef.current = mpStub.adapter;
 
-describe('HOS-115 T-011 — annual trial-vs-pay branch (POST /start-paid, annual)', () => {
+/**
+ * Narrow a recorded `subscriptions.create` call down to the qzpay-core
+ * `CreateSubscriptionAdapterInput` (the `input` sub-object of the stub's
+ * first arg — verified empirically against `trial-vs-pay-checkout.test.ts`,
+ * the monthly counterpart of this same harness: the top-level arg also
+ * carries `providerCustomerId`, `customer`, `price`, `plan`,
+ * `externalReference`, etc., but `freeTrialDays`/`billingInterval` live on
+ * `input`).
+ */
+function firstCreateInput(call: MpStubCall | undefined): Record<string, unknown> {
+    const arg = (call?.args[0] ?? {}) as { input?: Record<string, unknown> };
+    return arg.input ?? {};
+}
+
+describe('HOS-115/HOS-171 T-011 — annual trial-vs-pay branch (POST /start-paid, annual)', () => {
     let app: ReturnType<typeof initApp>;
 
     beforeAll(async () => {
@@ -94,14 +108,23 @@ describe('HOS-115 T-011 — annual trial-vs-pay branch (POST /start-paid, annual
         await testDb.clean();
     });
 
-    it('AC-1: grants a no-card trial for a trial-eligible customer on the ANNUAL toggle — no MP checkout object, trialing local sub', async () => {
+    it('AC-1: a trial-eligible customer on the ANNUAL toggle gets a real 12-month preapproval carrying a 14-day free_trial', async () => {
         // ARRANGE — seedBillingTestPlans' `expensive` plan declares a 14-day
-        // trial (metadata.hasTrial:true, metadata.trialDays:14). No MP stub
-        // response is configured for `checkout.create` (the annual paid-path
-        // provider call): if the trial branch ever fell through to the
-        // upfront-charge path, the stub would throw "unconfigured operation"
-        // and fail this test loudly instead of silently passing.
+        // trial (metadata.hasTrial:true, metadata.trialDays:14). Card-first
+        // (HOS-171): annual is a preapproval now, same as monthly, so the
+        // stub MUST be configured for `subscriptions.create` — if it were
+        // still unconfigured, the request would fail loudly with
+        // MpStubUnconfiguredError instead of silently taking a dead branch.
         const seed = await seedBillingTestPlans();
+        const expectedCheckoutUrl = 'https://stub.example/preapproval/sub_annual_trial_eligible';
+        mpStub.config.setSuccess(
+            'subscriptions.create',
+            providerResponseFixtures.subscription({
+                id: 'sub_annual_trial_eligible',
+                status: 'pending',
+                initPoint: expectedCheckoutUrl
+            })
+        );
 
         const user = await createTestUser({
             email: `annual-trial-eligible-${Date.now()}@example.com`
@@ -121,8 +144,10 @@ describe('HOS-115 T-011 — annual trial-vs-pay branch (POST /start-paid, annual
             billingInterval: 'annual'
         });
 
-        // ASSERT — response contract: appliedEffect:'trial', in-app success
-        // sentinel URL (NOT an MP-hosted checkout URL).
+        // ASSERT — response contract: NO `appliedEffect` marker, a REAL MP
+        // checkoutUrl (the card is collected even though the first annual
+        // charge is deferred by the free_trial — this is the whole point of
+        // card-first).
         expect(response.status).toBe(201);
         const body = (await response.json()) as {
             readonly success: boolean;
@@ -134,16 +159,16 @@ describe('HOS-115 T-011 — annual trial-vs-pay branch (POST /start-paid, annual
             };
         };
         expect(body.success).toBe(true);
-        expect(body.data.appliedEffect).toBe('trial');
-        expect(body.data.checkoutUrl).toContain('/suscriptores/checkout/success/');
-        expect(body.data.checkoutUrl).not.toMatch(/mercadopago|mp\.test|stub\.example/i);
+        expect(body.data.appliedEffect).toBeUndefined();
+        expect(body.data.checkoutUrl).toBe(expectedCheckoutUrl);
         expect(body.data.localSubscriptionId).toMatch(/^[0-9a-f-]{36}$/);
 
-        // ASSERT — local subscription row is `trialing`, tied to the resolved
-        // plan and customer, with NO providerSubscriptionId (no MP checkout
-        // object was ever created for an annual entry that resolved to the
-        // trial branch). Also sanity-checks AC-8 (intendedInterval='annual'
-        // stamped on the trial metadata) as a byproduct of this same flow.
+        // ASSERT — local subscription row is tied to the resolved plan and
+        // customer, WITH a providerSubscriptionId (a real preapproval was
+        // created — card-first has no MP-less trial object on either
+        // interval). `create-annual-subscription.ts`'s direct-insert
+        // `pending_provider` shape is gone; this row comes from the same
+        // qzpay-core create path monthly uses.
         const rows = await testDb
             .getDb()
             .select()
@@ -152,22 +177,30 @@ describe('HOS-115 T-011 — annual trial-vs-pay branch (POST /start-paid, annual
         expect(rows).toHaveLength(1);
         const row = rows[0];
         expect(row).toBeDefined();
-        expect(row?.status).toBe('trialing');
         expect(row?.customerId).toBe(customer.customerId);
         expect(row?.planId).toBe(seed.expensive.planId);
-        expect(row?.mpSubscriptionId ?? null).toBeNull();
-        const metadata = row?.metadata as Record<string, unknown> | null;
-        expect(metadata?.intendedInterval).toBe('annual');
+        expect(row?.mpSubscriptionId).toBe('sub_annual_trial_eligible');
 
-        // ASSERT — the MP payment adapter's annual checkout-create call was
-        // NEVER invoked. A trial-only `billing.subscriptions.create` call
-        // (no `mode: 'paid'` / no `checkout.create`) never reaches the
-        // payment adapter at the qzpay-core level.
+        // ASSERT — AC-8/AC-9 core contract, on the ANNUAL entry point too: the
+        // preapproval create call carries `billingInterval: 'annual'` (qzpay
+        // maps this to MP's `frequency: 12, frequency_type: 'months'`) AND
+        // the resolved `freeTrialDays` (plan base, no promo here) — ONE
+        // preapproval, ONE free_trial, not a separate no-card trial plus a
+        // later upfront annual charge.
+        const calls = mpStub.config.getCalls('subscriptions.create');
+        expect(calls).toHaveLength(1);
+        expect(calls[0]?.outcome).toBe('success');
+        const createInput = firstCreateInput(calls[0]);
+        expect(createInput.billingInterval).toBe('annual');
+        expect(createInput.freeTrialDays).toBe(14);
+
+        // ASSERT — the one-time `checkout.create` provider call (the OLD
+        // annual mechanism) was never invoked — annual no longer goes through
+        // `billing.checkout.create({ mode: 'payment' })` at all.
         expect(mpStub.config.getCalls('checkout.create')).toHaveLength(0);
-        expect(mpStub.config.getCalls('subscriptions.create')).toHaveLength(0);
     });
 
-    it('AC-2/AC-7: an already-subscribed customer selecting ANNUAL is NOT granted a second trial — falls through to the unchanged upfront MP Checkout', async () => {
+    it('AC-2/AC-7: an already-subscribed customer selecting ANNUAL is NOT granted a trial — the preapproval create call carries no freeTrialDays', async () => {
         // ARRANGE — same trial-declaring plan, but this customer already has a
         // prior subscription (even a CANCELLED one disqualifies a trial per
         // the cross-interval "one trial per customer, for life" rule — AC-7).
@@ -193,13 +226,13 @@ describe('HOS-115 T-011 — annual trial-vs-pay branch (POST /start-paid, annual
             status: 'cancelled'
         });
 
-        const expectedCheckoutUrl = 'https://stub.example/checkout/chk_annual_trial_ineligible';
+        const expectedCheckoutUrl = 'https://stub.example/preapproval/sub_annual_trial_ineligible';
         mpStub.config.setSuccess(
-            'checkout.create',
-            providerResponseFixtures.checkout({
-                id: 'chk_annual_trial_ineligible',
-                url: expectedCheckoutUrl,
-                status: 'pending'
+            'subscriptions.create',
+            providerResponseFixtures.subscription({
+                id: 'sub_annual_trial_ineligible',
+                status: 'pending',
+                initPoint: expectedCheckoutUrl
             })
         );
 
@@ -212,8 +245,10 @@ describe('HOS-115 T-011 — annual trial-vs-pay branch (POST /start-paid, annual
             billingInterval: 'annual'
         });
 
-        // ASSERT — normal paid annual path: no appliedEffect:'trial', MP
-        // checkoutUrl, local row `pending_provider` (annual's pre-webhook state).
+        // ASSERT — normal paid annual path: no appliedEffect marker, MP
+        // checkoutUrl, local row `incomplete` (qzpay's pre-webhook state for a
+        // `mode: 'paid'` create — annual shares the SAME local status space as
+        // monthly now, not the old direct-insert `pending_provider`).
         expect(response.status).toBe(201);
         const body = (await response.json()) as {
             readonly success: boolean;
@@ -224,7 +259,7 @@ describe('HOS-115 T-011 — annual trial-vs-pay branch (POST /start-paid, annual
             };
         };
         expect(body.success).toBe(true);
-        expect(body.data.appliedEffect).not.toBe('trial');
+        expect(body.data.appliedEffect).toBeUndefined();
         expect(body.data.checkoutUrl).toBe(expectedCheckoutUrl);
 
         const rows = await testDb
@@ -233,12 +268,18 @@ describe('HOS-115 T-011 — annual trial-vs-pay branch (POST /start-paid, annual
             .from(billingSubscriptions)
             .where(eq(billingSubscriptions.id, body.data.localSubscriptionId));
         expect(rows).toHaveLength(1);
-        expect(rows[0]?.status).toBe('pending_provider');
+        expect(rows[0]?.status).toBe('incomplete');
+        expect(rows[0]?.mpSubscriptionId).toBe('sub_annual_trial_ineligible');
 
-        // ASSERT — the MP checkout adapter WAS invoked exactly once for the
-        // new (paid) sub; the trial branch was never reached.
-        const calls = mpStub.config.getCalls('checkout.create');
+        // ASSERT — the MP adapter WAS invoked exactly once for the new (paid)
+        // sub, carrying `billingInterval: 'annual'` but NO freeTrialDays — the
+        // "one trial per customer, for life" gate suppressed it even though
+        // the plan declares one.
+        const calls = mpStub.config.getCalls('subscriptions.create');
         expect(calls).toHaveLength(1);
         expect(calls[0]?.outcome).toBe('success');
+        const createInput = firstCreateInput(calls[0]);
+        expect(createInput.billingInterval).toBe('annual');
+        expect(createInput.freeTrialDays).toBeUndefined();
     });
 });

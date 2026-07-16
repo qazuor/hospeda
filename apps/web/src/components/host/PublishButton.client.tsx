@@ -1,40 +1,41 @@
 /**
  * @file PublishButton.client.tsx
  * @description React island that renders a "Publicar" primary button with an
- * inline confirmation step explaining that publishing starts the no-card
- * 14-day free trial.
+ * inline confirmation step.
  *
  * Flow:
  *  1. Idle  → shows the "Publicar" button.
- *  2. Click → swaps to inline confirmation with the trial callout copy and
- *             "[Sí, publicar] [Cancelar]".
+ *  2. Click → swaps to inline confirmation with "[Sí, publicar] [Cancelar]".
  *  3. Confirm (Sí) → calls POST /api/v1/protected/accommodations/:id/publish,
- *                    disables UI while pending. Server-side this calls
- *                    `AccommodationService.publish()` directly, which starts
- *                    the no-card trial (`TrialService.startTrial()`) for an
- *                    eligible owner (HOS-110). A dedicated `/publish`
+ *                    disables UI while pending. A dedicated `/publish`
  *                    endpoint is used instead of the generic update PATCH
  *                    because the update schema strips `lifecycleState`,
  *                    which made the naive approach a silent no-op.
  *  4. Success → reloads the page via window.location.reload() so the card
  *               re-renders with the new ACTIVE status.
- *  5. Error   → shows inline error message, re-enables the button. When the
- *               failure is specifically `403 subscription_required` (the
- *               owner already consumed their one-per-life trial and has no
- *               active plan), a dedicated banner is shown instead, linking
- *               to the plans page rather than suggesting a retry. When the
- *               failure is `400` (the capacity-completeness guard —
- *               HOS-152 — rejecting publish because `capacity`/`minNights`/
- *               `bedrooms`/`bathrooms` are incomplete), a dedicated banner
- *               links to the editor instead of the generic "try again",
- *               since retrying without completing those fields will fail
- *               identically every time.
+ *  5. Error   → shows inline error message, re-enables the button. Two
+ *               failures get a dedicated banner instead, because retrying
+ *               them changes nothing: `403 subscription_required` (no active
+ *               plan — links to the plans page) and `400 VALIDATION_ERROR`
+ *               (the HOS-152 capacity-completeness guard, when
+ *               `capacity`/`minNights`/`bedrooms`/`bathrooms` are missing —
+ *               links to the editor).
  *  6. No (cancel) → returns to step 1.
+ *
+ * ## Publishing does NOT start a trial (HOS-171)
+ *
+ * It used to: publishing granted a no-card trial via `TrialService.startTrial()`,
+ * and the confirmation step existed to announce it ("14 días gratis al publicar.
+ * Sin tarjeta, sin compromiso"). Card-first moved the trial onto the MercadoPago
+ * preapproval the CHECKOUT creates, so publishing now requires an active
+ * subscription and rejects without one. The confirm copy no longer promises
+ * anything about billing, and `subscriptionRequired` went from an edge case (only
+ * an owner who had burnt their one trial) to the normal first-publish outcome for
+ * any owner without a plan — so its copy must not claim they already used a trial.
  *
  * Mirrors UnpublishButton.client.tsx / DeleteButton.client.tsx (same
  * inline-confirm UX), but uses a positive (green) accent for the confirm
- * button instead of the danger red, and surfaces the trial-start copy from
- * `CreatePropertyMiniForm.client.tsx`'s trial callout.
+ * button instead of the danger red.
  *
  * @example
  * ```astro
@@ -96,9 +97,9 @@ export interface PublishButtonProps {
     /** Error message shown on generic API failure (already-translated). */
     readonly errorText: string;
     /**
-     * Message shown when publish fails because the owner already consumed
-     * their one-per-life trial and has no active subscription
-     * (`403 subscription_required`, already-translated).
+     * Message shown when publish fails because the owner has no active
+     * subscription (`403 subscription_required`, already-translated). Since
+     * HOS-171 this is the normal outcome of a first publish, not an edge case.
      */
     readonly subscriptionRequiredMessage: string;
     /** Label for the link to the plans page in that same case (already-translated). */
@@ -164,9 +165,10 @@ export function PublishButton({
         const result = await accommodationEditApi.publish({ id: accommodationId });
 
         if (!result.ok) {
-            // W3: the owner already consumed their one-per-life trial and has
-            // no active subscription. Route them to the plans page instead of
-            // showing a generic "try again" message — retrying is pointless.
+            // The owner has no active subscription. Route them to the plans page
+            // instead of a generic "try again" — retrying is pointless. Since
+            // HOS-171 (publishing requires a card) this is the ordinary path for
+            // a first publish, not just for someone who burnt their trial.
             if (result.error.status === 403 && result.error.message === 'subscription_required') {
                 setState('subscriptionRequired');
                 return;
@@ -221,9 +223,8 @@ export function PublishButton({
     }
 
     // ── Subscription required ────────────────────────────────────────────
-    // Publish failed because the owner's one-per-life trial is already
-    // consumed and they have no active plan. Show a banner pointing to the
-    // plans page instead of a retryable error.
+    // Publish failed because the owner has no active plan. Show a banner
+    // pointing to the plans page instead of a retryable error.
     if (state === 'subscriptionRequired') {
         const plansUrl = buildUrl({ locale, path: 'suscriptores/planes' });
         return (

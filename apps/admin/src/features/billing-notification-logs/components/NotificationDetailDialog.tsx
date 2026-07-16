@@ -64,7 +64,6 @@ export function getTypeLabel(type: NotificationType, t: (key: TranslationKey) =>
         payment_success: t('admin-billing.notificationLogs.types.paymentSuccess'),
         payment_failed: t('admin-billing.notificationLogs.types.paymentFailed'),
         trial_ending: t('admin-billing.notificationLogs.types.trialEnding'),
-        trial_expired: t('admin-billing.notificationLogs.types.trialExpired'),
         subscription_cancelled: t('admin-billing.notificationLogs.types.subscriptionCancelled'),
         payment_reminder: t('admin-billing.notificationLogs.types.paymentReminder'),
         payment_receipt: t('admin-billing.notificationLogs.types.paymentReceipt')

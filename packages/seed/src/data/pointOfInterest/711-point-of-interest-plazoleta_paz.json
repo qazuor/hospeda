@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "711-point-of-interest-plazoleta_paz",
     "slug": "plazoleta_paz",
-    "lat": -31.6261431,
-    "long": -58.502587500000004,
+    "lat": null,
+    "long": null,
     "type": "PLAZA",
     "icon": null,
     "description": "Paseo urbano dedicado a la convivencia y la paz, integrado al sistema de plazoletas temáticas de avenida Malarín.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/ciudad/",
-    "notes": "Existencia confirmada por la Municipalidad. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia confirmada por la Municipalidad. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

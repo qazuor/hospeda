@@ -1,15 +1,26 @@
 /**
  * Trial Lifecycle Integration Tests
  *
- * Tests the complete trial lifecycle by exercising TrialService methods
- * end-to-end with a mocked QZPayBilling SDK. Validates the full sequence:
- * 1. Start trial -> returns subscription ID
- * 2. Get trial status -> shows active trial with 14 days remaining
- * 3. Extend trial -> adds 7 more days
- * 4. Check expiry on active trial -> returns false
- * 5. Simulate expiry via mocked expired trialEnd -> check expiry returns true
- * 6. Block expired trials -> cancels 1 subscription
- * 7. Reactivate from trial -> creates new paid subscription
+ * Exercises the TrialService methods that own a trial once it exists, against a
+ * mocked QZPayBilling SDK:
+ * 1. Get trial status -> shows an active trial with its days remaining
+ * 2. Extend trial -> adds days
+ * 3. Check expiry on an active trial -> returns false
+ * 4. Simulate expiry via a mocked expired trialEnd -> check expiry returns true
+ * 5. Reactivate from trial -> creates a real paid preapproval
+ *
+ * ## What deliberately is NOT here (HOS-171)
+ *
+ * Starting a trial is no longer a TrialService concern. Card-first made the
+ * trial `free_trial` on the same MercadoPago preapproval a paid checkout
+ * creates, so it is born in `initiatePaidMonthlySubscription` (covered by
+ * test/services/subscription-checkout.service.test.ts) and `startTrial` is gone.
+ *
+ * Likewise `blockExpiredTrials`, which cancelled every trial whose window had
+ * closed. An elapsed card-first trial is a customer MercadoPago is about to
+ * charge, so it is reconciled against the provider rather than cancelled --
+ * see `reconcileExpiredTrials`, covered by test/services/trial.service.test.ts,
+ * test/cron/trial-expiry.test.ts and test/routes/billing-trial-admin.test.ts.
  *
  * @module test/integration/trial-lifecycle
  */
@@ -89,16 +100,18 @@ vi.mock('@repo/logger', () => {
     };
 });
 
-// Mock entitlement cache clearing (side effect in blockExpiredTrials)
+// Mock entitlement cache clearing (a side effect TrialService fires on the
+// lifecycle writes below)
 vi.mock('../../src/middlewares/entitlement', () => ({
     clearEntitlementCache: vi.fn()
 }));
 
-// Mock notifications (fire-and-forget side effect)
+// Mock notifications (fire-and-forget side effect). TRIAL_EXPIRED is gone with
+// the cancel-at-expiry cron (HOS-171) — an elapsed card-first trial is a customer
+// MercadoPago is about to charge, not one to email about a dead trial.
 vi.mock('@repo/notifications', () => ({
     NotificationType: {
-        TRIAL_EXPIRED: 'TRIAL_EXPIRED',
-        TRIAL_ENDING: 'TRIAL_ENDING'
+        TRIAL_ENDING_REMINDER: 'trial_ending_reminder'
     }
 }));
 
@@ -175,6 +188,23 @@ const REACTIVATION_URLS = {
     notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
 };
 
+/**
+ * What `subscriptions.create` returns for a real paid preapproval.
+ *
+ * `providerSubscriptionIds.mercadopago` is not decoration: `createPaidSubscription`
+ * fails closed without it (HOS-151 Bug C), because the webhook lookup keys on that
+ * id, so a row persisted without one can never activate and its preapproval can
+ * never be found to cancel.
+ */
+function buildPaidPreapprovalResult(): Record<string, unknown> {
+    return {
+        id: PAID_SUBSCRIPTION_ID,
+        status: 'incomplete',
+        providerInitPoint: 'https://mp.test/checkout/reactivate-int',
+        providerSubscriptionIds: { mercadopago: 'mp_preapproval_reactivate' }
+    };
+}
+
 /** HOS-114: a paid, monthly plan fixture accepted by the reactivation plan guard. */
 function buildPaidMonthlyPlanFixture(): Record<string, unknown> {
     return {
@@ -210,69 +240,6 @@ describe('Trial Lifecycle Integration', () => {
         service = new TrialService(mockBilling as any);
 
         mockedGetQZPayBilling.mockReturnValue(mockBilling as any);
-    });
-
-    // ----------------------------------------------------------------
-    // Step 1: Start trial
-    // ----------------------------------------------------------------
-    describe('startTrial', () => {
-        it('should start a trial and return a subscription ID', async () => {
-            // Arrange: no existing subscriptions for this customer
-            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([]);
-
-            // Act
-            const subscriptionId = await service.startTrial({ customerId: CUSTOMER_ID });
-
-            // Assert
-            expect(subscriptionId).toBe(SUBSCRIPTION_ID);
-            expect(mockBilling.plans.list).toHaveBeenCalledOnce();
-            expect(mockBilling.subscriptions.create).toHaveBeenCalledOnce();
-
-            const createCall = mockBilling.subscriptions.create.mock.calls[0]?.[0] as Record<
-                string,
-                unknown
-            >;
-            expect(createCall).toMatchObject({
-                customerId: CUSTOMER_ID,
-                planId: PLAN_ID,
-                trialDays: expect.any(Number)
-            });
-        });
-
-        it('should return null when customer already has an active subscription', async () => {
-            // Arrange: customer already subscribed
-            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
-                buildTrialingSubscription()
-            ]);
-
-            // Act
-            const result = await service.startTrial({ customerId: CUSTOMER_ID });
-
-            // Assert
-            expect(result).toBeNull();
-            expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
-        });
-
-        it('should return null when billing is disabled', async () => {
-            // Arrange: service without billing
-            const disabledService = new TrialService(null);
-
-            // Act
-            const result = await disabledService.startTrial({ customerId: CUSTOMER_ID });
-
-            // Assert
-            expect(result).toBeNull();
-        });
-
-        it('should throw when the trial plan is not found in the catalog', async () => {
-            // Arrange: billing returns empty plan list
-            mockBilling.plans.list.mockResolvedValue({ data: [] });
-
-            // Act & Assert
-            await expect(service.startTrial({ customerId: CUSTOMER_ID })).rejects.toThrow(
-                'Trial plan not found: owner-basico'
-            );
-        });
     });
 
     // ----------------------------------------------------------------
@@ -418,78 +385,6 @@ describe('Trial Lifecycle Integration', () => {
     // ----------------------------------------------------------------
     // Step 6: Block expired trials
     // ----------------------------------------------------------------
-    describe('blockExpiredTrials', () => {
-        it('should cancel expired trialing subscriptions and return count', async () => {
-            // Arrange: one expired trialing subscription in the list
-            const expiredSub = buildExpiredSubscription();
-            mockBilling.subscriptions.list.mockResolvedValue({ data: [expiredSub] });
-            mockBilling.customers.get.mockResolvedValue({
-                id: CUSTOMER_ID,
-                email: 'owner@example.com',
-                metadata: { name: 'Test Owner', userId: 'user-001' }
-            });
-            mockBilling.plans.get.mockResolvedValue({ id: PLAN_ID, name: 'owner-basico' });
-
-            // Act
-            const blockedCount = await service.blockExpiredTrials();
-
-            // Assert
-            expect(blockedCount).toBe(1);
-            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledWith(SUBSCRIPTION_ID);
-        });
-
-        it('should skip subscriptions with no trialEnd date', async () => {
-            // Arrange: trialing subscription missing trialEnd
-            const noEndSub = { ...buildTrialingSubscription(), trialEnd: null };
-            mockBilling.subscriptions.list.mockResolvedValue({ data: [noEndSub] });
-
-            // Act
-            const blockedCount = await service.blockExpiredTrials();
-
-            // Assert
-            expect(blockedCount).toBe(0);
-            expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
-        });
-
-        it('should not cancel active trialing subscriptions that have not expired', async () => {
-            // Arrange: active trial with future end date
-            const activeSub = buildTrialingSubscription();
-            mockBilling.subscriptions.list.mockResolvedValue({ data: [activeSub] });
-
-            // Act
-            const blockedCount = await service.blockExpiredTrials();
-
-            // Assert
-            expect(blockedCount).toBe(0);
-            expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
-        });
-
-        it('should return 0 when there are no trialing subscriptions', async () => {
-            // Arrange
-            mockBilling.subscriptions.list.mockResolvedValue({ data: [] });
-
-            // Act
-            const blockedCount = await service.blockExpiredTrials();
-
-            // Assert
-            expect(blockedCount).toBe(0);
-        });
-
-        it('should return 0 when billing is disabled', async () => {
-            // Arrange
-            const disabledService = new TrialService(null);
-
-            // Act
-            const blockedCount = await disabledService.blockExpiredTrials();
-
-            // Assert
-            expect(blockedCount).toBe(0);
-        });
-    });
-
-    // ----------------------------------------------------------------
-    // Step 7: Reactivate from trial
-    // ----------------------------------------------------------------
     describe('reactivateFromTrial (HOS-114)', () => {
         it('should create a real paid preapproval and return a checkoutUrl, leaving the trial subscription untouched', async () => {
             // Arrange: customer has one trialing subscription; the plan guard needs a
@@ -497,11 +392,7 @@ describe('Trial Lifecycle Integration', () => {
             const trialSub = buildTrialingSubscription();
             mockBilling.subscriptions.getByCustomerId.mockResolvedValue([trialSub]);
             mockBilling.plans.list.mockResolvedValue({ data: [buildPaidMonthlyPlanFixture()] });
-            mockBilling.subscriptions.create.mockResolvedValue({
-                id: PAID_SUBSCRIPTION_ID,
-                status: 'incomplete',
-                providerInitPoint: 'https://mp.test/checkout/reactivate-int'
-            });
+            mockBilling.subscriptions.create.mockResolvedValue(buildPaidPreapprovalResult());
 
             // Act
             const result = await service.reactivateFromTrial({
@@ -545,11 +436,7 @@ describe('Trial Lifecycle Integration', () => {
             // Arrange: no existing subscriptions
             mockBilling.subscriptions.getByCustomerId.mockResolvedValue([]);
             mockBilling.plans.list.mockResolvedValue({ data: [buildPaidMonthlyPlanFixture()] });
-            mockBilling.subscriptions.create.mockResolvedValue({
-                id: PAID_SUBSCRIPTION_ID,
-                status: 'incomplete',
-                providerInitPoint: 'https://mp.test/checkout/reactivate-int'
-            });
+            mockBilling.subscriptions.create.mockResolvedValue(buildPaidPreapprovalResult());
 
             // Act
             const result = await service.reactivateFromTrial({

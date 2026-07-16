@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "577-point-of-interest-paranacito_pesca_deportiva",
     "slug": "paranacito_pesca_deportiva",
-    "lat": -33.7349001,
-    "long": -58.7901903,
+    "lat": null,
+    "long": null,
     "type": "STADIUM",
     "icon": null,
     "description": "Salidas de pesca embarcada con guías locales en ríos y arroyos del delta.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.villaparanacito.gob.ar/turismo/actividades",
-    "notes": "Oferta oficial vigente. Falta relevar bajadas, permisos y circuitos por temporada. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Oferta oficial vigente. Falta relevar bajadas, permisos y circuitos por temporada.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

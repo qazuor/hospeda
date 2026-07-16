@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "069-point-of-interest-banados",
     "slug": "banados",
-    "lat": -33.4987683,
-    "long": -58.809814499999995,
+    "lat": null,
+    "long": null,
     "type": "NATURAL",
     "icon": null,
     "description": "Extensos ambientes inundables que sostienen gran biodiversidad de aves acuáticas, anfibios y vegetación típica del delta.",
@@ -26,8 +26,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.entrerios.tur.ar/localidades-1/ceibas; https://www.lanacion.com.ar/revista-lugares/meca-internacional-el-pueblo-que-convoca-gente-del-mundo-entero-para-ver-y-fotografiar-aves-nid03082025/",
-    "notes": "Ambiente natural regional; requiere polígonos y accesos diferenciados. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://www.entrerios.tur.ar/localidades-1/ceibas",
+    "notes": "Ambiente natural regional; requiere polígonos y accesos diferenciados.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

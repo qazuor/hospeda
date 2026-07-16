@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "114-point-of-interest-camping_las_palmeras",
     "slug": "camping_las_palmeras",
-    "lat": -31.244756,
-    "long": -57.9614354,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Camping y complejo recreativo del Lago de Salto Grande con servicios para acampe, descanso y actividades al aire libre.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.concordia.gob.ar/turismo/atractivos/termas/complejo-camping-las-palmeras",
-    "notes": "Dirección y actividad confirmadas. Falta geocodificar el acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Dirección y actividad confirmadas. Falta geocodificar el acceso.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

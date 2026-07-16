@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "116-point-of-interest-campo_las_ruedas",
     "slug": "campo_las_ruedas",
-    "lat": -32.4963409,
-    "long": -58.442593,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Emprendimiento familiar de apicultura y agricultura orgánica con visitas guiadas, colmenas y degustación de mieles.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://caseros.gob.ar/turismo-y-cultura/",
-    "notes": "Prestador privado con reservas. Falta geocodificar el acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Prestador privado con reservas. Falta geocodificar el acceso.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

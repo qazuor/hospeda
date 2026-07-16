@@ -22,7 +22,7 @@ import styles from './CalendarSection.module.css';
 /** Maps an occupancy source to its i18n sub-key suffix under `calendar.source.*`. */
 export function sourceKeySuffix(
     source: OccupancySourceEnum
-): 'manual' | 'google' | 'airbnb' | 'booking' {
+): 'manual' | 'google' | 'airbnb' | 'booking' | 'other' {
     switch (source) {
         case OccupancySourceEnum.GOOGLE_CALENDAR:
             return 'google';
@@ -30,6 +30,8 @@ export function sourceKeySuffix(
             return 'airbnb';
         case OccupancySourceEnum.BOOKING:
             return 'booking';
+        case OccupancySourceEnum.OTHER:
+            return 'other';
         default:
             return 'manual';
     }
@@ -48,6 +50,8 @@ export function sourceFallbackLabel(source: OccupancySourceEnum): string {
             return 'Airbnb';
         case OccupancySourceEnum.BOOKING:
             return 'Booking.com';
+        case OccupancySourceEnum.OTHER:
+            return 'Otro calendario';
         default:
             return 'Manual';
     }
@@ -62,6 +66,8 @@ function sourceDotClass(source: OccupancySourceEnum): string {
             return styles.dotAirbnb;
         case OccupancySourceEnum.BOOKING:
             return styles.dotBooking;
+        case OccupancySourceEnum.OTHER:
+            return styles.dotOther;
         default:
             return styles.dotManual;
     }
@@ -77,7 +83,13 @@ export interface CalendarDayCellProps {
     readonly dateKey: string;
     readonly locale: SupportedLocale;
     readonly t: TranslationFn;
-    /** The occupancy row for this date, if any (undefined = free). */
+    /**
+     * The date's PRIMARY occupancy row, if any (undefined = free). When a
+     * date carries rows from multiple sources (HOS-162), the caller has
+     * already resolved this to the highest-priority one
+     * (`resolvePrimaryOccupancyRow`, `MANUAL > GOOGLE_CALENDAR > AIRBNB >
+     * BOOKING > OTHER`) — this component only ever renders one row per day.
+     */
     readonly row: AccommodationOccupancy | undefined;
     /** Whether this date is strictly before today — occupancy is future-facing. */
     readonly isPast: boolean;
@@ -85,6 +97,14 @@ export interface CalendarDayCellProps {
     readonly isSelected: boolean;
     /** Whether this date is the pending range start (first click, awaiting the second). */
     readonly isPending: boolean;
+    /**
+     * Bar-layout mode (HOS-162 prototype): occupancy is drawn as spanning
+     * event bars overlaid on the week, so the cell suppresses its own occupied
+     * background + source dot and renders the number top-left to leave room for
+     * the bars. Interaction (togglable MANUAL / free, disabled sync / past) is
+     * unchanged. Defaults to `false` (legacy per-day dot rendering).
+     */
+    readonly barMode?: boolean;
     readonly onSelect: (dateKey: string) => void;
 }
 
@@ -105,12 +125,19 @@ export function CalendarDayCell({
     isPast,
     isSelected,
     isPending,
+    barMode = false,
     onSelect
 }: CalendarDayCellProps) {
-    const isOccupied = Boolean(row?.isBlocked);
-    const isManual = row?.source === OccupancySourceEnum.MANUAL;
-    const isSyncOrigin = Boolean(row) && !isManual;
-    const isDisabled = isSyncOrigin || isPast;
+    // A date is occupied if it has ANY row (HOS-162: multiple rows per date
+    // are possible; presence, not `isBlocked`, is the occupied signal —
+    // `row` is already the caller-resolved primary row for the date).
+    const isOccupied = Boolean(row);
+    const isSyncOrigin = isOccupied && row?.source !== OccupancySourceEnum.MANUAL;
+    // HOS-175 interaction model: cell click/hover only marks FREE days as
+    // occupied. Occupied days (manual OR sync) are never togglable from the
+    // cell — an existing event is edited/removed by clicking its bar instead
+    // (CalendarSection opens the edit dialog). Past days are always inert.
+    const isDisabled = isOccupied || isPast;
 
     const statusLabel = row
         ? `${t('host.properties.editor.calendar.statusOccupied', 'Ocupado')} — ${t(
@@ -129,19 +156,22 @@ export function CalendarDayCell({
             type="button"
             className={cn(
                 styles.day,
-                isOccupied && styles.dayOccupied,
-                isSyncOrigin && styles.daySync,
+                barMode && styles.dayBarMode,
+                // In bar mode the spanning bars carry the occupied/source
+                // signal, so suppress the per-cell occupied bg + dashed sync
+                // border to avoid a double indicator.
+                !barMode && isOccupied && styles.dayOccupied,
+                !barMode && isSyncOrigin && styles.daySync,
                 isSelected && styles.daySelected,
                 isPending && styles.dayPending,
                 isPast && styles.dayPast
             )}
             onClick={() => !isDisabled && onSelect(dateKey)}
             disabled={isDisabled}
-            aria-pressed={isManual ? isOccupied : undefined}
             aria-label={ariaLabel}
         >
             <span className={styles.dayNumber}>{date.getDate()}</span>
-            {isSyncOrigin && row && (
+            {!barMode && isSyncOrigin && row && (
                 <span
                     className={cn(styles.sourceDot, sourceDotClass(row.source))}
                     aria-hidden="true"

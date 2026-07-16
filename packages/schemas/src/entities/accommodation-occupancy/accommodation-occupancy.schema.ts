@@ -57,6 +57,18 @@ export const AccommodationOccupancySchema = z.object({
         .max(255, { message: 'zodError.accommodationOccupancy.externalEventId.max' })
         .nullable(),
 
+    /**
+     * The external event's title/summary (iCal VEVENT `SUMMARY` or Google
+     * Calendar event summary) — read-only, sync-sourced (HOS-175). `null` for
+     * `MANUAL` rows. `.optional()` for additive backward-compat: rows/fixtures
+     * predating the column simply omit it.
+     */
+    eventTitle: z
+        .string({ message: 'zodError.accommodationOccupancy.eventTitle.required' })
+        .max(500, { message: 'zodError.accommodationOccupancy.eventTitle.max' })
+        .nullable()
+        .optional(),
+
     /** Optional internal note the host can attach to a blocked day. */
     note: z
         .string({ message: 'zodError.accommodationOccupancy.note.required' })

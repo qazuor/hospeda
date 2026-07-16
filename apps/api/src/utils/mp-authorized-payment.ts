@@ -42,6 +42,21 @@ export interface MPAuthorizedPaymentDetails {
     readonly paymentStatus: string | null;
     /** Scheduled debit date (ISO 8601) for this charge. */
     readonly debitDate: string | null;
+    /**
+     * `coupon_amount` from the inner payment block, in MAJOR units — the
+     * discount MercadoPago's OWN campaign engine applied to this charge.
+     *
+     * Hospeda never sets this on any call path, so a non-zero value means an
+     * account-level discount campaign (seller panel → Ofrecer Descuentos)
+     * matched the charge and we were paid less than the plan says. See
+     * `detectExternalChargeInterference` in `@repo/service-core` (HOS-171 §7.5).
+     */
+    readonly couponAmount: number | null;
+    /**
+     * `campaign_id` from the inner payment block — which MercadoPago discount
+     * campaign matched. Also never set by us; see {@link couponAmount}.
+     */
+    readonly campaignId: string | null;
 }
 
 /**
@@ -167,6 +182,11 @@ function parseAuthorizedPaymentResponse(
 
     let paymentId: string | null = null;
     let paymentStatus: string | null = null;
+    // MercadoPago reports its own campaign discounts on the inner payment block.
+    // Read defensively: absent is the normal case (no campaign matched), and a
+    // malformed value must degrade to null rather than break payment recording.
+    let couponAmount: number | null = null;
+    let campaignId: string | null = null;
     const payment = raw.payment;
     if (payment && typeof payment === 'object') {
         const p = payment as Record<string, unknown>;
@@ -178,6 +198,14 @@ function parseAuthorizedPaymentResponse(
         if (typeof p.status === 'string') {
             paymentStatus = p.status;
         }
+        if (typeof p.coupon_amount === 'number') {
+            couponAmount = p.coupon_amount;
+        }
+        if (typeof p.campaign_id === 'number') {
+            campaignId = String(p.campaign_id);
+        } else if (typeof p.campaign_id === 'string' && p.campaign_id.length > 0) {
+            campaignId = p.campaign_id;
+        }
     }
 
     return {
@@ -188,7 +216,9 @@ function parseAuthorizedPaymentResponse(
         paymentId,
         status,
         paymentStatus,
-        debitDate
+        debitDate,
+        couponAmount,
+        campaignId
     };
 }
 

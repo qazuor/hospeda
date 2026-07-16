@@ -139,6 +139,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Sync occupancy dates from every active Google Calendar connection (HOS-157 Phase 2).'
     },
     {
+        name: 'calendar-sync-ical',
+        displayName: 'Sync de calendarios iCal',
+        category: 'content',
+        schedule: '0 */6 * * *',
+        description:
+            'Sync occupancy dates from every active Airbnb/Booking/other iCal feed (HOS-162 Phase 3).'
+    },
+    {
         name: 'dunning',
         displayName: 'Reintentos de cobro',
         category: 'billing',
@@ -228,11 +236,12 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Poll MercadoPago /preapproval/{id} for pending subscriptions to flip them to active when the subscription_preapproval webhook is delayed or lost (SPEC-143 Finding #17 fallback).'
     },
     {
-        name: 'trial-expiry',
-        displayName: 'Expiración de pruebas',
+        name: 'trial-reconcile',
+        displayName: 'Reconciliación de pruebas',
         category: 'billing',
         schedule: '0 2 * * *',
-        description: 'Expire trial subscriptions whose period has ended.'
+        description:
+            'Reconcile trials whose window has elapsed against MercadoPago: convert the ones whose charge landed, route failed charges to dunning, and mirror cancellations. Renamed from trial-expiry (HOS-171) — it no longer cancels elapsed trials.'
     },
     // 'trial-pre-end-notif' intentionally omitted: the job was DELETED (HOS-121).
     // It duplicated notification-schedule's TRIAL_ENDING_REMINDER sender; its two

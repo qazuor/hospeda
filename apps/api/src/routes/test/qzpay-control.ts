@@ -25,8 +25,7 @@ import {
 import { Hono } from 'hono';
 
 const VALID_OPERATIONS: ReadonlyArray<ControllableOperation> = [
-    'startTrial',
-    'cancelTrial',
+    'createSubscription',
     'createPaymentPreference',
     'capturePayment',
     'refundPayment',

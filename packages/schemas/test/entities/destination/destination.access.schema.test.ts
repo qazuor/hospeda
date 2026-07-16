@@ -27,7 +27,7 @@ describe('Destination Access Schemas — pointsOfInterest exposure (HOS-113 Phas
         });
 
         it('parses and preserves a populated pointsOfInterest array, including description/isFeatured/isBuiltin', () => {
-            const poi = createValidPointOfInterest();
+            const poi = { ...createValidPointOfInterest(), relation: 'PRIMARY' as const };
             const data = { ...createValidDestination(), pointsOfInterest: [poi] };
 
             const result = DestinationPublicSchema.parse(data);
@@ -41,6 +41,15 @@ describe('Destination Access Schemas — pointsOfInterest exposure (HOS-113 Phas
                 isBuiltin: poi.isBuiltin
             });
         });
+
+        it('preserves the relation kind (HOS-146) instead of dropping it as an undeclared key', () => {
+            const poi = { ...createValidPointOfInterest(), relation: 'NEARBY' as const };
+            const data = { ...createValidDestination(), pointsOfInterest: [poi] };
+
+            const result = DestinationPublicSchema.parse(data);
+
+            expect(result.pointsOfInterest?.[0]?.relation).toBe('NEARBY');
+        });
     });
 
     describe('DestinationProtectedSchema', () => {
@@ -49,7 +58,7 @@ describe('Destination Access Schemas — pointsOfInterest exposure (HOS-113 Phas
         });
 
         it('parses and preserves a populated pointsOfInterest array', () => {
-            const poi = createValidPointOfInterest();
+            const poi = { ...createValidPointOfInterest(), relation: 'PRIMARY' as const };
             const data = { ...createValidDestination(), pointsOfInterest: [poi] };
 
             const result = DestinationProtectedSchema.parse(data);

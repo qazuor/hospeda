@@ -466,7 +466,12 @@ describe('DestinationModel.getPointsOfInterestMap', () => {
     let getDbMock: ReturnType<typeof vi.fn>;
     let logErrorMock: ReturnType<typeof vi.fn>;
 
-    /** Builds a chainable mock for db.select().from().innerJoin().where().orderBy() */
+    /**
+     * Builds a chainable mock for
+     * `db.select().from().innerJoin().leftJoin().leftJoin().where().orderBy()`
+     * (HOS-182 added the two trailing `leftJoin`s that resolve each POI's
+     * primary category via `r_poi_category` / `poi_categories`).
+     */
     function buildSelectChain(finalResolved: unknown[], shouldReject = false) {
         const orderByMock = vi
             .fn()
@@ -476,10 +481,20 @@ describe('DestinationModel.getPointsOfInterestMap', () => {
                     : Promise.resolve(finalResolved)
             );
         const whereMock = vi.fn().mockReturnValue({ orderBy: orderByMock });
-        const innerJoinMock = vi.fn().mockReturnValue({ where: whereMock });
+        const leftJoinMock2 = vi.fn().mockReturnValue({ where: whereMock });
+        const leftJoinMock1 = vi.fn().mockReturnValue({ leftJoin: leftJoinMock2 });
+        const innerJoinMock = vi.fn().mockReturnValue({ leftJoin: leftJoinMock1 });
         const fromMock = vi.fn().mockReturnValue({ innerJoin: innerJoinMock });
         const selectMock = vi.fn().mockReturnValue({ from: fromMock });
-        return { selectMock, fromMock, innerJoinMock, whereMock, orderByMock };
+        return {
+            selectMock,
+            fromMock,
+            innerJoinMock,
+            leftJoinMock1,
+            leftJoinMock2,
+            whereMock,
+            orderByMock
+        };
     }
 
     beforeEach(() => {
@@ -539,7 +554,8 @@ describe('DestinationModel.getPointsOfInterestMap', () => {
                 icon: 'flag-checkered',
                 isFeatured: true,
                 isBuiltin: false,
-                displayWeight: 80
+                displayWeight: 80,
+                primaryCategory: null
             }
         ]);
     });
@@ -710,8 +726,12 @@ describe('DestinationModel.getPointsOfInterestMap', () => {
             select: vi.fn().mockReturnValue({
                 from: vi.fn().mockReturnValue({
                     innerJoin: vi.fn().mockReturnValue({
-                        where: vi.fn().mockReturnValue({
-                            orderBy: vi.fn().mockResolvedValue([])
+                        leftJoin: vi.fn().mockReturnValue({
+                            leftJoin: vi.fn().mockReturnValue({
+                                where: vi.fn().mockReturnValue({
+                                    orderBy: vi.fn().mockResolvedValue([])
+                                })
+                            })
                         })
                     })
                 })
@@ -816,6 +836,181 @@ describe('DestinationModel.getPointsOfInterestMap', () => {
             const entries = result.get('dest-1') ?? [];
             expect(entries).toHaveLength(1);
             expect(entries[0]?.relation).toBe('NEARBY');
+        });
+    });
+
+    // ========================================================================
+    // HOS-146 review: public-read gate (ACTIVE, non-soft-deleted only)
+    // ========================================================================
+    describe('public-read gate (HOS-146 review, mirrors HOS-132)', () => {
+        /**
+         * Walks a drizzle `SQL` tree and collects the names of every column it
+         * references plus every bound parameter value, so a `where` clause built
+         * with `and(...)` can be asserted structurally (drizzle wraps the
+         * conditions into one opaque SQL object — see the AC-6 test above).
+         */
+        function inspectSql(
+            node: unknown,
+            acc: { columns: string[]; params: unknown[] }
+        ): {
+            columns: string[];
+            params: unknown[];
+        } {
+            if (!node || typeof node !== 'object') return acc;
+            if (Array.isArray(node)) {
+                for (const child of node) inspectSql(child, acc);
+                return acc;
+            }
+            const rec = node as Record<string, unknown>;
+            if (typeof rec.name === 'string' && 'table' in rec) acc.columns.push(rec.name);
+            if ('value' in rec && !('queryChunks' in rec)) acc.params.push(rec.value);
+            if ('queryChunks' in rec) inspectSql(rec.queryChunks, acc);
+            return acc;
+        }
+
+        it('filters out soft-deleted and non-ACTIVE POIs (a DRAFT/deleted POI must never reach a public response)', async () => {
+            // Arrange
+            const { selectMock, whereMock } = buildSelectChain([]);
+            getDbMock.mockReturnValue({ select: selectMock });
+
+            // Act
+            await model.getPointsOfInterestMap(['dest-1'], undefined, 'ALL');
+
+            // Assert — the where clause constrains the POI's own deletedAt and
+            // lifecycleState columns, not just the join row's destinationId.
+            const { columns, params } = inspectSql(whereMock.mock.calls[0]?.[0], {
+                columns: [],
+                params: []
+            });
+            expect(columns).toContain('deleted_at');
+            expect(columns).toContain('lifecycle_state');
+            expect(params).toContain('ACTIVE');
+        });
+
+        it('applies the gate on the default (PRIMARY) relation path too — both callers are public reads', async () => {
+            // Arrange
+            const { selectMock, whereMock } = buildSelectChain([]);
+            getDbMock.mockReturnValue({ select: selectMock });
+
+            // Act — no relation arg: the `_withPointsOfInterest` detail-payload path.
+            await model.getPointsOfInterestMap(['dest-1']);
+
+            // Assert
+            const { columns } = inspectSql(whereMock.mock.calls[0]?.[0], {
+                columns: [],
+                params: []
+            });
+            expect(columns).toContain('deleted_at');
+            expect(columns).toContain('lifecycle_state');
+        });
+    });
+
+    // ========================================================================
+    // HOS-182: primaryCategory (r_poi_category isPrimary LEFT JOIN)
+    // ========================================================================
+    describe('primaryCategory (HOS-182)', () => {
+        it('resolves primaryCategory to {slug, nameI18n} for a POI with a primary category row', async () => {
+            const rows = [
+                {
+                    destinationId: 'dest-1',
+                    id: 'poi-1',
+                    slug: 'autodromo',
+                    lat: -32.48,
+                    long: -58.24,
+                    type: 'STADIUM',
+                    icon: null,
+                    displayWeight: 80,
+                    primaryCategorySlug: 'sports_venue',
+                    primaryCategoryNameI18n: {
+                        es: 'Recinto deportivo',
+                        en: 'Sports venue',
+                        pt: 'Recinto esportivo'
+                    }
+                }
+            ];
+            const { selectMock } = buildSelectChain(rows);
+            getDbMock.mockReturnValue({ select: selectMock });
+
+            const result = await model.getPointsOfInterestMap(['dest-1']);
+
+            expect(result.get('dest-1')?.[0]?.primaryCategory).toEqual({
+                slug: 'sports_venue',
+                nameI18n: { es: 'Recinto deportivo', en: 'Sports venue', pt: 'Recinto esportivo' }
+            });
+        });
+
+        it('resolves primaryCategory to null for a POI with no category rows at all', async () => {
+            const rows = [
+                {
+                    destinationId: 'dest-1',
+                    id: 'poi-no-categories',
+                    slug: 'plaza-sin-categoria',
+                    lat: -32.0,
+                    long: -58.0,
+                    type: 'PLAZA',
+                    icon: null,
+                    displayWeight: 50,
+                    primaryCategorySlug: null,
+                    primaryCategoryNameI18n: null
+                }
+            ];
+            const { selectMock } = buildSelectChain(rows);
+            getDbMock.mockReturnValue({ select: selectMock });
+
+            const result = await model.getPointsOfInterestMap(['dest-1']);
+
+            expect(result.get('dest-1')?.[0]?.primaryCategory).toBeNull();
+        });
+
+        it('resolves primaryCategory to null for a POI with category rows but none marked primary (dirty data, HOS-177)', async () => {
+            // The LEFT JOIN's ON condition filters r_poi_category to
+            // isPrimary = true — a POI whose category rows are all
+            // isPrimary = false never matches that join, so the DB layer
+            // returns the same null-slug shape as "no categories at all".
+            const rows = [
+                {
+                    destinationId: 'dest-1',
+                    id: 'poi-no-primary',
+                    slug: 'museo-sin-primaria',
+                    lat: -32.1,
+                    long: -58.1,
+                    type: 'MUSEUM',
+                    icon: null,
+                    displayWeight: 40,
+                    primaryCategorySlug: null,
+                    primaryCategoryNameI18n: null
+                }
+            ];
+            const { selectMock } = buildSelectChain(rows);
+            getDbMock.mockReturnValue({ select: selectMock });
+
+            const result = await model.getPointsOfInterestMap(['dest-1']);
+
+            expect(result.get('dest-1')?.[0]?.primaryCategory).toBeNull();
+        });
+
+        it('chains two leftJoin calls (r_poi_category, poi_categories) after the innerJoin', async () => {
+            const { selectMock, innerJoinMock, leftJoinMock1 } = buildSelectChain([]);
+            getDbMock.mockReturnValue({ select: selectMock });
+
+            await model.getPointsOfInterestMap(['dest-1']);
+
+            expect(innerJoinMock).toHaveBeenCalledTimes(1);
+            expect(leftJoinMock1).toHaveBeenCalledTimes(1);
+        });
+
+        it('projects primaryCategorySlug/primaryCategoryNameI18n into the select() call', async () => {
+            const { selectMock } = buildSelectChain([]);
+            getDbMock.mockReturnValue({ select: selectMock });
+
+            await model.getPointsOfInterestMap(['dest-1']);
+
+            expect(selectMock).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    primaryCategorySlug: expect.anything(),
+                    primaryCategoryNameI18n: expect.anything()
+                })
+            );
         });
     });
 });

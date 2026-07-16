@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "438-point-of-interest-iglesia_natividad",
     "slug": "iglesia_natividad",
-    "lat": -32.165207699999996,
-    "long": -58.401718599999995,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Templo central conocido como Iglesia Virgen Niña, iniciado en 1936 y destacado por sus murales testimoniales del cristianismo y su presencia urbana.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://villaelisa.tur.ar/atractivos/; https://villaelisa.tur.ar/preguntas-frecuentes/",
-    "notes": "Nombre, historia y relevancia turística confirmados. Falta dirección postal y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://villaelisa.tur.ar/atractivos/",
+    "notes": "Nombre, historia y relevancia turística confirmados. Falta dirección postal y coordenadas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

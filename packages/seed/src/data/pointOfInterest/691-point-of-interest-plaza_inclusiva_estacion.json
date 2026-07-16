@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "691-point-of-interest-plaza_inclusiva_estacion",
     "slug": "plaza_inclusiva_estacion",
-    "lat": -32.6849274,
-    "long": -58.8916416,
+    "lat": null,
+    "long": null,
     "type": "PARK",
     "icon": null,
     "description": "Espacio de juegos accesibles e integración familiar dentro del predio cultural ferroviario.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://urdinarrain.tur.ar/que-hacer/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

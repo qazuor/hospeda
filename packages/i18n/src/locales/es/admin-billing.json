@@ -581,7 +581,6 @@
             "paymentSuccess": "Pago Exitoso",
             "paymentFailed": "Pago Fallido",
             "trialEnding": "Prueba Finalizando",
-            "trialExpired": "Prueba Expirada",
             "subscriptionCancelled": "Suscripción Cancelada",
             "paymentReminder": "Recordatorio de Pago",
             "paymentReceipt": "Recibo de Pago"

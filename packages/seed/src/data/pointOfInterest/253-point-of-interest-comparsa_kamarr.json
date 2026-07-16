@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "253-point-of-interest-comparsa_kamarr",
     "slug": "comparsa_kamarr",
-    "lat": -33.0080206,
-    "long": -58.518803299999995,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Comparsa del Carnaval del País con taller, producción artística, vestuario, música y trabajo comunitario.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://gualeguaychu.tur.ar/carnaval",
-    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, actividad y ubicación general o dirección confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

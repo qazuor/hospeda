@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "471-point-of-interest-locomotora_la_solis",
     "slug": "locomotora_la_solis",
-    "lat": -33.1483158,
-    "long": -59.3276817,
+    "lat": null,
+    "long": null,
     "type": "MONUMENT",
     "icon": null,
     "description": "Locomotora histórica del Ferrocarril Primer Entrerriano, protagonista del viaje inaugural de 1866 y conservada frente a la estación.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://es.wikipedia.org/wiki/Ferrocarril_Primer_Entrerriano; https://www.argentinaviajera.com.ar/entrerios/gualeguay.html",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://es.wikipedia.org/wiki/Ferrocarril_Primer_Entrerriano",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

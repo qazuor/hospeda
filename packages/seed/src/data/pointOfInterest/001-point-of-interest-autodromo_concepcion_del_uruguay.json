@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "001-point-of-interest-autodromo_concepcion_del_uruguay",
     "slug": "autodromo_concepcion_del_uruguay",
-    "lat": -32.423,
-    "long": -58.2591,
+    "lat": -32.45541,
+    "long": -58.31482,
     "type": "STADIUM",
     "description": "Autódromo de Concepción del Uruguay, sede de competencias de turismo carretera y motociclismo",
     "nameI18n": {
@@ -50,5 +50,9 @@
     "isBuiltin": true,
     "isFeatured": true,
     "displayWeight": 80,
-    "lifecycleState": "ACTIVE"
+    "lifecycleState": "ACTIVE",
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://concepcionentrerios.tur.ar/",
+    "notes": "Carga inicial. Coordenadas y dirección pendientes de validación cartográfica final."
 }

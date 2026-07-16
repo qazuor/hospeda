@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "211-point-of-interest-circuito_historico_autoguiado",
     "slug": "circuito_historico_autoguiado",
-    "lat": -32.6849274,
-    "long": -58.8916416,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido por catorce lugares icónicos, edificios relevantes y espacios ligados con la identidad local, realizable caminando o en bicicleta.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://urdinarrain.tur.ar/que-hacer/; https://urdinarrain.tur.ar/tag/lugares-turisticos-entre-rios/",
-    "notes": "Circuito oficial confirmado. Falta digitalizar el trazado y sus catorce paradas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://urdinarrain.tur.ar/que-hacer/",
+    "notes": "Circuito oficial confirmado. Falta digitalizar el trazado y sus catorce paradas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

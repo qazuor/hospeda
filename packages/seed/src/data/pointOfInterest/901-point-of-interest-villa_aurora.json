@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "901-point-of-interest-villa_aurora",
     "slug": "villa_aurora",
-    "lat": -31.6247717,
-    "long": -58.5051869,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Edificio en pie más antiguo de San Salvador, datado en 1890. Fue sede de la primera administración de la colonia y residencia vinculada con la familia Malarín.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/ciudad/",
-    "notes": "Historia y relevancia confirmadas por la Municipalidad. Falta dirección y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Historia y relevancia confirmadas por la Municipalidad. Falta dirección y coordenadas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

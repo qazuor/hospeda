@@ -20,6 +20,68 @@ const __dirname = path.dirname(__filename);
 /** Absolute path to the seeded destination fixture directory. */
 const DESTINATION_DATA_DIR = path.resolve(__dirname, '../../src/data/destination');
 
+/** Minimal destination metadata the pipeline needs at runtime. */
+export interface RealDestinationRecord {
+    readonly slug: string;
+    readonly name: string;
+    readonly center: {
+        readonly lat: number;
+        readonly long: number;
+    };
+}
+
+interface RawDestinationFixture {
+    readonly slug?: unknown;
+    readonly name?: unknown;
+    readonly location?: {
+        readonly coordinates?: {
+            readonly lat?: unknown;
+            readonly long?: unknown;
+        };
+    };
+}
+
+/**
+ * Loads the real seeded destination catalog (slug + display name + center).
+ *
+ * @param params.dir - Override for the fixture directory (defaults to the real
+ *   seed data dir). Primarily for tests.
+ * @returns The destination catalog keyed by slug.
+ */
+export function loadRealDestinations(
+    params: { readonly dir?: string } = {}
+): Map<string, RealDestinationRecord> {
+    const dir = params.dir ?? DESTINATION_DATA_DIR;
+    const destinations = new Map<string, RealDestinationRecord>();
+
+    for (const file of readdirSync(dir)) {
+        if (!file.endsWith('.json')) {
+            continue;
+        }
+        const parsed = JSON.parse(
+            readFileSync(path.join(dir, file), 'utf8')
+        ) as RawDestinationFixture;
+        const slug = typeof parsed.slug === 'string' ? parsed.slug : null;
+        const name = typeof parsed.name === 'string' ? parsed.name : null;
+        const lat = Number(parsed.location?.coordinates?.lat);
+        const long = Number(parsed.location?.coordinates?.long);
+
+        if (slug === null || name === null || !Number.isFinite(lat) || !Number.isFinite(long)) {
+            throw new Error(
+                `Destination fixture '${file}' is missing a valid slug/name/location.coordinates center.`
+            );
+        }
+
+        destinations.set(slug, {
+            slug,
+            name,
+            center: { lat, long }
+        });
+    }
+
+    return destinations;
+}
+
 /**
  * Loads the set of real seeded destination slugs from the destination fixture
  * JSON files (`packages/seed/src/data/destination/*.json`). Reading the
@@ -31,18 +93,7 @@ const DESTINATION_DATA_DIR = path.resolve(__dirname, '../../src/data/destination
  * @returns The set of real destination slugs.
  */
 export function loadRealDestinationSlugs(params: { readonly dir?: string } = {}): Set<string> {
-    const dir = params.dir ?? DESTINATION_DATA_DIR;
-    const slugs = new Set<string>();
-    for (const file of readdirSync(dir)) {
-        if (!file.endsWith('.json')) {
-            continue;
-        }
-        const parsed = JSON.parse(readFileSync(path.join(dir, file), 'utf8')) as { slug?: unknown };
-        if (typeof parsed.slug === 'string') {
-            slugs.add(parsed.slug);
-        }
-    }
-    return slugs;
+    return new Set(loadRealDestinations(params).keys());
 }
 
 /**

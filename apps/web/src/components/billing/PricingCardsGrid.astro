@@ -794,7 +794,7 @@ function formatPriceArs(cents: number): string {
 	import { billingApi } from '@/lib/api/endpoints-protected';
 	/**
 	 * Reads the `?interval=` query param (HOS-115 §5 nudge delivery path 1 —
-	 * the TRIAL_EXPIRED notification's upgradeUrl). Returns `null` when
+	 * the TRIAL_ENDING_REMINDER notification's upgradeUrl). Returns `null` when
 	 * absent or set to anything other than the two known values, so a bad or
 	 * stale link never leaves the toggle in an invalid state.
 	 */

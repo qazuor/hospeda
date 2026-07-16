@@ -993,6 +993,9 @@
             },
             "promoCodeIgnored": {
                 "invalid": "O indicador de código promocional ignorado não é válido"
+            },
+            "trialGranted": {
+                "invalid": "O indicador de período de teste concedido não é válido"
             }
         },
         "subscriptionEvent": {
@@ -4384,6 +4387,20 @@
             "min": "É necessário indicar pelo menos uma data",
             "required": "As datas são obrigatórias"
         },
+        "eventTitle": {
+            "max": "O título do evento não pode ultrapassar 500 caracteres",
+            "required": "O título do evento é obrigatório"
+        },
+        "eventUpdate": {
+            "newRange": {
+                "invalid": "A data inicial nova deve ser anterior ou igual à data final nova",
+                "tooLong": "O novo intervalo de datas não pode ultrapassar 366 dias"
+            },
+            "oldRange": {
+                "invalid": "A data inicial original deve ser anterior ou igual à data final original",
+                "tooLong": "O intervalo de datas original não pode ultrapassar 366 dias"
+            }
+        },
         "externalEventId": {
             "max": "O ID do evento externo não pode ultrapassar 255 caracteres",
             "required": "O ID do evento externo é obrigatório"
@@ -4412,12 +4429,24 @@
         "accessTokenIv": {
             "required": "O IV do token de acesso é obrigatório"
         },
+        "calendarProviderToken": {
+            "invalid": "O provedor de calendário é inválido"
+        },
         "createdAt": {
             "required": "A data de criação é obrigatória"
         },
         "externalCalendarId": {
             "max": "O ID do calendário externo não pode ultrapassar 255 caracteres",
             "required": "O ID do calendário externo é obrigatório"
+        },
+        "feedUrl": {
+            "httpsRequired": "A URL do feed deve usar HTTPS",
+            "invalid": "A URL do feed é inválida",
+            "max": "A URL do feed não pode ultrapassar 2048 caracteres",
+            "required": "A URL do feed é obrigatória"
+        },
+        "icalProviderToken": {
+            "invalid": "O provedor de calendário iCal é inválido"
         },
         "isActive": {
             "required": "O status ativo é obrigatório"

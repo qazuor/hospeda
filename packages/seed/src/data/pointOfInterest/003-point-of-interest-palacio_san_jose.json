@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "003-point-of-interest-palacio_san_jose",
     "slug": "palacio_san_jose",
-    "lat": -32.1975,
-    "long": -58.4949,
+    "lat": -32.427222,
+    "long": -58.522872,
     "type": "MUSEUM",
     "description": "Ex residencia de Justo José de Urquiza, hoy museo histórico nacional",
     "nameI18n": {
@@ -50,5 +50,9 @@
     "isBuiltin": true,
     "isFeatured": true,
     "displayWeight": 90,
-    "lifecycleState": "ACTIVE"
+    "lifecycleState": "ACTIVE",
+    "verified": true,
+    "verifiedAt": null,
+    "source": "https://museourquiza.cultura.gob.ar/info/visita/",
+    "notes": "Coordenadas contrastadas con Wikimedia Commons/Wikidata y descripción con el sitio oficial del museo."
 }

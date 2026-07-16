@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "848-point-of-interest-sinagoga_tefila_mois_s",
     "slug": "sinagoga_tefila_mois_s",
-    "lat": -32.3697278,
-    "long": -58.8760306,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Templo histórico del circuito de colonias judías, vinculado con la vida religiosa y comunitaria de los colonos.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.turismoentrerios.com/villaguay/circuito-colonias-judias.htm",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

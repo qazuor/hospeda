@@ -152,11 +152,39 @@ Hospeda billing is built on **QZPay** (`@qazuor/qzpay-core`) with a MercadoPago 
 
 - **Routes**: `apps/api/src/routes/billing/` (start-paid, plan-change, subscription-cancel, addons, webhooks, etc.)
 - **Services**: `packages/service-core/src/services/billing/` (subscription, addon, promo-code, settings — deliberately outside `BaseCrudService`)
-- **Cron jobs**: `apps/api/src/cron/jobs/` (dunning, webhook-retry, finalize-cancelled-subs, trial-expiry, addon-expiry, apply-scheduled-plan-changes, subscription-poll, abandoned-pending-subs, exchange-rate-fetch)
+- **Cron jobs**: `apps/api/src/cron/jobs/` (dunning, webhook-retry, finalize-cancelled-subs, trial-reconcile, addon-expiry, apply-scheduled-plan-changes, subscription-poll, abandoned-pending-subs, exchange-rate-fetch)
 - **Config**: `packages/billing/` (plan definitions, entitlement keys, limits, MP adapter factory)
 - **DB adapter**: `packages/db/src/billing/drizzle-adapter.ts` (QZPay Drizzle storage adapter)
 
-Key DB columns: `billing_subscriptions.mp_subscription_id` stores the MercadoPago preapproval ID for monthly recurring subscriptions (NULL for annual one-time charges). `billing_customers.segment` (not `category`). `billing_plans.id` is UUID; `billing_subscriptions.plan_id` is varchar but stores the plan UUID.
+Key DB columns: `billing_subscriptions.mp_subscription_id` stores the MercadoPago preapproval ID for EVERY subscription — monthly and annual alike since HOS-171 (see below). `billing_customers.segment` (not `category`). `billing_plans.id` is UUID; `billing_subscriptions.plan_id` is varchar but stores the plan UUID.
+
+#### Card-first trials, one charging mechanism (HOS-171)
+
+Every subscription is a MercadoPago **preapproval**, trial or not:
+
+- **The trial is MercadoPago's**, not ours: a preapproval carrying
+  `auto_recurring.free_trial`, so the card is collected on day 1 and MP defers the
+  first charge to day N. There is no no-card trial and no `TrialService.startTrial`
+  path from checkout. `freeTrialDays` is decided ONCE, at checkout, by
+  `resolveCheckoutFreeTrialDays` (plan base + any `trial_extension` promo).
+- **`TRIALING` is derived, never stored at creation.** MercadoPago reports an
+  authorized preapproval as `active`; `deriveTrialingStatus` turns that into
+  `trialing` in the webhook when the local `trialEnd` is still in the future. Do NOT
+  "fix" qzpay's `mode:'paid' → incomplete` insert to write `trialing` directly — that
+  guard is what stops anyone who abandons MP's authorization page from walking away
+  with N days of free entitlements.
+- **Annual is a recurring preapproval** at qzpay's `'annual'` cadence (MP
+  `frequency: 12, frequency_type: 'months'`; `years` is rejected outright). It renews
+  itself, so there is no annual reactivation to build and no one-time Checkout Pro
+  charge (`create-annual-subscription.ts` is gone). MP preapprovals have no
+  `statement_descriptor` — that capability died with the hosted checkout.
+- **The `trial-reconcile` cron CONVERTS, it does not cancel.** An elapsed trial is a
+  customer MP is about to charge (or already has), so the cron re-reads the
+  preapproval and mirrors the provider's verdict: `active` → convert, `past_due` →
+  hand to dunning, `cancelled`/`paused` → mirror. It is load-bearing, not a backstop:
+  MP fires `subscription_authorized_payment.created` on the day-N charge but the
+  preapproval status does not change, so a `preapproval.updated` webhook may never
+  arrive and the row would stay `trialing` forever.
 
 Three distinct grace mechanisms exist (see [`docs/billing/grace-period-source-of-truth.md`](docs/billing/grace-period-source-of-truth.md)):
 past-due dunning grace (7 days, `past_due` status), cron-lag grace (6h, `active` status), and soft-cancel grace (until `currentPeriodEnd`).
@@ -478,7 +506,7 @@ Full details: [docs/guides/dependency-policy.md](docs/guides/dependency-policy.m
 ## Common Gotchas
 
 - **Amenity/feature catalog (SPEC-266)**: the `name` column was DROPPED. Display labels come from `@repo/i18n` (`accommodations.amenityNames.<slug>` / `accommodations.featureNames.<slug>`), keyed by `slug`. The amenity/feature slug regex now allows underscores (`^[a-z0-9]+(?:[-_][a-z0-9]+)*$`) — the slug IS the i18n key. Both tables carry `applicable_verticals text[]`; public catalog endpoints (`/api/v1/public/amenities|features`) accept `?applicableVertical=accommodation|gastronomy|experience` to scope results. **BETA-90** (remove `name` → i18n by slug) is ABSORBED by SPEC-266 — do not plan it separately.
-- **Points of interest (POI) catalog (HOS-113)**: `points_of_interest` has NO `name` column (like SPEC-266's amenities/features) — display names resolve via `@repo/i18n` keyed by `slug` (`destinations.poiNames.<slug>`), and `type` (closed 9-value `PointOfInterestTypeEnum`) resolves via `destinations.poiTypeLabels.<TYPE>`. Coordinates are plain `doublePrecision` `lat`/`long` columns — NOT the JSONB/string shape `accommodations`/`destinations` use elsewhere, so no `::numeric` casts or `long`/`lng` naming confusion. Relation to destinations is **many-to-many** via `r_destination_point_of_interest` (a POI can belong to several destinations; coordinates live on the POI row, not the join table). Phase 1 is **seed-only** — there is no `/admin/points-of-interest` CRUD yet (deferred follow-up); the service is read-capable + seed-writable so admin CRUD is additive later. The destination detail page renders POIs as a **list/grid** (`DestinationPOISection.astro`) — multi-marker map pins are explicitly deferred (`LocationMap` has no multi-marker mode); do not add map pins without extending `LocationMapInner.client.tsx` first.
+- **Points of interest (POI) catalog (HOS-113 → HOS-138/146)**: `points_of_interest` has NO `name` column (like SPEC-266's amenities/features). Display names come from the admin-editable multilang `nameI18n` column, degrading to a humanized slug when absent — resolve them with `translatePoiName()` (`apps/web/src/lib/poi-labels.ts`), NEVER by i18n key: **HOS-138 removed the legacy `destinations.poiNames.<slug>` keys entirely**. Only `type` (closed 9-value `PointOfInterestTypeEnum`) still resolves via i18n (`destinations.poiTypeLabels.<TYPE>`). Coordinates are plain `doublePrecision` `lat`/`long` columns, **nullable since HOS-138** — NOT the JSONB/string shape `accommodations`/`destinations` use elsewhere, so no `::numeric` casts or `long`/`lng` naming confusion. Relation to destinations is **many-to-many** via `r_destination_point_of_interest` (a POI can belong to several destinations; coordinates live on the POI row, not the join table). The destination detail page renders POIs **twice**: the SSR `list/grid` (`DestinationPOISection.astro`) stays the indexable content source, and **HOS-146** added a multi-marker map (`DestinationPOIMap.client.tsx`) below it as enrichment. Three things to know before touching that map: (1) `LocationMap` now has a `mode: 'multi'`, implemented in a SIBLING chunk (`MultiMarkerMapInner.client.tsx`), NOT by extending `LocationMapInner.client.tsx` — POI pins pull in `react-dom/server` + the icon table, and the split is what keeps the approximate/exact maps from paying for it; (2) the destination payload is **PRIMARY-only** — `NEARBY` POIs are fetched client-side from `GET /api/v1/public/destinations/:id/points-of-interest?relation=NEARBY` (Colón alone has 57; bundling them would inflate every consumer's payload for one toggle); (3) the initial frame is **destination-centre + p90 radius clamped to [1.5, 8]km**, NOT the POI bbox — HOS-141's pipeline marks POIs up to 39km away as PRIMARY, so a bbox fit yields 100-200km viewports on 20 of 22 destinations.
 - **Biome `useDefaultParameterLast`**: Params with defaults MUST come after required params
 - **Biome `noExplicitAny`**: `biome-ignore` on interface/type properties does NOT work.. use proper types
 - **Biome `useExhaustiveDependencies`**: Pass whole objects (e.g. `[config]`) not individual properties

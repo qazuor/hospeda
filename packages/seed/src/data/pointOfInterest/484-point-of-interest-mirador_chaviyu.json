@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "484-point-of-interest-mirador_chaviyu",
     "slug": "mirador_chaviyu",
-    "lat": -31.0670978,
-    "long": -57.902121199999996,
+    "lat": null,
+    "long": null,
     "type": "VIEWPOINT",
     "icon": null,
     "description": "Punto panorámico sobre el lago Salto Grande y los islotes formados por el embalse, rodeado por el paisaje de la reserva.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/otros-atractivos/",
-    "notes": "Mirador confirmado por la oferta oficial. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Mirador confirmado por la oferta oficial. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

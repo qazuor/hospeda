@@ -2893,6 +2893,198 @@
       "howToObtainEs": "Texto libre que se devuelve cuando salta el limiter de admin."
     },
     {
+      "name": "API_RATE_LIMIT_PROTECTED_ENABLED",
+      "description": "Enable the per-IP anti-abuse limiter for protected endpoints",
+      "descriptionEs": "Activa el limiter anti-abuso por IP para endpoints protected",
+      "type": "boolean",
+      "required": false,
+      "secret": false,
+      "defaultValue": "true",
+      "exampleValue": "true",
+      "apps": [
+        "api"
+      ],
+      "category": "api-config",
+      "howToObtain": "Default true. Coarse IP ceiling on /api/v1/protected/*. The real governor is the per-user sliding window (200/60s) in routes/index.ts.",
+      "howToObtainEs": "Por defecto true. Techo grueso por IP en /api/v1/protected/*. El que gobierna de verdad es el sliding window por usuario (200/60s) en routes/index.ts."
+    },
+    {
+      "name": "API_RATE_LIMIT_PROTECTED_WINDOW_MS",
+      "description": "Protected rate-limit window duration in milliseconds",
+      "descriptionEs": "Duración de la ventana de rate-limit de protected, en ms",
+      "type": "number",
+      "required": false,
+      "secret": false,
+      "defaultValue": "900000",
+      "exampleValue": "900000",
+      "apps": [
+        "api"
+      ],
+      "category": "api-config",
+      "howToObtain": "Window for the protected IP counter (ms). Default 900000 (15 min).",
+      "howToObtainEs": "Ventana del contador por IP de protected (ms). Por defecto 900000 (15 min)."
+    },
+    {
+      "name": "API_RATE_LIMIT_PROTECTED_MAX_REQUESTS",
+      "description": "Maximum requests allowed per window for the protected IP limiter",
+      "descriptionEs": "Máximo de requests por ventana en el limiter por IP de protected",
+      "type": "number",
+      "required": false,
+      "secret": false,
+      "defaultValue": "2000",
+      "exampleValue": "2000",
+      "apps": [
+        "api"
+      ],
+      "category": "api-config",
+      "howToObtain": "Max protected requests per IP per window. Default 2000/15min — deliberately generous so it only catches gross abuse. Lowering it penalises CGNAT users (Argentine mobile carriers share one IP across thousands of users).",
+      "howToObtainEs": "Máximo de requests protected por IP por ventana. Por defecto 2000/15min: generoso a propósito, solo atrapa abuso grosero. Bajarlo penaliza a usuarios detrás de CGNAT (los carriers móviles argentinos comparten una IP entre miles de usuarios)."
+    },
+    {
+      "name": "API_RATE_LIMIT_PROTECTED_MESSAGE",
+      "description": "Error message returned when the protected rate limit is exceeded",
+      "descriptionEs": "Mensaje de error cuando se excede el rate limit de protected",
+      "type": "string",
+      "required": false,
+      "secret": false,
+      "defaultValue": "Too many requests, please try again later.",
+      "exampleValue": "Too many requests, please try again later.",
+      "apps": [
+        "api"
+      ],
+      "category": "api-config",
+      "howToObtain": "Free text returned when the protected IP limiter trips.",
+      "howToObtainEs": "Texto libre que se devuelve cuando salta el limiter por IP de protected."
+    },
+    {
+      "name": "API_RATE_LIMIT_BILLING_ENABLED",
+      "description": "Enable dedicated rate limiter for billing endpoints",
+      "descriptionEs": "Activa el rate limiter dedicado para endpoints de billing",
+      "type": "boolean",
+      "required": false,
+      "secret": false,
+      "defaultValue": "true",
+      "exampleValue": "true",
+      "apps": [
+        "api"
+      ],
+      "category": "api-config",
+      "howToObtain": "Default true. Restrictive per-IP throttle on POST requests to /billing/ paths — financial operations. Almost never disable in prod.",
+      "howToObtainEs": "Por defecto true. Throttle restrictivo por IP en los POST a rutas /billing/ (operaciones financieras). Casi nunca se desactiva en prod."
+    },
+    {
+      "name": "API_RATE_LIMIT_BILLING_WINDOW_MS",
+      "description": "Billing rate-limit window duration in milliseconds",
+      "descriptionEs": "Duración de la ventana de rate-limit de billing, en ms",
+      "type": "number",
+      "required": false,
+      "secret": false,
+      "defaultValue": "900000",
+      "exampleValue": "900000",
+      "apps": [
+        "api"
+      ],
+      "category": "api-config",
+      "howToObtain": "Window for the billing counter (ms). Default 900000 (15 min).",
+      "howToObtainEs": "Ventana del contador de billing (ms). Por defecto 900000 (15 min)."
+    },
+    {
+      "name": "API_RATE_LIMIT_BILLING_MAX_REQUESTS",
+      "description": "Maximum requests allowed per window for the billing limiter",
+      "descriptionEs": "Máximo de requests por ventana en el limiter de billing",
+      "type": "number",
+      "required": false,
+      "secret": false,
+      "defaultValue": "10",
+      "exampleValue": "10",
+      "apps": [
+        "api"
+      ],
+      "category": "api-config",
+      "howToObtain": "Max billing POSTs per IP per window. Default 10/15min — deliberately tight: these are payment mutations, not browsing.",
+      "howToObtainEs": "Máximo de POSTs de billing por IP por ventana. Por defecto 10/15min: apretado a propósito, son mutaciones de pago, no navegación."
+    },
+    {
+      "name": "API_RATE_LIMIT_BILLING_MESSAGE",
+      "description": "Error message returned when the billing rate limit is exceeded",
+      "descriptionEs": "Mensaje de error cuando se excede el rate limit de billing",
+      "type": "string",
+      "required": false,
+      "secret": false,
+      "defaultValue": "Too many billing requests, please try again later.",
+      "exampleValue": "Too many billing requests, please try again later.",
+      "apps": [
+        "api"
+      ],
+      "category": "api-config",
+      "howToObtain": "Free text returned when the billing limiter trips.",
+      "howToObtainEs": "Texto libre que se devuelve cuando salta el limiter de billing."
+    },
+    {
+      "name": "API_RATE_LIMIT_WEBHOOK_ENABLED",
+      "description": "Enable dedicated rate limiter for webhook and machine-to-machine endpoints",
+      "descriptionEs": "Activa el rate limiter dedicado para webhooks y endpoints máquina-a-máquina",
+      "type": "boolean",
+      "required": false,
+      "secret": false,
+      "defaultValue": "true",
+      "exampleValue": "true",
+      "apps": [
+        "api"
+      ],
+      "category": "api-config",
+      "howToObtain": "Default true. High-throughput bucket for /webhooks/ paths. Also governs the ai-inbound (/api/v1/ai/*) and make-callback (/api/v1/integrations/make/*) tiers, which map to this same bucket — tuning it moves all three.",
+      "howToObtainEs": "Por defecto true. Bucket de alto throughput para rutas /webhooks/. También gobierna los tiers ai-inbound (/api/v1/ai/*) y make-callback (/api/v1/integrations/make/*), que mapean a este mismo bucket: tocarlo mueve los tres."
+    },
+    {
+      "name": "API_RATE_LIMIT_WEBHOOK_WINDOW_MS",
+      "description": "Webhook rate-limit window duration in milliseconds",
+      "descriptionEs": "Duración de la ventana de rate-limit de webhooks, en ms",
+      "type": "number",
+      "required": false,
+      "secret": false,
+      "defaultValue": "60000",
+      "exampleValue": "60000",
+      "apps": [
+        "api"
+      ],
+      "category": "api-config",
+      "howToObtain": "Window for the webhook counter (ms). Default 60000 (1 min).",
+      "howToObtainEs": "Ventana del contador de webhooks (ms). Por defecto 60000 (1 min)."
+    },
+    {
+      "name": "API_RATE_LIMIT_WEBHOOK_MAX_REQUESTS",
+      "description": "Maximum requests allowed per window for the webhook limiter",
+      "descriptionEs": "Máximo de requests por ventana en el limiter de webhooks",
+      "type": "number",
+      "required": false,
+      "secret": false,
+      "defaultValue": "100",
+      "exampleValue": "100",
+      "apps": [
+        "api"
+      ],
+      "category": "api-config",
+      "howToObtain": "Max webhook requests per IP per window. Default 100/min. Raise if a provider (e.g. MercadoPago) bursts retries above this.",
+      "howToObtainEs": "Máximo de requests de webhook por IP por ventana. Por defecto 100/min. Subilo si un proveedor (ej. MercadoPago) hace ráfagas de reintentos por encima."
+    },
+    {
+      "name": "API_RATE_LIMIT_WEBHOOK_MESSAGE",
+      "description": "Error message returned when the webhook rate limit is exceeded",
+      "descriptionEs": "Mensaje de error cuando se excede el rate limit de webhooks",
+      "type": "string",
+      "required": false,
+      "secret": false,
+      "defaultValue": "Too many webhook requests, please try again later.",
+      "exampleValue": "Too many webhook requests, please try again later.",
+      "apps": [
+        "api"
+      ],
+      "category": "api-config",
+      "howToObtain": "Free text returned when the webhook limiter trips.",
+      "howToObtainEs": "Texto libre que se devuelve cuando salta el limiter de webhooks."
+    },
+    {
       "name": "API_SECURITY_ENABLED",
       "description": "Enable the security-headers middleware",
       "descriptionEs": "Activa el middleware de security-headers",

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "162-point-of-interest-ceibas_paseos_lancha",
     "slug": "ceibas_paseos_lancha",
-    "lat": -33.0121274,
-    "long": -58.50490800000001,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Experiencias náuticas por cursos de agua tranquilos y brazos internos del delta para observar paisaje, fauna y vegetación.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/ceibas",
-    "notes": "Oferta general confirmada. Falta identificar muelles, prestadores y circuitos autorizados. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Oferta general confirmada. Falta identificar muelles, prestadores y circuitos autorizados.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

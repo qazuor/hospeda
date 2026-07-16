@@ -25,7 +25,8 @@ const SOURCE_LABEL_KEYS: Record<OccupancySourceEnum, TranslationKey> = {
     [OccupancySourceEnum.GOOGLE_CALENDAR]:
         'admin-pages.accommodations.occupancy.sourceLabels.GOOGLE_CALENDAR',
     [OccupancySourceEnum.AIRBNB]: 'admin-pages.accommodations.occupancy.sourceLabels.AIRBNB',
-    [OccupancySourceEnum.BOOKING]: 'admin-pages.accommodations.occupancy.sourceLabels.BOOKING'
+    [OccupancySourceEnum.BOOKING]: 'admin-pages.accommodations.occupancy.sourceLabels.BOOKING',
+    [OccupancySourceEnum.OTHER]: 'admin-pages.accommodations.occupancy.sourceLabels.OTHER'
 };
 
 /**

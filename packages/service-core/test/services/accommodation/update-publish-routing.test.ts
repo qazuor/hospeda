@@ -40,9 +40,11 @@ function createPublishDeps(
     overrides: Partial<AccommodationPublishDeps> = {}
 ): AccommodationPublishDeps {
     return {
-        checkEligibility: vi.fn().mockResolvedValue('first_publish'),
-        startTrial: vi.fn().mockResolvedValue({ subscriptionId: 'qzpay-sub-001' }),
-        cancelTrial: vi.fn().mockResolvedValue(undefined),
+        // 'has_active_sub' is the only eligibility that still permits publishing.
+        // This default used to be 'first_publish', back when that meant "grant a
+        // no-card trial and go live"; card-first rejects it to the plans page just
+        // like 'subscription_required', so it is no longer a publishable owner.
+        checkEligibility: vi.fn().mockResolvedValue('has_active_sub'),
         ...overrides
     };
 }
@@ -128,12 +130,9 @@ describe('AccommodationService.update — publish routing', () => {
         });
 
         expect(result.error).toBeUndefined();
-        // Confirm the publish path was taken (eligibility was checked + trial started)
+        // Confirm the publish path was taken. Since HOS-171 publish() does not touch
+        // billing, so the eligibility check is what proves the routing happened.
         expect(deps.checkEligibility).toHaveBeenCalledWith('user-002', expect.anything());
-        expect(deps.startTrial).toHaveBeenCalledWith({
-            ownerId: 'user-002',
-            accommodationId: 'acc-publish'
-        });
     });
 
     it('promotes a PRIVATE draft to PUBLIC when activated without an explicit visibility', async () => {
@@ -197,7 +196,6 @@ describe('AccommodationService.update — publish routing', () => {
 
         // Since current is already ACTIVE, the override falls through to super.update
         // and no publish work happens.
-        expect(deps.startTrial).not.toHaveBeenCalled();
         expect(deps.checkEligibility).not.toHaveBeenCalled();
     });
 
@@ -220,7 +218,7 @@ describe('AccommodationService.update — publish routing', () => {
             name: 'New name'
         });
 
-        expect(deps.startTrial).not.toHaveBeenCalled();
+        expect(deps.checkEligibility).not.toHaveBeenCalled();
         expect(accommodationModel.update).toHaveBeenCalled();
     });
 });

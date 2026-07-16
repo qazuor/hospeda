@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "625-point-of-interest-pasarela_chaviyu",
     "slug": "pasarela_chaviyu",
-    "lat": -31.0670978,
-    "long": -57.902121199999996,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Paseo peatonal elevado de aproximadamente 150 metros diseñado para recorrer la reserva y observar sus ambientes con menor impacto.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.federacion.tur.ar/otros-atractivos/; https://www.federacion.tur.ar/reserva-natural-chaviyu/",
-    "notes": "Longitud y función confirmadas. Falta geocodificar inicio y final. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://www.federacion.tur.ar/otros-atractivos/",
+    "notes": "Longitud y función confirmadas. Falta geocodificar inicio y final.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

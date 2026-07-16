@@ -127,17 +127,6 @@ describe('Subject Builder', () => {
                 expect(result).toBe('Tu período de prueba termina pronto');
             });
 
-            it('should return trial expired subject', () => {
-                // Arrange
-                const data = {};
-
-                // Act
-                const result = getSubject(NotificationType.TRIAL_EXPIRED, data);
-
-                // Assert
-                expect(result).toBe('Tu período de prueba ha finalizado');
-            });
-
             it('should return admin payment failure subject with userEmail', () => {
                 // Arrange
                 const data = { userEmail: 'user@example.com' };
@@ -354,6 +343,40 @@ describe('Subject Builder', () => {
                 // Assert — placeholder preserved when variable missing
                 expect(result).toContain('{thresholdPct}');
                 expect(result).toContain('global');
+            });
+        });
+
+        // Broken iCal feed alert to the host (HOS-162 Phase 3)
+        describe('ACCOMMODATION_CALENDAR_FEED_BROKEN subject', () => {
+            it('should replace providerLabel and accommodationName', () => {
+                // Arrange
+                const data = { providerLabel: 'Airbnb', accommodationName: 'Cabañas del Río' };
+
+                // Act
+                const result = getSubject(
+                    NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN,
+                    data
+                );
+
+                // Assert
+                expect(result).toBe(
+                    'Tu calendario de Airbnb dejó de sincronizarse — Cabañas del Río'
+                );
+            });
+
+            it('should preserve placeholders when data is missing', () => {
+                // Arrange
+                const data = {};
+
+                // Act
+                const result = getSubject(
+                    NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN,
+                    data
+                );
+
+                // Assert
+                expect(result).toContain('{providerLabel}');
+                expect(result).toContain('{accommodationName}');
             });
         });
     });

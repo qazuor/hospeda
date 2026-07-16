@@ -395,10 +395,11 @@ describe('NotificationService', () => {
                     expirationDate: '2024-12-31'
                 },
                 {
-                    type: NotificationType.TRIAL_EXPIRED,
+                    type: NotificationType.TRIAL_ENDING_REMINDER,
                     ...basePayload,
                     planName: 'Premium',
                     trialEndDate: '2024-12-15',
+                    daysRemaining: 3,
                     upgradeUrl: 'https://hospeda.com/upgrade'
                 },
                 {

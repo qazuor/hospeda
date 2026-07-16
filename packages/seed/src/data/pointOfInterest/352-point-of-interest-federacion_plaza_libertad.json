@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://mapcarta.com/es/W1101824521; https://mapcarta.com/es/N10082753555",
+    "source": "https://mapcarta.com/es/W1101824521",
     "notes": "Existencia y ubicación relativa confirmadas. Falta recuperar coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

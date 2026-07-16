@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "488-point-of-interest-molino_astegar",
     "slug": "molino_astegar",
-    "lat": -32.3055515,
-    "long": -59.1446774,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Antiguo edificio industrial del corredor ferroviario, actualmente vinculado con la Cooperativa Apícola del Tala.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=content%2Fun-lugar-para-descubrir",
-    "notes": "Edificio y uso general confirmados. Falta geocodificar y validar atención al público. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Edificio y uso general confirmados. Falta geocodificar y validar atención al público.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "086-point-of-interest-biblioteca_rivadavia",
     "slug": "biblioteca_rivadavia",
-    "lat": -30.9856574,
-    "long": -57.9194395,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Biblioteca popular y espacio cultural de consulta, lectura y actividades educativas.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
-    "notes": "Existencia confirmada en el plano turístico. Falta dirección y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Existencia confirmada en el plano turístico. Falta dirección y geocodificación.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

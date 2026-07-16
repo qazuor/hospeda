@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "435-point-of-interest-ibicuy_plaza_san_martin",
     "slug": "ibicuy_plaza_san_martin",
-    "lat": -33.7424848,
-    "long": -59.157665400000006,
+    "lat": null,
+    "long": null,
     "type": "PLAZA",
     "icon": null,
     "description": "Plaza principal de Ibicuy con juegos infantiles, arbolado, espacios de descanso e iluminación para paseo nocturno.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://ibicuy.gob.ar/?q=content%2Fque-visitar",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

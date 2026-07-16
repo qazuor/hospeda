@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "604-point-of-interest-parque_san_martin",
     "slug": "parque_san_martin",
-    "lat": -32.6852152,
-    "long": -58.8909721,
+    "lat": null,
+    "long": null,
     "type": "PARK",
     "icon": null,
     "description": "Parque con juegos infantiles integrado al gran predio recreativo y cultural de la estación.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://urdinarrain.tur.ar/que-hacer/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

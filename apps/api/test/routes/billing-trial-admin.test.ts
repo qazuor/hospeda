@@ -1,10 +1,20 @@
 /**
  * Unit tests for Trial Check Expiry Admin Authentication
  *
- * Tests the admin-only authentication check for the trial expiry endpoint.
- * Verifies that only ADMIN and SUPER_ADMIN roles can access the endpoint.
+ * Tests the admin-only authentication check for the trial reconciliation
+ * endpoint. Verifies that only ADMIN and SUPER_ADMIN roles can access the
+ * endpoint.
  *
  * Endpoint: POST /api/v1/protected/billing/trial/check-expiry
+ *
+ * HOS-171: this endpoint used to trigger a blind cancel-at-expiry sweep
+ * (`blockExpiredTrials`). It now triggers `reconcileExpiredTrials`, which
+ * re-reads each elapsed trial's MercadoPago preapproval and mirrors the
+ * provider's verdict (convert / defer to dunning / mirror cancel-or-pause) —
+ * see `TrialService.reconcileExpiredTrials` for the full decision table.
+ * The route-handler tests here only cover the HTTP/auth/response-shape
+ * surface; the reconciliation logic itself is covered by
+ * `test/services/trial.service.test.ts`.
  *
  * Test Coverage:
  * - Non-admin users receive 403 Forbidden
@@ -60,7 +70,7 @@ vi.mock('../../src/middlewares/actor', () => ({
 
 // Mock trial service
 const mockTrialService = {
-    blockExpiredTrials: vi.fn()
+    reconcileExpiredTrials: vi.fn()
 };
 
 vi.mock('../../src/services/trial.service', () => ({
@@ -84,6 +94,30 @@ vi.mock('../../src/middlewares/billing', () => ({
     requireBilling: vi.fn(async (_c: any, next: any) => next())
 }));
 
+// Mock qzpay-logger (passed into createMercadoPagoAdapter)
+vi.mock('../../src/lib/qzpay-logger.js', () => ({
+    qzpayLogger: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn()
+    }
+}));
+
+// Mock @repo/billing's createMercadoPagoAdapter: handleCheckExpiry builds its
+// own MP adapter (mirroring the trial-reconcile cron) and passes it to
+// TrialService.reconcileExpiredTrials as `paymentAdapter`. TrialService
+// itself is mocked above, so the adapter's shape doesn't matter here — this
+// stub only exists so the real factory (which reads env vars and throws if
+// missing) is never invoked.
+const mockPaymentAdapter = {
+    subscriptions: { retrieve: vi.fn() }
+};
+
+vi.mock('@repo/billing', () => ({
+    createMercadoPagoAdapter: vi.fn(() => mockPaymentAdapter)
+}));
+
 describe('Trial Check Expiry - Admin Authentication', () => {
     let mockContext: Partial<Context>;
 
@@ -99,7 +133,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
         };
 
         // Reset service mocks
-        mockTrialService.blockExpiredTrials.mockResolvedValue(5);
+        mockTrialService.reconcileExpiredTrials.mockResolvedValue(5);
     });
 
     describe('Authorization - Access Control', () => {
@@ -120,7 +154,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
 
             // Assert - handler runs successfully (auth middleware would block before reaching here)
             expect(result).toHaveProperty('success', true);
-            expect(mockTrialService.blockExpiredTrials).toHaveBeenCalledTimes(1);
+            expect(mockTrialService.reconcileExpiredTrials).toHaveBeenCalledTimes(1);
         });
 
         it('should allow access for guest user when billing enabled (auth enforced by route middleware)', async () => {
@@ -174,12 +208,12 @@ describe('Trial Check Expiry - Admin Authentication', () => {
 
             // Assert
             expect(result).toHaveProperty('success', true);
-            expect(result).toHaveProperty('blockedCount', 5);
+            expect(result).toHaveProperty('reconciledCount', 5);
             expect(result).toHaveProperty('message');
-            expect(result.message).toContain('5 expired trial');
+            expect(result.message).toContain('5 elapsed trial');
 
             // Verify service was called
-            expect(mockTrialService.blockExpiredTrials).toHaveBeenCalledTimes(1);
+            expect(mockTrialService.reconcileExpiredTrials).toHaveBeenCalledTimes(1);
         });
 
         it('should allow access for super admin user', async () => {
@@ -190,15 +224,15 @@ describe('Trial Check Expiry - Admin Authentication', () => {
                 role: RoleEnum.SUPER_ADMIN
             });
 
-            mockTrialService.blockExpiredTrials.mockResolvedValue(3);
+            mockTrialService.reconcileExpiredTrials.mockResolvedValue(3);
 
             // Act
             const result = await handleCheckExpiry(mockContext as Context);
 
             // Assert
             expect(result).toHaveProperty('success', true);
-            expect(result).toHaveProperty('blockedCount', 3);
-            expect(mockTrialService.blockExpiredTrials).toHaveBeenCalledTimes(1);
+            expect(result).toHaveProperty('reconciledCount', 3);
+            expect(mockTrialService.reconcileExpiredTrials).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -234,7 +268,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
                 role: RoleEnum.ADMIN
             });
 
-            mockTrialService.blockExpiredTrials.mockRejectedValue(
+            mockTrialService.reconcileExpiredTrials.mockRejectedValue(
                 new Error('Database connection failed')
             );
 
@@ -256,7 +290,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
                 role: RoleEnum.ADMIN
             });
 
-            mockTrialService.blockExpiredTrials.mockRejectedValue('Unknown error');
+            mockTrialService.reconcileExpiredTrials.mockRejectedValue('Unknown error');
 
             // Act & Assert
             await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(HTTPException);
@@ -268,7 +302,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
     });
 
     describe('Response Structure', () => {
-        it('should return correct response structure with zero blocked trials', async () => {
+        it('should return correct response structure with zero reconciled trials', async () => {
             // Arrange
             mockGetActorFromContext.mockReturnValue({
                 id: 'admin-1',
@@ -276,20 +310,20 @@ describe('Trial Check Expiry - Admin Authentication', () => {
                 role: RoleEnum.ADMIN
             });
 
-            mockTrialService.blockExpiredTrials.mockResolvedValue(0);
+            mockTrialService.reconcileExpiredTrials.mockResolvedValue(0);
 
             // Act
             const result = await handleCheckExpiry(mockContext as Context);
 
             // Assert
             expect(result).toEqual({
-                blockedCount: 0,
-                message: 'Successfully blocked 0 expired trial(s)',
+                reconciledCount: 0,
+                message: 'Successfully reconciled 0 elapsed trial(s)',
                 success: true
             });
         });
 
-        it('should return correct response structure with multiple blocked trials', async () => {
+        it('should return correct response structure with multiple reconciled trials', async () => {
             // Arrange
             mockGetActorFromContext.mockReturnValue({
                 id: 'admin-1',
@@ -297,15 +331,36 @@ describe('Trial Check Expiry - Admin Authentication', () => {
                 role: RoleEnum.ADMIN
             });
 
-            mockTrialService.blockExpiredTrials.mockResolvedValue(42);
+            mockTrialService.reconcileExpiredTrials.mockResolvedValue(42);
 
             // Act
             const result = await handleCheckExpiry(mockContext as Context);
 
             // Assert
             expect(result.success).toBe(true);
-            expect(result.blockedCount).toBe(42);
-            expect(result.message).toBe('Successfully blocked 42 expired trial(s)');
+            expect(result.reconciledCount).toBe(42);
+            expect(result.message).toBe('Successfully reconciled 42 elapsed trial(s)');
+        });
+
+        it('should build the MP adapter and pass it through to reconcileExpiredTrials as paymentAdapter (HOS-171)', async () => {
+            // Arrange — handleCheckExpiry must construct the same kind of MP
+            // adapter as the trial-reconcile cron so the reconciler can re-read
+            // each preapproval's live status; verify it flows through untouched.
+            mockGetActorFromContext.mockReturnValue({
+                id: 'admin-1',
+                permissions: Object.values(PermissionEnum),
+                role: RoleEnum.ADMIN
+            });
+
+            mockTrialService.reconcileExpiredTrials.mockResolvedValue(1);
+
+            // Act
+            await handleCheckExpiry(mockContext as Context);
+
+            // Assert
+            expect(mockTrialService.reconcileExpiredTrials).toHaveBeenCalledWith({
+                paymentAdapter: mockPaymentAdapter
+            });
         });
     });
 
@@ -341,7 +396,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
                 role: RoleEnum.USER
             });
 
-            const serviceSpy = vi.spyOn(mockTrialService, 'blockExpiredTrials');
+            const serviceSpy = vi.spyOn(mockTrialService, 'reconcileExpiredTrials');
 
             // Act - handler executes because auth check is in route middleware, not handler
             const result = await handleCheckExpiry(mockContext as Context);
@@ -377,12 +432,12 @@ describe('Trial Check Expiry - Admin Authentication', () => {
                 });
 
                 // Reset spy
-                mockTrialService.blockExpiredTrials.mockClear();
+                mockTrialService.reconcileExpiredTrials.mockClear();
 
                 // Act & Assert - all roles succeed since handler has no role check
                 const result = await handleCheckExpiry(mockContext as Context);
                 expect(result.success).toBe(true);
-                expect(mockTrialService.blockExpiredTrials).toHaveBeenCalled();
+                expect(mockTrialService.reconcileExpiredTrials).toHaveBeenCalled();
             }
         });
     });

@@ -103,7 +103,14 @@ const ALLOWLIST = Object.freeze({
     // drop-shadow that separates the sticky band from content scrolling under
     // it (replaces the old wave-SVG shadow). No precomputed foreground-alpha
     // token exists, so it follows the same residual pattern as the entries above.
-    'src/components/shared/ui/WaveHeader.astro': 1
+    'src/components/shared/ui/WaveHeader.astro': 1,
+    // HOS-175: occupancy calendar event bars derive their bg/text/border tints
+    // from oklch(from var(--bar-color) ...) where `--bar-color` is set per
+    // occupancy source (manual/google/airbnb/booking/other) on the bar class.
+    // The base color is resolved at RUNTIME from the source class, so no single
+    // precomputed alpha token applies — same theme-adaptive residual pattern as
+    // the entries above.
+    'src/components/host/editor/CalendarSection.module.css': 3
 });
 
 // ============================================================================

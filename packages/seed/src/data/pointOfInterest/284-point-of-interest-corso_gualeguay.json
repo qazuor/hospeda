@@ -26,7 +26,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://corso.gualeguay.gob.ar/; https://www.entrerios.tur.ar/localidades-1/gualeguay",
+    "source": "https://corso.gualeguay.gob.ar/",
     "notes": "Evento confirmado; comparte ubicación general con el Corsódromo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

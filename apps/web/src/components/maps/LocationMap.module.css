@@ -117,6 +117,28 @@
     transform: translateY(0);
 }
 
+/* HOS-146 — multi-marker (POI) mode only: the hint stays a pure visual, and
+ * activation moves to a capture-phase pointerdown on the map root (see
+ * MultiMarkerMapInner.client.tsx's "Activation" docs). A click-catching overlay
+ * on a map made of ~97 clickable pins costs the first click on every one of
+ * them; approximate/exact (0-1 markers) keep the overlay above as-is.
+ * Hover styling is driven from `.mapWrapper` because a `pointer-events: none`
+ * element never matches `:hover` itself — the overlay covers the whole wrapper,
+ * so the hover target is the same region either way. */
+.activationHintPassive {
+    pointer-events: none;
+    cursor: default;
+}
+
+.mapWrapper:hover .activationHintPassive {
+    background-color: oklch(0 0 0 / 0.25);
+}
+
+.mapWrapper:hover .activationHintPassive .activationHintText {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 @media (prefers-reduced-motion: reduce) {
     .activationHint,
     .activationHintText {
@@ -128,4 +150,76 @@
     .container {
         scroll-behavior: auto;
     }
+}
+
+/* ─── Multi-marker POI pins (HOS-146, hue per-category HOS-182) ───────────
+ * `.poiPinReset` strips Leaflet's default white divIcon box, matching the
+ * `.destPinReset` precedent in ListingMap.module.css. PRIMARY vs NEARBY are
+ * distinguished by BOTH size (set via divIcon iconSize, inline) and
+ * fill-vs-outline shape — not color alone, so the distinction survives
+ * grayscale/color-blind viewing (WCAG). The category hue rides ON TOP of
+ * that distinction: it is per-marker data, so `background-color` (PRIMARY)
+ * and `border-color` (NEARBY) are set INLINE by `getPoiDivIcon`
+ * (MultiMarkerMapInner.client.tsx), never here — these classes only carry
+ * the structural bits that are the SAME for every marker of a given
+ * relation. */
+.poiPinReset {
+    background: transparent;
+    border: 0;
+}
+
+.poiPin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-card);
+}
+
+.poiPin svg {
+    display: block;
+}
+
+/* PRIMARY: solid fill (hue set inline), card-colored ring — the "city view"
+ * pins. `background-color` is deliberately NOT declared here — it is set
+ * inline per-marker (category hue, or `--brand-primary` fallback). */
+.poiPinPrimary {
+    border: 2px solid var(--core-card);
+}
+
+/* NEARBY: outlined (hue set inline), card-surface fill — visually lighter
+ * than PRIMARY so the city core reads as the focal set. `border-color` is
+ * deliberately NOT declared here — it is set inline per-marker (category
+ * hue, or `--brand-primary` fallback). */
+.poiPinNearby {
+    background-color: var(--core-card);
+    border-width: 2px;
+    border-style: solid;
+    opacity: 0.85;
+}
+
+.poiPopupTitle {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+}
+
+.poiPopupType {
+    display: block;
+    margin-top: 2px;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+/* "Ver alrededores" toggle — floats over the top-right corner of the map,
+ * above Leaflet's own zoom control (top-left) so they never collide. */
+.surroundingsToggleWrapper {
+    position: absolute;
+    top: var(--space-3, 12px);
+    right: var(--space-3, 12px);
+    z-index: 500;
 }

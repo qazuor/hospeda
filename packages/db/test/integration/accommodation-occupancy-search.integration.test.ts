@@ -11,7 +11,8 @@
  *   `searchWithRelations()`) implements the intended half-open-range
  *   semantics and stays retrocompatible when no dates are supplied.
  *
- * Coverage (the three acceptance criteria from the HOS-43 recon):
+ * Coverage (the three acceptance criteria from the HOS-43 recon, plus one
+ * HOS-162 regression case):
  *   1. Occupied 10→12 (blocked days: 10, 11), searched with
  *      checkIn=10/checkOut=12 → the accommodation is EXCLUDED (both blocked
  *      days fall inside the half-open search range).
@@ -21,6 +22,11 @@
  *   3. Same occupancy, searched with NO checkIn/checkOut → the accommodation
  *      is INCLUDED (retrocompat: the filter must be a no-op when either date
  *      is missing, matching pre-HOS-43 behavior).
+ *   4. HOS-162: a date with TWO occupancy rows (same date, two different
+ *      sync sources, e.g. AIRBNB + BOOKING) still excludes the accommodation
+ *      — the `NOT EXISTS` filter only checks for presence of any matching
+ *      row, so it is unaffected by the source-scoped unique index allowing
+ *      multiple rows per date.
  */
 import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model.ts';
@@ -204,6 +210,71 @@ describe('AccommodationModel.search — checkIn/checkOut occupancy filter (HOS-4
 
             const ids = result.items.map((item) => item.id);
             expect(ids).toContain(accommodation.id);
+        });
+    });
+
+    it('HOS-162: excludes the accommodation when a date has TWO occupancy rows from different sources', async () => {
+        await withTestTransaction(async (tx) => {
+            const ownerPayload = testData.user({ role: 'HOST' });
+            const [owner] = await tx.insert(users).values(ownerPayload).returning();
+            if (!owner) throw new Error('Failed to insert owner');
+
+            const destinationPayload = testData.destination({ ownerId: owner.id });
+            const [destination] = await tx
+                .insert(destinations)
+                .values(destinationPayload)
+                .returning();
+            if (!destination) throw new Error('Failed to insert destination');
+
+            const uid = crypto.randomUUID().slice(0, 8);
+            const [accommodation] = await tx
+                .insert(accommodations)
+                .values({
+                    ownerId: owner.id,
+                    destinationId: destination.id,
+                    slug: `hos162-occupancy-multisource-${uid}`,
+                    name: 'HOS-162 Multi-Source Occupancy Test',
+                    summary: 'Regression test for the cross-provider occupancy collision fix.',
+                    type: 'HOUSE',
+                    description:
+                        'Accommodation inserted for the HOS-162 multi-source occupancy filter test.',
+                    lifecycleState: 'ACTIVE'
+                })
+                .returning();
+            if (!accommodation) throw new Error('Failed to insert accommodation');
+
+            // 2024-01-10 is blocked by BOTH AIRBNB and BOOKING — two rows,
+            // same date, different source. Allowed since HOS-162 scoped the
+            // unique index to (accommodationId, date, source).
+            await tx.insert(accommodationOccupancy).values([
+                {
+                    accommodationId: accommodation.id,
+                    date: '2024-01-10',
+                    isBlocked: true,
+                    source: 'AIRBNB',
+                    createdById: owner.id
+                },
+                {
+                    accommodationId: accommodation.id,
+                    date: '2024-01-10',
+                    isBlocked: true,
+                    source: 'BOOKING',
+                    createdById: owner.id
+                }
+            ]);
+
+            const model = new AccommodationModel();
+            const result = await model.search(
+                {
+                    destinationId: destination.id,
+                    checkIn: new Date('2024-01-10'),
+                    checkOut: new Date('2024-01-11')
+                },
+                tx
+            );
+
+            const ids = result.items.map((item) => item.id);
+            expect(ids).not.toContain(accommodation.id);
         });
     });
 });

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "453-point-of-interest-la_sonada_footgolf",
     "slug": "la_sonada_footgolf",
-    "lat": null,
-    "long": null,
+    "lat": -32.3132826,
+    "long": -59.132246900000005,
     "type": "STADIUM",
     "icon": null,
     "description": "Complejo recreativo con footgolf, golf, vóley y propuesta gastronómica criolla.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.rosariodeltala.gob.ar/?q=que-hacer",
-    "notes": "Prestador listado oficialmente. Falta validar atención y coordenadas.",
+    "notes": "Prestador listado oficialmente. Falta validar atención y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

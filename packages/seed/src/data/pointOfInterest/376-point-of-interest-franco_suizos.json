@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "376-point-of-interest-franco_suizos",
     "slug": "franco_suizos",
-    "lat": -32.195297499999995,
-    "long": -58.2431496,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Emprendimiento familiar vinculado con la producción vitivinícola, quesos y dulce de leche, integrado a los paseos productivos de San José.",
@@ -34,7 +34,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sanjose.gob.ar/san-jose-se-posiciona-como-uno-de-los-destinos-preferidos-de-la-provincia-de-entre-rios-para-disfrutar-del-ocio-y-descanso-sobre-la-orilla-del-rio-uruguay/",
-    "notes": "Actividad turística-productiva confirmada; falta domicilio, condiciones de visita y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Actividad turística-productiva confirmada; falta domicilio, condiciones de visita y coordenadas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

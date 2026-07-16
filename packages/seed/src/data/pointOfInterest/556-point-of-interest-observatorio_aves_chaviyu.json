@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "556-point-of-interest-observatorio_aves_chaviyu",
     "slug": "observatorio_aves_chaviyu",
-    "lat": -31.0670978,
-    "long": -57.902121199999996,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Observatorio integrado a la pasarela de la reserva, preparado para contemplar aves sin alterar su comportamiento.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/otros-atractivos/",
-    "notes": "Existencia y finalidad confirmadas. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia y finalidad confirmadas. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

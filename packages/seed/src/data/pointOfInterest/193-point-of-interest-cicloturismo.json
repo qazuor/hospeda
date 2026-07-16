@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "193-point-of-interest-cicloturismo",
     "slug": "cicloturismo",
-    "lat": -33.7163973,
-    "long": -58.6620273,
+    "lat": -33.695478,
+    "long": -58.653771600000006,
     "type": "STADIUM",
     "icon": null,
     "description": "Recorridos en bicicleta por caminos, puentes, costas y áreas rurales del municipio.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.villaparanacito.gob.ar/turismo/actividades",
-    "notes": "Actividad oficial vigente. Falta digitalizar rutas y estado de caminos. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Actividad oficial vigente. Falta digitalizar rutas y estado de caminos. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

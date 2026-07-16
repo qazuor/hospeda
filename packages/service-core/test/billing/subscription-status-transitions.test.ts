@@ -47,12 +47,17 @@ const LEGAL_TRANSITIONS: ReadonlyMap<
 > = new Map([
     [
         SubscriptionStatusEnum.PENDING_PROVIDER,
-        new Set([SubscriptionStatusEnum.ACTIVE, SubscriptionStatusEnum.ABANDONED])
+        new Set([
+            SubscriptionStatusEnum.ACTIVE,
+            SubscriptionStatusEnum.TRIALING,
+            SubscriptionStatusEnum.ABANDONED
+        ])
     ],
     [
         SubscriptionStatusEnum.TRIALING,
         new Set([
             SubscriptionStatusEnum.ACTIVE,
+            SubscriptionStatusEnum.PAST_DUE,
             SubscriptionStatusEnum.CANCELLED,
             SubscriptionStatusEnum.EXPIRED,
             SubscriptionStatusEnum.PAUSED
@@ -365,8 +370,19 @@ describe('getAllowedTransitions — utility', () => {
         // Assert
         expect(result).toBeDefined();
         expect(result?.has(SubscriptionStatusEnum.ACTIVE)).toBe(true);
+        expect(result?.has(SubscriptionStatusEnum.TRIALING)).toBe(true);
         expect(result?.has(SubscriptionStatusEnum.ABANDONED)).toBe(true);
-        expect(result?.size).toBe(2);
+        expect(result?.size).toBe(3);
+    });
+
+    it('permits pending_provider → trialing (AC-4 — card-first authorization)', () => {
+        // Arrange & Act
+        const result = checkSubscriptionStatusTransition({
+            from: SubscriptionStatusEnum.PENDING_PROVIDER,
+            to: SubscriptionStatusEnum.TRIALING
+        });
+        // Assert
+        expect(result.valid).toBe(true);
     });
 
     it('returns the correct set for trialing', () => {
@@ -375,10 +391,23 @@ describe('getAllowedTransitions — utility', () => {
         // Assert
         expect(result).toBeDefined();
         expect(result?.has(SubscriptionStatusEnum.ACTIVE)).toBe(true);
+        expect(result?.has(SubscriptionStatusEnum.PAST_DUE)).toBe(true);
         expect(result?.has(SubscriptionStatusEnum.CANCELLED)).toBe(true);
         expect(result?.has(SubscriptionStatusEnum.EXPIRED)).toBe(true);
         expect(result?.has(SubscriptionStatusEnum.PAUSED)).toBe(true);
-        expect(result?.size).toBe(4);
+        expect(result?.size).toBe(5);
+    });
+
+    it('permits trialing → past_due (AC-7 — the card-first first-charge failure)', () => {
+        // Arrange & Act — unreachable before card-first, because a no-card trial
+        // had no charge that could fail. Without this edge the reconciler cannot
+        // hand a failed first charge to the dunning cron.
+        const result = checkSubscriptionStatusTransition({
+            from: SubscriptionStatusEnum.TRIALING,
+            to: SubscriptionStatusEnum.PAST_DUE
+        });
+        // Assert
+        expect(result.valid).toBe(true);
     });
 
     it('returns the correct set for active', () => {

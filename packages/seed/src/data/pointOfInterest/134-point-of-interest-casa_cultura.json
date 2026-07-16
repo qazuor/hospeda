@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "134-point-of-interest-casa_cultura",
     "slug": "casa_cultura",
-    "lat": -30.9856574,
-    "long": -57.9194395,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio municipal dedicado a talleres, muestras, formación artística y actividades culturales.",
@@ -26,8 +26,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf; https://www.federacion.gob.ar/areas-noticias/secretaria-turismo",
-    "notes": "Existencia confirmada en el plano turístico. Falta dirección y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "source": "https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
+    "notes": "Existencia confirmada en el plano turístico. Falta dirección y geocodificación.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

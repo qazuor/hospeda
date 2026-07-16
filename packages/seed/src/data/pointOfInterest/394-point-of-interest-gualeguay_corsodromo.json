@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "394-point-of-interest-gualeguay_corsodromo",
     "slug": "gualeguay_corsodromo",
-    "lat": -33.148673599999995,
-    "long": -59.32862849999999,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Pista y complejo de desfile inaugurado en 2005, sede del carnaval local y de espectáculos de gran convocatoria.",
@@ -26,8 +26,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://corso.gualeguay.gob.ar/; https://www.entrerios.tur.ar/localidades-1/gualeguay; https://es.wikipedia.org/wiki/Gualeguay",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://corso.gualeguay.gob.ar/",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

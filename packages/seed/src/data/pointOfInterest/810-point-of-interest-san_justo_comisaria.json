@@ -26,7 +26,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.facebook.com/municipalidadsanjustoentrerios/; https://mapcarta.com/es/19203230",
+    "source": "https://www.facebook.com/municipalidadsanjustoentrerios/",
     "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

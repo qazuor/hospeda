@@ -124,24 +124,59 @@
     text-transform: capitalize;
 }
 
+/*
+ * HOS-162 prototype: the grid is a vertical stack of week rows. Each week is a
+ * positioning context (`.week`) holding a 7-column day row (`.weekDays`) plus
+ * an absolutely-positioned bar overlay (`.weekBars`). A zero inter-cell gap is
+ * intentional — bars are placed at exact `1/7` column fractions, so any gap
+ * would desync the bars from the cells underneath.
+ */
 .grid {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    overflow: hidden;
+}
+
+.week {
+    /*
+     * A FIXED number of bar lanes is reserved per week so every day cell is the
+     * same height regardless of how busy the week is. Events beyond `--max-lanes`
+     * collapse into a per-day "+N" indicator (see `.barMore`) — the cell never
+     * grows. Keep `--max-lanes` in sync with `MAX_VISIBLE_LANES` in
+     * `lib/calendar/occupancy-bar-layout.ts`.
+     */
+    --max-lanes: 3;
+    --bar-height: 1.15rem;
+    --bar-gap: 0.25rem;
+    position: relative;
+}
+
+.weekDays {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: var(--space-1, 0.25rem);
 }
 
 .pad {
-    aspect-ratio: 1;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background-color: var(--muted);
 }
 
 .day {
     position: relative;
-    aspect-ratio: 1;
+    /*
+     * FIXED height: the day-number band (1.75rem, matching `.weekBars` top)
+     * plus a constant `--max-lanes` rows. Every cell is identical; busier weeks
+     * spill into the "+N" indicator instead of stretching the cell.
+     */
+    min-height: calc(1.75rem + var(--max-lanes) * (var(--bar-height) + var(--bar-gap)));
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
     background-color: var(--core-card);
     color: var(--core-foreground);
     font-family: var(--font-sans);
@@ -152,8 +187,18 @@
         border-color var(--duration-fast, 0.2s) ease-in-out;
 }
 
+/* Bar mode: number pinned top-left, cell body left free for the bar overlay. */
+.dayBarMode {
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 0.25rem 0.375rem;
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+}
+
 .day:hover:not(:disabled) {
-    border-color: var(--brand-primary);
+    z-index: 1;
+    box-shadow: inset 0 0 0 1px var(--brand-primary);
 }
 
 .day:disabled {
@@ -162,6 +207,119 @@
 
 .dayNumber {
     pointer-events: none;
+}
+
+/* --- Spanning event bars overlay --- */
+
+.weekBars {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 1.75rem;
+    /* Fixed band: exactly `--max-lanes` rows tall. Anything positioned below is
+     * clipped — but the layout never does that, it collapses extras into
+     * `.barMore` before they reach here. */
+    height: calc(var(--max-lanes) * (var(--bar-height) + var(--bar-gap)));
+    overflow: hidden;
+    /* Sit above a hovered cell (which raises itself to z-index 1) so the hover
+     * highlight never paints over an event bar. Bars stay click-through; the
+     * clickable bar itself opts back into pointer events (see `.bar`). */
+    z-index: 2;
+    pointer-events: none;
+}
+
+.bar {
+    position: absolute;
+    height: var(--bar-height);
+    display: flex;
+    align-items: center;
+    padding: 0 0.4375rem;
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1;
+    background-color: oklch(from var(--bar-color) l c h / 0.18);
+    color: oklch(from var(--bar-color) calc(l - 0.2) c h);
+    border: 1px solid oklch(from var(--bar-color) l c h / 0.4);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* Rounded caps only on the event's real ends; flat where it continues weeks. */
+.barStart {
+    border-top-left-radius: var(--radius-pill, 9999px);
+    border-bottom-left-radius: var(--radius-pill, 9999px);
+}
+
+.barEnd {
+    border-top-right-radius: var(--radius-pill, 9999px);
+    border-bottom-right-radius: var(--radius-pill, 9999px);
+}
+
+.barLabel {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* A manual event bar is an interactive button that opens the edit dialog. It
+ * opts back into the pointer events `.weekBars` disables and resets the native
+ * button chrome so it looks identical to a decorative `.bar`. */
+.barButton {
+    appearance: none;
+    -webkit-appearance: none;
+    margin: 0;
+    pointer-events: auto;
+    cursor: pointer;
+    text-align: left;
+}
+
+.barButton:hover {
+    filter: brightness(0.95);
+}
+
+.barButton:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--brand-primary);
+}
+
+/* Per-day "+N" indicator for events that overflow the fixed lane band. */
+.barMore {
+    position: absolute;
+    height: var(--bar-height);
+    display: flex;
+    align-items: center;
+    padding: 0 0.4375rem;
+    font-family: var(--font-sans);
+    font-size: 0.625rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--core-muted-foreground);
+    background-color: var(--muted);
+    border-radius: var(--radius-pill, 9999px);
+    box-sizing: border-box;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.barManual {
+    --bar-color: var(--destructive, #e40016);
+}
+
+.barGoogle {
+    --bar-color: var(--brand-primary, #3885f9);
+}
+
+.barAirbnb {
+    --bar-color: var(--palette-rose-500, #e6598a);
+}
+
+.barBooking {
+    --bar-color: var(--palette-cyan-600, #2f8fa8);
+}
+
+.barOther {
+    --bar-color: var(--palette-purple-500, #8b5cf6);
 }
 
 .dayOccupied {
@@ -215,6 +373,10 @@
 
 .dotBooking {
     background-color: var(--palette-cyan-600, #2f8fa8);
+}
+
+.dotOther {
+    background-color: var(--palette-purple-500, #8b5cf6);
 }
 
 .dotFree {
@@ -299,6 +461,68 @@
 .blockButton:disabled,
 .unblockButton:disabled,
 .cancelButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* --- Edit-event dialog (HOS-175) --- */
+
+.editForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.editInput {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button, 8px);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+}
+
+.editFooterSpread {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    width: 100%;
+}
+
+.editFooterActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.saveButton {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+}
+
+.deleteButton {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    border: 1px solid var(--destructive);
+    background-color: transparent;
+    color: var(--destructive);
+}
+
+.saveButton:disabled,
+.deleteButton:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }

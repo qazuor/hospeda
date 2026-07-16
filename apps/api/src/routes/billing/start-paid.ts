@@ -14,12 +14,14 @@
  * - `billingInterval: 'monthly'` -> {@link initiatePaidMonthlySubscription}
  *   (preapproval/recurring via MP).
  * - `billingInterval: 'annual'` -> {@link initiatePaidAnnualSubscription}
- *   (one-time upfront charge via MP Checkout, SPEC-141 D1).
+ *   (ALSO a recurring preapproval since HOS-171 §7.2, at a 12-month cadence —
+ *   it used to be a one-time upfront Checkout charge and therefore never
+ *   renewed; now it does).
  * - `promoCode` present (BOTH branches, SPEC-262 T-012 P2) -> forwarded to the
  *   service, which honors:
- *     - `trial_extension` -> `freeTrialDays` (monthly only; ignored on annual).
- *     - `discount` -> lowered preapproval amount (monthly, FAIL-CLOSED) or a
- *       reduced one-time line-item (annual).
+ *     - `trial_extension` -> extra `freeTrialDays` on the preapproval's
+ *       `free_trial`, on BOTH intervals.
+ *     - `discount` -> lowered preapproval amount, FAIL-CLOSED, on BOTH intervals.
  *     - `comp` -> a `status='comp'` subscription with NO MercadoPago charge; the
  *       response carries `appliedEffect: 'comp'` and an in-app success URL.
  *   Unknown / inactive codes surface as HTTP 422; a discount that MP rejects
@@ -54,7 +56,6 @@ import {
     SubscriptionCheckoutError
 } from '../../services/subscription-checkout.service';
 import { createRouter } from '../../utils/create-app';
-import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
 import {
@@ -283,7 +284,10 @@ export const handleStartPaidSubscription = async (
                           cancelUrl: buildAnnualCancelUrl(locale),
                           notificationUrl: buildNotificationUrl()
                       },
-                      statementDescriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR,
+                      // No statementDescriptor: annual is a preapproval now
+                      // (HOS-171 §7.2) and MercadoPago preapprovals have no
+                      // statement-descriptor field — only the hosted checkout
+                      // this replaced did. Monthly never set one either.
                       promoCode: body.promoCode
                   })
                 : await initiatePaidMonthlySubscription({
@@ -320,7 +324,13 @@ export const handleStartPaidSubscription = async (
         // is emitted when `initiatePaid*Subscription` throws (the outer catch
         // handles that path).
         try {
-            const outcome = result.appliedEffect ?? 'paid';
+            // `trialGranted` is checked BEFORE falling back to 'paid': a card-first
+            // trial has no appliedEffect (it is an ordinary MP redirect), so without
+            // this the funnel would report every trial signup as a plain paid one and
+            // trial→paid conversion (HOS-130) would have nothing to measure.
+            // `comp`/`discount` still win — they describe what the money did, which is
+            // the more specific fact when both are true.
+            const outcome = result.appliedEffect ?? (result.trialGranted ? 'trial' : 'paid');
             getPostHogClient()?.capture({
                 distinctId: actor.id,
                 event: 'checkout_completed',
@@ -328,6 +338,18 @@ export const handleStartPaidSubscription = async (
                     planSlug: body.planSlug,
                     billingInterval: body.billingInterval,
                     outcome,
+                    /**
+                     * Whether MercadoPago will defer the first charge, as its OWN
+                     * dimension rather than folded into `outcome`.
+                     *
+                     * `outcome` is a single scalar, so when a checkout is both a
+                     * trial and a discount it has to pick one — and it picks the
+                     * money (`'discount'`), which would silently drop the trial
+                     * from the funnel for exactly the customers most worth
+                     * tracking. Since HOS-171 a trial COEXISTS with a discount, so
+                     * that combination is normal, not an edge case.
+                     */
+                    trialGranted: result.trialGranted ?? false,
                     promoCode: body.promoCode ?? null,
                     promoCodeIgnored: result.promoCodeIgnored ?? false,
                     localSubscriptionId: result.localSubscriptionId,

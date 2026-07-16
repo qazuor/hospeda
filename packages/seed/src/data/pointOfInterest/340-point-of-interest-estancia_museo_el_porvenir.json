@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "340-point-of-interest-estancia_museo_el_porvenir",
     "slug": "estancia_museo_el_porvenir",
-    "lat": -32.1631324,
-    "long": -58.4004902,
+    "lat": null,
+    "long": null,
     "type": "MUSEUM",
     "icon": null,
     "description": "Casona del siglo XIX que fue residencia de Héctor de Elia, fundador de Villa Elisa. Conserva relatos, objetos y espacios vinculados con los primeros pobladores.",
@@ -33,8 +33,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://villaelisa.tur.ar/atractivos/; https://villaelisa.tur.ar/turismo-accesible/",
-    "notes": "Institución, historia y servicios confirmados por Turismo Villa Elisa. Falta geocodificar el acceso. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "source": "https://villaelisa.tur.ar/atractivos/",
+    "notes": "Institución, historia y servicios confirmados por Turismo Villa Elisa. Falta geocodificar el acceso.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

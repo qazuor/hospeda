@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "231-point-of-interest-club_nautico",
     "slug": "club_nautico",
-    "lat": -32.1926969,
-    "long": -58.1595137,
+    "lat": null,
+    "long": null,
     "type": "STADIUM",
     "icon": null,
     "description": "Espacio recreativo y deportivo dedicado a actividades náuticas, navegación y propuestas vinculadas con el río Uruguay.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://mapcarta.com/es/N9147097112",
-    "notes": "El club aparece cartografiado en el complejo balneario; falta recuperar coordenadas del acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "El club aparece cartografiado en el complejo balneario; falta recuperar coordenadas del acceso.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

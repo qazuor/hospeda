@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "248-point-of-interest-colon_plaza_san_martin",
     "slug": "colon_plaza_san_martin",
-    "lat": -32.2182804,
-    "long": -58.1356171,
+    "lat": null,
+    "long": null,
     "type": "PLAZA",
     "icon": null,
     "description": "Plaza tradicional incluida en los recorridos turísticos urbanos de Colón y utilizada para descanso, actividades comunitarias y encuentros.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://colon.gov.ar/bus-turistico-y-caminatas-a-la-reserva-norte-dos-propuestas-guiadas-para-conocer-nuestra-ciudad/",
-    "notes": "Incluida en el circuito oficial del Bus Turístico. Falta confirmar dirección y coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Incluida en el circuito oficial del Bus Turístico. Falta confirmar dirección y coordenadas exactas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

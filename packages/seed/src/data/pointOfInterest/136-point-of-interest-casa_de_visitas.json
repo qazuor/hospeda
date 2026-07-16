@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "136-point-of-interest-casa_de_visitas",
     "slug": "casa_de_visitas",
-    "lat": -32.1557568,
-    "long": -58.187684499999996,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Residencia de categoría construida por la compañía para recibir visitantes y personalidades, asociada a la historia empresarial y social del complejo industrial.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/capital-humano/cultura/monumentos/pueblo-liebig",
-    "notes": "Edificio histórico documentado; falta confirmar estado actual, accesibilidad y ubicación puntual. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Edificio histórico documentado; falta confirmar estado actual, accesibilidad y ubicación puntual.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

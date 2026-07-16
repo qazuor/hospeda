@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "915-point-of-interest-villaguay_oficina_turismo",
     "slug": "villaguay_oficina_turismo",
-    "lat": -31.8676271,
-    "long": -59.0270174,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Punto oficial de información sobre atractivos, eventos, alojamiento, gastronomía y circuitos de la Ciudad de Encuentros.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://www.villaguay.gob.ar/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

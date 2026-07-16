@@ -54,6 +54,8 @@ export interface GoogleCalendarEventDate {
 export interface GoogleCalendarEvent {
     /** Stable event id, used as `externalEventId` on the occupancy rows. */
     readonly id: string;
+    /** Event title, shown in the occupancy calendar's event bars (HOS-175). */
+    readonly summary?: string;
     /** Event status. `'cancelled'` marks a deletion in incremental sync results. */
     readonly status?: string;
     /** Event start marker (absent on some cancelled events in incremental results). */

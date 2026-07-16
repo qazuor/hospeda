@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "214-point-of-interest-circuito_museos_bici",
     "slug": "circuito_museos_bici",
-    "lat": -33.0328106,
-    "long": -59.014476099999996,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido cultural que conecta el Museo de la Estación con la Casa Museo La Tera mediante un paseo urbano en bicicleta.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.larroque.gob.ar/noticia/1995/la_rica_historia_de_larroque_y_la_conexion_de_sus_museos",
-    "notes": "Circuito municipal confirmado. Falta digitalizar el trazado. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Circuito municipal confirmado. Falta digitalizar el trazado.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

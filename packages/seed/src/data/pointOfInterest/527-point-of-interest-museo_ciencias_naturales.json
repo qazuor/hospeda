@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://sanjose.gob.ar/nos-sumamos-a-la-noche-de-los-museos-entrerrianos/; https://mapcarta.com/es/N3279483618",
+    "source": "https://sanjose.gob.ar/nos-sumamos-a-la-noche-de-los-museos-entrerrianos/",
     "notes": "Existencia y ubicación relativa confirmadas; falta geocodificar el acceso. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [

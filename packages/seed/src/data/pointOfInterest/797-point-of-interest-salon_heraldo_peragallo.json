@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "797-point-of-interest-salon_heraldo_peragallo",
     "slug": "salon_heraldo_peragallo",
-    "lat": -32.1631324,
-    "long": -58.4004902,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Sala cultural municipal utilizada para muestras, homenajes, talleres, presentaciones artísticas y actividades educativas.",
@@ -32,8 +32,8 @@
     "displayWeight": 50,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://villaelisa.gov.ar/homenaje-al-artista-andres-mirwald/; https://villaelisa.gov.ar/con-una-charla-en-el-centro-saboya-este-jueves-celebramos-el-dia-del-inmigrante/",
-    "notes": "Uso cultural y denominación confirmados. Falta dirección y coordenadas exactas. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "source": "https://villaelisa.gov.ar/homenaje-al-artista-andres-mirwald/",
+    "notes": "Uso cultural y denominación confirmados. Falta dirección y coordenadas exactas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "207-point-of-interest-circuito_colonias_judias",
     "slug": "circuito_colonias_judias",
-    "lat": -31.9872354,
-    "long": -58.962646500000005,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido regional por sinagogas, cooperativas, cementerios y viviendas vinculadas con la colonización agrícola judía.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.turismoentrerios.com/villaguay/circuito-colonias-judias.htm; https://www.entrerios.tur.ar/localidades-1/villaguay",
-    "notes": "Circuito regional confirmado. Falta digitalizar trazado, paradas y condiciones de visita. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://www.turismoentrerios.com/villaguay/circuito-colonias-judias.htm",
+    "notes": "Circuito regional confirmado. Falta digitalizar trazado, paradas y condiciones de visita.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

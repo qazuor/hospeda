@@ -188,6 +188,10 @@
             "title": "Planejamento simples e rapido",
             "description": "Reserve sua hospedagem em poucos passos"
         },
+        "feature4": {
+            "title": "Sincronização com o Google Calendar",
+            "description": "Conecte seu Google Calendar para sincronizar a disponibilidade da sua acomodação e evitar reservas sobrepostas"
+        },
         "statsLabel": "viajeros satisfechos"
     },
     "partners": {

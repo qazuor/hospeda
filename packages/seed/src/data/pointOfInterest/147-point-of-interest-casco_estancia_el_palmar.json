@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "147-point-of-interest-casco_estancia_el_palmar",
     "slug": "casco_estancia_el_palmar",
-    "lat": -31.816523399999994,
-    "long": -58.321273100000006,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Conjunto de edificios, galpones y jardines que conserva testimonios de la vida rural y productiva de la antigua estancia.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
-    "notes": "Existencia y valor patrimonial confirmados. Falta geocodificar el conjunto. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia y valor patrimonial confirmados. Falta geocodificar el conjunto.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

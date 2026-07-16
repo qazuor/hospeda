@@ -23,6 +23,12 @@ vi.mock('../../src/utils/env', () => ({
 
 vi.mock('@repo/billing', () => ({
     resolveFreeTrialExtensionPromo: vi.fn(() => null),
+    // createPaidSubscription (shared by this path) routes its preapproval create
+    // through the E2E test-control seam (HOS-171). Inert here: it just invokes the
+    // real call, exactly as it does in production with the gate closed.
+    applyTestControl: vi.fn(async (_op: string, _args: unknown, realCall: () => Promise<unknown>) =>
+        realCall()
+    ),
     // `resolvePlanBySlug` in subscription-checkout.service.ts (shared by the
     // commerce path) references TEST_DAILY_PLAN.slug; this minimal mock must
     // provide it. The commerce slug never equals it, so the test-plan gate is

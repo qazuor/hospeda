@@ -13,6 +13,7 @@ import { protectedAddMediaRoute } from './addMedia';
 import { protectedAddOccupancyRoute } from './addOccupancy';
 import { protectedBatchOccupancyRoute } from './batchOccupancy';
 import { protectedCalendarConnectGoogleRoute } from './calendarConnectGoogle';
+import { protectedCalendarConnectIcalRoute } from './calendarConnectIcal';
 import { protectedCalendarDisconnectRoute } from './calendarDisconnect';
 import { protectedCalendarGoogleCallbackRoute } from './calendarGoogleCallback';
 import { protectedCalendarSyncRoute } from './calendarSync';
@@ -45,6 +46,7 @@ import { protectedSoftDeleteAccommodationRoute } from './softDelete';
 import { protectedUnpublishAccommodationRoute } from './unpublish';
 import { protectedUpdateAccommodationRoute } from './update';
 import { updateFaqRoute } from './updateFaq';
+import { protectedUpdateOccupancyEventRoute } from './updateOccupancyEvent';
 
 /**
  * Sub-router for ownership-protected CRUD routes.
@@ -115,15 +117,21 @@ app.route('/', protectedGetFeaturedEntitlementRoute);
 app.route('/', protectedGetOccupancyRoute);
 app.route('/', protectedAddOccupancyRoute);
 app.route('/', protectedBatchOccupancyRoute);
+// PATCH /:id/occupancy/event registered BEFORE DELETE /:id/occupancy/:date, same
+// fixed-suffix-before-param-route ordering rationale as /batch above (HOS-175 Phase 3).
+app.route('/', protectedUpdateOccupancyEventRoute);
 app.route('/', protectedRemoveOccupancyRoute);
 
-// Google Calendar sync (HOS-157 Phase 2). Auth required; ownership + MANAGE
-// enforced inline, CAN_SYNC_EXTERNAL_CALENDAR at the route on connect/sync.
-// The callback is a FIXED path (no :id) matching the registered Google redirect
-// URI — registered before the /:id calendar-sync routes for clarity (Hono
-// matches the all-literal path unambiguously either way).
+// Google Calendar sync (HOS-157 Phase 2) + Airbnb/Booking/generic iCal feed
+// sync (HOS-162 Phase 3). Auth required; ownership + MANAGE enforced inline,
+// CAN_SYNC_EXTERNAL_CALENDAR at the route on connect/sync. The callback is a
+// FIXED path (no :id) matching the registered Google redirect URI —
+// registered before the /:id calendar-sync routes for clarity (Hono matches
+// the all-literal path unambiguously either way). `sync`/`status`/
+// `disconnect` are shared across both providers (widened HOS-162 Phase 3).
 app.route('/', protectedCalendarGoogleCallbackRoute);
 app.route('/', protectedCalendarConnectGoogleRoute);
+app.route('/', protectedCalendarConnectIcalRoute);
 app.route('/', protectedCalendarSyncRoute);
 app.route('/', protectedCalendarSyncStatusRoute);
 app.route('/', protectedCalendarDisconnectRoute);

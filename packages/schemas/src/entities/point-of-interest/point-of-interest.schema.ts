@@ -5,6 +5,7 @@ import { PartialI18nTextSchema, TranslationMetaSchema } from '../../common/i18n.
 import { PointOfInterestIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { PointOfInterestTypeEnumSchema } from '../../enums/point-of-interest-type.schema.js';
+import { PoiCategoryPrimarySchema } from '../poi-category/poi-category.schema.js';
 
 /**
  * Point Of Interest Schema - Main entity schema for points of interest (POIs)
@@ -162,6 +163,25 @@ export const PointOfInterestSchema = z.object({
 /**
  * Point Of Interest Summary Schema - Lightweight version for lists and relations
  * Contains only essential fields for display purposes
+ *
+ * HOS-182: extended (not picked) with `primaryCategory` — the POI's single
+ * `isPrimary` row from the `r_poi_category` M2M join (HOS-139), projected to
+ * its `{ slug, nameI18n }` display shape. `null` when the POI has no category
+ * rows at all, or has category rows but none marked primary (POI data is
+ * known-dirty — see HOS-177); this is an expected, non-error state. The
+ * frontend resolves icon/marker-color from `primaryCategory.slug` and falls
+ * back to the legacy `type`→icon mapping when it is `null`.
+ *
+ * `.nullish()`, not `.nullable()`, for the same additive-only reason
+ * documented on `DestinationPointOfInterestSummarySchema`'s `relation` field
+ * (`point-of-interest.relations.schema.ts`): only the destination
+ * points-of-interest endpoint (HOS-182) currently populates this field via a
+ * JOIN. Every other reader of this schema (the generic public POI
+ * list/getById/getBySlug routes, backed by `BaseCrudService`'s plain
+ * `findAll`/`findById` reads) never sets the key at all — a `.nullable()`
+ * (required) field would fail `stripWithSchema`'s `safeParse` and 500 those
+ * routes. `.nullish()` lets an absent key parse as `undefined` while the
+ * populating endpoints still emit an explicit object-or-`null` value.
  */
 export const PointOfInterestSummarySchema = PointOfInterestSchema.pick({
     id: true,
@@ -177,6 +197,8 @@ export const PointOfInterestSummarySchema = PointOfInterestSchema.pick({
     isFeatured: true,
     isBuiltin: true,
     displayWeight: true
+}).extend({
+    primaryCategory: PoiCategoryPrimarySchema.nullish()
 });
 
 /**

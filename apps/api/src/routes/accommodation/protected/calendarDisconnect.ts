@@ -2,9 +2,8 @@
  * DELETE /api/v1/protected/accommodations/:id/calendar-sync/:provider
  *
  * Owner self-service: disconnect an accommodation's external calendar
- * connection (HOS-157 Phase 2 — Layer 4). Phase 2 only supports the `google`
- * provider; the path param is kept so Phase 3 (Airbnb/Booking iCal) reuses the
- * same route shape.
+ * connection (HOS-157 Phase 2 — `google`; widened by HOS-162 Phase 3 to
+ * `airbnb`/`booking`/`other`).
  *
  * Soft disconnect: sets `isActive=false` (the cron's `findAllActiveByProvider`
  * stops picking the row up) but keeps the row for audit. Existing occupancy
@@ -21,28 +20,33 @@
  */
 
 import { accommodationCalendarSyncModel } from '@repo/db';
-import { AccommodationIdSchema, OccupancySourceEnum } from '@repo/schemas';
+import {
+    AccommodationIdSchema,
+    type CalendarDisconnectResponse,
+    CalendarDisconnectResponseSchema,
+    type CalendarProviderToken,
+    CalendarProviderTokenSchema,
+    OccupancySourceEnum
+} from '@repo/schemas';
 import { assertOccupancyManageAccess } from '@repo/service-core';
 import type { Context } from 'hono';
-import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 /** Maps the public `:provider` path token to the internal occupancy source. */
-const PROVIDER_BY_TOKEN: Record<string, OccupancySourceEnum> = {
-    google: OccupancySourceEnum.GOOGLE_CALENDAR
+const PROVIDER_BY_TOKEN: Record<CalendarProviderToken, OccupancySourceEnum> = {
+    google: OccupancySourceEnum.GOOGLE_CALENDAR,
+    airbnb: OccupancySourceEnum.AIRBNB,
+    booking: OccupancySourceEnum.BOOKING,
+    other: OccupancySourceEnum.OTHER
 };
-
-const CalendarDisconnectResponseSchema = z.object({
-    disconnected: z.boolean()
-});
 
 /**
  * DELETE /api/v1/protected/accommodations/:id/calendar-sync/:provider
  *
  * Soft-disconnects the accommodation's calendar connection for the given
- * provider (Phase 2: `google`). Requires ownership + `ACCOMMODATION_OCCUPANCY_MANAGE`;
- * no entitlement gate.
+ * provider (`google`, `airbnb`, `booking`, or `other`). Requires ownership +
+ * `ACCOMMODATION_OCCUPANCY_MANAGE`; no entitlement gate.
  */
 export const protectedCalendarDisconnectRoute = createProtectedRoute({
     method: 'delete',
@@ -50,23 +54,27 @@ export const protectedCalendarDisconnectRoute = createProtectedRoute({
     summary: 'Disconnect an external calendar connection (owner)',
     description:
         "Soft-disconnects (isActive=false, row kept for audit) the accommodation's calendar " +
-        'connection for the given provider. Previously-synced occupancy rows are left in place. ' +
-        'Requires ACCOMMODATION_OCCUPANCY_MANAGE + ownership; no entitlement gate.',
+        'connection for the given provider (google/airbnb/booking/other). Previously-synced ' +
+        'occupancy rows are left in place. Requires ACCOMMODATION_OCCUPANCY_MANAGE + ownership; ' +
+        'no entitlement gate.',
     tags: ['Accommodations'],
     requestParams: {
         id: AccommodationIdSchema,
-        provider: z.enum(['google'])
+        provider: CalendarProviderTokenSchema
     },
     responseSchema: CalendarDisconnectResponseSchema,
-    handler: async (ctx: Context, params: Record<string, unknown>) => {
+    handler: async (
+        ctx: Context,
+        params: Record<string, unknown>
+    ): Promise<CalendarDisconnectResponse> => {
         const actor = getActorFromContext(ctx);
         const accommodationId = params.id as string;
-        const providerToken = params.provider as string;
+        const providerToken = params.provider as CalendarProviderToken;
 
         const provider = PROVIDER_BY_TOKEN[providerToken];
         if (provider === undefined) {
-            // The zod enum already rejects anything but 'google'; this guards a
-            // future widening of the param without a matching mapping entry.
+            // The zod enum already rejects anything outside CalendarProviderTokenSchema;
+            // this guards a future widening of the param without a matching mapping entry.
             return { disconnected: false };
         }
 

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "294-point-of-interest-cristo_hermandad",
     "slug": "cristo_hermandad",
-    "lat": -30.7603828,
-    "long": -57.9852672,
+    "lat": -30.761782,
+    "long": -57.976906400000004,
     "type": "OTHER",
     "icon": null,
     "description": "Monumento religioso de gran escala incluido entre los atractivos y referencias de la ciudad.",
@@ -26,8 +26,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf; https://termaschajari.tur.ar/arco-de-entrada/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "source": "https://chajari.gob.ar/wp-content/uploads/2023/02/GCCH-Plano-Ciudad-de-Chajari.pdf",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "769-point-of-interest-rio_lento",
     "slug": "rio_lento",
-    "lat": -30.9774426,
-    "long": -57.93159929999999,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Canal recreativo de aproximadamente 600 metros que recorre el parque acuático entre puentes, pérgolas y sectores de descanso.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/parque-acuatico1/",
-    "notes": "Longitud y recorrido confirmados. Falta digitalizar el trazado interno. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Longitud y recorrido confirmados. Falta digitalizar el trazado interno.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

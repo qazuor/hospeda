@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "202-point-of-interest-circuito_calle_san_martin",
     "slug": "circuito_calle_san_martin",
-    "lat": -31.6082776,
-    "long": -58.5236331,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido peatonal de aproximadamente cinco cuadras por calle San Martín, desde la estación hasta el Museo del Arroz, interpretando edificios civiles, religiosos y patrimoniales.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://sansalvadorer.gob.ar/gobierno/turismo/; https://sansalvadorer.gob.ar/ciudad/",
-    "notes": "Recorrido oficial de turismo educativo. Falta digitalizar el trazado lineal. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://sansalvadorer.gob.ar/gobierno/turismo/",
+    "notes": "Recorrido oficial de turismo educativo. Falta digitalizar el trazado lineal.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -187,8 +187,6 @@
         "success": {
             "title": "Your subscription is active!",
             "subtitle": "Your payment was approved successfully",
-            "trialTitle": "Your free trial has started!",
-            "trialSubtitle": "You can start using your plan right now. There's no charge: your free trial is active and no card was charged.",
             "planDetails": "Plan: {{planName}}",
             "amountDetails": "Amount: {{amount}}",
             "verifyingStatus": "Verifying payment status...",
@@ -197,7 +195,7 @@
             "timeoutSubtitle": "Your payment may still be processing. Check your account in a few minutes to confirm your subscription.",
             "cta": "Go to my account",
             "pageTitle": "Payment approved",
-            "promoIgnoredNote": "Your discount code was not applied because you started your free trial instead."
+            "promoIgnoredNote": "Your code was not applied: it extends a free trial, and this subscription does not have one."
         },
         "pending": {
             "title": "Your payment is being processed",

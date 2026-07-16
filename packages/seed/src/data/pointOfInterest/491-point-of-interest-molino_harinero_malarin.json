@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "491-point-of-interest-molino_harinero_malarin",
     "slug": "molino_harinero_malarin",
-    "lat": -31.6130873,
-    "long": -58.49173669999999,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Estructuras del molino construido en 1929 por el coronel Malarín, considerado el inicio de la cultura industrial de San Salvador.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sansalvadorer.gob.ar/ciudad/",
-    "notes": "Historia y relación con la Casa del Fundador confirmadas. Falta geocodificar y documentar accesibilidad. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Historia y relación con la Casa del Fundador confirmadas. Falta geocodificar y documentar accesibilidad.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

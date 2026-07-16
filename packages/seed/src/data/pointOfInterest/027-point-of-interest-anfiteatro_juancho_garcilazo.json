@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "027-point-of-interest-anfiteatro_juancho_garcilazo",
     "slug": "anfiteatro_juancho_garcilazo",
-    "lat": -30.986365900000003,
-    "long": -57.916493900000006,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Anfiteatro al aire libre utilizado para la Fiesta Nacional del Lago, festivales, recitales y celebraciones comunitarias.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.federacion.tur.ar/fiesta-nacional-del-lago/; https://www.federacion.gob.ar/areas-noticias/secretaria-turismo",
-    "notes": "Nombre y uso actual confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://www.federacion.tur.ar/fiesta-nacional-del-lago/",
+    "notes": "Nombre y uso actual confirmados. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

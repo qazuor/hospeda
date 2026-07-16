@@ -1,10 +1,22 @@
 /**
- * SPEC-262 T-012 P2 — subscription-checkout discount/comp branch routing tests.
+ * SPEC-262 T-012 P2 / HOS-171 — subscription-checkout discount/comp/trial
+ * branch routing tests.
  *
- * Exercises the NEW promo branches wired into initiatePaidMonthlySubscription /
+ * Exercises the promo branches wired into initiatePaidMonthlySubscription /
  * initiatePaidAnnualSubscription, with the promo resolver + comp creator +
- * discount-signup seam mocked (so this stays a focused branch-routing test, not
- * an MP/DB integration test).
+ * discount-signup seam mocked (so this stays a focused branch-routing test,
+ * not an MP/DB integration test).
+ *
+ * HOS-171 (card-first) removed the separate no-card trial branch. A trial is
+ * now just an ordinary `mode: 'paid'` preapproval that carries
+ * `freeTrialDays` (mapped by qzpay to `auto_recurring.free_trial`) — the
+ * SAME `createPaidSubscription` call every checkout makes, trial or not.
+ * `CheckoutAppliedEffect` no longer has a `'trial'` variant: a granted trial
+ * produces no `appliedEffect` marker at all. Precedence is enforced
+ * explicitly via a `trialGranted` boolean (there is no more early `return`
+ * to fall out of): `comp` wins outright -> `trial_extension` lengthens the
+ * trial -> `discount` YIELDS to a trial and is DISCARDED, never sent to MP,
+ * flagged via `promoCodeIgnored: true`.
  *
  * Critical coverage (CI guardrail):
  *  - FAIL-CLOSED: when the monthly discount mutation fails, the just-created
@@ -12,15 +24,23 @@
  *    error code is DISCOUNT_APPLY_FAILED.
  *  - comp (monthly + annual) → createCompSubscription, appliedEffect='comp', no MP.
  *  - discount happy path (monthly) → appliedEffect='discount', checkoutUrl present.
- *  - discount (annual) → reduced line-item, appliedEffect='discount'.
+ *  - discount (annual) → preapproval created at full price then mutated down via
+ *    `applySignupDiscountToMonthly` (the SAME mechanism as monthly — HOS-171 §7.2
+ *    made annual a preapproval too, so there is no more one-time line item).
+ *  - AC-8: a 60-day `trial_extension` on a 14-day plan sends exactly ONE
+ *    `freeTrialDays: 74` to the preapproval create call.
+ *  - AC-9: `HOSPEDA_TRIAL_DAYS_OVERRIDE=0` suppresses the trial even with an
+ *    extension promo (the kill-switch is evaluated against the BASE length).
+ *  - AC-10: any prior subscription (any status) -> no trial, normal paid preapproval.
+ *  - A `discount` code alongside a granted trial is DISCARDED and never
+ *    reaches `applySignupDiscountToMonthly`/`calculatePromoCodeEffect`/MP.
  *  - SPEC-262 C1+H1: expired/restricted codes → INVALID_PROMO_CODE (resolver returns invalid).
- *  - SPEC-262 C2: capped annual discount code → INVALID_PROMO_CODE (redemption fails before URL).
  *  - SPEC-262 L1: 100% discount → INVALID_PROMO_CODE (0-amount rejected before preapproval).
  *
  * @module test/services/subscription-checkout-promo-branches
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // --- Mock the promo resolver + new helper modules -------------------------
 const resolveCheckoutPromoPlanMock = vi.fn();
@@ -42,12 +62,11 @@ const resolveFullPlanPriceCentavosMock = vi.fn();
 const calculatePromoCodeEffectMock = vi.fn();
 const redeemAndRecordUsageMock = vi.fn();
 // HOS-110: keep the rest of the real module (PlanService, resolvePlanTrialConfig,
-// withServiceTransaction, etc.) intact via importActual — subscription-checkout.service.ts
-// now transitively imports TrialService (./trial.service.js), which imports
-// clearEntitlementCache from '../middlewares/entitlement', which constructs a
-// module-level `new PlanService()` from `@repo/service-core` at import time. A
-// fully-replaced mock (no importActual) leaves PlanService undefined and breaks
-// that construction for every test in this file, not just the new trial ones.
+// resolveCheckoutFreeTrialDays, withServiceTransaction, etc.) intact via
+// importActual — subscription-checkout.service.ts transitively imports symbols
+// from '@repo/service-core' that construct module-level singletons at import
+// time. A fully-replaced mock (no importActual) breaks that construction for
+// every test in this file, not just the promo ones.
 vi.mock('@repo/service-core', async () => {
     const actual = await vi.importActual('@repo/service-core');
     return {
@@ -63,7 +82,7 @@ const dbExecuteMock = vi.fn();
 const dbInsertValuesMock = vi.fn();
 // HOS-110: importActual (not a full replace) for the same reason as the
 // @repo/service-core mock above — the real @repo/service-core module graph
-// pulled in transitively via TrialService needs real @repo/db exports too.
+// needs real @repo/db exports too.
 vi.mock('@repo/db', async () => {
     const actual = await vi.importActual('@repo/db');
     return {
@@ -97,8 +116,10 @@ vi.mock('../../src/utils/logger', () => ({
 import {
     initiatePaidAnnualSubscription,
     initiatePaidMonthlySubscription,
+    PENDING_PROVIDER_TTL_MS,
     SubscriptionCheckoutError
 } from '../../src/services/subscription-checkout.service';
+import { env } from '../../src/utils/env';
 
 // --- Fixtures -------------------------------------------------------------
 
@@ -189,15 +210,15 @@ const ANNUAL_BASE = {
     urls: ANNUAL_URLS
 } as const;
 
-// --- HOS-110 W1 fixtures: a plan that declares a trial ---------------------
+// --- HOS-110/HOS-171 fixtures: a plan that declares a trial -----------------
 
 /**
  * Same slug as PLAN/MONTHLY_BASE.planSlug, but declares a 14-day trial.
  * Carries BOTH a monthly and an annual price (HOS-115) so the same fixture
- * serves the monthly TRIAL branch tests (HOS-110 W1) and the new annual
- * TRIAL branch tests (HOS-115) — `initiatePaidAnnualSubscription` resolves
- * `findAnnualPrice` BEFORE the promo/trial branches run, so an annual price
- * row is required for any annual test that reaches this fixture.
+ * serves the monthly TRIAL-eligible tests and the annual TRIAL-eligible tests
+ * — `initiatePaidAnnualSubscription` resolves `findAnnualPrice` BEFORE the
+ * promo/trial branches run, so an annual price row is required for any
+ * annual test that reaches this fixture.
  */
 const TRIAL_PLAN = {
     id: 'plan-uuid-trial',
@@ -222,23 +243,24 @@ const TRIAL_PLAN = {
 };
 
 /**
- * Billing stub for the HOS-110 W1 / HOS-115 trial-vs-promo branch tests.
- * Extends `makeBilling`'s shape with the two extra calls the TRIAL branch
- * (and the real `TrialService` it constructs) needs: `subscriptions.getByCustomerId`
- * (trial-eligibility check) and `subscriptions.get` (post-create trialEnd
- * lookup). `plans.list()` resolves {@link TRIAL_PLAN} so both
- * `resolvePlanBySlug` and `TrialService.startTrial`'s own internal plan
- * lookup agree on the same trial-declaring plan. Shared by both the
- * monthly (HOS-110) and annual (HOS-115) TRIAL branch tests.
+ * Billing stub for the trial-eligibility / trial-vs-promo branch tests.
+ * Extends `makeBilling`'s shape with the extra call the eligibility check
+ * needs (`subscriptions.getByCustomerId`). `plans.list()` resolves
+ * {@link TRIAL_PLAN}. `subscriptions.create` ALWAYS returns a full
+ * preapproval shape (id + providerInitPoint + providerSubscriptionIds) —
+ * card-first means there is no longer a separate MP-less trial object, so
+ * the create call must resolve exactly like any other paid checkout whether
+ * or not it ends up carrying `freeTrialDays`.
  */
 function makeTrialBilling(
     opts: {
         existingSubscriptions?: readonly unknown[];
-        trialSubscription?: Record<string, unknown> | null;
-        createdTrialId?: string;
+        createdSubscriptionId?: string;
+        checkoutUrl?: string;
     } = {}
 ) {
-    const createdTrialId = opts.createdTrialId ?? 'trial-sub-1';
+    const createdSubscriptionId = opts.createdSubscriptionId ?? 'trial-sub-1';
+    const checkoutUrl = opts.checkoutUrl ?? 'https://mp.test/checkout/trial';
     return {
         plans: { list: vi.fn().mockResolvedValue({ data: [TRIAL_PLAN] }) },
         customers: {
@@ -250,26 +272,32 @@ function makeTrialBilling(
             })
         },
         subscriptions: {
-            create: vi.fn().mockResolvedValue({ id: createdTrialId }),
+            create: vi.fn().mockResolvedValue({
+                id: createdSubscriptionId,
+                providerInitPoint: checkoutUrl,
+                providerSubscriptionIds: { mercadopago: `mp-${createdSubscriptionId}` },
+                livemode: false
+            }),
             cancel: vi.fn().mockResolvedValue(undefined),
-            getByCustomerId: vi.fn().mockResolvedValue(opts.existingSubscriptions ?? []),
-            get: vi
-                .fn()
-                .mockResolvedValue(
-                    opts.trialSubscription === undefined
-                        ? { id: createdTrialId, trialEnd: null }
-                        : opts.trialSubscription
-                )
+            getByCustomerId: vi.fn().mockResolvedValue(opts.existingSubscriptions ?? [])
         },
         checkout: { create: vi.fn() },
         getStorage: vi.fn(() => ({}))
     };
 }
 
-describe('HOS-110 W1: promo effect_kind reordered BEFORE the trial branch', () => {
+/** Extracts the object `billing.subscriptions.create` was called with. */
+function createCallArg(
+    billing: ReturnType<typeof makeTrialBilling> | ReturnType<typeof makeBilling>
+): Record<string, unknown> {
+    const mockFn = billing.subscriptions.create as unknown as { mock: { calls: unknown[][] } };
+    return (mockFn.mock.calls[0]?.[0] ?? {}) as Record<string, unknown>;
+}
+
+describe('HOS-110 W1 / HOS-171: promo effect_kind precedence before the preapproval is created (monthly)', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it('comp wins over trial: comp branch resolves first, trial is never attempted', async () => {
+    it('comp wins over a trial: comp branch resolves first, the preapproval is never attempted', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'comp',
             promoCodeId: 'pc-1',
@@ -288,48 +316,59 @@ describe('HOS-110 W1: promo effect_kind reordered BEFORE the trial branch', () =
         expect(result.appliedEffect).toBe('comp');
         expect(result.localSubscriptionId).toBe('comp-sub-1');
         expect(createCompSubscriptionMock).toHaveBeenCalledOnce();
-        // The trial branch never ran: no eligibility check, no trial create.
+        // Neither the eligibility check nor the preapproval create ever ran.
         expect(billing.subscriptions.getByCustomerId).not.toHaveBeenCalled();
         expect(billing.subscriptions.create).not.toHaveBeenCalled();
     });
 
-    it('trial_extension: the granted trial length is base + the code freeTrialDays', async () => {
-        resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'trial', freeTrialDays: 7 });
-        const billing = makeTrialBilling({
-            trialSubscription: { id: 'trial-sub-1', trialEnd: null }
-        });
+    it('AC-8: trial_extension sums with the plan base into ONE 74-day free_trial (the leak closes)', async () => {
+        resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'trial', freeTrialDays: 60 });
+        const billing = makeTrialBilling();
 
         const before = Date.now();
         const result = await initiatePaidMonthlySubscription({
             ...MONTHLY_BASE,
             // biome-ignore lint/suspicious/noExplicitAny: test billing stub
             billing: billing as any,
-            promoCode: 'EXTEND7'
+            promoCode: 'EXTEND60'
         });
         const after = Date.now();
 
-        expect(result.appliedEffect).toBe('trial');
+        // No 'trial' marker — card-first removed that CheckoutAppliedEffect
+        // variant. The trial is invisible in the response shape.
+        expect(result.appliedEffect).toBeUndefined();
         expect(result.promoCodeIgnored).toBeUndefined();
-        // TrialService.startTrial receives the combined length: 14 base + 7 extension.
-        expect(billing.subscriptions.create).toHaveBeenCalledWith(
-            expect.objectContaining({ trialDays: 21 })
-        );
+        // Exactly ONE preapproval create call, carrying 74 days (14 base + 60
+        // extension) as `freeTrialDays` — not 14 now and 60 again later.
+        const createArg = createCallArg(billing);
+        expect(createArg.freeTrialDays).toBe(74);
+        expect(createArg.trialDays).toBeUndefined();
+        // expiresAt is the generic pending-provider TTL now (30 min), NOT the
+        // trial length — a trial checkout is an ordinary preapproval redirect
+        // with the same abandonment window as any other paid checkout.
         const expiresAtMs = new Date(result.expiresAt).getTime();
-        expect(expiresAtMs).toBeGreaterThanOrEqual(before + 21 * 24 * 60 * 60 * 1000 - 5000);
-        expect(expiresAtMs).toBeLessThanOrEqual(after + 21 * 24 * 60 * 60 * 1000 + 5000);
+        expect(expiresAtMs).toBeGreaterThanOrEqual(before + PENDING_PROVIDER_TTL_MS - 5000);
+        expect(expiresAtMs).toBeLessThanOrEqual(after + PENDING_PROVIDER_TTL_MS + 5000);
     });
 
-    it('discount: the trial wins outright and the discount is discarded (promoCodeIgnored=true)', async () => {
+    it('discount: applies ALONGSIDE the trial — the customer gets both (HOS-171)', async () => {
+        // Arrange — a trial-eligible customer on a 14-day plan, with a 50%-off code
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'discount',
             promoCodeId: 'pc-1',
             code: 'LANZA50',
             effect: { kind: 'discount', valueKind: 'percentage', value: 50, durationCycles: 3 }
         });
-        const billing = makeTrialBilling({
-            trialSubscription: { id: 'trial-sub-1', trialEnd: '2027-01-01T00:00:00.000Z' }
+        calculatePromoCodeEffectMock.mockReturnValue({
+            type: 'apply-discount',
+            discountAmount: 5000,
+            finalAmount: 5000,
+            remainingCycles: 3
         });
+        applySignupDiscountToMonthlyMock.mockResolvedValue({ success: true, data: {} });
+        const billing = makeTrialBilling();
 
+        // Act
         const result = await initiatePaidMonthlySubscription({
             ...MONTHLY_BASE,
             // biome-ignore lint/suspicious/noExplicitAny: test billing stub
@@ -337,24 +376,38 @@ describe('HOS-110 W1: promo effect_kind reordered BEFORE the trial branch', () =
             promoCode: 'LANZA50'
         });
 
-        expect(result.appliedEffect).toBe('trial');
-        expect(result.promoCodeIgnored).toBe(true);
-        expect(result.expiresAt).toBe('2027-01-01T00:00:00.000Z');
-        // No extension — the trial is granted at its base length, unchanged.
-        expect(billing.subscriptions.create).toHaveBeenCalledWith(
-            expect.objectContaining({ trialDays: 14 })
-        );
-        // The discount machinery is never invoked — the code was discarded,
-        // not persisted anywhere (no post-trial discount, per owner decision).
-        expect(applySignupDiscountToMonthlyMock).not.toHaveBeenCalled();
-        expect(calculatePromoCodeEffectMock).not.toHaveBeenCalled();
-        expect(resolveFullPlanPriceCentavosMock).not.toHaveBeenCalled();
+        // Assert — the trial defers the first charge; the discount lowers what
+        // that charge will be. They are no longer mutually exclusive: a no-card
+        // trial had no preapproval to discount, a card-first one IS the
+        // preapproval (verified by the HOS-171 production spike).
+        expect(result.promoCodeIgnored).toBeUndefined();
+        expect(result.appliedEffect).toBe('discount');
+        // The trial is untouched, at its base length.
+        expect(createCallArg(billing).freeTrialDays).toBe(14);
+        // And the discount really was applied to the live preapproval.
+        expect(applySignupDiscountToMonthlyMock).toHaveBeenCalledOnce();
+        expect(billing.subscriptions.create).toHaveBeenCalledOnce();
     });
 
-    it('none: no promo code supplied → unchanged trial, no promoCodeIgnored flag', async () => {
+    it('none: no promo code supplied → the trial is granted at its base length, no promoCodeIgnored flag', async () => {
+        resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'none' });
+        const billing = makeTrialBilling();
+
+        const result = await initiatePaidMonthlySubscription({
+            ...MONTHLY_BASE,
+            // biome-ignore lint/suspicious/noExplicitAny: test billing stub
+            billing: billing as any
+        });
+
+        expect(result.appliedEffect).toBeUndefined();
+        expect(result.promoCodeIgnored).toBeUndefined();
+        expect(createCallArg(billing).freeTrialDays).toBe(14);
+    });
+
+    it('AC-10: a customer with any prior subscription gets no trial and pays immediately', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'none' });
         const billing = makeTrialBilling({
-            trialSubscription: { id: 'trial-sub-1', trialEnd: '2027-02-01T00:00:00.000Z' }
+            existingSubscriptions: [{ id: 'existing-sub', status: 'cancelled' }]
         });
 
         const result = await initiatePaidMonthlySubscription({
@@ -363,11 +416,9 @@ describe('HOS-110 W1: promo effect_kind reordered BEFORE the trial branch', () =
             billing: billing as any
         });
 
-        expect(result.appliedEffect).toBe('trial');
-        expect(result.promoCodeIgnored).toBeUndefined();
-        expect(billing.subscriptions.create).toHaveBeenCalledWith(
-            expect.objectContaining({ trialDays: 14 })
-        );
+        expect(result.appliedEffect).toBeUndefined();
+        expect(billing.subscriptions.getByCustomerId).toHaveBeenCalledOnce();
+        expect(createCallArg(billing).freeTrialDays).toBeUndefined();
     });
 
     it('an invalid promo code always throws INVALID_PROMO_CODE, even for a trial-eligible customer', async () => {
@@ -390,9 +441,60 @@ describe('HOS-110 W1: promo effect_kind reordered BEFORE the trial branch', () =
         }
 
         expect((thrown as SubscriptionCheckoutError).code).toBe('INVALID_PROMO_CODE');
-        // Neither the comp/trial branches nor the paid path ever ran.
+        // Neither the eligibility check nor the preapproval create ever ran.
         expect(billing.subscriptions.getByCustomerId).not.toHaveBeenCalled();
         expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+});
+
+describe('HOS-171 §7.4 AC-9: the ops kill-switch beats an extension promo', () => {
+    let originalOverride: typeof env.HOSPEDA_TRIAL_DAYS_OVERRIDE;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        originalOverride = env.HOSPEDA_TRIAL_DAYS_OVERRIDE;
+    });
+
+    afterEach(() => {
+        env.HOSPEDA_TRIAL_DAYS_OVERRIDE = originalOverride;
+    });
+
+    it('HOSPEDA_TRIAL_DAYS_OVERRIDE=0 suppresses the trial even with a 60-day extension promo (monthly)', async () => {
+        env.HOSPEDA_TRIAL_DAYS_OVERRIDE = 0;
+        resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'trial', freeTrialDays: 60 });
+        const billing = makeTrialBilling();
+
+        const result = await initiatePaidMonthlySubscription({
+            ...MONTHLY_BASE,
+            // biome-ignore lint/suspicious/noExplicitAny: test billing stub
+            billing: billing as any,
+            promoCode: 'EXTEND60'
+        });
+
+        // The extension is discarded — nothing to lengthen — and the
+        // customer pays immediately on a full-price, no-trial preapproval.
+        expect(result.appliedEffect).toBeUndefined();
+        expect(result.promoCodeIgnored).toBe(true);
+        expect(createCallArg(billing).freeTrialDays).toBeUndefined();
+    });
+
+    it('HOSPEDA_TRIAL_DAYS_OVERRIDE=0 suppresses the trial even with a 10-day extension promo (annual)', async () => {
+        env.HOSPEDA_TRIAL_DAYS_OVERRIDE = 0;
+        resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'trial', freeTrialDays: 10 });
+        const billing = makeTrialBilling();
+
+        const result = await initiatePaidAnnualSubscription({
+            ...ANNUAL_BASE,
+            // biome-ignore lint/suspicious/noExplicitAny: test billing stub
+            billing: billing as any,
+            promoCode: 'EXTEND10'
+        });
+
+        expect(result.appliedEffect).toBeUndefined();
+        expect(result.promoCodeIgnored).toBe(true);
+        const createArg = createCallArg(billing);
+        expect(createArg.billingInterval).toBe('annual');
+        expect(createArg.freeTrialDays).toBeUndefined();
     });
 });
 
@@ -606,10 +708,10 @@ describe('monthly discount branch — FAIL-CLOSED', () => {
     });
 });
 
-describe('annual comp + discount branches', () => {
+describe('annual comp + discount branches (HOS-171 §7.2: annual is a preapproval too)', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it('comp → createCompSubscription(interval=annual), appliedEffect=comp, no checkout', async () => {
+    it('comp → createCompSubscription(interval=annual), appliedEffect=comp, no preapproval', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'comp',
             promoCodeId: 'pc-1',
@@ -628,11 +730,15 @@ describe('annual comp + discount branches', () => {
         expect(result.localSubscriptionId).toBe('comp-annual-1');
         expect(result.checkoutUrl).toBe(ANNUAL_URLS.successUrl);
         expect(billing.checkout.create).not.toHaveBeenCalled();
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
         const compArg = createCompSubscriptionMock.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(compArg.interval).toBe('annual');
     });
 
-    it('discount → reduced line-item amount, appliedEffect=discount', async () => {
+    it('discount → preapproval created at FULL price then mutated down via applySignupDiscountToMonthly, appliedEffect=discount', async () => {
+        // HOS-171: annual discount is no longer a one-time discounted line
+        // item — it is the SAME preapproval-then-mutate mechanism as monthly
+        // (§7.2), because annual is now a recurring preapproval too.
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'discount',
             promoCodeId: 'pc-1',
@@ -645,10 +751,10 @@ describe('annual comp + discount branches', () => {
             finalAmount: 80000,
             remainingCycles: 0
         });
-        // SPEC-262 C2: redemption succeeds (gating the discounted URL)
-        redeemAndRecordUsageMock.mockResolvedValue({ success: true, data: {} });
-        dbInsertValuesMock.mockResolvedValue(undefined);
-        dbExecuteMock.mockResolvedValue({ rows: [] });
+        applySignupDiscountToMonthlyMock.mockResolvedValue({
+            success: true,
+            data: { discountedAmountCentavos: 80000, remainingCyclesSeed: 0 }
+        });
         const billing = makeBilling();
 
         const result = await initiatePaidAnnualSubscription({
@@ -659,16 +765,36 @@ describe('annual comp + discount branches', () => {
         });
 
         expect(result.appliedEffect).toBe('discount');
-        // Line item charged the discounted amount (80000), not the full 100000.
-        const checkoutArg = billing.checkout.create.mock.calls[0]?.[0] as {
-            lineItems: { unitAmount: number }[];
-        };
-        expect(checkoutArg.lineItems[0]?.unitAmount).toBe(80000);
-        // Redemption MUST have been called before the checkout URL was returned (C2).
-        expect(redeemAndRecordUsageMock).toHaveBeenCalledBefore(billing.checkout.create);
+        expect(result.checkoutUrl).toBe('https://mp.test/checkout/abc');
+        // Annual no longer calls the one-time `checkout.create` at all.
+        expect(billing.checkout.create).not.toHaveBeenCalled();
+        // The preapproval was created with billingInterval='annual' at full
+        // price (annualPrice.unitAmount = 100000) and no freeTrialDays (this
+        // plan does not declare a trial), then applySignupDiscountToMonthly
+        // (price-agnostic despite the name — it takes fullPriceCentavos)
+        // mutates it down to 80000.
+        const createArg = createCallArg(billing);
+        expect(createArg.billingInterval).toBe('annual');
+        expect(createArg.freeTrialDays).toBeUndefined();
+        expect(applySignupDiscountToMonthlyMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                mpSubscriptionId: 'mp-1',
+                subscriptionId: 'sub-1',
+                fullPriceCentavos: 100000
+            })
+        );
+        // resolveFullPlanPriceCentavos is a MONTHLY-only DB lookup — annual
+        // uses annualPrice.unitAmount directly, never touching it.
+        expect(resolveFullPlanPriceCentavosMock).not.toHaveBeenCalled();
     });
 
-    it('SPEC-262 C2: capped annual discount → redemption fails → INVALID_PROMO_CODE, no checkoutUrl', async () => {
+    it('FAIL-CLOSED: annual discount mutation fails → sub CANCELLED, no checkoutUrl, DISCOUNT_APPLY_FAILED', async () => {
+        // HOS-171: the OLD "SPEC-262 C2 capped annual discount" scenario
+        // (redemption failing INSIDE a pre-charge check) no longer exists —
+        // annual creates the preapproval FIRST, exactly like monthly, so ANY
+        // failure inside applySignupDiscountToMonthly (a max-uses race
+        // included) surfaces as the SAME fail-closed DISCOUNT_APPLY_FAILED
+        // contract as monthly, not a pre-creation INVALID_PROMO_CODE.
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'discount',
             promoCodeId: 'pc-1',
@@ -681,12 +807,12 @@ describe('annual comp + discount branches', () => {
             finalAmount: 80000,
             remainingCycles: 0
         });
-        // Redemption fails (cap exhausted race)
-        redeemAndRecordUsageMock.mockResolvedValue({
+        applySignupDiscountToMonthlyMock.mockResolvedValue({
             success: false,
             error: { code: 'PROMO_CODE_MAX_USES', message: 'Code has reached max uses' }
         });
-        const billing = makeBilling();
+        const cancel = vi.fn().mockResolvedValue(undefined);
+        const billing = makeBilling({ cancel });
 
         let thrown: unknown;
         try {
@@ -700,12 +826,13 @@ describe('annual comp + discount branches', () => {
             thrown = e;
         }
 
-        expect((thrown as SubscriptionCheckoutError).code).toBe('INVALID_PROMO_CODE');
-        // No checkout was provisioned — no URL returned.
-        expect(billing.checkout.create).not.toHaveBeenCalled();
+        expect((thrown as SubscriptionCheckoutError).code).toBe('DISCOUNT_APPLY_FAILED');
+        // The just-created preapproval MUST be cancelled (fail-closed) — no
+        // checkoutUrl was ever returned to the caller.
+        expect(cancel).toHaveBeenCalledWith('sub-1');
     });
 
-    it('SPEC-262 L1: annual 100% discount (finalAmount=0) → INVALID_PROMO_CODE', async () => {
+    it('SPEC-262 L1: annual 100% discount (finalAmount=0) → INVALID_PROMO_CODE, no preapproval created', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'discount',
             promoCodeId: 'pc-1',
@@ -733,7 +860,7 @@ describe('annual comp + discount branches', () => {
         }
 
         expect((thrown as SubscriptionCheckoutError).code).toBe('INVALID_PROMO_CODE');
-        expect(billing.checkout.create).not.toHaveBeenCalled();
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
     });
 
     it('SPEC-262 C1+H1: annual expired/restricted code → INVALID_PROMO_CODE', async () => {
@@ -756,22 +883,20 @@ describe('annual comp + discount branches', () => {
         }
 
         expect((thrown as SubscriptionCheckoutError).code).toBe('INVALID_PROMO_CODE');
-        expect(billing.checkout.create).not.toHaveBeenCalled();
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
     });
 });
 
 // ---------------------------------------------------------------------------
-// HOS-115 — annual TRIAL branch (mirrors the monthly HOS-110 W1 branch above)
+// HOS-115/HOS-171 — annual TRIAL-eligible checkout (mirrors monthly above)
 // ---------------------------------------------------------------------------
 
-describe('HOS-115: annual TRIAL branch (mirrors monthly HOS-110 W1)', () => {
+describe('HOS-115/HOS-171: annual TRIAL-eligible checkout (mirrors monthly HOS-110 W1)', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it('AC-1: trial-eligible annual checkout grants a no-card trial — no MP object, no charge', async () => {
+    it('AC-1: a trial-eligible annual checkout is a real preapproval carrying freeTrialDays, billingInterval=annual', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'none' });
-        const billing = makeTrialBilling({
-            trialSubscription: { id: 'trial-sub-1', trialEnd: '2027-03-01T00:00:00.000Z' }
-        });
+        const billing = makeTrialBilling();
 
         const result = await initiatePaidAnnualSubscription({
             ...ANNUAL_BASE,
@@ -779,32 +904,20 @@ describe('HOS-115: annual TRIAL branch (mirrors monthly HOS-110 W1)', () => {
             billing: billing as any
         });
 
-        expect(result.appliedEffect).toBe('trial');
+        expect(result.appliedEffect).toBeUndefined();
         expect(result.localSubscriptionId).toBe('trial-sub-1');
-        // In-app success sentinel URL reused — NOT a real MP checkout URL.
-        expect(result.checkoutUrl).toBe(ANNUAL_URLS.successUrl);
-        expect(result.expiresAt).toBe('2027-03-01T00:00:00.000Z');
-        // NO MercadoPago checkout object was ever created — no charge.
-        expect(billing.checkout.create).not.toHaveBeenCalled();
-        // No pending-provider annual billing_subscriptions row was inserted,
-        // and no promo redemption ran — the trial branch returns before both.
-        expect(dbInsertValuesMock).not.toHaveBeenCalled();
-        // Trial length equals the plan's own trialDays (interval-agnostic).
-        expect(billing.subscriptions.create).toHaveBeenCalledWith(
-            expect.objectContaining({ trialDays: 14 })
-        );
+        // A REAL MP checkoutUrl — not the comp in-app success sentinel.
+        expect(result.checkoutUrl).toBe('https://mp.test/checkout/trial');
+        const createArg = createCallArg(billing);
+        expect(createArg.billingInterval).toBe('annual');
+        expect(createArg.freeTrialDays).toBe(14);
     });
 
-    it('AC-2: a not-eligible customer (existing subscription) skips the trial and pays the annual upfront charge', async () => {
+    it('AC-2: a not-eligible customer (existing subscription) skips the trial — the preapproval carries no freeTrialDays', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'none' });
         const billing = makeTrialBilling({
             existingSubscriptions: [{ id: 'existing-sub', status: 'active' }]
         });
-        billing.checkout.create.mockResolvedValue({
-            id: 'co-annual-1',
-            providerInitPoint: 'https://mp.test/annual/real'
-        });
-        dbInsertValuesMock.mockResolvedValue(undefined);
 
         const result = await initiatePaidAnnualSubscription({
             ...ANNUAL_BASE,
@@ -812,29 +925,21 @@ describe('HOS-115: annual TRIAL branch (mirrors monthly HOS-110 W1)', () => {
             billing: billing as any
         });
 
-        // Never 'trial' — the unchanged upfront charge path ran instead.
-        expect(result.appliedEffect).not.toBe('trial');
-        expect(result.checkoutUrl).toBe('https://mp.test/annual/real');
-        // The trial branch's cheap eligibility check ran (getByCustomerId),
-        // but `startTrial` itself was never reached — no subscriptions.create.
+        expect(result.appliedEffect).toBeUndefined();
         expect(billing.subscriptions.getByCustomerId).toHaveBeenCalledOnce();
-        expect(billing.subscriptions.create).not.toHaveBeenCalled();
-        expect(billing.checkout.create).toHaveBeenCalledOnce();
+        const createArg = createCallArg(billing);
+        expect(createArg.billingInterval).toBe('annual');
+        expect(createArg.freeTrialDays).toBeUndefined();
     });
 
-    it('AC-7: cross-interval eligibility — a customer who already consumed a trial (any interval) is not granted a second one', async () => {
+    it('AC-7/AC-10: cross-interval eligibility — a customer who already consumed a trial (any interval, any status) is not granted a second one', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'none' });
-        // The customer's only subscription is a CANCELED trial — startTrial's
+        // The customer's only subscription is a CANCELED trial — the
         // eligibility gate does not distinguish status or interval, so this
         // still disqualifies (one trial per customer, for life).
         const billing = makeTrialBilling({
             existingSubscriptions: [{ id: 'expired-monthly-trial', status: 'canceled' }]
         });
-        billing.checkout.create.mockResolvedValue({
-            id: 'co-annual-2',
-            providerInitPoint: 'https://mp.test/annual/real2'
-        });
-        dbInsertValuesMock.mockResolvedValue(undefined);
 
         const result = await initiatePaidAnnualSubscription({
             ...ANNUAL_BASE,
@@ -842,12 +947,12 @@ describe('HOS-115: annual TRIAL branch (mirrors monthly HOS-110 W1)', () => {
             billing: billing as any
         });
 
-        expect(result.appliedEffect).not.toBe('trial');
-        expect(billing.subscriptions.create).not.toHaveBeenCalled();
-        expect(billing.checkout.create).toHaveBeenCalledOnce();
+        expect(result.appliedEffect).toBeUndefined();
+        expect(createCallArg(billing).freeTrialDays).toBeUndefined();
+        expect(billing.subscriptions.create).toHaveBeenCalledOnce();
     });
 
-    it('AC-5: comp wins over trial on the annual entry — trial branch never attempted', async () => {
+    it('comp wins over trial on the annual entry — the preapproval is never attempted', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'comp',
             promoCodeId: 'pc-1',
@@ -869,16 +974,14 @@ describe('HOS-115: annual TRIAL branch (mirrors monthly HOS-110 W1)', () => {
         expect(result.localSubscriptionId).toBe('comp-annual-trial-1');
         const compArg = createCompSubscriptionMock.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(compArg.interval).toBe('annual');
-        // The trial branch never ran.
+        // The eligibility check and the preapproval create never ran.
         expect(billing.subscriptions.getByCustomerId).not.toHaveBeenCalled();
         expect(billing.subscriptions.create).not.toHaveBeenCalled();
     });
 
-    it('AC-5: trial_extension lengthens the annual trial by the code freeTrialDays', async () => {
+    it('trial_extension lengthens the annual trial by the code freeTrialDays', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'trial', freeTrialDays: 10 });
-        const billing = makeTrialBilling({
-            trialSubscription: { id: 'trial-sub-1', trialEnd: null }
-        });
+        const billing = makeTrialBilling();
 
         const result = await initiatePaidAnnualSubscription({
             ...ANNUAL_BASE,
@@ -887,25 +990,32 @@ describe('HOS-115: annual TRIAL branch (mirrors monthly HOS-110 W1)', () => {
             promoCode: 'EXTEND10'
         });
 
-        expect(result.appliedEffect).toBe('trial');
+        expect(result.appliedEffect).toBeUndefined();
         expect(result.promoCodeIgnored).toBeUndefined();
         // 14 base (TRIAL_PLAN) + 10 extension = 24.
-        expect(billing.subscriptions.create).toHaveBeenCalledWith(
-            expect.objectContaining({ trialDays: 24 })
-        );
+        const createArg = createCallArg(billing);
+        expect(createArg.billingInterval).toBe('annual');
+        expect(createArg.freeTrialDays).toBe(24);
     });
 
-    it('AC-5: discount is discarded on the annual trial branch (promoCodeIgnored=true), trial granted at base length', async () => {
+    it('discount applies ALONGSIDE the annual trial, exactly like monthly (HOS-171)', async () => {
+        // Arrange
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'discount',
             promoCodeId: 'pc-1',
             code: 'LANZA50',
             effect: { kind: 'discount', valueKind: 'percentage', value: 50, durationCycles: 3 }
         });
-        const billing = makeTrialBilling({
-            trialSubscription: { id: 'trial-sub-1', trialEnd: '2027-04-01T00:00:00.000Z' }
+        calculatePromoCodeEffectMock.mockReturnValue({
+            type: 'apply-discount',
+            discountAmount: 17_500_000,
+            finalAmount: 17_500_000,
+            remainingCycles: 3
         });
+        applySignupDiscountToMonthlyMock.mockResolvedValue({ success: true, data: {} });
+        const billing = makeTrialBilling();
 
+        // Act
         const result = await initiatePaidAnnualSubscription({
             ...ANNUAL_BASE,
             // biome-ignore lint/suspicious/noExplicitAny: test billing stub
@@ -913,65 +1023,15 @@ describe('HOS-115: annual TRIAL branch (mirrors monthly HOS-110 W1)', () => {
             promoCode: 'LANZA50'
         });
 
-        expect(result.appliedEffect).toBe('trial');
-        expect(result.promoCodeIgnored).toBe(true);
-        expect(result.expiresAt).toBe('2027-04-01T00:00:00.000Z');
-        // No extension — the trial is granted at its base length, unchanged.
-        expect(billing.subscriptions.create).toHaveBeenCalledWith(
-            expect.objectContaining({ trialDays: 14 })
-        );
-        // The discount/redemption machinery is never invoked — discarded, not
-        // persisted anywhere (mirrors monthly HOS-110 W1; no post-trial discount).
-        expect(calculatePromoCodeEffectMock).not.toHaveBeenCalled();
-        expect(redeemAndRecordUsageMock).not.toHaveBeenCalled();
-        expect(dbExecuteMock).not.toHaveBeenCalled();
+        // Assert — annual has no promo behavior of its own any more
+        expect(result.promoCodeIgnored).toBeUndefined();
+        expect(result.appliedEffect).toBe('discount');
+        const createArg = createCallArg(billing);
+        expect(createArg.billingInterval).toBe('annual');
+        expect(createArg.freeTrialDays).toBe(14);
+        // Mutated down on the live preapproval, not baked into a one-time line
+        // item — the hosted checkout is never touched.
+        expect(applySignupDiscountToMonthlyMock).toHaveBeenCalledOnce();
         expect(billing.checkout.create).not.toHaveBeenCalled();
-    });
-});
-
-// ---------------------------------------------------------------------------
-// HOS-115 AC-8 — intendedInterval stamped on the trial subscription metadata,
-// on BOTH entry paths (source of truth for the post-trial conversion nudge).
-// ---------------------------------------------------------------------------
-
-describe('HOS-115 AC-8: intendedInterval stamped on trial metadata', () => {
-    beforeEach(() => vi.clearAllMocks());
-
-    it('the annual entry branch stamps intendedInterval="annual"', async () => {
-        resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'none' });
-        const billing = makeTrialBilling({
-            trialSubscription: { id: 'trial-sub-1', trialEnd: null }
-        });
-
-        await initiatePaidAnnualSubscription({
-            ...ANNUAL_BASE,
-            // biome-ignore lint/suspicious/noExplicitAny: test billing stub
-            billing: billing as any
-        });
-
-        expect(billing.subscriptions.create).toHaveBeenCalledWith(
-            expect.objectContaining({
-                metadata: expect.objectContaining({ intendedInterval: 'annual' })
-            })
-        );
-    });
-
-    it('the monthly entry branch stamps intendedInterval="monthly"', async () => {
-        resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'none' });
-        const billing = makeTrialBilling({
-            trialSubscription: { id: 'trial-sub-1', trialEnd: null }
-        });
-
-        await initiatePaidMonthlySubscription({
-            ...MONTHLY_BASE,
-            // biome-ignore lint/suspicious/noExplicitAny: test billing stub
-            billing: billing as any
-        });
-
-        expect(billing.subscriptions.create).toHaveBeenCalledWith(
-            expect.objectContaining({
-                metadata: expect.objectContaining({ intendedInterval: 'monthly' })
-            })
-        );
     });
 });

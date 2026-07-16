@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "455-point-of-interest-lacteos_la_pequena",
     "slug": "lacteos_la_pequena",
-    "lat": -32.6532238,
-    "long": -58.8831372,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Tambo y fábrica familiar de quesos y dulce de leche, reconocido por su dulce de leche repostero premiado a nivel nacional.",
@@ -34,7 +34,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://urdinarrain.tur.ar/que-hacer/",
-    "notes": "Visitas guiadas y degustaciones confirmadas. Falta geocodificar y validar modalidad de reserva. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Visitas guiadas y degustaciones confirmadas. Falta geocodificar y validar modalidad de reserva.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

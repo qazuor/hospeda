@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "499-point-of-interest-monumento_dr_bastian",
     "slug": "monumento_dr_bastian",
-    "lat": -32.2096568,
-    "long": -58.219216200000005,
+    "lat": null,
+    "long": null,
     "type": "MONUMENT",
     "icon": null,
     "description": "Monumento funerario dedicado al primer médico de la Colonia San José, ubicado en el cementerio municipal y puesto en valor por el museo local.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sanjose.gob.ar/trabajos-de-puesta-en-valor-del-monumento-al-dr-bastian-en-el-cementerio-de-san-jose/",
-    "notes": "Existencia, historia y ubicación dentro del cementerio confirmadas; falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia, historia y ubicación dentro del cementerio confirmadas; falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

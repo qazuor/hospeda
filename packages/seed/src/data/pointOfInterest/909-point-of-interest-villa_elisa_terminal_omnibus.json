@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "909-point-of-interest-villa_elisa_terminal_omnibus",
     "slug": "villa_elisa_terminal_omnibus",
-    "lat": -32.1631324,
-    "long": -58.4004902,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Principal terminal de transporte terrestre de pasajeros de Villa Elisa, conectada con ciudades provinciales y nacionales.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://villaelisa.tur.ar/preguntas-frecuentes/; https://digesto.villaelisa.gov.ar/archivo/MVE_RESHCD_Indice_de_ORDENANZAS_-_al_12-07-2021.pdf",
-    "notes": "Función y denominación histórica confirmadas. Falta dirección y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "source": "https://villaelisa.tur.ar/preguntas-frecuentes/",
+    "notes": "Función y denominación histórica confirmadas. Falta dirección y geocodificación.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

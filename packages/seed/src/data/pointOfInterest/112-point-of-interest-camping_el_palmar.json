@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "112-point-of-interest-camping_el_palmar",
     "slug": "camping_el_palmar",
-    "lat": -31.866703500000003,
-    "long": -58.209686,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Camping organizado con parcelas, sanitarios, duchas, parrillas, bancos, mesas, proveeduría y acceso durante todo el año.",
@@ -33,8 +33,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/horarios-como-llegar; https://www.argentina.gob.ar/sites/default/files/2024/09/pn_elpalmar_-_uso_publico_-_abril2024.pdf",
-    "notes": "Servicios y funcionamiento confirmados. Falta geocodificar el acceso del camping. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/horarios-como-llegar",
+    "notes": "Servicios y funcionamiento confirmados. Falta geocodificar el acceso del camping.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

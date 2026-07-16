@@ -66,6 +66,13 @@ import { accommodationCalendarSyncModel, accommodationOccupancyModel } from '@re
 import { CalendarSyncStatusEnum, OccupancySourceEnum } from '@repo/schemas';
 import { apiLogger } from '../../utils/logger.js';
 import {
+    enumerateHalfOpenDates,
+    getTodayInMarketTimezone,
+    MARKET_TIMEZONE,
+    MAX_EVENT_DAYS,
+    markerToDate
+} from '../calendar-sync/date-range.js';
+import {
     GoogleCalendarApiError,
     type GoogleCalendarEvent,
     listEvents
@@ -87,17 +94,13 @@ const PROVIDER = OccupancySourceEnum.GOOGLE_CALENDAR;
  * Hardcoded because the platform targets the AR market (Litoral) and
  * accommodations carry no per-property timezone. Revisit (env var or a
  * per-accommodation zone) only if non-AR accommodations are onboarded.
+ *
+ * Aliases the shared {@link MARKET_TIMEZONE} (`../calendar-sync/date-range.js`)
+ * under this module's own established name — every existing reference below
+ * stays valid, and the value can never drift from the one `getTodayInMarketTimezone`
+ * uses for `fromDate`.
  */
-const SYNC_RESPONSE_TIMEZONE = 'America/Argentina/Buenos_Aires';
-
-/** Milliseconds in a day, for half-open date enumeration. */
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/**
- * Defensive cap on the number of days a single event may occupy. Guards against
- * a pathological multi-year event exploding into tens of thousands of rows.
- */
-const MAX_EVENT_DAYS = 370;
+const SYNC_RESPONSE_TIMEZONE = MARKET_TIMEZONE;
 
 /**
  * Outcome of a single {@link syncAccommodationCalendar} run.
@@ -128,58 +131,16 @@ export type CalendarSyncResult =
       };
 
 /**
- * Extracts the wall-clock `YYYY-MM-DD` date from an event start/end marker.
- * All-day markers expose `date` directly; timed markers expose `dateTime`
- * whose `YYYY-MM-DD` prefix is the date in {@link SYNC_RESPONSE_TIMEZONE}
- * (Google normalizes timed events to that zone at the API layer).
- *
- * @param marker - The event start or end marker, if present.
- * @returns The `YYYY-MM-DD` date, or `undefined` when the marker is absent/unusable.
- */
-const markerToDate = (marker: GoogleCalendarEvent['start']): string | undefined => {
-    if (marker === undefined) {
-        return undefined;
-    }
-    if (marker.date !== undefined) {
-        return marker.date;
-    }
-    if (marker.dateTime !== undefined && marker.dateTime.length >= 10) {
-        return marker.dateTime.slice(0, 10);
-    }
-    return undefined;
-};
-
-/**
- * Enumerates the half-open `[startDate, endDate)` date range as `YYYY-MM-DD`
- * strings, using UTC date math to avoid any local-timezone drift.
- *
- * Returns an empty array when the range is empty or inverted (`endDate <=
- * startDate`) — this is exactly how same-day / sub-1-day events are excluded.
- *
- * @param startDate - Inclusive lower bound, `YYYY-MM-DD`.
- * @param endDate - Exclusive upper bound, `YYYY-MM-DD`.
- * @returns The occupied dates, capped at {@link MAX_EVENT_DAYS}.
- */
-const enumerateHalfOpenDates = (startDate: string, endDate: string): string[] => {
-    const startMs = Date.parse(`${startDate}T00:00:00Z`);
-    const endMs = Date.parse(`${endDate}T00:00:00Z`);
-    if (Number.isNaN(startMs) || Number.isNaN(endMs) || endMs <= startMs) {
-        return [];
-    }
-
-    const dates: string[] = [];
-    let cursor = startMs;
-    while (cursor < endMs && dates.length < MAX_EVENT_DAYS) {
-        // Built from a `T00:00:00Z` base, so the ISO date prefix is stable.
-        dates.push(new Date(cursor).toISOString().slice(0, 10));
-        cursor += DAY_MS;
-    }
-    return dates;
-};
-
-/**
  * Maps a non-cancelled event to the set of dates it occupies. Returns an empty
  * array when the event has no usable start/end or is shorter than one day.
+ *
+ * Uses the shared provider-agnostic {@link markerToDate} /
+ * {@link enumerateHalfOpenDates} helpers (`../calendar-sync/date-range.js`) —
+ * `event.start`/`event.end` structurally satisfy `DateOrDateTimeMarker`. The
+ * `YYYY-MM-DD` extraction from a timed marker's `dateTime` prefix is
+ * deterministic here specifically because {@link SYNC_RESPONSE_TIMEZONE} is
+ * requested from the Calendar API (Google normalizes timed events to that
+ * zone at the API layer).
  *
  * Emits a WARN when the event's date range hits {@link MAX_EVENT_DAYS} — a
  * pathological span whose occupancy is truncated at the cap.
@@ -326,13 +287,9 @@ export const syncAccommodationCalendar = async (params: {
 
     // 2. Compute the reconcile window ONCE: start-of-today forward, in the AR
     //    market zone (NOT UTC) so `fromDate` is consistent with how event dates
-    //    are extracted (both in SYNC_RESPONSE_TIMEZONE). Using UTC here would,
-    //    during the ~3h UTC-vs-AR daily overlap, place `fromDate` a day ahead of
-    //    an event's AR date and let a past date slip through. AR is a fixed
-    //    UTC-3 offset (no DST since 2009).
-    const fromDate = new Intl.DateTimeFormat('en-CA', {
-        timeZone: SYNC_RESPONSE_TIMEZONE
-    }).format(new Date());
+    //    are extracted (both in SYNC_RESPONSE_TIMEZONE). See
+    //    `getTodayInMarketTimezone`'s doc for why UTC would be wrong here.
+    const fromDate = getTodayInMarketTimezone();
     const timeMin = new Date(`${fromDate}T00:00:00-03:00`).toISOString();
 
     // 3. FULL fetch of every live event from `timeMin` forward.
@@ -356,14 +313,26 @@ export const syncAccommodationCalendar = async (params: {
     // 4. Build the DESIRED blocked-date set: one entry per date, first live
     //    event to cover a date wins its provenance. Overlaps collapse to a
     //    single row that stays blocked as long as EITHER event is live.
-    const desired = new Map<string, string>();
+    const desired = new Map<string, { readonly id: string; readonly title: string | null }>();
     for (const event of fetched.events) {
         if (event.status === 'cancelled') {
             continue;
         }
+        // Truncated to 500 chars (AFTER trimming) to match the DB column's
+        // `varchar(500)` cap — a Google event with an oversized summary would
+        // otherwise make `batchUpsertSync`'s insert throw "value too long for
+        // type character varying(500)", rolling back the entire atomic
+        // reconcile and turning the calendar into a poison pill that fails
+        // every future sync.
+        const trimmedSummary = typeof event.summary === 'string' ? event.summary.trim() : '';
+        // Truncate by code point (not UTF-16 unit) so an astral char (emoji)
+        // at the 500 boundary is never split into a lone surrogate. `event_title`
+        // is varchar(500) — Postgres counts code points, so this always fits.
+        const title =
+            trimmedSummary.length > 0 ? Array.from(trimmedSummary).slice(0, 500).join('') : null;
         for (const date of mapEventToDates(event, accommodationId)) {
             if (!desired.has(date)) {
-                desired.set(date, event.id);
+                desired.set(date, { id: event.id, title });
             }
         }
     }
@@ -375,7 +344,7 @@ export const syncAccommodationCalendar = async (params: {
     // invariant intact on the insert side too.
     const rows = [...desired]
         .filter(([date]) => date >= fromDate)
-        .map(([date, externalEventId]) => ({ date, externalEventId }));
+        .map(([date, { id, title }]) => ({ date, externalEventId: id, eventTitle: title }));
 
     // 5. Atomically replace all future GOOGLE_CALENDAR rows with the desired
     //    set (never touches MANUAL rows).

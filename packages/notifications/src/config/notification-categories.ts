@@ -17,7 +17,6 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     [NotificationType.ADDON_EXPIRATION_WARNING]: NotificationCategory.REMINDER,
     [NotificationType.ADDON_EXPIRED]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_ENDING_REMINDER]: NotificationCategory.REMINDER,
-    [NotificationType.TRIAL_EXPIRED]: NotificationCategory.REMINDER,
 
     // Admin - Sent to admin email list only
     [NotificationType.ADMIN_PAYMENT_FAILURE]: NotificationCategory.ADMIN,
@@ -65,5 +64,9 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     [NotificationType.PLAN_BEING_RETIRED]: NotificationCategory.TRANSACTIONAL,
 
     // Commerce owner credentials (SPEC-239 T-050) — TRANSACTIONAL: required for first login
-    [NotificationType.COMMERCE_OWNER_CREDENTIALS]: NotificationCategory.TRANSACTIONAL
+    [NotificationType.COMMERCE_OWNER_CREDENTIALS]: NotificationCategory.TRANSACTIONAL,
+
+    // Broken iCal feed alert to the host (HOS-162 Phase 3) — TRANSACTIONAL:
+    // overbooking risk, always sent, never opted out of
+    [NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN]: NotificationCategory.TRANSACTIONAL
 };

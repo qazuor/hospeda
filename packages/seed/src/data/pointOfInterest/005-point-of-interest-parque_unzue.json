@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "005-point-of-interest-parque_unzue",
     "slug": "parque_unzue",
-    "lat": -32.478,
-    "long": -58.233,
+    "lat": null,
+    "long": null,
     "type": "PARK",
     "description": "Parque urbano tradicional con espacios verdes y arboledas centenarias",
     "nameI18n": {
@@ -50,5 +50,9 @@
     "isBuiltin": true,
     "isFeatured": false,
     "displayWeight": 60,
-    "lifecycleState": "ACTIVE"
+    "lifecycleState": "ACTIVE",
+    "verified": false,
+    "verifiedAt": null,
+    "source": "https://gualeguaychu.tur.ar/naturaleza",
+    "notes": "Área extensa confirmada. Falta definir acceso principal y, posteriormente, un polígono."
 }

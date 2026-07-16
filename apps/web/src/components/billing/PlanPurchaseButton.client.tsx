@@ -711,29 +711,32 @@ export function PlanPurchaseButton({
             // URL (not a MercadoPago redirect). window.location.href handles all
             // cases correctly — the sentinel page manages the success flow.
             //
-            // HOS-110 F1: the sentinel URL has no `collection_status` (that only
-            // ever comes from a real MP redirect), so without a signal the success
-            // page defaults to its "verifying payment" variant — wrong for a
-            // no-card trial (there is no payment to verify) and wrong for a comp
-            // grant. Flag the granted effect on the URL so the page can render the
-            // correct copy instead. checkoutUrl is always our own absolute site
-            // URL for these two effects (never an external MP redirect), so
-            // appending a query param here is always safe.
+            // A comp grant returns an in-app sentinel URL, not an MP redirect, so it
+            // has no `collection_status` — without a signal the success page would
+            // default to its "verifying payment" variant and wait on a payment that
+            // was never made. Flag the effect on the URL so it renders the right copy.
+            // checkoutUrl is always our own absolute site URL for comp (never an
+            // external MP redirect), so appending a query param here is safe.
             //
-            // HOS-110 W1: when the server discarded a discount code in favor of a
-            // granted trial (`promoCodeIgnored`), flag that too so the page can
-            // tell the user their code was not applied. Both params can coexist.
+            // `comp` is the only effect that takes this branch. It used to be shared
+            // with `trial`, back when a trial-eligible checkout granted a no-card
+            // trial instead of a paid one; HOS-171 made a trial just `free_trial` on
+            // the paid preapproval, so it now goes to MercadoPago like any other
+            // checkout and resolves through the poller below.
             let target = result.data.checkoutUrl;
-            if (result.data.appliedEffect === 'trial' || result.data.appliedEffect === 'comp') {
+            if (result.data.appliedEffect === 'comp') {
                 target = appendQueryParam(target, 'effect', result.data.appliedEffect);
             } else {
-                // HOS-151 Bug A: a real MercadoPago redirect (plain paid or a
-                // `discount` preapproval). The recurring-preapproval return
-                // carries no `collection_status`, so stash the local sub id for
-                // the success page to poll on return. Skipped for trial/comp,
-                // which resolve instantly on the in-app sentinel page.
+                // HOS-151 Bug A: a real MercadoPago redirect (plain paid, a trial, or
+                // a `discount` preapproval). The recurring-preapproval return carries
+                // no `collection_status`, so stash the local sub id for the success
+                // page to poll on return. Skipped for comp, which resolves instantly
+                // on the in-app sentinel page.
                 storePendingCheckoutSubId(result.data.localSubscriptionId);
             }
+            // The server accepted a promo code that ended up doing nothing (a
+            // trial_extension with no trial to lengthen) — tell the user rather than
+            // pocketing it silently. Can coexist with the effect param.
             if (result.data.promoCodeIgnored) {
                 target = appendQueryParam(target, 'promoIgnored', '1');
             }

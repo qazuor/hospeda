@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "098-point-of-interest-cabalgatas_humedal",
     "slug": "cabalgatas_humedal",
-    "lat": -32.4633428,
-    "long": -58.3988259,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorridos guiados a caballo por campos bajos e inundables, utilizados para conocer el paisaje ganadero y buscar fauna.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.lanacion.com.ar/revista-lugares/meca-internacional-el-pueblo-que-convoca-gente-del-mundo-entero-para-ver-y-fotografiar-aves-nid03082025/",
-    "notes": "Actividad dependiente de prestadores y condiciones del terreno. Falta identificar establecimientos habilitados. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Actividad dependiente de prestadores y condiciones del terreno. Falta identificar establecimientos habilitados.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

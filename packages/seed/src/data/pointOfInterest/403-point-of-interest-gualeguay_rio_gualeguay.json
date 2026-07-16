@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "403-point-of-interest-gualeguay_rio_gualeguay",
     "slug": "gualeguay_rio_gualeguay",
-    "lat": -33.1504259,
-    "long": -59.3106789,
+    "lat": null,
+    "long": null,
     "type": "NATURAL",
     "icon": null,
     "description": "Curso de agua central para la identidad del destino, utilizado para pesca deportiva, navegación, avistaje de aves y actividades recreativas.",
@@ -26,8 +26,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.entrerios.tur.ar/localidades-1/gualeguay; https://en.wikipedia.org/wiki/Gualeguay_River",
-    "notes": "Curso de agua; requiere geometría lineal y puntos de acceso separados. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "source": "https://www.entrerios.tur.ar/localidades-1/gualeguay",
+    "notes": "Curso de agua; requiere geometría lineal y puntos de acceso separados.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

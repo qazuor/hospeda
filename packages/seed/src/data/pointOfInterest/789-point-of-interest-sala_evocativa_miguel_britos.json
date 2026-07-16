@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "789-point-of-interest-sala_evocativa_miguel_britos",
     "slug": "sala_evocativa_miguel_britos",
-    "lat": null,
-    "long": null,
+    "lat": -32.46547530000001,
+    "long": -58.4809474,
     "type": "MUSEUM",
     "icon": null,
     "description": "Sala con piezas, objetos y vestimenta donados por la familia de Miguel F. Britos para preservar su memoria local.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://caseros.gob.ar/turismo-y-cultura/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

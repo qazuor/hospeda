@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "182-point-of-interest-centro_visitantes_el_palmar",
     "slug": "centro_visitantes_el_palmar",
-    "lat": -31.8674095,
-    "long": -58.208841199999995,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio interpretativo con información sobre ambientes, flora, fauna e historia del parque, exposición fotográfica, auditorio y atención al visitante.",
@@ -34,7 +34,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/servicios",
-    "notes": "Existencia y servicios confirmados por Parques Nacionales. Falta geocodificar el edificio. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Existencia y servicios confirmados por Parques Nacionales. Falta geocodificar el edificio.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

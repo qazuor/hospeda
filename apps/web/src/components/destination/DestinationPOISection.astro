@@ -2,12 +2,20 @@
 /**
  * @file DestinationPOISection.astro
  * @description Points-of-interest (POI) section for the destination detail
- * page (HOS-113 Phase 4, extended HOS-138). Renders the destination's POIs
- * as a **list / grid** — NOT map pins (multi-marker rendering is deferred,
- * see spec NG-3 / OQ-4; `LocationMap` has no multi-marker mode). Built
+ * page (HOS-113 Phase 4, extended HOS-138, HOS-146). Renders the
+ * destination's PRIMARY POIs as a **list / grid** — NOT map pins; the
+ * multi-marker map lives separately in `DestinationPOIMap.client.tsx`
+ * (HOS-146), rendered as enrichment alongside this SSR grid, which stays the
+ * indexable content source (SSR-first principle, apps/web/CLAUDE.md). Built
  * fresh — this does NOT resurrect the dead `DestinationAttractionsGrid.astro`,
  * though its displayWeight-then-alphabetical sort + card shape informed this
  * one.
+ *
+ * HOS-146: the API payload now carries BOTH `PRIMARY` (city-core) and
+ * `NEARBY` (far-out, median 9-55km away) POIs. This grid explicitly filters
+ * to `relation !== 'NEARBY'` so it keeps showing exactly what it showed
+ * before HOS-146 shipped NEARBY — zero visual regression. NEARBY POIs only
+ * ever appear on the map, behind the "ver alrededores" toggle.
  *
  * Each card shows: a type-derived icon, the display name (HOS-138 resolves
  * admin-editable multilang `nameI18n` content, degrading to a humanized slug
@@ -17,15 +25,16 @@
  * (same multilang-first/legacy-fallback order via `descriptionI18n` /
  * `description`). Ordered featured-first, then by `displayWeight`
  * descending, then by display name (§8). Renders nothing when the
- * destination has no POIs, mirroring how the attractions grid guards
+ * destination has no PRIMARY POIs, mirroring how the attractions grid guards
  * against an empty array.
  */
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { translatePoiName, translatePoiTypeLabel } from '@/lib/poi-labels';
+import { translatePoiCategoryLabel, translatePoiName } from '@/lib/poi-labels';
 import { getPointOfInterestTypeIcon } from '@/lib/poi-type-icons';
+import type { I18nTextLike } from '@/lib/resolve-i18n-text';
 import { resolveI18nText } from '@/lib/resolve-i18n-text';
-import type { I18nText } from '@repo/schemas';
+import { getPoiCategoryColorScheme, getPoiCategoryIcon } from '@repo/icons';
 
 /** A single point of interest belonging to a destination. */
 export interface DestinationPOIItem {
@@ -35,10 +44,35 @@ export interface DestinationPOIItem {
 	readonly description?: string | null;
 	readonly isFeatured?: boolean;
 	readonly displayWeight?: number;
-	/** Admin-editable multilang name content (HOS-138); null for POIs not yet migrated. */
-	readonly nameI18n?: I18nText | null;
+	/**
+	 * Admin-editable multilang name content (HOS-138); null for POIs not yet
+	 * migrated. `I18nTextLike` (not the stricter `I18nText`) because the
+	 * source payload allows null `en`/`pt` for Spanish-sourced imports — same
+	 * shape `poi-labels.ts`'s `translatePoiName` already accepts.
+	 */
+	readonly nameI18n?: I18nTextLike | null;
 	/** Admin-editable multilang description content (HOS-138); null for POIs not yet migrated. */
-	readonly descriptionI18n?: I18nText | null;
+	readonly descriptionI18n?: I18nTextLike | null;
+	/**
+	 * PRIMARY (city-core) vs NEARBY (far-out) — HOS-146. Only PRIMARY POIs
+	 * render in this grid; `undefined` is treated as PRIMARY (back-compat
+	 * with callers that predate HOS-146).
+	 */
+	readonly relation?: 'PRIMARY' | 'NEARBY';
+	/** Unused by the grid; present so the page can share one transform shape with DestinationPOIMap (HOS-146). */
+	readonly lat?: number | null;
+	/** Unused by the grid; present so the page can share one transform shape with DestinationPOIMap (HOS-146). */
+	readonly long?: number | null;
+	/**
+	 * The POI's primary category (HOS-182); `null`/absent when it has none
+	 * (expected, known-dirty data — HOS-177). `slug` drives the card icon +
+	 * icon color and `nameI18n` the badge label, both falling back to the
+	 * legacy `type`-based mapping when absent.
+	 */
+	readonly primaryCategory?: {
+		readonly slug: string;
+		readonly nameI18n?: I18nTextLike | null;
+	} | null;
 }
 
 interface Props {
@@ -51,7 +85,13 @@ const { t } = createTranslations(locale);
 
 if (!pointsOfInterest || pointsOfInterest.length === 0) return;
 
-const sorted = [...pointsOfInterest]
+// HOS-146: the payload now carries NEARBY POIs too (map-only) — filter them
+// out here so the grid keeps showing exactly what it showed pre-HOS-146.
+const primaryOnly = pointsOfInterest.filter((poi) => poi.relation !== 'NEARBY');
+
+if (primaryOnly.length === 0) return;
+
+const sorted = [...primaryOnly]
 	.map((poi) => ({
 		...poi,
 		displayName: translatePoiName({ slug: poi.slug, nameI18n: poi.nameI18n, locale }),
@@ -77,12 +117,26 @@ const sorted = [...pointsOfInterest]
 
 	<div class="poi-section__grid">
 		{sorted.map((poi) => {
-			const Icon = getPointOfInterestTypeIcon({ type: poi.type });
-			const typeLabel = translatePoiTypeLabel({ t, type: poi.type });
+			const categorySlug = poi.primaryCategory?.slug;
+			const Icon = categorySlug
+				? getPoiCategoryIcon({ slug: categorySlug })
+				: getPointOfInterestTypeIcon({ type: poi.type });
+			// HOS-182: an uncategorized POI must look exactly as it did before —
+			// never resolve the color scheme for a nullish slug (its `services`
+			// bucket carries real meaning it would falsely apply here).
+			const iconColor = categorySlug
+				? getPoiCategoryColorScheme({ slug: categorySlug }).fill
+				: 'var(--brand-primary)';
+			const typeLabel = translatePoiCategoryLabel({
+				t,
+				type: poi.type,
+				primaryCategory: poi.primaryCategory,
+				locale
+			});
 			return (
 				<div class="poi-section__card">
 					<span class="poi-section__icon" aria-hidden="true">
-						<Icon size={28} weight="fill" aria-hidden="true" />
+						<Icon size={28} weight="fill" color={iconColor} aria-hidden="true" />
 					</span>
 					<h3 class="poi-section__name">{poi.displayName}</h3>
 					<span class="poi-section__type-badge">{typeLabel}</span>

@@ -16,7 +16,6 @@ import {
     TrialEndingReminder,
     type TrialEndingReminderProps
 } from '../../src/templates/trial/trial-ending-reminder';
-import { TrialExpired, type TrialExpiredProps } from '../../src/templates/trial/trial-expired';
 
 describe('Trial Email Templates', () => {
     describe('TrialEndingReminder', () => {
@@ -129,95 +128,6 @@ describe('Trial Email Templates', () => {
 
             // Assert
             expect(html).toContain('https://custom.url/upgrade?ref=trial');
-        });
-    });
-
-    describe('TrialExpired', () => {
-        const validProps: TrialExpiredProps = {
-            recipientName: 'Martín Castro',
-            planName: 'Plan Standard',
-            trialEndDate: '2024-12-15',
-            upgradeUrl: 'https://hospeda.com.ar/precios'
-        };
-
-        it('should render without errors', () => {
-            // Arrange & Act
-            const render = () => renderToStaticMarkup(TrialExpired(validProps));
-
-            // Assert
-            expect(render).not.toThrow();
-        });
-
-        it('should include required fields from payload', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(TrialExpired(validProps));
-
-            // Assert
-            expect(html).toContain('Martín Castro');
-            expect(html).toContain('Plan Standard');
-            expect(html).toContain('https://hospeda.com.ar/precios');
-        });
-
-        it('should include Spanish text', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(TrialExpired(validProps));
-
-            // Assert
-            expect(html).toContain('período de prueba ha finalizado');
-            expect(html).toContain('Hola');
-            expect(html).toContain('ha finalizado');
-            expect(html).toContain('Suscríbete ahora');
-        });
-
-        it('should format trial end date in Spanish', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(TrialExpired(validProps));
-
-            // Assert
-            // Should contain Spanish month name or formatted date
-            expect(html).toMatch(/\d{1,2}.*de.*(diciembre|noviembre|enero)/i);
-        });
-
-        it('should include call-to-action button with upgrade URL', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(TrialExpired(validProps));
-
-            // Assert
-            expect(html).toContain('Suscribirse ahora');
-            expect(html).toContain('https://hospeda.com.ar/precios');
-        });
-
-        it('should handle different upgrade URLs correctly', () => {
-            // Arrange
-            const propsWithCustomUrl: TrialExpiredProps = {
-                ...validProps,
-                upgradeUrl: 'https://app.hospeda.com/billing/upgrade'
-            };
-
-            // Act
-            const html = renderToStaticMarkup(TrialExpired(propsWithCustomUrl));
-
-            // Assert
-            expect(html).toContain('https://app.hospeda.com/billing/upgrade');
-        });
-
-        it('should communicate urgency in expired trial', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(TrialExpired(validProps));
-
-            // Assert
-            // Should convey that trial has ended and action is needed
-            expect(html).toContain('ha finalizado');
-            expect(html).toContain('Suscríbete ahora');
-        });
-
-        it('should explain consequences of not upgrading', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(TrialExpired(validProps));
-
-            // Assert
-            // Should mention limited access or features no longer available
-            expect(html).toMatch(/funcionalidades que ya no están disponibles|plan gratuito/i);
         });
     });
 });

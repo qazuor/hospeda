@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "448-point-of-interest-la_aldea_club_campo",
     "slug": "la_aldea_club_campo",
-    "lat": -32.34570600000001,
-    "long": -58.159467,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio recreativo rural incluido en la oferta turística de Colón, con propuestas familiares y actividades en contacto con la naturaleza.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.colonturismo.tur.ar/directorio/ypf-2/",
-    "notes": "Incluido en el directorio turístico oficial. Falta validar domicilio, servicios actuales y coordenadas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Incluido en el directorio turístico oficial. Falta validar domicilio, servicios actuales y coordenadas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

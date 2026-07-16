@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "344-point-of-interest-expo_feria_rural",
     "slug": "expo_feria_rural",
-    "lat": null,
-    "long": null,
+    "lat": -32.455839,
+    "long": -58.385633999999996,
     "type": "OTHER",
     "icon": null,
     "description": "Feria educativa y productiva vinculada con la escuela rural, emprendedores y actividades del campo.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://munisanjusto.gob.ar/noticias/1er-expo-feria-rural-escuela-nina-n-11-18-de-octubre-2024-07-11t11-30-00-000z-1er-e",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

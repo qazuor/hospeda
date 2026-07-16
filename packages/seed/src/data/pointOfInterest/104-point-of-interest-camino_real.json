@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "104-point-of-interest-camino_real",
     "slug": "camino_real",
-    "lat": -32.4296383,
-    "long": -58.5108525,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Antiguo camino rural utilizado por Justo José de Urquiza y su familia entre el Palacio San José y Concepción del Uruguay.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.hotelposadatierralinda.com.ar/",
-    "notes": "Falta digitalizar el trazado histórico y diferenciar tramos públicos. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Falta digitalizar el trazado histórico y diferenciar tramos públicos.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

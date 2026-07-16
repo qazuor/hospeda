@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "836-point-of-interest-sendero_la_glorieta",
     "slug": "sendero_la_glorieta",
-    "lat": -31.8770725,
-    "long": -58.2634837,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Sendero de 900 metros que desciende desde el mirador hacia el arroyo El Palmar, atraviesa selva ribereña y llega a una pequeña cascada.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
-    "notes": "Nombre, longitud y recorrido confirmados. Falta geocodificar el inicio. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Nombre, longitud y recorrido confirmados. Falta geocodificar el inicio.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

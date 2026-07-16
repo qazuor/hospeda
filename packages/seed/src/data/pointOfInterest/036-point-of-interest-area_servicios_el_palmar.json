@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "036-point-of-interest-area_servicios_el_palmar",
     "slug": "area_servicios_el_palmar",
-    "lat": -31.8543085,
-    "long": -58.3194309,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Sector principal de atención al visitante donde se concentran estacionamiento, centro de visitantes, gastronomía, camping, proveeduría y prestadores recreativos.",
@@ -33,8 +33,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/horarios-como-llegar; https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/servicios",
-    "notes": "Ubicación relativa y servicios confirmados. Falta definir un punto central cartográfico. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/horarios-como-llegar",
+    "notes": "Ubicación relativa y servicios confirmados. Falta definir un punto central cartográfico.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

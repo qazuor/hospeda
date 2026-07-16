@@ -149,7 +149,10 @@ export function AccommodationsListingMap({
         initialItems,
         pageSize: 100,
         extraParams: extraSearchParams,
-        locale
+        locale,
+        // HOS-186: lets the hook bulk-resolve bookmark state for refetched
+        // items, so the popup/sidebar FavoriteButtons never mount unhydrated.
+        isAuthenticated
     });
 
     const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);

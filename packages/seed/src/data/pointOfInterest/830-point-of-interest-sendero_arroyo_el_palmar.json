@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "830-point-of-interest-sendero_arroyo_el_palmar",
     "slug": "sendero_arroyo_el_palmar",
-    "lat": -31.8946084,
-    "long": -58.2379336,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Sendero de 350 metros que desciende desde el mirador hasta la costa del arroyo atravesando un área abierta con vistas panorámicas.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.argentina.gob.ar/parquesnacionales/centro/parque-nacional-el-palmar/actividades",
-    "notes": "Nombre, longitud y recorrido confirmados. Falta geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Nombre, longitud y recorrido confirmados. Falta geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

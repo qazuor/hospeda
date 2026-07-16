@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "056-point-of-interest-bajada_rio_piedras_finas",
     "slug": "bajada_rio_piedras_finas",
-    "lat": -30.899350899999998,
-    "long": -57.931115399999996,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Acceso rural al agua utilizado como punto de observación y conexión con el paisaje del lago.",
@@ -26,8 +26,8 @@
     "displayWeight": 50,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://mapcarta.com/es/W706820034; https://mapcarta.com/es/N8949729120",
-    "notes": "Ubicación relativa confirmada. Falta geocodificar y validar acceso público. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://mapcarta.com/es/W706820034",
+    "notes": "Ubicación relativa confirmada. Falta geocodificar y validar acceso público.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "367-point-of-interest-fiesta_pastel_artesanal",
     "slug": "fiesta_pastel_artesanal",
-    "lat": -31.8676271,
-    "long": -59.0270174,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Fiesta gastronómica y cultural dedicada a elaboraciones artesanales, productores y tradiciones locales.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.entrerios.tur.ar/localidades-1/villaguay",
-    "notes": "Evento destacado por Turismo Entre Ríos. Falta confirmar sede y calendario de cada edición. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Evento destacado por Turismo Entre Ríos. Falta confirmar sede y calendario de cada edición.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

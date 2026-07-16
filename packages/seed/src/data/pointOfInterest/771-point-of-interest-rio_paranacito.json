@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "771-point-of-interest-rio_paranacito",
     "slug": "rio_paranacito",
-    "lat": -33.7163973,
-    "long": -58.6620273,
+    "lat": null,
+    "long": null,
     "type": "NATURAL",
     "icon": null,
     "description": "Curso de agua central para la vida local, la navegación, la pesca y las celebraciones náuticas de la comunidad.",
@@ -26,8 +26,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.entrerios.tur.ar/localidades-1/villa-paranacito; https://www.villaparanacito.gob.ar/turismo/eventos",
-    "notes": "Curso de agua; requiere geometría lineal y puntos de acceso diferenciados. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "source": "https://www.entrerios.tur.ar/localidades-1/villa-paranacito",
+    "notes": "Curso de agua; requiere geometría lineal y puntos de acceso diferenciados.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

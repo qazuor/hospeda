@@ -89,6 +89,33 @@ function orNull(value: string): string | null {
 }
 
 /**
+ * Seed fixtures intentionally do not persist raw `verifiedAt` CSV strings.
+ *
+ * The CSV carries spreadsheet/export-level date cells (e.g. `46214`) rather
+ * than a trustworthy domain timestamp. The seed contract is therefore to keep
+ * `verifiedAt` null unless a future curation pass introduces a typed date on
+ * purpose.
+ */
+function sanitizeVerifiedAt(_value: string): null {
+    return null;
+}
+
+/** Source field max length enforced by the POI schema. */
+const MAX_SOURCE_LENGTH = 200;
+
+/**
+ * Picks the first semicolon-delimited source entry that fits the schema limit.
+ */
+function sanitizeSource(value: string): string | null {
+    for (const candidate of splitSemicolon(value)) {
+        if (candidate.length <= MAX_SOURCE_LENGTH) {
+            return candidate;
+        }
+    }
+    return null;
+}
+
+/**
  * Builds one v2 POI fixture object from a fully-processed row.
  *
  * @param params.row - The raw CSV row (provenance source).
@@ -124,14 +151,14 @@ export function buildPoiFixture(params: {
         lat = Number(row.lat);
         long = Number(row.lng);
         verified = csvVerified;
-        verifiedAt = orNull(row.verifiedAt);
+        verifiedAt = sanitizeVerifiedAt(row.verifiedAt);
         notes = orNull(row.notes);
     } else if (geocoded === null) {
         // Unresolved: keep null coordinates (OQ-4), carry provenance unchanged.
         lat = null;
         long = null;
         verified = csvVerified;
-        verifiedAt = orNull(row.verifiedAt);
+        verifiedAt = sanitizeVerifiedAt(row.verifiedAt);
         notes = orNull(row.notes);
     } else {
         // Coordinates derived by the pipeline: never claim verification (G-5).
@@ -167,7 +194,7 @@ export function buildPoiFixture(params: {
         displayWeight: DISPLAY_WEIGHT_BY_PRIORITY[row.priority.trim().toUpperCase()] ?? 50,
         verified,
         verifiedAt,
-        source: orNull(row.source),
+        source: sanitizeSource(row.source),
         notes,
         lifecycleState: 'ACTIVE',
         categories: categories.map((c) => ({ slug: c.slug, isPrimary: c.isPrimary }))

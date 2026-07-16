@@ -1,4 +1,5 @@
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import type { PointOfInterest } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils';
@@ -14,15 +15,38 @@ import { hasPermission } from '../../utils';
  */
 
 /**
- * Checks if an actor has permission to view a point of interest.
- * POIs are a public catalog (HOS-113 §6.5 — seed-only, no admin CRUD in
- * Phase 1): viewing never requires a permission, mirroring
- * `checkCanViewAmenity`.
+ * Checks if an actor may view a point of interest. POIs are a public catalog
+ * (HOS-113 §6.5) — no permission is required — but the entity's lifecycle
+ * still gates visibility (HOS-132).
+ *
+ * `getById`/`getBySlug` (via `BaseCrudRead.getByField` → `BaseModel.findOne`)
+ * return rows regardless of `deletedAt`/`lifecycleState`, and this hook is
+ * the ONLY per-entity gate on that shared read path — it is reused verbatim
+ * by BOTH the public and admin `getById` routes
+ * (`apps/api/src/routes/point-of-interest/{public,admin}/getById.ts` and the
+ * public/admin `getBySlug`/slug routes all call the same
+ * `PointOfInterestService.getById`/`getBySlug`). Actors holding
+ * `POINT_OF_INTEREST_VIEW` (the same permission gating `_canAdminList`)
+ * bypass the filter so admin management can still see archived, draft, and
+ * soft-deleted rows; every other actor gets `NOT_FOUND` for a non-live POI —
+ * mirroring `AccommodationService`'s / `ExperienceService`'s `_canView`
+ * admin-exemption shape (HOS-117 T-022). POIs have no `visibility` column, so
+ * there is no PUBLIC/PRIVATE split to consider here, unlike those two.
  * @param actor The actor performing the action.
+ * @param entity The point of interest entity being viewed.
+ * @throws {ServiceError} NOT_FOUND when the entity is soft-deleted or not
+ *   `ACTIVE` and the actor lacks `POINT_OF_INTEREST_VIEW`.
  */
-export function checkCanViewPointOfInterest(_actor: Actor): void {
-    // Public catalog: no permission required to view.
-    return;
+export function checkCanViewPointOfInterest(actor: Actor, entity: PointOfInterest): void {
+    if (hasPermission(actor, PermissionEnum.POINT_OF_INTEREST_VIEW)) {
+        return;
+    }
+    if (entity.deletedAt !== null && entity.deletedAt !== undefined) {
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Point of interest not found');
+    }
+    if (entity.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Point of interest not found');
+    }
 }
 
 /**

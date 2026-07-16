@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "740-point-of-interest-pulperia_colonia_caseros",
     "slug": "pulperia_colonia_caseros",
-    "lat": -32.4344543,
-    "long": -58.512823399999995,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Espacio de productos regionales, artesanías y gastronomía ubicado sobre el acceso al Palacio San José.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://caseros.gob.ar/turismo-y-cultura/",
-    "notes": "Emprendimiento privado. Conviene validar horarios y reservas. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Emprendimiento privado. Conviene validar horarios y reservas.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

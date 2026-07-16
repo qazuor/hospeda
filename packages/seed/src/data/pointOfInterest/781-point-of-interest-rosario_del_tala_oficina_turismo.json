@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "781-point-of-interest-rosario_del_tala_oficina_turismo",
     "slug": "rosario_del_tala_oficina_turismo",
-    "lat": -32.3008178,
-    "long": -59.138887,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Punto municipal de información sobre atractivos, actividades, prestadores, alojamiento y agenda local.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.rosariodeltala.gob.ar/?q=areas-noticias%2Fturismo; https://www.rosariodeltala.gob.ar/sites/default/files/plano_turistico.pdf; https://www.entrerios.tur.ar/localidades-1/rosario-del-tala",
-    "notes": "Servicio oficial confirmado. Falta validar dirección exacta y horarios vigentes. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "source": "https://www.rosariodeltala.gob.ar/?q=areas-noticias%2Fturismo",
+    "notes": "Servicio oficial confirmado. Falta validar dirección exacta y horarios vigentes.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

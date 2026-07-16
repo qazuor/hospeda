@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "035-point-of-interest-apimania",
     "slug": "apimania",
-    "lat": -31.007468399999997,
-    "long": -57.899809700000006,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Emprendimiento apícola de la Antigua Ciudad con productos derivados de la miel y propuestas vinculadas con la producción local.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.federacion.tur.ar/otros-atractivos/",
-    "notes": "Actividad incluida en el circuito productivo oficial. Falta validar atención al público y geocodificar. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Actividad incluida en el circuito productivo oficial. Falta validar atención al público y geocodificar.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

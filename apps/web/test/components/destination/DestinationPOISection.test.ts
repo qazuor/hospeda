@@ -30,7 +30,7 @@ describe('DestinationPOISection.astro', () => {
 
     it('resolves POI display names via translatePoiName (nameI18n-first, humanized-slug fallback — HOS-138)', () => {
         expect(sectionSrc).toContain(
-            "import { translatePoiName, translatePoiTypeLabel } from '@/lib/poi-labels';"
+            "import { translatePoiCategoryLabel, translatePoiName } from '@/lib/poi-labels';"
         );
         expect(sectionSrc).toContain(
             'translatePoiName({ slug: poi.slug, nameI18n: poi.nameI18n, locale })'
@@ -44,8 +44,13 @@ describe('DestinationPOISection.astro', () => {
         );
     });
 
-    it('resolves the type label via translatePoiTypeLabel', () => {
-        expect(sectionSrc).toContain('translatePoiTypeLabel({ t, type: poi.type })');
+    it('resolves the badge label via translatePoiCategoryLabel, not the legacy type label', () => {
+        // HOS-182: the badge prefers the POI's primary CATEGORY name and only
+        // falls back to `type`. Reading `type` unconditionally made two thirds of
+        // a real destination's cards say "Otro" beside a category-driven icon.
+        expect(sectionSrc).toContain('translatePoiCategoryLabel({');
+        expect(sectionSrc).toContain('primaryCategory: poi.primaryCategory');
+        expect(sectionSrc).not.toContain('translatePoiTypeLabel({ t, type: poi.type })');
     });
 
     it('resolves a type-derived icon via getPointOfInterestTypeIcon', () => {
@@ -76,5 +81,26 @@ describe('DestinationPOISection.astro', () => {
 
     it('does NOT import Tailwind utility classes or CSS Modules — vanilla scoped <style> per web conventions', () => {
         expect(sectionSrc).not.toContain('.module.css');
+    });
+
+    // HOS-146: the payload now carries PRIMARY + NEARBY POIs; the grid must
+    // keep showing PRIMARY only (zero visual regression from pre-HOS-146).
+    //
+    // These three assert on identifiers and structure, NOT on verbatim
+    // statements: a `biome check` reformat must never fail them. What they pin
+    // down is the causal chain that keeps NEARBY POIs out of the grid —
+    // filter → guard on the FILTERED list → sort the FILTERED list. Asserting
+    // the same three facts against the raw `pointsOfInterest` prop is exactly
+    // the regression they exist to catch.
+    it('filters NEARBY out before rendering (PRIMARY-only grid, HOS-146)', () => {
+        expect(sectionSrc).toMatch(/\.filter\(\s*\(poi\)\s*=>\s*poi\.relation\s*!==\s*'NEARBY'/);
+    });
+
+    it('guards on the NEARBY-filtered list, so a POI set that is entirely NEARBY renders nothing', () => {
+        expect(sectionSrc).toMatch(/if\s*\(\s*primaryOnly\.length\s*===\s*0\s*\)\s*return/);
+    });
+
+    it('sorts the PRIMARY-filtered list, not the raw pointsOfInterest prop', () => {
+        expect(sectionSrc).toMatch(/const\s+sorted\s*=\s*\[\s*\.\.\.primaryOnly\s*\]/);
     });
 });

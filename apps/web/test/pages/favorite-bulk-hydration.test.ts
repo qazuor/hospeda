@@ -154,6 +154,98 @@ describe('pages/[lang]/alojamientos/index.astro — accommodation bulk check', (
 });
 
 // ---------------------------------------------------------------------------
+// alojamientos/mapa.astro — accommodation MAP view (HOS-186)
+//
+// This page was the only listing that never bulk-hydrated: its loader fetched
+// up to MAP_FETCH_CAP (100) accommodations and built cards via
+// `toAccommodationCardProps`, which leaves `isFavorited === undefined` — so all
+// ~100 FavoriteButtons (sidebar cards + map popups) self-hydrated on mount,
+// firing ~100 GET /user-bookmarks/check in ~2s and tripping the API rate limit
+// in production (329 x 429 on that route in 24h).
+// ---------------------------------------------------------------------------
+
+describe('pages/[lang]/alojamientos/mapa.astro — accommodation bulk check', () => {
+    const src = readSrc('pages/[lang]/alojamientos/mapa.astro');
+
+    assertBulkCheckPattern(src, 'alojamientos/mapa');
+
+    it('calls checkBulk with entityType ACCOMMODATION', () => {
+        expect(src).toContain("entityType: 'ACCOMMODATION'");
+    });
+
+    it('builds cards by injecting favorite state into baseCards (not a straight alias)', () => {
+        expect(src).toContain('baseCards');
+        expect(src).toContain('isFavorited: entry.isBookmarked');
+        expect(src).toContain('favoriteBookmarkId: entry.bookmarkId');
+    });
+
+    it('passes the resolved cards to the map island (not the un-hydrated baseCards)', () => {
+        expect(src).toContain('initialItems={cards}');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// useViewportSearch.ts — client-side bulk check on map viewport refetch
+//
+// SSR-only hydration is not enough for the map: this hook refetches on every
+// moveend/zoomend (including the initial one FitBoundsOnce fires on mount) and
+// replaces the SSR items with fresh, un-hydrated ones.
+// ---------------------------------------------------------------------------
+
+describe('hooks/useViewportSearch.ts — client-side bulk check on refetch', () => {
+    const src = readFileSync(resolve(SRC_DIR, 'hooks/useViewportSearch.ts'), 'utf8');
+
+    it('imports userBookmarksApi from endpoints-protected', () => {
+        expect(src).toContain("from '@/lib/api/endpoints-protected'");
+        expect(src).toContain('userBookmarksApi');
+    });
+
+    it('calls checkBulk with entityType ACCOMMODATION', () => {
+        expect(src).toContain('checkBulk');
+        expect(src).toContain("entityType: 'ACCOMMODATION'");
+    });
+
+    it('guards the bulk check with isAuthenticated (guests never fetch)', () => {
+        expect(src).toContain('isAuthenticated');
+        const guardIdx = src.indexOf('!isAuthenticated');
+        const bulkIdx = src.indexOf('checkBulk');
+        expect(guardIdx).toBeGreaterThan(-1);
+        expect(guardIdx).toBeLessThan(bulkIdx);
+    });
+
+    it('merges favorite state BEFORE setItems, not in a later effect', () => {
+        // React runs child effects before parent effects, so any merge that
+        // happens after the items render is too late — every FavoriteButton
+        // would already have fired its own /check.
+        const mergeIdx = src.indexOf('mergeFavoriteState({');
+        const setItemsIdx = src.indexOf('setItems(merged)');
+        expect(mergeIdx).toBeGreaterThan(-1);
+        expect(setItemsIdx).toBeGreaterThan(mergeIdx);
+    });
+
+    it('degrades to the un-merged items instead of erasing them on failure', () => {
+        expect(src).toContain('return items;');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// AccommodationsListingMap.client.tsx — forwards auth state into the hook
+// ---------------------------------------------------------------------------
+
+describe('components/maps/AccommodationsListingMap.client.tsx — auth wiring', () => {
+    const src = readSrc('components/maps/AccommodationsListingMap.client.tsx');
+
+    it('forwards isAuthenticated into useViewportSearch', () => {
+        // Without this the hook defaults to guest and silently skips the bulk
+        // merge for signed-in users, re-opening the N+1 on every pan/zoom.
+        const hookCallIdx = src.indexOf('useViewportSearch({');
+        expect(hookCallIdx).toBeGreaterThan(-1);
+        const callBlock = src.slice(hookCallIdx, src.indexOf('});', hookCallIdx));
+        expect(callBlock).toContain('isAuthenticated');
+    });
+});
+
+// ---------------------------------------------------------------------------
 // experiencias/index.astro — experience listing page
 // ---------------------------------------------------------------------------
 

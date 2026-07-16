@@ -32,7 +32,7 @@
     "displayWeight": 100,
     "verified": true,
     "verifiedAt": null,
-    "source": "https://www.argentina.gob.ar/puertos-vias-navegables-y-marina-mercante/informaci%C3%B3n-portuaria/ibicuy; https://mapcarta.com/es/35396866",
+    "source": "https://www.argentina.gob.ar/puertos-vias-navegables-y-marina-mercante/informaci%C3%B3n-portuaria/ibicuy",
     "notes": "Localización oficial del puerto convertida a coordenadas decimales y contrastada con cartografía abierta.",
     "lifecycleState": "ACTIVE",
     "categories": [

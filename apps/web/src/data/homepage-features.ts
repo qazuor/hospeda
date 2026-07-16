@@ -28,5 +28,10 @@ export const ctaFeatures: readonly FeatureItemData[] = [
         icon: 'ShieldIcon',
         titleKey: 'home.ownerCta.feature3.title',
         descriptionKey: 'home.ownerCta.feature3.description'
+    },
+    {
+        icon: 'CalendarIcon',
+        titleKey: 'home.ownerCta.feature4.title',
+        descriptionKey: 'home.ownerCta.feature4.description'
     }
 ] as const;

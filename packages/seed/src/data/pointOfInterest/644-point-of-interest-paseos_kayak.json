@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "644-point-of-interest-paseos_kayak",
     "slug": "paseos_kayak",
-    "lat": -33.7163973,
-    "long": -58.6620273,
+    "lat": null,
+    "long": null,
     "type": "STADIUM",
     "icon": null,
     "description": "Excursiones guiadas en kayak por el delta, ofrecidas por prestadores registrados en el portal municipal.",
@@ -27,7 +27,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.villaparanacito.gob.ar/turismo/actividades",
-    "notes": "Actividad oficial vigente. Falta geocodificar el punto de salida. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Actividad oficial vigente. Falta geocodificar el punto de salida.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

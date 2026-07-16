@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "801-point-of-interest-san_jose_cementerio_municipal",
     "slug": "san_jose_cementerio_municipal",
-    "lat": -32.2014971,
-    "long": -58.2221131,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Necrópolis local con valor histórico y patrimonial, incluida en circuitos vinculados con las primeras familias de la colonia.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://sanjose.gob.ar/con-nueva-politica-de-turismo-sostenible-el-gobierno-municipal-busca-impulsar-el-sector/",
-    "notes": "Valor patrimonial y uso turístico confirmados; falta dirección y geocodificación. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "notes": "Valor patrimonial y uso turístico confirmados; falta dirección y geocodificación.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

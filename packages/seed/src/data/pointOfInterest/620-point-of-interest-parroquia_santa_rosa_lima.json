@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "620-point-of-interest-parroquia_santa_rosa_lima",
     "slug": "parroquia_santa_rosa_lima",
-    "lat": -31.867077799999997,
-    "long": -59.0277271,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Principal templo católico de Villaguay y referencia religiosa del casco histórico frente a Plaza 25 de Mayo.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay; https://es.wikipedia.org/wiki/Villaguay",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://www.entrerios.tur.ar/localidades-1/villaguay",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

@@ -136,8 +136,15 @@ export type UserBookmarkToggleHttp = z.infer<typeof UserBookmarkToggleHttpSchema
 // BULK CHECK SCHEMAS
 // ============================================================================
 
-/** Maximum number of entity IDs accepted per bulk-check request. */
-const MAX_BULK_CHECK_ENTITY_IDS = 100;
+/**
+ * Maximum number of entity IDs accepted per bulk-check request.
+ *
+ * Exported so callers can chunk their input against the real limit instead of
+ * hardcoding a matching number (HOS-186). Exceeding it is a 400, not a
+ * truncated result: a caller that silently over-sends loses the whole response
+ * and falls back to one request per item — the N+1 this cap exists to prevent.
+ */
+export const MAX_BULK_CHECK_ENTITY_IDS = 100;
 
 /**
  * Request body schema for the bulk bookmark check endpoint.

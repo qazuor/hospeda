@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "219-point-of-interest-circuito_productivo",
     "slug": "circuito_productivo",
-    "lat": -30.986084599999998,
-    "long": -57.919918700000004,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Recorrido por productores locales de miel, alfajores, dulces, licores, quesos y otros productos regionales.",
@@ -33,8 +33,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.federacion.tur.ar/otros-atractivos/; https://www.federacion.tur.ar/wp-content/uploads/2021/03/plano-Federacion.pdf",
-    "notes": "Circuito y tipos de productores confirmados. Falta digitalizar recorrido y validar visitas actuales. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://www.federacion.tur.ar/otros-atractivos/",
+    "notes": "Circuito y tipos de productores confirmados. Falta digitalizar recorrido y validar visitas actuales.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

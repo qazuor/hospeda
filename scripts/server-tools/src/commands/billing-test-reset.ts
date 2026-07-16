@@ -8,16 +8,27 @@
  * `billing_promo_codes`, `billing_settings`). Wipes per-customer state:
  * subscriptions, polling jobs, payments, invoices, addon purchases,
  * entitlements, limits, audit log, dunning attempts, idempotency keys,
- * notification log, etc.
+ * notification log, commerce-listing subscription links, featured-listing
+ * addon grants, etc. Also resets the entitlement-driven `isFeatured` /
+ * `featuredByEntitlement` flags on any accommodation the user owns.
  *
  * With `--delete-user` also removes the Better Auth user row (cascades
  * to `accounts` and `sessions` via FK), giving a fully fresh signup
  * surface for the next smoke.
  *
- * Rejected on `--target=prod` outright. There is no legitimate use
- * case for wiping a production customer's billing history via this
- * command; if a real prod cleanup is needed, it goes through SQL +
- * separate ops review.
+ * Safety model (all targets, including prod):
+ *   - **Dry-run by default.** Without `--execute` the command only
+ *     discovers the user/customer and prints the row counts that WOULD
+ *     be deleted/updated. Nothing is written.
+ *   - `--execute` is required to actually run the destructive
+ *     transaction, on every target.
+ *   - On staging/local, `--execute` asks for a normal yes/no
+ *     confirmation (skippable with `--yes`/`-y`, same as before).
+ *   - On prod, `--execute` requires the operator to re-type the
+ *     resolved customer's exact signup email, and `--yes`/`-y` is
+ *     rejected outright — there is no way to skip confirmation in prod.
+ *     The operation is always scoped to the single customer resolved by
+ *     `--email`.
  *
  * @module commands/billing-test-reset
  */
@@ -25,14 +36,22 @@
 import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
 import { runInContainer } from '../lib/docker.ts';
 import { die, log } from '../lib/log.ts';
-import { confirm } from '../lib/prompt.ts';
+import { confirm, promptText } from '../lib/prompt.ts';
 import type { Target } from '../lib/target.ts';
 import { getDbCredentials } from '../lib/target.ts';
+import {
+    buildResetTransaction,
+    countAffected,
+    countFeaturedAccommodations,
+    discoverTarget,
+    type RowCount
+} from './billing-test-reset-queries.ts';
 
 const HELP = `
 hops billing-test-reset --email <signup-email>
                         [--delete-user]
-                        [--target=staging]
+                        [--target=staging|prod]
+                        [--execute]
                         [--yes]
 
 Wipe all billing transactional data linked to a Hospeda signup user so
@@ -48,16 +67,24 @@ Optional:
                           (cascades to accounts + sessions). Without
                           this flag the user is preserved and you can
                           reuse them for the next signup-less smoke.
-  --target=staging        Target (defaults to active target). Production
-                          is rejected outright.
-  --yes                   Skip confirmation prompts.
+  --target=staging|prod   Target. Always explicit — never inferred from
+                          HOPS_DEFAULT_TARGET.
+  --execute               Actually run the destructive transaction.
+                          Without this flag the command is a DRY RUN:
+                          it only discovers the user/customer and prints
+                          row counts, nothing is written, on ANY target.
+  --yes                   Skip the confirmation prompt. REJECTED when
+                          combined with --target=prod --execute — prod
+                          confirmation can never be skipped.
   --help, -h              Show this help.
 
 What gets wiped (per linked customer):
   - billing_subscription_polling_jobs
   - billing_subscription_addons
   - billing_subscription_events
+  - commerce_listing_subscriptions (link table, by subscription)
   - billing_subscriptions
+  - featured_listing_addon_grants (link table, by addon purchase)
   - billing_addon_purchases
   - billing_checkouts
   - billing_payments
@@ -66,12 +93,19 @@ What gets wiped (per linked customer):
   - billing_invoices (and invoice_lines, invoice_payments)
   - billing_customer_entitlements
   - billing_customer_limits
-  - billing_usage_records
+  - billing_usage_records (removed automatically via ON DELETE cascade
+    when its parent billing_subscriptions rows are deleted)
   - billing_promo_code_usage
   - billing_dunning_attempts
   - billing_notification_log
-  - billing_audit_logs (where customer_id matches)
+  - billing_audit_logs (polymorphic entity_type/entity_id rows for the
+    customer itself and for its subscriptions, payments and invoices)
   - billing_customers (the customer row itself)
+
+Also reset (independent of the customer row — scoped by accommodation
+ownership, so it applies even when there is no linked billing customer):
+  - accommodations: featured_by_entitlement = false, is_featured = false
+    for every accommodation owned by this user.
 
 What is preserved (seed/config):
   - billing_plans / billing_prices / billing_addons /
@@ -79,27 +113,42 @@ What is preserved (seed/config):
     billing_settings
 
 Safety:
-  - Rejected if --target=prod.
-  - Shows row counts that will be deleted, asks for confirmation.
-  - All deletes happen inside a single transaction.
+  - Dry run by default on every target — pass --execute to write.
+  - On staging: --execute asks for confirmation (skip with --yes).
+  - On prod: --execute requires re-typing the customer's exact email;
+    --yes is rejected outright.
+  - Shows row counts that will be deleted/updated before executing.
+  - All deletes/updates happen inside a single transaction.
 
 Examples:
-  hops billing-test-reset --email qazuor+billtest@gmail.com
-  hops billing-test-reset --email qazuor+billtest@gmail.com --delete-user
-  hops billing-test-reset --email qazuor+billtest@gmail.com --yes
+  hops billing-test-reset --target=staging --email qazuor+billtest@gmail.com
+  hops billing-test-reset --target=staging --email qazuor+billtest@gmail.com --execute --yes
+  hops billing-test-reset --target=staging --email qazuor+billtest@gmail.com --execute --delete-user
+  hops billing-test-reset --target=prod --email real.customer@example.com          # dry run only
+  hops billing-test-reset --target=prod --email real.customer@example.com --execute # asks to re-type the email
 `.trim();
 
-interface ParsedArgs {
+export interface ParsedBillingTestResetArgs {
     readonly email: string;
     readonly deleteUser: boolean;
     readonly target: Target;
     readonly skipConfirm: boolean;
+    readonly execute: boolean;
 }
 
-function parseArgs(argv: ReadonlyArray<string>): ParsedArgs | null {
+/**
+ * Parses `billing-test-reset` argv into a typed, validated shape. Pure
+ * function — no I/O, no `getActiveTarget()` call — so it is unit
+ * testable without a live target/container. The command entry point
+ * calls `getActiveTarget()` separately and merges it in.
+ */
+export function parseBillingTestResetArgs(
+    argv: ReadonlyArray<string>
+): Omit<ParsedBillingTestResetArgs, 'target'> | null {
     let email: string | undefined;
     let deleteUser = false;
     let skipConfirm = false;
+    let execute = false;
 
     for (let i = 0; i < argv.length; i += 1) {
         const arg = argv[i];
@@ -109,6 +158,8 @@ function parseArgs(argv: ReadonlyArray<string>): ParsedArgs | null {
             email = arg.slice('--email='.length);
         } else if (arg === '--delete-user') {
             deleteUser = true;
+        } else if (arg === '--execute') {
+            execute = true;
         } else if (arg === '--yes' || arg === '-y') {
             skipConfirm = true;
         }
@@ -117,181 +168,49 @@ function parseArgs(argv: ReadonlyArray<string>): ParsedArgs | null {
     if (!email) {
         return null;
     }
-    return {
-        email,
-        deleteUser,
-        target: getActiveTarget(),
-        skipConfirm
-    };
-}
-
-interface DiscoveredEntity {
-    readonly userId: string;
-    readonly userEmail: string;
-    readonly customerId: string | null;
-}
-
-async function discoverTarget(params: {
-    container: string;
-    user: string;
-    db: string;
-    email: string;
-}): Promise<DiscoveredEntity | null> {
-    const escapedEmail = params.email.replace(/'/g, "''");
-    const query = `
-SELECT
-    u.id::text       AS user_id,
-    u.email          AS user_email,
-    bc.id::text      AS customer_id
-FROM users u
-LEFT JOIN billing_customers bc ON bc.external_id = u.id::text
-WHERE u.email = '${escapedEmail}';
-`.trim();
-
-    const result = await runInContainer({
-        container: params.container,
-        argv: ['psql', '-U', params.user, '-d', params.db, '-t', '-A', '-F', '|', '-c', query]
-    });
-    if (result.exitCode !== 0) {
-        die(result.stderr.trim() || `psql exited ${result.exitCode}`);
-        return null;
-    }
-    const rows = result.stdout
-        .split('\n')
-        .map((line) => line.trim())
-        .filter((line) => line.length > 0);
-
-    if (rows.length === 0) {
-        return null;
-    }
-    if (rows.length > 1) {
-        die(
-            `Found ${rows.length} users with email ${params.email}. Refusing to operate ambiguously.`
-        );
-        return null;
-    }
-    const row = rows[0];
-    if (!row) {
-        return null;
-    }
-    const [userId, userEmail, customerId] = row.split('|');
-    if (!userId || !userEmail) {
-        die(`Malformed psql output row for email ${params.email}: "${row}"`);
-        return null;
-    }
-    return { userId, userEmail, customerId: customerId || null };
-}
-
-interface RowCount {
-    readonly table: string;
-    readonly count: number;
-}
-
-async function countAffected(params: {
-    container: string;
-    user: string;
-    db: string;
-    customerId: string;
-}): Promise<RowCount[]> {
-    const cid = params.customerId.replace(/'/g, "''");
-    const query = `
-WITH counts AS (
-    SELECT 'billing_subscription_polling_jobs' AS table_name,
-           (SELECT count(*) FROM billing_subscription_polling_jobs
-            WHERE subscription_id IN (SELECT id FROM billing_subscriptions WHERE customer_id = '${cid}')) AS row_count
-    UNION ALL SELECT 'billing_subscription_addons',
-           (SELECT count(*) FROM billing_subscription_addons
-            WHERE subscription_id IN (SELECT id FROM billing_subscriptions WHERE customer_id = '${cid}'))
-    UNION ALL SELECT 'billing_subscription_events',
-           (SELECT count(*) FROM billing_subscription_events
-            WHERE subscription_id IN (SELECT id FROM billing_subscriptions WHERE customer_id = '${cid}'))
-    UNION ALL SELECT 'billing_subscriptions',
-           (SELECT count(*) FROM billing_subscriptions WHERE customer_id = '${cid}')
-    UNION ALL SELECT 'billing_addon_purchases',
-           (SELECT count(*) FROM billing_addon_purchases WHERE customer_id = '${cid}')
-    UNION ALL SELECT 'billing_checkouts',
-           (SELECT count(*) FROM billing_checkouts WHERE customer_id = '${cid}')
-    UNION ALL SELECT 'billing_payments',
-           (SELECT count(*) FROM billing_payments WHERE customer_id = '${cid}')
-    UNION ALL SELECT 'billing_payment_methods',
-           (SELECT count(*) FROM billing_payment_methods WHERE customer_id = '${cid}')
-    UNION ALL SELECT 'billing_invoices',
-           (SELECT count(*) FROM billing_invoices WHERE customer_id = '${cid}')
-    UNION ALL SELECT 'billing_customer_entitlements',
-           (SELECT count(*) FROM billing_customer_entitlements WHERE customer_id = '${cid}')
-    UNION ALL SELECT 'billing_customer_limits',
-           (SELECT count(*) FROM billing_customer_limits WHERE customer_id = '${cid}')
-    UNION ALL SELECT 'billing_promo_code_usage',
-           (SELECT count(*) FROM billing_promo_code_usage WHERE customer_id = '${cid}')
-    UNION ALL SELECT 'billing_dunning_attempts',
-           (SELECT count(*) FROM billing_dunning_attempts WHERE customer_id = '${cid}')
-)
-SELECT table_name, row_count FROM counts WHERE row_count > 0 ORDER BY table_name;
-`.trim();
-
-    const result = await runInContainer({
-        container: params.container,
-        argv: ['psql', '-U', params.user, '-d', params.db, '-t', '-A', '-F', '|', '-c', query]
-    });
-    if (result.exitCode !== 0) {
-        die(result.stderr.trim() || `psql exited ${result.exitCode}`);
-        return [];
-    }
-    return result.stdout
-        .split('\n')
-        .map((line) => line.trim())
-        .filter((line) => line.length > 0)
-        .flatMap((line) => {
-            const [table, count] = line.split('|');
-            return table ? [{ table, count: Number(count) || 0 }] : [];
-        });
+    return { email, deleteUser, skipConfirm, execute };
 }
 
 /**
- * SQL transaction body. Ordered so children precede parents to keep
- * FK constraints happy even if a particular FK is not declared with
- * ON DELETE CASCADE.
+ * Resolves whether this run is a dry-run preview or a real destructive
+ * execution. Trivial by itself, but kept as a named pure function so the
+ * decision point is explicit and unit-testable rather than an inline
+ * boolean check scattered through the command body.
  */
-function buildResetTransaction(params: {
-    customerId: string | null;
-    userId: string;
-    deleteUser: boolean;
-}): string {
-    const cid = params.customerId?.replace(/'/g, "''");
-    const uid = params.userId.replace(/'/g, "''");
-    const lines: string[] = ['BEGIN;'];
+export function resolveResetMode(execute: boolean): 'preview' | 'execute' {
+    return execute ? 'execute' : 'preview';
+}
 
-    if (cid) {
-        lines.push(
-            `DELETE FROM billing_subscription_polling_jobs WHERE subscription_id IN (SELECT id FROM billing_subscriptions WHERE customer_id = '${cid}');`,
-            `DELETE FROM billing_subscription_addons WHERE subscription_id IN (SELECT id FROM billing_subscriptions WHERE customer_id = '${cid}');`,
-            `DELETE FROM billing_subscription_events WHERE subscription_id IN (SELECT id FROM billing_subscriptions WHERE customer_id = '${cid}');`,
-            `DELETE FROM billing_dunning_attempts WHERE customer_id = '${cid}';`,
-            `DELETE FROM billing_invoice_payments WHERE invoice_id IN (SELECT id FROM billing_invoices WHERE customer_id = '${cid}');`,
-            `DELETE FROM billing_invoice_lines WHERE invoice_id IN (SELECT id FROM billing_invoices WHERE customer_id = '${cid}');`,
-            `DELETE FROM billing_invoices WHERE customer_id = '${cid}';`,
-            `DELETE FROM billing_refunds WHERE payment_id IN (SELECT id FROM billing_payments WHERE customer_id = '${cid}');`,
-            `DELETE FROM billing_payments WHERE customer_id = '${cid}';`,
-            `DELETE FROM billing_payment_methods WHERE customer_id = '${cid}';`,
-            `DELETE FROM billing_subscriptions WHERE customer_id = '${cid}';`,
-            `DELETE FROM billing_addon_purchases WHERE customer_id = '${cid}';`,
-            `DELETE FROM billing_checkouts WHERE customer_id = '${cid}';`,
-            `DELETE FROM billing_customer_entitlements WHERE customer_id = '${cid}';`,
-            `DELETE FROM billing_customer_limits WHERE customer_id = '${cid}';`,
-            `DELETE FROM billing_usage_records WHERE customer_id = '${cid}';`,
-            `DELETE FROM billing_promo_code_usage WHERE customer_id = '${cid}';`,
-            `DELETE FROM billing_notification_log WHERE customer_id = '${cid}';`,
-            `DELETE FROM billing_audit_logs WHERE entity_id = '${cid}';`,
-            `DELETE FROM billing_customers WHERE id = '${cid}';`
-        );
+export interface ExecuteGuardInput {
+    readonly target: Target;
+    readonly execute: boolean;
+    readonly skipConfirm: boolean;
+}
+
+export interface ExecuteGuardResult {
+    readonly ok: boolean;
+    readonly message?: string;
+}
+
+/**
+ * Enforces the one hard prod safety rule: `--yes`/`-y` can never skip
+ * confirmation for a real (`--execute`) run against `--target=prod`.
+ * Pure function, no I/O — the caller (`billingTestReset`) `die()`s using
+ * the returned message when `ok` is `false`.
+ *
+ * @param input - Resolved target, execute flag, and skip-confirm flag.
+ * @returns `{ ok: true }` when the combination is allowed, otherwise
+ *   `{ ok: false, message }` describing why it was rejected.
+ */
+export function validateExecuteGuard(input: ExecuteGuardInput): ExecuteGuardResult {
+    if (input.target === 'prod' && input.execute && input.skipConfirm) {
+        return {
+            ok: false,
+            message:
+                'Refusing --yes/-y with --target=prod --execute: confirmation cannot be skipped in prod. Remove --yes/-y and re-type the customer email when prompted.'
+        };
     }
-
-    if (params.deleteUser) {
-        lines.push(`DELETE FROM users WHERE id = '${uid}';`);
-    }
-
-    lines.push('COMMIT;');
-    return lines.join('\n');
+    return { ok: true };
 }
 
 export async function billingTestReset(argv: ReadonlyArray<string>): Promise<void> {
@@ -300,16 +219,16 @@ export async function billingTestReset(argv: ReadonlyArray<string>): Promise<voi
         return;
     }
 
-    const parsed = parseArgs(argv);
-    if (!parsed) {
+    const parsedArgs = parseBillingTestResetArgs(argv);
+    if (!parsedArgs) {
         die('Missing required --email. Run with --help for usage.');
         return;
     }
+    const parsed: ParsedBillingTestResetArgs = { ...parsedArgs, target: getActiveTarget() };
 
-    if (parsed.target === 'prod') {
-        die(
-            'billing-test-reset is disabled for --target=prod. There is no legitimate test-reset operation against a production customer; production cleanups go through reviewed SQL, not this command.'
-        );
+    const guard = validateExecuteGuard(parsed);
+    if (!guard.ok) {
+        die(guard.message ?? 'Refusing to proceed.');
         return;
     }
 
@@ -334,10 +253,11 @@ export async function billingTestReset(argv: ReadonlyArray<string>): Promise<voi
     if (discovered.customerId) {
         log.info(`Linked billing customer: ${discovered.customerId}.`);
     } else {
-        log.info('No linked billing_customers row — only the user row will be reset if requested.');
+        log.info('No linked billing_customers row — only owner-scoped state will be reset.');
     }
 
-    // Step 2 — count affected rows so the operator sees what will go.
+    // Step 2 — count affected rows so the operator sees what will go,
+    // on EVERY run (preview or execute).
     let counts: RowCount[] = [];
     if (discovered.customerId) {
         counts = await countAffected({
@@ -347,11 +267,19 @@ export async function billingTestReset(argv: ReadonlyArray<string>): Promise<voi
             customerId: discovered.customerId
         });
     }
+    const featuredAccommodationsCount = await countFeaturedAccommodations({
+        container,
+        user: dbUser,
+        db,
+        userId: discovered.userId
+    });
 
-    process.stdout.write(`\nTarget:    ${parsed.target}\n`);
+    const mode = resolveResetMode(parsed.execute);
+    process.stdout.write(`\nMode:      ${mode === 'preview' ? 'DRY RUN (pass --execute to write)' : 'EXECUTE'}\n`);
+    process.stdout.write(`Target:    ${parsed.target}\n`);
     process.stdout.write(`User:      ${discovered.userId} (${discovered.userEmail})\n`);
     process.stdout.write(`Customer:  ${discovered.customerId ?? '<none>'}\n`);
-    process.stdout.write('\nRows that will be deleted:\n');
+    process.stdout.write(`\nRows that will be deleted${mode === 'preview' ? ' (preview)' : ''}:\n`);
     if (counts.length === 0) {
         process.stdout.write('  (no transactional rows linked to this customer)\n');
     } else {
@@ -365,10 +293,26 @@ export async function billingTestReset(argv: ReadonlyArray<string>): Promise<voi
     if (parsed.deleteUser) {
         process.stdout.write(`  ${'users'.padEnd(40)} 1 (cascades to accounts + sessions)\n`);
     }
-    process.stdout.write('\n');
+    process.stdout.write(
+        `\nAccommodations to reset (featured_by_entitlement/is_featured → false): ${featuredAccommodationsCount}\n\n`
+    );
 
-    // Step 3 — confirm before destructive op.
-    if (!parsed.skipConfirm) {
+    if (mode === 'preview') {
+        log.info('Dry run complete. No changes were made. Pass --execute to run the reset for real.');
+        return;
+    }
+
+    // Step 3 — confirm before the destructive op.
+    if (parsed.target === 'prod') {
+        log.warn('This is a PRODUCTION delete. It cannot be undone.');
+        const typed = await promptText({
+            message: `Type the customer's exact email to confirm (${discovered.userEmail}):`
+        });
+        if (typed !== discovered.userEmail) {
+            log.warn('Typed email did not match. Aborted.');
+            return;
+        }
+    } else if (!parsed.skipConfirm) {
         const ok = await confirm('Proceed with the reset?', { defaultValue: false });
         if (!ok) {
             log.warn('Aborted.');

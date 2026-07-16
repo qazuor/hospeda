@@ -1,32 +1,41 @@
 /**
- * Trial Expiry Cron Job
+ * Trial Reconciliation Cron Job
  *
- * Checks for expired trial subscriptions and updates their status.
- * Runs daily at 2 AM to process trials that have passed their end date.
+ * Settles trials whose window has elapsed against the payment provider.
+ * Runs daily at 2 AM.
+ *
+ * ⚠️ This job CONVERTS elapsed trials; it does NOT expire or cancel them
+ * (HOS-171). Under card-first trials the customer authorized a card on day 1
+ * and MercadoPago charges automatically at day N, so an elapsed trial is a
+ * customer who is about to pay — or already has. The provider's status, not
+ * our clock, decides each outcome. See `TrialService.reconcileExpiredTrials`
+ * for the full rationale and the decision table.
  *
  * Features:
- * - Finds all subscriptions with status='trialing' where trial_end_date <= now()
- * - Updates expired trials to 'expired' status
- * - Processes in batches of 100 to avoid memory issues
- * - Logs all expiry actions for audit trail
+ * - Finds local subscriptions with status='trialing' where trial_end < now()
+ * - Re-reads each preapproval from MercadoPago and mirrors its verdict:
+ *   active → converted, past_due → dunning owns it, cancelled/paused → mirrored
+ * - Processes in bounded batches, draining the backlog over successive runs
+ * - Writes a TRIAL_RECONCILED event per subscription for audit + idempotency
  *
  * @module cron/jobs/trial-expiry
  */
 
+import { createMercadoPagoAdapter } from '@repo/billing';
+import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { TrialService } from '../../services/trial.service.js';
-import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition } from '../types.js';
 
 /**
- * Trial expiry cron job definition
+ * Trial reconciliation cron job definition
  *
  * Schedule: Daily at 2 AM (0 2 * * *)
- * Purpose: Automatically expire trials that have passed their end date
+ * Purpose: Settle elapsed trials against the provider (convert, or mirror its status)
  */
 export const trialExpiryJob: CronJobDefinition = {
-    name: 'trial-expiry',
-    description: 'Check and expire trials that have passed their end date',
+    name: 'trial-reconcile',
+    description: 'Reconcile elapsed trials against the payment provider (converts, never cancels)',
     schedule: '0 2 * * *', // Daily at 2 AM
     enabled: true,
     timeoutMs: 300000, // 5 minutes timeout
@@ -34,7 +43,7 @@ export const trialExpiryJob: CronJobDefinition = {
     handler: async (ctx) => {
         const { logger, startedAt, dryRun } = ctx;
 
-        logger.info('Starting trial expiry check', {
+        logger.info('Starting trial reconciliation', {
             dryRun,
             startedAt: startedAt.toISOString()
         });
@@ -47,7 +56,7 @@ export const trialExpiryJob: CronJobDefinition = {
             const billing = getQZPayBilling();
 
             if (!billing) {
-                logger.warn('Billing not configured, skipping trial expiry check');
+                logger.warn('Billing not configured, skipping trial reconciliation');
                 return {
                     success: true,
                     message: 'Skipped - Billing not configured',
@@ -57,16 +66,11 @@ export const trialExpiryJob: CronJobDefinition = {
                 };
             }
 
-            // Create trial service with notification sender so TRIAL_EXPIRED emails
-            // fire when blockExpiredTrials cancels a subscription (INV-2).
-            const trialService = new TrialService(billing, (payload) => {
-                sendNotification(payload).catch(
-                    // Fire-and-forget: sendNotification logs all failures internally
-                    // (apiLogger.error in notification-helper.ts), so swallowing here
-                    // is intentional — no duplicate log needed (item 9c / SPEC-194 review).
-                    (/* logged inside sendNotification */) => {}
-                );
-            });
+            // Reconciliation sends no email: a converting customer was already
+            // warned by TRIAL_ENDING_REMINDER before the charge, and a failed
+            // charge is the dunning cron's story to tell. TrialService therefore
+            // no longer takes a notification sender.
+            const trialService = new TrialService(billing);
 
             if (dryRun) {
                 // Dry run mode - count how many trials would be expired
@@ -77,11 +81,7 @@ export const trialExpiryJob: CronJobDefinition = {
                     filters: { status: 'trialing' }
                 });
 
-                if (
-                    !allSubscriptionsResult ||
-                    !allSubscriptionsResult.data ||
-                    allSubscriptionsResult.data.length === 0
-                ) {
+                if (!allSubscriptionsResult?.data || allSubscriptionsResult.data.length === 0) {
                     logger.info('No subscriptions found');
                     return {
                         success: true,
@@ -93,7 +93,7 @@ export const trialExpiryJob: CronJobDefinition = {
                 }
 
                 const now = new Date();
-                let expiredCount = 0;
+                let elapsedCount = 0;
 
                 // Filter for trialing subscriptions
                 for (const subscription of allSubscriptionsResult.data) {
@@ -105,8 +105,8 @@ export const trialExpiryJob: CronJobDefinition = {
                     const trialEnd = subscription.trialEnd ? new Date(subscription.trialEnd) : null;
 
                     if (trialEnd && now > trialEnd) {
-                        expiredCount++;
-                        logger.debug('Would expire trial subscription', {
+                        elapsedCount++;
+                        logger.debug('Would reconcile elapsed trial subscription', {
                             subscriptionId: subscription.id,
                             customerId: subscription.customerId,
                             trialEnd: trialEnd.toISOString()
@@ -116,8 +116,8 @@ export const trialExpiryJob: CronJobDefinition = {
 
                 return {
                     success: true,
-                    message: `Dry run - Would expire ${expiredCount} trial subscriptions`,
-                    processed: expiredCount,
+                    message: `Dry run - Would reconcile ${elapsedCount} elapsed trial subscriptions`,
+                    processed: elapsedCount,
                     errors: 0,
                     durationMs: Date.now() - startedAt.getTime(),
                     details: {
@@ -127,15 +127,21 @@ export const trialExpiryJob: CronJobDefinition = {
                 };
             }
 
-            // Production mode - actually expire the trials
-            logger.info('Running in production mode - expiring trials');
+            // Production mode - reconcile against the provider
+            logger.info('Running in production mode - reconciling elapsed trials');
 
-            const blockedCount = await trialService.blockExpiredTrials();
+            // The cron builds its own MP adapter (same pattern as
+            // subscription-poll.job.ts / webhook-retry.job.ts): qzpay-core's
+            // getPaymentAdapter() returns the generic adapter interface, and
+            // reconciliation needs the MercadoPago-typed subscriptions.retrieve().
+            const paymentAdapter = createMercadoPagoAdapter({ logger: qzpayLogger });
 
-            processed = blockedCount;
+            const reconciledCount = await trialService.reconcileExpiredTrials({ paymentAdapter });
 
-            logger.info('Trial expiry check completed', {
-                blockedCount,
+            processed = reconciledCount;
+
+            logger.info('Trial reconciliation completed', {
+                reconciledCount,
                 durationMs: Date.now() - startedAt.getTime()
             });
 
@@ -143,12 +149,12 @@ export const trialExpiryJob: CronJobDefinition = {
 
             return {
                 success: true,
-                message: `Successfully expired ${blockedCount} trial subscriptions`,
+                message: `Successfully reconciled ${reconciledCount} elapsed trial subscriptions`,
                 processed,
                 errors,
                 durationMs,
                 details: {
-                    blockedCount
+                    reconciledCount
                 }
             };
         } catch (error) {
@@ -157,9 +163,9 @@ export const trialExpiryJob: CronJobDefinition = {
 
             errors++;
 
-            // SPEC-180: trial expiry failure is actionable — forward to Sentry.
+            // SPEC-180: trial reconciliation failure is actionable — forward to Sentry.
             logger.error(
-                'Trial expiry check failed',
+                'Trial reconciliation failed',
                 { error: errorMessage, stack: errorStack },
                 { capture: true }
             );
@@ -168,7 +174,7 @@ export const trialExpiryJob: CronJobDefinition = {
 
             return {
                 success: false,
-                message: `Failed to check expired trials: ${errorMessage}`,
+                message: `Failed to reconcile elapsed trials: ${errorMessage}`,
                 processed,
                 errors,
                 durationMs,

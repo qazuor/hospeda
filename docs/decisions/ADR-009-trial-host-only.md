@@ -4,6 +4,13 @@
 
 Accepted
 
+> **Addendum (HOS-171, 2026-07-15)** — this decision still stands unchanged. The
+> trial became **card-first** (a MercadoPago preapproval carrying
+> `auto_recurring.free_trial`, so the card is collected on day 1) instead of a
+> no-card subscription Hospeda granted itself. That changes *when the card is
+> collected*, not *who gets a trial*: the HOST-only rule below is justified by
+> growth economics and is untouched.
+
 ## Context
 
 The Hospeda billing system supports multiple user roles: Guest, Host, Sponsor, and Admin. Each role has different platform capabilities and pricing models. When designing the free trial experience, the team needed to decide which roles should receive a trial period and how to manage the complexity of multi-role trials.

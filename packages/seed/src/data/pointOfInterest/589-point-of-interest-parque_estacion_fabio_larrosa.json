@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "589-point-of-interest-parque_estacion_fabio_larrosa",
     "slug": "parque_estacion_fabio_larrosa",
-    "lat": -33.035753,
-    "long": -59.006104099999995,
+    "lat": null,
+    "long": null,
     "type": "PARK",
     "icon": null,
     "description": "Parque ferroviario recuperado para recreación, cultura y esparcimiento, con salas, monumentos y espacios comunitarios.",
@@ -32,8 +32,8 @@
     "displayWeight": 100,
     "verified": false,
     "verifiedAt": null,
-    "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes; https://www.larroque.gob.ar/noticia/2205/visito_nuestra_ciudad_el_intendente_de_general_galarza",
-    "notes": "Área extensa confirmada. Falta definir acceso principal y polígono. Coordinates auto-geocoded from address on 2026-07-13 via google-places; pending human cartographic verification.",
+    "source": "https://www.larroque.gob.ar/ciudad/3/lugares_de_interes",
+    "notes": "Área extensa confirmada. Falta definir acceso principal y polígono.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {

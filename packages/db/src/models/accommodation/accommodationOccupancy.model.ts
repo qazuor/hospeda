@@ -30,8 +30,11 @@ import type { DrizzleClient } from '../../types.ts';
  * - {@link replaceFutureSyncOccupancy} — atomically deletes every future
  *   row for one sync source and re-inserts a fresh declarative set in a
  *   single transaction; the core primitive of the HOS-157 declarative
- *   full-window reconcile. Never touches `MANUAL` rows (source-scoped delete
- *   + `ON CONFLICT DO NOTHING` on `(accommodationId, date)`).
+ *   full-window reconcile. Never touches `MANUAL` rows, nor any OTHER sync
+ *   source's rows (source-scoped delete + `ON CONFLICT DO NOTHING` on
+ *   `(accommodationId, date, source)` — HOS-162: the unique index is
+ *   source-scoped, so two sync sources can each hold their own row for the
+ *   same date without one silently dropping the other's insert).
  *
  * Reconciliation note: there is currently NO index on `external_event_id` —
  * an accepted Phase 2 limitation given the small per-accommodation row
@@ -104,11 +107,13 @@ export class AccommodationOccupancyModel extends BaseModelImpl<AccommodationOccu
 
     /**
      * Idempotently inserts one `source=MANUAL`, `isBlocked=true` row per
-     * date. Relies on the `(accommodation_id, date)` unique index: re-running
-     * with a date that already has a row (of any source) is a no-op for that
-     * date — it does NOT overwrite a sync-sourced row's `source`, matching
-     * the spec's "sync is not pierced by manual writes" invariant (US-1,
-     * risk table).
+     * date. Relies on the `(accommodation_id, date, source)` unique index
+     * (HOS-162): re-running with a date that already has a `MANUAL` row is a
+     * no-op for that date. A sync-sourced row for the same date does NOT
+     * block this insert — `MANUAL` and sync sources each hold their own row
+     * per date — but this call never overwrites a sync-sourced row's data,
+     * matching the spec's "sync is not pierced by manual writes" invariant
+     * (US-1, risk table).
      *
      * @param params.accommodationId - The accommodation to block dates on.
      * @param params.dates - `YYYY-MM-DD` dates to insert. Empty array is a no-op.
@@ -148,7 +153,11 @@ export class AccommodationOccupancyModel extends BaseModelImpl<AccommodationOccu
             .insert(accommodationOccupancy)
             .values(values)
             .onConflictDoNothing({
-                target: [accommodationOccupancy.accommodationId, accommodationOccupancy.date]
+                target: [
+                    accommodationOccupancy.accommodationId,
+                    accommodationOccupancy.date,
+                    accommodationOccupancy.source
+                ]
             })
             .returning();
 
@@ -159,8 +168,10 @@ export class AccommodationOccupancyModel extends BaseModelImpl<AccommodationOccu
      * Deletes the `MANUAL` occupancy row for a single date, if any.
      *
      * Scoped to `source='MANUAL'` on purpose — a sync-sourced row for the
-     * same `(accommodationId, date)` is left untouched, since the unique
-     * index guarantees at most one row per day regardless of source.
+     * same `(accommodationId, date)` is left untouched. Since HOS-162 the
+     * unique index is `(accommodationId, date, source)`, so a given day can
+     * legitimately have several rows (one per source); this method only
+     * ever removes the `MANUAL` one.
      *
      * @param params.accommodationId - The accommodation to unblock a date on.
      * @param params.date - `YYYY-MM-DD` date to unblock.
@@ -189,7 +200,8 @@ export class AccommodationOccupancyModel extends BaseModelImpl<AccommodationOccu
     /**
      * Batch variant of {@link deleteManualByDate} — deletes the `MANUAL` rows
      * for every date in the list, leaving any sync-sourced rows for those
-     * same dates untouched.
+     * same dates untouched. Since HOS-162 a given date may have several rows
+     * (one per source); this only ever removes the `MANUAL` one(s).
      *
      * @param params.accommodationId - The accommodation to unblock dates on.
      * @param params.dates - `YYYY-MM-DD` dates to unblock. Empty array is a no-op.
@@ -230,12 +242,17 @@ export class AccommodationOccupancyModel extends BaseModelImpl<AccommodationOccu
      *
      * 1. `DELETE FROM accommodation_occupancy WHERE accommodation_id = :id AND
      *    source = :source AND date >= :fromDate`. The `source` scope means
-     *    this NEVER deletes a `MANUAL` row; the `date >= fromDate` bound means
-     *    past occupancy is never touched.
+     *    this NEVER deletes a `MANUAL` row, nor a row belonging to any OTHER
+     *    sync source; the `date >= fromDate` bound means past occupancy is
+     *    never touched.
      * 2. If `rows` is non-empty, one multi-row `INSERT ... ON CONFLICT
-     *    (accommodation_id, date) DO NOTHING` of `isBlocked=true` rows. The
-     *    conflict clause leaves any `MANUAL` row on a shared date intact —
-     *    MANUAL wins the day — so a host's manual block is never overwritten.
+     *    (accommodation_id, date, source) DO NOTHING` of `isBlocked=true`
+     *    rows (HOS-162: the conflict target is source-scoped). The conflict
+     *    clause leaves any `MANUAL` row, or any OTHER sync source's row, on a
+     *    shared date intact — so a host's manual block is never overwritten,
+     *    and two sync sources (e.g. `AIRBNB` and `BOOKING`) can each hold
+     *    their own row for the same date without one dropping the other's
+     *    insert (the cross-provider collision this method used to allow).
      *
      * The caller MUST dedupe `rows` by date (at most one entry per date); the
      * conflict target only guards against a pre-existing row (typically
@@ -255,7 +272,12 @@ export class AccommodationOccupancyModel extends BaseModelImpl<AccommodationOccu
             accommodationId: string;
             source: OccupancySourceEnum;
             fromDate: string;
-            rows: readonly { date: string; externalEventId: string }[];
+            rows: readonly {
+                date: string;
+                externalEventId: string;
+                /** External event title/summary, if the feed exposed one (HOS-175). */
+                eventTitle?: string | null;
+            }[];
             createdById: string;
         },
         tx?: DrizzleClient
@@ -286,6 +308,7 @@ export class AccommodationOccupancyModel extends BaseModelImpl<AccommodationOccu
                 isBlocked: true,
                 source,
                 externalEventId: row.externalEventId,
+                eventTitle: row.eventTitle ?? null,
                 note: null,
                 createdById,
                 createdAt: now,
@@ -296,7 +319,11 @@ export class AccommodationOccupancyModel extends BaseModelImpl<AccommodationOccu
                 .insert(accommodationOccupancy)
                 .values(values)
                 .onConflictDoNothing({
-                    target: [accommodationOccupancy.accommodationId, accommodationOccupancy.date]
+                    target: [
+                        accommodationOccupancy.accommodationId,
+                        accommodationOccupancy.date,
+                        accommodationOccupancy.source
+                    ]
                 })
                 .returning();
 

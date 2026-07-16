@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "266-point-of-interest-concepcion_del_uruguay_palacio_municipal",
     "slug": "concepcion_del_uruguay_palacio_municipal",
-    "lat": -32.4851849,
-    "long": -58.2320232,
+    "lat": null,
+    "long": null,
     "type": "OTHER",
     "icon": null,
     "description": "Sede del gobierno local y referencia cívica y administrativa del centro urbano.",
@@ -33,7 +33,7 @@
     "verified": false,
     "verifiedAt": null,
     "source": "https://www.cdeluruguay.gob.ar/",
-    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo. Coordinates auto-geocoded from address on 2026-07-13 via nominatim; pending human cartographic verification.",
+    "notes": "Nombre, función y ubicación general confirmados. Falta geocodificar el acceso o punto representativo.",
     "lifecycleState": "ACTIVE",
     "categories": [
         {
