@@ -200,6 +200,10 @@ export const ANFITRIONES_LIST: readonly FeatureListItem[] = [
         descriptionKey: 'features.anfitriones.list.reputation.description'
     },
     {
+        titleKey: 'features.anfitriones.list.calendarSync.title',
+        descriptionKey: 'features.anfitriones.list.calendarSync.description'
+    },
+    {
         titleKey: 'features.anfitriones.list.vipTraveler.title',
         descriptionKey: 'features.anfitriones.list.vipTraveler.description'
     },
@@ -533,12 +537,6 @@ export const SOON_ITEMS: readonly SoonItem[] = [
         Icon: ChatIcon,
         titleKey: 'features.proximamente.items.reviewReplies.title',
         descriptionKey: 'features.proximamente.items.reviewReplies.description'
-    },
-    {
-        id: 'calendar-sync',
-        Icon: CalendarIcon,
-        titleKey: 'features.proximamente.items.calendarSync.title',
-        descriptionKey: 'features.proximamente.items.calendarSync.description'
     },
     {
         id: 'whatsapp-listing',

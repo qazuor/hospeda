@@ -155,6 +155,10 @@
                 "title": "Reputación de todos lados, en un lugar",
                 "description": "Conectá tus ratings de Google, Booking y más para mostrarlos en tu ficha."
             },
+            "calendarSync": {
+                "title": "Sincronização com Google Calendar",
+                "description": "Conecte seu Google Calendar com acesso somente leitura para marcar datas ocupadas e evitar reservas sobrepostas."
+            },
             "vipTraveler": {
                 "title": "Además, sos VIP viajando",
                 "description": "Todo anfitrión tiene gratis el pack completo de viajero VIP: favoritos infinitos, comparador, alertas y más."
@@ -302,10 +306,6 @@
             "reviewReplies": {
                 "title": "Responder reseñas",
                 "description": "Que el anfitrión responda públicamente las opiniones de sus huéspedes."
-            },
-            "calendarSync": {
-                "title": "Calendario de disponibilidad",
-                "description": "Con sincronización a Google Calendar e iCal para no repetir fechas."
             },
             "whatsappListing": {
                 "title": "WhatsApp en la ficha",

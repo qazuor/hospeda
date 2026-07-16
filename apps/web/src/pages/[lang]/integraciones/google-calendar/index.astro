@@ -1,0 +1,390 @@
+---
+/**
+ * @file integraciones/google-calendar/index.astro
+ * @description Public, no-login explainer page for the Google Calendar
+ * integration used by Hospeda hosts. Designed to satisfy Google OAuth app
+ * homepage review requirements by clearly stating purpose, requested data,
+ * privacy links, and support contact.
+ * @route /{lang}/integraciones/google-calendar/
+ * @rendering SSR + Cloudflare cache (static marketing/compliance content)
+ */
+
+import AboutPageJsonLd from '@/components/seo/AboutPageJsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { getSiteUrl } from '@/lib/env';
+import { buildUrl } from '@/lib/urls';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { CalendarIcon, CheckIcon, HomeIcon, ShieldIcon, SparkleIcon } from '@repo/icons';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const pageTitle = t('google-calendar.meta.title', 'Integracion con Google Calendar');
+const pageDescription = t(
+    'google-calendar.meta.description',
+    'Conoce como Hospeda usa acceso de solo lectura a Google Calendar para sincronizar disponibilidad y evitar reservas superpuestas.'
+);
+
+const siteBase = getSiteUrl();
+const canonicalUrl = new URL(Astro.url.pathname, siteBase).href;
+const homeUrl = new URL(buildUrl({ locale, path: '' }), siteBase).href;
+const policyUrl = buildUrl({ locale, path: '/legal/privacidad/' });
+const contactUrl = buildUrl({ locale, path: '/contacto/' });
+const ownerPlansUrl = buildUrl({ locale, path: '/suscriptores/propietarios/' });
+
+const inLanguageMap: Record<SupportedLocale, string> = {
+    es: 'es-AR',
+    en: 'en-US',
+    pt: 'pt-BR'
+};
+
+const breadcrumbItems = [
+    { name: t('google-calendar.breadcrumb.home', 'Inicio'), url: homeUrl },
+    { name: t('google-calendar.breadcrumb.current', 'Integracion con Google Calendar'), url: canonicalUrl }
+];
+
+const purposeCards = [
+    {
+        key: 'syncBusyDates',
+        Icon: CalendarIcon
+    },
+    {
+        key: 'avoidDoubleBookings',
+        Icon: CheckIcon
+    },
+    {
+        key: 'ownerControl',
+        Icon: HomeIcon
+    }
+] as const;
+
+const permissionCards = [
+    {
+        key: 'scope',
+        Icon: ShieldIcon
+    },
+    {
+        key: 'usage',
+        Icon: CalendarIcon
+    },
+    {
+        key: 'limitedUse',
+        Icon: SparkleIcon
+    }
+] as const;
+
+const stepCards = ['connect', 'authorize', 'sync'] as const;
+
+const privacyCards = [
+    {
+        key: 'policy',
+        href: policyUrl,
+        ctaKey: 'google-calendar.privacy.policyLink'
+    },
+    {
+        key: 'disconnect',
+        href: ownerPlansUrl,
+        ctaKey: 'google-calendar.hero.primaryCta'
+    },
+    {
+        key: 'support',
+        href: contactUrl,
+        ctaKey: 'google-calendar.privacy.contactLink'
+    }
+] as const;
+---
+
+<MarketingLayout
+    locale={locale}
+    title={pageTitle}
+    description={pageDescription}
+    canonicalPath={`/${locale}/integraciones/google-calendar/`}
+>
+    <AboutPageJsonLd
+        slot="head-extra"
+        title={pageTitle}
+        description={pageDescription}
+        url={canonicalUrl}
+        inLanguage={inLanguageMap[locale]}
+    />
+    <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
+
+    <MarketingHero
+        tagline={t('google-calendar.hero.tagline', 'Sincronizacion para anfitriones')}
+        titleMain={t('google-calendar.hero.titleMain', 'Google Calendar en')}
+        titleAccent={t('google-calendar.hero.titleAccent', 'Hospeda')}
+        subtitle={t(
+            'google-calendar.hero.subtitle',
+            'Hospeda permite a anfitriones sincronizar las fechas ocupadas de su alojamiento con Google Calendar para evitar reservas superpuestas. Esta pagina explica que datos pedimos, para que los usamos y que no hacemos con ellos.'
+        )}
+    >
+        <Fragment slot="icon-1"><CalendarIcon size="md" weight="duotone" /></Fragment>
+        <Fragment slot="icon-2"><ShieldIcon size="md" weight="duotone" /></Fragment>
+        <Fragment slot="icon-3"><SparkleIcon size="md" weight="duotone" /></Fragment>
+        <div slot="cta" class="gc-hero__actions">
+            <GradientButton
+                href={ownerPlansUrl}
+                label={t('google-calendar.hero.primaryCta', 'Ver planes para anfitriones')}
+                variant="primary"
+            />
+            <GradientButton
+                href={policyUrl}
+                label={t('google-calendar.hero.secondaryCta', 'Leer politica de privacidad')}
+                variant="outline-primary"
+            />
+        </div>
+    </MarketingHero>
+
+    <section class="gc-section section">
+        <div class="gc-section__container">
+            <div class="gc-section__head" data-reveal="up">
+                <p class="gc-section__eyebrow">
+                    {t('google-calendar.purpose.eyebrow', 'Proposito de la integracion')}
+                </p>
+                <h2 class="gc-section__title">
+                    {t('google-calendar.purpose.title', 'Para que sirve')}
+                </h2>
+                <p class="gc-section__lead">
+                    {t(
+                        'google-calendar.purpose.description',
+                        'La integracion esta pensada para propietarios que gestionan la disponibilidad de un alojamiento con Google Calendar y necesitan reflejar esas fechas ocupadas dentro de Hospeda.'
+                    )}
+                </p>
+            </div>
+
+            <div class="gc-card-grid" data-reveal="up">
+                {purposeCards.map(({ key, Icon }, index) => (
+                    <article class="gc-card" data-stagger-index={Math.min(index, 6)} data-stagger-step="100">
+                        <span class="gc-card__icon" aria-hidden="true">
+                            <Icon size={24} weight="duotone" />
+                        </span>
+                        <h3 class="gc-card__title">
+                            {t(`google-calendar.purpose.cards.${key}.title`)}
+                        </h3>
+                        <p class="gc-card__body">
+                            {t(`google-calendar.purpose.cards.${key}.description`)}
+                        </p>
+                    </article>
+                ))}
+            </div>
+        </div>
+    </section>
+
+    <section class="gc-section gc-section--warm section section--warm">
+        <div class="gc-section__container">
+            <div class="gc-section__head" data-reveal="up">
+                <p class="gc-section__eyebrow">
+                    {t('google-calendar.permissions.eyebrow', 'Datos y permisos')}
+                </p>
+                <h2 class="gc-section__title">
+                    {t('google-calendar.permissions.title', 'Que acceso pedimos a Google')}
+                </h2>
+                <p class="gc-section__lead">
+                    {t(
+                        'google-calendar.permissions.description',
+                        'Esta integracion solicita unicamente el permiso de solo lectura de Google Calendar.'
+                    )}
+                </p>
+            </div>
+
+            <div class="gc-card-grid" data-reveal="up">
+                {permissionCards.map(({ key, Icon }, index) => (
+                    <article class="gc-card gc-card--accent" data-stagger-index={Math.min(index, 6)} data-stagger-step="100">
+                        <span class="gc-card__icon" aria-hidden="true">
+                            <Icon size={24} weight="duotone" />
+                        </span>
+                        <h3 class="gc-card__title">
+                            {t(`google-calendar.permissions.cards.${key}.title`)}
+                        </h3>
+                        <p class="gc-card__body">
+                            {t(`google-calendar.permissions.cards.${key}.description`)}
+                        </p>
+                    </article>
+                ))}
+            </div>
+        </div>
+    </section>
+
+    <section class="gc-section section">
+        <div class="gc-section__container">
+            <div class="gc-section__head" data-reveal="up">
+                <p class="gc-section__eyebrow">
+                    {t('google-calendar.steps.eyebrow', 'Como funciona')}
+                </p>
+                <h2 class="gc-section__title">
+                    {t('google-calendar.steps.title', 'Que pasa cuando conectas tu cuenta')}
+                </h2>
+            </div>
+
+            <div class="gc-step-grid" data-reveal="up">
+                {stepCards.map((key, index) => (
+                    <article class="gc-step-card" data-stagger-index={Math.min(index, 6)} data-stagger-step="100">
+                        <span class="gc-step-card__index">{index + 1}</span>
+                        <h3 class="gc-card__title">{t(`google-calendar.steps.items.${key}.title`)}</h3>
+                        <p class="gc-card__body">{t(`google-calendar.steps.items.${key}.description`)}</p>
+                    </article>
+                ))}
+            </div>
+        </div>
+    </section>
+
+    <section class="gc-section gc-section--warm section section--warm">
+        <div class="gc-section__container">
+            <div class="gc-section__head" data-reveal="up">
+                <p class="gc-section__eyebrow">
+                    {t('google-calendar.privacy.eyebrow', 'Privacidad y soporte')}
+                </p>
+                <h2 class="gc-section__title">
+                    {t('google-calendar.privacy.title', 'Donde ver mas informacion')}
+                </h2>
+                <p class="gc-section__lead">
+                    {t(
+                        'google-calendar.privacy.description',
+                        'La politica de privacidad explica con mas detalle como tratamos la informacion de Google Calendar y como podes contactarnos.'
+                    )}
+                </p>
+            </div>
+
+            <div class="gc-card-grid" data-reveal="up">
+                {privacyCards.map(({ key, href, ctaKey }, index) => (
+                    <article class="gc-card" data-stagger-index={Math.min(index, 6)} data-stagger-step="100">
+                        <h3 class="gc-card__title">{t(`google-calendar.privacy.items.${key}.title`)}</h3>
+                        <p class="gc-card__body">{t(`google-calendar.privacy.items.${key}.description`)}</p>
+                        <a class="gc-card__link" href={href}>{t(ctaKey)}</a>
+                    </article>
+                ))}
+            </div>
+        </div>
+    </section>
+</MarketingLayout>
+
+<style>
+    .gc-hero__actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--space-3);
+    }
+
+    .gc-section__container {
+        max-width: var(--container-max);
+        margin: 0 auto;
+        padding: 0 var(--space-container-x);
+    }
+
+    .gc-section__head {
+        max-width: 60rem;
+        margin: 0 auto var(--space-8);
+        text-align: center;
+    }
+
+    .gc-section__eyebrow {
+        margin: 0 0 var(--space-2);
+        font-family: var(--font-decorative);
+        font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+        font-weight: 700;
+        color: var(--brand-accent);
+    }
+
+    .gc-section__title {
+        margin: 0 0 var(--space-3);
+        font-family: var(--font-heading);
+        font-size: clamp(1.7rem, 3vw, 2.35rem);
+        color: var(--core-foreground);
+    }
+
+    .gc-section__lead {
+        margin: 0;
+        color: var(--core-muted-foreground);
+        font-size: var(--text-body-lg);
+    }
+
+    .gc-card-grid,
+    .gc-step-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-card-gap);
+    }
+
+    .gc-card,
+    .gc-step-card {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-6);
+        border-radius: var(--radius-card);
+        background-color: var(--core-card);
+        box-shadow: var(--shadow-card);
+        border: 1px solid var(--border);
+    }
+
+    .gc-card--accent {
+        background: linear-gradient(180deg, var(--core-card) 0%, var(--brand-primary-a05) 100%);
+    }
+
+    .gc-card__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 9999px;
+        color: var(--brand-primary);
+        background-color: var(--brand-primary-a10);
+    }
+
+    .gc-card__title {
+        margin: 0;
+        font-family: var(--font-heading);
+        font-size: 1.15rem;
+        color: var(--core-foreground);
+    }
+
+    .gc-card__body {
+        margin: 0;
+        color: var(--core-muted-foreground);
+        line-height: 1.65;
+    }
+
+    .gc-card__link {
+        margin-top: auto;
+        color: var(--brand-primary);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .gc-card__link:hover {
+        text-decoration: underline;
+    }
+
+    .gc-step-card__index {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 9999px;
+        font-family: var(--font-heading);
+        font-weight: 700;
+        color: var(--accent-foreground);
+        background-color: var(--brand-accent);
+    }
+
+    @media (min-width: 768px) {
+        .gc-card-grid,
+        .gc-step-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 640px) {
+        .gc-card,
+        .gc-step-card {
+            padding: var(--space-5);
+        }
+    }
+</style>
