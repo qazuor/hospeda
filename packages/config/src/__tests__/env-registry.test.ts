@@ -225,8 +225,15 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * +4 = API_RATE_LIMIT_PROTECTED_ENABLED / _WINDOW_MS / _MAX_REQUESTS / _MESSAGE
  * (HOS-186: dedicated rate-limit tier for /api/v1/protected/*, which used to
  * fall through to the `general` catch-all). 260 + 4 = 264.
+ *
+ * +8 = API_RATE_LIMIT_BILLING_* and API_RATE_LIMIT_WEBHOOK_* (_ENABLED /
+ * _WINDOW_MS / _MAX_REQUESTS / _MESSAGE each). HOS-186 drift fix: both tiers
+ * were already read by env-config-helpers.ts but had never been registered,
+ * so they were absent from .env.example and invisible to operators. The
+ * registry↔schema cross-check could not catch it — it diffs the registry
+ * against the Zod schema, and these were in neither. 264 + 8 = 272.
  */
-const EXPECTED_VAR_COUNT = 264;
+const EXPECTED_VAR_COUNT = 272;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
