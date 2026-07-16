@@ -14,6 +14,7 @@
  * @module routes/billing/trial
  */
 
+import { createMercadoPagoAdapter } from '@repo/billing';
 import {
     PermissionEnum,
     ReactivateSubscriptionRequestSchema,
@@ -23,6 +24,7 @@ import {
 } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
+import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { SubscriptionCheckoutError } from '../../services/billing/subscription-checkout-error';
@@ -63,16 +65,6 @@ const trialStatusResponseSchema = z.object({
  * Start trial request schema.
  * No body required.. all HOST users receive the same trial.
  */
-const _startTrialRequestSchema = z.object({});
-
-/**
- * Start trial response schema
- */
-const startTrialResponseSchema = z.object({
-    success: z.boolean(),
-    subscriptionId: z.string().nullable(),
-    message: z.string().optional()
-});
 
 /**
  * Extend trial request schema
@@ -97,7 +89,7 @@ const extendTrialResponseSchema = z.object({
  */
 const checkExpiryResponseSchema = z.object({
     success: z.boolean(),
-    blockedCount: z.number(),
+    reconciledCount: z.number(),
     message: z.string()
 });
 
@@ -137,84 +129,6 @@ export const getTrialStatusRoute = createSimpleRoute({
         });
 
         return status;
-    }
-});
-
-/**
- * POST /api/v1/protected/billing/trial/start
- * Start trial for authenticated user
- *
- * This endpoint starts a trial subscription for the authenticated user.
- * The billing customer ID is obtained from the user's billing context.
- */
-export const startTrialRoute = createSimpleRoute({
-    method: 'post',
-    path: '/start',
-    summary: 'Start trial',
-    description: 'Start a trial subscription for the authenticated user',
-    tags: ['Billing', 'Trial'],
-    responseSchema: startTrialResponseSchema,
-    handler: async (c) => {
-        const billingEnabled = c.get('billingEnabled');
-
-        if (!billingEnabled) {
-            throw new HTTPException(503, {
-                message: 'Billing service is not configured'
-            });
-        }
-
-        // Get billing customer ID from authenticated user context
-        const billingCustomerId = c.get('billingCustomerId');
-
-        if (!billingCustomerId) {
-            throw new HTTPException(400, {
-                message: 'No billing account found'
-            });
-        }
-
-        const customerId = billingCustomerId;
-        const billing = getQZPayBilling();
-        const trialService = new TrialService(billing);
-
-        try {
-            const subscriptionId = await trialService.startTrial({
-                customerId
-            });
-
-            if (!subscriptionId) {
-                throw new HTTPException(409, {
-                    message: 'User already has a subscription or trial could not be created'
-                });
-            }
-
-            return {
-                success: true,
-                subscriptionId,
-                message: 'Trial started successfully'
-            };
-        } catch (error) {
-            if (error instanceof HTTPException) {
-                throw error;
-            }
-
-            const errorMessage = error instanceof Error ? error.message : String(error);
-
-            apiLogger.error(
-                {
-                    customerId,
-                    error: errorMessage
-                },
-                'Failed to start trial'
-            );
-
-            const safeMessage = env.HOSPEDA_API_DEBUG_ERRORS
-                ? `Failed to start trial: ${errorMessage}`
-                : 'Failed to start trial';
-
-            throw new HTTPException(500, {
-                message: safeMessage
-            });
-        }
     }
 });
 
@@ -401,11 +315,15 @@ export const reactivateTrialRoute = createSimpleRoute({
 });
 
 /**
- * Handler for checking and blocking expired trials
- * Extracted for testability
+ * Handler for reconciling elapsed trials against the payment provider.
+ * Extracted for testability.
+ *
+ * Manually triggers the same work as the `trial-reconcile` cron. Note this
+ * CONVERTS elapsed trials whose provider charge landed — it does not cancel
+ * them (HOS-171); see `TrialService.reconcileExpiredTrials`.
  *
  * @param c - Hono context
- * @returns Response with blocked trial count
+ * @returns Response with the number of trials reconciled
  * @throws HTTPException 503 if billing not configured
  * @throws HTTPException 500 if service fails
  */
@@ -425,7 +343,11 @@ export const handleCheckExpiry = async (
     const trialService = new TrialService(billing);
 
     try {
-        const blockedCount = await trialService.blockExpiredTrials();
+        // Build the MP adapter here, mirroring the cron jobs: qzpay-core's
+        // `getPaymentAdapter()` returns the generic adapter interface, and this
+        // path needs the MercadoPago-typed `subscriptions.retrieve()`.
+        const paymentAdapter = createMercadoPagoAdapter({ logger: qzpayLogger });
+        const reconciledCount = await trialService.reconcileExpiredTrials({ paymentAdapter });
 
         auditLog({
             auditEvent: AuditEventType.BILLING_MUTATION,
@@ -437,8 +359,8 @@ export const handleCheckExpiry = async (
 
         return {
             success: true,
-            blockedCount,
-            message: `Successfully blocked ${blockedCount} expired trial(s)`
+            reconciledCount,
+            message: `Successfully reconciled ${reconciledCount} elapsed trial(s)`
         };
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -596,7 +518,6 @@ export const reactivateSubscriptionRoute = createSimpleRoute({
 const trialRouter = createRouter();
 
 trialRouter.route('/', getTrialStatusRoute);
-trialRouter.route('/', startTrialRoute);
 trialRouter.route('/', reactivateTrialRoute);
 trialRouter.route('/', reactivateSubscriptionRoute);
 trialRouter.route('/', extendTrialRoute);

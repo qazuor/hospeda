@@ -5,63 +5,44 @@ import type { ServiceContext } from '../../types';
  * The actor's current publish eligibility, computed by querying the
  * billing layer for active or historical subscriptions.
  *
- * - `first_publish`: the owner has never had a subscription. The publish flow
- *   must create a trial subscription before transitioning the accommodation
- *   to `ACTIVE`.
+ * - `first_publish`: the owner has never had a subscription. Publishing is
+ *   rejected and the owner is sent to the plans page, where they enter a card
+ *   and their free trial begins (HOS-171). This used to silently grant a
+ *   no-card trial mid-publish instead; card-first has no way to give away
+ *   access without the payer authorizing a card at MercadoPago first.
  * - `has_active_sub`: the owner has at least one subscription in `trialing`
- *   or `active` status. The publish flow may proceed without creating a new
- *   subscription.
+ *   or `active` status. The publish flow may proceed.
  * - `subscription_required`: the owner has had subscriptions before, but none
- *   are currently active. The publish flow must reject the request and direct
- *   the user to the plans page.
+ *   are currently active. Publishing is rejected, same as `first_publish`.
+ *
+ * The two rejecting states are kept distinct even though `publish` treats them
+ * identically: they are a truthful read of the billing state, and the front-end
+ * has grounds to word them differently ("start your free trial" vs "renew").
  */
 export type PublishEligibility = 'first_publish' | 'has_active_sub' | 'subscription_required';
 
 /**
- * External dependencies required by `AccommodationService.publish` to do its
- * job atomically without violating the "external API call outside the
- * transaction" rule documented in service-core CLAUDE.md.
+ * External dependency required by `AccommodationService.publish`.
  *
- * The API layer (`apps/api`) wires these by adapting `TrialService` and the
- * `QZPayBilling` client. The publish flow then orchestrates them:
+ * The API layer (`apps/api`) wires this by querying the billing layer. Publish
+ * calls it before any write, and either proceeds (`has_active_sub`) or rejects
+ * to the plans page.
  *
- *  1. `checkEligibility` runs before any write to determine the branch.
- *  2. `startTrial` runs OUTSIDE any transaction (it does the HTTP call to
- *     QZPay and persists the local `billing_subscriptions` row through the
- *     qzpay-drizzle adapter).
- *  3. The local DB writes (lifecycleState change, role promotion, audit log)
- *     run inside `withServiceTransaction`.
- *  4. If the post-trial transaction fails, `cancelTrial` is invoked as
- *     compensation against the external QZPay subscription. If compensation
- *     also fails, the inconsistency is logged for manual reconciliation.
+ * This used to carry `startTrial` / `cancelTrial` too: publish granted a
+ * no-card trial mid-flow, so it needed an external call outside the
+ * transaction and a compensating cancel if the local write then failed. Under
+ * card-first (HOS-171) publish creates nothing at MercadoPago — the owner goes
+ * to checkout and authorizes a card there — so the external call, the
+ * compensation and the whole reconciliation hazard are gone.
  *
- * All three callbacks are optional only at the type level so that consumers
- * who never call `publish()` can keep instantiating `AccommodationService`
- * without wiring billing. At runtime, calling `publish()` without these wired
- * results in `CONFIGURATION_ERROR`.
+ * The callback is optional only at the type level so that consumers who never
+ * call `publish()` can keep instantiating `AccommodationService` without wiring
+ * billing. At runtime, calling `publish()` without it results in
+ * `CONFIGURATION_ERROR`.
  */
 export interface AccommodationPublishDeps {
     /** Resolves the publish eligibility for a given owner. */
     checkEligibility: (ownerId: string, ctx?: ServiceContext) => Promise<PublishEligibility>;
-    /**
-     * Creates a new trial subscription for the owner. MUST run outside any
-     * transaction. Returns the QZPay subscription identifier on success.
-     *
-     * `accommodationId` is the accommodation whose publish triggered the trial.
-     * Trials are per-owner, so this id is purely *referential* ("triggered by")
-     * — it does NOT mean the subscription belongs to a single accommodation. It
-     * is threaded through for observability (logging / Sentry linkage) and as a
-     * referential marker on the MercadoPago creation payload (SPEC-222).
-     */
-    startTrial: (input: {
-        ownerId: string;
-        accommodationId: string;
-    }) => Promise<{ subscriptionId: string }>;
-    /**
-     * Cancels a previously created trial subscription. Used as compensation
-     * when the post-trial transaction fails.
-     */
-    cancelTrial: (subscriptionId: string) => Promise<void>;
 }
 
 /**

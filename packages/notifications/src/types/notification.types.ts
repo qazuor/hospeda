@@ -12,7 +12,6 @@ export enum NotificationType {
     ADDON_EXPIRED = 'addon_expired',
     ADDON_RENEWAL_CONFIRMATION = 'addon_renewal_confirmation',
     TRIAL_ENDING_REMINDER = 'trial_ending_reminder',
-    TRIAL_EXPIRED = 'trial_expired',
     ADMIN_PAYMENT_FAILURE = 'admin_payment_failure',
     ADMIN_SYSTEM_EVENT = 'admin_system_event',
     FEEDBACK_REPORT = 'feedback_report',
@@ -175,7 +174,7 @@ export interface AddonEventPayload extends BaseNotificationPayload {
 
 /** Trial lifecycle events */
 export interface TrialEventPayload extends BaseNotificationPayload {
-    type: NotificationType.TRIAL_ENDING_REMINDER | NotificationType.TRIAL_EXPIRED;
+    type: NotificationType.TRIAL_ENDING_REMINDER;
     planName: string;
     trialEndDate: string;
     daysRemaining?: number;

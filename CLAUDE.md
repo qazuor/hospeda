@@ -152,11 +152,39 @@ Hospeda billing is built on **QZPay** (`@qazuor/qzpay-core`) with a MercadoPago 
 
 - **Routes**: `apps/api/src/routes/billing/` (start-paid, plan-change, subscription-cancel, addons, webhooks, etc.)
 - **Services**: `packages/service-core/src/services/billing/` (subscription, addon, promo-code, settings — deliberately outside `BaseCrudService`)
-- **Cron jobs**: `apps/api/src/cron/jobs/` (dunning, webhook-retry, finalize-cancelled-subs, trial-expiry, addon-expiry, apply-scheduled-plan-changes, subscription-poll, abandoned-pending-subs, exchange-rate-fetch)
+- **Cron jobs**: `apps/api/src/cron/jobs/` (dunning, webhook-retry, finalize-cancelled-subs, trial-reconcile, addon-expiry, apply-scheduled-plan-changes, subscription-poll, abandoned-pending-subs, exchange-rate-fetch)
 - **Config**: `packages/billing/` (plan definitions, entitlement keys, limits, MP adapter factory)
 - **DB adapter**: `packages/db/src/billing/drizzle-adapter.ts` (QZPay Drizzle storage adapter)
 
-Key DB columns: `billing_subscriptions.mp_subscription_id` stores the MercadoPago preapproval ID for monthly recurring subscriptions (NULL for annual one-time charges). `billing_customers.segment` (not `category`). `billing_plans.id` is UUID; `billing_subscriptions.plan_id` is varchar but stores the plan UUID.
+Key DB columns: `billing_subscriptions.mp_subscription_id` stores the MercadoPago preapproval ID for EVERY subscription — monthly and annual alike since HOS-171 (see below). `billing_customers.segment` (not `category`). `billing_plans.id` is UUID; `billing_subscriptions.plan_id` is varchar but stores the plan UUID.
+
+#### Card-first trials, one charging mechanism (HOS-171)
+
+Every subscription is a MercadoPago **preapproval**, trial or not:
+
+- **The trial is MercadoPago's**, not ours: a preapproval carrying
+  `auto_recurring.free_trial`, so the card is collected on day 1 and MP defers the
+  first charge to day N. There is no no-card trial and no `TrialService.startTrial`
+  path from checkout. `freeTrialDays` is decided ONCE, at checkout, by
+  `resolveCheckoutFreeTrialDays` (plan base + any `trial_extension` promo).
+- **`TRIALING` is derived, never stored at creation.** MercadoPago reports an
+  authorized preapproval as `active`; `deriveTrialingStatus` turns that into
+  `trialing` in the webhook when the local `trialEnd` is still in the future. Do NOT
+  "fix" qzpay's `mode:'paid' → incomplete` insert to write `trialing` directly — that
+  guard is what stops anyone who abandons MP's authorization page from walking away
+  with N days of free entitlements.
+- **Annual is a recurring preapproval** at qzpay's `'annual'` cadence (MP
+  `frequency: 12, frequency_type: 'months'`; `years` is rejected outright). It renews
+  itself, so there is no annual reactivation to build and no one-time Checkout Pro
+  charge (`create-annual-subscription.ts` is gone). MP preapprovals have no
+  `statement_descriptor` — that capability died with the hosted checkout.
+- **The `trial-reconcile` cron CONVERTS, it does not cancel.** An elapsed trial is a
+  customer MP is about to charge (or already has), so the cron re-reads the
+  preapproval and mirrors the provider's verdict: `active` → convert, `past_due` →
+  hand to dunning, `cancelled`/`paused` → mirror. It is load-bearing, not a backstop:
+  MP fires `subscription_authorized_payment.created` on the day-N charge but the
+  preapproval status does not change, so a `preapproval.updated` webhook may never
+  arrive and the row would stay `trialing` forever.
 
 Three distinct grace mechanisms exist (see [`docs/billing/grace-period-source-of-truth.md`](docs/billing/grace-period-source-of-truth.md)):
 past-due dunning grace (7 days, `past_due` status), cron-lag grace (6h, `active` status), and soft-cancel grace (until `currentPeriodEnd`).

@@ -110,6 +110,18 @@ vi.mock('../../src/utils/env', () => ({
 //  - 'FREEMONTH' → { kind: 'trial', freeTrialDays: 30 } (SPEC-126 D9 trial extension).
 //  - any other non-empty code → { kind: 'invalid', message: '...' } so that the
 //    existing 422 rejection tests (NOT_A_REAL_CODE) continue to pass.
+// The discount seam mutates the live MercadoPago preapproval amount and redeems the
+// code, fail-closed. These are ROUTE tests — the seam has its own suite — so stub it
+// to "MP accepted the lowered amount". Needed since HOS-171: a discount now coexists
+// with a trial, so the trial-flavoured cases reach this call instead of returning
+// early with the code discarded.
+vi.mock('../../src/services/subscription-discount-signup.service', () => ({
+    applySignupDiscountToMonthly: vi.fn(async () => ({
+        success: true as const,
+        data: { discountedAmountCentavos: 4_500_000, remainingCyclesSeed: null }
+    }))
+}));
+
 vi.mock('../../src/services/subscription-checkout-promo.service', () => ({
     resolveCheckoutPromoPlan: vi.fn(
         async (input: {
@@ -247,11 +259,23 @@ interface PriceFixture {
     active: boolean;
 }
 
-function createPlan(prices: PriceFixture[]) {
+/** The trial length declared by the plan fixtures that have one. */
+const PLAN_TRIAL_DAYS = 14;
+
+/** Metadata for a plan that declares the standard owner trial. */
+const TRIAL_METADATA = { hasTrial: true, trialDays: PLAN_TRIAL_DAYS };
+
+/**
+ * Builds a plan fixture. `metadata` drives the card-first trial resolution —
+ * `resolvePlanTrialConfig` reads `hasTrial`/`trialDays` off it, and a plan without
+ * metadata declares no trial at all.
+ */
+function createPlan(prices: PriceFixture[], metadata?: Record<string, unknown>) {
     return {
         id: PLAN_ID,
         name: 'owner-premium',
-        prices
+        prices,
+        ...(metadata === undefined ? {} : { metadata })
     };
 }
 
@@ -494,8 +518,15 @@ describe('handleStartPaidSubscription (monthly)', () => {
     // annual now delegates to `initiatePaidAnnualSubscription` — see the
     // `handleStartPaidSubscription (annual)` describe block below.
 
-    it('accepts the FREEMONTH promo and forwards freeTrialDays to qzpay (D9)', async () => {
-        const billing = createBillingMock();
+    it('sums the plan base trial and FREEMONTH into ONE freeTrialDays', async () => {
+        // FREEMONTH is a `trial_extension`: it LENGTHENS the trial the plan already
+        // grants, it does not create one. It used to forward a flat 30 regardless;
+        // card-first resolves base + promo ONCE (resolveCheckoutFreeTrialDays), so
+        // the plan has to declare a trial for the extension to have anything to add
+        // to — on a plan without one it grants nothing and reports promoCodeIgnored.
+        const billing = createBillingMock({
+            plans: [createPlan([MONTHLY_PRICE, ANNUAL_PRICE], TRIAL_METADATA)]
+        });
         mockBilling(billing);
 
         const ctx = createMockContext();
@@ -506,7 +537,7 @@ describe('handleStartPaidSubscription (monthly)', () => {
         });
 
         const callArg = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(callArg.freeTrialDays).toBe(30);
+        expect(callArg.freeTrialDays).toBe(PLAN_TRIAL_DAYS + 30);
         const metadata = callArg.metadata as Record<string, unknown>;
         expect(metadata.promoCode).toBe('FREEMONTH');
     });
@@ -701,13 +732,29 @@ const ANNUAL_CUSTOMER_FIXTURE = {
 interface AnnualBillingMockOptions {
     plans?: ReturnType<typeof createPlan>[];
     customer?: typeof ANNUAL_CUSTOMER_FIXTURE | null;
-    checkoutResult?: {
-        id?: string;
+    subscription?: {
+        id: string;
         providerInitPoint?: string;
         providerSandboxInitPoint?: string;
+        providerSubscriptionIds?: { mercadopago?: string };
     } | null;
+    createThrows?: Error;
+    /** Existing subscriptions — non-empty disqualifies the customer from a trial. */
+    priorSubscriptions?: unknown[];
 }
 
+/**
+ * Billing mock for the annual route.
+ *
+ * HOS-171 §7.2 collapsed annual into the monthly mechanism: a RECURRING preapproval
+ * at a 12-month cadence, created through `subscriptions.create` exactly like
+ * monthly — not the one-time Checkout Pro charge it used to be. So this mirrors
+ * `createBillingMock`; the annual-specific parts left are the price fixture and the
+ * `billingInterval` the route must forward.
+ *
+ * `customers.get` survives only because the comp-promo branch reads `livemode` off
+ * the customer. The plain annual path never calls it.
+ */
 function createAnnualBillingMock(opts: AnnualBillingMockOptions = {}) {
     const annualPriceWithAmount = {
         ...ANNUAL_PRICE,
@@ -723,21 +770,30 @@ function createAnnualBillingMock(opts: AnnualBillingMockOptions = {}) {
             }
         ] as unknown as ReturnType<typeof createPlan>[]);
     const customer = opts.customer === undefined ? ANNUAL_CUSTOMER_FIXTURE : opts.customer;
-    const checkoutResult =
-        opts.checkoutResult === undefined
-            ? { id: 'checkout-1', providerInitPoint: 'https://mp.test/annual-abc' }
-            : opts.checkoutResult;
+    const subscription =
+        opts.subscription === undefined
+            ? {
+                  id: LOCAL_SUB_ID,
+                  providerInitPoint: 'https://mp.test/annual-abc',
+                  providerSandboxInitPoint: 'https://sandbox.mp.test/annual-abc',
+                  // HOS-151 Bug C: createPaidSubscription fails closed without one.
+                  providerSubscriptionIds: { mercadopago: 'mp_preapproval_annual' }
+              }
+            : opts.subscription;
+
+    const create = opts.createThrows
+        ? vi.fn().mockRejectedValue(opts.createThrows)
+        : vi.fn().mockResolvedValue(subscription);
 
     return {
         plans: { list: vi.fn().mockResolvedValue({ data: plans }) },
         customers: { get: vi.fn().mockResolvedValue(customer) },
-        checkout: { create: vi.fn().mockResolvedValue(checkoutResult) },
         subscriptions: {
             // SPEC-147 T-008: getByCustomerId is called by the cancel-pending guard.
-            // Default: no existing subs (guard passes through for annual tests).
-            getByCustomerId: vi.fn().mockResolvedValue([]),
-            // Stub for monthly fallback path — never invoked in annual tests.
-            create: vi.fn()
+            // It is ALSO the HOS-171 one-trial-per-customer-for-life gate, so an
+            // empty array means "trial-eligible" as well as "guard passes through".
+            getByCustomerId: vi.fn().mockResolvedValue(opts.priorSubscriptions ?? []),
+            create
         }
     };
 }
@@ -747,7 +803,7 @@ describe('handleStartPaidSubscription (annual)', () => {
         vi.clearAllMocks();
     });
 
-    it('creates an annual subscription via billing.checkout (mode=payment) and returns the URL', async () => {
+    it('creates a recurring annual preapproval and returns the URL', async () => {
         const billing = createAnnualBillingMock();
         mockBilling(billing);
 
@@ -758,14 +814,20 @@ describe('handleStartPaidSubscription (annual)', () => {
         });
 
         expect(result.checkoutUrl).toBe('https://mp.test/annual-abc');
-        expect(typeof result.localSubscriptionId).toBe('string');
-        expect(result.localSubscriptionId).toMatch(/^[0-9a-f-]{36}$/i);
-        expect(billing.checkout.create).toHaveBeenCalledTimes(1);
-        // Monthly path must NOT be invoked when interval is annual.
-        expect(billing.subscriptions.create).not.toHaveBeenCalled();
+        // The local row is inserted by the qzpay adapter inside subscriptions.create
+        // now, so its id comes back from the provider response rather than being
+        // minted here and hand-inserted.
+        expect(result.localSubscriptionId).toBe(LOCAL_SUB_ID);
+        // Annual is the SAME call as monthly since HOS-171 — only the cadence differs.
+        // It is no longer a one-time Checkout Pro charge.
+        expect(billing.subscriptions.create).toHaveBeenCalledTimes(1);
+        const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(call.mode).toBe('paid');
+        expect(call.billingInterval).toBe('annual');
+        expect(call.priceId).toBe(ANNUAL_PRICE_ID);
     });
 
-    it('passes successUrl, cancelUrl, notificationUrl and statementDescriptor from env', async () => {
+    it('passes the success back_url and notificationUrl from env', async () => {
         const billing = createAnnualBillingMock();
         mockBilling(billing);
 
@@ -775,15 +837,16 @@ describe('handleStartPaidSubscription (annual)', () => {
             billingInterval: 'annual'
         });
 
-        const call = billing.checkout.create.mock.calls[0]?.[0] as Record<string, unknown>;
-        // Finding #8: annual back_urls point at the existing locale-prefixed
-        // checkout pages (success/failure), not the old /billing/return.
-        expect(call.successUrl).toBe('https://hospeda.test/es/suscriptores/checkout/success/');
-        expect(call.cancelUrl).toBe('https://hospeda.test/es/suscriptores/checkout/failure/');
+        const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        // A preapproval has exactly ONE back_url, so the old cancelUrl and
+        // statementDescriptor have no equivalent here — both died with the hosted
+        // Checkout Pro page (HOS-171 §7.2).
+        expect(call.paymentMethodReturnUrl).toBe(
+            'https://hospeda.test/es/suscriptores/checkout/success/'
+        );
         expect(call.notificationUrl).toBe(
             'https://api.hospeda.test/api/v1/webhooks/mercadopago?source_news=webhooks'
         );
-        expect(call.statementDescriptor).toBe('HOSPEDA');
     });
 
     it('returns 404 when the plan has no active annual price (NO_ANNUAL_PRICE)', async () => {
@@ -802,22 +865,13 @@ describe('handleStartPaidSubscription (annual)', () => {
         ).rejects.toMatchObject({ status: 404 });
     });
 
-    it('returns 404 when the customer cannot be resolved (CUSTOMER_NOT_FOUND)', async () => {
-        mockBilling(createAnnualBillingMock({ customer: null }));
-
-        const ctx = createMockContext();
-        await expect(
-            handleStartPaidSubscription(ctx as never, {
-                planSlug: 'owner-premium',
-                billingInterval: 'annual'
-            })
-        ).rejects.toMatchObject({ status: 404 });
-    });
-
-    it('returns 500 when checkout returns no init point (MISSING_INIT_POINT)', async () => {
+    it('returns 500 when the preapproval carries no init point (MISSING_INIT_POINT)', async () => {
         mockBilling(
             createAnnualBillingMock({
-                checkoutResult: { id: 'checkout-empty' }
+                subscription: {
+                    id: LOCAL_SUB_ID,
+                    providerSubscriptionIds: { mercadopago: 'mp_preapproval_annual' }
+                }
             })
         );
 
@@ -866,7 +920,12 @@ describe('handleStartPaidSubscription (annual)', () => {
         ).rejects.toMatchObject({ status: 400 });
     });
 
-    it('promoCode is ignored on annual (only forwarded by the monthly path)', async () => {
+    it('forwards the promoCode on annual — it is the same path as monthly now', async () => {
+        // This assertion is INVERTED versus what it used to be. Annual ignored
+        // promoCode entirely (SPEC-122 Decision 4) because it was a one-time
+        // Checkout Pro charge and the promo engine only spoke preapproval. HOS-171
+        // made annual the same preapproval as monthly, so it runs the same promo
+        // resolution and the code reaches MercadoPago rather than being dropped.
         const billing = createAnnualBillingMock();
         mockBilling(billing);
 
@@ -877,9 +936,10 @@ describe('handleStartPaidSubscription (annual)', () => {
             promoCode: 'FREEMONTH'
         });
 
-        // billing.checkout was called (success) — annual ignores promoCode
-        // entirely (Decision 4 of SPEC-122: discount-type promos out of MVP).
-        expect(billing.checkout.create).toHaveBeenCalledTimes(1);
+        expect(billing.subscriptions.create).toHaveBeenCalledTimes(1);
+        const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        const metadata = call.metadata as Record<string, unknown>;
+        expect(metadata.promoCode).toBe('FREEMONTH');
     });
 });
 
@@ -1176,7 +1236,7 @@ describe('handleStartPaidSubscription — provider error wiring (SPEC-149 T-004)
             'checkout_create'
         );
         const billing = createAnnualBillingMock();
-        billing.checkout.create = vi.fn().mockRejectedValue(providerErr);
+        billing.subscriptions.create = vi.fn().mockRejectedValue(providerErr);
         mockBilling(billing);
 
         const ctx = createMockContext();
@@ -1194,7 +1254,7 @@ describe('handleStartPaidSubscription — provider error wiring (SPEC-149 T-004)
     it('annual: MP 500 → ServiceError PROVIDER_ERROR', async () => {
         const providerErr = buildProviderSyncError(buildStubCause(500), 'checkout_create');
         const billing = createAnnualBillingMock();
-        billing.checkout.create = vi.fn().mockRejectedValue(providerErr);
+        billing.subscriptions.create = vi.fn().mockRejectedValue(providerErr);
         mockBilling(billing);
 
         const ctx = createMockContext();
@@ -1212,7 +1272,7 @@ describe('handleStartPaidSubscription — provider error wiring (SPEC-149 T-004)
     it('annual: captureBillingError called with operation=start_paid_checkout and providerStatus on 429', async () => {
         const providerErr = buildProviderSyncError(buildStubCause(429), 'checkout_create');
         const billing = createAnnualBillingMock();
-        billing.checkout.create = vi.fn().mockRejectedValue(providerErr);
+        billing.subscriptions.create = vi.fn().mockRejectedValue(providerErr);
         mockBilling(billing);
 
         const ctx = createMockContext();
@@ -1330,13 +1390,13 @@ describe('handleStartPaidSubscription — no server-side retry (SPEC-149 descope
         expect(billing.subscriptions.create).toHaveBeenCalledTimes(1);
     });
 
-    it('annual: billing.checkout.create called exactly once on MP 429 (no retry)', async () => {
+    it('annual: the preapproval create is called exactly once on MP 429 (no retry)', async () => {
         const providerErr = buildProviderSyncError(
             buildStubCause(429, 'RATE_LIMITED'),
             'checkout_create'
         );
         const billing = createAnnualBillingMock();
-        billing.checkout.create = vi.fn().mockRejectedValue(providerErr);
+        billing.subscriptions.create = vi.fn().mockRejectedValue(providerErr);
         mockBilling(billing);
 
         const ctx = createMockContext();
@@ -1345,16 +1405,16 @@ describe('handleStartPaidSubscription — no server-side retry (SPEC-149 descope
             billingInterval: 'annual'
         }).catch(() => undefined);
 
-        expect(billing.checkout.create).toHaveBeenCalledTimes(1);
+        expect(billing.subscriptions.create).toHaveBeenCalledTimes(1);
     });
 
-    it('annual: billing.checkout.create called exactly once on MP 503 (no retry)', async () => {
+    it('annual: the preapproval create is called exactly once on MP 503 (no retry)', async () => {
         const providerErr = buildProviderSyncError(
             buildStubCause(503, 'SERVICE_UNAVAILABLE'),
             'checkout_create'
         );
         const billing = createAnnualBillingMock();
-        billing.checkout.create = vi.fn().mockRejectedValue(providerErr);
+        billing.subscriptions.create = vi.fn().mockRejectedValue(providerErr);
         mockBilling(billing);
 
         const ctx = createMockContext();
@@ -1363,7 +1423,7 @@ describe('handleStartPaidSubscription — no server-side retry (SPEC-149 descope
             billingInterval: 'annual'
         }).catch(() => undefined);
 
-        expect(billing.checkout.create).toHaveBeenCalledTimes(1);
+        expect(billing.subscriptions.create).toHaveBeenCalledTimes(1);
     });
 });
 
@@ -1396,16 +1456,21 @@ describe('handleStartPaidSubscription — checkout_started analytics on the ANNU
             metadata: { hasTrial: true, trialDays: 14 }
         } as unknown as ReturnType<typeof createPlan>;
 
+        // A card-first trial IS a real MercadoPago preapproval: the card is taken on
+        // day 1 and only the first CHARGE is deferred. So it comes back with an init
+        // point and a provider id like any paid checkout — it used to be a no-card
+        // subscription with neither, which is why this shape had to change.
         const trialSubscription = {
             id: 'trial-sub-annual-1',
             status: 'trialing',
-            trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+            trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+            providerInitPoint: 'https://mp.test/checkout/trial-preapproval',
+            providerSubscriptionIds: { mercadopago: 'mp_preapproval_trial' }
         };
 
         return {
             plans: { list: vi.fn().mockResolvedValue({ data: [trialPlan] }) },
             customers: { get: vi.fn().mockResolvedValue(ANNUAL_CUSTOMER_FIXTURE) },
-            checkout: { create: vi.fn() }, // must NOT be called on the trial branch
             subscriptions: {
                 // No prior subscriptions -> trial-eligible.
                 getByCustomerId: vi.fn().mockResolvedValue([]),
@@ -1432,8 +1497,12 @@ describe('handleStartPaidSubscription — checkout_started analytics on the ANNU
 
         // SANITY — the checkout really did resolve to the trial branch (no MP
         // checkout object created), establishing the premise AC-10 is about.
-        expect(result.appliedEffect).toBe('trial');
-        expect(billing.checkout.create).not.toHaveBeenCalled();
+        // A trial is no longer an `appliedEffect`: it is an ordinary paid preapproval
+        // with the first charge deferred, so it carries `trialGranted` instead and
+        // takes the normal MP redirect. The `outcome` assertion below is unchanged —
+        // the analytics contract this AC pins survives, only its carrier moved.
+        expect(result.trialGranted).toBe(true);
+        expect(result.appliedEffect).toBeUndefined();
 
         // ASSERT — checkout_started WAS captured, with billingInterval='annual'
         // (the part of AC-10 the current implementation satisfies).
@@ -1504,16 +1573,21 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
             metadata: { hasTrial: true, trialDays: 14 }
         } as unknown as ReturnType<typeof createPlan>;
 
+        // A card-first trial IS a real MercadoPago preapproval: the card is taken on
+        // day 1 and only the first CHARGE is deferred. So it comes back with an init
+        // point and a provider id like any paid checkout — it used to be a no-card
+        // subscription with neither, which is why this shape had to change.
         const trialSubscription = {
             id: 'trial-sub-annual-hos122-1',
             status: 'trialing',
-            trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+            trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+            providerInitPoint: 'https://mp.test/checkout/trial-preapproval',
+            providerSubscriptionIds: { mercadopago: 'mp_preapproval_trial' }
         };
 
         return {
             plans: { list: vi.fn().mockResolvedValue({ data: [trialPlan] }) },
             customers: { get: vi.fn().mockResolvedValue(ANNUAL_CUSTOMER_FIXTURE) },
-            checkout: { create: vi.fn() }, // must NOT be called on the trial branch
             subscriptions: {
                 getByCustomerId: vi.fn().mockResolvedValue([]),
                 create: vi.fn().mockResolvedValue(trialSubscription),
@@ -1522,8 +1596,7 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         };
     }
 
-    // Monthly mirror of the helper above (AC-3). The monthly trial branch
-    // never touches `billing.checkout`, so that stub is omitted.
+    // Monthly mirror of the helper above (AC-3).
     function createMonthlyTrialBillingMock() {
         const trialPlan = {
             id: PLAN_ID,
@@ -1532,10 +1605,16 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
             metadata: { hasTrial: true, trialDays: 14 }
         } as unknown as ReturnType<typeof createPlan>;
 
+        // A card-first trial IS a real MercadoPago preapproval: the card is taken on
+        // day 1 and only the first CHARGE is deferred. So it comes back with an init
+        // point and a provider id like any paid checkout — it used to be a no-card
+        // subscription with neither, which is why this shape had to change.
         const trialSubscription = {
             id: 'trial-sub-monthly-hos122-1',
             status: 'trialing',
-            trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+            trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+            providerInitPoint: 'https://mp.test/checkout/trial-preapproval',
+            providerSubscriptionIds: { mercadopago: 'mp_preapproval_trial' }
         };
 
         return {
@@ -1562,7 +1641,12 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         });
 
         // ASSERT
-        expect(result.appliedEffect).toBe('trial');
+        // A trial is no longer an `appliedEffect`: it is an ordinary paid preapproval
+        // with the first charge deferred, so it carries `trialGranted` instead and
+        // takes the normal MP redirect. The `outcome` assertion below is unchanged —
+        // the analytics contract this AC pins survives, only its carrier moved.
+        expect(result.trialGranted).toBe(true);
+        expect(result.appliedEffect).toBeUndefined();
         const completed = findCapturedEvent('checkout_completed');
         expect(completed).toBeDefined();
         expect(completed?.properties.billingInterval).toBe('annual');
@@ -1624,7 +1708,12 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         });
 
         // ASSERT
-        expect(result.appliedEffect).toBe('trial');
+        // A trial is no longer an `appliedEffect`: it is an ordinary paid preapproval
+        // with the first charge deferred, so it carries `trialGranted` instead and
+        // takes the normal MP redirect. The `outcome` assertion below is unchanged —
+        // the analytics contract this AC pins survives, only its carrier moved.
+        expect(result.trialGranted).toBe(true);
+        expect(result.appliedEffect).toBeUndefined();
         const completed = findCapturedEvent('checkout_completed');
         expect(completed).toBeDefined();
         expect(completed?.properties.billingInterval).toBe('monthly');
@@ -1692,13 +1781,16 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         expect(completed?.properties.outcome).toBe('discount');
     });
 
-    it('AC-4: a trial checkout that discards a discount promo emits outcome="trial" with promoCodeIgnored=true', async () => {
-        // ARRANGE — full integration through the REAL trial branch: a
-        // trial-eligible annual checkout that ALSO supplies a `discount`
-        // promo code. Per the production trial branch (the trial wins over a
-        // discount on a not-yet-charged subscription — see
-        // subscription-checkout.service.ts's TRIAL branch comment), the code
-        // is discarded and `promoCodeIgnored: true` is returned.
+    it('AC-4: a trial checkout that ALSO gets a discount keeps both, and the event reports both', async () => {
+        // ARRANGE — a trial-eligible annual checkout that ALSO supplies a
+        // `discount` code.
+        //
+        // This AC is INVERTED versus what it pinned. It used to assert the trial
+        // DISCARDED the discount (promoCodeIgnored: true) because the trial "won"
+        // on a not-yet-charged subscription. HOS-171 reversed that: the two
+        // coexist — the trial defers the first charge, the discount lowers what
+        // that charge will be. The old rule left a first-time owner, the only
+        // customer who gets a trial, unable to use a discount code at all.
         const billing = createAnnualTrialBillingMock();
         mockBilling(billing);
         vi.mocked(resolveCheckoutPromoPlan).mockResolvedValueOnce({
@@ -1721,13 +1813,19 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
             promoCode: 'SAVE10'
         });
 
-        // ASSERT
-        expect(result.appliedEffect).toBe('trial');
-        expect(result.promoCodeIgnored).toBe(true);
+        // ASSERT — both effects land, and nothing is reported as ignored.
+        expect(result.trialGranted).toBe(true);
+        expect(result.appliedEffect).toBe('discount');
+        expect(result.promoCodeIgnored).toBeUndefined();
+
         const completed = findCapturedEvent('checkout_completed');
         expect(completed).toBeDefined();
-        expect(completed?.properties.outcome).toBe('trial');
-        expect(completed?.properties.promoCodeIgnored).toBe(true);
+        // `outcome` is a scalar and reports what the money did. The trial is not
+        // lost with it — it rides its own dimension, which is the whole reason
+        // `trialGranted` exists on the event.
+        expect(completed?.properties.outcome).toBe('discount');
+        expect(completed?.properties.trialGranted).toBe(true);
+        expect(completed?.properties.promoCodeIgnored).toBe(false);
     });
 
     it('AC-5: checkout_started stays without appliedEffect/outcome once checkout_completed also fires', async () => {

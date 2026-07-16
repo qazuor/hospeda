@@ -1,17 +1,18 @@
 /**
- * Unit Tests: Trial Expiry Cron Job Handler
+ * Unit Tests: Trial Reconciliation Cron Job Handler
  *
- * Tests the trial-expiry job handler that processes expired trials.
+ * Tests the `trial-reconcile` job handler that settles elapsed trials
+ * against the payment provider (HOS-171: card-first trials, provider
+ * verdict decides the outcome — convert, defer to dunning, or mirror a
+ * cancellation/pause. Never a blind cancel-at-expiry).
  *
  * Test Coverage:
- * - Processes expired trials successfully
- * - Handles no expired trials gracefully
+ * - Reconciles elapsed trials successfully
+ * - Handles zero elapsed trials gracefully
  * - Returns correct CronJobResult structure
- * - Error handling during trial processing
+ * - Error handling during reconciliation
  * - Dry run mode behavior
  * - Billing not configured scenario
- * - Batch processing behavior
- * - Notification sender wired into TrialService constructor (INV-2)
  *
  * @module test/cron/trial-expiry
  */
@@ -19,11 +20,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { trialExpiryJob } from '../../src/cron/jobs/trial-expiry';
 import type { CronJobContext } from '../../src/cron/types';
-
-// Hoisted mock for sendNotification so it can be referenced in the vi.mock factory
-const { mockSendNotification } = vi.hoisted(() => ({
-    mockSendNotification: vi.fn().mockResolvedValue(undefined)
-}));
 
 // Mock billing middleware
 vi.mock('../../src/middlewares/billing', () => ({
@@ -35,9 +31,31 @@ vi.mock('../../src/services/trial.service', () => ({
     TrialService: vi.fn()
 }));
 
-// Mock notification-helper so we can assert the sender is injected
-vi.mock('../../src/utils/notification-helper', () => ({
-    sendNotification: mockSendNotification
+// Mock qzpay-logger (passed into createMercadoPagoAdapter)
+vi.mock('../../src/lib/qzpay-logger.js', () => ({
+    qzpayLogger: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn()
+    }
+}));
+
+// Mock @repo/billing's createMercadoPagoAdapter: the reconcile job builds its
+// own MP adapter (mirroring subscription-poll.job.ts / webhook-retry.job.ts)
+// so it can call the MercadoPago-typed subscriptions.retrieve(). The stub
+// returned here is what TrialService.reconcileExpiredTrials receives as
+// `paymentAdapter` — its shape doesn't matter for these job-level tests
+// since TrialService itself is mocked, but it must exist so the real
+// createMercadoPagoAdapter (which reads env vars and throws if missing) is
+// never called.
+const mockPaymentAdapter = {
+    subscriptions: { retrieve: vi.fn() }
+};
+const mockCreateMercadoPagoAdapter = vi.fn((..._args: unknown[]) => mockPaymentAdapter);
+
+vi.mock('@repo/billing', () => ({
+    createMercadoPagoAdapter: (...args: unknown[]) => mockCreateMercadoPagoAdapter(...args)
 }));
 
 // Import mocked modules after mocking
@@ -61,16 +79,16 @@ function createMockContext(overrides?: Partial<CronJobContext>): CronJobContext 
     };
 }
 
-describe('Trial Expiry Cron Job', () => {
+describe('Trial Reconciliation Cron Job (HOS-171)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
     describe('Job Definition', () => {
         it('should have correct job metadata', () => {
-            expect(trialExpiryJob.name).toBe('trial-expiry');
+            expect(trialExpiryJob.name).toBe('trial-reconcile');
             expect(trialExpiryJob.description).toBe(
-                'Check and expire trials that have passed their end date'
+                'Reconcile elapsed trials against the payment provider (converts, never cancels)'
             );
             expect(trialExpiryJob.schedule).toBe('0 2 * * *');
             expect(trialExpiryJob.enabled).toBe(true);
@@ -79,7 +97,7 @@ describe('Trial Expiry Cron Job', () => {
     });
 
     describe('Successful Processing', () => {
-        it('should process expired trials successfully', async () => {
+        it('should reconcile elapsed trials successfully', async () => {
             // Arrange
             const ctx = createMockContext();
             const mockBilling = {
@@ -90,7 +108,7 @@ describe('Trial Expiry Cron Job', () => {
                 }
             };
             const mockTrialService = {
-                blockExpiredTrials: vi.fn().mockResolvedValue(5)
+                reconcileExpiredTrials: vi.fn().mockResolvedValue(5)
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
@@ -103,15 +121,22 @@ describe('Trial Expiry Cron Job', () => {
 
             // Assert
             expect(result.success).toBe(true);
-            expect(result.message).toContain('Successfully expired 5 trial subscriptions');
+            expect(result.message).toContain(
+                'Successfully reconciled 5 elapsed trial subscriptions'
+            );
             expect(result.processed).toBe(5);
             expect(result.errors).toBe(0);
             expect(result.durationMs).toBeGreaterThanOrEqual(0);
-            expect(result.details?.blockedCount).toBe(5);
-            expect(mockTrialService.blockExpiredTrials).toHaveBeenCalledTimes(1);
+            expect(result.details?.reconciledCount).toBe(5);
+            expect(mockTrialService.reconcileExpiredTrials).toHaveBeenCalledTimes(1);
+            // The reconciler must receive the MP adapter built from @repo/billing.
+            expect(mockTrialService.reconcileExpiredTrials).toHaveBeenCalledWith({
+                paymentAdapter: mockPaymentAdapter
+            });
+            expect(mockCreateMercadoPagoAdapter).toHaveBeenCalledTimes(1);
         });
 
-        it('should handle no expired trials gracefully', async () => {
+        it('should handle zero elapsed trials gracefully', async () => {
             // Arrange
             const ctx = createMockContext();
             const mockBilling = {
@@ -122,7 +147,7 @@ describe('Trial Expiry Cron Job', () => {
                 }
             };
             const mockTrialService = {
-                blockExpiredTrials: vi.fn().mockResolvedValue(0)
+                reconcileExpiredTrials: vi.fn().mockResolvedValue(0)
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
@@ -135,14 +160,45 @@ describe('Trial Expiry Cron Job', () => {
 
             // Assert
             expect(result.success).toBe(true);
-            expect(result.message).toContain('Successfully expired 0 trial subscriptions');
+            expect(result.message).toContain(
+                'Successfully reconciled 0 elapsed trial subscriptions'
+            );
             expect(result.processed).toBe(0);
             expect(result.errors).toBe(0);
+        });
+
+        // AC-6 (HOS-171): the cron must never cancel — TrialService owns that
+        // decision, but the job-level contract asserts the constructor no
+        // longer accepts (or requires) any cancellation-adjacent wiring, i.e.
+        // TrialService is constructed with exactly the billing instance.
+        it('constructs TrialService with only the billing instance (no notification sender)', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const mockBilling = {
+                subscriptions: {
+                    list: vi.fn().mockResolvedValue({ data: [] })
+                }
+            };
+            const mockTrialService = {
+                reconcileExpiredTrials: vi.fn().mockResolvedValue(0)
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
+
+            // Act
+            await trialExpiryJob.handler(ctx);
+
+            // Assert — single constructor arg (the billing instance)
+            expect(TrialService).toHaveBeenCalledOnce();
+            expect(TrialService).toHaveBeenCalledWith(mockBilling);
         });
     });
 
     describe('Dry Run Mode', () => {
-        it('should count expired trials without processing in dry-run mode', async () => {
+        it('should count elapsed trials without reconciling in dry-run mode', async () => {
             // Arrange
             const ctx = createMockContext({ dryRun: true });
             const now = new Date('2024-06-15T02:00:00Z');
@@ -193,17 +249,21 @@ describe('Trial Expiry Cron Job', () => {
 
             // Assert
             expect(result.success).toBe(true);
-            expect(result.message).toContain('Dry run - Would expire 2 trial subscriptions');
+            expect(result.message).toContain(
+                'Dry run - Would reconcile 2 elapsed trial subscriptions'
+            );
             expect(result.processed).toBe(2);
             expect(result.errors).toBe(0);
             expect(result.details?.dryRun).toBe(true);
             expect(result.details?.totalSubscriptions).toBe(4);
+            // Dry run never builds a live MP adapter — no provider calls happen.
+            expect(mockCreateMercadoPagoAdapter).not.toHaveBeenCalled();
 
             // Restore real timers
             vi.useRealTimers();
         });
 
-        it('should handle no expired trials in dry-run mode', async () => {
+        it('should handle no subscriptions in dry-run mode', async () => {
             // Arrange
             const ctx = createMockContext({ dryRun: true });
             const mockBilling = {
@@ -228,7 +288,7 @@ describe('Trial Expiry Cron Job', () => {
     });
 
     describe('Error Handling', () => {
-        it('should handle billing service errors gracefully', async () => {
+        it('should handle reconciliation errors gracefully', async () => {
             // Arrange
             const ctx = createMockContext();
             const mockBilling = {
@@ -239,7 +299,7 @@ describe('Trial Expiry Cron Job', () => {
                 }
             };
             const mockTrialService = {
-                blockExpiredTrials: vi
+                reconcileExpiredTrials: vi
                     .fn()
                     .mockRejectedValue(new Error('Database connection failed'))
             };
@@ -254,7 +314,7 @@ describe('Trial Expiry Cron Job', () => {
 
             // Assert
             expect(result.success).toBe(false);
-            expect(result.message).toContain('Failed to check expired trials');
+            expect(result.message).toContain('Failed to reconcile elapsed trials');
             expect(result.message).toContain('Database connection failed');
             expect(result.errors).toBe(1);
             expect(result.durationMs).toBeGreaterThanOrEqual(0);
@@ -272,7 +332,7 @@ describe('Trial Expiry Cron Job', () => {
                 }
             };
             const mockTrialService = {
-                blockExpiredTrials: vi.fn().mockRejectedValue('Unknown error')
+                reconcileExpiredTrials: vi.fn().mockRejectedValue('Unknown error')
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
@@ -285,7 +345,7 @@ describe('Trial Expiry Cron Job', () => {
 
             // Assert
             expect(result.success).toBe(false);
-            expect(result.message).toContain('Failed to check expired trials');
+            expect(result.message).toContain('Failed to reconcile elapsed trials');
             expect(result.errors).toBe(1);
         });
     });
@@ -305,7 +365,7 @@ describe('Trial Expiry Cron Job', () => {
             expect(result.processed).toBe(0);
             expect(result.errors).toBe(0);
             expect(ctx.logger.warn).toHaveBeenCalledWith(
-                'Billing not configured, skipping trial expiry check'
+                'Billing not configured, skipping trial reconciliation'
             );
         });
     });
@@ -322,7 +382,7 @@ describe('Trial Expiry Cron Job', () => {
                 }
             };
             const mockTrialService = {
-                blockExpiredTrials: vi.fn().mockResolvedValue(3)
+                reconcileExpiredTrials: vi.fn().mockResolvedValue(3)
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
@@ -344,7 +404,7 @@ describe('Trial Expiry Cron Job', () => {
 
             if (result.details) {
                 expect(result.details).toMatchObject({
-                    blockedCount: expect.any(Number)
+                    reconciledCount: expect.any(Number)
                 });
             }
         });
@@ -362,7 +422,7 @@ describe('Trial Expiry Cron Job', () => {
                 }
             };
             const mockTrialService = {
-                blockExpiredTrials: vi.fn().mockResolvedValue(2)
+                reconcileExpiredTrials: vi.fn().mockResolvedValue(2)
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
@@ -374,87 +434,17 @@ describe('Trial Expiry Cron Job', () => {
             await trialExpiryJob.handler(ctx);
 
             // Assert
-            expect(ctx.logger.info).toHaveBeenCalledWith('Starting trial expiry check', {
+            expect(ctx.logger.info).toHaveBeenCalledWith('Starting trial reconciliation', {
                 dryRun: false,
                 startedAt: expect.any(String)
             });
             expect(ctx.logger.info).toHaveBeenCalledWith(
-                'Running in production mode - expiring trials'
+                'Running in production mode - reconciling elapsed trials'
             );
-            expect(ctx.logger.info).toHaveBeenCalledWith('Trial expiry check completed', {
-                blockedCount: 2,
+            expect(ctx.logger.info).toHaveBeenCalledWith('Trial reconciliation completed', {
+                reconciledCount: 2,
                 durationMs: expect.any(Number)
             });
-        });
-    });
-
-    // -------------------------------------------------------------------------
-    // INV-2: notification sender must be wired into TrialService constructor
-    // -------------------------------------------------------------------------
-
-    describe('Notification sender wiring (INV-2)', () => {
-        it('should construct TrialService with the sendNotification helper as second arg', async () => {
-            // Arrange
-            const ctx = createMockContext();
-            const mockBilling = {
-                subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [] })
-                }
-            };
-            const mockTrialService = {
-                blockExpiredTrials: vi.fn().mockResolvedValue(0)
-            };
-
-            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(function () {
-                return mockTrialService as any;
-            });
-
-            // Act
-            await trialExpiryJob.handler(ctx);
-
-            // Assert — TrialService must receive sendNotification as the 2nd constructor arg
-            expect(TrialService).toHaveBeenCalledOnce();
-            const [_billingArg, senderArg] = vi.mocked(TrialService).mock.calls[0]!;
-            expect(typeof senderArg).toBe('function');
-        });
-
-        it('should pass a sender that calls sendNotification when invoked', async () => {
-            // Arrange
-            const ctx = createMockContext();
-            const mockBilling = {
-                subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [] })
-                }
-            };
-            const mockTrialService = {
-                blockExpiredTrials: vi.fn().mockResolvedValue(0)
-            };
-
-            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(function () {
-                return mockTrialService as any;
-            });
-
-            // Act
-            await trialExpiryJob.handler(ctx);
-
-            // Invoke the wired sender with a sample payload to verify it delegates
-            // to the imported sendNotification helper
-            const [_billingArg, senderArg] = vi.mocked(TrialService).mock.calls[0]!;
-            const samplePayload = {
-                type: 'trial_expired' as const,
-                recipientEmail: 'host@example.com',
-                recipientName: 'Host User',
-                userId: 'user_1',
-                customerId: 'cust_1',
-                planName: 'owner-basico',
-                trialEndDate: new Date().toISOString(),
-                upgradeUrl: 'https://hospeda.com.ar/es/suscriptores/planes/'
-            };
-            (senderArg as (p: typeof samplePayload) => void)(samplePayload);
-
-            expect(mockSendNotification).toHaveBeenCalledWith(samplePayload);
         });
     });
 });

@@ -17,7 +17,6 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     [NotificationType.ADDON_EXPIRATION_WARNING]: NotificationCategory.REMINDER,
     [NotificationType.ADDON_EXPIRED]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_ENDING_REMINDER]: NotificationCategory.REMINDER,
-    [NotificationType.TRIAL_EXPIRED]: NotificationCategory.REMINDER,
 
     // Admin - Sent to admin email list only
     [NotificationType.ADMIN_PAYMENT_FAILURE]: NotificationCategory.ADMIN,

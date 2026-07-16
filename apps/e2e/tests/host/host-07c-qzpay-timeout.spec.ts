@@ -1,36 +1,42 @@
 /**
- * HOST-07c — QZPay startTrial timeout returns 5xx with no DB writes.
+ * HOST-07c — MercadoPago timeout during checkout leaves no half-state.
  *
- * Actors: HOST mid-publish.
+ * Actors: HOST starting a paid subscription.
  * Tags: @p0 @host @billing @resilience
  *
  * Preconditions:
- *   - Host with role='HOST' and a DRAFT accommodation.
- *   - QZPay test-control endpoint mounted (env
- *     `HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true` on the API).
- *   - Cloudinary not exercised here.
+ *   - Host with role='HOST' and a billing customer (no subscription yet).
+ *   - QZPay test-control endpoint mounted.
  *
  * What this validates:
- *  1. With `failNext({operation: 'startTrial', errorCode: 'TIMEOUT'})` armed,
- *     the publish POST returns a 5xx (typically 503).
- *  2. The recorded calls log includes a failed `startTrial` call.
- *  3. DB invariants: the accommodation remains DRAFT and no
- *     `billing_subscriptions` row was created — there are no half-completed
- *     state changes to clean up.
+ *  1. With `failNext({operation: 'createSubscription', errorCode: 'TIMEOUT'})`
+ *     armed, POST /start-paid fails instead of hanging or half-committing.
+ *  2. The recorded calls include a failed `createSubscription`.
+ *  3. DB invariant: no `billing_subscriptions` row survives the timeout.
+ *
+ * A timeout is the nastier sibling of RES-01's outage: the provider may or may
+ * not have acted, so the guarantee we need is that OUR side persists nothing it
+ * cannot later reconcile. HOS-151 is what this protects against — an `incomplete`
+ * row whose preapproval can never be located again.
+ *
+ * This spec used to time out `startTrial` and drive `publish`. HOS-171 deleted the
+ * no-card trial: publishing requires a card now and never reaches billing, so the
+ * provider call it was modelling no longer exists there. The checkout is where a
+ * timeout can actually strand a subscription.
  *
  * @see SPEC-092 spec.md § HOST-07
- * @see apps/e2e/fixtures/qzpay-test-control.ts
  */
 
 import { expect, test } from '@playwright/test';
-import { createAccommodation, createUser, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
+import { createUser, ensureBillingCustomer, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { createQZPayTestControl } from '../../fixtures/qzpay-test-control.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
+const START_PAID_URL = `${API_URL}/api/v1/protected/billing/subscriptions/start-paid`;
 
-test.describe('HOST-07c: QZPay startTrial timeout @p0 @host @billing @resilience', () => {
+test.describe('HOST-07c: MP timeout during checkout @p0 @host @billing @resilience', () => {
     let userId: string | null = null;
 
     test.afterEach(async () => {
@@ -40,7 +46,7 @@ test.describe('HOST-07c: QZPay startTrial timeout @p0 @host @billing @resilience
         userId = null;
     });
 
-    test('startTrial timeout: publish returns 5xx, accommodation stays DRAFT, no sub row', async ({
+    test('preapproval timeout: checkout fails and no subscription row is left behind', async ({
         page
     }) => {
         const qzpayControl = createQZPayTestControl(API_URL);
@@ -58,62 +64,51 @@ test.describe('HOST-07c: QZPay startTrial timeout @p0 @host @billing @resilience
         }
         await qzpayControl.reset();
 
-        // ── Setup: HOST + DRAFT acc, no subscription yet ───────────────────
+        // ── Setup: HOST with a billing customer, no subscription yet ────────
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userId = host.id;
         await forceVerifyEmail(host.id);
 
-        const accommodation = await createAccommodation({
-            ownerId: host.id,
-            lifecycleState: 'DRAFT',
-            slugPrefix: 'host-07c'
-        });
+        // Scoping is by billing customer id, not user id — see the seam's
+        // `extractScope` (@repo/billing). It must exist before arming.
+        const { customerId } = await ensureBillingCustomer({ userId: host.id });
 
-        // ── Arm the failure: next startTrial call fails with TIMEOUT ──────
+        // ── Arm the failure: the next preapproval create times out ──────────
         await qzpayControl.failNext({
-            operation: 'startTrial',
+            operation: 'createSubscription',
             errorCode: 'TIMEOUT',
-            errorMessage: 'QZPay startTrial exceeded 8s timeout (HOST-07c E2E)',
-            scope: host.id
+            errorMessage: 'MercadoPago preapproval create exceeded its timeout (HOST-07c E2E)',
+            scope: customerId
         });
 
-        // ── Publish: expect 5xx ────────────────────────────────────────────
-        // Owner-scoped protected publish endpoint (POST .../publish) — the
-        // same route the web editor's "Publicar" button calls, and the only
-        // route that carries a `lifecycleState` transition (the protected
-        // PATCH/PUT schema has no such field, HOS-110).
-        const publishResponse = await page.request.post(
-            `${API_URL}/api/v1/protected/accommodations/${accommodation.id}/publish`,
-            {
-                headers: { cookie: host.sessionCookie }
-            }
-        );
+        // ── Checkout: must fail, not hang or half-commit ────────────────────
+        const response = await page.request.post(START_PAID_URL, {
+            // `/start-paid` is wrapped by idempotencyKeyMiddleware: without this
+            // header it 400s before reaching billing, and the armed timeout would
+            // look like it never fired. The front end sends a fresh uuid per click.
+            headers: { cookie: host.sessionCookie, 'X-Idempotency-Key': crypto.randomUUID() },
+            data: { planSlug: 'owner-basico', billingInterval: 'monthly' }
+        });
         expect(
-            publishResponse.status() >= 500 && publishResponse.status() < 600,
-            `expected 5xx on QZPay timeout, got ${publishResponse.status()}`
-        ).toBe(true);
+            response.ok(),
+            `checkout must not succeed on a provider timeout (got ${response.status()})`
+        ).toBe(false);
 
-        // ── Recorded calls: failed startTrial captured ────────────────────
-        const calls = await qzpayControl.getRecordedCalls('startTrial');
+        // ── Recorded calls: the failed create was captured ──────────────────
+        const calls = await qzpayControl.getRecordedCalls('createSubscription');
         const firstFailure = calls.find((call) => call.outcome !== 'ok');
         expect(
             firstFailure,
-            'expected at least one failed startTrial in recorded calls'
+            'expected at least one failed createSubscription in recorded calls'
         ).toBeDefined();
 
-        // ── DB invariants: no half-state ──────────────────────────────────
-        const accAfter = await execSQL<{ lifecycle_state: string }>(
-            'SELECT lifecycle_state FROM accommodations WHERE id = $1',
-            [accommodation.id]
-        );
-        expect(accAfter[0]?.lifecycle_state).toBe('DRAFT');
-
-        const subRows = await execSQL(
+        // ── DB invariant: no orphan row ─────────────────────────────────────
+        const subs = await execSQL(
             `SELECT s.id FROM billing_subscriptions s
              JOIN billing_customers c ON s.customer_id = c.id
              WHERE c.external_id = $1`,
             [host.id]
         );
-        expect(subRows.length, 'no subscription row should exist after timeout').toBe(0);
+        expect(subs.length, 'a timed-out checkout must leave no subscription row').toBe(0);
     });
 });

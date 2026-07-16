@@ -90,23 +90,55 @@ export const StartPaidSubscriptionResponseSchema = z.object({
      * - `'discount'` — a discount was applied (the monthly preapproval amount was
      *   lowered, or the annual line-item was reduced). A normal MP redirect to
      *   `checkoutUrl` still follows; the marker is informational.
-     * - `'trial'` (HOS-110) — the plan's no-card trial was granted instead of a
-     *   paid checkout. There is NO MercadoPago preapproval: like `'comp'`,
-     *   `checkoutUrl` is an in-app success sentinel URL and the front-end should
-     *   go straight to success rather than redirecting to a payment provider.
+     * There is no `'trial'` variant. Card-first (HOS-171) deleted the no-card
+     * trial that used to be granted INSTEAD of a paid checkout: a trial is now
+     * `free_trial` on the very preapproval a paid checkout creates, so it is a
+     * normal MP redirect and carries no marker of its own.
+     *
+     * Narrowing this enum is a deliberate exception to the additive-only
+     * schema-compat policy, taken while the platform has no real customers and the
+     * API and web release together. The policy guards stored JSONB, cached
+     * responses and queued messages; `appliedEffect` is a transient response field
+     * that nothing persists, so no old value can be in flight to fail parsing.
      */
     appliedEffect: z
-        .enum(['comp', 'discount', 'trial'], {
+        .enum(['comp', 'discount'], {
             message: 'zodError.billing.startPaid.appliedEffect.invalid'
         })
         .optional(),
     /**
-     * HOS-110 W1: `true` when a `discount` promo code was supplied alongside a
-     * trial-eligible checkout and was DISCARDED (never persisted) because the
-     * free trial (`appliedEffect: 'trial'`) takes priority over a discount on
-     * a not-yet-charged subscription. Only ever present together with
-     * `appliedEffect: 'trial'`. Absent (not `false`) in every other case —
-     * the front-end should treat "absent" and "false" identically.
+     * `true` when the checkout granted free trial days — MercadoPago will defer
+     * the first charge instead of taking it today.
+     *
+     * Deliberately NOT an `appliedEffect` variant. A card-first trial is not an
+     * alternative to a paid checkout the way `comp` is: it IS the paid checkout,
+     * on the same preapproval, with the first debit pushed out — so it returns a
+     * normal MP redirect and no effect marker. Modelling it as an effect is what
+     * the pre-HOS-171 `'trial'` variant did, back when a trial really was a
+     * separate no-card path.
+     *
+     * Absent (not `false`) when no trial was granted.
+     */
+    trialGranted: z
+        .literal(true, {
+            message: 'zodError.billing.startPaid.trialGranted.invalid'
+        })
+        .optional(),
+    /**
+     * `true` when a promo code was supplied but had no effect, so the customer is
+     * told rather than silently losing it. Absent (not `false`) otherwise — the
+     * front-end should treat "absent" and "false" identically.
+     *
+     * Since HOS-171 this means exactly ONE thing: a `trial_extension` code was
+     * applied to a checkout that grants no trial to lengthen (the plan declares
+     * none, or the customer already had a subscription — one trial per customer,
+     * for life).
+     *
+     * It no longer means "a discount was discarded in favour of a trial". That
+     * precedence is gone: a discount now COEXISTS with a trial, because the trial
+     * defers the first charge while the discount lowers what that charge will be.
+     * The old rule left a first-time owner — the only customer who gets a trial —
+     * unable to use a discount code at all.
      */
     promoCodeIgnored: z
         .literal(true, {

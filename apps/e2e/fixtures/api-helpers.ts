@@ -460,12 +460,23 @@ export async function createAccommodation(options: {
  * @qazuor/qzpay-core; the columns referenced here match the migrations
  * applied at the time of writing. Adjust if the upstream schema evolves.
  */
-export async function createSubscription(options: {
+/**
+ * Resolves the billing customer for a user, creating it when absent, and returns
+ * its id. Idempotent.
+ *
+ * Split out of {@link createSubscription} so a test can get a customer WITHOUT
+ * also getting a subscription. The resilience suite needs exactly that: it arms a
+ * `createSubscription` failure scoped to a `customerId` (the scope key the
+ * test-control seam extracts — HOS-171), and that id has to be known BEFORE the
+ * checkout that would otherwise create the customer on demand. Scoping matters:
+ * an unscoped entry is consumed by whichever parallel worker calls first.
+ *
+ * Note the id here is `billing_customers.id`, NOT the user id — the two are linked
+ * by `external_id`. Arming a failure scoped to a user id silently matches nothing.
+ */
+export async function ensureBillingCustomer(options: {
     readonly userId: string;
-    readonly planId: string;
-    readonly status: 'trialing' | 'active' | 'canceled' | 'expired';
-    readonly periodEnd?: Date;
-}): Promise<{ readonly customerId: string; readonly subscriptionId: string }> {
+}): Promise<{ readonly customerId: string }> {
     // billing_customers.external_id has no UNIQUE constraint — only a regular btree
     // index. Use SELECT-or-INSERT pattern instead of ON CONFLICT.
     // billing_customers also requires `email` (NOT NULL).
@@ -474,22 +485,37 @@ export async function createSubscription(options: {
         'SELECT id FROM billing_customers WHERE external_id = $1 AND livemode = false LIMIT 1',
         [options.userId]
     );
-    let customerId = existingCustomer[0]?.id;
-    if (!customerId) {
-        // Derive a placeholder email from the userId for seed/test rows.
-        const placeholderEmail = `e2e-billing-${options.userId}@hospeda-test.local`;
-        // livemode=false: the E2E environment runs with HOSPEDA_MERCADO_PAGO_SANDBOX=true,
-        // so QZPay's livemode=false. The Drizzle adapter filters by livemode, so rows
-        // inserted with livemode=true (the column default) are invisible to the adapter.
-        const insertedCustomer = await execSQL<{ id: string }>(
-            `INSERT INTO billing_customers (external_id, email, segment, livemode, created_at, updated_at)
-             VALUES ($1, $2, 'host', false, NOW(), NOW())
-             RETURNING id`,
-            [options.userId, placeholderEmail]
-        );
-        customerId = insertedCustomer[0]?.id;
-        if (!customerId) throw new Error('createSubscription: customer insert returned no id');
+    const existingId = existingCustomer[0]?.id;
+    if (existingId) {
+        return { customerId: existingId };
     }
+
+    // Derive a placeholder email from the userId for seed/test rows.
+    const placeholderEmail = `e2e-billing-${options.userId}@hospeda-test.local`;
+    // livemode=false: the E2E environment runs with HOSPEDA_MERCADO_PAGO_SANDBOX=true,
+    // so QZPay's livemode=false. The Drizzle adapter filters by livemode, so rows
+    // inserted with livemode=true (the column default) are invisible to the adapter.
+    const insertedCustomer = await execSQL<{ id: string }>(
+        `INSERT INTO billing_customers (external_id, email, segment, livemode, created_at, updated_at)
+         VALUES ($1, $2, 'host', false, NOW(), NOW())
+         RETURNING id`,
+        [options.userId, placeholderEmail]
+    );
+    const customerId = insertedCustomer[0]?.id;
+    if (!customerId) {
+        throw new Error('ensureBillingCustomer: customer insert returned no id');
+    }
+    return { customerId };
+}
+
+export async function createSubscription(options: {
+    readonly userId: string;
+    readonly planId: string;
+    readonly status: 'trialing' | 'active' | 'canceled' | 'expired';
+    readonly periodEnd?: Date;
+}): Promise<{ readonly customerId: string; readonly subscriptionId: string }> {
+    // Resolves-or-creates; throws rather than returning an id-less customer.
+    const { customerId } = await ensureBillingCustomer({ userId: options.userId });
 
     const periodEnd = options.periodEnd ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     const periodStart = new Date(); // billing_subscriptions.current_period_start is NOT NULL

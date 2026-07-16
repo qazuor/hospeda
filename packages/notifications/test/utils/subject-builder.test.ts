@@ -127,17 +127,6 @@ describe('Subject Builder', () => {
                 expect(result).toBe('Tu período de prueba termina pronto');
             });
 
-            it('should return trial expired subject', () => {
-                // Arrange
-                const data = {};
-
-                // Act
-                const result = getSubject(NotificationType.TRIAL_EXPIRED, data);
-
-                // Assert
-                expect(result).toBe('Tu período de prueba ha finalizado');
-            });
-
             it('should return admin payment failure subject with userEmail', () => {
                 // Arrange
                 const data = { userEmail: 'user@example.com' };

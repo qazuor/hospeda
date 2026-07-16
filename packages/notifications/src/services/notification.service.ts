@@ -29,8 +29,7 @@ import {
     SubscriptionCancelled,
     SubscriptionPaused,
     SubscriptionReactivated,
-    TrialEndingReminder,
-    TrialExpired
+    TrialEndingReminder
 } from '../templates/index.js';
 import { formatDate } from '../templates/utils/index.js';
 import type { EmailTransport } from '../transports/email/email-transport.interface.js';
@@ -414,16 +413,6 @@ export class NotificationService {
                     planName: p.planName,
                     trialEndDate: p.trialEndDate,
                     daysRemaining: p.daysRemaining,
-                    upgradeUrl: p.upgradeUrl
-                });
-            }
-
-            case 'trial_expired': {
-                const p = payload as TrialEventPayload;
-                return TrialExpired({
-                    recipientName,
-                    planName: p.planName,
-                    trialEndDate: p.trialEndDate,
                     upgradeUrl: p.upgradeUrl
                 });
             }

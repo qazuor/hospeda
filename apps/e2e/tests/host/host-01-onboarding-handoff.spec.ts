@@ -17,8 +17,10 @@
  *  3. Mini-form POST creates a DRAFT and atomically promotes USER → HOST.
  *  4. Browser is redirected to admin /accommodations/{id}/edit.
  *  5. Admin route guard accepts the new HOST (no /auth/forbidden).
- *  6. Filling remaining fields + clicking Publicar transitions to ACTIVE
- *     and creates a billing_subscriptions row with status='trialing'.
+ *  6. Filling remaining fields + clicking Publicar transitions to ACTIVE.
+ *     Publishing NO LONGER creates the subscription: since HOS-171 it requires an
+ *     already-active one and rejects with 403 subscription_required otherwise, so
+ *     the owner is given a plan here the way a real one gets it at checkout.
  *  7. Public detail page shows the accommodation within ISR window.
  *  8. Idempotency: re-firing mini-form returns `resumed` with no
  *     new accommodation row.
@@ -238,6 +240,24 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         // the trial subscription (HOS-110 dedicated endpoint — the protected
         // PATCH schema has no `lifecycleState` field, so publishing goes
         // through the dedicated endpoint instead of the generic update).
+        // Card-first (HOS-171): publish requires a LIVE subscription — including on
+        // the owner's very first publish. It used to grant a no-card trial itself,
+        // which is what let this flow go straight from onboarding to ACTIVE. A real
+        // owner now gets here through the checkout; this stands in for that, so the
+        // spec keeps testing the onboarding handoff rather than billing.
+        const publishPlanRows = await execSQL<{ id: string }>(
+            `SELECT id FROM billing_plans
+             WHERE name = 'owner-basico' AND active = true
+             LIMIT 1`
+        );
+        const publishPlanId = publishPlanRows[0]?.id;
+        expect(publishPlanId, 'owner-basico must be seeded for the publish gate').toBeDefined();
+        await createSubscription({
+            userId: user.id,
+            planId: publishPlanId as string,
+            status: 'active'
+        });
+
         const publishResponse = await page.request.post(
             `${API_URL}/api/v1/protected/accommodations/${result.accommodationId}/publish`,
             {
@@ -249,7 +269,7 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
             `publish POST must succeed (got ${publishResponse.status()})`
         ).toBe(true);
 
-        // Step 13 of spec: ACTIVE state + trialing subscription + role unchanged
+        // Step 13 of spec: ACTIVE state + role unchanged
         const accsPublished = await execSQL<{ lifecycle_state: string; visibility: string }>(
             'SELECT lifecycle_state, visibility FROM accommodations WHERE id = $1',
             [result.accommodationId]
@@ -259,23 +279,17 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         // PRIVATE to PUBLIC so the public detail-by-slug page serves it (no 404).
         expect(accsPublished[0]?.visibility).toBe('PUBLIC');
 
-        // Trial subscription created OUTSIDE the local DB transaction (per
-        // architecture). Only the QZPay test-control adapter (T-036) makes this
-        // assertion deterministic — a stub MP token sets the access token but does
-        // NOT create the trialing subscription, so it cannot gate this assertion.
-        // Without the test-control adapter, skip the billing assertion — the rest
-        // of the test still validates role promotion, admin redirect, public
-        // visibility, and idempotency.
-        const hasBillingConfigured = process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED === 'true';
-        if (hasBillingConfigured) {
-            const subsPublished = await execSQL<{ status: string }>(
-                `SELECT s.status FROM billing_subscriptions s
-                 JOIN billing_customers c ON s.customer_id = c.id
-                 WHERE c.external_id = $1`,
-                [user.id]
-            );
-            expect(subsPublished[0]?.status).toBe('trialing');
-        }
+        // The subscription is the one seeded above, untouched: publish reads billing
+        // state now, it never writes it. Asserting it survived as `active` is what
+        // proves publish did not invent one behind our back.
+        const subsPublished = await execSQL<{ status: string }>(
+            `SELECT s.status FROM billing_subscriptions s
+             JOIN billing_customers c ON s.customer_id = c.id
+             WHERE c.external_id = $1`,
+            [user.id]
+        );
+        expect(subsPublished).toHaveLength(1);
+        expect(subsPublished[0]?.status).toBe('active');
 
         const usersFinal = await execSQL<{ role: string }>('SELECT role FROM users WHERE id = $1', [
             user.id

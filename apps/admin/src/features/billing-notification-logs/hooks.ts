@@ -8,7 +8,6 @@ export type NotificationType =
     | 'payment_success'
     | 'payment_failed'
     | 'trial_ending'
-    | 'trial_expired'
     | 'subscription_cancelled'
     | 'payment_reminder'
     | 'payment_receipt';

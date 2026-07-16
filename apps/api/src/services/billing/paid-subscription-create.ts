@@ -23,6 +23,7 @@
  */
 
 import type { QZPayBilling, QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
+import { applyTestControl } from '@repo/billing';
 import { apiLogger } from '../../utils/logger.js';
 import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
 
@@ -41,8 +42,19 @@ export interface CreatePaidSubscriptionInput {
      * helper never looks a plan up itself.
      */
     readonly planId: string;
-    /** Resolved qzpay monthly price ID (`billing_prices.id`) for {@link planId}. */
+    /** Resolved qzpay price ID (`billing_prices.id`) for {@link planId}. */
     readonly priceId: string;
+    /**
+     * Billing cadence for the preapproval. Defaults to `'monthly'`.
+     *
+     * `'annual'` is mapped by qzpay to MercadoPago's
+     * `frequency: 12, frequency_type: 'months'` — NOT `frequency_type: 'years'`,
+     * which MercadoPago rejects outright. 12 months is also preferable to the
+     * 365 days that would otherwise work: it handles leap years and keeps the
+     * renewal aligned to the calendar instead of drifting a day every four
+     * years (HOS-171 §7.2).
+     */
+    readonly billingInterval?: 'monthly' | 'annual';
     /** MercadoPago `back_url` for the preapproval. */
     readonly paymentMethodReturnUrl: string;
     /** Webhook destination for this preapproval. */
@@ -114,23 +126,36 @@ export async function createPaidSubscription(
         paymentMethodReturnUrl,
         notificationUrl,
         freeTrialDays,
+        billingInterval = 'monthly',
         metadata
     } = input;
 
-    const subscription: QZPaySubscriptionWithHelpers = await billing.subscriptions.create({
-        customerId,
-        planId,
-        priceId,
-        mode: 'paid',
-        billingInterval: 'monthly',
-        paymentMethodReturnUrl,
-        notificationUrl,
-        // SPEC-126 D9: extra free-trial days are forwarded to the MP
-        // preapproval so the first recurring charge is delayed by N days.
-        // Omitted when the caller has no qualifying trial extension.
-        ...(freeTrialDays === undefined ? {} : { freeTrialDays }),
-        ...(metadata === undefined ? {} : { metadata })
-    });
+    // The preapproval create is wrapped in the E2E test-control seam so the
+    // resilience suite can force the provider to be down or time out at exactly
+    // this point — a failure the real MP sandbox cannot produce on demand. It is
+    // wired HERE rather than at each caller because every paid checkout funnels
+    // through this one call (monthly, annual and reactivation), so one seam covers
+    // all three. Inert in production: `applyTestControl` returns `realCall()`
+    // untouched unless HOSPEDA_QZPAY_TEST_CONTROL_ENABLED === 'true'.
+    //
+    // Scoped by `customerId` so parallel E2E workers sharing the global queue do
+    // not consume each other's armed failures (`extractScope`, @repo/billing).
+    const subscription = (await applyTestControl('createSubscription', { customerId, planId }, () =>
+        billing.subscriptions.create({
+            customerId,
+            planId,
+            priceId,
+            mode: 'paid',
+            billingInterval,
+            paymentMethodReturnUrl,
+            notificationUrl,
+            // SPEC-126 D9: extra free-trial days are forwarded to the MP
+            // preapproval so the first recurring charge is delayed by N days.
+            // Omitted when the caller has no qualifying trial extension.
+            ...(freeTrialDays === undefined ? {} : { freeTrialDays }),
+            ...(metadata === undefined ? {} : { metadata })
+        })
+    )) as QZPaySubscriptionWithHelpers;
 
     const checkoutUrl = subscription.providerInitPoint ?? subscription.providerSandboxInitPoint;
 

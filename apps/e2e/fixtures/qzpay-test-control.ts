@@ -7,22 +7,22 @@
  *
  * Used by E2E tests that need deterministic failure injection into the
  * QZPay/MercadoPago adapter — failures the real sandbox cannot produce
- * on demand: HOST-07c (timeout), HOST-07d (post-trial DB write failure),
+ * on demand: HOST-07c (timeout), HOST-07d (post-create compensation),
  * RES-01 (api caída during checkout), RES-04 (webhook duplicate).
  *
  * @example
  * ```ts
  * await qzpayControl.reset();
  * await qzpayControl.failNext({
- *     operation: 'startTrial',
+ *     operation: 'createSubscription',
  *     errorCode: 'TIMEOUT',
- *     errorMessage: 'QZPay startTrial exceeded 8s timeout'
+ *     errorMessage: 'MercadoPago preapproval create exceeded its timeout'
  * });
  *
- * // Run the user action that should hit startTrial
- * await page.click('[data-testid="publicar"]');
+ * // Run the user action that reaches the preapproval create
+ * await page.request.post(`${API_URL}/api/v1/protected/billing/start-paid`, { ... });
  *
- * const calls = await qzpayControl.getRecordedCalls('startTrial');
+ * const calls = await qzpayControl.getRecordedCalls('createSubscription');
  * expect(calls).toHaveLength(1);
  * expect(calls[0].outcome).toBe('failed');
  * ```
@@ -32,8 +32,7 @@
 const DEFAULT_API_BASE_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
 
 export type ControllableOperation =
-    | 'startTrial'
-    | 'cancelTrial'
+    | 'createSubscription'
     | 'createPaymentPreference'
     | 'capturePayment'
     | 'refundPayment'
@@ -54,7 +53,7 @@ export interface QZPayTestControl {
         readonly errorMessage: string;
         readonly delayMs?: number;
         /**
-         * Optional ownerId/subscriptionId scope. When set, only a call whose
+         * Optional customerId/subscriptionId scope. When set, only a call whose
          * extracted scope matches consumes this queued failure. Prevents
          * cross-contamination between parallel Playwright workers sharing the
          * API's global failNext queue. Omit for backward-compat (matches any).
@@ -65,7 +64,7 @@ export interface QZPayTestControl {
         operation: ControllableOperation,
         ms: number,
         /**
-         * Optional ownerId/subscriptionId scope. When set, only a call whose
+         * Optional customerId/subscriptionId scope. When set, only a call whose
          * extracted scope matches consumes this queued delay. Omit for
          * backward-compat (matches any caller). Mirrors `failNext`'s scope.
          */

@@ -47,6 +47,20 @@ export const BILLING_EVENT_TYPES = {
     NOTIFICATION_SCHEDULED: 'NOTIFICATION_SCHEDULED',
     /** Fired when a trial subscription is blocked due to expiry (idempotency dedup guard) */
     TRIAL_BLOCKED: 'TRIAL_BLOCKED',
+    /**
+     * Fired when the trial reconciler settles an elapsed card-first trial against
+     * the provider (HOS-171), recording the outcome it reconciled the local row
+     * to — converted to active, mirrored to cancelled/paused, or routed to
+     * past_due after a failed first charge.
+     *
+     * Acts as the per-subscription idempotency dedup guard for
+     * `reconcileExpiredTrials`, the role `TRIAL_BLOCKED` played for the
+     * cancel-at-expiry cron this replaced. Deliberately a NEW event type rather
+     * than a reuse: `TRIAL_BLOCKED` means "we cancelled this customer", which is
+     * the opposite of what the reconciler does, and conflating them would make
+     * the audit trail lie about which behavior ran.
+     */
+    TRIAL_RECONCILED: 'TRIAL_RECONCILED',
     /** Fired when the reactivation audit-log insert fails; used by Sentry and reconciliation jobs */
     REACTIVATION_AUDIT_FAILED: 'REACTIVATION_AUDIT_FAILED',
     /**

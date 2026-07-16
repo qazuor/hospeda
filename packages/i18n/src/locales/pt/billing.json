@@ -187,8 +187,6 @@
         "success": {
             "title": "Sua assinatura está ativa!",
             "subtitle": "Seu pagamento foi aprovado com sucesso",
-            "trialTitle": "Seu período de teste grátis começou!",
-            "trialSubtitle": "Você já pode começar a usar seu plano. Não cobramos nada: seu período de teste grátis está ativo e nenhum cartão foi cobrado.",
             "planDetails": "Plano: {{planName}}",
             "amountDetails": "Valor: {{amount}}",
             "verifyingStatus": "Verificando o status do pagamento...",
@@ -197,7 +195,7 @@
             "timeoutSubtitle": "Seu pagamento pode ainda estar sendo processado. Verifique sua conta em alguns minutos para confirmar sua assinatura.",
             "cta": "Ir para minha conta",
             "pageTitle": "Pagamento aprovado",
-            "promoIgnoredNote": "Seu código de desconto não foi aplicado porque você ativou o período de teste grátis."
+            "promoIgnoredNote": "Seu código não foi aplicado: ele estende um período de teste grátis, e esta assinatura não tem um."
         },
         "pending": {
             "title": "Seu pagamento está sendo processado",

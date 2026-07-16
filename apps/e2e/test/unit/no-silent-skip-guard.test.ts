@@ -25,12 +25,19 @@ import { ANNOTATION_KEYWORDS, detectSilentSkips } from './skip-detector.ts';
 
 const E2E_ROOT = join(import.meta.dirname, '..', '..');
 
+// host-07d-tx-compensation.spec.ts was on this list and is deliberately gone
+// (HOS-171): its premise — publish starting a trial, then compensating via
+// cancelTrial when a later step failed — died with the no-card trial, and the spec
+// had already stopped giving signal, self-skipping via test.fixme() the moment the
+// flow stopped calling startTrial. Which is exactly what this guard exists to
+// catch, and could not: the guard only inspects the files named here, and a
+// self-skip driven by runtime state is invisible to a source scan. Rebuilding it
+// on the post-create compensation path is HOS-184.
 const TARGET_SPECS = [
     'tests/host/host-03-trial-expired.spec.ts',
     'tests/host/host-04-cancellation-grace.spec.ts',
     'tests/host/host-07b-subscription-required.spec.ts',
     'tests/host/host-07c-qzpay-timeout.spec.ts',
-    'tests/host/host-07d-tx-compensation.spec.ts',
     'tests/resilience/res-01-api-down-checkout.spec.ts'
 ] as const;
 

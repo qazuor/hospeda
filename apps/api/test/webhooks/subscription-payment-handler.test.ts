@@ -62,18 +62,64 @@ vi.mock('../../src/utils/mp-authorized-payment', () => ({
 // executor (apps/api). Mocked so the handler's renewal wiring is exercised
 // without a real DB or MercadoPago.
 vi.mock('@repo/service-core', () => ({
-    resolveRenewalPromoEffect: vi.fn()
+    resolveRenewalPromoEffect: vi.fn(),
+    // HOS-171: the handler now also converts a card-first trial on its first
+    // settled charge, which pulls in these. The whole module is replaced here
+    // (not spread over the real one) to keep the handler free of a real DB, so
+    // every symbol it imports must be listed — a missing one resolves to
+    // undefined and the conversion fails silently inside its own catch.
+    // Their own logic is unit-tested in @repo/service-core.
+    BILLING_EVENT_TYPES: { TRIAL_RECONCILED: 'TRIAL_RECONCILED' },
+    checkSubscriptionStatusTransition: vi.fn(() => ({ valid: true })),
+    detectExternalChargeInterference: vi.fn(() => null),
+    resolveFullPlanPriceCentavos: vi.fn(async () => null),
+    withServiceTransaction: vi.fn(async (cb: (ctx: { tx: unknown }) => Promise<unknown>) =>
+        cb({ tx: mockTx })
+    )
 }));
 
 vi.mock('../../src/services/promo-renewal-mp.service', () => ({
     restoreFullPriceMutation: vi.fn()
 }));
 
+// The handler drops the entitlement cache when it converts a trial (HOS-171,
+// INV-1). Mocked because the real module pulls in PlanService from the
+// (module-level mocked) @repo/service-core and would fail to construct it.
+vi.mock('../../src/middlewares/entitlement', () => ({
+    clearEntitlementCache: vi.fn()
+}));
+
 // `@repo/db` is mocked at the module level so the handler can call
 // `getDb()` and we can drive the row results per-test.
-const subLookupResult: { rows: Array<{ id: string; customerId: string }> } = { rows: [] };
+const subLookupResult: {
+    rows: Array<{
+        id: string;
+        customerId: string;
+        planId?: string | null;
+        status?: string;
+        trialEnd?: Date | null;
+    }>;
+} = { rows: [] };
 const dedupeResult: { rows: Array<{ id: string }> } = { rows: [] };
 let nextSelectCall = 0;
+
+// The transaction the trial conversion writes through (HOS-171). Hoisted so the
+// `@repo/service-core` mock's `withServiceTransaction` can hand it to callbacks.
+const { mockTx, mockTxUpdateChain, mockTxInsertChain } = vi.hoisted(() => {
+    const txUpdateChain = {
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue(undefined)
+    };
+    const txInsertChain = { values: vi.fn().mockResolvedValue(undefined) };
+    return {
+        mockTx: {
+            update: vi.fn(() => txUpdateChain),
+            insert: vi.fn(() => txInsertChain)
+        },
+        mockTxUpdateChain: txUpdateChain,
+        mockTxInsertChain: txInsertChain
+    };
+});
 
 function makeQueryBuilder<T>(rows: T[]) {
     const builder = {
@@ -102,8 +148,16 @@ vi.mock('@repo/db', () => ({
     billingSubscriptions: {
         id: 'ID_COL',
         customerId: 'CUSTOMER_ID_COL',
+        planId: 'PLAN_ID_COL',
+        status: 'STATUS_COL',
+        trialEnd: 'TRIAL_END_COL',
         mpSubscriptionId: 'MP_SUB_ID_COL',
         deletedAt: 'DELETED_AT_COL'
+    },
+    billingSubscriptionEvents: {
+        id: 'EVENT_ID_COL',
+        subscriptionId: 'EVENT_SUB_ID_COL',
+        eventType: 'EVENT_TYPE_COL'
     },
     and: (...args: unknown[]) => ({ _and: args }),
     eq: (a: unknown, b: unknown) => ({ _eq: [a, b] }),
@@ -117,6 +171,7 @@ vi.mock('@repo/db', () => ({
 
 import { resolveRenewalPromoEffect } from '@repo/service-core';
 import { getQZPayBilling } from '../../src/middlewares/billing';
+import { clearEntitlementCache } from '../../src/middlewares/entitlement';
 import { cleanupRequestProviderEventId } from '../../src/routes/webhooks/mercadopago/event-handler';
 import {
     _internals,
@@ -169,6 +224,10 @@ function makeDetails(
         status: 'processed',
         paymentStatus: 'approved',
         debitDate: '2026-06-15T10:00:00.000Z',
+        // A clean charge: MercadoPago's own discount-campaign engine did not
+        // touch it. Non-null here is what the §7.5 accounting defense alerts on.
+        couponAmount: null,
+        campaignId: null,
         ...overrides
     };
 }
@@ -653,6 +712,127 @@ describe('handleSubscriptionAuthorizedPayment', () => {
                 error: { code: 'MP_RESTORE_FAILED', message: 'mp down' }
             });
 
+            await expect(
+                handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent())
+            ).resolves.toBeUndefined();
+            expect(markEventProcessedByProviderId).toHaveBeenCalled();
+        });
+    });
+
+    // ── HOS-171: card-first trial conversion ────────────────────────────────
+    //
+    // This is the PRIMARY conversion path. MercadoPago charges a card-first
+    // trial at day N without changing the preapproval's status, so this event
+    // is the only signal that the charge happened. If the conversion waited for
+    // the daily reconcile cron, a customer MP just charged would sit at
+    // `trialing` with an elapsed trial_end — and the trial middleware answers
+    // that state with HTTP 402 on every write, for up to 24h, right after they
+    // paid.
+    describe('card-first trial conversion (HOS-171)', () => {
+        /** A local row mid-trial, whose day-N charge is what this event reports. */
+        const trialingRow = {
+            id: 'local-sub-1',
+            customerId: 'cust-1',
+            planId: 'plan-1',
+            status: 'trialing',
+            trialEnd: new Date('2026-05-15T00:00:00.000Z')
+        };
+
+        it('flips a trialing subscription to active when the charge settles', async () => {
+            // Arrange
+            subLookupResult.rows = [trialingRow];
+            dedupeResult.rows = [];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+            setupBillingMock();
+
+            // Act
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+            // Assert — converted, and stamped as a conversion rather than an expiry
+            expect(mockTxUpdateChain.set).toHaveBeenCalledWith(
+                expect.objectContaining({ status: 'active', trialConverted: true })
+            );
+        });
+
+        it('records a TRIAL_RECONCILED event attributed to the webhook', async () => {
+            // Arrange
+            subLookupResult.rows = [trialingRow];
+            dedupeResult.rows = [];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+            setupBillingMock();
+
+            // Act
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+            // Assert — same fact the cron would record, different discoverer.
+            // This is also what makes the cron's dedup guard skip this sub.
+            expect(mockTxInsertChain.values).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    eventType: 'TRIAL_RECONCILED',
+                    previousStatus: 'trialing',
+                    newStatus: 'active',
+                    triggerSource: 'subscription-authorized-payment-webhook'
+                })
+            );
+        });
+
+        it('drops the entitlement cache so the customer can use what they paid for', async () => {
+            // Arrange
+            subLookupResult.rows = [trialingRow];
+            dedupeResult.rows = [];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+            setupBillingMock();
+
+            // Act
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+            // Assert — INV-1: never make them wait out the 5-minute cache
+            expect(clearEntitlementCache).toHaveBeenCalledWith('cust-1');
+        });
+
+        it('leaves an already-active subscription alone (idempotent on retry)', async () => {
+            // Arrange — a webhook redelivery, or the cron got there first
+            subLookupResult.rows = [{ ...trialingRow, status: 'active' }];
+            dedupeResult.rows = [];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+            setupBillingMock();
+
+            // Act
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+            // Assert — only a trialing row is ever converted
+            expect(mockTxUpdateChain.set).not.toHaveBeenCalled();
+        });
+
+        it('does NOT convert when the charge did not succeed', async () => {
+            // Arrange — a rejected day-N charge is past_due territory, and the
+            // reconciler/dunning own it. Converting here would mark someone paid
+            // who is not.
+            subLookupResult.rows = [trialingRow];
+            dedupeResult.rows = [];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
+                fetchOk(makeDetails({ paymentStatus: 'rejected' }))
+            );
+            setupBillingMock();
+
+            // Act
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+            // Assert
+            expect(mockTxUpdateChain.set).not.toHaveBeenCalled();
+        });
+
+        it('still acknowledges the event when the conversion write fails', async () => {
+            // Arrange — the charge already settled and is already recorded; a
+            // failed status flip must not turn into a webhook retry storm. The
+            // reconcile cron is the backstop.
+            subLookupResult.rows = [trialingRow];
+            dedupeResult.rows = [];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+            setupBillingMock();
+            mockTxUpdateChain.where.mockRejectedValueOnce(new Error('db down'));
+
+            // Act & Assert
             await expect(
                 handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent())
             ).resolves.toBeUndefined();

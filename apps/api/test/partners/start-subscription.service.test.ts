@@ -9,7 +9,13 @@ vi.mock('../../src/utils/env', () => ({
 }));
 
 vi.mock('@repo/billing', () => ({
-    resolveFreeTrialExtensionPromo: vi.fn(() => null)
+    resolveFreeTrialExtensionPromo: vi.fn(() => null),
+    // createPaidSubscription (shared by this path) routes its preapproval create
+    // through the E2E test-control seam (HOS-171). Inert here: it just invokes the
+    // real call, exactly as it does in production with the gate closed.
+    applyTestControl: vi.fn(async (_op: string, _args: unknown, realCall: () => Promise<unknown>) =>
+        realCall()
+    )
 }));
 
 const dbExecute = vi.fn((_query: unknown) => Promise.resolve(undefined));

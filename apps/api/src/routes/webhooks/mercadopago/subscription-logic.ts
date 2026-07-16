@@ -21,7 +21,9 @@ import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
     checkSubscriptionStatusTransition,
+    deriveTrialingStatus,
     normalizeStoredSubscriptionStatus,
+    QZPAY_TO_HOSPEDA_STATUS,
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner,
     withServiceTransaction
@@ -78,31 +80,14 @@ import {
 } from './notifications.js';
 
 /**
- * Maps QZPay subscription statuses (returned by retrieve()) to internal SubscriptionStatusEnum.
+ * Re-exported from `@repo/service-core`, where the map now lives so that this
+ * webhook and the trial reconciler cron cannot drift on what a provider status
+ * means. Kept exported here for the existing importers of this module.
  *
- * - A non-null value means "update the local subscription to this status".
- * - A null value means "no status change, log only".
- * - If the status is not in this map, it is unknown (WARN + Sentry).
- *
- * @remarks
- * QZPay uses "canceled" (1 L) while Hospeda uses "cancelled" (2 L's).
- * The mapStatus() in @qazuor/qzpay-mercadopago passes through unknown statuses,
- * so "finished" arrives as-is.
- *
- * NOT the same map as `normalizeStoredSubscriptionStatus` (@repo/service-core):
- * this one maps the INCOMING status returned by `retrieve()` (has `finished`,
- * `pending` → null; never `incomplete`), whereas the normalizer maps the STORED
- * DB `from` status (has `incomplete`, `unpaid`, `incomplete_expired`). They
- * serve different inputs — do NOT merge them.
+ * @see {@link QZPAY_TO_HOSPEDA_STATUS} in `@repo/service-core` for the semantics
+ *   of a null value (no status change) vs an absent key (unknown status).
  */
-export const QZPAY_TO_HOSPEDA_STATUS: Record<string, SubscriptionStatusEnum | null> = {
-    active: SubscriptionStatusEnum.ACTIVE,
-    paused: SubscriptionStatusEnum.PAUSED,
-    canceled: SubscriptionStatusEnum.CANCELLED,
-    finished: SubscriptionStatusEnum.EXPIRED,
-    past_due: SubscriptionStatusEnum.PAST_DUE,
-    pending: null
-} as const;
+export { QZPAY_TO_HOSPEDA_STATUS };
 
 /**
  * Determines if a reactivation email should be sent based on a subscription status transition.
@@ -370,9 +355,14 @@ export async function processSubscriptionUpdated({
     const qzpayStatus = mpSubscription.status;
 
     // Step 4: Map to internal status
-    const mappedStatus = QZPAY_TO_HOSPEDA_STATUS[qzpayStatus];
+    //
+    // This is the raw provider-reported status. It is NOT the value written to
+    // the DB — Step 5c derives the final target status from it once the local
+    // row (and therefore the trial window) is known. Use `mappedStatus` below,
+    // never `providerStatus`.
+    const providerStatus = QZPAY_TO_HOSPEDA_STATUS[qzpayStatus];
 
-    if (mappedStatus === null) {
+    if (providerStatus === null) {
         // pending status - no action needed
         apiLogger.info(
             { mpPreapprovalId: maskId(mpPreapprovalId), qzpayStatus, source },
@@ -381,7 +371,7 @@ export async function processSubscriptionUpdated({
         return { success: true, statusChanged: false };
     }
 
-    if (mappedStatus === undefined) {
+    if (providerStatus === undefined) {
         // Unknown status
         apiLogger.warn(
             { mpPreapprovalId: maskId(mpPreapprovalId), qzpayStatus, source },
@@ -416,6 +406,24 @@ export async function processSubscriptionUpdated({
         );
         return { success: true, statusChanged: false };
     }
+
+    // Step 5c: Derive TRIALING from the provider status + the local trial window
+    // (HOS-171).
+    //
+    // MercadoPago has no trial status: a card-first trial is an `authorized`
+    // preapproval whose first charge is deferred, which arrives here as `active`.
+    // `trialEnd` comes from the row already fetched above, so this costs no extra
+    // query, and the clock is passed explicitly to keep the helper pure.
+    //
+    // This deliberately lands BEFORE every consumer of `mappedStatus` — the
+    // planId safety net, the Step 6 fast-path guard and the in-transaction guard
+    // must all observe the SAME target status, or the row is written with one
+    // value while the guards reason about another.
+    const mappedStatus = deriveTrialingStatus({
+        mappedStatus: providerStatus,
+        trialEnd: localSubscription.trialEnd,
+        now: new Date()
+    });
 
     // Step 5b: Detect planId change (webhook safety net for AC-3.7)
     //

@@ -236,11 +236,12 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Poll MercadoPago /preapproval/{id} for pending subscriptions to flip them to active when the subscription_preapproval webhook is delayed or lost (SPEC-143 Finding #17 fallback).'
     },
     {
-        name: 'trial-expiry',
-        displayName: 'Expiración de pruebas',
+        name: 'trial-reconcile',
+        displayName: 'Reconciliación de pruebas',
         category: 'billing',
         schedule: '0 2 * * *',
-        description: 'Expire trial subscriptions whose period has ended.'
+        description:
+            'Reconcile trials whose window has elapsed against MercadoPago: convert the ones whose charge landed, route failed charges to dunning, and mirror cancellations. Renamed from trial-expiry (HOS-171) — it no longer cancels elapsed trials.'
     },
     // 'trial-pre-end-notif' intentionally omitted: the job was DELETED (HOS-121).
     // It duplicated notification-schedule's TRIAL_ENDING_REMINDER sender; its two
