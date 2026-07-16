@@ -228,6 +228,38 @@ describe('AccommodationProtectedSchema — extraInfo tolerance for DRAFT data (H
 });
 
 // ---------------------------------------------------------------------------
+// mobilePhone tolerance for legacy records (HOS-190)
+// ---------------------------------------------------------------------------
+//
+// `ContactInfoSchema.mobilePhone` used to be the only required field on an
+// otherwise fully-optional schema. A legacy accommodation persisted before
+// `mobilePhone` collection was mandatory (or one edited to remove it) failed
+// the read schema with a 500 ("Response payload does not match declared
+// schema"), fail-closed-locking the host out of both viewing AND editing the
+// listing (PATCH parses the same response schema on the way back out).
+// `mobilePhone` is now `.optional()` end-to-end (product decision: it is not
+// required for any accommodation to function), which is exactly the case
+// this test pins.
+
+describe('AccommodationProtectedSchema — mobilePhone tolerance for legacy records (HOS-190)', () => {
+    it('accepts a contactInfo missing mobilePhone entirely', () => {
+        const payload = { ...entityPayload, contactInfo: { personalEmail: 'legacy@example.com' } };
+        const result = AccommodationProtectedSchema.safeParse(payload);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.contactInfo?.mobilePhone).toBeUndefined();
+            expect(result.data.contactInfo?.personalEmail).toBe('legacy@example.com');
+        }
+    });
+
+    it('accepts an entirely absent contactInfo', () => {
+        const payload = { ...entityPayload, contactInfo: undefined };
+        const result = AccommodationProtectedSchema.safeParse(payload);
+        expect(result.success).toBe(true);
+    });
+});
+
+// ---------------------------------------------------------------------------
 // slug tolerance for long onboarding-generated slugs (BETA-172)
 // ---------------------------------------------------------------------------
 //

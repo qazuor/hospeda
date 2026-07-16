@@ -780,10 +780,10 @@ export const httpToDomainAccommodationCreateDraft = (
         : {}),
 
     // --- Optional: contact info (→ contactInfo JSONB) ---
-    // ContactInfoSchema.mobilePhone is required in the full schema, but for a DRAFT
-    // we may only have a website (no phone) or a phone without website. Cast to the
-    // full ContactInfo type since the DB column is JSONB and the service normalises
-    // at read time. Same pattern as the update path (ContactInfoSchema.partial()).
+    // For a DRAFT we may only have a website (no phone) or a phone without website.
+    // mobilePhone is optional on ContactInfoSchema (HOS-190), so a partial contact
+    // object is valid; the cast just keeps the conditional-spread shape aligned with
+    // the ContactInfo type. Same pattern as the update path (ContactInfoSchema.partial()).
     ...(httpData.phone !== undefined || httpData.website !== undefined
         ? {
               contactInfo: {
