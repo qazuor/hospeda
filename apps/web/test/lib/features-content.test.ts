@@ -164,8 +164,8 @@ describe('features-content — brochure cupo spot-checks', () => {
 // ─── Próximamente ───────────────────────────────────────────────────────────
 
 describe('features-content — próximamente items', () => {
-    it('has exactly 8 items', () => {
-        expect(SOON_ITEMS).toHaveLength(8);
+    it('has exactly 7 items', () => {
+        expect(SOON_ITEMS).toHaveLength(7);
     });
 
     it('every item has a unique id', () => {
