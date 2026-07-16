@@ -16,11 +16,11 @@
  */
 import 'leaflet/dist/leaflet.css';
 
+import { getPoiCategoryColorScheme, getPoiCategoryIcon } from '@repo/icons';
 import L from 'leaflet';
 import { useEffect, useRef, useState } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
-
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { getPointOfInterestTypeIcon } from '@/lib/poi-type-icons';
 import type {
@@ -43,26 +43,41 @@ const PRIMARY_GLYPH_PX = 16;
 const NEARBY_GLYPH_PX = 12;
 
 /**
- * Process-lifetime cache of POI pin icons, keyed `${type}:${relation}`.
+ * Process-lifetime cache of POI pin icons, keyed `${categorySlug ?? type}:${relation}`.
  *
- * The key space is closed and tiny: 9 `PointOfInterestTypeEnum` values × 2
- * relations = 18 icons, ever. Caching them matters because a `L.DivIcon` is
+ * HOS-182: the key's first segment is the POI's primary CATEGORY slug when it
+ * has one, falling back to the legacy `type` when it does not (a POI can lack
+ * a primary category — known-dirty data, HOS-177). The key space is still
+ * closed, just bigger: up to 40 `poi_categories` slugs (`@repo/icons`'
+ * `POI_CATEGORY_VISUALS`) PLUS 9 legacy `PointOfInterestTypeEnum` values (a
+ * category slug and a type value never collide — categories are lowercase
+ * `snake_case`, types are `UPPER_CASE`) = 49 distinct first-segment values ×
+ * 2 relations = 98 icons, ever. Caching them matters because a `L.DivIcon` is
  * compared BY REFERENCE by react-leaflet: a freshly-built icon per marker per
  * render makes every re-render (e.g. the "ver alrededores" toggle) call
  * `setIcon()` on all ~97 markers for zero visual change. Entries are built
- * lazily on first sight, so a map only pays for the types it actually shows.
+ * lazily on first sight, so a map only pays for the categories/types it
+ * actually shows.
  */
 const poiDivIconCache = new Map<string, L.DivIcon>();
 
 /**
  * Returns the Leaflet divIcon for a POI pin, building it once per
- * `type`/`relation` pair. PRIMARY pins are solid brand-primary circles
- * (larger); NEARBY pins are outlined circles on the card surface (smaller,
- * lower visual weight) — a shape/size distinction, not color alone (WCAG).
+ * `categorySlug` (or `type` fallback) / `relation` pair. PRIMARY pins are
+ * solid circles (larger); NEARBY pins are outlined circles on the card
+ * surface (smaller, lower visual weight) — a shape/size distinction, not
+ * color alone (WCAG). The category hue rides ON TOP of that distinction, it
+ * does not replace it.
  *
- * The glyph reuses `getPointOfInterestTypeIcon` — the SAME type→icon mapping
- * `DestinationPOISection.astro`'s grid uses — so a POI's map pin and its grid
- * card can never drift apart.
+ * The glyph + hue reuse `getPoiCategoryIcon`/`getPoiCategoryColorScheme` — the
+ * SAME category→visual mapping `DestinationPOISection.astro`'s grid and
+ * `WhatsNearbySection.astro` use — so a POI's map pin and its grid card can
+ * never drift apart. When the POI has no primary category, this falls back to
+ * `getPointOfInterestTypeIcon` for the glyph and `var(--brand-primary)` for
+ * the color, EXACTLY the pre-HOS-182 behavior — `getPoiCategoryColorScheme`
+ * is deliberately never called with a nullish slug here, since it would
+ * resolve to the `services` bucket (a real category meaning) and falsely
+ * paint an uncategorized POI as a service.
  *
  * ## Why `renderToStaticMarkup`, and what it costs
  *
@@ -70,46 +85,68 @@ const poiDivIconCache = new Map<string, L.DivIcon>();
  * only exposes Phosphor React components — there is no SVG-string form to
  * reuse. So this is NOT the `DESTINATION_ICON` pattern in
  * `ListingMapInner.client.tsx`: that one hand-writes a single literal SVG
- * string because it has exactly one, fixed pin. Hand-writing 9 POI glyphs here
- * would mean a second icon table that silently diverges from the grid's the
- * first time either changes — a worse failure than the bundle cost.
+ * string because it has exactly one, fixed pin. Hand-writing dozens of POI
+ * glyphs here would mean a second icon table that silently diverges from the
+ * grid's the first time either changes — a worse failure than the bundle cost.
  *
  * The tradeoff we accept instead: `react-dom/server` ships in THIS chunk. It is
  * contained by (a) the module-level cache above, which caps the render work at
- * 18 calls for the lifetime of the page, and (b) this file being its own async
+ * 98 calls for the lifetime of the page, and (b) this file being its own async
  * chunk, so only the destination POI map pays for it — never the accommodation
  * detail map or the destination mini-map.
  *
- * @param params.type - POI type (resolves the glyph)
+ * @param params.type - POI type (glyph fallback when there is no category)
  * @param params.relation - PRIMARY | NEARBY (resolves size and fill/outline)
+ * @param params.categorySlug - POI primary category slug (resolves glyph + hue); `null`/undefined falls back to `type` + `--brand-primary`
  * @returns The cached (or newly built) divIcon for that combination
+ *
+ * Exported (only) so `MultiMarkerMapInner.test.tsx` can assert directly on the
+ * resolved icon/color/cache behavior without rendering the full Leaflet map.
  */
-function getPoiDivIcon({
+export function getPoiDivIcon({
     type,
-    relation
+    relation,
+    categorySlug
 }: {
     readonly type: string;
     readonly relation: 'PRIMARY' | 'NEARBY';
+    readonly categorySlug?: string | null;
 }): L.DivIcon {
-    const cacheKey = `${type}:${relation}`;
+    const cacheKey = `${categorySlug ?? type}:${relation}`;
     const cached = poiDivIconCache.get(cacheKey);
     if (cached) return cached;
 
-    const Icon = getPointOfInterestTypeIcon({ type });
+    const Icon = categorySlug
+        ? getPoiCategoryIcon({ slug: categorySlug })
+        : getPointOfInterestTypeIcon({ type });
     const isPrimary = relation === 'PRIMARY';
+    // Fallback matches the pre-HOS-182 hardcoded values exactly: PRIMARY was
+    // always a solid `--brand-primary` fill with a `--primary-foreground`
+    // glyph, NEARBY was always a `--brand-primary` outline + glyph.
+    const colors = categorySlug
+        ? getPoiCategoryColorScheme({ slug: categorySlug })
+        : { fill: 'var(--brand-primary)', onFill: 'var(--primary-foreground)' };
+    const glyphColor = isPrimary ? colors.onFill : colors.fill;
     const glyph = renderToStaticMarkup(
         <Icon
             size={isPrimary ? PRIMARY_GLYPH_PX : NEARBY_GLYPH_PX}
             weight="fill"
-            color={isPrimary ? 'var(--primary-foreground)' : 'var(--brand-primary)'}
+            color={glyphColor}
             aria-hidden="true"
         />
     );
     const size = isPrimary ? PRIMARY_PIN_PX : NEARBY_PIN_PX;
     const pinClass = isPrimary ? styles.poiPinPrimary : styles.poiPinNearby;
+    // The bucket hue is per-marker data, so it cannot live in the (static)
+    // CSS classes above — it rides inline. PRIMARY paints its solid fill;
+    // NEARBY paints its outline. See LocationMap.module.css for the
+    // structural (size/opacity/border-width) half of this split.
+    const pinStyle = isPrimary
+        ? `background-color: ${colors.fill};`
+        : `border-color: ${colors.fill};`;
     const icon = L.divIcon({
         className: styles.poiPinReset,
-        html: `<span class="${styles.poiPin} ${pinClass}">${glyph}</span>`,
+        html: `<span class="${styles.poiPin} ${pinClass}" style="${pinStyle}">${glyph}</span>`,
         iconSize: [size, size],
         iconAnchor: [size / 2, size / 2],
         popupAnchor: [0, -(size / 2) - 4]
@@ -247,7 +284,11 @@ export function MultiMarkerMapInner(props: Extract<LocationMapProps, { mode: 'mu
                         <Marker
                             key={marker.id}
                             position={[marker.lat, marker.long]}
-                            icon={getPoiDivIcon({ type: marker.type, relation: marker.relation })}
+                            icon={getPoiDivIcon({
+                                type: marker.type,
+                                relation: marker.relation,
+                                categorySlug: marker.categorySlug
+                            })}
                             // Leaflet renders every marker as a focusable
                             // `role="button"` element. Without this it is a tab
                             // stop with NO accessible name — ~97 unnamed buttons

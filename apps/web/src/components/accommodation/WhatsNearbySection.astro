@@ -26,8 +26,9 @@
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { formatDistanceKm } from '@/lib/format-distance';
-import { translatePoiName, translatePoiTypeLabel } from '@/lib/poi-labels';
+import { translatePoiCategoryLabel, translatePoiName } from '@/lib/poi-labels';
 import { getPointOfInterestTypeIcon } from '@/lib/poi-type-icons';
+import { getPoiCategoryColorScheme, getPoiCategoryIcon } from '@repo/icons';
 import type { NearbyPoi } from '@repo/schemas';
 
 interface Props {
@@ -56,12 +57,26 @@ const sorted = [...pointsOfInterest]
 
 	<div class="nearby-poi-section__grid">
 		{sorted.map((poi) => {
-			const Icon = getPointOfInterestTypeIcon({ type: poi.type });
-			const typeLabel = translatePoiTypeLabel({ t, type: poi.type });
+			const categorySlug = poi.primaryCategory?.slug;
+			const Icon = categorySlug
+				? getPoiCategoryIcon({ slug: categorySlug })
+				: getPointOfInterestTypeIcon({ type: poi.type });
+			// HOS-182: an uncategorized POI must look exactly as it did before —
+			// never resolve the color scheme for a nullish slug (its `services`
+			// bucket carries real meaning it would falsely apply here).
+			const iconColor = categorySlug
+				? getPoiCategoryColorScheme({ slug: categorySlug }).fill
+				: 'var(--brand-primary)';
+			const typeLabel = translatePoiCategoryLabel({
+				t,
+				type: poi.type,
+				primaryCategory: poi.primaryCategory,
+				locale
+			});
 			return (
 				<div class="nearby-poi-section__card">
 					<span class="nearby-poi-section__icon" aria-hidden="true">
-						<Icon size={28} weight="fill" aria-hidden="true" />
+						<Icon size={28} weight="fill" color={iconColor} aria-hidden="true" />
 					</span>
 					<h3 class="nearby-poi-section__name">{poi.displayName}</h3>
 					<div class="nearby-poi-section__meta">

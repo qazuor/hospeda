@@ -25,9 +25,11 @@ import {
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { attractions } from '../../schemas/destination/attraction.dbschema.ts';
 import { destinations } from '../../schemas/destination/destination.dbschema.ts';
+import { poiCategories } from '../../schemas/destination/poi-category.dbschema.ts';
 import { pointsOfInterest } from '../../schemas/destination/point-of-interest.dbschema.ts';
 import { rDestinationAttraction } from '../../schemas/destination/r_destination_attraction.dbschema.ts';
 import { rDestinationPointOfInterest } from '../../schemas/destination/r_destination_point_of_interest.dbschema.ts';
+import { rPoiCategory } from '../../schemas/destination/r_poi_category.dbschema.ts';
 import { userBookmarks } from '../../schemas/user/user_bookmark.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { buildWhereClause, safeIlike } from '../../utils/drizzle-helpers.ts';
@@ -506,6 +508,16 @@ export class DestinationModel extends BaseModelImpl<Destination> {
      * same invariant `PointOfInterestService` establishes for its own public
      * reads (HOS-132). A DRAFT or soft-deleted POI must never surface on a
      * public surface just because it still has a join row.
+     *
+     * HOS-182: also LEFT JOINs `r_poi_category` (filtered to
+     * `isPrimary = true` in the JOIN condition, not WHERE — a POI without a
+     * primary category row must still be returned, just with
+     * `primaryCategory: null`) and `poi_categories` (filtered to
+     * ACTIVE/non-deleted, same JOIN-condition placement, mirroring the public
+     * read gate already applied to `pointsOfInterest` above) to resolve each
+     * POI's primary category. The partial unique index
+     * `r_poi_category_primary_idx` guarantees at most one `isPrimary = true`
+     * row per POI, so these LEFT JOINs cannot fan out a POI-destination row.
      * @param destIds - Array of destination UUIDs
      * @param tx - Optional transaction client
      * @param relation - Relation-kind filter, default `'PRIMARY'`.
@@ -536,6 +548,10 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                 readonly isBuiltin: boolean;
                 readonly displayWeight: number;
                 readonly relation: PointOfInterestDestinationRelationEnum;
+                readonly primaryCategory: {
+                    readonly slug: string;
+                    readonly nameI18n: I18nText;
+                } | null;
             }>
         >
     > {
@@ -570,12 +586,29 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                     isFeatured: pointsOfInterest.isFeatured,
                     isBuiltin: pointsOfInterest.isBuiltin,
                     displayWeight: pointsOfInterest.displayWeight,
-                    relation: rDestinationPointOfInterest.relation
+                    relation: rDestinationPointOfInterest.relation,
+                    primaryCategorySlug: poiCategories.slug,
+                    primaryCategoryNameI18n: poiCategories.nameI18n
                 })
                 .from(rDestinationPointOfInterest)
                 .innerJoin(
                     pointsOfInterest,
                     eq(rDestinationPointOfInterest.pointOfInterestId, pointsOfInterest.id)
+                )
+                .leftJoin(
+                    rPoiCategory,
+                    and(
+                        eq(rPoiCategory.pointOfInterestId, pointsOfInterest.id),
+                        eq(rPoiCategory.isPrimary, true)
+                    )
+                )
+                .leftJoin(
+                    poiCategories,
+                    and(
+                        eq(poiCategories.id, rPoiCategory.categoryId),
+                        isNull(poiCategories.deletedAt),
+                        eq(poiCategories.lifecycleState, 'ACTIVE')
+                    )
                 )
                 .where(and(...whereConditions))
                 .orderBy(desc(pointsOfInterest.displayWeight));
@@ -597,6 +630,10 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                     readonly isBuiltin: boolean;
                     readonly displayWeight: number;
                     readonly relation: PointOfInterestDestinationRelationEnum;
+                    readonly primaryCategory: {
+                        readonly slug: string;
+                        readonly nameI18n: I18nText;
+                    } | null;
                 }>
             >();
             for (const row of results) {
@@ -615,7 +652,13 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                     isFeatured: row.isFeatured,
                     isBuiltin: row.isBuiltin,
                     displayWeight: row.displayWeight,
-                    relation: row.relation as PointOfInterestDestinationRelationEnum
+                    relation: row.relation as PointOfInterestDestinationRelationEnum,
+                    primaryCategory: row.primaryCategorySlug
+                        ? {
+                              slug: row.primaryCategorySlug,
+                              nameI18n: row.primaryCategoryNameI18n as I18nText
+                          }
+                        : null
                 });
                 map.set(row.destinationId, existing);
             }

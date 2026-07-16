@@ -1,9 +1,11 @@
-import type { PointOfInterest } from '@repo/schemas';
+import type { I18nText, PointOfInterest } from '@repo/schemas';
 import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { destinations } from '../../schemas/destination/destination.dbschema.ts';
+import { poiCategories } from '../../schemas/destination/poi-category.dbschema.ts';
 import { pointsOfInterest } from '../../schemas/destination/point-of-interest.dbschema.ts';
 import { rDestinationPointOfInterest } from '../../schemas/destination/r_destination_point_of_interest.dbschema.ts';
+import { rPoiCategory } from '../../schemas/destination/r_poi_category.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import {
@@ -133,6 +135,15 @@ export class PointOfInterestModel extends BaseModelImpl<PointOfInterest> {
      * ~78% of the POI v2 dataset has null coordinates and must never reach
      * the numeric path), `lifecycleState = 'ACTIVE'`, and not soft-deleted.
      *
+     * HOS-182: LEFT JOINs `r_poi_category` (filtered to `isPrimary = true` in
+     * the JOIN condition, not WHERE — a POI without a primary category row
+     * must still be returned, just with `primaryCategory: null`) and
+     * `poi_categories` (filtered to ACTIVE/non-deleted, same JOIN-condition
+     * placement) to resolve each POI's primary category. The partial unique
+     * index `r_poi_category_primary_idx` guarantees at most one
+     * `isPrimary = true` row per POI, so these LEFT JOINs cannot fan out a
+     * single POI into multiple result rows.
+     *
      * @param params - Receive-object.
      * @param params.lat - Center latitude in degrees.
      * @param params.long - Center longitude in degrees.
@@ -141,12 +152,20 @@ export class PointOfInterestModel extends BaseModelImpl<PointOfInterest> {
      * @param tx - Optional transaction client.
      * @returns Promise resolving to POIs within radius, nearest first, each
      *   with a numeric `distanceKm` (coerced from the driver's numeric
-     *   string representation).
+     *   string representation) and a `primaryCategory` (`{ slug, nameI18n }`
+     *   or `null`).
      */
     async findWithinRadius(
         params: { lat: number; long: number; radiusKm: number; limit: number },
         tx?: DrizzleClient
-    ): Promise<Array<PointOfInterest & { distanceKm: number }>> {
+    ): Promise<
+        Array<
+            PointOfInterest & {
+                distanceKm: number;
+                primaryCategory: { slug: string; nameI18n: I18nText } | null;
+            }
+        >
+    > {
         const { lat, long, radiusKm, limit } = params;
 
         try {
@@ -158,9 +177,26 @@ export class PointOfInterestModel extends BaseModelImpl<PointOfInterest> {
             const rows = await db
                 .select({
                     ...getTableColumns(pointsOfInterest),
-                    distanceKm: buildHaversineDistanceExpr({ latCol, longCol, lat, long })
+                    distanceKm: buildHaversineDistanceExpr({ latCol, longCol, lat, long }),
+                    primaryCategorySlug: poiCategories.slug,
+                    primaryCategoryNameI18n: poiCategories.nameI18n
                 })
                 .from(pointsOfInterest)
+                .leftJoin(
+                    rPoiCategory,
+                    and(
+                        eq(rPoiCategory.pointOfInterestId, pointsOfInterest.id),
+                        eq(rPoiCategory.isPrimary, true)
+                    )
+                )
+                .leftJoin(
+                    poiCategories,
+                    and(
+                        eq(poiCategories.id, rPoiCategory.categoryId),
+                        isNull(poiCategories.deletedAt),
+                        eq(poiCategories.lifecycleState, 'ACTIVE')
+                    )
+                )
                 .where(
                     and(
                         buildWithinRadiusClause({ latCol, longCol, lat, long, radiusKm }),
@@ -173,10 +209,24 @@ export class PointOfInterestModel extends BaseModelImpl<PointOfInterest> {
                 .orderBy(buildDistanceOrderByExpr({ latCol, longCol, lat, long, order: 'asc' }))
                 .limit(limit);
 
-            const result = rows.map((row) => ({
-                ...row,
-                distanceKm: Number(row.distanceKm)
-            })) as Array<PointOfInterest & { distanceKm: number }>;
+            const result = rows.map((row) => {
+                const { primaryCategorySlug, primaryCategoryNameI18n, ...poiRow } = row;
+                return {
+                    ...poiRow,
+                    distanceKm: Number(row.distanceKm),
+                    primaryCategory: primaryCategorySlug
+                        ? {
+                              slug: primaryCategorySlug,
+                              nameI18n: primaryCategoryNameI18n as I18nText
+                          }
+                        : null
+                };
+            }) as Array<
+                PointOfInterest & {
+                    distanceKm: number;
+                    primaryCategory: { slug: string; nameI18n: I18nText } | null;
+                }
+            >;
 
             logQuery(this.entityName, 'findWithinRadius', params, result);
             return result;

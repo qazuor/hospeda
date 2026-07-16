@@ -152,12 +152,17 @@
     }
 }
 
-/* ─── Multi-marker POI pins (HOS-146) ──────────────────────────────────────
+/* ─── Multi-marker POI pins (HOS-146, hue per-category HOS-182) ───────────
  * `.poiPinReset` strips Leaflet's default white divIcon box, matching the
  * `.destPinReset` precedent in ListingMap.module.css. PRIMARY vs NEARBY are
  * distinguished by BOTH size (set via divIcon iconSize, inline) and
  * fill-vs-outline shape — not color alone, so the distinction survives
- * grayscale/color-blind viewing (WCAG). */
+ * grayscale/color-blind viewing (WCAG). The category hue rides ON TOP of
+ * that distinction: it is per-marker data, so `background-color` (PRIMARY)
+ * and `border-color` (NEARBY) are set INLINE by `getPoiDivIcon`
+ * (MultiMarkerMapInner.client.tsx), never here — these classes only carry
+ * the structural bits that are the SAME for every marker of a given
+ * relation. */
 .poiPinReset {
     background: transparent;
     border: 0;
@@ -177,17 +182,21 @@
     display: block;
 }
 
-/* PRIMARY: solid brand-primary fill, white glyph — the "city view" pins. */
+/* PRIMARY: solid fill (hue set inline), card-colored ring — the "city view"
+ * pins. `background-color` is deliberately NOT declared here — it is set
+ * inline per-marker (category hue, or `--brand-primary` fallback). */
 .poiPinPrimary {
-    background-color: var(--brand-primary);
     border: 2px solid var(--core-card);
 }
 
-/* NEARBY: outlined, card-surface fill, brand-primary glyph — visually
- * lighter than PRIMARY so the city core reads as the focal set. */
+/* NEARBY: outlined (hue set inline), card-surface fill — visually lighter
+ * than PRIMARY so the city core reads as the focal set. `border-color` is
+ * deliberately NOT declared here — it is set inline per-marker (category
+ * hue, or `--brand-primary` fallback). */
 .poiPinNearby {
     background-color: var(--core-card);
-    border: 2px solid var(--brand-primary);
+    border-width: 2px;
+    border-style: solid;
     opacity: 0.85;
 }
 

@@ -19,7 +19,8 @@ describe('toDestinationPointOfInterestListProps', () => {
             descriptionI18n: { es: 'Una playa', en: null, pt: null },
             nameI18n: { es: 'Playa Ita Pirú', en: null, pt: null },
             isFeatured: true,
-            displayWeight: 80
+            displayWeight: 80,
+            primaryCategory: { slug: 'beach', nameI18n: { es: 'Playa', en: null, pt: null } }
         };
 
         // Act
@@ -37,8 +38,89 @@ describe('toDestinationPointOfInterestListProps', () => {
             descriptionI18n: { es: 'Una playa', en: null, pt: null },
             nameI18n: { es: 'Playa Ita Pirú', en: null, pt: null },
             isFeatured: true,
-            displayWeight: 80
+            displayWeight: 80,
+            primaryCategory: { slug: 'beach', nameI18n: { es: 'Playa', en: null, pt: null } }
         });
+    });
+
+    // ── primaryCategory (HOS-182) ────────────────────────────────────────────
+
+    it('passes through a well-formed primaryCategory object', () => {
+        // Arrange
+        const raw = {
+            id: 'poi-cat-1',
+            slug: 'museo-x',
+            type: 'MUSEUM',
+            primaryCategory: { slug: 'museum', nameI18n: { es: 'Museo', en: null, pt: null } }
+        };
+
+        // Act
+        const [result] = toDestinationPointOfInterestListProps({ pointsOfInterest: [raw] });
+
+        // Assert
+        expect(result.primaryCategory).toEqual({
+            slug: 'museum',
+            nameI18n: { es: 'Museo', en: null, pt: null }
+        });
+    });
+
+    it('normalizes a missing primaryCategory to null (expected — POI has no primary category)', () => {
+        // Arrange
+        const raw = { id: 'poi-cat-2', slug: 'sin-categoria', type: 'OTHER' };
+
+        // Act
+        const [result] = toDestinationPointOfInterestListProps({ pointsOfInterest: [raw] });
+
+        // Assert
+        expect(result.primaryCategory).toBeNull();
+    });
+
+    it('normalizes an explicit null primaryCategory to null', () => {
+        // Arrange
+        const raw = {
+            id: 'poi-cat-3',
+            slug: 'sin-categoria-2',
+            type: 'OTHER',
+            primaryCategory: null
+        };
+
+        // Act
+        const [result] = toDestinationPointOfInterestListProps({ pointsOfInterest: [raw] });
+
+        // Assert
+        expect(result.primaryCategory).toBeNull();
+    });
+
+    it('normalizes a malformed primaryCategory (no string slug) to null defensively', () => {
+        // Arrange
+        const raw = {
+            id: 'poi-cat-4',
+            slug: 'categoria-rota',
+            type: 'OTHER',
+            primaryCategory: { slug: 42, nameI18n: { es: 'x' } }
+        };
+
+        // Act
+        const [result] = toDestinationPointOfInterestListProps({ pointsOfInterest: [raw] });
+
+        // Assert
+        expect(result.primaryCategory).toBeNull();
+    });
+
+    it('defaults a primaryCategory missing nameI18n to null (not undefined)', () => {
+        // Arrange
+        const raw = {
+            id: 'poi-cat-5',
+            slug: 'categoria-sin-nombre',
+            type: 'OTHER',
+            primaryCategory: { slug: 'other' }
+        };
+
+        // Act
+        const [result] = toDestinationPointOfInterestListProps({ pointsOfInterest: [raw] });
+
+        // Assert
+        expect(result.primaryCategory).toEqual({ slug: 'other', nameI18n: null });
     });
 
     it('preserves the NEARBY relation', () => {
@@ -114,6 +196,7 @@ describe('toDestinationPointOfInterestListProps', () => {
         expect(result.nameI18n).toBeNull();
         expect(result.descriptionI18n).toBeNull();
         expect(result.description).toBeNull();
+        expect(result.primaryCategory).toBeNull();
     });
 
     it('maps an array preserving order and length', () => {

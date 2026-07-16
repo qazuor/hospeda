@@ -59,6 +59,8 @@ const buildNearbyPoi = (overrides: Partial<NearbyPoi> = {}): NearbyPoi =>
         isBuiltin: false,
         displayWeight: 50,
         distanceKm: 1.23,
+        // HOS-182: always present on a real NearbyPoi (object or null).
+        primaryCategory: null,
         ...overrides
     }) as NearbyPoi;
 

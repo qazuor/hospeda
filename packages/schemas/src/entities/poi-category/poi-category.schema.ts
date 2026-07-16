@@ -99,8 +99,21 @@ export const PoiCategoryMiniSchema = PoiCategorySchema.pick({
 });
 
 /**
+ * POI Category Primary Schema - the nested shape embedded as a POI's
+ * `primaryCategory` field (HOS-182). Deliberately narrower than
+ * `PoiCategoryMiniSchema` (no `id`/`icon`): the frontend resolves icon and
+ * marker color from `slug` via its own category→style mapping, so the API
+ * only needs to hand back the stable identifier and the display name.
+ */
+export const PoiCategoryPrimarySchema = PoiCategorySchema.pick({
+    slug: true,
+    nameI18n: true
+});
+
+/**
  * Type exports
  */
 export type PoiCategory = z.infer<typeof PoiCategorySchema>;
 export type PoiCategorySummary = z.infer<typeof PoiCategorySummarySchema>;
 export type PoiCategoryMini = z.infer<typeof PoiCategoryMiniSchema>;
+export type PoiCategoryPrimary = z.infer<typeof PoiCategoryPrimarySchema>;

@@ -511,15 +511,27 @@ export interface DestinationPointOfInterestItem {
     readonly nameI18n?: I18nTextLike | null;
     readonly isFeatured?: boolean;
     readonly displayWeight?: number;
+    /**
+     * The POI's primary category (HOS-182) — `{ slug, nameI18n }`, or `null`
+     * when the POI has no primary category assigned. Absent/null is an
+     * EXPECTED state (data is known-dirty, see HOS-177), never an error.
+     * Consumers resolve icon + marker color from `primaryCategory.slug` via
+     * `@repo/icons`' `getPoiCategoryIcon`/`getPoiCategoryColorScheme`, falling
+     * back to the legacy `type`-based mapping when it is `null`.
+     */
+    readonly primaryCategory?: {
+        readonly slug: string;
+        readonly nameI18n?: I18nTextLike | null;
+    } | null;
 }
 
 /**
  * Converts the raw `dest.pointsOfInterest` API payload (HOS-138 nullable
- * coords, HOS-146 PRIMARY/NEARBY `relation`) into the single shape both
- * `DestinationPOISection.astro` (grid, PRIMARY-only) and `DestinationPOIMap`
- * (map, all POIs with coordinates) consume. Never passes raw API data to
- * components (project rule) — missing/malformed fields degrade to safe
- * defaults instead of throwing.
+ * coords, HOS-146 PRIMARY/NEARBY `relation`, HOS-182 `primaryCategory`) into
+ * the single shape both `DestinationPOISection.astro` (grid, PRIMARY-only)
+ * and `DestinationPOIMap` (map, all POIs with coordinates) consume. Never
+ * passes raw API data to components (project rule) — missing/malformed
+ * fields degrade to safe defaults instead of throwing.
  *
  * @param pointsOfInterest - Raw `dest.pointsOfInterest` array from the public destination endpoint
  * @returns The normalized POI list, one entry per input item
@@ -532,6 +544,17 @@ export function toDestinationPointOfInterestListProps({
     return pointsOfInterest.map((poi) => {
         const lat = typeof poi.lat === 'number' && Number.isFinite(poi.lat) ? poi.lat : null;
         const long = typeof poi.long === 'number' && Number.isFinite(poi.long) ? poi.long : null;
+        const rawCategory = poi.primaryCategory as
+            | { slug?: unknown; nameI18n?: unknown }
+            | null
+            | undefined;
+        const primaryCategory =
+            rawCategory && typeof rawCategory.slug === 'string'
+                ? {
+                      slug: rawCategory.slug,
+                      nameI18n: (rawCategory.nameI18n as I18nTextLike | null | undefined) ?? null
+                  }
+                : null;
         return {
             id: String(poi.id ?? ''),
             slug: String(poi.slug ?? ''),
@@ -543,7 +566,8 @@ export function toDestinationPointOfInterestListProps({
             descriptionI18n: (poi.descriptionI18n as I18nTextLike | null | undefined) ?? null,
             nameI18n: (poi.nameI18n as I18nTextLike | null | undefined) ?? null,
             isFeatured: Boolean(poi.isFeatured),
-            displayWeight: typeof poi.displayWeight === 'number' ? poi.displayWeight : 0
+            displayWeight: typeof poi.displayWeight === 'number' ? poi.displayWeight : 0,
+            primaryCategory
         };
     });
 }

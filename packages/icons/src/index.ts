@@ -71,6 +71,20 @@ export {
     getEventCategoryVisual
 } from './domain/event-category';
 export type {
+    PoiCategoryBucket,
+    PoiCategoryColorScheme,
+    PoiCategoryVisual
+} from './domain/poi-category';
+// POI-category slug → icon + color-bucket token. Single source of truth shared
+// by apps/web and apps/admin. 40 seeded categories collapse into 6 color buckets.
+export {
+    getPoiCategoryColorScheme,
+    getPoiCategoryIcon,
+    getPoiCategoryVisual,
+    POI_CATEGORY_FALLBACK_VISUAL,
+    POI_CATEGORY_VISUALS
+} from './domain/poi-category';
+export type {
     PostCategoryColorScheme,
     PostCategoryColorVariant,
     PostCategoryVisual

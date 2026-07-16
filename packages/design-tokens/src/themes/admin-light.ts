@@ -61,6 +61,7 @@ import {
     warning
 } from '../tokens/colors.js';
 import { eventCategoryTokens } from '../tokens/event-categories.js';
+import { poiCategoryTokens } from '../tokens/poi-categories.js';
 import { postCategoryTokens } from '../tokens/post-categories.js';
 import { radiusBase } from '../tokens/radius.js';
 import { sponsorTypeTokens } from '../tokens/sponsor-types.js';
@@ -171,6 +172,9 @@ export const adminLight: Theme = {
     // its base palette's shade-500 primitive so the category badge renders with
     // the SAME hue in admin as in web across light and dark.
     ...eventCategoryTokens,
+    // Per-POI-category-BUCKET tokens (same source constant as web). 40 seeded
+    // categories collapse into 6 buckets; @repo/icons owns the assignment.
+    ...poiCategoryTokens,
     // Per-post-category tokens (same source constant as web), each referencing
     // an existing base palette per the prior badge colors.
     ...postCategoryTokens,

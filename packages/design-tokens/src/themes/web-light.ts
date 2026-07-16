@@ -57,6 +57,7 @@ import {
 import { eventCategoryTokens } from '../tokens/event-categories.js';
 import { layoutChrome, layoutContainer } from '../tokens/layout.js';
 import { webDuration, webEasing } from '../tokens/motion.js';
+import { poiCategoryTokens } from '../tokens/poi-categories.js';
 import { postCategoryTokens } from '../tokens/post-categories.js';
 import { radiusBase, radiusOrganic, radiusScale, radiusSemantic } from '../tokens/radius.js';
 import { shadowSemantic } from '../tokens/shadows.js';
@@ -366,6 +367,10 @@ export const webLight: Theme = {
     // referencing an existing base palette's shade-500 primitive so a category
     // renders with the SAME hue in both apps across light and dark.
     ...eventCategoryTokens,
+    // Per-POI-category-BUCKET tokens — same layered model, but 40 seeded
+    // categories collapse into 6 buckets (40 hues would be unreadable on a map);
+    // @repo/icons owns the category → bucket assignment.
+    ...poiCategoryTokens,
     // Per-post-category tokens — same layered model as the event-category and
     // accommodation-type ones; declared once and shared with admin.
     ...postCategoryTokens,

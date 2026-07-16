@@ -12,7 +12,11 @@
 import { PointOfInterestTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { createTranslations, type SupportedLocale } from '../../src/lib/i18n';
-import { translatePoiName, translatePoiTypeLabel } from '../../src/lib/poi-labels';
+import {
+    translatePoiCategoryLabel,
+    translatePoiName,
+    translatePoiTypeLabel
+} from '../../src/lib/poi-labels';
 
 const LOCALES: readonly SupportedLocale[] = ['es', 'en', 'pt'];
 const POI_TYPES = Object.values(PointOfInterestTypeEnum);
@@ -72,5 +76,64 @@ describe('translatePoiName', () => {
             locale: 'es'
         });
         expect(name).toBe('Palacio San Jose');
+    });
+});
+
+describe('translatePoiCategoryLabel (HOS-182)', () => {
+    const { t } = createTranslations('es' as SupportedLocale);
+
+    it('prefers the primary category name over the legacy type label', () => {
+        // The whole point: on a real destination, 66 of 100 POIs are type=OTHER
+        // with a real category, so reading `type` rendered "Otro" next to a
+        // category-driven icon.
+        const label = translatePoiCategoryLabel({
+            t,
+            type: PointOfInterestTypeEnum.OTHER,
+            primaryCategory: { nameI18n: { es: 'Bodega', en: 'Winery', pt: 'Vinícola' } },
+            locale: 'es'
+        });
+        expect(label).toBe('Bodega');
+    });
+
+    it('resolves the category name in the active locale', () => {
+        const label = translatePoiCategoryLabel({
+            t,
+            type: PointOfInterestTypeEnum.OTHER,
+            primaryCategory: { nameI18n: { es: 'Bodega', en: 'Winery', pt: 'Vinícola' } },
+            locale: 'en'
+        });
+        expect(label).toBe('Winery');
+    });
+
+    it.each([
+        ['null', null],
+        ['undefined', undefined]
+    ])('falls back to the type label when primaryCategory is %s', (_label, primaryCategory) => {
+        const label = translatePoiCategoryLabel({
+            t,
+            type: PointOfInterestTypeEnum.BEACH,
+            primaryCategory,
+            locale: 'es'
+        });
+        expect(label).toBe(translatePoiTypeLabel({ t, type: PointOfInterestTypeEnum.BEACH }));
+    });
+
+    it('falls back to the type label when the category name resolves empty', () => {
+        const label = translatePoiCategoryLabel({
+            t,
+            type: PointOfInterestTypeEnum.MUSEUM,
+            primaryCategory: { nameI18n: { es: '', en: '', pt: '' } },
+            locale: 'es'
+        });
+        expect(label).toBe(translatePoiTypeLabel({ t, type: PointOfInterestTypeEnum.MUSEUM }));
+    });
+
+    it('falls back to the type label when no locale is available to resolve with', () => {
+        const label = translatePoiCategoryLabel({
+            t,
+            type: PointOfInterestTypeEnum.PARK,
+            primaryCategory: { nameI18n: { es: 'Parque', en: 'Park', pt: 'Parque' } }
+        });
+        expect(label).toBe(translatePoiTypeLabel({ t, type: PointOfInterestTypeEnum.PARK }));
     });
 });

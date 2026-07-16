@@ -100,3 +100,43 @@ export function translatePoiTypeLabel({
     const translated = t(`destinations.poiTypeLabels.${type}`);
     return translated.startsWith('[MISSING:') ? humanizeKey(type) : translated;
 }
+
+/**
+ * Resolves the label shown on a POI's badge: its primary CATEGORY name when it
+ * has one, falling back to the legacy `type` label when it does not.
+ *
+ * HOS-182: the badge used to read `type` unconditionally, but `type` is the
+ * deprecated 9-value enum in which most POIs are `OTHER` — on a real destination
+ * two thirds of the cards read "Otro" while their icon (now category-driven)
+ * showed something specific. Preferring the category keeps the badge and the
+ * glyph telling the same story.
+ *
+ * Category names are data-driven (`poi_categories.nameI18n`, resolved per
+ * locale), NOT i18n-by-slug — unlike `type`, whose labels are static keys. See
+ * `poi-category.dbschema.ts` for why HOS-139 chose that.
+ *
+ * @param params.t - Active locale translator, for the `type` fallback
+ * @param params.type - The POI's `type` enum value, used when no category
+ * @param params.primaryCategory - The POI's primary category, `null` when it has
+ *   none (POI data is known-dirty — see HOS-177)
+ * @param params.locale - The active locale, required to resolve `nameI18n`
+ * @returns The localized category name, or the localized type label
+ */
+export function translatePoiCategoryLabel({
+    t,
+    type,
+    primaryCategory,
+    locale
+}: {
+    readonly t: Translate;
+    readonly type: string;
+    readonly primaryCategory?: { readonly nameI18n?: I18nTextLike | null } | null;
+    readonly locale?: string;
+}): string {
+    if (primaryCategory?.nameI18n && locale) {
+        const resolved = resolveI18nText(primaryCategory.nameI18n, locale);
+        if (resolved) return resolved;
+    }
+
+    return translatePoiTypeLabel({ t, type });
+}

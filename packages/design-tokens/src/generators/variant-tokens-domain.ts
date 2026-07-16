@@ -119,6 +119,16 @@ const POST_CATEGORY_BASES = [
     'post-category-festivals'
 ] as const;
 
+/** 6 POI-category-bucket token base names. */
+const POI_CATEGORY_BASES = [
+    'poi-category-water',
+    'poi-category-nature',
+    'poi-category-culture',
+    'poi-category-food',
+    'poi-category-leisure',
+    'poi-category-services'
+] as const;
+
 /** 3 sponsor-type token base names. */
 const SPONSOR_TYPE_BASES = [
     'sponsor-type-post-sponsor',
@@ -138,7 +148,7 @@ const USER_ROLE_BASES = [
 ] as const;
 
 // ============================================================================
-// All 63 domain bases, in group order
+// All 69 domain bases, in group order
 // ============================================================================
 
 const ALL_DOMAIN_BASES: ReadonlyArray<string> = [
@@ -146,6 +156,7 @@ const ALL_DOMAIN_BASES: ReadonlyArray<string> = [
     ...AMENITY_TYPE_BASES,
     ...AUTH_PROVIDER_BASES,
     ...EVENT_CATEGORY_BASES,
+    ...POI_CATEGORY_BASES,
     ...POST_CATEGORY_BASES,
     ...SPONSOR_TYPE_BASES,
     ...USER_ROLE_BASES

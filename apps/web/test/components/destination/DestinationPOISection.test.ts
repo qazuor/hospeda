@@ -30,7 +30,7 @@ describe('DestinationPOISection.astro', () => {
 
     it('resolves POI display names via translatePoiName (nameI18n-first, humanized-slug fallback — HOS-138)', () => {
         expect(sectionSrc).toContain(
-            "import { translatePoiName, translatePoiTypeLabel } from '@/lib/poi-labels';"
+            "import { translatePoiCategoryLabel, translatePoiName } from '@/lib/poi-labels';"
         );
         expect(sectionSrc).toContain(
             'translatePoiName({ slug: poi.slug, nameI18n: poi.nameI18n, locale })'
@@ -44,8 +44,13 @@ describe('DestinationPOISection.astro', () => {
         );
     });
 
-    it('resolves the type label via translatePoiTypeLabel', () => {
-        expect(sectionSrc).toContain('translatePoiTypeLabel({ t, type: poi.type })');
+    it('resolves the badge label via translatePoiCategoryLabel, not the legacy type label', () => {
+        // HOS-182: the badge prefers the POI's primary CATEGORY name and only
+        // falls back to `type`. Reading `type` unconditionally made two thirds of
+        // a real destination's cards say "Otro" beside a category-driven icon.
+        expect(sectionSrc).toContain('translatePoiCategoryLabel({');
+        expect(sectionSrc).toContain('primaryCategory: poi.primaryCategory');
+        expect(sectionSrc).not.toContain('translatePoiTypeLabel({ t, type: poi.type })');
     });
 
     it('resolves a type-derived icon via getPointOfInterestTypeIcon', () => {
