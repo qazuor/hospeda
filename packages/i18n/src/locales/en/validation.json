@@ -993,6 +993,9 @@
             },
             "promoCodeIgnored": {
                 "invalid": "The promo code ignored flag is not valid"
+            },
+            "trialGranted": {
+                "invalid": "The granted-free-trial flag is not valid"
             }
         },
         "subscriptionEvent": {

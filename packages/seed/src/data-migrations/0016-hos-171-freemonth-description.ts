@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0015-hos-171-freemonth-description
+ * Data migration: 0016-hos-171-freemonth-description
  *
  * Corrects the seeded description of the FREEMONTH promo code, which claimed it
  * granted "30 extra free-trial days on monthly paid subscriptions". Both halves of
@@ -30,7 +30,7 @@ import { and, billingPromoCodes, eq, sql } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0015-hos-171-freemonth-description',
+    name: '0016-hos-171-freemonth-description',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];

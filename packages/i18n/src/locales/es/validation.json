@@ -993,6 +993,9 @@
             },
             "promoCodeIgnored": {
                 "invalid": "El indicador de código promocional ignorado no es válido"
+            },
+            "trialGranted": {
+                "invalid": "El indicador de prueba gratuita otorgada no es válido"
             }
         },
         "subscriptionEvent": {
