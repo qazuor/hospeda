@@ -192,15 +192,41 @@ drifted, record the id. Never create per-customer plans.
 
 ### 6.4 qzpay adapter changes (`@qazuor/qzpay-mercadopago`)
 
-The adapter today only builds direct `/preapproval`. It needs:
+**Adapter-surface audit (2026-07-16) — the change is far smaller than first
+assumed.** `preapproval_plan` management is **already implemented** in qzpay:
 
-- Create/read/update MP `preapproval_plan` (`POST/GET/PUT /preapproval_plan`).
-- Create a subscription **via `preapproval_plan_id`** (not inline auto_recurring).
-- Keep the direct `/preapproval` path available only if a fallback/hybrid is
-  ever needed (not used by default once migrated).
+- `packages/mercadopago/src/adapters/price.adapter.ts`
+  (`QZPayMercadoPagoPriceAdapter`) already wraps MP's `PreApprovalPlan` SDK class:
+  `create()` = `POST /preapproval_plan` (with `free_trial` support), `archive()` =
+  `PUT /preapproval_plan/{id}` (status inactive), `retrieve()` =
+  `GET /preapproval_plan/{id}`. It is exposed under the generic **`prices`**
+  adapter slot (`QZPayPaymentPriceAdapter`), just not wired into subscription
+  creation.
+- `packages/core/src/billing.ts` **already resolves**
+  `price.providerPriceIds[provider]` and forwards it as
+  `QZPayProviderCreateSubscriptionInput.providerPriceId` into
+  `subscriptions.create()`.
+- The **only gap**: `subscription.adapter.ts::buildCreateBody` (lines ~172-209)
+  **ignores** `providerPriceId` and builds `auto_recurring` inline.
 
-This is an **external package** change — coordinate the version bump; Hospeda
-pins `@qazuor/qzpay-mercadopago` (currently `^2.2.1`).
+So the real adapter change is a **single branch in `buildCreateBody`**:
+
+- If `providerInput.providerPriceId` is present → build a plan-based body
+  `{ preapproval_plan_id: providerPriceId, payer_email, external_reference,
+  reason, back_url }` with **no** `auto_recurring` (amount/interval/`free_trial`
+  inherited from the plan) and **no** `card_token`/`status` → MP returns an
+  `init_point` for the redirect authorization (the SP-1-validated flow).
+- Else → keep today's inline `/preapproval` body as fallback.
+
+`update()` already supports `input.transactionAmount` (the SP-1 discount
+mutation), and `cancel/pause/resume/retrieve` are unchanged. **`core` likely
+needs no change** — the contract already carries `providerPriceId`. This stays an
+**external package** change (changesets workflow; version `2.2.1` → minor bump,
+additive/non-breaking; Hospeda re-pins). Tests: extend
+`packages/mercadopago/test/subscription.adapter.test.ts` (its `buildCreateInput`
+fixture already includes a `providerPriceId`); `PreApprovalPlan` is already mocked
+in `test/helpers/mercadopago-mocks.ts`. Check `test/sandbox/
+mercadopago-sandbox.test.ts` uses mocks (not a live MP call) before editing.
 
 ### 6.5 Price changes
 
@@ -248,9 +274,10 @@ proliferation are both off the table — kept only as historical fallbacks.
   `PUT /preapproval_plan/{id}`, `POST /preapproval` (with `preapproval_plan_id`),
   `GET /preapproval/{id}`, `PUT /preapproval/{id}` (cancel; and amount-mutate iff
   SP-1 passes).
-- **qzpay contract:** new plan-management + subscribe-via-plan methods
-  (`@qazuor/qzpay-core` + `@qazuor/qzpay-mercadopago`). Exact surface designed
-  with the adapter change.
+- **qzpay contract:** plan-management already exists (`prices` adapter =
+  `preapproval_plan` CRUD) and `providerPriceId` already flows to
+  `subscriptions.create()`. The change is the `buildCreateBody` branch in
+  `@qazuor/qzpay-mercadopago` only (§6.4); `@qazuor/qzpay-core` likely untouched.
 
 ## 8. UX / UI behavior
 
