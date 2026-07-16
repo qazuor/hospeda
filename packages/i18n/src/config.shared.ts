@@ -67,6 +67,7 @@ export const webNamespaces = [
     'host-trades',
     'mobile',
     'gastronomy',
+    'google-calendar',
     'commerce',
     'external-reputation',
     'experience',
@@ -133,6 +134,7 @@ import featuresEn from './locales/en/features.json';
 import fieldsEn from './locales/en/fields.json';
 import footerEn from './locales/en/footer.json';
 import gastronomyEn from './locales/en/gastronomy.json';
+import googleCalendarEn from './locales/en/google-calendar.json';
 import homeEn from './locales/en/home.json';
 import hostEn from './locales/en/host.json';
 import hostTradesEn from './locales/en/host-trades.json';
@@ -185,6 +187,7 @@ import featuresEs from './locales/es/features.json';
 import fieldsEs from './locales/es/fields.json';
 import footerEs from './locales/es/footer.json';
 import gastronomyEs from './locales/es/gastronomy.json';
+import googleCalendarEs from './locales/es/google-calendar.json';
 import homeEs from './locales/es/home.json';
 import hostEs from './locales/es/host.json';
 import hostTradesEs from './locales/es/host-trades.json';
@@ -238,6 +241,7 @@ import featuresPt from './locales/pt/features.json';
 import fieldsPt from './locales/pt/fields.json';
 import footerPt from './locales/pt/footer.json';
 import gastronomyPt from './locales/pt/gastronomy.json';
+import googleCalendarPt from './locales/pt/google-calendar.json';
 import homePt from './locales/pt/home.json';
 import hostPt from './locales/pt/host.json';
 import hostTradesPt from './locales/pt/host-trades.json';
@@ -315,6 +319,7 @@ export const rawWebTranslations = {
         maps: mapsEs,
         mobile: mobileEs,
         gastronomy: gastronomyEs,
+        'google-calendar': googleCalendarEs,
         commerce: commerceEs,
         experience: experienceEs,
         social: socialEs,
@@ -366,6 +371,7 @@ export const rawWebTranslations = {
         maps: mapsEn,
         mobile: mobileEn,
         gastronomy: gastronomyEn,
+        'google-calendar': googleCalendarEn,
         commerce: commerceEn,
         experience: experienceEn,
         social: socialEn,
@@ -417,6 +423,7 @@ export const rawWebTranslations = {
         maps: mapsPt,
         mobile: mobilePt,
         gastronomy: gastronomyPt,
+        'google-calendar': googleCalendarPt,
         commerce: commercePt,
         experience: experiencePt,
         social: socialPt,
