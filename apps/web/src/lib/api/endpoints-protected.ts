@@ -28,6 +28,7 @@ import type {
     UserPublic,
     ValidationResult
 } from '@repo/schemas';
+import { MAX_BULK_CHECK_ENTITY_IDS } from '@repo/schemas';
 import { apiClient } from './client';
 import type { ApiResult, PaginatedResponse } from './types';
 
@@ -121,11 +122,22 @@ export const userBookmarksApi = {
     },
 
     /**
-     * Bulk-check bookmark status for many entities of the same type in a single request.
+     * Bulk-check bookmark status for many entities of the same type.
      * Used by listing pages to pre-hydrate FavoriteButton state without
      * issuing one /check call per card (SPEC-098 T-041).
      *
-     * @param body - The shared `entityType` and the list of `entityIds` to check (max 100)
+     * Accepts any number of `entityIds`: the endpoint caps each request at
+     * {@link MAX_BULK_CHECK_ENTITY_IDS}, so longer lists are split across
+     * requests here and the results merged. Callers do not need to know the
+     * cap (HOS-186) — over-sending would otherwise 400 the whole request, and
+     * a caller degrading from that failure falls back to one check per card,
+     * which is the N+1 the bulk endpoint exists to avoid.
+     *
+     * Fails as a unit: if any chunk fails, the whole call reports that error
+     * rather than returning a partial map that would read as "not bookmarked"
+     * for the missing entries.
+     *
+     * @param body - The shared `entityType` and the list of `entityIds` to check
      * @returns A map keyed by entityId with `{ isBookmarked, bookmarkId }` per entry.
      *
      * @example
@@ -137,7 +149,7 @@ export const userBookmarksApi = {
      * if (result.ok) console.log(result.data.checks['uuid-1'].isBookmarked);
      * ```
      */
-    checkBulk(body: {
+    async checkBulk(body: {
         readonly entityType: BookmarkEntityType;
         readonly entityIds: readonly string[];
         /**
@@ -155,12 +167,44 @@ export const userBookmarksApi = {
             >;
         }>
     > {
-        const { cookieHeader, ...rest } = body;
-        return apiClient.postProtected({
-            path: `${PROTECTED}/user-bookmarks/check-bulk`,
-            body: rest,
-            cookieHeader
-        });
+        const { cookieHeader, entityType, entityIds } = body;
+
+        const chunks: string[][] = [];
+        for (let i = 0; i < entityIds.length; i += MAX_BULK_CHECK_ENTITY_IDS) {
+            chunks.push(entityIds.slice(i, i + MAX_BULK_CHECK_ENTITY_IDS));
+        }
+
+        const requestChunk = (ids: readonly string[]) =>
+            apiClient.postProtected<{
+                readonly checks: Readonly<
+                    Record<
+                        string,
+                        { readonly isBookmarked: boolean; readonly bookmarkId: string | null }
+                    >
+                >;
+            }>({
+                path: `${PROTECTED}/user-bookmarks/check-bulk`,
+                body: { entityType, entityIds: ids },
+                cookieHeader
+            });
+
+        // Single-chunk (the overwhelming majority) stays a plain pass-through.
+        if (chunks.length <= 1) {
+            return requestChunk(entityIds);
+        }
+
+        const results = await Promise.all(chunks.map(requestChunk));
+
+        const merged: Record<
+            string,
+            { readonly isBookmarked: boolean; readonly bookmarkId: string | null }
+        > = {};
+        for (const result of results) {
+            if (!result.ok) return result;
+            Object.assign(merged, result.data.checks);
+        }
+
+        return { ok: true, data: { checks: merged } };
     },
 
     /**

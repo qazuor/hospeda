@@ -285,6 +285,28 @@ export const ApiEnvBaseSchema = z.object({
     API_RATE_LIMIT_PROTECTED_MESSAGE: z
         .string()
         .default('Too many requests, please try again later.'),
+    /*
+     * Billing + webhook tiers. Read by `getRateLimitConfig()` in
+     * env-config-helpers.ts, which goes to `process.env` directly — these Zod
+     * entries exist so the vars are validated at startup and stay visible to
+     * the registry cross-check + generated .env.example (HOS-186). Defaults
+     * mirror env-config-helpers.ts exactly; keep the two in sync.
+     *
+     * The webhook bucket also backs the `ai-inbound` and `make-callback`
+     * tiers (see getEndpointType) — tuning it moves all three.
+     */
+    API_RATE_LIMIT_BILLING_ENABLED: boolEnv(true),
+    API_RATE_LIMIT_BILLING_WINDOW_MS: z.coerce.number().default(900000),
+    API_RATE_LIMIT_BILLING_MAX_REQUESTS: z.coerce.number().default(10),
+    API_RATE_LIMIT_BILLING_MESSAGE: z
+        .string()
+        .default('Too many billing requests, please try again later.'),
+    API_RATE_LIMIT_WEBHOOK_ENABLED: boolEnv(true),
+    API_RATE_LIMIT_WEBHOOK_WINDOW_MS: z.coerce.number().default(60000),
+    API_RATE_LIMIT_WEBHOOK_MAX_REQUESTS: z.coerce.number().default(100),
+    API_RATE_LIMIT_WEBHOOK_MESSAGE: z
+        .string()
+        .default('Too many webhook requests, please try again later.'),
 
     // Security
     API_SECURITY_ENABLED: boolEnv(true),
