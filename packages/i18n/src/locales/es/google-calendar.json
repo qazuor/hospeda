@@ -1,0 +1,95 @@
+{
+    "meta": {
+        "title": "Integración con Google Calendar",
+        "description": "Conocé cómo Hospeda usa acceso de solo lectura a Google Calendar para sincronizar disponibilidad y evitar reservas superpuestas."
+    },
+    "breadcrumb": {
+        "home": "Inicio",
+        "current": "Integración con Google Calendar"
+    },
+    "hero": {
+        "tagline": "Sincronización para anfitriones",
+        "titleMain": "Google Calendar en",
+        "titleAccent": "Hospeda",
+        "subtitle": "Hospeda permite a anfitriones sincronizar las fechas ocupadas de su alojamiento con Google Calendar para evitar reservas superpuestas. Esta página explica qué datos pedimos, para qué los usamos y qué no hacemos con ellos.",
+        "primaryCta": "Ver planes para anfitriones",
+        "secondaryCta": "Leer política de privacidad"
+    },
+    "purpose": {
+        "eyebrow": "Propósito de la integración",
+        "title": "Para qué sirve",
+        "description": "La integración está pensada para propietarios que gestionan la disponibilidad de un alojamiento con Google Calendar y necesitan reflejar esas fechas ocupadas dentro de Hospeda.",
+        "cards": {
+            "syncBusyDates": {
+                "title": "Sincronizar fechas ocupadas",
+                "description": "Leemos los eventos de tu Google Calendar y reflejamos esas fechas como no disponibles en Hospeda."
+            },
+            "avoidDoubleBookings": {
+                "title": "Evitar reservas superpuestas",
+                "description": "La sincronización ayuda a que tu calendario público no muestre libre una fecha que ya tenés comprometida."
+            },
+            "ownerControl": {
+                "title": "Mantener el control",
+                "description": "Conectás y desconectás la integración desde tu panel cuando lo necesités."
+            }
+        }
+    },
+    "permissions": {
+        "eyebrow": "Datos y permisos",
+        "title": "Qué acceso pedimos a Google",
+        "description": "Esta integración solicita únicamente el permiso de solo lectura de Google Calendar.",
+        "cards": {
+            "scope": {
+                "title": "Scope solicitado",
+                "description": "Usamos el scope `https://www.googleapis.com/auth/calendar.readonly` para leer los eventos necesarios de disponibilidad."
+            },
+            "usage": {
+                "title": "Cómo usamos esos datos",
+                "description": "Hospeda usa la información del calendario para actualizar las fechas ocupadas del alojamiento que conectaste."
+            },
+            "limitedUse": {
+                "title": "Qué no hacemos",
+                "description": "No creamos, editamos ni eliminamos eventos en Google Calendar. No usamos estos datos para publicidad, venta a terceros ni entrenamiento de IA."
+            }
+        }
+    },
+    "steps": {
+        "eyebrow": "Cómo funciona",
+        "title": "Qué pasa cuando conectás tu cuenta",
+        "items": {
+            "connect": {
+                "title": "Iniciás la conexión",
+                "description": "Desde el panel del alojamiento elegís conectar Google Calendar."
+            },
+            "authorize": {
+                "title": "Autorizás acceso de solo lectura",
+                "description": "Google te muestra el permiso solicitado y confirmás si querés compartirlo con Hospeda."
+            },
+            "sync": {
+                "title": "Hospeda sincroniza disponibilidad",
+                "description": "Con el acceso aprobado, Hospeda puede leer las fechas necesarias para marcar ocupación y ayudarte a evitar solapamientos."
+            }
+        }
+    },
+    "privacy": {
+        "eyebrow": "Privacidad y soporte",
+        "title": "Dónde ver más información",
+        "description": "La política de privacidad explica con más detalle cómo tratamos la información de Google Calendar y cómo podés contactarnos.",
+        "items": {
+            "policy": {
+                "title": "Política de privacidad",
+                "description": "Incluye la sección específica sobre datos de tu cuenta de Google y el cumplimiento de Limited Use."
+            },
+            "disconnect": {
+                "title": "Desconexión",
+                "description": "Podés revocar el acceso y desconectar la integración desde tu panel cuando quieras."
+            },
+            "support": {
+                "title": "Soporte",
+                "description": "Si tenés dudas sobre esta integración o sobre tus datos, podés escribirnos desde nuestro canal de contacto."
+            }
+        },
+        "policyLink": "Abrir política de privacidad",
+        "contactLink": "Contactar a Hospeda"
+    }
+}

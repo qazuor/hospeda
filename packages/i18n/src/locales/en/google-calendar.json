@@ -1,0 +1,95 @@
+{
+    "meta": {
+        "title": "Google Calendar integration",
+        "description": "Learn how Hospeda uses read-only Google Calendar access to sync availability and avoid double bookings."
+    },
+    "breadcrumb": {
+        "home": "Home",
+        "current": "Google Calendar integration"
+    },
+    "hero": {
+        "tagline": "Sync for hosts",
+        "titleMain": "Google Calendar in",
+        "titleAccent": "Hospeda",
+        "subtitle": "Hospeda lets hosts sync occupied dates from their property with Google Calendar to avoid double bookings. This page explains which data we request, why we use it, and what we do not do with it.",
+        "primaryCta": "View host plans",
+        "secondaryCta": "Read privacy policy"
+    },
+    "purpose": {
+        "eyebrow": "Integration purpose",
+        "title": "What it is for",
+        "description": "This integration is built for hosts who manage a property's availability in Google Calendar and need those occupied dates reflected inside Hospeda.",
+        "cards": {
+            "syncBusyDates": {
+                "title": "Sync busy dates",
+                "description": "We read the events in your Google Calendar and reflect those dates as unavailable in Hospeda."
+            },
+            "avoidDoubleBookings": {
+                "title": "Avoid double bookings",
+                "description": "The sync helps your public calendar avoid showing a date as available when you already have it committed elsewhere."
+            },
+            "ownerControl": {
+                "title": "Keep control",
+                "description": "You connect and disconnect the integration from your panel whenever you need to."
+            }
+        }
+    },
+    "permissions": {
+        "eyebrow": "Data and permissions",
+        "title": "What access we request from Google",
+        "description": "This integration requests only read-only access to Google Calendar.",
+        "cards": {
+            "scope": {
+                "title": "Requested scope",
+                "description": "We use the `https://www.googleapis.com/auth/calendar.readonly` scope to read the availability events needed for synchronization."
+            },
+            "usage": {
+                "title": "How we use that data",
+                "description": "Hospeda uses calendar information to update occupied dates for the accommodation you connected."
+            },
+            "limitedUse": {
+                "title": "What we do not do",
+                "description": "We do not create, edit, or delete events in Google Calendar. We do not use this data for advertising, third-party sale, or AI training."
+            }
+        }
+    },
+    "steps": {
+        "eyebrow": "How it works",
+        "title": "What happens when you connect your account",
+        "items": {
+            "connect": {
+                "title": "You start the connection",
+                "description": "From the accommodation panel, you choose to connect Google Calendar."
+            },
+            "authorize": {
+                "title": "You approve read-only access",
+                "description": "Google shows the requested permission and you confirm whether you want to share it with Hospeda."
+            },
+            "sync": {
+                "title": "Hospeda syncs availability",
+                "description": "Once access is approved, Hospeda can read the dates needed to mark occupancy and help you avoid overlaps."
+            }
+        }
+    },
+    "privacy": {
+        "eyebrow": "Privacy and support",
+        "title": "Where to find more information",
+        "description": "The privacy policy explains in more detail how we handle Google Calendar information and how you can contact us.",
+        "items": {
+            "policy": {
+                "title": "Privacy policy",
+                "description": "It includes the specific section about your Google account data and compliance with Limited Use."
+            },
+            "disconnect": {
+                "title": "Disconnect",
+                "description": "You can revoke access and disconnect the integration from your panel whenever you want."
+            },
+            "support": {
+                "title": "Support",
+                "description": "If you have questions about this integration or your data, you can contact us through our support channel."
+            }
+        },
+        "policyLink": "Open privacy policy",
+        "contactLink": "Contact Hospeda"
+    }
+}
