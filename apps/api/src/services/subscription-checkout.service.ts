@@ -399,6 +399,22 @@ export interface InitiatePaidMonthlySubscriptionResult {
     readonly expiresAt: string;
     readonly appliedEffect?: CheckoutAppliedEffect;
     /**
+     * `true` when this checkout granted free trial days — i.e. MercadoPago will
+     * defer the first charge rather than take it today.
+     *
+     * This is NOT an `appliedEffect`. A card-first trial is not an alternative to
+     * a paid checkout the way `comp` is: it IS the paid checkout, on the same
+     * preapproval, with the first debit pushed out. So it takes the normal MP
+     * redirect and carries no effect marker — which is exactly why the signal has
+     * to live on its own field.
+     *
+     * Without it the checkout analytics cannot tell a trial from a plain paid
+     * signup (`outcome` would collapse both to `'paid'`), and trial→paid
+     * conversion (HOS-130) has no event to build on.
+     */
+    readonly trialGranted?: true;
+
+    /**
      * Set to `true` when the customer supplied a promo code that ended up doing
      * nothing, so the front-end can say so instead of letting them believe it
      * applied.
@@ -697,6 +713,7 @@ export async function initiatePaidMonthlySubscription(
         checkoutUrl,
         localSubscriptionId: subscription.id,
         expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
+        ...(freeTrialDays === undefined ? {} : { trialGranted: true as const }),
         ...(appliedEffect ? { appliedEffect } : {}),
         ...(promoCodeIgnored ? { promoCodeIgnored: true } : {})
     };
@@ -1055,13 +1072,22 @@ export interface InitiatePaidAnnualSubscriptionResult {
     readonly expiresAt: string;
     readonly appliedEffect?: CheckoutAppliedEffect;
     /**
-     * HOS-115 (mirrors HOS-110 W1 monthly): set to `true` when a `discount`
-     * promo code was supplied alongside a trial-eligible annual checkout and
-     * the code was DISCARDED (not persisted anywhere) because the free trial
-     * takes priority over a discount on a not-yet-charged subscription. Only
-     * ever present together with `appliedEffect: 'trial'`. Absent (not
-     * `false`) in every other case — the front-end should treat "absent" and
-     * "false" identically.
+     * `true` when this checkout granted free trial days — see the monthly
+     * result's note. Annual carries the identical signal because since HOS-171
+     * it is the identical mechanism: one preapproval, 12-month cadence.
+     */
+    readonly trialGranted?: true;
+    /**
+     * Set to `true` when the customer supplied a promo code that ended up doing
+     * nothing. One case only: a `trial_extension` code when no trial was granted.
+     *
+     * It no longer means "a discount was discarded because the trial took
+     * priority" — that precedence is gone (HOS-171). A discount and a trial
+     * coexist now: the trial defers the first charge, the discount lowers what
+     * that charge will be.
+     *
+     * Absent (not `false`) in every other case — the front-end should treat
+     * "absent" and "false" identically.
      */
     readonly promoCodeIgnored?: true;
 }
@@ -1285,6 +1311,7 @@ export async function initiatePaidAnnualSubscription(
         checkoutUrl,
         localSubscriptionId: subscription.id,
         expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
+        ...(freeTrialDays === undefined ? {} : { trialGranted: true as const }),
         ...(appliedEffect ? { appliedEffect } : {}),
         ...(promoCodeIgnored ? { promoCodeIgnored: true } : {})
     };

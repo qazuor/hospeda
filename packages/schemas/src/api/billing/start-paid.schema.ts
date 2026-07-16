@@ -107,6 +107,24 @@ export const StartPaidSubscriptionResponseSchema = z.object({
         })
         .optional(),
     /**
+     * `true` when the checkout granted free trial days — MercadoPago will defer
+     * the first charge instead of taking it today.
+     *
+     * Deliberately NOT an `appliedEffect` variant. A card-first trial is not an
+     * alternative to a paid checkout the way `comp` is: it IS the paid checkout,
+     * on the same preapproval, with the first debit pushed out — so it returns a
+     * normal MP redirect and no effect marker. Modelling it as an effect is what
+     * the pre-HOS-171 `'trial'` variant did, back when a trial really was a
+     * separate no-card path.
+     *
+     * Absent (not `false`) when no trial was granted.
+     */
+    trialGranted: z
+        .literal(true, {
+            message: 'zodError.billing.startPaid.trialGranted.invalid'
+        })
+        .optional(),
+    /**
      * `true` when a promo code was supplied but had no effect, so the customer is
      * told rather than silently losing it. Absent (not `false`) otherwise — the
      * front-end should treat "absent" and "false" identically.
