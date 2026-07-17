@@ -457,6 +457,7 @@ export function CommerceListingEditor({
             className={styles.editor}
             onSubmit={handleSubmit}
             aria-busy={isSaving}
+            noValidate
         >
             {/* T-020: type select */}
             <section className={styles.section}>

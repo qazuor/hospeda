@@ -451,6 +451,7 @@ export function AccommodationEditor({
         <form
             className={styles.editor}
             onSubmit={handleSubmit}
+            noValidate
         >
             <div className={styles.layout}>
                 <div className={styles.navSlot}>
