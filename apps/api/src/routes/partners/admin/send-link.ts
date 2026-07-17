@@ -39,6 +39,10 @@ function mapCheckoutErrorToHttp(error: SubscriptionCheckoutError): HTTPException
             return new HTTPException(404, { message: error.message });
         case 'MISSING_INIT_POINT':
             return new HTTPException(500, { message: error.message });
+        // HOS-191: the checkout could not resolve/provision the MercadoPago plan.
+        // Upstream/registry failure — 502, matching the shared mapper.
+        case 'MP_PLAN_PROVISIONING_FAILED':
+            return new HTTPException(502, { message: error.message });
         default:
             return new HTTPException(500, { message: error.message });
     }

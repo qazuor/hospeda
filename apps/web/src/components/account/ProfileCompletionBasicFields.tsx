@@ -15,8 +15,10 @@ import { useEffect, useRef, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { enUS as enLocale, es as esLocale, ptBR as ptLocale } from 'react-day-picker/locale';
 import 'react-day-picker/style.css';
+import { FieldError } from '@/components/ui/FieldError';
+import type { FieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
-import { ddmmyyyyToDate, type ProfileCompletionFieldErrors } from './ProfileCompletion.helpers';
+import { ddmmyyyyToDate } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
 import { ProfileCompletionAvatarPicker } from './ProfileCompletionAvatarPicker';
 
@@ -47,7 +49,7 @@ export interface ProfileCompletionBasicFieldsProps {
     /** Initial OAuth avatar URL — used only for comparison in parent. */
     readonly initialAvatarUrl: string | undefined;
     /** Field-level validation errors from the parent. */
-    readonly errors: ProfileCompletionFieldErrors;
+    readonly errors: FieldErrors;
     /** Whether the form is currently submitting (disables all inputs). */
     readonly submitting: boolean;
     /** Translation function from the parent island. */
@@ -159,15 +161,10 @@ export function ProfileCompletionBasicFields({
                         autoComplete="given-name"
                         disabled={submitting}
                     />
-                    {errors.firstName && (
-                        <p
-                            id="pc-firstName-error"
-                            className={styles.errorMsg}
-                            role="alert"
-                        >
-                            {errors.firstName}
-                        </p>
-                    )}
+                    <FieldError
+                        id="pc-firstName-error"
+                        message={errors.firstName}
+                    />
                 </div>
 
                 <div className={styles.field}>
@@ -200,15 +197,10 @@ export function ProfileCompletionBasicFields({
                         autoComplete="family-name"
                         disabled={submitting}
                     />
-                    {errors.lastName && (
-                        <p
-                            id="pc-lastName-error"
-                            className={styles.errorMsg}
-                            role="alert"
-                        >
-                            {errors.lastName}
-                        </p>
-                    )}
+                    <FieldError
+                        id="pc-lastName-error"
+                        message={errors.lastName}
+                    />
                 </div>
             </div>
 
@@ -226,14 +218,26 @@ export function ProfileCompletionBasicFields({
                 <input
                     id="pc-displayName"
                     type="text"
-                    className={styles.input}
+                    className={
+                        errors.displayName ? `${styles.input} ${styles.inputError}` : styles.input
+                    }
                     value={displayNameValue}
                     onChange={(e) => onDisplayNameChange(e.target.value)}
                     placeholder={derivedDisplayName || 'Nombre Apellido'}
                     autoComplete="nickname"
                     disabled={submitting}
+                    aria-describedby={
+                        errors.displayName ? 'pc-displayName-error' : 'pc-displayName-hint'
+                    }
                 />
-                <p className={styles.hint}>
+                <FieldError
+                    id="pc-displayName-error"
+                    message={errors.displayName}
+                />
+                <p
+                    id="pc-displayName-hint"
+                    className={styles.hint}
+                >
                     {t(
                         'account.profileCompletion.fields.displayNameHelper',
                         'Auto-derivado de tu nombre y apellido, podés editarlo.'
@@ -376,15 +380,10 @@ function BirthDateField({
                     </div>
                 )}
             </div>
-            {error && (
-                <p
-                    id="pc-birthDate-error"
-                    className={styles.errorMsg}
-                    role="alert"
-                >
-                    {error}
-                </p>
-            )}
+            <FieldError
+                id="pc-birthDate-error"
+                message={error}
+            />
             <p
                 id="pc-birthDate-hint"
                 className={styles.hint}

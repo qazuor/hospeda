@@ -33,7 +33,9 @@
  * to `window.dataLayer` when available.
  */
 
+import { NewsletterGuestSubscribeRequestSchema } from '@repo/schemas';
 import { useEffect, useId, useState } from 'react';
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
@@ -359,14 +361,19 @@ export function NewsletterForm({
 
         const isGuest = formState === 'idle-guest';
 
-        // Guest path: light client-side email validation before the round-trip
-        // so an obviously-invalid typo doesn't burn the IP's rate-limit budget
-        // (3 req/min on the public endpoint).
+        // Guest path: client-side validation before the round-trip so an
+        // obviously-invalid typo doesn't burn the IP's rate-limit budget
+        // (3 req/min on the public endpoint). Validates against the exact
+        // schema the API route enforces (HOS-190 form 23) — was a hand-rolled
+        // regex + max-length check duplicating NewsletterGuestSubscribeRequestSchema.
         if (isGuest) {
             const trimmed = guestEmail.trim();
-            const isPlausibleEmail =
-                /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) && trimmed.length <= 255;
-            if (!isPlausibleEmail) {
+            const parsed = NewsletterGuestSubscribeRequestSchema.safeParse({
+                email: trimmed,
+                locale,
+                source: 'web_footer'
+            });
+            if (!parsed.success) {
                 const msg = t('footer.newsletter.invalidEmail', 'Ingresá un email válido.');
                 setErrorMessage(msg);
                 setStatusText(msg);
@@ -791,6 +798,9 @@ export function NewsletterForm({
                                 placeholder={t('footer.newsletter.emailPlaceholder', 'Tu email')}
                                 aria-labelledby={emailLabelId}
                                 aria-invalid={formState === 'error' ? 'true' : 'false'}
+                                aria-describedby={
+                                    formState === 'error' ? fieldErrorId('email') : undefined
+                                }
                                 autoComplete="email"
                                 inputMode="email"
                                 disabled={isLoading}
@@ -835,13 +845,12 @@ export function NewsletterForm({
                 </div>
 
                 {/* Inline error — shown only in error state */}
-                {formState === 'error' && errorMessage && (
-                    <p
+                {formState === 'error' && (
+                    <FieldError
+                        id={fieldErrorId('email')}
+                        message={errorMessage}
                         className={styles.errorMessage}
-                        role="alert"
-                    >
-                        {errorMessage}
-                    </p>
+                    />
                 )}
 
                 {/* Consent note — referenced by aria-describedby */}

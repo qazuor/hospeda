@@ -552,6 +552,10 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                     readonly slug: string;
                     readonly nameI18n: I18nText;
                 } | null;
+                // HOS-147: the POI's full category set (all r_poi_category
+                // slugs), for the destination-page thematic filter. Always an
+                // array (empty when the POI has no active categories).
+                readonly categories: { slug: string }[];
             }>
         >
     > {
@@ -588,7 +592,21 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                     displayWeight: pointsOfInterest.displayWeight,
                     relation: rDestinationPointOfInterest.relation,
                     primaryCategorySlug: poiCategories.slug,
-                    primaryCategoryNameI18n: poiCategories.nameI18n
+                    primaryCategoryNameI18n: poiCategories.nameI18n,
+                    // HOS-147: the FULL set of the POI's categories (every
+                    // r_poi_category row, not just the isPrimary one that the
+                    // LEFT JOINs above project into primaryCategory), backing
+                    // the destination-page thematic filter. A correlated
+                    // json_agg subquery keeps this a single query with no
+                    // fan-out — a second LEFT JOIN of all category rows would
+                    // duplicate the POI row per category and break the
+                    // one-row-per-POI grouping below. COALESCE to '[]' so a POI
+                    // with no active categories yields an empty array, never
+                    // null. Only ACTIVE, non-deleted categories are included,
+                    // matching the primaryCategory JOIN gate.
+                    categories: sql<
+                        Array<{ slug: string }>
+                    >`coalesce((select json_agg(json_build_object('slug', pc.slug) order by pc.display_weight asc, pc.slug asc) from r_poi_category rpc inner join poi_categories pc on pc.id = rpc.category_id and pc.deleted_at is null and pc.lifecycle_state = 'ACTIVE' where rpc.point_of_interest_id = ${pointsOfInterest.id}), '[]'::json)`
                 })
                 .from(rDestinationPointOfInterest)
                 .innerJoin(
@@ -634,6 +652,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                         readonly slug: string;
                         readonly nameI18n: I18nText;
                     } | null;
+                    readonly categories: { slug: string }[];
                 }>
             >();
             for (const row of results) {
@@ -658,7 +677,8 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                               slug: row.primaryCategorySlug,
                               nameI18n: row.primaryCategoryNameI18n as I18nText
                           }
-                        : null
+                        : null,
+                    categories: (row.categories ?? []) as { slug: string }[]
                 });
                 map.set(row.destinationId, existing);
             }

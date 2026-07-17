@@ -10,6 +10,7 @@ import type {
     CountResponse,
     PoiCategory,
     PoiCategoryIdType,
+    PoiCategoryPublic,
     PointOfInterest,
     PointOfInterestCategoryAssignment,
     PointOfInterestCategoryRelation,
@@ -35,7 +36,8 @@ import {
     type UnassignCategoryFromPointOfInterestInput,
     UnassignCategoryFromPointOfInterestInputSchema
 } from '@repo/schemas';
-import { inArray, type SQL } from 'drizzle-orm';
+import { inArray, isNull, type SQL } from 'drizzle-orm';
+import { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import {
@@ -59,6 +61,7 @@ import {
     checkCanDeletePoiCategory,
     checkCanHardDeletePoiCategory,
     checkCanListPoiCategories,
+    checkCanListPublicPoiCategories,
     checkCanRestorePoiCategory,
     checkCanUpdatePoiCategory,
     checkCanViewPoiCategory
@@ -815,6 +818,67 @@ export class PointOfInterestCategoryService extends BaseCrudRelatedService<
                     isPrimary: isPrimaryByCategoryId.get(category.id) ?? false
                 }));
                 return { categories: assignments };
+            }
+        });
+    }
+
+    /**
+     * Lists the PUBLIC POI category catalog (HOS-147) — every ACTIVE,
+     * non-deleted category, ordered by `displayWeight` descending (higher =
+     * shown first, matching {@link getCategoriesForPointOfInterest} and the
+     * amenity/feature catalog convention) with a `slug` ascending tiebreak for
+     * deterministic ordering. Backs the thematic filter-chip UI's chip options
+     * (`GET /api/v1/public/poi-categories`).
+     *
+     * Unlike the admin catalog list, this is a public read: it uses
+     * {@link checkCanListPublicPoiCategories} (any actor), NOT the
+     * `POI_CATEGORY_VIEW`-gated `_canList`. The result is projected to the
+     * narrow {@link PoiCategoryPublic} shape (no audit/admin fields).
+     *
+     * @param actor - The actor performing the action (guest allowed).
+     * @param ctx - Optional service context carrying transaction and hookState.
+     * @returns A `ServiceOutput` with `{ categories }` sorted for display.
+     */
+    public async listPublicCategories(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ categories: PoiCategoryPublic[] }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listPublicCategories',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, actor, execCtx) => {
+                checkCanListPublicPoiCategories(actor);
+
+                // `lifecycleState: 'ACTIVE'` alone is NOT enough: base `softDelete`
+                // sets `deletedAt` WITHOUT flipping `lifecycleState`, and
+                // `BaseModelImpl.findAll` does not auto-exclude soft-deleted rows
+                // (that injection lives only in `BaseCrudRead.list`). Add an
+                // explicit `deletedAt IS NULL` so this public catalog never leaks
+                // soft-deleted categories.
+                const { items } = await this.model.findAll(
+                    { lifecycleState: 'ACTIVE' },
+                    { pageSize: POI_CATEGORY_RELATIONS_PAGE_SIZE },
+                    [isNull(poiCategories.deletedAt)],
+                    execCtx?.tx
+                );
+
+                const categories: PoiCategoryPublic[] = [...items]
+                    .sort(
+                        (a, b) =>
+                            (b.displayWeight ?? 50) - (a.displayWeight ?? 50) ||
+                            a.slug.localeCompare(b.slug)
+                    )
+                    .map((category) => ({
+                        id: category.id,
+                        slug: category.slug,
+                        nameI18n: category.nameI18n,
+                        icon: category.icon ?? null,
+                        displayWeight: category.displayWeight ?? 50
+                    }));
+
+                return { categories };
             }
         });
     }

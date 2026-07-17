@@ -31,17 +31,19 @@
  */
 
 import type { AccommodationImportResponse, DestinationPublic, FieldSource } from '@repo/schemas';
-import { AccommodationTypeEnum } from '@repo/schemas';
+import { AccommodationCreateDraftHttpSchema, AccommodationTypeEnum } from '@repo/schemas';
 import { useCallback, useId, useMemo, useState } from 'react';
 import type { SelectableItem } from '@/components/form/SearchableSelect.client';
 import { SearchableSelect } from '@/components/form/SearchableSelect.client';
 import { ImportFromUrl } from '@/components/host/ImportFromUrl.client';
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { translateApiError } from '@/lib/api-errors';
 import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
+import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
@@ -74,13 +76,6 @@ export type CreatePropertyMiniFormProps = {
      */
     readonly canAccessAdminPanel: boolean;
 };
-
-type FieldErrors = Readonly<{
-    name?: string;
-    summary?: string;
-    type?: string;
-    destinationId?: string;
-}>;
 
 /**
  * Per-field import metadata stored when an import prefills the form.
@@ -253,7 +248,16 @@ export function CreatePropertyMiniForm({
     const [summary, setSummary] = useState('');
     const [typeItem, setTypeItem] = useState<SelectableItem | null>(null);
     const [city, setCity] = useState<SelectableItem | null>(null);
-    const [errors, setErrors] = useState<FieldErrors>({});
+    // Field-level validation is delegated to the shared `useZodForm` primitive
+    // (HOS-190 slice 3) against `AccommodationCreateDraftHttpSchema` — the same
+    // schema the draft-create endpoint validates server-side. Previously only
+    // 4 of ~15 payload fields were checked client-side (name/summary/type/
+    // destinationId); the rest (description, maxGuests, bathrooms, street,
+    // number, website, ...) reached the API unvalidated.
+    const { fieldErrors, validate } = useZodForm({
+        schema: AccommodationCreateDraftHttpSchema,
+        t
+    });
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -582,98 +586,75 @@ export function CreatePropertyMiniForm({
         });
     }, [locale, t]);
 
-    function validate(): FieldErrors {
-        const next: Record<string, string> = {};
-        if (name.trim().length < 3) {
-            next.name = t(
-                'host.miniForm.errors.name',
-                'El nombre debe tener al menos 3 caracteres.'
-            );
-        }
-        if (summary.trim().length < 10) {
-            next.summary = t(
-                'host.miniForm.errors.summary',
-                'La descripción corta debe tener al menos 10 caracteres.'
-            );
-        }
-        if (!typeItem) {
-            next.type = t('host.miniForm.errors.type', 'Elegí el tipo de alojamiento.');
-        }
-        if (!city?.id) {
-            next.destinationId = t(
-                'host.miniForm.errors.destinationId',
-                'Elegí la ciudad donde está tu alojamiento.'
-            );
-        }
-        return next;
-    }
-
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
         event.preventDefault();
         if (isSubmitting) return;
 
         setSubmitError(null);
-        const fieldErrors = validate();
-        setErrors(fieldErrors);
-        if (Object.keys(fieldErrors).length > 0) return;
+
+        // Build the payload: required base fields + SPEC-258 optional extras
+        // (only fields that were imported and not cleared by the host).
+        const payload: Record<string, unknown> = {
+            name: name.trim(),
+            summary: summary.trim(),
+            // typeItem.id is the AccommodationType enum value; empty when unset
+            // (surfaces as a field error via the schema's enum validation below).
+            type: typeItem?.id ?? '',
+            // city.id is a UUID; empty when unset (surfaces as a field error).
+            destinationId: city?.id ?? ''
+        };
+
+        // Append optional extras — coerce number inputs, omit cleared fields.
+        if (extras.description !== undefined && extras.description.trim() !== '') {
+            payload.description = extras.description.trim();
+        }
+        if (extras.maxGuests !== undefined) {
+            payload.maxGuests = extras.maxGuests;
+        }
+        if (extras.bedrooms !== undefined) {
+            payload.bedrooms = extras.bedrooms;
+        }
+        if (extras.bathrooms !== undefined) {
+            payload.bathrooms = extras.bathrooms;
+        }
+        if (extras.beds !== undefined) {
+            payload.beds = extras.beds;
+        }
+        if (extras.basePrice !== undefined) {
+            payload.basePrice = extras.basePrice;
+        }
+        if (extras.currency !== undefined) {
+            payload.currency = extras.currency;
+        }
+        if (extras.latitude !== undefined) {
+            payload.latitude = extras.latitude;
+        }
+        if (extras.longitude !== undefined) {
+            payload.longitude = extras.longitude;
+        }
+        if (extras.street !== undefined && extras.street.trim() !== '') {
+            payload.street = extras.street.trim();
+        }
+        if (extras.number !== undefined && extras.number.trim() !== '') {
+            payload.number = extras.number.trim();
+        }
+        if (extras.phone !== undefined && extras.phone.trim() !== '') {
+            payload.phone = extras.phone.trim();
+        }
+        if (extras.website !== undefined && extras.website.trim() !== '') {
+            payload.website = extras.website.trim();
+        }
+        if (extras.amenityIds && extras.amenityIds.length > 0) {
+            payload.amenityIds = extras.amenityIds;
+        }
+
+        // Full-payload validation (all ~15 fields, not just the 4 previously
+        // checked by hand) against the same schema the API validates with.
+        const parsed = validate(payload);
+        if (!parsed.success) return;
 
         setIsSubmitting(true);
         try {
-            // Build the payload: required base fields + SPEC-258 optional extras
-            // (only fields that were imported and not cleared by the host).
-            const payload: Record<string, unknown> = {
-                name: name.trim(),
-                summary: summary.trim(),
-                // typeItem.id is the AccommodationType enum value; guaranteed by validate()
-                type: typeItem?.id ?? '',
-                // city.id is guaranteed by validate()
-                destinationId: city?.id ?? ''
-            };
-
-            // Append optional extras — coerce number inputs, omit cleared fields.
-            if (extras.description !== undefined && extras.description.trim() !== '') {
-                payload.description = extras.description.trim();
-            }
-            if (extras.maxGuests !== undefined) {
-                payload.maxGuests = extras.maxGuests;
-            }
-            if (extras.bedrooms !== undefined) {
-                payload.bedrooms = extras.bedrooms;
-            }
-            if (extras.bathrooms !== undefined) {
-                payload.bathrooms = extras.bathrooms;
-            }
-            if (extras.beds !== undefined) {
-                payload.beds = extras.beds;
-            }
-            if (extras.basePrice !== undefined) {
-                payload.basePrice = extras.basePrice;
-            }
-            if (extras.currency !== undefined) {
-                payload.currency = extras.currency;
-            }
-            if (extras.latitude !== undefined) {
-                payload.latitude = extras.latitude;
-            }
-            if (extras.longitude !== undefined) {
-                payload.longitude = extras.longitude;
-            }
-            if (extras.street !== undefined && extras.street.trim() !== '') {
-                payload.street = extras.street.trim();
-            }
-            if (extras.number !== undefined && extras.number.trim() !== '') {
-                payload.number = extras.number.trim();
-            }
-            if (extras.phone !== undefined && extras.phone.trim() !== '') {
-                payload.phone = extras.phone.trim();
-            }
-            if (extras.website !== undefined && extras.website.trim() !== '') {
-                payload.website = extras.website.trim();
-            }
-            if (extras.amenityIds && extras.amenityIds.length > 0) {
-                payload.amenityIds = extras.amenityIds;
-            }
-
             const response = await fetch(
                 `${apiUrl.replace(/\/$/, '')}/api/v1/protected/host-onboarding/start`,
                 {
@@ -893,18 +874,13 @@ export function CreatePropertyMiniForm({
                     onChange={(event) => setName(event.target.value)}
                     maxLength={100}
                     required
-                    aria-invalid={errors.name ? 'true' : 'false'}
-                    aria-describedby={errors.name ? `${nameId}-error` : undefined}
+                    aria-invalid={fieldErrors.name ? 'true' : 'false'}
+                    aria-describedby={fieldErrors.name ? `${nameId}-error` : undefined}
                 />
-                {errors.name && (
-                    <p
-                        id={`${nameId}-error`}
-                        className="form-error"
-                        role="alert"
-                    >
-                        {errors.name}
-                    </p>
-                )}
+                <FieldError
+                    id={`${nameId}-error`}
+                    message={fieldErrors.name}
+                />
             </div>
 
             {/* Type — shared SearchableSelect in local mode (icon affordance per type). */}
@@ -925,7 +901,7 @@ export function CreatePropertyMiniForm({
                     items={typeItems}
                     placeholder={t('host.miniForm.fields.typePlaceholder', 'Elegí una opción')}
                     emptyLabel={t('host.miniForm.fields.typeEmpty', 'No hay tipos que coincidan')}
-                    error={errors.type ?? null}
+                    error={fieldErrors.type ?? null}
                     required
                     testId="property-type"
                 />
@@ -952,7 +928,7 @@ export function CreatePropertyMiniForm({
                         'host.form.sections.ubicacion.cityPicker.empty',
                         'No hay coincidencias'
                     )}
-                    error={errors.destinationId ?? null}
+                    error={fieldErrors.destinationId ?? null}
                     required
                     testId="property-city"
                     footer={
@@ -1045,8 +1021,8 @@ export function CreatePropertyMiniForm({
                     rows={3}
                     maxLength={300}
                     required
-                    aria-invalid={errors.summary ? 'true' : 'false'}
-                    aria-describedby={errors.summary ? `${summaryId}-error` : undefined}
+                    aria-invalid={fieldErrors.summary ? 'true' : 'false'}
+                    aria-describedby={fieldErrors.summary ? `${summaryId}-error` : undefined}
                 />
                 <p className="form-hint">
                     {t(
@@ -1054,15 +1030,10 @@ export function CreatePropertyMiniForm({
                         'Una frase de presentación. Después podés ampliar todo en el panel.'
                     )}
                 </p>
-                {errors.summary && (
-                    <p
-                        id={`${summaryId}-error`}
-                        className="form-error"
-                        role="alert"
-                    >
-                        {errors.summary}
-                    </p>
-                )}
+                <FieldError
+                    id={`${summaryId}-error`}
+                    message={fieldErrors.summary}
+                />
             </div>
 
             {/*
@@ -1123,7 +1094,17 @@ export function CreatePropertyMiniForm({
                                             }))
                                         }
                                         rows={5}
+                                        aria-invalid={fieldErrors.description ? 'true' : 'false'}
+                                        aria-describedby={
+                                            fieldErrors.description
+                                                ? fieldErrorId('description')
+                                                : undefined
+                                        }
                                         data-testid="extras-description"
+                                    />
+                                    <FieldError
+                                        id={fieldErrorId('description')}
+                                        message={fieldErrors.description}
                                     />
                                 </div>
                             )}
@@ -1171,6 +1152,10 @@ export function CreatePropertyMiniForm({
                                                 }}
                                                 data-testid="extras-maxGuests"
                                             />
+                                            <FieldError
+                                                id={fieldErrorId('maxGuests')}
+                                                message={fieldErrors.maxGuests}
+                                            />
                                         </div>
                                     )}
 
@@ -1210,6 +1195,10 @@ export function CreatePropertyMiniForm({
                                                     }));
                                                 }}
                                                 data-testid="extras-bedrooms"
+                                            />
+                                            <FieldError
+                                                id={fieldErrorId('bedrooms')}
+                                                message={fieldErrors.bedrooms}
                                             />
                                         </div>
                                     )}
@@ -1251,6 +1240,10 @@ export function CreatePropertyMiniForm({
                                                 }}
                                                 data-testid="extras-beds"
                                             />
+                                            <FieldError
+                                                id={fieldErrorId('beds')}
+                                                message={fieldErrors.beds}
+                                            />
                                         </div>
                                     )}
 
@@ -1290,6 +1283,10 @@ export function CreatePropertyMiniForm({
                                                     }));
                                                 }}
                                                 data-testid="extras-bathrooms"
+                                            />
+                                            <FieldError
+                                                id={fieldErrorId('bathrooms')}
+                                                message={fieldErrors.bathrooms}
                                             />
                                         </div>
                                     )}
@@ -1342,6 +1339,10 @@ export function CreatePropertyMiniForm({
                                             }));
                                         }}
                                         data-testid="extras-basePrice"
+                                    />
+                                    <FieldError
+                                        id={fieldErrorId('basePrice')}
+                                        message={fieldErrors.basePrice}
                                     />
                                 </div>
                             )}
@@ -1410,6 +1411,10 @@ export function CreatePropertyMiniForm({
                                                 }
                                                 data-testid="extras-street"
                                             />
+                                            <FieldError
+                                                id={fieldErrorId('street')}
+                                                message={fieldErrors.street}
+                                            />
                                         </div>
                                     )}
 
@@ -1443,6 +1448,10 @@ export function CreatePropertyMiniForm({
                                                     }))
                                                 }
                                                 data-testid="extras-number"
+                                            />
+                                            <FieldError
+                                                id={fieldErrorId('number')}
+                                                message={fieldErrors.number}
                                             />
                                         </div>
                                     )}
@@ -1515,6 +1524,10 @@ export function CreatePropertyMiniForm({
                                             }))
                                         }
                                         data-testid="extras-website"
+                                    />
+                                    <FieldError
+                                        id={fieldErrorId('website')}
+                                        message={fieldErrors.website}
                                     />
                                 </div>
                             )}

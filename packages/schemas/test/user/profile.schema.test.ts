@@ -79,6 +79,11 @@ describe('ProfileEditSchema', () => {
             expect(result.success).toBe(true);
         });
 
+        it('should accept a very short bio (no minimum)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, bio: 'x' });
+            expect(result.success).toBe(true);
+        });
+
         it('should accept displayName at exactly 100 characters', () => {
             const result = ProfileEditSchema.safeParse({
                 ...VALID_BASE,
@@ -122,28 +127,63 @@ describe('ProfileEditSchema', () => {
         });
     });
 
-    describe('required fields validation', () => {
-        it('should reject when displayName is missing', () => {
+    // ─── HOS-190 slice 3: displayName/firstName/lastName are optional/blankable ──
+    //
+    // A profile with `firstName: null` (incomplete OAuth signup) must be able
+    // to re-save an unrelated field without a required-field error blocking
+    // the whole PATCH (read⊇write — the caller omits the key entirely when
+    // the user has not provided a value). When a value IS provided it still
+    // must satisfy the loose 1-100 bound: a legacy 1-character value (e.g. a
+    // pre-existing short name) must remain saveable so a user is never locked
+    // out of editing unrelated fields (read⊇write — the form validates the
+    // FULL current state, not just the diff).
+    describe('optional name fields (HOS-190 read⊇write fix)', () => {
+        it('should accept a payload missing displayName entirely', () => {
             const { displayName: _dn, ...rest } = VALID_BASE;
             const result = ProfileEditSchema.safeParse(rest);
-            expect(result.success).toBe(false);
+            expect(result.success).toBe(true);
         });
 
-        it('should reject when firstName is missing', () => {
+        it('should accept a payload missing firstName entirely', () => {
             const { firstName: _fn, ...rest } = VALID_BASE;
             const result = ProfileEditSchema.safeParse(rest);
-            expect(result.success).toBe(false);
+            expect(result.success).toBe(true);
         });
 
-        it('should reject when lastName is missing', () => {
+        it('should accept a payload missing lastName entirely', () => {
             const { lastName: _ln, ...rest } = VALID_BASE;
             const result = ProfileEditSchema.safeParse(rest);
-            expect(result.success).toBe(false);
+            expect(result.success).toBe(true);
         });
 
-        it('should reject an empty displayName', () => {
+        it('should accept an empty string for displayName (unset/incomplete signup)', () => {
             const result = ProfileEditSchema.safeParse({ ...VALID_BASE, displayName: '' });
-            expect(result.success).toBe(false);
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept an empty string for firstName (unset/incomplete signup)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, firstName: '' });
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept an empty string for lastName (unset/incomplete signup)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, lastName: '' });
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept a single-character displayName (legacy short value)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, displayName: 'a' });
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept a single-character firstName (legacy short value)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, firstName: 'a' });
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept a single-character lastName (legacy short value)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, lastName: 'a' });
+            expect(result.success).toBe(true);
         });
 
         it('should reject displayName longer than 100 characters', () => {
@@ -154,13 +194,19 @@ describe('ProfileEditSchema', () => {
             expect(result.success).toBe(false);
         });
 
-        it('should reject an empty firstName', () => {
-            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, firstName: '' });
+        it('should reject firstName longer than 100 characters', () => {
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                firstName: 'a'.repeat(101)
+            });
             expect(result.success).toBe(false);
         });
 
-        it('should reject an empty lastName', () => {
-            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, lastName: '' });
+        it('should reject lastName longer than 100 characters', () => {
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                lastName: 'a'.repeat(101)
+            });
             expect(result.success).toBe(false);
         });
     });
@@ -172,6 +218,19 @@ describe('ProfileEditSchema', () => {
                 bio: 'x'.repeat(1001)
             });
             expect(result.success).toBe(false);
+        });
+
+        it('should accept a short bio (no minimum, legacy short value)', () => {
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                bio: 'too short'
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept an omitted bio (unset, leaves server value unchanged)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE });
+            expect(result.success).toBe(true);
         });
     });
 
@@ -345,6 +404,16 @@ describe('ProfileEditSchema', () => {
                 country: 'Argentina',
                 postalCode: 'C1043'
             });
+            expect(result.success).toBe(true);
+        });
+
+        it('accepts an empty string for country (clearing it)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, country: '' });
+            expect(result.success).toBe(true);
+        });
+
+        it('accepts a single-character country (no minimum, legacy short value)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, country: 'A' });
             expect(result.success).toBe(true);
         });
     });

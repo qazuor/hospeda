@@ -8,15 +8,15 @@
  * Hydration directive: client:visible (lazy, below the fold).
  */
 
+import { COMMENT_CONTENT_MAX_LENGTH, CreateCommentBodySchema } from '@repo/schemas';
 import { type FormEvent, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { getApiUrl } from '@/lib/env';
+import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './CommentThreadIsland.module.css';
-
-/** Maximum allowed comment length (mirrors COMMENT_CONTENT_MAX_LENGTH from @repo/schemas). */
-const COMMENT_CONTENT_MAX_LENGTH = 2000;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -112,6 +112,10 @@ export function CommentThreadIsland({
     currentUserName
 }: CommentThreadIslandProps) {
     const { t } = createTranslations(locale);
+    const { fieldErrors, validate, clearError } = useZodForm({
+        schema: CreateCommentBodySchema,
+        t
+    });
 
     // AC-27: list state (starts with SSR-seeded comments; new ones are appended)
     const [comments, setComments] = useState<readonly CommentItem[]>(initialComments);
@@ -129,6 +133,10 @@ export function CommentThreadIsland({
         e.preventDefault();
         if (!canSubmit) return;
 
+        const trimmed = content.trim();
+        const result = validate({ content: trimmed });
+        if (!result.success) return;
+
         setIsSubmitting(true);
         setErrorMsg(null);
 
@@ -138,7 +146,7 @@ export function CommentThreadIsland({
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ content: content.trim() })
+                body: JSON.stringify(result.data)
             });
 
             // AC-28: check 429 BEFORE res.ok; read Retry-After; preserve input
@@ -270,11 +278,20 @@ export function CommentThreadIsland({
                         onChange={(e) => {
                             setContent(e.currentTarget.value);
                             setErrorMsg(null);
+                            if (fieldErrors.content) {
+                                clearError('content');
+                            }
                         }}
                         placeholder={t('comments.form.placeholder', 'Escribí tu comentario...')}
                         maxLength={COMMENT_CONTENT_MAX_LENGTH}
-                        aria-describedby={errorMsg ? 'comment-error' : 'comment-char-count'}
-                        aria-invalid={isOverLimit}
+                        aria-describedby={
+                            errorMsg
+                                ? 'comment-error'
+                                : fieldErrors.content
+                                  ? fieldErrorId('content')
+                                  : 'comment-char-count'
+                        }
+                        aria-invalid={isOverLimit || !!fieldErrors.content}
                         rows={4}
                         disabled={isSubmitting}
                     />
@@ -289,6 +306,11 @@ export function CommentThreadIsland({
                             .replace('{{count}}', String(charCount))
                             .replace('{{max}}', String(COMMENT_CONTENT_MAX_LENGTH))}
                     </p>
+
+                    <FieldError
+                        id={fieldErrorId('content')}
+                        message={fieldErrors.content}
+                    />
 
                     {/* Inline error (rate-limit or network) */}
                     {errorMsg && (

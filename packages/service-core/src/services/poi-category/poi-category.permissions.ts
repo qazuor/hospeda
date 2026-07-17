@@ -55,6 +55,23 @@ export function checkCanListPoiCategories(actor: Actor): void {
 }
 
 /**
+ * Checks if an actor can list the PUBLIC POI category catalog (HOS-147).
+ *
+ * Public read: ANY actor (guest included) may list the catalog, mirroring the
+ * amenity/feature public-catalog convention (`checkCanListAmenities` — "results
+ * are filtered elsewhere"). The service filters to ACTIVE, non-deleted rows.
+ * This deliberately does NOT require `POI_CATEGORY_VIEW`: that gate still guards
+ * the ADMIN catalog (`checkCanAdminList`/`checkCanListPoiCategories`), which is
+ * unchanged. Opening this narrow public read is what backs the thematic
+ * filter-chip UI (`GET /api/v1/public/poi-categories`).
+ * @param actor The actor performing the action.
+ * @throws {ServiceError} If no actor is present.
+ */
+export function checkCanListPublicPoiCategories(actor: Actor): void {
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
+}
+
+/**
  * Checks if an actor has permission to create a POI category (or assign an
  * existing category to a point of interest — spec §7.3).
  * Requires `POI_CATEGORY_CREATE`.

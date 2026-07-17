@@ -90,6 +90,17 @@ vi.mock('@repo/db', () => {
     };
 });
 
+// HOS-191: the real Initiate* flows now resolve/provision a MercadoPago
+// preapproval_plan via `resolveCheckoutMpPlanId`, which reaches the payment
+// adapter singleton + `billing_mp_plans`. Stub it at this one boundary so
+// these route tests (which mock `@repo/db` and the billing middleware)
+// exercise the checkout decision logic without a live adapter or DB. The
+// provisioning service itself is unit-tested in `mp-plan-provisioning.test.ts`.
+vi.mock('../../../src/services/billing/mp-plan-provisioning.service', () => ({
+    resolveCheckoutMpPlanId: vi.fn().mockResolvedValue('mp_plan_test'),
+    resolveOrProvisionMpPlan: vi.fn()
+}));
+
 // ---------------------------------------------------------------------------
 // Imports (after mocks).
 // ---------------------------------------------------------------------------

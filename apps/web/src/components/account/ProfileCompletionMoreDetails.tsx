@@ -12,9 +12,10 @@
  * Not a `.client.tsx` — mounts inside the already-hydrated parent island.
  */
 
+import { FieldError } from '@/components/ui/FieldError';
+import type { FieldErrors } from '@/lib/forms/field-errors';
 import {
     LOCATION_COUNTRIES,
-    type ProfileCompletionFieldErrors,
     SOCIAL_PLATFORMS,
     type SocialPlatform
 } from './ProfileCompletion.helpers';
@@ -40,8 +41,12 @@ export interface ProfileCompletionMoreDetailsProps {
     readonly locationRegion: string;
     /** City text or empty string. */
     readonly locationCity: string;
-    /** Field-level errors from the parent (bio, website, occupation). */
-    readonly errors: ProfileCompletionFieldErrors;
+    /**
+     * Field-level errors from the parent, keyed by the real
+     * `CompleteProfileBodySchema` field path (`bio`, `website`, `occupation`,
+     * `socialNetworks.<platform>`, `location.country`).
+     */
+    readonly errors: FieldErrors;
     /** Whether the form is currently submitting (disables all inputs). */
     readonly submitting: boolean;
     /** Translation function from the parent island. */
@@ -149,16 +154,13 @@ export function ProfileCompletionMoreDetails({
                             maxLength={300}
                             rows={3}
                             disabled={submitting}
+                            aria-describedby={errors.bio ? 'pc-bio-error' : undefined}
                         />
                         <div className={styles.bioFooter}>
-                            {errors.bio && (
-                                <p
-                                    className={styles.errorMsg}
-                                    role="alert"
-                                >
-                                    {errors.bio}
-                                </p>
-                            )}
+                            <FieldError
+                                id="pc-bio-error"
+                                message={errors.bio}
+                            />
                             <span className={styles.charCount}>{bio.length}/300</span>
                         </div>
                     </div>
@@ -184,15 +186,12 @@ export function ProfileCompletionMoreDetails({
                             placeholder="https://mipagina.com"
                             autoComplete="url"
                             disabled={submitting}
+                            aria-describedby={errors.website ? 'pc-website-error' : undefined}
                         />
-                        {errors.website && (
-                            <p
-                                className={styles.errorMsg}
-                                role="alert"
-                            >
-                                {errors.website}
-                            </p>
-                        )}
+                        <FieldError
+                            id="pc-website-error"
+                            message={errors.website}
+                        />
                     </div>
 
                     {/* Occupation */}
@@ -219,15 +218,12 @@ export function ProfileCompletionMoreDetails({
                             )}
                             maxLength={100}
                             disabled={submitting}
+                            aria-describedby={errors.occupation ? 'pc-occupation-error' : undefined}
                         />
-                        {errors.occupation && (
-                            <p
-                                className={styles.errorMsg}
-                                role="alert"
-                            >
-                                {errors.occupation}
-                            </p>
-                        )}
+                        <FieldError
+                            id="pc-occupation-error"
+                            message={errors.occupation}
+                        />
                     </div>
 
                     {/* Social networks */}
@@ -250,13 +246,26 @@ export function ProfileCompletionMoreDetails({
                                     <input
                                         id={`pc-social-${platform.key}`}
                                         type="url"
-                                        className={styles.input}
+                                        className={
+                                            errors[`socialNetworks.${platform.key}`]
+                                                ? `${styles.input} ${styles.inputError}`
+                                                : styles.input
+                                        }
                                         value={socialNetworks[platform.key] ?? ''}
                                         onChange={(e) =>
                                             onSocialNetworkChange(platform.key, e.target.value)
                                         }
                                         placeholder={platform.placeholder}
                                         disabled={submitting}
+                                        aria-describedby={
+                                            errors[`socialNetworks.${platform.key}`]
+                                                ? `pc-social-${platform.key}-error`
+                                                : undefined
+                                        }
+                                    />
+                                    <FieldError
+                                        id={`pc-social-${platform.key}-error`}
+                                        message={errors[`socialNetworks.${platform.key}`]}
                                     />
                                 </div>
                             ))}
@@ -282,6 +291,11 @@ export function ProfileCompletionMoreDetails({
                                     value={locationCountry}
                                     onChange={(e) => onLocationCountryChange(e.target.value)}
                                     disabled={submitting}
+                                    aria-describedby={
+                                        errors['location.country']
+                                            ? 'pc-location-country-error'
+                                            : undefined
+                                    }
                                 >
                                     <option value="">
                                         {t(
@@ -298,6 +312,10 @@ export function ProfileCompletionMoreDetails({
                                         </option>
                                     ))}
                                 </select>
+                                <FieldError
+                                    id="pc-location-country-error"
+                                    message={errors['location.country']}
+                                />
                             </div>
                             <div className={styles.field}>
                                 <label

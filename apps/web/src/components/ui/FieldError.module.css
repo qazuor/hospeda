@@ -1,0 +1,6 @@
+.error {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--destructive, oklch(0.6 0.22 25));
+    margin: 0;
+}

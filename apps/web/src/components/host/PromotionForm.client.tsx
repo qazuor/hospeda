@@ -25,7 +25,11 @@
  * Hydration: client:load (form is the primary interactive element on the page).
  */
 
-import { OwnerPromotionDiscountTypeEnum, OwnerPromotionUpdateInputSchema } from '@repo/schemas';
+import {
+    OwnerPromotionCreateRequestSchema,
+    OwnerPromotionDiscountTypeEnum,
+    OwnerPromotionUpdateInputSchema
+} from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, useEffect, useId, useState } from 'react';
 import { ownerPromotionApi, protectedAccommodationsApi } from '@/lib/api/endpoints-protected';
 import { transformOwnerPromotion } from '@/lib/api/transforms';
@@ -361,14 +365,18 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
             return;
         }
 
-        // Both modes use OwnerPromotionUpdateInputSchema for client-side validation
-        // because OwnerPromotionCreateInputSchema requires server-managed fields
-        // (ownerId, lifecycleState) that the form does not control. The update schema
-        // is `.partial().strict()` — it validates types for present fields only.
-        // Required-field presence is enforced by the Zod rules still: title,
-        // discountType, discountValue, and validFrom are checked before this call
-        // (their values are non-empty strings at this point).
-        const parsed = OwnerPromotionUpdateInputSchema.safeParse(payload);
+        // Create mode validates against OwnerPromotionCreateRequestSchema (the exact
+        // client-facing schema the POST route enforces — omits ownerId, which the
+        // route injects from the session actor; lifecycleState defaults server-side).
+        // Edit mode validates against OwnerPromotionUpdateInputSchema (`.partial().strict()`
+        // — every field optional, present fields only). Required-field presence for
+        // create (title, discountType, discountValue, validFrom) is enforced by the
+        // explicit `requiredErrors` check above, so both schemas see non-empty values
+        // for those fields by the time we get here.
+        const parsed =
+            mode === 'create'
+                ? OwnerPromotionCreateRequestSchema.safeParse(payload)
+                : OwnerPromotionUpdateInputSchema.safeParse(payload);
 
         if (!parsed.success) {
             setErrors(extractFieldErrors(parsed.error));

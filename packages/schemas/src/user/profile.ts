@@ -59,29 +59,54 @@ import {
  */
 export const ProfileEditSchema = z.strictObject({
     /**
-     * Public display name shown across the platform.
-     * Between 1 and 100 characters.
+     * Public display name shown across the platform. Between 1 and 100
+     * characters when provided.
+     *
+     * Optional/blankable: a profile edit form re-saving a user whose
+     * `displayName` is unset (e.g. incomplete OAuth signup) must be able to
+     * submit an unrelated field change without being blocked by a
+     * required-field error here — the caller omits this key entirely when
+     * the user has not provided a value (read⊇write).
      */
     displayName: z
-        .string()
-        .min(1, { message: 'zodError.user.profile.displayName.min' })
-        .max(100, { message: 'zodError.user.profile.displayName.max' }),
+        .union([
+            z.literal(''),
+            z
+                .string()
+                .min(1, { message: 'zodError.user.profile.displayName.min' })
+                .max(100, { message: 'zodError.user.profile.displayName.max' })
+        ])
+        .optional(),
 
     /**
-     * Legal first name. Between 1 and 100 characters.
+     * Legal first name. Between 1 and 100 characters when provided.
+     * Optional/blankable for the same read⊇write reason as `displayName`
+     * above.
      */
     firstName: z
-        .string()
-        .min(1, { message: 'zodError.user.profile.firstName.min' })
-        .max(100, { message: 'zodError.user.profile.firstName.max' }),
+        .union([
+            z.literal(''),
+            z
+                .string()
+                .min(1, { message: 'zodError.user.profile.firstName.min' })
+                .max(100, { message: 'zodError.user.profile.firstName.max' })
+        ])
+        .optional(),
 
     /**
-     * Legal last name. Between 1 and 100 characters.
+     * Legal last name. Between 1 and 100 characters when provided.
+     * Optional/blankable for the same read⊇write reason as `displayName`
+     * above.
      */
     lastName: z
-        .string()
-        .min(1, { message: 'zodError.user.profile.lastName.min' })
-        .max(100, { message: 'zodError.user.profile.lastName.max' }),
+        .union([
+            z.literal(''),
+            z
+                .string()
+                .min(1, { message: 'zodError.user.profile.lastName.min' })
+                .max(100, { message: 'zodError.user.profile.lastName.max' })
+        ])
+        .optional(),
 
     /**
      * Short biography or personal description. Up to 1000 characters.
@@ -163,7 +188,17 @@ export const ProfileEditSchema = z.strictObject({
     addressLine1: z.string().max(200).optional(),
     city: z.string().max(100).optional(),
     province: z.string().max(100).optional(),
-    country: z.string().max(100).optional(),
+
+    /**
+     * Country name. Up to 100 characters when provided; no minimum.
+     * Blankable via the empty-string variant so the field can be cleared.
+     */
+    country: z
+        .union([
+            z.literal(''),
+            z.string().max(100, { message: 'zodError.common.location.country.max' })
+        ])
+        .optional(),
     postalCode: z.string().max(20).optional()
 });
 

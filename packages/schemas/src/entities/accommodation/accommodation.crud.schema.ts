@@ -191,11 +191,12 @@ export const AccommodationUpdateInputSchema = z
          * Deep-partial override for grouped JSONB columns (SPEC-229).
          *
          * The full entity requires `capacity`/`minNights`/`bedrooms`/`bathrooms`
-         * (extraInfo) and `mobilePhone` (contactInfo). On a PATCH, the caller may
-         * touch a single inner field (e.g. only `bedrooms`), and the backend
-         * shallow-merges it onto the stored JSONB. Re-deriving these as `.partial()`
-         * lets the converter emit a partial group without tripping required-field
-         * validation, so omitted siblings are preserved instead of being lost.
+         * (extraInfo). On a PATCH, the caller may touch a single inner field (e.g.
+         * only `bedrooms`), and the backend shallow-merges it onto the stored JSONB.
+         * Re-deriving these as `.partial()` lets the converter emit a partial group
+         * without tripping required-field validation, so omitted siblings are
+         * preserved instead of being lost. (`contactInfo` fields are all optional
+         * since HOS-190, so `.partial()` there is a no-op kept for symmetry.)
          */
         extraInfo: AccommodationExtraInfoSchema.partial().nullish(),
         contactInfo: ContactInfoSchema.partial().nullish()

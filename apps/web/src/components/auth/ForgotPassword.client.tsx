@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { translateApiError } from '@/lib/api-errors';
 import { forgetPassword } from '@/lib/auth-client';
+import { EmailFormatSchema } from '@/lib/forms/email-format';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './ForgotPassword.module.css';
@@ -53,15 +54,30 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
         e.preventDefault();
         setError(null);
 
-        if (!email.trim()) {
+        // HOS-190 slice 3: the presence check already existed, but the
+        // trimmed value was only used for the check itself and then
+        // discarded — the untrimmed `email` state was sent to
+        // `forgetPassword()` below. Also add a real format check (the form
+        // is `noValidate`, so the browser's native `type="email"` never ran).
+        const trimmedEmail = email.trim();
+        if (!trimmedEmail) {
             setError(t('auth.forgotPassword.emailRequired', 'Ingresá tu correo electrónico'));
+            return;
+        }
+        if (!EmailFormatSchema.safeParse(trimmedEmail).success) {
+            setError(
+                t('auth.forgotPassword.emailInvalid', 'Ingresá un correo electrónico válido.')
+            );
             return;
         }
 
         setIsLoading(true);
 
         try {
-            const result = await forgetPassword({ email, redirectTo: resetPasswordUrl });
+            const result = await forgetPassword({
+                email: trimmedEmail,
+                redirectTo: resetPasswordUrl
+            });
 
             if (result.error) {
                 setError(

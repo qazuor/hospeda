@@ -85,12 +85,12 @@ describe('SignUp.client.tsx', () => {
             expect(src).toContain('setConfirmPassword');
         });
 
-        it('imports StrongPasswordRegex from @repo/schemas', () => {
-            expect(src).toContain("import { StrongPasswordRegex } from '@repo/schemas'");
+        it('imports StrongPasswordSchema from @repo/schemas (HOS-190 slice 3)', () => {
+            expect(src).toContain("import { StrongPasswordSchema } from '@repo/schemas'");
         });
 
-        it('checks the password against StrongPasswordRegex before submit', () => {
-            expect(src).toContain('StrongPasswordRegex.test(password)');
+        it('validates the password against StrongPasswordSchema before submit', () => {
+            expect(src).toContain('StrongPasswordSchema.safeParse(password)');
         });
 
         it('checks that password and confirmPassword match before submit', () => {
@@ -102,6 +102,21 @@ describe('SignUp.client.tsx', () => {
             for (const key of ['length:', 'upper:', 'lower:', 'digit:', 'special:']) {
                 expect(src).toContain(key);
             }
+        });
+    });
+
+    /**
+     * HOS-190 slice 3: `noValidate` disables the browser's native email
+     * enforcement, so a real presence + format guard is required before
+     * calling `signUp.email()`.
+     */
+    describe('email guard (HOS-190 slice 3)', () => {
+        it('checks the trimmed email against EmailFormatSchema before submit', () => {
+            expect(src).toContain('EmailFormatSchema.safeParse(trimmedEmail)');
+        });
+
+        it('sends the trimmed email to signUp.email', () => {
+            expect(src).toContain('signUp.email({ email: trimmedEmail, password, ');
         });
     });
 });

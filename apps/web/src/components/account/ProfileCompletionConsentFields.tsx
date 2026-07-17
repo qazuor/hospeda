@@ -14,8 +14,9 @@
  * a pure controlled presentation layer.
  */
 
+import { FieldError } from '@/components/ui/FieldError';
+import type { FieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
-import type { ProfileCompletionFieldErrors } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -28,8 +29,8 @@ export interface ProfileCompletionConsentFieldsProps {
     readonly newsletter: boolean;
     /** Whether terms checkbox is checked. */
     readonly acceptedTerms: boolean;
-    /** Field-level errors from the parent. */
-    readonly errors: ProfileCompletionFieldErrors;
+    /** Field-level errors from the parent (`terms` aliases the schema's `acceptedTerms`). */
+    readonly errors: FieldErrors;
     /** Whether the form is currently submitting (disables all inputs). */
     readonly submitting: boolean;
     /** Translation function from the parent island. */
@@ -108,15 +109,10 @@ export function ProfileCompletionConsentFields({
                         </a>
                     </span>
                 </label>
-                {errors.terms && (
-                    <p
-                        id="pc-terms-error"
-                        className={styles.errorMsg}
-                        role="alert"
-                    >
-                        {errors.terms}
-                    </p>
-                )}
+                <FieldError
+                    id="pc-terms-error"
+                    message={errors.terms}
+                />
             </div>
         </>
     );

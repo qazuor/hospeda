@@ -7,6 +7,7 @@
  * Introduced in the SPEC-113 polish round.
  */
 
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import type { ProfileEditFieldErrors } from './ProfileEditForm.helpers';
 import styles from './ProfileEditForm.module.css';
 
@@ -67,18 +68,14 @@ function AddressField({
                 onChange={(e) => onChange(e.target.value)}
                 maxLength={maxLength}
                 autoComplete={autoComplete}
-                aria-describedby={error ? `${id}-error` : undefined}
+                aria-invalid={!!error}
+                aria-describedby={error ? fieldErrorId(id) : undefined}
                 disabled={submitting}
             />
-            {error && (
-                <p
-                    id={`${id}-error`}
-                    className={styles.errorMsg}
-                    role="alert"
-                >
-                    {error}
-                </p>
-            )}
+            <FieldError
+                id={fieldErrorId(id)}
+                message={error}
+            />
         </div>
     );
 }
