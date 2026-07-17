@@ -18,6 +18,7 @@
  */
 
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { translateApiError } from '@/lib/api-errors';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -25,7 +26,9 @@ import { createTranslations } from '@/lib/i18n';
 import styles from './GastronomyReviewForm.module.css';
 
 const TITLE_MAX = 120;
+const TITLE_MIN = 3;
 const CONTENT_MAX = 2000;
+const CONTENT_MIN = 10;
 const STAR_POSITIONS = [1, 2, 3, 4, 5] as const;
 
 interface GastronomyReviewFormProps {
@@ -77,6 +80,10 @@ export function GastronomyReviewForm({
     const [submitted, setSubmitted] = useState<boolean>(false);
 
     const rated = overall >= 1;
+    const titleTrimmed = title.trim();
+    const titleValid = titleTrimmed.length === 0 || titleTrimmed.length >= TITLE_MIN;
+    const contentTrimmed = content.trim();
+    const contentValid = contentTrimmed.length === 0 || contentTrimmed.length >= CONTENT_MIN;
 
     // Sync the native <dialog> with React state; showModal() traps focus + ESC.
     useEffect(() => {
@@ -111,7 +118,7 @@ export function GastronomyReviewForm({
     const handleSubmit = useCallback(
         async (event: FormEvent<HTMLFormElement>) => {
             event.preventDefault();
-            if (!rated || submitting) return;
+            if (!rated || submitting || !titleValid || !contentValid) return;
             setSubmitting(true);
             setError(null);
 
@@ -124,8 +131,8 @@ export function GastronomyReviewForm({
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             overallRating: overall,
-                            title: title.trim() || undefined,
-                            content: content.trim() || undefined
+                            title: titleTrimmed || undefined,
+                            content: contentTrimmed || undefined
                         })
                     }
                 );
@@ -167,7 +174,19 @@ export function GastronomyReviewForm({
                 setSubmitting(false);
             }
         },
-        [apiUrl, content, gastronomyId, locale, overall, rated, submitting, t, title]
+        [
+            apiUrl,
+            contentTrimmed,
+            contentValid,
+            gastronomyId,
+            locale,
+            overall,
+            rated,
+            submitting,
+            t,
+            titleTrimmed,
+            titleValid
+        ]
     );
 
     return (
@@ -433,6 +452,23 @@ export function GastronomyReviewForm({
                                             'Resumen de tu experiencia'
                                         )}
                                         disabled={submitting}
+                                        aria-invalid={!titleValid}
+                                        aria-describedby={
+                                            titleValid
+                                                ? undefined
+                                                : fieldErrorId('gastronomy-review-title')
+                                        }
+                                    />
+                                    <FieldError
+                                        id={fieldErrorId('gastronomy-review-title')}
+                                        message={
+                                            titleValid
+                                                ? null
+                                                : t(
+                                                      'review.form.errors.titleMinLength',
+                                                      'El título debe tener al menos 3 caracteres'
+                                                  )
+                                        }
                                     />
                                 </label>
 
@@ -454,10 +490,27 @@ export function GastronomyReviewForm({
                                             'Comparte tu experiencia en detalle...'
                                         )}
                                         disabled={submitting}
+                                        aria-invalid={!contentValid}
+                                        aria-describedby={
+                                            contentValid
+                                                ? undefined
+                                                : fieldErrorId('gastronomy-review-content')
+                                        }
                                     />
                                     <span className={styles.charCounter}>
                                         {content.length}/{CONTENT_MAX}
                                     </span>
+                                    <FieldError
+                                        id={fieldErrorId('gastronomy-review-content')}
+                                        message={
+                                            contentValid
+                                                ? null
+                                                : t(
+                                                      'review.form.errors.contentMinLength',
+                                                      'El comentario debe tener al menos 10 caracteres'
+                                                  )
+                                        }
+                                    />
                                 </label>
 
                                 {error && (
@@ -481,7 +534,9 @@ export function GastronomyReviewForm({
                                     <button
                                         type="submit"
                                         className={styles.submitButton}
-                                        disabled={!rated || submitting}
+                                        disabled={
+                                            !rated || !titleValid || !contentValid || submitting
+                                        }
                                     >
                                         {submitting && (
                                             <span
