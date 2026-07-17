@@ -248,7 +248,14 @@ describe('PromotionForm — create mode', () => {
         expect(callArg.body.touristAudience).toBe('vip');
     });
 
-    it('does not send touristAudience when the VIP-only toggle is left off (HOS-21 T-013)', async () => {
+    it('sends the schema default touristAudience: "plus" when the VIP-only toggle is left off (HOS-21 T-013, HOS-190)', async () => {
+        // HOS-190 form 16: create mode now validates against
+        // OwnerPromotionCreateRequestSchema (the real client-facing create
+        // schema), which carries the entity's `.default('plus')` for
+        // touristAudience — unlike the edit-mode OwnerPromotionUpdateInputSchema
+        // (defaults stripped so absent keys mean "no change"). An omitted
+        // toggle therefore now resolves to the explicit default 'plus' instead
+        // of an absent key; both mean the same thing server-side.
         mockCreate.mockResolvedValueOnce({ ok: true, data: { id: 'new-promo-id' } });
 
         render(
@@ -266,7 +273,7 @@ describe('PromotionForm — create mode', () => {
         });
 
         const callArg = mockCreate.mock.calls[0][0] as { body: Record<string, unknown> };
-        expect(callArg.body.touristAudience).toBeUndefined();
+        expect(callArg.body.touristAudience).toBe('plus');
     });
 
     it('shows generic form-error banner when create API returns non-ok', async () => {
