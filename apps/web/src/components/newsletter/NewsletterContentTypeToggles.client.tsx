@@ -16,19 +16,18 @@
  * renders the terminal note instead.
  */
 
+import type { NewsletterContentPreferences } from '@repo/schemas';
+import { NewsletterContentTypeEnum } from '@repo/schemas';
 import { useCallback, useId, useState } from 'react';
 import { type ApiErrorShape, translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './NewsletterContentTypeToggles.module.css';
 
-/**
- * Wire keys for `newsletter_subscribers.preferences`. KEEP IN SYNC with
- * `NewsletterContentTypeEnum` in `@repo/schemas`.
- */
-const CONTENT_TYPE_KEYS = ['offers', 'events', 'guides', 'productNews'] as const;
-type ContentTypeKey = (typeof CONTENT_TYPE_KEYS)[number];
-type Preferences = Record<ContentTypeKey, boolean>;
+/** Wire keys for `newsletter_subscribers.preferences`, sourced from `@repo/schemas`. */
+const CONTENT_TYPE_KEYS = Object.values(NewsletterContentTypeEnum);
+type ContentTypeKey = NewsletterContentTypeEnum;
+type Preferences = NewsletterContentPreferences;
 
 export interface NewsletterContentTypeTogglesProps {
     readonly locale: SupportedLocale;
