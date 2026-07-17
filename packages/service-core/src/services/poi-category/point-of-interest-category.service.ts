@@ -36,7 +36,7 @@ import {
     type UnassignCategoryFromPointOfInterestInput,
     UnassignCategoryFromPointOfInterestInputSchema
 } from '@repo/schemas';
-import { inArray, type SQL } from 'drizzle-orm';
+import { inArray, isNull, type SQL } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
@@ -851,10 +851,16 @@ export class PointOfInterestCategoryService extends BaseCrudRelatedService<
             execute: async (_validated, actor, execCtx) => {
                 checkCanListPublicPoiCategories(actor);
 
+                // `lifecycleState: 'ACTIVE'` alone is NOT enough: base `softDelete`
+                // sets `deletedAt` WITHOUT flipping `lifecycleState`, and
+                // `BaseModelImpl.findAll` does not auto-exclude soft-deleted rows
+                // (that injection lives only in `BaseCrudRead.list`). Add an
+                // explicit `deletedAt IS NULL` so this public catalog never leaks
+                // soft-deleted categories.
                 const { items } = await this.model.findAll(
                     { lifecycleState: 'ACTIVE' },
                     { pageSize: POI_CATEGORY_RELATIONS_PAGE_SIZE },
-                    undefined,
+                    [isNull(poiCategories.deletedAt)],
                     execCtx?.tx
                 );
 

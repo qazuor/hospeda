@@ -76,6 +76,15 @@ export interface DestinationPOIMapProps {
      */
     readonly center?: { readonly lat: number; readonly long: number } | null;
     readonly locale: SupportedLocale;
+    /**
+     * Whether the thematic category filter is active on this page (HOS-147) —
+     * the page passes `true` only when the filter chip island is actually
+     * mounted (>=2 present categories). When `false`, the map ignores any
+     * `?categories=` URL param so it can never filter its markers while the
+     * grid (which has no filter UI) shows everything — that would desync the
+     * two. Defaults to `true` (back-compat for callers/tests without a filter).
+     */
+    readonly filterEnabled?: boolean;
 }
 
 /**
@@ -160,9 +169,15 @@ function readActivePoiCategories(): string[] {
  * then follows live changes broadcast by `DestinationPOIFilter` via the
  * `POI_CATEGORY_FILTER_EVENT` and browser back/forward via `popstate`.
  */
-function useActivePoiCategoryFilter(): readonly string[] {
+function useActivePoiCategoryFilter(enabled: boolean): readonly string[] {
     const [active, setActive] = useState<readonly string[]>([]);
     useEffect(() => {
+        // When the filter UI is absent (page gated it off), never honor the URL
+        // param or events — the grid isn't filtering, so the map must not either.
+        if (!enabled) {
+            setActive([]);
+            return;
+        }
         const syncFromUrl = () => setActive(readActivePoiCategories());
         const onFilter = (event: Event) => {
             const detail = (event as CustomEvent<{ categories?: string[] }>).detail;
@@ -175,7 +190,7 @@ function useActivePoiCategoryFilter(): readonly string[] {
             window.removeEventListener(POI_CATEGORY_FILTER_EVENT, onFilter);
             window.removeEventListener('popstate', syncFromUrl);
         };
-    }, []);
+    }, [enabled]);
     return active;
 }
 
@@ -188,11 +203,12 @@ export function DestinationPOIMap({
     pointsOfInterest,
     destinationId,
     center,
-    locale
+    locale,
+    filterEnabled = true
 }: DestinationPOIMapProps) {
     const { t } = createTranslations(locale);
     const nearby = useNearbyPointsOfInterest({ destinationId });
-    const activeCategories = useActivePoiCategoryFilter();
+    const activeCategories = useActivePoiCategoryFilter(filterEnabled);
 
     // `nearby` rows carry an explicitly re-asserted relation (see
     // useNearbyPointsOfInterest) — the PRIMARY/NEARBY split below cannot drift

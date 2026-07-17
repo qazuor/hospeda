@@ -496,6 +496,36 @@ describe('DestinationPOIMap', () => {
         // Cleanup URL for the rest of the suite.
         window.history.pushState({}, '', '/');
     });
+
+    it('ignores the URL filter when filterEnabled is false (no chip UI → no desync)', () => {
+        // Arrange — a stale deep link, but the page did NOT mount the filter
+        // island (fewer than 2 present categories), so filterEnabled=false.
+        window.history.pushState({}, '', '/es/destinos/colon/?categories=museos');
+        const pointsOfInterest = [
+            poi({ id: 'p-termas', lat: -32.4, long: -58.1, categories: [{ slug: 'termas' }] }),
+            poi({ id: 'p-museos', lat: -32.41, long: -58.11, categories: [{ slug: 'museos' }] })
+        ];
+
+        // Act
+        render(
+            <DestinationPOIMap
+                pointsOfInterest={pointsOfInterest}
+                destinationId={DEST_ID}
+                locale="es"
+                filterEnabled={false}
+            />
+        );
+
+        // Assert — the map shows ALL markers (the grid has no filter UI, so the
+        // map must not filter either).
+        expect(
+            lastMultiProps()
+                .markers.map((m) => m.id)
+                .sort()
+        ).toEqual(['p-museos', 'p-termas']);
+
+        window.history.pushState({}, '', '/');
+    });
 });
 
 function lastMultiProps() {

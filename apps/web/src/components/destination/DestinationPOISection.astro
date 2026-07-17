@@ -210,6 +210,14 @@ const sorted = [...primaryOnly]
 		transition: box-shadow var(--duration-fast) ease;
 	}
 
+	/* HOS-147: the thematic filter island hides non-matching cards by setting
+	   the `hidden` attribute; the card's own `display: flex` would otherwise
+	   defeat the UA `[hidden] { display: none }` rule (author-normal beats
+	   UA-normal regardless of specificity), so re-assert it explicitly. */
+	.poi-section__card[hidden] {
+		display: none;
+	}
+
 	.poi-section__card:hover {
 		box-shadow: var(--shadow-card-hover);
 	}

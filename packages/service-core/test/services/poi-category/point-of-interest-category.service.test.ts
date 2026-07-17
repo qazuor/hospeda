@@ -1148,13 +1148,18 @@ describe('PointOfInterestCategoryService', () => {
                 icon: 'fish',
                 displayWeight: 80
             });
-            // ACTIVE-only filter is forwarded to the model.
+            // ACTIVE-only filter + an explicit soft-delete exclusion are forwarded
+            // to the model (base findAll does NOT auto-exclude deletedAt, so the
+            // deletedAt IS NULL additional condition is what keeps soft-deleted
+            // categories out of the public catalog).
             expect(model.findAll).toHaveBeenCalledWith(
                 { lifecycleState: 'ACTIVE' },
                 expect.objectContaining({ pageSize: 200 }),
-                undefined,
+                expect.arrayContaining([expect.anything()]),
                 undefined
             );
+            const firstCall = (model.findAll as unknown as import('vitest').Mock).mock.calls[0];
+            expect(firstCall?.[2]).toHaveLength(1);
         });
 
         it('allows a guest actor with no POI_CATEGORY_VIEW permission (public catalog)', async () => {

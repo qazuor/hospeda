@@ -117,4 +117,13 @@ describe('DestinationPOISection.astro', () => {
         expect(sectionSrc).toContain('data-poi-empty');
         expect(sectionSrc).toContain('pointsOfInterestEmptyFiltered');
     });
+
+    it('re-asserts display:none for [hidden] cards so the filter actually hides them (HOS-147)', () => {
+        // The island hides cards via the `hidden` attribute, but the card's own
+        // `display: flex` (author-normal) would otherwise beat the UA
+        // `[hidden] { display: none }` rule regardless of specificity, leaving
+        // every card visible. A scoped `.poi-section__card[hidden]` rule (higher
+        // specificity than `.poi-section__card`) is required — assert it exists.
+        expect(sectionSrc).toMatch(/\.poi-section__card\[hidden\]\s*\{[^}]*display:\s*none/);
+    });
 });
