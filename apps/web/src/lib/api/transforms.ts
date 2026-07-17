@@ -523,6 +523,14 @@ export interface DestinationPointOfInterestItem {
         readonly slug: string;
         readonly nameI18n?: I18nTextLike | null;
     } | null;
+    /**
+     * The POI's FULL set of category slugs (HOS-147) — every `r_poi_category`
+     * row, not just the primary one. Backs the client-side thematic filter's
+     * membership test (`matchesActivePoiCategories`), which must match against
+     * ALL of a POI's categories. Always an array (empty when the POI has no
+     * categories); never `undefined` after transform.
+     */
+    readonly categories: ReadonlyArray<{ readonly slug: string }>;
 }
 
 /**
@@ -555,6 +563,13 @@ export function toDestinationPointOfInterestListProps({
                       nameI18n: (rawCategory.nameI18n as I18nTextLike | null | undefined) ?? null
                   }
                 : null;
+        // HOS-147: the POI's full category set. Defensively normalize — keep
+        // only well-formed `{ slug: string }` entries, default to [].
+        const rawCategories = Array.isArray(poi.categories) ? poi.categories : [];
+        const categories = rawCategories
+            .map((c) => (c as { slug?: unknown })?.slug)
+            .filter((slug): slug is string => typeof slug === 'string' && slug.length > 0)
+            .map((slug) => ({ slug }));
         return {
             id: String(poi.id ?? ''),
             slug: String(poi.slug ?? ''),
@@ -567,7 +582,8 @@ export function toDestinationPointOfInterestListProps({
             nameI18n: (poi.nameI18n as I18nTextLike | null | undefined) ?? null,
             isFeatured: Boolean(poi.isFeatured),
             displayWeight: typeof poi.displayWeight === 'number' ? poi.displayWeight : 0,
-            primaryCategory
+            primaryCategory,
+            categories
         };
     });
 }
