@@ -140,42 +140,42 @@
             "id": "T-007",
             "title": "Register POI-category facet in facet-config.ts",
             "description": "Add a new FacetId for POI categories in apps/web/src/lib/filters/facet-config.ts: paramKey 'categories', singularParamKey undefined, operator 'OR', enum undefined (DB-driven, mirror the destinationAttraction precedent). This makes readFacetActiveValues / buildMultiToggleParamHref work unchanged for the new facet. Tests: unit test that read + toggle helpers resolve the new facet's CSV param correctly.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-009"],
             "subtasks": [
-                { "title": "Add FacetId entry", "completed": false },
-                { "title": "Unit test read/toggle for new facet", "completed": false }
+                { "title": "Add FacetId entry", "completed": true },
+                { "title": "Unit test read/toggle for new facet", "completed": true }
             ],
             "tags": ["web", "filters"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-17T04:07:19.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-17T05:38:00Z",
+                "completed": "2026-07-17T05:46:00Z"
             }
         },
         {
             "id": "T-008",
             "title": "Shared OR category-filter predicate util",
             "description": "Add a single shared predicate (e.g. matchesAnyCategory(poiCategorySlugs, activeSlugs)) in apps/web/src/lib/filters/ used by cards, PRIMARY markers, and NEARBY markers so the OR logic exists once (spec section 12, R-3). Empty active set = show all. Tests (TDD): unit tests for OR semantics, multi-category match, empty selection (AC-3, AC-4, AC-6).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-009", "T-010", "T-012"],
             "subtasks": [
-                { "title": "Write predicate unit tests (OR/multi/empty)", "completed": false },
-                { "title": "Implement matchesAnyCategory", "completed": false }
+                { "title": "Write predicate unit tests (OR/multi/empty)", "completed": true },
+                { "title": "Implement matchesAnyCategory", "completed": true }
             ],
             "tags": ["web", "filters"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-17T04:07:19.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-17T05:40:00Z",
+                "completed": "2026-07-17T05:46:00Z"
             }
         },
         {
@@ -322,9 +322,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 8,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.1
     }
