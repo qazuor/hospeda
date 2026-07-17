@@ -19,16 +19,22 @@ import { billingPlans } from '../../billing/index.ts';
  * price/limits/entitlements/trialDays; the MP plan is a **projection** of it, and
  * this table is the link between the two.
  *
- * Because trial-eligibility is per-customer (one trial per customer for life), a
- * commercial plan needs up to **two** MP plan variants per interval:
- * - `trial`   — carries `auto_recurring.free_trial`, for trial-eligible customers.
- * - `notrial` — no free_trial, for trial-ineligible customers and `hasTrial: false`
- *   plans (first charge is immediate).
+ * A plan-based subscription's trial length is baked into the MercadoPago plan and
+ * is **immutable** once the subscription is authorized (verified in prod, HOS-191
+ * SP-3: `transaction_amount` mutates but `free_trial`/`start_date`/
+ * `next_payment_date` do not). So each distinct trial length a commercial plan may
+ * need becomes its own MP plan variant, keyed by `trial_days`:
+ * - `0`  — no `free_trial`; first charge is immediate (trial-ineligible customers,
+ *   `hasTrial: false` plans).
+ * - `14` — the plan's base trial.
+ * - `21`, `28`, … — base trial extended by a `trial_extension` promo (SPEC-262).
  *
- * The provisioning step (uses qzpay's existing `prices` adapter =
- * `POST /preapproval_plan`) creates/updates the MP plan and records its id here;
- * checkout resolves `mp_preapproval_plan_id` from `(commercial_plan_id,
- * billing_interval, trial_variant)` and passes it as the qzpay `providerPriceId`.
+ * Variants are **lazily provisioned**: checkout resolves the exact `trial_days`
+ * for a customer (0 / base / base + promo extra), looks up
+ * `(commercial_plan_id, billing_interval, trial_days)`, and if no MP plan exists
+ * yet, creates one via qzpay's `prices` adapter (`POST /preapproval_plan`) and
+ * records it here. The resolved `mp_preapproval_plan_id` is then passed to qzpay
+ * as the `providerPriceId`.
  */
 export const billingMpPlans = pgTable(
     'billing_mp_plans',
@@ -40,8 +46,6 @@ export const billingMpPlans = pgTable(
             .references(() => billingPlans.id, { onDelete: 'cascade' }),
         /** Billing cadence of this variant: `monthly` | `annual` | `daily`. */
         billingInterval: varchar('billing_interval', { length: 20 }).notNull(),
-        /** `trial` (carries free_trial) or `notrial` (immediate first charge). */
-        trialVariant: varchar('trial_variant', { length: 10 }).notNull(),
         /** The MercadoPago `preapproval_plan` id this variant maps to. */
         mpPreapprovalPlanId: varchar('mp_preapproval_plan_id', { length: 255 }).notNull(),
         /**
@@ -53,8 +57,10 @@ export const billingMpPlans = pgTable(
          */
         amountArs: integer('amount_ars').notNull(),
         /**
-         * Free-trial days baked into the MP plan. `0` for `notrial` variants and
-         * `hasTrial: false` plans.
+         * Free-trial days baked into the MP plan — the discriminating dimension of
+         * this registry. `0` = no trial (immediate first charge); the plan's base
+         * (e.g. `14`); or base + a `trial_extension` promo (e.g. `21`). Part of the
+         * uniqueness key: one MP plan per `(commercial_plan, interval, trial_days)`.
          */
         trialDays: integer('trial_days').notNull().default(0),
         /** Registry lifecycle: `active` | `inactive`. */
@@ -63,11 +69,11 @@ export const billingMpPlans = pgTable(
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
     },
     (table) => ({
-        // Exactly one MP plan per (commercial plan × interval × trial variant).
+        // Exactly one MP plan per (commercial plan × interval × trial length).
         billingMpPlans_variant_uniq: uniqueIndex('billingMpPlans_variant_uniq').on(
             table.commercialPlanId,
             table.billingInterval,
-            table.trialVariant
+            table.trialDays
         ),
         // An MP preapproval_plan id is registered at most once.
         billingMpPlans_mpPreapprovalPlanId_uniq: uniqueIndex(

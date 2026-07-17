@@ -1,5 +1,5 @@
 {
-    "id": "a28a4c4f-58f8-44fb-a586-e044441a4099",
+    "id": "332efc2a-491b-4c67-bd24-5dbc5ba98966",
     "prevId": "21d503ae-6f0c-4ad2-bfe5-f770ab813950",
     "version": "7",
     "dialect": "postgresql",
@@ -4872,12 +4872,6 @@
                     "primaryKey": false,
                     "notNull": true
                 },
-                "trial_variant": {
-                    "name": "trial_variant",
-                    "type": "varchar(10)",
-                    "primaryKey": false,
-                    "notNull": true
-                },
                 "mp_preapproval_plan_id": {
                     "name": "mp_preapproval_plan_id",
                     "type": "varchar(255)",
@@ -4936,7 +4930,7 @@
                             "nulls": "last"
                         },
                         {
-                            "expression": "trial_variant",
+                            "expression": "trial_days",
                             "isExpression": false,
                             "asc": true,
                             "nulls": "last"
