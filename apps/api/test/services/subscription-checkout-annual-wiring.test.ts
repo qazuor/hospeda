@@ -21,6 +21,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { initiatePaidAnnualSubscription } from '../../src/services/subscription-checkout.service';
 
+// HOS-191: the real Initiate* flows now resolve/provision a MercadoPago
+// preapproval_plan via `resolveCheckoutMpPlanId`, which reaches the payment
+// adapter singleton + `billing_mp_plans`. Stub it at this one boundary so this
+// wiring test exercises the checkout decision logic without a live adapter or
+// DB. The provisioning service itself is unit-tested in
+// `mp-plan-provisioning.test.ts`.
+vi.mock('../../src/services/billing/mp-plan-provisioning.service', () => ({
+    resolveCheckoutMpPlanId: vi.fn().mockResolvedValue('mp_plan_test'),
+    resolveOrProvisionMpPlan: vi.fn()
+}));
+
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------

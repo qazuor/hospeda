@@ -198,6 +198,20 @@ export function createMpStubAdapter(): CreateMpStubResult {
     const responses = new Map<MpStubOperation, MpStubResponseMode>();
     const calls: MpStubCall[] = [];
 
+    // HOS-191: every card-first checkout now provisions an MP `preapproval_plan`
+    // (`prices.create`), and may archive a stale/orphan one (`prices.archive`).
+    // These are ubiquitous side effects rather than test-specific operations, so
+    // seed sensible success defaults — otherwise every pre-existing e2e checkout
+    // flow (which never configured `prices.*`) would throw
+    // `MpStubUnconfiguredError`. Re-applied on `reset()` (which tests call in
+    // `beforeEach`) so the defaults survive a reset. A test can still fault-inject
+    // by overriding via `config.setError` / `setTimeout` / `setMalformed`.
+    function seedDefaults(): void {
+        responses.set('prices.create', { kind: 'success', data: 'stub_preapproval_plan_id' });
+        responses.set('prices.archive', { kind: 'success', data: undefined });
+    }
+    seedDefaults();
+
     /**
      * Internal dispatcher: looks up the configured response for `op`,
      * records the call, then resolves or rejects accordingly.
@@ -339,6 +353,9 @@ export function createMpStubAdapter(): CreateMpStubResult {
         reset() {
             responses.clear();
             calls.length = 0;
+            // Re-apply the HOS-191 `prices.*` defaults so checkout provisioning
+            // keeps working after a per-test reset.
+            seedDefaults();
         },
         getCalls(op) {
             if (op === undefined) return [...calls];
