@@ -909,9 +909,9 @@
 .form-input[aria-invalid="true"],
 .form-select[aria-invalid="true"],
 .form-textarea[aria-invalid="true"],
-input:not([type='checkbox']):not([type='radio'])[aria-invalid='true'],
-textarea[aria-invalid='true'],
-select[aria-invalid='true'] {
+input:not([type="checkbox"]):not([type="radio"])[aria-invalid="true"],
+textarea[aria-invalid="true"],
+select[aria-invalid="true"] {
     border-color: var(--destructive, oklch(0.6 0.22 25));
     background-color: var(--destructive-a10, oklch(0.6 0.22 25 / 0.1));
 }

@@ -275,7 +275,7 @@ describe('ExternalReputationSection', () => {
             // client then mis-read into a generic banner. It now validates the
             // URL client-side (AccommodationExternalListingSchema.shape.url) and
             // never fires the POST for a malformed value.
-            vi.mocked(global.fetch).mockImplementation((url, opts) => {
+            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
                 if ((opts as RequestInit)?.method === 'POST') {
                     return Promise.resolve(makeOkResponse());
                 }
