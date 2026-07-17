@@ -13,8 +13,10 @@
  * Not a `.client.tsx` — mounts inside the already-hydrated parent island.
  */
 
+import { FieldError } from '@/components/ui/FieldError';
+import type { FieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
-import { COUNTRY_CODES, type ProfileCompletionFieldErrors } from './ProfileCompletion.helpers';
+import { COUNTRY_CODES } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -28,7 +30,7 @@ export interface ProfileCompletionContactFieldsProps {
     /** Currently selected locale preference. */
     readonly selectedLocale: SupportedLocale;
     /** Field-level errors from the parent. */
-    readonly errors: ProfileCompletionFieldErrors;
+    readonly errors: FieldErrors;
     /** Whether the form is currently submitting (disables all inputs). */
     readonly submitting: boolean;
     /** Translation function from the parent island. */
@@ -115,13 +117,10 @@ export function ProfileCompletionContactFields({
                     />
                 </div>
                 {errors.phone ? (
-                    <p
+                    <FieldError
                         id="pc-phone-error"
-                        className={styles.errorMsg}
-                        role="alert"
-                    >
-                        {errors.phone}
-                    </p>
+                        message={errors.phone}
+                    />
                 ) : (
                     <p
                         id="pc-phone-hint"

@@ -18,17 +18,16 @@
  * Hydration: caller MUST use `client:load`.
  */
 
+import { CompleteProfileBodySchema } from '@repo/schemas';
 import { useState } from 'react';
 import { refreshBetterAuthSession } from '@/lib/auth-client';
+import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import {
     computeDisplayName,
     computeInitialDisplayNameOverride,
-    type ProfileCompletionFieldErrors,
-    type ProfileCompletionPayload,
-    type SocialPlatform,
-    validateProfileCompletionFields
+    type SocialPlatform
 } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
 import { ProfileCompletionBasicFields } from './ProfileCompletionBasicFields';
@@ -145,9 +144,17 @@ export function ProfileCompletion({
     const [locationCity, setLocationCity] = useState('');
 
     // ── Form meta state ───────────────────────────────────────────────────────
+    //
+    // Validation is delegated to the shared `useZodForm` primitive (HOS-190
+    // slice 3), validating the real API payload against
+    // `CompleteProfileBodySchema` instead of the old hand-rolled
+    // `validateProfileCompletionFields` (which never checked `socialNetworks.*`
+    // or `displayName` length bounds — both enforced server-side).
 
-    const [errors, setErrors] = useState<ProfileCompletionFieldErrors>({});
-    const [globalError, setGlobalError] = useState<string | null>(null);
+    const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
+        schema: CompleteProfileBodySchema,
+        t
+    });
     const [submitting, setSubmitting] = useState(false);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -159,148 +166,88 @@ export function ProfileCompletion({
         return `${phoneCode}${trimmed.replace(/[\s\-().]/g, '')}`;
     }
 
-    /**
-     * Map raw validation error tokens to translated messages, returning an
-     * errors object with human-readable strings for subcomponent rendering.
-     */
-    function translateErrors(raw: ProfileCompletionFieldErrors): ProfileCompletionFieldErrors {
-        const map: Record<string, string> = {
-            firstName_required: t(
-                'account.profileCompletion.errors.firstNameRequired',
-                'El nombre es obligatorio.'
-            ),
-            firstName_max: t(
-                'account.profileCompletion.errors.firstNameMax',
-                'El nombre no puede superar los 50 caracteres.'
-            ),
-            lastName_required: t(
-                'account.profileCompletion.errors.lastNameRequired',
-                'El apellido es obligatorio.'
-            ),
-            lastName_max: t(
-                'account.profileCompletion.errors.lastNameMax',
-                'El apellido no puede superar los 50 caracteres.'
-            ),
-            birthDate_invalid: t(
-                'account.profileCompletion.errors.birthDateInvalid',
-                'Ingresá una fecha válida (dd/mm/yyyy).'
-            ),
-            phone_format: t(
-                'account.profileCompletion.errors.phoneFormat',
-                'Ingresá un número de teléfono válido con código de país.'
-            ),
-            terms_required: t(
-                'account.profileCompletion.errors.termsRequired',
-                'Tenés que aceptar los términos para continuar.'
-            ),
-            bio_min: t(
-                'account.profileCompletion.errors.bioMin',
-                'La bio debe tener al menos 10 caracteres.'
-            ),
-            bio_max: t(
-                'account.profileCompletion.errors.bioMax',
-                'La bio no puede superar los 300 caracteres.'
-            ),
-            website_url: t(
-                'account.profileCompletion.errors.websiteUrl',
-                'Ingresá una URL válida (ej: https://mipagina.com).'
-            ),
-            occupation_min: t(
-                'account.profileCompletion.errors.occupationMin',
-                'La ocupación debe tener al menos 2 caracteres.'
-            ),
-            occupation_max: t(
-                'account.profileCompletion.errors.occupationMax',
-                'La ocupación no puede superar los 100 caracteres.'
-            )
-        };
-
-        const translated: ProfileCompletionFieldErrors = {};
-        for (const [field, token] of Object.entries(raw) as [
-            keyof ProfileCompletionFieldErrors,
-            string
-        ][]) {
-            translated[field] = map[`${field}_${token}`] ?? `${field}: ${token}`;
-        }
-        return translated;
-    }
-
     // ── Submit ────────────────────────────────────────────────────────────────
 
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
         event.preventDefault();
-        setGlobalError(null);
+        setFormError(null);
 
-        const phone = buildPhone() ?? '';
-        const rawErrors = validateProfileCompletionFields({
-            firstName,
-            lastName,
-            phone,
-            birthDate,
+        // The birthDate input collects dd/mm/yyyy; the API expects ISO
+        // YYYY-MM-DD per the Zod schema. When the mask is incomplete/invalid
+        // (ddmmyyyyToIso returns null) forward the raw text instead of
+        // dropping the field — CompleteProfileBodySchema's `z.string().date()`
+        // then fails naturally and surfaces the error on `birthDate` via
+        // `fieldErrors`, so there is no separate hand-rolled date check to
+        // keep in sync.
+        const birthDateIso = ddmmyyyyToIso(birthDate);
+        const birthDateForValidation = birthDate.trim()
+            ? (birthDateIso ?? birthDate.trim())
+            : undefined;
+
+        const trimmedBio = bio.trim();
+        const trimmedWebsite = website.trim();
+        const trimmedOccupation = occupation.trim();
+        const phone = buildPhone();
+
+        const payload: Record<string, unknown> = {
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            displayName: derivedDisplayName,
             acceptedTerms,
-            bio: bio || undefined,
-            website: website || undefined,
-            occupation: occupation || undefined
-        });
+            locale: selectedLocale,
+            newsletterOptIn: newsletter,
+            ...(birthDateForValidation && { birthDate: birthDateForValidation }),
+            ...(imageUrl && imageUrl !== initialAvatarUrl && { imageUrl }),
+            ...(phone && { phone }),
+            ...(trimmedBio && { bio: trimmedBio }),
+            ...(trimmedWebsite && { website: trimmedWebsite }),
+            ...(trimmedOccupation && { occupation: trimmedOccupation }),
+            ...(Object.keys(socialNetworks).length > 0 && { socialNetworks }),
+            ...(locationCountry && {
+                location: {
+                    country: locationCountry,
+                    ...(locationRegion.trim() && { region: locationRegion.trim() }),
+                    ...(locationCity.trim() && { city: locationCity.trim() })
+                }
+            })
+        };
 
-        if (Object.keys(rawErrors).length > 0) {
-            setErrors(translateErrors(rawErrors));
-            if (rawErrors.bio || rawErrors.website || rawErrors.occupation) {
-                setDetailsOpen(true);
-            }
+        const parsed = validate(payload);
+
+        if (!parsed.success) {
+            const detailsFields = ['bio', 'website', 'occupation', 'socialNetworks', 'location'];
+            const needsDetailsOpen = parsed.error.issues.some((issue) =>
+                detailsFields.includes(String(issue.path[0]))
+            );
+            if (needsDetailsOpen) setDetailsOpen(true);
             return;
         }
 
-        setErrors({});
         setSubmitting(true);
 
         try {
-            // The birthDate input collects dd/mm/yyyy; the API expects ISO
-            // YYYY-MM-DD per the Zod schema. Drop the field when the user
-            // hasn't typed a complete date.
-            const birthDateIso = ddmmyyyyToIso(birthDate);
-
-            const body: ProfileCompletionPayload = {
-                firstName: firstName.trim(),
-                lastName: lastName.trim(),
-                displayName: derivedDisplayName,
-                acceptedTerms: true,
-                ...(birthDateIso && { birthDate: birthDateIso }),
-                ...(imageUrl && imageUrl !== initialAvatarUrl && { imageUrl }),
-                ...(phone && { phone }),
-                locale: selectedLocale,
-                newsletterOptIn: newsletter,
-                ...(bio.trim() && { bio: bio.trim() }),
-                ...(website.trim() && { website: website.trim() }),
-                ...(occupation.trim() && { occupation: occupation.trim() }),
-                ...(Object.keys(socialNetworks).length > 0 && { socialNetworks }),
-                ...(locationCountry && {
-                    location: {
-                        country: locationCountry,
-                        ...(locationRegion.trim() && { region: locationRegion.trim() }),
-                        ...(locationCity.trim() && { city: locationCity.trim() })
-                    }
-                })
-            };
-
             const response = await fetch(`${apiUrl}/api/v1/protected/profile/complete`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify(body)
+                body: JSON.stringify(parsed.data)
             });
 
             if (!response.ok) {
-                const errorData = (await response.json()) as {
-                    error?: { message?: string };
-                };
-                setGlobalError(
-                    errorData?.error?.message ??
-                        t(
-                            'account.profileCompletion.errors.submitFailed',
-                            'No se pudo completar el perfil. Intentá nuevamente.'
-                        )
+                const fallback = t(
+                    'account.profileCompletion.errors.submitFailed',
+                    'No se pudo completar el perfil. Intentá nuevamente.'
                 );
+                let apiError: { code?: string; message?: string } | undefined;
+                try {
+                    const body = (await response.json()) as {
+                        error?: { code?: string; message?: string };
+                    };
+                    if (body.error) apiError = body.error;
+                } catch {
+                    // ignore — keep apiError undefined; handleApiError uses the fallback
+                }
+                handleApiError(apiError, fallback);
                 return;
             }
 
@@ -316,7 +263,7 @@ export function ProfileCompletion({
                 window.location.href = `/${locale}/mi-cuenta/`;
             }
         } catch {
-            setGlobalError(
+            setFormError(
                 t(
                     'account.profileCompletion.errors.submitFailed',
                     'No se pudo completar el perfil. Intentá nuevamente.'
@@ -334,6 +281,15 @@ export function ProfileCompletion({
     }
 
     // ── Render ────────────────────────────────────────────────────────────────
+
+    // ConsentFields historically reads its terms-checkbox error under the
+    // `terms` key (see `id="pc-terms-error"` and its test coverage in
+    // ProfileCompletion.layout.test.ts); the schema's field is `acceptedTerms`
+    // (`z.literal(true)`). Alias it here rather than renaming the schema field
+    // or the subcomponent's established prop contract.
+    const consentFieldErrors = fieldErrors.acceptedTerms
+        ? { ...fieldErrors, terms: fieldErrors.acceptedTerms }
+        : fieldErrors;
 
     return (
         <div className={styles.wrapper}>
@@ -366,7 +322,7 @@ export function ProfileCompletion({
                         birthDate={birthDate}
                         imageUrl={imageUrl}
                         initialAvatarUrl={initialAvatarUrl}
-                        errors={errors}
+                        errors={fieldErrors}
                         submitting={submitting}
                         t={t}
                         onFirstNameChange={handleFirstNameChange}
@@ -381,7 +337,7 @@ export function ProfileCompletion({
                         phoneCode={phoneCode}
                         phoneNumber={phoneNumber}
                         selectedLocale={selectedLocale}
-                        errors={errors}
+                        errors={fieldErrors}
                         submitting={submitting}
                         t={t}
                         onPhoneCodeChange={setPhoneCode}
@@ -398,7 +354,7 @@ export function ProfileCompletion({
                         locationCountry={locationCountry}
                         locationRegion={locationRegion}
                         locationCity={locationCity}
-                        errors={errors}
+                        errors={fieldErrors}
                         submitting={submitting}
                         t={t}
                         onDetailsToggle={() => setDetailsOpen((v) => !v)}
@@ -415,20 +371,20 @@ export function ProfileCompletion({
                         locale={locale}
                         newsletter={newsletter}
                         acceptedTerms={acceptedTerms}
-                        errors={errors}
+                        errors={consentFieldErrors}
                         submitting={submitting}
                         t={t}
                         onNewsletterChange={setNewsletter}
                         onAcceptedTermsChange={setAcceptedTerms}
                     />
 
-                    {/* ── Global error banner ────────────────────────────── */}
-                    {globalError && (
+                    {/* ── Form-level error banner ──────────────────────────── */}
+                    {formError && (
                         <div
                             className={`${styles.feedbackBanner} ${styles.feedbackBannerError}`}
                             role="alert"
                         >
-                            {globalError}
+                            {formError}
                         </div>
                     )}
 
