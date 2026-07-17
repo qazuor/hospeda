@@ -196,15 +196,16 @@ export async function resolveOrProvisionMpPlan(
             }
         );
         if (!updated) {
-            // Lost the CAS: another request re-provisioned first. Our new plan is
-            // the orphan — archive it and converge on the winner's id.
-            await archiveMpPlanBestEffort(input.adapter, newId, 'lost-race');
+            // Lost the CAS: another request re-provisioned first. Find the winner,
+            // THEN archive our new plan as the orphan. Order matters: if the row
+            // has somehow vanished (pathological — nothing deletes billing_mp_plans
+            // today), we keep our freshly-created plan as the live one instead of
+            // archiving the very id we are about to hand back.
             const winner = await billingMpPlanModel.findOne(key);
             if (winner) {
+                await archiveMpPlanBestEffort(input.adapter, newId, 'lost-race');
                 return { mpPreapprovalPlanId: winner.mpPreapprovalPlanId, created: false };
             }
-            // Row vanished between the failed update and the re-read (extremely
-            // unlikely). Fall back to our just-created plan.
             return { mpPreapprovalPlanId: newId, created: true };
         }
         // We won the swap: retire the stale plan we just replaced.
