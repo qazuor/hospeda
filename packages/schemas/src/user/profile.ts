@@ -59,11 +59,8 @@ import {
  */
 export const ProfileEditSchema = z.strictObject({
     /**
-     * Public display name shown across the platform. Between 2 and 50
-     * characters when provided — aligned with `UserSchema.displayName`
-     * (`packages/schemas/src/entities/user/user.schema.ts`), the bound the
-     * API actually enforces (HOS-190 slice 3 bound-alignment fix; this
-     * schema previously accepted 1-100, silently diverging from the server).
+     * Public display name shown across the platform. Between 1 and 100
+     * characters when provided.
      *
      * Optional/blankable: a profile edit form re-saving a user whose
      * `displayName` is unset (e.g. incomplete OAuth signup) must be able to
@@ -76,55 +73,46 @@ export const ProfileEditSchema = z.strictObject({
             z.literal(''),
             z
                 .string()
-                .min(2, { message: 'zodError.user.profile.displayName.min' })
-                .max(50, { message: 'zodError.user.profile.displayName.max' })
+                .min(1, { message: 'zodError.user.profile.displayName.min' })
+                .max(100, { message: 'zodError.user.profile.displayName.max' })
         ])
         .optional(),
 
     /**
-     * Legal first name. Between 2 and 50 characters when provided — aligned
-     * with `UserSchema.firstName` (nullish server-side). Optional/blankable
-     * for the same read⊇write reason as `displayName` above.
+     * Legal first name. Between 1 and 100 characters when provided.
+     * Optional/blankable for the same read⊇write reason as `displayName`
+     * above.
      */
     firstName: z
         .union([
             z.literal(''),
             z
                 .string()
-                .min(2, { message: 'zodError.user.profile.firstName.min' })
-                .max(50, { message: 'zodError.user.profile.firstName.max' })
+                .min(1, { message: 'zodError.user.profile.firstName.min' })
+                .max(100, { message: 'zodError.user.profile.firstName.max' })
         ])
         .optional(),
 
     /**
-     * Legal last name. Between 2 and 50 characters when provided — aligned
-     * with `UserSchema.lastName` (nullish server-side). Optional/blankable
-     * for the same read⊇write reason as `displayName` above.
+     * Legal last name. Between 1 and 100 characters when provided.
+     * Optional/blankable for the same read⊇write reason as `displayName`
+     * above.
      */
     lastName: z
         .union([
             z.literal(''),
             z
                 .string()
-                .min(2, { message: 'zodError.user.profile.lastName.min' })
-                .max(50, { message: 'zodError.user.profile.lastName.max' })
+                .min(1, { message: 'zodError.user.profile.lastName.min' })
+                .max(100, { message: 'zodError.user.profile.lastName.max' })
         ])
         .optional(),
 
     /**
-     * Short biography or personal description. Between 10 and 300 characters
-     * when provided — aligned with `UserProfileSchema.bio`
-     * (`packages/schemas/src/entities/user/user.profile.schema.ts`), the
-     * bound the API actually enforces (HOS-190 slice 3 bound-alignment fix;
-     * this schema previously accepted 0-1000, silently diverging from the
-     * server and letting a too-short bio pass client validation only to 400
-     * on submit). Optional — omitting it leaves the existing bio unchanged.
+     * Short biography or personal description. Up to 1000 characters.
+     * Optional — omitting it leaves the existing bio unchanged on the server.
      */
-    bio: z
-        .string()
-        .min(10, { message: 'zodError.user.profile.bio.min' })
-        .max(300, { message: 'zodError.user.profile.bio.max' })
-        .optional(),
+    bio: z.string().max(1000, { message: 'zodError.user.profile.bio.max' }).optional(),
 
     /**
      * URL of the user's avatar image.
@@ -202,21 +190,13 @@ export const ProfileEditSchema = z.strictObject({
     province: z.string().max(100).optional(),
 
     /**
-     * Country name. Between 2 and 100 characters when provided — aligned
-     * with `UserLocationSchema.country` (`packages/schemas/src/common/location.schema.ts`),
-     * the bound the API actually enforces (HOS-190 slice 3 bound-alignment
-     * fix; this field previously had no minimum). Reuses the existing
-     * `zodError.common.location.country.*` i18n keys (already translated —
-     * `UserLocationSchema` uses the same keys) instead of introducing new
-     * `zodError.user.profile.country.*` keys.
+     * Country name. Up to 100 characters when provided; no minimum.
+     * Blankable via the empty-string variant so the field can be cleared.
      */
     country: z
         .union([
             z.literal(''),
-            z
-                .string()
-                .min(2, { message: 'zodError.common.location.country.min' })
-                .max(100, { message: 'zodError.common.location.country.max' })
+            z.string().max(100, { message: 'zodError.common.location.country.max' })
         ])
         .optional(),
     postalCode: z.string().max(20).optional()

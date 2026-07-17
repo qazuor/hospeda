@@ -74,20 +74,20 @@ describe('ProfileEditSchema', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should accept bio at exactly 300 characters', () => {
-            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, bio: 'x'.repeat(300) });
+        it('should accept bio at exactly 1000 characters', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, bio: 'x'.repeat(1000) });
             expect(result.success).toBe(true);
         });
 
-        it('should accept bio at exactly 10 characters (minimum)', () => {
-            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, bio: 'x'.repeat(10) });
+        it('should accept a very short bio (no minimum)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, bio: 'x' });
             expect(result.success).toBe(true);
         });
 
-        it('should accept displayName at exactly 50 characters', () => {
+        it('should accept displayName at exactly 100 characters', () => {
             const result = ProfileEditSchema.safeParse({
                 ...VALID_BASE,
-                displayName: 'a'.repeat(50)
+                displayName: 'a'.repeat(100)
             });
             expect(result.success).toBe(true);
         });
@@ -133,8 +133,10 @@ describe('ProfileEditSchema', () => {
     // to re-save an unrelated field without a required-field error blocking
     // the whole PATCH (read⊇write — the caller omits the key entirely when
     // the user has not provided a value). When a value IS provided it still
-    // must satisfy the 2-50 bound aligned with `UserSchema` (`packages/schemas/
-    // src/entities/user/user.schema.ts`), the bound the API actually enforces.
+    // must satisfy the loose 1-100 bound: a legacy 1-character value (e.g. a
+    // pre-existing short name) must remain saveable so a user is never locked
+    // out of editing unrelated fields (read⊇write — the form validates the
+    // FULL current state, not just the diff).
     describe('optional name fields (HOS-190 read⊇write fix)', () => {
         it('should accept a payload missing displayName entirely', () => {
             const { displayName: _dn, ...rest } = VALID_BASE;
@@ -169,61 +171,61 @@ describe('ProfileEditSchema', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should reject a non-empty displayName shorter than 2 characters', () => {
+        it('should accept a single-character displayName (legacy short value)', () => {
             const result = ProfileEditSchema.safeParse({ ...VALID_BASE, displayName: 'a' });
-            expect(result.success).toBe(false);
+            expect(result.success).toBe(true);
         });
 
-        it('should reject a non-empty firstName shorter than 2 characters', () => {
+        it('should accept a single-character firstName (legacy short value)', () => {
             const result = ProfileEditSchema.safeParse({ ...VALID_BASE, firstName: 'a' });
-            expect(result.success).toBe(false);
+            expect(result.success).toBe(true);
         });
 
-        it('should reject a non-empty lastName shorter than 2 characters', () => {
+        it('should accept a single-character lastName (legacy short value)', () => {
             const result = ProfileEditSchema.safeParse({ ...VALID_BASE, lastName: 'a' });
-            expect(result.success).toBe(false);
+            expect(result.success).toBe(true);
         });
 
-        it('should reject displayName longer than 50 characters', () => {
+        it('should reject displayName longer than 100 characters', () => {
             const result = ProfileEditSchema.safeParse({
                 ...VALID_BASE,
-                displayName: 'a'.repeat(51)
+                displayName: 'a'.repeat(101)
             });
             expect(result.success).toBe(false);
         });
 
-        it('should reject firstName longer than 50 characters', () => {
+        it('should reject firstName longer than 100 characters', () => {
             const result = ProfileEditSchema.safeParse({
                 ...VALID_BASE,
-                firstName: 'a'.repeat(51)
+                firstName: 'a'.repeat(101)
             });
             expect(result.success).toBe(false);
         });
 
-        it('should reject lastName longer than 50 characters', () => {
+        it('should reject lastName longer than 100 characters', () => {
             const result = ProfileEditSchema.safeParse({
                 ...VALID_BASE,
-                lastName: 'a'.repeat(51)
+                lastName: 'a'.repeat(101)
             });
             expect(result.success).toBe(false);
         });
     });
 
     describe('bio validation', () => {
-        it('should reject bio exceeding 300 characters', () => {
+        it('should reject bio exceeding 1000 characters', () => {
             const result = ProfileEditSchema.safeParse({
                 ...VALID_BASE,
-                bio: 'x'.repeat(301)
+                bio: 'x'.repeat(1001)
             });
             expect(result.success).toBe(false);
         });
 
-        it('should reject bio shorter than 10 characters (when provided)', () => {
+        it('should accept a short bio (no minimum, legacy short value)', () => {
             const result = ProfileEditSchema.safeParse({
                 ...VALID_BASE,
                 bio: 'too short'
             });
-            expect(result.success).toBe(false);
+            expect(result.success).toBe(true);
         });
 
         it('should accept an omitted bio (unset, leaves server value unchanged)', () => {
@@ -405,16 +407,14 @@ describe('ProfileEditSchema', () => {
             expect(result.success).toBe(true);
         });
 
-        // HOS-190 slice 3: `country` previously had no minimum, diverging
-        // from `UserLocationSchema.country` (min 2) enforced server-side.
         it('accepts an empty string for country (clearing it)', () => {
             const result = ProfileEditSchema.safeParse({ ...VALID_BASE, country: '' });
             expect(result.success).toBe(true);
         });
 
-        it('rejects a country shorter than 2 characters', () => {
+        it('accepts a single-character country (no minimum, legacy short value)', () => {
             const result = ProfileEditSchema.safeParse({ ...VALID_BASE, country: 'A' });
-            expect(result.success).toBe(false);
+            expect(result.success).toBe(true);
         });
     });
 });
