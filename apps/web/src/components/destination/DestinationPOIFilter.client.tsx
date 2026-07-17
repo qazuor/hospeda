@@ -108,6 +108,13 @@ export function DestinationPOIFilter({ categories, locale }: DestinationPOIFilte
         const empty = document.querySelector<HTMLElement>('[data-poi-empty]');
         if (empty) empty.hidden = visibleCount > 0;
 
+        // HOS-181: turn the grid's "show first 12" cap OFF while a filter is
+        // active. That cap hides cards by DOM position (`nth-child(n + 13)`), which
+        // would wrongly hide a matching POI sitting past index 12. The grid keys
+        // the cap off `[data-poi-filtered]` on the section.
+        const section = document.querySelector<HTMLElement>('[data-poi-section]');
+        if (section) section.toggleAttribute('data-poi-filtered', active.length > 0);
+
         window.dispatchEvent(
             new CustomEvent(POI_CATEGORY_FILTER_EVENT, { detail: { categories: [...active] } })
         );

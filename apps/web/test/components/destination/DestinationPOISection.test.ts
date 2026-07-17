@@ -164,4 +164,24 @@ describe('DestinationPOISection.astro — HOS-181 visual-weight reduction', () =
         expect(sectionSrc).toMatch(/padding:\s*0\.85rem/);
         expect(sectionSrc).toMatch(/-webkit-line-clamp:\s*1/);
     });
+
+    // HOS-181 × HOS-147: the 12-cap is position-based (nth-child), so under an
+    // active category filter it would wrongly hide a matching POI past index 12.
+    // The section carries `data-poi-section`; the filter island sets
+    // `data-poi-filtered` on it, which turns the cap (and its "ver más") off.
+    it('marks the section with data-poi-section so the filter island can key off it', () => {
+        expect(sectionSrc).toContain('data-poi-section');
+    });
+
+    it('disables the position cap while a category filter is active (:not([data-poi-filtered]))', () => {
+        expect(sectionSrc).toMatch(
+            /\.poi-section:not\(\[data-poi-filtered\]\):has\(\.poi-section__more:not\(\[open\]\)\)/
+        );
+    });
+
+    it('hides the show-more disclosure under an active category filter', () => {
+        expect(sectionSrc).toMatch(
+            /\.poi-section\[data-poi-filtered\]\s*\.poi-section__more\s*\{\s*display:\s*none/
+        );
+    });
 });

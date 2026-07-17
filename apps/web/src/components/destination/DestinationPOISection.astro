@@ -125,7 +125,7 @@ const hasOverflow = sorted.length > POI_VISIBLE_LIMIT;
 const overflowCount = Math.max(0, sorted.length - POI_VISIBLE_LIMIT);
 ---
 
-<section class="poi-section" aria-labelledby="poi-section-title">
+<section class="poi-section" data-poi-section aria-labelledby="poi-section-title">
 	<h2 class="poi-section__title" id="poi-section-title">
 		{t('destinations.detailPage.pointsOfInterestTitle', 'Puntos de interés')}
 	</h2>
@@ -285,8 +285,20 @@ const overflowCount = Math.max(0, sorted.length - POI_VISIBLE_LIMIT);
 	 * past the 12th. All cards stay in the DOM (SSR-first, crawlable) — this
 	 * never removes content from the served HTML. `nth-child(n + 13)` pairs with
 	 * POI_VISIBLE_LIMIT = 12; when there is no overflow the <details> is absent,
-	 * `:has()` does not match, and all cards show. */
-	.poi-section:has(.poi-section__more:not([open])) .poi-section__card:nth-child(n + 13) {
+	 * `:has()` does not match, and all cards show.
+	 *
+	 * HOS-181 × HOS-147: the `:not([data-poi-filtered])` guard turns the cap OFF
+	 * while a category filter is active. Under a filter, visibility is decided by
+	 * match (the island's `[hidden]`), not by DOM position — a matching POI sitting
+	 * past index 12 must still show, so the position-based cap must not apply. */
+	.poi-section:not([data-poi-filtered]):has(.poi-section__more:not([open]))
+		.poi-section__card:nth-child(n + 13) {
+		display: none;
+	}
+
+	/* Under an active category filter the "ver más" control is meaningless (its
+	 * count is over the unfiltered total and the cap is off), so hide it. */
+	.poi-section[data-poi-filtered] .poi-section__more {
 		display: none;
 	}
 

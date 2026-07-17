@@ -47,6 +47,9 @@ const CATEGORIES = [
 function seedCards(): void {
     const grid = document.createElement('div');
     grid.id = 'test-grid';
+    // Mirrors the real `<section data-poi-section>` wrapper so the island can
+    // toggle `data-poi-filtered` on it (HOS-181 grid-cap coexistence).
+    grid.setAttribute('data-poi-section', '');
     grid.innerHTML = `
         <div data-poi-card data-poi-categories="termas,gastronomia" id="card-a"></div>
         <div data-poi-card data-poi-categories="museos" id="card-b"></div>
@@ -105,6 +108,30 @@ describe('DestinationPOIFilter (HOS-147)', () => {
         expect(card('card-b').hidden).toBe(true);
         // Some visible → empty state stays hidden.
         expect(card('empty').hidden).toBe(true);
+    });
+
+    it('sets data-poi-filtered on the section while a filter is active, clears it when emptied (HOS-181)', () => {
+        // HOS-181 coexistence: an active filter must turn the grid's position-based
+        // 12-cap off, or a matching POI past index 12 would stay hidden. The island
+        // signals that by toggling `data-poi-filtered` on the section.
+        render(
+            <DestinationPOIFilter
+                categories={CATEGORIES}
+                locale="es"
+            />
+        );
+        const section = document.getElementById('test-grid') as HTMLElement;
+
+        // Inactive → no marker (cap stays on).
+        expect(section.hasAttribute('data-poi-filtered')).toBe(false);
+
+        // Activate a filter → attribute set (cap off).
+        fireEvent.click(screen.getByRole('link', { name: 'Termas' }));
+        expect(section.hasAttribute('data-poi-filtered')).toBe(true);
+
+        // Toggle it back off → attribute cleared (cap on again).
+        fireEvent.click(screen.getByRole('link', { name: 'Termas' }));
+        expect(section.hasAttribute('data-poi-filtered')).toBe(false);
     });
 
     it('applies OR semantics across two selected chips', () => {
