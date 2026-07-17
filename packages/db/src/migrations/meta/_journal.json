@@ -428,6 +428,13 @@
             "when": 1784137685544,
             "tag": "0060_flowery_nova",
             "breakpoints": true
+        },
+        {
+            "idx": 61,
+            "version": "7",
+            "when": 1784261757755,
+            "tag": "0061_majestic_cardiac",
+            "breakpoints": true
         }
     ]
 }
