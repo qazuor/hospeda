@@ -73,6 +73,13 @@ export interface DestinationPOIItem {
 		readonly slug: string;
 		readonly nameI18n?: I18nTextLike | null;
 	} | null;
+	/**
+	 * The POI's full category set (HOS-147) — every category slug, not just the
+	 * primary. Emitted as the card's `data-poi-categories` attribute so the
+	 * client-side thematic filter island (`DestinationPOIFilter.client.tsx`)
+	 * can show/hide this card by intersecting it with the active selection.
+	 */
+	readonly categories?: ReadonlyArray<{ readonly slug: string }>;
 }
 
 interface Props {
@@ -133,8 +140,11 @@ const sorted = [...primaryOnly]
 				primaryCategory: poi.primaryCategory,
 				locale
 			});
+			// HOS-147: emit every category slug so the client-side thematic
+			// filter island can match this card against the active selection.
+			const categorySlugs = (poi.categories ?? []).map((c) => c.slug).join(',');
 			return (
-				<div class="poi-section__card">
+				<div class="poi-section__card" data-poi-card data-poi-categories={categorySlugs}>
 					<span class="poi-section__icon" aria-hidden="true">
 						<Icon size={28} weight="fill" color={iconColor} aria-hidden="true" />
 					</span>
@@ -147,6 +157,13 @@ const sorted = [...primaryOnly]
 			);
 		})}
 	</div>
+
+	<p class="poi-section__empty" data-poi-empty hidden>
+		{t(
+			'destinations.detailPage.pointsOfInterestEmptyFiltered',
+			'No hay puntos de interés para las categorías seleccionadas.'
+		)}
+	</p>
 </section>
 
 <style>
@@ -230,5 +247,13 @@ const sorted = [...primaryOnly]
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
+	}
+
+	.poi-section__empty {
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		color: var(--core-muted-foreground);
+		margin: 0;
+		padding: 1rem 0;
 	}
 </style>

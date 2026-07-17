@@ -19,6 +19,7 @@ import { LocationMap } from '@/components/maps/LocationMap.client';
 import DestinationDetailHeader from '@/components/destination/DestinationDetailHeader.astro';
 import DestinationGallery from '@/components/destination/DestinationGallery.astro';
 import DestinationPOISection from '@/components/destination/DestinationPOISection.astro';
+import { DestinationPOIFilter } from '@/components/destination/DestinationPOIFilter.client';
 import { DestinationPOIMap } from '@/components/destination/DestinationPOIMap.client';
 import DestinationMiniMap from '@/components/destination/DestinationMiniMap.astro';
 import DestinationSidebarCtas from '@/components/destination/DestinationSidebarCtas.astro';
@@ -32,6 +33,7 @@ import {
 	destinationsApi,
 	accommodationsApi,
 	eventsApi,
+	poiCategoryApi,
 	postsApi,
 	userBookmarksPublicApi
 } from '@/lib/api/endpoints';
@@ -150,6 +152,22 @@ const pointsOfInterest = toDestinationPointOfInterestListProps({
 // the pointless NEARBY fetch and island mount on those pages. Same shape as
 // `hasDestCoords` guarding <DestinationMiniMap> further down.
 const hasGeolocatedPois = pointsOfInterest.some((poi) => poi.lat != null && poi.long != null);
+
+// HOS-147: thematic filter-chip options. Present-only (D-5): the set of category
+// slugs actually appearing among the destination's (PRIMARY) POIs, computed from
+// the already-loaded set — never the whole catalog. Fetch the public catalog for
+// each present category's display metadata (label/icon/weight, already ordered by
+// displayWeight desc), then keep only the present ones. The filter is only worth
+// showing when >=2 categories are present (a lone chip filters nothing useful).
+const presentCategorySlugs = new Set(
+	pointsOfInterest.flatMap((poi) => poi.categories.map((c) => c.slug))
+);
+const poiCategoryResult =
+	presentCategorySlugs.size >= 2 ? await poiCategoryApi.list() : null;
+const poiFilterCategories =
+	poiCategoryResult?.ok === true
+		? poiCategoryResult.data.filter((category) => presentCategorySlugs.has(category.slug))
+		: [];
 
 const ratingBreakdown = dest.rating as Record<string, number | undefined> | null | undefined;
 
@@ -606,6 +624,17 @@ const isThinContent = isThinDestination({
 		     this SSR grid (which stays the indexable content source) — it
 		     self-guards on the client the same way when no POI has coords. -->
 		<div class="dest-detail__section">
+			{
+				/* HOS-147: thematic category filter chips. Client-side only (D-3);
+				   only mounts when >=2 categories are present among the POIs. */
+				poiFilterCategories.length >= 2 && (
+					<DestinationPOIFilter
+						client:load
+						categories={poiFilterCategories}
+						locale={locale}
+					/>
+				)
+			}
 			<DestinationPOISection pointsOfInterest={pointsOfInterest} locale={locale} />
 		</div>
 

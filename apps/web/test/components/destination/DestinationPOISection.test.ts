@@ -103,4 +103,18 @@ describe('DestinationPOISection.astro', () => {
     it('sorts the PRIMARY-filtered list, not the raw pointsOfInterest prop', () => {
         expect(sectionSrc).toMatch(/const\s+sorted\s*=\s*\[\s*\.\.\.primaryOnly\s*\]/);
     });
+
+    // HOS-147: each card exposes its category slugs so the client-side thematic
+    // filter island can show/hide it; a hidden empty-state element covers the
+    // "selection matches zero POIs" case.
+    it('emits data-poi-card + data-poi-categories on each card (HOS-147)', () => {
+        expect(sectionSrc).toContain('data-poi-card');
+        expect(sectionSrc).toContain('data-poi-categories={categorySlugs}');
+        expect(sectionSrc).toMatch(/const\s+categorySlugs\s*=\s*\(poi\.categories\s*\?\?\s*\[\]\)/);
+    });
+
+    it('renders a hidden empty-state element the filter island can reveal (HOS-147)', () => {
+        expect(sectionSrc).toContain('data-poi-empty');
+        expect(sectionSrc).toContain('pointsOfInterestEmptyFiltered');
+    });
 });
