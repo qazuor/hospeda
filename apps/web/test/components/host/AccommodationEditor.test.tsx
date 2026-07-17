@@ -379,6 +379,54 @@ describe('AccommodationEditor', () => {
         expect(mockUpdate).not.toHaveBeenCalled();
     });
 
+    it('blocks submit and shows a field error when the phone is not a valid number (HOS-190 gap)', async () => {
+        // Regression guard: `AccommodationEditFormSchema` used to inherit the
+        // HTTP schema's bare `z.string().optional()` for phone/whatsapp (no
+        // format check), so "abc" reached the server. It now enforces
+        // InternationalPhoneRegex client-side (composePhoneValue → "+54 abc").
+        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
+        vi.doMock('@/lib/api/endpoints-protected', () => ({
+            accommodationEditApi: { update: mockUpdate }
+        }));
+
+        const user = userEvent.setup();
+        render(<AccommodationEditor {...DEFAULT_PROPS} />);
+
+        const phoneNumberInput = within(
+            screen.getByRole('group', { name: /^teléfono$/i })
+        ).getByLabelText(/número/i) as HTMLInputElement;
+        await user.clear(phoneNumberInput);
+        await user.type(phoneNumberInput, 'abc');
+        fireEvent.submit(phoneNumberInput.closest('form')!);
+
+        expect(await screen.findByRole('alert')).toBeInTheDocument();
+        expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    it('shows a "no changes" info toast when submitting an unchanged form (HOS-190)', async () => {
+        // Regression guard: a diff-empty submit used to `return` silently,
+        // leaving the host with no feedback. It now surfaces an info toast.
+        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
+        vi.doMock('@/lib/api/endpoints-protected', () => ({
+            accommodationEditApi: { update: mockUpdate }
+        }));
+
+        render(<AccommodationEditor {...DEFAULT_PROPS} />);
+
+        const nameInput = screen.getByLabelText(/nombre/i) as HTMLInputElement;
+        fireEvent.submit(nameInput.closest('form')!);
+
+        await vi.waitFor(() => {
+            expect(vi.mocked(addToast)).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: 'info',
+                    message: expect.stringMatching(/no hay cambios/i)
+                })
+            );
+        });
+        expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
     it('should include contact info fields in PATCH payload when changed', async () => {
         const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
         vi.doMock('@/lib/api/endpoints-protected', () => ({

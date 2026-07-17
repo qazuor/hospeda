@@ -9,7 +9,11 @@
  * owns all state + handlers, delegates rendering to section subcomponents.
  */
 
-import { AccommodationUpdateHttpSchema, PriceCurrencyEnumSchema } from '@repo/schemas';
+import {
+    AccommodationUpdateHttpSchema,
+    InternationalPhoneRegex,
+    PriceCurrencyEnumSchema
+} from '@repo/schemas';
 import { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
 import type {
@@ -78,6 +82,14 @@ export interface AccommodationEditorProps {
  *    domain requires 30–2000 (`AccommodationSchema.description`).
  *  - `basePrice`: HTTP schema accepts `0`; the domain's `PriceSchema.price`
  *    requires a strictly positive value.
+ *  - `phone` / `whatsapp`: the HTTP schema types these as a bare
+ *    `z.string().optional()` with NO format check (unlike `email`/`website`/all
+ *    social URLs in the same schema), so `"asdasd"` used to pass both the client
+ *    gate and the server. They are re-tightened here to the shared
+ *    `InternationalPhoneRegex` — the SAME E.164 pattern `ProfileEditSchema.phone`
+ *    already enforces (`ContactInfoSection` composes the value as
+ *    `"<dialCode> <number>"`, which the regex accepts). `''` stays valid so a
+ *    host can clear the field (HOS-190 validation-gap fix).
  *
  * The numeric fields that `AccommodationEditData` types as `number | null`
  * (latitude/longitude/maxGuests/bedrooms/bathrooms/basePrice/currency) are
@@ -106,7 +118,23 @@ const AccommodationEditFormSchema = AccommodationUpdateHttpSchema.extend({
         .positive({ message: 'zodError.common.price.price.positive' })
         .nullable()
         .optional(),
-    currency: PriceCurrencyEnumSchema.nullable().optional()
+    currency: PriceCurrencyEnumSchema.nullable().optional(),
+    phone: z
+        .union([
+            z.literal(''),
+            z.string().regex(InternationalPhoneRegex, {
+                message: 'zodError.common.contact.mobilePhone.international'
+            })
+        ])
+        .optional(),
+    whatsapp: z
+        .union([
+            z.literal(''),
+            z.string().regex(InternationalPhoneRegex, {
+                message: 'zodError.common.contact.whatsapp.international'
+            })
+        ])
+        .optional()
 });
 
 /** Field-level error shape consumed by every editor section (dotted/flat keys). */
@@ -347,7 +375,15 @@ export function AccommodationEditor({
             setFormError(null);
             const payload = buildPatchPayload(formData);
             if (Object.keys(payload).length === 0) {
-                // No changes — nothing to save
+                // No changes to persist. Never save silently (HOS-190): give
+                // explicit feedback so "Save" always visibly does something.
+                addToast({
+                    type: 'info',
+                    message: t(
+                        'host.properties.editor.toast.noChanges',
+                        'No hay cambios para guardar'
+                    )
+                });
                 return;
             }
 
