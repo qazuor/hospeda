@@ -39,7 +39,8 @@ export type FacetId =
     | 'accommodationType'
     | 'eventCategory'
     | 'postCategory'
-    | 'destinationAttraction';
+    | 'destinationAttraction'
+    | 'pointOfInterestCategory';
 
 /**
  * Declared config for one multi-selectable quick-filter facet.
@@ -146,6 +147,24 @@ export const FACET_CONFIG_BY_ID: Readonly<Record<FacetId, FacetConfig>> = Object
         paramKey: 'attractions',
         singularParamKey: undefined,
         operator: 'AND',
+        enum: undefined,
+        dedicatedLandingPattern: undefined,
+        outOfBackendScope: true
+    }),
+    // HOS-147: thematic POI-category filter on the destination detail page.
+    // DB-driven values (category slugs from the public poi-categories catalog),
+    // so `enum` is `undefined` like `destinationAttraction`. `operator: 'OR'`
+    // (any-of union) per spec D-1. `outOfBackendScope: true` (like destinos):
+    // owner decision D-3 resolves this filter ENTIRELY client-side over the
+    // already-loaded, unpaginated POI list — the URL `?categories=` param is
+    // for shareability only, never a server round-trip. No dedicated landing
+    // (NG-4): the destination page stays canonical, the filter is a client-side
+    // view refinement.
+    pointOfInterestCategory: Object.freeze({
+        id: 'pointOfInterestCategory',
+        paramKey: 'categories',
+        singularParamKey: undefined,
+        operator: 'OR',
         enum: undefined,
         dedicatedLandingPattern: undefined,
         outOfBackendScope: true
