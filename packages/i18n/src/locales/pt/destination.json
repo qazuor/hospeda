@@ -208,7 +208,11 @@
         "accommodationCount_other": "{{count}} acomodacoes disponiveis",
         "eventCount_one": "{{count}} evento proximo",
         "eventCount_other": "{{count}} eventos proximos",
-        "pointsOfInterestTitle": "Pontos de interesse"
+        "pointsOfInterestTitle": "Pontos de interesse",
+        "pointsOfInterestFilterLabel": "Filtrar por categoria",
+        "pointsOfInterestFilterClear": "Limpar ({{count}})",
+        "pointsOfInterestFilterClearAria": "Remover os {{count}} filtros de categoria",
+        "pointsOfInterestEmptyFiltered": "Nenhum ponto de interesse para as categorias selecionadas."
     },
     "rating": {
         "outOf": "de 5",

@@ -73,6 +73,13 @@ export interface DestinationPOIItem {
 		readonly slug: string;
 		readonly nameI18n?: I18nTextLike | null;
 	} | null;
+	/**
+	 * The POI's full category set (HOS-147) — every category slug, not just the
+	 * primary. Emitted as the card's `data-poi-categories` attribute so the
+	 * client-side thematic filter island (`DestinationPOIFilter.client.tsx`)
+	 * can show/hide this card by intersecting it with the active selection.
+	 */
+	readonly categories?: ReadonlyArray<{ readonly slug: string }>;
 }
 
 interface Props {
@@ -141,8 +148,11 @@ const overflowCount = Math.max(0, sorted.length - POI_VISIBLE_LIMIT);
 				primaryCategory: poi.primaryCategory,
 				locale
 			});
+			// HOS-147: emit every category slug so the client-side thematic
+			// filter island can match this card against the active selection.
+			const categorySlugs = (poi.categories ?? []).map((c) => c.slug).join(',');
 			return (
-				<div class="poi-section__card">
+				<div class="poi-section__card" data-poi-card data-poi-categories={categorySlugs}>
 					<span class="poi-section__icon" aria-hidden="true">
 						<Icon size={28} weight="fill" color={iconColor} aria-hidden="true" />
 					</span>
@@ -155,6 +165,13 @@ const overflowCount = Math.max(0, sorted.length - POI_VISIBLE_LIMIT);
 			);
 		})}
 	</div>
+
+	<p class="poi-section__empty" data-poi-empty hidden>
+		{t(
+			'destinations.detailPage.pointsOfInterestEmptyFiltered',
+			'No hay puntos de interés para las categorías seleccionadas.'
+		)}
+	</p>
 
 	{
 		hasOverflow && (
@@ -217,6 +234,14 @@ const overflowCount = Math.max(0, sorted.length - POI_VISIBLE_LIMIT);
 		transition: box-shadow var(--duration-fast) ease;
 	}
 
+	/* HOS-147: the thematic filter island hides non-matching cards by setting
+	   the `hidden` attribute; the card's own `display: flex` would otherwise
+	   defeat the UA `[hidden] { display: none }` rule (author-normal beats
+	   UA-normal regardless of specificity), so re-assert it explicitly. */
+	.poi-section__card[hidden] {
+		display: none;
+	}
+
 	.poi-section__card:hover {
 		box-shadow: var(--shadow-card-hover);
 	}
@@ -256,6 +281,14 @@ const overflowCount = Math.max(0, sorted.length - POI_VISIBLE_LIMIT);
 		overflow: hidden;
 	}
 
+	.poi-section__empty {
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		color: var(--core-muted-foreground);
+		margin: 0;
+		padding: 1rem 0;
+	}
+
 	/* HOS-181: visual-only cut. When the disclosure is closed, hide every card
 	 * past the 12th. All cards stay in the DOM (SSR-first, crawlable) — this
 	 * never removes content from the served HTML. `nth-child(n + 13)` pairs with
@@ -263,6 +296,22 @@ const overflowCount = Math.max(0, sorted.length - POI_VISIBLE_LIMIT);
 	 * `:has()` does not match, and all cards show. */
 	.poi-section:has(.poi-section__more:not([open])) .poi-section__card:nth-child(n + 13) {
 		display: none;
+	}
+
+	/* HOS-147 × HOS-181: while a thematic category filter is active (the island
+	 * sets `data-poi-filtered` on the section), the filter IS the narrowing
+	 * mechanism — the 12-card overflow cut must not also hide a filtered-in card
+	 * just because it sits past the 12th DOM position, and the "Ver más" control
+	 * is redundant. So hide the toggle and re-show every MATCHING card past the
+	 * 12th. `[hidden]` (non-matching) cards stay hidden via the rule below —
+	 * hence the `:not([hidden])`. Higher specificity than the HOS-181 cut. */
+	.poi-section[data-poi-filtered] .poi-section__more {
+		display: none;
+	}
+
+	.poi-section[data-poi-filtered]:has(.poi-section__more:not([open]))
+		.poi-section__card:nth-child(n + 13):not([hidden]) {
+		display: flex;
 	}
 
 	/* Native <details> used purely as a stateful toggle — the cards live in the

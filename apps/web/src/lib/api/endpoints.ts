@@ -17,6 +17,7 @@ import type {
     GastronomyPublic,
     NearbyPoi,
     PartnerPublic,
+    PoiCategoryPublic,
     PointOfInterestPublic,
     PostListItem,
     PostPublic,
@@ -475,6 +476,21 @@ export const pointOfInterestApi = {
         readonly slug: string;
     }): Promise<ApiResult<PointOfInterestPublic | null>> {
         return apiClient.get({ path: `${BASE}/points-of-interest/slug/${slug}` });
+    }
+};
+
+// --- POI Categories ---
+
+/**
+ * Public POI-category catalog API (HOS-147). The endpoint returns the full
+ * ACTIVE catalog as a bare array (no pagination), already ordered by
+ * displayWeight desc then slug — the source for the destination-page thematic
+ * filter-chip options.
+ */
+export const poiCategoryApi = {
+    /** List the public POI category catalog (ACTIVE only, display-ordered). */
+    list(): Promise<ApiResult<ReadonlyArray<PoiCategoryPublic>>> {
+        return apiClient.get({ path: `${BASE}/poi-categories` });
     }
 };
 
