@@ -32,44 +32,44 @@
             "id": "T-002",
             "title": "Add public read method to PoiCategoryService",
             "description": "Add a read method on PoiCategoryService (packages/service-core) that returns ACTIVE, non-deleted categories sorted by displayWeight asc then slug, shaped as PublicPoiCategorySchema. Reuse BaseModelImpl.findAll on PoiCategoryModel with lifecycleState=ACTIVE / deletedAt=null. Tests (TDD, write first): unit test that soft-deleted/non-active categories are excluded and ordering is displayWeight then slug (AC-1).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-003"],
             "subtasks": [
-                { "title": "Write failing unit test (active-only + order)", "completed": false },
-                { "title": "Implement listPublic read method", "completed": false },
-                { "title": "Map rows to PublicPoiCategorySchema", "completed": false }
+                { "title": "Write failing unit test (active-only + order)", "completed": true },
+                { "title": "Implement listPublic read method", "completed": true },
+                { "title": "Map rows to PublicPoiCategorySchema", "completed": true }
             ],
             "tags": ["service", "api"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-17T04:07:19.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-17T05:15:00Z",
+                "completed": "2026-07-17T05:25:00Z"
             }
         },
         {
             "id": "T-003",
             "title": "Add public route GET /api/v1/public/poi-categories",
             "description": "Add public/list.ts under apps/api/src/routes/poi-category/ using createPublicListRoute (mirror an existing public catalog route). Validate empty query, call PoiCategoryService.listPublic, return array of PublicPoiCategorySchema, set cacheTTL consistent with other public catalog routes. Wire publicPoiCategoryRoutes into apps/api/src/routes/index.ts. Tests: route integration test asserting 200, shape, and active-only ordering (AC-1).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-011"],
             "subtasks": [
-                { "title": "Create public/list.ts route", "completed": false },
-                { "title": "Wire into routes/index.ts", "completed": false },
-                { "title": "Route integration test", "completed": false }
+                { "title": "Create public/list.ts route", "completed": true },
+                { "title": "Wire into routes/index.ts", "completed": true },
+                { "title": "Route integration test", "completed": true }
             ],
             "tags": ["api", "route"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-17T04:07:19.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-17T05:25:00Z",
+                "completed": "2026-07-17T05:32:00Z"
             }
         },
         {
@@ -322,9 +322,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 10,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.1
     }
