@@ -600,4 +600,37 @@ describe('persistTranslations', () => {
         >;
         expect(meta.name?.en?.autoTranslated).toBe(false);
     });
+
+    it('refuses to persist a malformed translated value instead of writing it ungated (HOS-190 regression)', async () => {
+        // Regression guard: `persistTranslations` used to build `updateSet`
+        // straight from `result.translatedText` (AI-provider output) and
+        // write it via `db.update()` with zero runtime validation. A
+        // provider response that doesn't come back as a plain string (here
+        // simulated by force-casting a number past the `TranslateResult`
+        // type) must now be rejected by the `I18nTextSchema` gate BEFORE any
+        // DB write — never persisted silently.
+        const fieldValues = { name: 'Cabaña' };
+        const translations: TranslateResult[] = [
+            {
+                fieldType: 'name',
+                locale: 'en',
+                translatedText: 12345 as unknown as string,
+                success: true
+            }
+        ];
+
+        await expect(
+            persistTranslations(
+                'accommodation',
+                'test-uuid',
+                fieldValues,
+                translations,
+                'stub',
+                'stub-model'
+            )
+        ).rejects.toThrow(/malformed i18n value/i);
+
+        // The gate must fire before the write — db.update() never runs.
+        expect(mockUpdate).not.toHaveBeenCalled();
+    });
 });

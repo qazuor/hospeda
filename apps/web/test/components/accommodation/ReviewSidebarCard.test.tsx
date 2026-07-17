@@ -105,6 +105,57 @@ describe('ReviewSidebarCard — render', () => {
     });
 });
 
+describe('ReviewSidebarCard — content min-length gate (HOS-190)', () => {
+    beforeEach(() => {
+        setupDialogMocks();
+    });
+
+    it('disables submit and shows a field error when content is 1-9 chars', () => {
+        renderCard();
+        openDialog();
+        rateAllAspects();
+
+        fireEvent.change(screen.getByPlaceholderText(/comparte tu experiencia en detalle/i), {
+            target: { value: 'too short' } // 9 chars
+        });
+
+        expect(screen.getByRole('button', { name: /enviar reseña/i })).toBeDisabled();
+        expect(
+            screen.getByText('El comentario debe tener al menos 10 caracteres')
+        ).toBeInTheDocument();
+    });
+
+    it('does NOT call fetch when content is under the minimum and the form is submitted', () => {
+        vi.stubGlobal('fetch', vi.fn());
+        renderCard();
+        openDialog();
+        rateAllAspects();
+
+        fireEvent.change(screen.getByPlaceholderText(/comparte tu experiencia en detalle/i), {
+            target: { value: 'short' }
+        });
+
+        const form = document.querySelector('form') as HTMLFormElement;
+        fireEvent.submit(form);
+
+        expect(global.fetch).not.toHaveBeenCalled();
+        vi.unstubAllGlobals();
+    });
+
+    it('re-enables submit once content reaches 10+ chars (or is cleared back to empty/optional)', () => {
+        renderCard();
+        openDialog();
+        rateAllAspects();
+
+        const textarea = screen.getByPlaceholderText(/comparte tu experiencia en detalle/i);
+        fireEvent.change(textarea, { target: { value: 'short' } });
+        expect(screen.getByRole('button', { name: /enviar reseña/i })).toBeDisabled();
+
+        fireEvent.change(textarea, { target: { value: 'now this is long enough' } });
+        expect(screen.getByRole('button', { name: /enviar reseña/i })).not.toBeDisabled();
+    });
+});
+
 describe('ReviewSidebarCard — review_submitted analytics event', () => {
     let captureSpy: ReturnType<typeof vi.fn>;
 

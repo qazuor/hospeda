@@ -210,6 +210,58 @@ describe('CalendarSyncPanel', () => {
         expect(mockStatus).toHaveBeenCalledTimes(2);
     });
 
+    // HOS-190 form 25: client-side validation via ConnectIcalBodySchema
+    // (feedUrl must be HTTPS, ≤2048 chars) — blocks the call to onConnectIcal
+    // before the network round-trip, showing a FieldError under the input.
+    // Asserts on the error element's id + non-empty text (not a literal
+    // translated string): the test's i18n mock is a 2-arg `(key, fallback?)`
+    // stub, so a message resolved through `resolveValidationMessage` (which
+    // calls `t` with a 3rd `params` arg the mock ignores) surfaces as the raw
+    // `validation.*` key rather than the real Spanish copy — matching the
+    // established pattern in ProfileCompletion.client.test.tsx.
+    it('blocks connectIcal and shows a field error for a non-HTTPS feed URL', async () => {
+        mockStatus.mockResolvedValue(emptyStatus());
+        const user = userEvent.setup();
+
+        render(
+            <CalendarSyncPanel
+                locale="es"
+                accommodationId={ACC_ID}
+            />
+        );
+        const airbnbRow = within(await screen.findByTestId('calendar-provider-row-AIRBNB'));
+        const input = airbnbRow.getByPlaceholderText('https://ejemplo.com/calendario.ics');
+        await user.type(input, 'http://airbnb.com/calendar/ical/123.ics');
+        await user.click(airbnbRow.getByRole('button', { name: 'Conectar' }));
+
+        await waitFor(() => {
+            expect(document.getElementById('ical-feed-url-AIRBNB-error')?.textContent).toBeTruthy();
+        });
+        expect(mockConnectIcal).not.toHaveBeenCalled();
+    });
+
+    it('clears the feedUrl field error once the value is edited again', async () => {
+        mockStatus.mockResolvedValue(emptyStatus());
+        const user = userEvent.setup();
+
+        render(
+            <CalendarSyncPanel
+                locale="es"
+                accommodationId={ACC_ID}
+            />
+        );
+        const airbnbRow = within(await screen.findByTestId('calendar-provider-row-AIRBNB'));
+        const input = airbnbRow.getByPlaceholderText('https://ejemplo.com/calendario.ics');
+        await user.type(input, 'not-a-url');
+        await user.click(airbnbRow.getByRole('button', { name: 'Conectar' }));
+        await waitFor(() => {
+            expect(document.getElementById('ical-feed-url-AIRBNB-error')?.textContent).toBeTruthy();
+        });
+
+        await user.type(input, 's');
+        expect(document.getElementById('ical-feed-url-AIRBNB-error')).not.toBeInTheDocument();
+    });
+
     it('surfaces a 400 connect-ical error next to that provider row only', async () => {
         mockStatus.mockResolvedValue(emptyStatus());
         mockConnectIcal.mockResolvedValue({

@@ -9,13 +9,26 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { UserBookmarkCollectionCreateInputSchema } from '@repo/schemas';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { CollectionColorPicker, CollectionIconPicker } from './CollectionPickers';
 import styles from './CreateEditCollectionModal.module.css';
 import { useCollectionMutation } from './useCollectionMutation';
+
+/**
+ * Client-validated form schema — the user-editable fields only. Derived from
+ * `UserBookmarkCollectionCreateInputSchema` (not the `*UpdateInputSchema`,
+ * which is `.partial()` and would make `name` optional) because the modal
+ * ALWAYS submits `name` in both CREATE and EDIT mode; `userId` is omitted
+ * since it's never a form field (resolved server-side from the session,
+ * exactly like the API's own `CreateCollectionRequestSchema`).
+ */
+const CollectionFormSchema = UserBookmarkCollectionCreateInputSchema.omit({ userId: true });
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -120,8 +133,23 @@ export function CreateEditCollectionModal({
         icon: collection?.icon ?? ''
     }));
 
-    /** Inline validation error for the name field */
+    /**
+     * Inline error for the name field coming from the API's 409 NAME_TAKEN
+     * response (`useCollectionMutation`'s `setNameError` callback) — this is
+     * genuinely server-side (can't be known client-side) and stays a
+     * separate mechanism from `fieldErrors.name` below, which is CLIENT-side
+     * pre-submit validation. Both render under the same field; whichever is
+     * set wins (they are never both set at once — clearing one field clears
+     * the other on next change, see `handleNameChange`).
+     */
     const [nameError, setNameError] = useState<string | null>(null);
+
+    // ── Client-side validation (HOS-190 slice 3) ──────────────────────────
+
+    const { fieldErrors, validate, clearError } = useZodForm({
+        schema: CollectionFormSchema,
+        t
+    });
 
     // ── Mutation callbacks (stable reference via useMemo) ─────────────────
 
@@ -168,10 +196,12 @@ export function CreateEditCollectionModal({
     function handleNameChange(event: React.ChangeEvent<HTMLInputElement>): void {
         setForm((prev) => ({ ...prev, name: event.target.value }));
         if (nameError) setNameError(null);
+        clearError('name');
     }
 
     function handleDescriptionChange(event: React.ChangeEvent<HTMLTextAreaElement>): void {
         setForm((prev) => ({ ...prev, description: event.target.value }));
+        clearError('description');
     }
 
     // ── Submit ────────────────────────────────────────────────────────────
@@ -179,18 +209,33 @@ export function CreateEditCollectionModal({
     function handleSubmit(event: React.FormEvent<HTMLFormElement>): void {
         event.preventDefault();
 
-        // Local validation: name is required
-        const trimmedName = form.name.trim();
-        if (trimmedName.length === 0) {
-            setNameError('El nombre es requerido');
-            return;
-        }
+        // Client-side validation against the same schema the API validates
+        // create/update bodies with (name required 1-60 chars, description
+        // max 300, color/icon hex/key format when set — though color/icon
+        // only ever come from the fixed picker options, never free text).
+        const parsed = validate({
+            name: form.name.trim(),
+            description: form.description.trim() || null,
+            color: form.color.trim() || null,
+            icon: form.icon.trim() || null
+        });
+        if (!parsed.success) return;
 
-        // Delegate to mutation hook (async, non-blocking for the handler)
+        // Delegate to mutation hook (async, non-blocking for the handler).
+        // useCollectionMutation does its own trimming + null-conversion for
+        // color/icon, so the original (untrimmed) form state is passed —
+        // parsed.data is only used as the client-side validation gate.
         void submit(form);
     }
 
     // ── Computed values ───────────────────────────────────────────────────
+
+    /**
+     * Combined name-field error: the API's 409 NAME_TAKEN error (server-side,
+     * can only be known after a submit attempt) takes precedence when both
+     * happen to be set, otherwise falls back to the client-side Zod error.
+     */
+    const nameFieldError = nameError ?? fieldErrors.name;
 
     const modalTitle = isEditMode
         ? t('account.favorites.collections.edit', 'Editar colección')
@@ -280,23 +325,19 @@ export function CreateEditCollectionModal({
                         <input
                             id="collection-name"
                             type="text"
-                            className={`${styles.input}${nameError ? ` ${styles.inputError}` : ''}`}
+                            className={`${styles.input}${nameFieldError ? ` ${styles.inputError}` : ''}`}
                             value={form.name}
                             onChange={handleNameChange}
                             maxLength={NAME_MAX_LENGTH}
                             aria-required="true"
-                            aria-describedby={nameError ? 'collection-name-error' : undefined}
+                            aria-invalid={!!nameFieldError}
+                            aria-describedby={nameFieldError ? fieldErrorId('name') : undefined}
                             autoComplete="off"
                         />
-                        {nameError && (
-                            <p
-                                id="collection-name-error"
-                                className={styles.errorMsg}
-                                role="alert"
-                            >
-                                {nameError}
-                            </p>
-                        )}
+                        <FieldError
+                            id={fieldErrorId('name')}
+                            message={nameFieldError}
+                        />
                     </div>
 
                     {/* Description field (optional) */}
@@ -334,7 +375,12 @@ export function CreateEditCollectionModal({
                             onChange={handleDescriptionChange}
                             maxLength={DESCRIPTION_MAX_LENGTH}
                             rows={3}
-                            aria-describedby="collection-description-hint"
+                            aria-invalid={!!fieldErrors.description}
+                            aria-describedby={
+                                fieldErrors.description
+                                    ? fieldErrorId('description')
+                                    : 'collection-description-hint'
+                            }
                         />
                         <p
                             id="collection-description-hint"
@@ -345,6 +391,10 @@ export function CreateEditCollectionModal({
                                 'Opcional. Describe para qué usarás esta colección.'
                             )}
                         </p>
+                        <FieldError
+                            id={fieldErrorId('description')}
+                            message={fieldErrors.description}
+                        />
                     </div>
 
                     {/* Color picker */}

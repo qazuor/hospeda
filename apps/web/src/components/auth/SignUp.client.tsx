@@ -11,13 +11,14 @@
  * structured firstName + lastName instead of a single free-text name.
  */
 
-import { StrongPasswordRegex } from '@repo/schemas';
+import { StrongPasswordSchema } from '@repo/schemas';
 import { useEffect, useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
 import { translateApiError } from '@/lib/api-errors';
 import { signIn, signUp } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
+import { EmailFormatSchema } from '@/lib/forms/email-format';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './SignUp.module.css';
@@ -111,16 +112,45 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
         setPasswordError(null);
         setConfirmError(null);
 
-        // Enforce the full strong-password contract client-side so the
-        // user sees rule violations as inline field errors instead of
-        // a back-end 400 with a vague generic message.
-        if (!StrongPasswordRegex.test(password)) {
-            setPasswordError(
-                t(
-                    'auth.signUp.errors.passwordWeak',
-                    'La contraseña debe cumplir todas las reglas (8+ caracteres, mayúscula, minúscula, número y carácter especial).'
-                )
-            );
+        // HOS-190 slice 3: `required`/`type="email"` are decorative under
+        // `noValidate` — enforce presence + format for real before submitting.
+        const trimmedEmail = email.trim();
+        if (!trimmedEmail) {
+            setError(t('auth.signUp.errors.emailRequired', 'Ingresá tu correo electrónico.'));
+            return;
+        }
+        if (!EmailFormatSchema.safeParse(trimmedEmail).success) {
+            setError(t('auth.signUp.errors.emailInvalid', 'Ingresá un correo electrónico válido.'));
+            return;
+        }
+
+        // Unified with SetPassword/ResetPassword (HOS-190 slice 3): validate
+        // against the shared StrongPasswordSchema (min 8, max 128, upper/
+        // lower/digit/special) instead of the regex directly, so bounds and
+        // messaging stay consistent across every password-setting form. This
+        // does NOT change the complexity policy itself (still upper/lower/
+        // digit/special) — only adds the missing 128-char cap.
+        const passwordResult = StrongPasswordSchema.safeParse(password);
+        if (!passwordResult.success) {
+            const issue = passwordResult.error.issues[0];
+            if (issue?.code === 'too_big') {
+                // NOTE (HOS-190 i18n gap): no dedicated i18n key exists yet
+                // for this case — the fallback below is shown for every
+                // locale until `auth.signUp.errors.passwordMax` is added.
+                setPasswordError(
+                    t(
+                        'auth.signUp.errors.passwordMax',
+                        'La contraseña no puede superar los 128 caracteres.'
+                    )
+                );
+            } else {
+                setPasswordError(
+                    t(
+                        'auth.signUp.errors.passwordWeak',
+                        'La contraseña debe cumplir todas las reglas (8+ caracteres, mayúscula, minúscula, número y carácter especial).'
+                    )
+                );
+            }
             return;
         }
 
@@ -138,7 +168,7 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
             // is satisfied with an empty string here; the profile completion
             // form (SPEC-113) collects firstName + lastName and updates the
             // user's display_name afterwards.
-            const result = await signUp.email({ email, password, name: '' });
+            const result = await signUp.email({ email: trimmedEmail, password, name: '' });
 
             if (result.error) {
                 setError(

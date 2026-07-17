@@ -8,6 +8,7 @@
  * surface the social-network URLs collected during signup.
  */
 
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import type { ProfileEditFieldErrors } from './ProfileEditForm.helpers';
 import styles from './ProfileEditForm.module.css';
 
@@ -62,19 +63,15 @@ function SocialField({
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
-                aria-describedby={error ? `${id}-error` : undefined}
+                aria-invalid={!!error}
+                aria-describedby={error ? fieldErrorId(id) : undefined}
                 autoComplete="off"
                 disabled={submitting}
             />
-            {error && (
-                <p
-                    id={`${id}-error`}
-                    className={styles.errorMsg}
-                    role="alert"
-                >
-                    {error}
-                </p>
-            )}
+            <FieldError
+                id={fieldErrorId(id)}
+                message={error}
+            />
         </div>
     );
 }

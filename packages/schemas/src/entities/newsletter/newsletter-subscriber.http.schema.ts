@@ -70,6 +70,40 @@ export const NewsletterSubscribeResponseSchema = z.object({
 export type NewsletterSubscribeResponse = z.infer<typeof NewsletterSubscribeResponseSchema>;
 
 // ============================================================================
+// NewsletterGuestSubscribeRequestSchema
+// ============================================================================
+
+/** Sources accepted for a guest (unauthenticated) newsletter subscribe request. */
+export const NEWSLETTER_GUEST_SUBSCRIBE_SOURCES = ['web_footer', 'web_landing'] as const;
+
+/**
+ * Request body for `POST /api/v1/public/newsletter/subscribe` (guest/unauthenticated
+ * signup). Exported from `@repo/schemas` (HOS-190 form 23) so the web client
+ * validates against the exact same shape the API route enforces — the route
+ * imports this schema instead of declaring its own private copy.
+ *
+ * @example
+ * ```ts
+ * const result = NewsletterGuestSubscribeRequestSchema.safeParse({
+ *   email: 'visitor@example.com',
+ *   locale: 'es',
+ *   source: 'web_footer'
+ * });
+ * ```
+ */
+export const NewsletterGuestSubscribeRequestSchema = z.object({
+    /** Email address to subscribe. */
+    email: z.string().email().max(255),
+    /** UI locale at signup time, used for the verification email copy. */
+    locale: z.enum(['es', 'en', 'pt']).optional(),
+    /** Where the signup originated. */
+    source: z.enum(NEWSLETTER_GUEST_SUBSCRIBE_SOURCES).optional()
+});
+
+/** TypeScript type inferred from {@link NewsletterGuestSubscribeRequestSchema}. */
+export type NewsletterGuestSubscribeRequest = z.infer<typeof NewsletterGuestSubscribeRequestSchema>;
+
+// ============================================================================
 // NewsletterSubscriberStatsResponseSchema
 // ============================================================================
 

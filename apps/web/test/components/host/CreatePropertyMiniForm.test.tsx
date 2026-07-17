@@ -44,7 +44,7 @@ const FIXTURE_IMPORT_RESPONSE: AccommodationImportResponse = {
     partial: false,
     destinationHint: {
         scrapedLocality: 'Concepción del Uruguay',
-        candidates: [{ id: '00000000-0000-0000-0000-000000000001', name: 'Concepción del Uruguay' }]
+        candidates: [{ id: '00000000-0000-4000-8000-000000000001', name: 'Concepción del Uruguay' }]
     }
 };
 
@@ -57,7 +57,16 @@ const FIXTURE_IMPORT_RESPONSE_FULL: AccommodationImportResponse = {
         name: { value: 'Casa Importada', confidence: 90, source: 'jsonld' },
         summary: { value: 'Descripción importada desde URL.', confidence: 75, source: 'opengraph' },
         type: { value: 'CABIN', confidence: 80, source: 'text' },
-        description: { value: 'Descripción larga importada.', confidence: 70, source: 'text' },
+        // HOS-190 slice 3: the submit payload is now validated against
+        // `AccommodationCreateDraftHttpSchema`, whose `description` field
+        // requires a 30-char minimum (domain bound) — this value must stay
+        // at or above that length or the "submit payload with extras" test
+        // fails validation and the fetch mock is never called.
+        description: {
+            value: 'Descripción larga importada desde una URL de ejemplo.',
+            confidence: 70,
+            source: 'text'
+        },
         extraInfo: {
             capacity: { value: 4, confidence: 85, source: 'jsonld' },
             bedrooms: { value: 2, confidence: 80, source: 'jsonld' },
@@ -86,13 +95,13 @@ const FIXTURE_IMPORT_RESPONSE_FULL: AccommodationImportResponse = {
     methodsUsed: ['jsonld', 'text'],
     partial: false,
     resolvedAmenityIds: [
-        '11111111-1111-1111-1111-111111111111',
-        '22222222-2222-2222-2222-222222222222',
-        '33333333-3333-3333-3333-333333333333'
+        '11111111-1111-4111-8111-111111111111',
+        '22222222-2222-4222-8222-222222222222',
+        '33333333-3333-4333-8333-333333333333'
     ],
     destinationHint: {
         scrapedLocality: 'Concepción del Uruguay',
-        candidates: [{ id: '00000000-0000-0000-0000-000000000001', name: 'Concepción del Uruguay' }]
+        candidates: [{ id: '00000000-0000-4000-8000-000000000001', name: 'Concepción del Uruguay' }]
     }
 };
 
@@ -136,6 +145,14 @@ vi.mock('../../../src/components/host/ImportFromUrl.client', () => ({
  * Replace SearchableSelect with a plain button so the tests can drive the
  * type and city fields without the async combobox UI. Clicking the button
  * fires `onChange` with a fixed item, simulating a selection.
+ *
+ * HOS-190 slice 3: the form now validates the FULL submit payload against
+ * `AccommodationCreateDraftHttpSchema` (`type` must be a real
+ * `AccommodationTypeEnum` value, `destinationId` must be a UUID) before
+ * calling the API. A single shared `id: 'mock-id'` for every select used to
+ * be harmless when only presence was checked; it now fails real content
+ * validation and silently blocks submission. Branch on `testId` so each
+ * mocked select returns a schema-valid value for its field.
  */
 vi.mock('../../../src/components/form/SearchableSelect.client', () => ({
     SearchableSelect: ({
@@ -147,16 +164,24 @@ vi.mock('../../../src/components/form/SearchableSelect.client', () => ({
         testId?: string;
         label: string;
         [key: string]: unknown;
-    }) => (
-        <button
-            type="button"
-            data-testid={testId ? `${testId}-mock-select` : 'mock-select'}
-            aria-label={`select-${label}`}
-            onClick={() => onChange({ id: 'mock-id', label: 'Mock Option' })}
-        >
-            {label}
-        </button>
-    )
+    }) => {
+        const mockItem =
+            testId === 'property-type'
+                ? { id: 'APARTMENT', label: 'Apartamento' }
+                : testId === 'property-city'
+                  ? { id: '11111111-1111-4111-8111-111111111111', label: 'Mock City' }
+                  : { id: 'mock-id', label: 'Mock Option' };
+        return (
+            <button
+                type="button"
+                data-testid={testId ? `${testId}-mock-select` : 'mock-select'}
+                aria-label={`select-${label}`}
+                onClick={() => onChange(mockItem)}
+            >
+                {label}
+            </button>
+        );
+    }
 }));
 
 /**
@@ -601,7 +626,7 @@ describe('CreatePropertyMiniForm — imported extras (SPEC-258)', () => {
         // Open the extras section if collapsed (it defaults to open)
         const textarea = screen.getByTestId('extras-description') as HTMLTextAreaElement;
         expect(textarea).toBeInTheDocument();
-        expect(textarea.value).toBe('Descripción larga importada.');
+        expect(textarea.value).toBe('Descripción larga importada desde una URL de ejemplo.');
     });
 
     it('renders number inputs for capacity fields when imported', async () => {
@@ -780,9 +805,9 @@ describe('CreatePropertyMiniForm — submit payload with extras (SPEC-258)', () 
         expect(body.phone).toBe('+54 3442 123456');
         expect(body.website).toBe('https://ejemplo.com');
         expect(body.amenityIds).toEqual([
-            '11111111-1111-1111-1111-111111111111',
-            '22222222-2222-2222-2222-222222222222',
-            '33333333-3333-3333-3333-333333333333'
+            '11111111-1111-4111-8111-111111111111',
+            '22222222-2222-4222-8222-222222222222',
+            '33333333-3333-4333-8333-333333333333'
         ]);
     });
 
@@ -835,6 +860,39 @@ describe('CreatePropertyMiniForm — submit payload with extras (SPEC-258)', () 
         expect(body.basePrice).toBeUndefined();
         expect(body.latitude).toBeUndefined();
         expect(body.amenityIds).toBeUndefined();
+    });
+
+    it('blocks submit and shows a field error when the imported description is edited below the domain minimum (HOS-190 regression)', async () => {
+        // Regression guard: `validate()` previously only checked 4 of ~15
+        // payload fields by hand (name/summary/type/destinationId) — the
+        // imported extras (description, maxGuests, bathrooms, street,
+        // number, website, ...) reached the API completely unvalidated.
+        // `AccommodationCreateDraftHttpSchema.description` requires a
+        // 30-char minimum; editing the imported description down below
+        // that must now block submit client-side instead of only failing
+        // against the real API.
+        const fetchMock = vi.fn();
+        vi.stubGlobal('fetch', fetchMock);
+
+        const user = userEvent.setup();
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        // Full import auto-fills name/summary/type AND auto-selects the
+        // destination from `destinationHint.candidates[0]` — all four
+        // required fields are already valid after this.
+        await triggerFullImport(user);
+
+        const descriptionTextarea = screen.getByTestId('extras-description') as HTMLTextAreaElement;
+        await user.clear(descriptionTextarea);
+        await user.type(descriptionTextarea, 'Muy corta');
+
+        await act(async () => {
+            await user.click(getSubmitButton());
+        });
+
+        // The API must never be called — validation blocks submit client-side.
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(await screen.findByRole('alert')).toBeInTheDocument();
     });
 });
 

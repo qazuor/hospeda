@@ -16,6 +16,7 @@
  */
 
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { translateApiError } from '@/lib/api-errors';
@@ -47,6 +48,7 @@ const INITIAL_RATINGS: RatingState = {
 
 const TITLE_MAX = 120;
 const CONTENT_MAX = 2000;
+const CONTENT_MIN = 10;
 
 const DEFAULT_RATING_LABELS: Record<RatingKey, string> = {
     cleanliness: 'Limpieza',
@@ -88,6 +90,8 @@ export function ReviewSidebarCard({
     const [success, setSuccess] = useState<boolean>(false);
 
     const allRated = RATING_KEYS.every((key) => ratings[key] >= 1);
+    const contentTrimmed = content.trim();
+    const contentValid = contentTrimmed.length === 0 || contentTrimmed.length >= CONTENT_MIN;
 
     // Sync the native <dialog> element with React state. Use showModal()
     // (not show()) so focus is trapped and ESC closes the dialog.
@@ -127,7 +131,7 @@ export function ReviewSidebarCard({
     const handleSubmit = useCallback(
         async (event: FormEvent<HTMLFormElement>) => {
             event.preventDefault();
-            if (!allRated || submitting) return;
+            if (!allRated || submitting || !contentValid) return;
             setSubmitting(true);
             setError(null);
 
@@ -141,7 +145,7 @@ export function ReviewSidebarCard({
                         body: JSON.stringify({
                             rating: ratings,
                             title: title.trim() || undefined,
-                            content: content.trim() || undefined
+                            content: contentTrimmed || undefined
                         })
                     }
                 );
@@ -176,7 +180,7 @@ export function ReviewSidebarCard({
                     accommodation_id: accommodationId,
                     average_rating: averageRating,
                     has_title: title.trim().length > 0,
-                    has_content: content.trim().length > 0
+                    has_content: contentTrimmed.length > 0
                 });
 
                 setSuccess(true);
@@ -192,7 +196,18 @@ export function ReviewSidebarCard({
                 setSubmitting(false);
             }
         },
-        [accommodationId, allRated, apiUrl, content, locale, ratings, submitting, t, title]
+        [
+            accommodationId,
+            allRated,
+            apiUrl,
+            contentTrimmed,
+            contentValid,
+            locale,
+            ratings,
+            submitting,
+            t,
+            title
+        ]
     );
 
     return (
@@ -466,10 +481,27 @@ export function ReviewSidebarCard({
                                             'Comparte tu experiencia en detalle...'
                                         )}
                                         disabled={submitting}
+                                        aria-invalid={!contentValid}
+                                        aria-describedby={
+                                            contentValid
+                                                ? undefined
+                                                : fieldErrorId('review-content')
+                                        }
                                     />
                                     <span className={styles.charCounter}>
                                         {content.length}/{CONTENT_MAX}
                                     </span>
+                                    <FieldError
+                                        id={fieldErrorId('review-content')}
+                                        message={
+                                            contentValid
+                                                ? null
+                                                : t(
+                                                      'review.form.errors.contentMinLength',
+                                                      'El comentario debe tener al menos 10 caracteres'
+                                                  )
+                                        }
+                                    />
                                 </label>
 
                                 {error && (
@@ -493,7 +525,7 @@ export function ReviewSidebarCard({
                                     <button
                                         type="submit"
                                         className={styles.submitButton}
-                                        disabled={!allRated || submitting}
+                                        disabled={!allRated || !contentValid || submitting}
                                     >
                                         {submitting && (
                                             <span

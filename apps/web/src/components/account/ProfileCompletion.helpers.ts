@@ -2,39 +2,34 @@
  * @file ProfileCompletion.helpers.ts
  * @description Helpers, constants, and types for `ProfileCompletion.client.tsx`
  * (SPEC-113 T-113-04). Extracted to keep the island file under the 500-line
- * limit and to make the validation logic separately testable.
+ * limit and to make the computation logic separately testable.
+ *
+ * HOS-190 slice 3: the hand-rolled `validateProfileCompletionFields` (and its
+ * `ProfileCompletionFieldErrors` token map) was removed in favor of the
+ * shared `useZodForm` primitive validating the real API payload against
+ * `CompleteProfileBodySchema` from `@repo/schemas` directly in
+ * `ProfileCompletion.client.tsx`. This closed a real gap: the manual
+ * validator never checked `socialNetworks.*` (the server requires `.url()`
+ * per platform) or `displayName` length bounds.
  */
-
-import { InternationalPhoneRegex } from '@repo/schemas';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /**
- * Validated field errors keyed by field name.
- * Includes new fields from the refactored form (firstName, lastName, etc.).
+ * Payload sent to the API endpoint.
+ *
+ * `acceptedTerms` is typed as `boolean` (not `z.literal(true)`'s `true`) —
+ * unlike the API's `CompleteProfileBody`, this is the pre-validation shape
+ * built straight from form state, and the checkbox can legitimately be
+ * unchecked when the user submits. `useZodForm`'s `validate()` runs it
+ * through `CompleteProfileBodySchema` (whose `acceptedTerms` IS `z.literal(true)`)
+ * and surfaces the rejection as a field error — see `ProfileCompletion.client.tsx`.
  */
-export type ProfileCompletionFieldErrors = Partial<
-    Record<
-        | 'firstName'
-        | 'lastName'
-        | 'birthDate'
-        | 'displayName'
-        | 'phone'
-        | 'locale'
-        | 'terms'
-        | 'bio'
-        | 'website'
-        | 'occupation',
-        string
-    >
->;
-
-/** Payload sent to the API endpoint. */
 export interface ProfileCompletionPayload {
     readonly firstName: string;
     readonly lastName: string;
     readonly displayName: string;
-    readonly acceptedTerms: true;
+    readonly acceptedTerms: boolean;
     readonly birthDate?: string;
     readonly imageUrl?: string;
     readonly phone?: string;
@@ -200,90 +195,4 @@ export function ddmmyyyyToDate(value: string): Date | null {
         return null;
     }
     return date;
-}
-
-// ─── Validation ───────────────────────────────────────────────────────────────
-
-/**
- * Input shape for `validateProfileCompletionFields`.
- */
-export interface ProfileCompletionValidationInput {
-    readonly firstName: string;
-    readonly lastName: string;
-    readonly phone: string;
-    readonly birthDate?: string;
-    readonly acceptedTerms: boolean;
-    readonly bio?: string;
-    readonly website?: string;
-    readonly occupation?: string;
-}
-
-/**
- * Validates profile completion form fields client-side.
- * Mirrors server-side validation in `CompleteProfileBodySchema` from `@repo/schemas`.
- *
- * @param input - Form field values to validate
- * @returns Object keyed by field name with i18n error tokens (or empty object if valid)
- */
-export function validateProfileCompletionFields(
-    input: ProfileCompletionValidationInput
-): ProfileCompletionFieldErrors {
-    const errors: ProfileCompletionFieldErrors = {};
-    const { firstName, lastName, phone, birthDate, acceptedTerms, bio, website, occupation } =
-        input;
-
-    if (!firstName.trim()) {
-        errors.firstName = 'required';
-    } else if (firstName.trim().length > 50) {
-        errors.firstName = 'max';
-    }
-
-    if (!lastName.trim()) {
-        errors.lastName = 'required';
-    } else if (lastName.trim().length > 50) {
-        errors.lastName = 'max';
-    }
-
-    // Use the canonical E.164 regex from @repo/schemas so client validation
-    // can never drift from what CompleteProfileBodySchema enforces server-side.
-    // Strip spaces/dashes/parens first — the picker + number input let users
-    // type those for readability, and buildPhone() removes them before sending.
-    if (phone.trim() && !InternationalPhoneRegex.test(phone.replace(/[\s\-().]/g, ''))) {
-        errors.phone = 'format';
-    }
-
-    // birthDate is optional, but if the user typed something it must be a
-    // complete, calendar-valid dd/mm/yyyy date. Otherwise the server rejects
-    // the ISO string with a generic 422 and the field gets no error marker.
-    if (
-        birthDate !== undefined &&
-        birthDate.trim().length > 0 &&
-        ddmmyyyyToDate(birthDate) === null
-    ) {
-        errors.birthDate = 'invalid';
-    }
-
-    if (!acceptedTerms) {
-        errors.terms = 'required';
-    }
-
-    if (bio !== undefined && bio.trim().length > 0) {
-        if (bio.trim().length < 10) errors.bio = 'min';
-        else if (bio.trim().length > 300) errors.bio = 'max';
-    }
-
-    if (website !== undefined && website.trim().length > 0) {
-        try {
-            new URL(website.trim());
-        } catch {
-            errors.website = 'url';
-        }
-    }
-
-    if (occupation !== undefined && occupation.trim().length > 0) {
-        if (occupation.trim().length < 2) errors.occupation = 'min';
-        else if (occupation.trim().length > 100) errors.occupation = 'max';
-    }
-
-    return errors;
 }
