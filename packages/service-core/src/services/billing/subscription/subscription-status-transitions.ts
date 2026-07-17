@@ -74,6 +74,7 @@ const VALID_TRANSITIONS: ReadonlyMap<
         new Set<SubscriptionStatusFull>([
             SubscriptionStatusEnum.ACTIVE, // webhook/poll: payment confirmed (payment-logic.ts confirmAnnualSubscription)
             SubscriptionStatusEnum.TRIALING, // webhook: provider authorized a card-first trial, first charge deferred (subscription-logic.ts deriveTrialingStatus — HOS-171)
+            SubscriptionStatusEnum.CANCELLED, // webhook/poll: provider reports the pending preapproval was cancelled/rejected before it ever activated — user abandoned or rejected card authorization on MP's hosted checkout (subscription-logic.ts processSubscriptionUpdated). Without this edge the row sticks at pending_provider, erroring every poll tick — HOS-191 (surfaces routinely with the plan-based redirect checkout)
             SubscriptionStatusEnum.ABANDONED // abandoned-pending-subs cron: TTL elapsed (abandoned-pending-subs.job.ts)
         ])
     ],
