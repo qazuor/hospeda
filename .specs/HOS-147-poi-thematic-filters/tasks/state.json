@@ -7,23 +7,25 @@
         {
             "id": "T-001",
             "title": "Add PublicPoiCategorySchema Zod schema",
-            "description": "Add a public-facing category schema { id, slug, nameI18n, icon (nullable), displayWeight } in packages/schemas/src/entities/poi-category/, exported from the package barrel. This is the response shape for the new public catalog endpoint (spec G-1, section 7). Tests: schema parse/reject unit test (valid shape passes, missing slug/displayWeight fails) in the entity's __tests__ folder.",
-            "status": "pending",
+            "description": "RESOLVED BY REUSE (DRY): the existing PoiCategoryPublicSchema (packages/schemas/src/entities/poi-category/poi-category.access.schema.ts) already has the exact public shape { id, slug, nameI18n, icon, displayWeight } and is exported from @repo/schemas. No new schema created — the public catalog route (T-003) uses PoiCategoryPublicSchema as its response item schema. Covered by the existing poi-category access-schema tests.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-002"],
             "subtasks": [
-                { "title": "Define PublicPoiCategorySchema", "completed": false },
-                { "title": "Export from schemas barrel", "completed": false },
-                { "title": "Parse/reject unit test", "completed": false }
+                {
+                    "title": "Reuse existing PoiCategoryPublicSchema (no duplicate)",
+                    "completed": true
+                },
+                { "title": "Confirm exported from @repo/schemas", "completed": true }
             ],
             "tags": ["schema", "api"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-17T04:07:19.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-17T05:10:00Z",
+                "completed": "2026-07-17T05:12:00Z"
             }
         },
         {
@@ -320,9 +322,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.1
     }
