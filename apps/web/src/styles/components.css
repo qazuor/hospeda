@@ -894,10 +894,26 @@
     box-shadow: 0 0 0 3px var(--brand-primary-a20);
 }
 
+/*
+ * HOS-190: prominent invalid-field affordance — a tinted background plus the
+ * destructive border, so an errored field reads at a glance and not only via
+ * the inline <FieldError> text below it. The bare-element selectors also reach
+ * the host-editor `.fieldInput` modules (hashed class names global CSS cannot
+ * target by name). The `background-color` is the meaningful addition there; note
+ * the bare multi-`:not()` selector's specificity (0,3,1) does out-rank a single
+ * `.fieldInput[aria-invalid]` module rule (0,2,0), so this `border-color` also
+ * wins over the module's own — the two reds are near-identical, so the visual
+ * delta is nil, but the border is not purely additive. Checkbox/radio are
+ * excluded — a tinted box on a toggle reads as a fill, not an error.
+ */
 .form-input[aria-invalid="true"],
 .form-select[aria-invalid="true"],
-.form-textarea[aria-invalid="true"] {
+.form-textarea[aria-invalid="true"],
+input:not([type='checkbox']):not([type='radio'])[aria-invalid='true'],
+textarea[aria-invalid='true'],
+select[aria-invalid='true'] {
     border-color: var(--destructive, oklch(0.6 0.22 25));
+    background-color: var(--destructive-a10, oklch(0.6 0.22 25 / 0.1));
 }
 
 .form-input[aria-invalid="true"]:focus-visible,
