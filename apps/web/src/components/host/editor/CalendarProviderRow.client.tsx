@@ -27,11 +27,13 @@ import {
     GoogleIcon,
     SynchronizeIcon
 } from '@repo/icons';
-import { OccupancySourceEnum } from '@repo/schemas';
+import { ConnectIcalBodySchema, OccupancySourceEnum } from '@repo/schemas';
 import { useState } from 'react';
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import type { CalendarProviderConnectionStatus } from '@/lib/api/endpoints-protected';
 import { cn } from '@/lib/cn';
 import { formatDate } from '@/lib/format-utils';
+import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale, TranslationFn } from '@/lib/i18n';
 import { sourceFallbackLabel, sourceKeySuffix } from './CalendarDayCell.client';
 import styles from './CalendarSyncPanel.module.css';
@@ -105,6 +107,8 @@ interface IcalFeedFormProps {
     readonly submitLabel: string;
     readonly submitBusyLabel: string;
     readonly helpText: string;
+    /** Client-side validation error for `feedUrl` (from `ConnectIcalBodySchema`), if any. */
+    readonly feedUrlError?: string;
 }
 
 /** The `.ics` feed URL input + submit button, reused for connect and reconnect. */
@@ -117,20 +121,24 @@ function IcalFeedForm({
     busy,
     submitLabel,
     submitBusyLabel,
-    helpText
+    helpText,
+    feedUrlError
 }: IcalFeedFormProps) {
+    const inputId = `ical-feed-url-${provider}`;
+    const errorId = fieldErrorId(inputId);
+
     // A plain <div>, not a <form>: this markup is nested inside the editor's
     // own <form>, and nested forms are invalid HTML. Enter-to-submit is
     // preserved manually via the input's onKeyDown below.
     return (
         <div className={styles.icalForm}>
-            <label htmlFor={`ical-feed-url-${provider}`}>
+            <label htmlFor={inputId}>
                 <span className={styles.fieldLabel}>
                     {t('host.properties.editor.calendarSync.feedUrlLabel', 'URL del feed .ics')}
                 </span>
             </label>
             <input
-                id={`ical-feed-url-${provider}`}
+                id={inputId}
                 type="url"
                 inputMode="url"
                 className={styles.fieldInput}
@@ -147,7 +155,13 @@ function IcalFeedForm({
                     'https://ejemplo.com/calendario.ics'
                 )}
                 disabled={busy !== null}
+                aria-invalid={!!feedUrlError}
+                aria-describedby={feedUrlError ? errorId : undefined}
                 required
+            />
+            <FieldError
+                id={errorId}
+                message={feedUrlError}
             />
             <p className={styles.fieldHelp}>{helpText}</p>
             <button
@@ -187,6 +201,7 @@ export function CalendarProviderRow({
     // (Disconnect + reconnect would also work, but this is the direct path).
     const isIcalBroken = !isGoogle && isConnected && connection?.lastSyncStatus === 'ERROR';
     const [feedUrl, setFeedUrl] = useState('');
+    const { fieldErrors, validate, clearError } = useZodForm({ schema: ConnectIcalBodySchema, t });
 
     const providerLabel = t(
         `host.properties.editor.calendar.source.${sourceKeySuffix(provider)}`,
@@ -201,10 +216,18 @@ export function CalendarProviderRow({
           })
         : null;
 
-    const handleConnectIcal = () => {
-        if (feedUrl.trim()) {
-            onConnectIcal(feedUrl.trim());
+    const handleFeedUrlChange = (value: string) => {
+        setFeedUrl(value);
+        if (fieldErrors.feedUrl) {
+            clearError('feedUrl');
         }
+    };
+
+    const handleConnectIcal = () => {
+        const trimmed = feedUrl.trim();
+        const result = validate({ provider: sourceKeySuffix(provider), feedUrl: trimmed });
+        if (!result.success) return;
+        onConnectIcal(trimmed);
     };
 
     // The specific reason a broken iCal feed failed, when the API provided
@@ -352,7 +375,7 @@ export function CalendarProviderRow({
                             t={t}
                             provider={provider}
                             feedUrl={feedUrl}
-                            onFeedUrlChange={setFeedUrl}
+                            onFeedUrlChange={handleFeedUrlChange}
                             onSubmitFeed={handleConnectIcal}
                             busy={busy}
                             submitLabel={t(
@@ -367,6 +390,7 @@ export function CalendarProviderRow({
                                 'host.properties.editor.calendarSync.reconnectIcalHelp',
                                 'Volvé a pegar la URL corregida del calendario para reconectarlo.'
                             )}
+                            feedUrlError={fieldErrors.feedUrl}
                         />
                     )}
                 </div>
@@ -394,7 +418,7 @@ export function CalendarProviderRow({
                     t={t}
                     provider={provider}
                     feedUrl={feedUrl}
-                    onFeedUrlChange={setFeedUrl}
+                    onFeedUrlChange={handleFeedUrlChange}
                     onSubmitFeed={handleConnectIcal}
                     busy={busy}
                     submitLabel={t('host.properties.editor.calendarSync.connectIcal', 'Conectar')}
@@ -406,6 +430,7 @@ export function CalendarProviderRow({
                         'host.properties.editor.calendarSync.feedUrlHelp',
                         'Pegá la URL de exportación del calendario en formato iCal (.ics) de esa plataforma.'
                     )}
+                    feedUrlError={fieldErrors.feedUrl}
                 />
             )}
 
