@@ -93,6 +93,13 @@ export const PointOfInterestSearchSchema = BaseSearchSchema.extend({
 export const PointOfInterestListItemSchema = PointOfInterestSchema.pick({
     id: true,
     slug: true,
+    // HOS-144: a POI list item carries its own display name — the admin list
+    // column resolves it via `resolveI18nText(row.nameI18n)` and the admin's
+    // list-item schema (`apps/admin/.../points-of-interest.schemas.ts`) extends
+    // this one. `nameI18n` is `PartialI18nTextSchema.nullish()` on the base
+    // entity, so it accepts the es-only POI catalog shape
+    // (`{ es, en: null, pt: null }`, HOS-142) — only `es` is required.
+    nameI18n: true,
     lat: true,
     long: true,
     type: true,
