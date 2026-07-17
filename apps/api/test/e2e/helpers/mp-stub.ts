@@ -198,6 +198,18 @@ export function createMpStubAdapter(): CreateMpStubResult {
     const responses = new Map<MpStubOperation, MpStubResponseMode>();
     const calls: MpStubCall[] = [];
 
+    // HOS-191: every card-first checkout now provisions an MP `preapproval_plan`
+    // (`prices.create`) and may archive a stale/orphan one (`prices.archive`).
+    // These are ubiquitous side effects rather than test-specific operations, so
+    // the `prices.create` / `prices.archive` adapter methods below default to
+    // success when a test has not configured them — otherwise every pre-existing
+    // e2e checkout flow would throw `MpStubUnconfiguredError`. `prices.create`
+    // returns a UNIQUE id per call so the `billing_mp_plans`
+    // UNIQUE(mp_preapproval_plan_id) constraint holds even when one test
+    // provisions several variants. A test can still fault-inject by configuring
+    // the op explicitly (`config.setError` / `setTimeout` / `setMalformed`).
+    let priceCreateCounter = 0;
+
     /**
      * Internal dispatcher: looks up the configured response for `op`,
      * records the call, then resolves or rejects accordingly.
@@ -382,9 +394,34 @@ export function createMpStubAdapter(): CreateMpStubResult {
             resume: (id: string) => dispatch('subscriptions.resume', [id])
         },
         prices: {
-            create: (input: unknown, providerProductId: string) =>
-                dispatch('prices.create', [input, providerProductId]),
-            archive: (id: string) => dispatch('prices.archive', [id]),
+            create: (input: unknown, providerProductId: string) => {
+                // Default to a unique synthetic plan id when unconfigured; an
+                // explicit test config (setError/setTimeout/...) takes over.
+                if (!responses.has('prices.create')) {
+                    priceCreateCounter += 1;
+                    calls.push({
+                        operation: 'prices.create',
+                        args: [input, providerProductId],
+                        timestamp: Date.now(),
+                        outcome: 'success'
+                    });
+                    return Promise.resolve(`stub_preapproval_plan_id_${priceCreateCounter}`);
+                }
+                return dispatch('prices.create', [input, providerProductId]);
+            },
+            archive: (id: string) => {
+                // Default to a no-op when unconfigured; an explicit test config wins.
+                if (!responses.has('prices.archive')) {
+                    calls.push({
+                        operation: 'prices.archive',
+                        args: [id],
+                        timestamp: Date.now(),
+                        outcome: 'success'
+                    });
+                    return Promise.resolve();
+                }
+                return dispatch('prices.archive', [id]);
+            },
             retrieve: (id: string) => dispatch('prices.retrieve', [id]),
             createProduct: (name: string, description?: string) =>
                 dispatch('prices.createProduct', [name, description])

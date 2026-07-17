@@ -103,3 +103,7 @@ allowBuilds:
 # stage; keep the pre-v10 deploy behavior instead of switching the whole
 # workspace to injected packages (which would change @repo/* resolution in dev too).
 forceLegacyDeploy: true
+
+minimumReleaseAgeExclude:
+  - '@qazuor/qzpay-core@1.13.0'
+  - '@qazuor/qzpay-mercadopago@2.4.0'

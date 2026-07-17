@@ -62,8 +62,21 @@ export interface CreatePaidSubscriptionInput {
     /**
      * Extra free-trial days to delay the first recurring charge
      * (SPEC-126 D9). Omitted for a plain paid create with no promo effect.
+     *
+     * NOTE (HOS-191): in the `preapproval_plan` flow the trial is baked into the
+     * MP plan referenced by {@link providerPriceId}, so this field is a no-op there
+     * (qzpay builds no inline `auto_recurring` when `providerPriceId` is present).
+     * It is retained for the legacy inline-preapproval fallback.
      */
     readonly freeTrialDays?: number;
+    /**
+     * MercadoPago `preapproval_plan` id to subscribe against (HOS-191). When set,
+     * qzpay builds a plan-based preapproval (`preapproval_plan_id`, no inline
+     * `auto_recurring`) — amount, cadence and trial are inherited from the plan.
+     * Resolved by the checkout caller for the customer's exact trial-day variant.
+     * Omitted for the legacy inline-preapproval path.
+     */
+    readonly providerPriceId?: string;
     /** Arbitrary metadata attached to the created subscription/preapproval. */
     readonly metadata?: Readonly<Record<string, string>>;
 }
@@ -126,6 +139,7 @@ export async function createPaidSubscription(
         paymentMethodReturnUrl,
         notificationUrl,
         freeTrialDays,
+        providerPriceId,
         billingInterval = 'monthly',
         metadata
     } = input;
@@ -153,6 +167,9 @@ export async function createPaidSubscription(
             // preapproval so the first recurring charge is delayed by N days.
             // Omitted when the caller has no qualifying trial extension.
             ...(freeTrialDays === undefined ? {} : { freeTrialDays }),
+            // HOS-191: when set, qzpay subscribes against this MP preapproval_plan
+            // (plan-based flow) instead of building an inline preapproval.
+            ...(providerPriceId === undefined ? {} : { providerPriceId }),
             ...(metadata === undefined ? {} : { metadata })
         })
     )) as QZPaySubscriptionWithHelpers;
