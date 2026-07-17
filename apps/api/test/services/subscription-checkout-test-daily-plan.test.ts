@@ -20,6 +20,7 @@
 
 import { TEST_DAILY_PLAN } from '@repo/billing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { resolveCheckoutMpPlanId } from '../../src/services/billing/mp-plan-provisioning.service';
 import {
     _internals,
     initiatePaidMonthlySubscription,
@@ -199,6 +200,13 @@ describe('HOSPEDA_SHOW_TEST_BILLING_PLAN gate', () => {
                     planId: PLAN_ID,
                     priceId: DAILY_PRICE_ID
                 })
+            );
+            // HOS-191 regression guard: the MP plan for the daily test plan MUST be
+            // provisioned on a DAILY cadence, not monthly — otherwise the fast-cycle
+            // QA tool is silently defeated (the plan-based preapproval inherits its
+            // cadence from the MP plan we provision here).
+            expect(vi.mocked(resolveCheckoutMpPlanId)).toHaveBeenCalledWith(
+                expect.objectContaining({ billingInterval: 'daily' })
             );
         });
     });

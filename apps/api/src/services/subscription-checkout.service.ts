@@ -610,7 +610,11 @@ export async function initiatePaidMonthlySubscription(
         planName: getPlanDisplayName(plan),
         amountCentavos: monthlyPrice.unitAmount,
         currency: monthlyPrice.currency,
-        billingInterval: 'monthly',
+        // The hidden TEST_DAILY_PLAN resolves the `'day'` price above (into
+        // `monthlyPrice`), so its MP plan must be provisioned on a DAILY cadence —
+        // otherwise the plan-based preapproval bills monthly and the fast-cycle QA
+        // tool is silently defeated. Real plans on this flow are always monthly.
+        billingInterval: planSlug === TEST_DAILY_PLAN.slug ? 'daily' : 'monthly',
         trialDays: freeTrialDays ?? 0
     });
 

@@ -101,29 +101,62 @@ describe('resolveOrProvisionMpPlan', () => {
         expect(res).toEqual({ mpPreapprovalPlanId: 'mp_plan_new', created: true });
     });
 
-    it('re-provisions and archives the stale plan when the commercial price drifted', async () => {
+    it('re-provisions and archives the stale plan when the commercial price drifted (CAS won)', async () => {
         findOne.mockResolvedValue({
             id: 'row1',
             mpPreapprovalPlanId: 'mp_old',
             amountArs: 999,
             status: 'active'
         });
+        // CAS update matches the row (still points at mp_old) → truthy → we win.
+        update.mockResolvedValue({ id: 'row1' });
         const adapter = createAdapter();
         adapter.prices.create.mockResolvedValue('mp_new');
 
         const res = await resolveOrProvisionMpPlan({ adapter, ...BASE_INPUT });
 
         expect(adapter.prices.create).toHaveBeenCalledOnce();
-        expect(adapter.prices.archive).toHaveBeenCalledWith('mp_old');
+        // The conditional update carries the old id in the where-clause (CAS).
         expect(update).toHaveBeenCalledWith(
-            { id: 'row1' },
+            { id: 'row1', mpPreapprovalPlanId: 'mp_old' },
             expect.objectContaining({
                 mpPreapprovalPlanId: 'mp_new',
                 amountArs: 1_500_000,
                 status: 'active'
             })
         );
+        // Only after winning do we archive the stale plan (not our new one).
+        expect(adapter.prices.archive).toHaveBeenCalledWith('mp_old');
         expect(res).toEqual({ mpPreapprovalPlanId: 'mp_new', created: true });
+    });
+
+    it('drift CAS lost: archives our orphan plan and returns the concurrent winner id', async () => {
+        findOne
+            .mockResolvedValueOnce({
+                id: 'row1',
+                mpPreapprovalPlanId: 'mp_old',
+                amountArs: 999,
+                status: 'active'
+            })
+            // Post-failed-CAS re-read: another request already re-provisioned.
+            .mockResolvedValueOnce({
+                id: 'row1',
+                mpPreapprovalPlanId: 'mp_winner',
+                amountArs: 1_500_000,
+                status: 'active'
+            });
+        // CAS update matched 0 rows (someone swapped mp_old first) → null → we lost.
+        update.mockResolvedValue(null);
+        const adapter = createAdapter();
+        adapter.prices.create.mockResolvedValue('mp_our_orphan');
+
+        const res = await resolveOrProvisionMpPlan({ adapter, ...BASE_INPUT });
+
+        // Our just-created plan is the orphan → archived; the stale mp_old is NOT
+        // archived by us (the winner already handled it).
+        expect(adapter.prices.archive).toHaveBeenCalledWith('mp_our_orphan');
+        expect(adapter.prices.archive).not.toHaveBeenCalledWith('mp_old');
+        expect(res).toEqual({ mpPreapprovalPlanId: 'mp_winner', created: false });
     });
 
     it('re-provisions when the stored row is inactive even if the amount matches', async () => {
@@ -133,6 +166,7 @@ describe('resolveOrProvisionMpPlan', () => {
             amountArs: 1_500_000,
             status: 'inactive'
         });
+        update.mockResolvedValue({ id: 'row1' });
         const adapter = createAdapter();
         adapter.prices.create.mockResolvedValue('mp_reactivated');
 
@@ -197,6 +231,19 @@ describe('resolveOrProvisionMpPlan', () => {
             expect.any(String)
         );
     });
+
+    it('maps the daily cadence (TEST_DAILY_PLAN) to the qzpay day interval', async () => {
+        findOne.mockResolvedValue(null);
+        create.mockResolvedValue({ id: 'row1' });
+        const adapter = createAdapter();
+
+        await resolveOrProvisionMpPlan({ adapter, ...BASE_INPUT, billingInterval: 'daily' });
+
+        expect(adapter.prices.create).toHaveBeenCalledWith(
+            expect.objectContaining({ billingInterval: 'day' }),
+            expect.any(String)
+        );
+    });
 });
 
 describe('resolveCheckoutMpPlanId', () => {
@@ -232,5 +279,16 @@ describe('resolveCheckoutMpPlanId', () => {
         const id = await resolveCheckoutMpPlanId(CHECKOUT_INPUT);
 
         expect(id).toBe('mp_existing');
+    });
+
+    it('wraps a provisioning failure (MP prices.create / registry error) as MP_PLAN_PROVISIONING_FAILED', async () => {
+        const adapter = createAdapter();
+        adapter.prices.create.mockRejectedValue(new Error('MP 503 Service Unavailable'));
+        getBillingPaymentAdapter.mockReturnValue(adapter);
+        findOne.mockResolvedValue(null); // miss → provisioning attempted → throws
+
+        await expect(resolveCheckoutMpPlanId(CHECKOUT_INPUT)).rejects.toMatchObject({
+            code: 'MP_PLAN_PROVISIONING_FAILED'
+        });
     });
 });

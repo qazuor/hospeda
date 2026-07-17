@@ -30,8 +30,12 @@ import { getBillingPaymentAdapter } from '../../middlewares/billing.js';
 import { apiLogger } from '../../utils/logger.js';
 import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
 
-/** Hospeda billing cadence label (as stored on `billing_subscriptions`). */
-export type BillingIntervalLabel = 'monthly' | 'annual';
+/**
+ * Hospeda billing cadence label. `monthly` / `annual` are the real plan cadences;
+ * `daily` exists only for the hidden `TEST_DAILY_PLAN` QA tool (a 1-day recurring
+ * cycle so staff can validate dunning/webhook/cron timing without waiting a month).
+ */
+export type BillingIntervalLabel = 'monthly' | 'annual' | 'daily';
 
 /**
  * Input for {@link resolveOrProvisionMpPlan}.
@@ -83,7 +87,9 @@ export interface ResolveOrProvisionMpPlanResult {
  * into MercadoPago's `frequency: 12, frequency_type: 'months'`.
  */
 function toQZPayBillingInterval(interval: BillingIntervalLabel): QZPayBillingInterval {
-    return interval === 'annual' ? 'year' : 'month';
+    if (interval === 'annual') return 'year';
+    if (interval === 'daily') return 'day';
+    return 'month';
 }
 
 /**
@@ -174,15 +180,35 @@ export async function resolveOrProvisionMpPlan(
     // re-provision at the current amount and retire the stale MP plan.
     if (existing) {
         const newId = await createMpPlan(input);
-        await archiveMpPlanBestEffort(input.adapter, existing.mpPreapprovalPlanId, 'drift');
-        await billingMpPlanModel.update(
-            { id: existing.id },
+        // Compare-and-swap: only win the update if the row STILL points at the
+        // plan we read. A concurrent drift re-provision for the same variant will
+        // have swapped `mp_preapproval_plan_id` already, so our conditional update
+        // matches 0 rows (returns null) — an UPDATE has no unique constraint to
+        // collide on, so without this guard both requests would "succeed", the
+        // loser's freshly-created MP plan would be orphaned, and last-write-wins
+        // would silently pick one.
+        const updated = await billingMpPlanModel.update(
+            { id: existing.id, mpPreapprovalPlanId: existing.mpPreapprovalPlanId },
             {
                 mpPreapprovalPlanId: newId,
                 amountArs: input.amountCentavos,
                 status: 'active'
             }
         );
+        if (!updated) {
+            // Lost the CAS: another request re-provisioned first. Our new plan is
+            // the orphan — archive it and converge on the winner's id.
+            await archiveMpPlanBestEffort(input.adapter, newId, 'lost-race');
+            const winner = await billingMpPlanModel.findOne(key);
+            if (winner) {
+                return { mpPreapprovalPlanId: winner.mpPreapprovalPlanId, created: false };
+            }
+            // Row vanished between the failed update and the re-read (extremely
+            // unlikely). Fall back to our just-created plan.
+            return { mpPreapprovalPlanId: newId, created: true };
+        }
+        // We won the swap: retire the stale plan we just replaced.
+        await archiveMpPlanBestEffort(input.adapter, existing.mpPreapprovalPlanId, 'drift');
         apiLogger.info(
             {
                 commercialPlanId: input.commercialPlanId,
@@ -266,16 +292,29 @@ export async function resolveCheckoutMpPlanId(
             'Billing payment adapter is unavailable — cannot resolve the MercadoPago plan.'
         );
     }
-    const { mpPreapprovalPlanId } = await resolveOrProvisionMpPlan({
-        adapter,
-        commercialPlanId: input.commercialPlanId,
-        billingInterval: input.billingInterval,
-        trialDays: input.trialDays,
-        amountCentavos: input.amountCentavos,
-        currency: input.currency,
-        planName: input.planName
-    });
-    return mpPreapprovalPlanId;
+    try {
+        const { mpPreapprovalPlanId } = await resolveOrProvisionMpPlan({
+            adapter,
+            commercialPlanId: input.commercialPlanId,
+            billingInterval: input.billingInterval,
+            trialDays: input.trialDays,
+            amountCentavos: input.amountCentavos,
+            currency: input.currency,
+            planName: input.planName
+        });
+        return mpPreapprovalPlanId;
+    } catch (err) {
+        // A provisioning failure (MP `prices.create` error, or a registry
+        // read/write failure) must surface as the typed, retryable 502 the error
+        // code documents — not a raw 500. An already-typed checkout error (should
+        // not occur from provisioning today) passes through unchanged.
+        if (err instanceof SubscriptionCheckoutError) throw err;
+        const message = err instanceof Error ? err.message : String(err);
+        throw new SubscriptionCheckoutError(
+            'MP_PLAN_PROVISIONING_FAILED',
+            `Could not resolve or provision the MercadoPago plan: ${message}`
+        );
+    }
 }
 
 /**

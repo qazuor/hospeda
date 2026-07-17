@@ -181,6 +181,11 @@ function getBillingInstance(): QZPayBilling | null {
         // Suppress further attempts (and stack-trace spam) for the backoff window.
         billingInitRetryAfter = Date.now() + BILLING_INIT_RETRY_BACKOFF_MS;
 
+        // Clear the payment adapter too: it may have been assigned before the
+        // failing step (createQZPayBilling) threw. Otherwise getBillingPaymentAdapter()
+        // would hand out a live adapter while the rest of billing is unavailable.
+        billingPaymentAdapter = null;
+
         const errorMessage = error instanceof Error ? error.message : String(error);
         const errorStack = error instanceof Error ? error.stack : undefined;
         apiLogger.error(
@@ -333,6 +338,10 @@ export function resetBillingInstance(): void {
         );
     }
     billingInstance = null;
+    // Clear the cached payment adapter too, so a test that resets billing and then
+    // simulates "unconfigured" gets a null adapter from getBillingPaymentAdapter()
+    // rather than the previous test's stale instance.
+    billingPaymentAdapter = null;
     // Also clear the failure backoff so a failed init in one test cannot
     // suppress billing for the next (the 5-minute window would outlast the
     // whole suite). See billingInitRetryAfter.
