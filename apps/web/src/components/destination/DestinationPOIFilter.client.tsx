@@ -75,6 +75,15 @@ function readActiveFromUrl(): string[] {
 export function DestinationPOIFilter({ categories, locale }: DestinationPOIFilterProps) {
     const { t } = createTranslations(locale);
     const [activeSlugs, setActiveSlugs] = useState<readonly string[]>([]);
+    // SSR and the first client render must produce IDENTICAL markup, so the
+    // chip hrefs cannot depend on `window` until AFTER hydration — otherwise the
+    // server emits a relative `?categories=x` while the client emits the
+    // absolute path, and React aborts hydration with a mismatch. `mounted`
+    // stays false through hydration (server + first client render both compute
+    // hrefs with an empty base → same relative href), then flips in an effect so
+    // subsequent renders use the real, absolute, shareable URL.
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
 
     /**
      * Apply the active selection to the SSR card grid + empty state, and
@@ -150,8 +159,8 @@ export function DestinationPOIFilter({ categories, locale }: DestinationPOIFilte
     // hrefs (for shareability + right-click-open) are computed from the CURRENT
     // location. SSR has no `window`, so they fall back to empty — the island
     // recomputes real hrefs after hydration.
-    const currentSearch = typeof window === 'undefined' ? '' : window.location.search;
-    const currentPath = typeof window === 'undefined' ? '' : window.location.pathname;
+    const currentSearch = mounted ? window.location.search : '';
+    const currentPath = mounted ? window.location.pathname : '';
 
     const clearChip = buildClearFacetChip({
         baseUrl: currentPath,
