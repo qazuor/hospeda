@@ -242,8 +242,9 @@ export function DestinationPOIMap({
     );
 
     // HOS-147: apply the thematic category filter to the DISPLAYED markers only
-    // (OR/any-of, matching ALL of a POI's categories — the same shared predicate
-    // the SSR grid uses, R-3). Filtering by visible POI id reuses the existing
+    // (OR/any-of — a POI matches when it belongs to ANY selected category,
+    // tested against ALL of its categories — the same shared predicate the SSR
+    // grid uses, R-3). Filtering by visible POI id reuses the existing
     // marker mapping. The bounds/toggle below stay computed from the UNFILTERED
     // set so the frame doesn't jump and "ver alrededores" availability is stable
     // as the user toggles categories.
