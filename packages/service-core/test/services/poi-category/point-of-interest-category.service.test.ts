@@ -1096,4 +1096,77 @@ describe('PointOfInterestCategoryService', () => {
             );
         });
     });
+
+    // ========================================================================
+    // HOS-147: public catalog read for the thematic filter-chip UI
+    // ========================================================================
+    describe('listPublicCategories', () => {
+        it('returns ACTIVE categories sorted by displayWeight desc then slug asc, in the public shape', async () => {
+            // Arrange — two categories share displayWeight 80 to exercise the
+            // slug ascending tiebreak (aquarium before winery), plus a lower one.
+            const museum = PoiCategoryFactoryBuilder.create({
+                id: categoryId,
+                slug: 'museum',
+                displayWeight: 50,
+                icon: 'museum-icon',
+                nameI18n: { es: 'Museos', en: 'Museums', pt: 'Museus' }
+            });
+            const winery = PoiCategoryFactoryBuilder.create({
+                id: otherCategoryId,
+                slug: 'winery',
+                displayWeight: 80,
+                icon: 'grape',
+                nameI18n: { es: 'Bodegas', en: 'Wineries', pt: 'Vinícolas' }
+            });
+            const aquarium = PoiCategoryFactoryBuilder.create({
+                id: getMockId('poiCategory', 'cat-aquarium') as PoiCategoryIdType,
+                slug: 'aquarium',
+                displayWeight: 80,
+                icon: 'fish',
+                nameI18n: { es: 'Acuarios', en: 'Aquariums', pt: 'Aquários' }
+            });
+            asMock(model.findAll).mockResolvedValue({
+                items: [museum, winery, aquarium],
+                total: 3
+            });
+
+            // Act — a guest actor (no POI_CATEGORY_VIEW) is allowed.
+            const result = await service.listPublicCategories(createActor({ permissions: [] }));
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(result.data?.categories.map((c) => c.slug)).toEqual([
+                'aquarium',
+                'winery',
+                'museum'
+            ]);
+            // Public shape only — no audit/admin/lifecycle fields leak.
+            expect(result.data?.categories[0]).toEqual({
+                id: aquarium.id,
+                slug: 'aquarium',
+                nameI18n: { es: 'Acuarios', en: 'Aquariums', pt: 'Aquários' },
+                icon: 'fish',
+                displayWeight: 80
+            });
+            // ACTIVE-only filter is forwarded to the model.
+            expect(model.findAll).toHaveBeenCalledWith(
+                { lifecycleState: 'ACTIVE' },
+                expect.objectContaining({ pageSize: 200 }),
+                undefined,
+                undefined
+            );
+        });
+
+        it('allows a guest actor with no POI_CATEGORY_VIEW permission (public catalog)', async () => {
+            // Arrange
+            asMock(model.findAll).mockResolvedValue({ items: [], total: 0 });
+
+            // Act
+            const result = await service.listPublicCategories(createActor({ permissions: [] }));
+
+            // Assert — no FORBIDDEN; empty catalog returns an empty array.
+            expect(result.error).toBeUndefined();
+            expect(result.data?.categories).toEqual([]);
+        });
+    });
 });
