@@ -74,15 +74,20 @@ describe('ProfileEditSchema', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should accept bio at exactly 1000 characters', () => {
-            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, bio: 'x'.repeat(1000) });
+        it('should accept bio at exactly 300 characters', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, bio: 'x'.repeat(300) });
             expect(result.success).toBe(true);
         });
 
-        it('should accept displayName at exactly 100 characters', () => {
+        it('should accept bio at exactly 10 characters (minimum)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, bio: 'x'.repeat(10) });
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept displayName at exactly 50 characters', () => {
             const result = ProfileEditSchema.safeParse({
                 ...VALID_BASE,
-                displayName: 'a'.repeat(100)
+                displayName: 'a'.repeat(50)
             });
             expect(result.success).toBe(true);
         });
@@ -122,56 +127,108 @@ describe('ProfileEditSchema', () => {
         });
     });
 
-    describe('required fields validation', () => {
-        it('should reject when displayName is missing', () => {
+    // ─── HOS-190 slice 3: displayName/firstName/lastName are optional/blankable ──
+    //
+    // A profile with `firstName: null` (incomplete OAuth signup) must be able
+    // to re-save an unrelated field without a required-field error blocking
+    // the whole PATCH (read⊇write — the caller omits the key entirely when
+    // the user has not provided a value). When a value IS provided it still
+    // must satisfy the 2-50 bound aligned with `UserSchema` (`packages/schemas/
+    // src/entities/user/user.schema.ts`), the bound the API actually enforces.
+    describe('optional name fields (HOS-190 read⊇write fix)', () => {
+        it('should accept a payload missing displayName entirely', () => {
             const { displayName: _dn, ...rest } = VALID_BASE;
             const result = ProfileEditSchema.safeParse(rest);
-            expect(result.success).toBe(false);
+            expect(result.success).toBe(true);
         });
 
-        it('should reject when firstName is missing', () => {
+        it('should accept a payload missing firstName entirely', () => {
             const { firstName: _fn, ...rest } = VALID_BASE;
             const result = ProfileEditSchema.safeParse(rest);
-            expect(result.success).toBe(false);
+            expect(result.success).toBe(true);
         });
 
-        it('should reject when lastName is missing', () => {
+        it('should accept a payload missing lastName entirely', () => {
             const { lastName: _ln, ...rest } = VALID_BASE;
             const result = ProfileEditSchema.safeParse(rest);
-            expect(result.success).toBe(false);
+            expect(result.success).toBe(true);
         });
 
-        it('should reject an empty displayName', () => {
+        it('should accept an empty string for displayName (unset/incomplete signup)', () => {
             const result = ProfileEditSchema.safeParse({ ...VALID_BASE, displayName: '' });
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept an empty string for firstName (unset/incomplete signup)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, firstName: '' });
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept an empty string for lastName (unset/incomplete signup)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, lastName: '' });
+            expect(result.success).toBe(true);
+        });
+
+        it('should reject a non-empty displayName shorter than 2 characters', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, displayName: 'a' });
             expect(result.success).toBe(false);
         });
 
-        it('should reject displayName longer than 100 characters', () => {
+        it('should reject a non-empty firstName shorter than 2 characters', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, firstName: 'a' });
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject a non-empty lastName shorter than 2 characters', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, lastName: 'a' });
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject displayName longer than 50 characters', () => {
             const result = ProfileEditSchema.safeParse({
                 ...VALID_BASE,
-                displayName: 'a'.repeat(101)
+                displayName: 'a'.repeat(51)
             });
             expect(result.success).toBe(false);
         });
 
-        it('should reject an empty firstName', () => {
-            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, firstName: '' });
+        it('should reject firstName longer than 50 characters', () => {
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                firstName: 'a'.repeat(51)
+            });
             expect(result.success).toBe(false);
         });
 
-        it('should reject an empty lastName', () => {
-            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, lastName: '' });
+        it('should reject lastName longer than 50 characters', () => {
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                lastName: 'a'.repeat(51)
+            });
             expect(result.success).toBe(false);
         });
     });
 
     describe('bio validation', () => {
-        it('should reject bio exceeding 1000 characters', () => {
+        it('should reject bio exceeding 300 characters', () => {
             const result = ProfileEditSchema.safeParse({
                 ...VALID_BASE,
-                bio: 'x'.repeat(1001)
+                bio: 'x'.repeat(301)
             });
             expect(result.success).toBe(false);
+        });
+
+        it('should reject bio shorter than 10 characters (when provided)', () => {
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                bio: 'too short'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should accept an omitted bio (unset, leaves server value unchanged)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE });
+            expect(result.success).toBe(true);
         });
     });
 
@@ -346,6 +403,18 @@ describe('ProfileEditSchema', () => {
                 postalCode: 'C1043'
             });
             expect(result.success).toBe(true);
+        });
+
+        // HOS-190 slice 3: `country` previously had no minimum, diverging
+        // from `UserLocationSchema.country` (min 2) enforced server-side.
+        it('accepts an empty string for country (clearing it)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, country: '' });
+            expect(result.success).toBe(true);
+        });
+
+        it('rejects a country shorter than 2 characters', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, country: 'A' });
+            expect(result.success).toBe(false);
         });
     });
 });

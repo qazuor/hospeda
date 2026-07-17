@@ -24,12 +24,12 @@ import { ProfileEditSchema } from '@repo/schemas';
 import { useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
 import { getInitials } from '@/lib/avatar-utils';
+import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 import { ProfileEditAvatarSection } from './ProfileEditAvatarSection';
 import { ProfileEditExtrasSection } from './ProfileEditExtrasSection';
-import { type ProfileEditFieldErrors, parseZodErrors } from './ProfileEditForm.helpers';
 import styles from './ProfileEditForm.module.css';
 import { ProfileEditLocationSection } from './ProfileEditLocationSection';
 import { ProfileEditPersonalSection } from './ProfileEditPersonalSection';
@@ -196,9 +196,13 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
     const [avatarUploading, setAvatarUploading] = useState(false);
 
     // ── Form meta ─────────────────────────────────────────────────────────
+    //
+    // Validation is delegated to the shared `useZodForm` primitive (HOS-190
+    // slice 3) instead of the old locally-owned `fieldErrors`/`formError`
+    // state + `parseZodErrors` helper.
 
-    const [fieldErrors, setFieldErrors] = useState<ProfileEditFieldErrors>({});
-    const [formError, setFormError] = useState<string | null>(null);
+    const { fieldErrors, formError, validate, handleApiError, clearError, setFormError } =
+        useZodForm({ schema: ProfileEditSchema, t });
     const [submitting, setSubmitting] = useState(false);
 
     const activeImageUrl = previewUrl ?? (avatarUrl || null);
@@ -212,20 +216,10 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
      * inline error (matches the UX from before the polish refactor —
      * users get instant feedback that they've addressed the issue).
      */
-    function bindChange(
-        field: keyof ProfileEditFieldErrors,
-        setter: (value: string) => void
-    ): (value: string) => void {
+    function bindChange(field: string, setter: (value: string) => void): (value: string) => void {
         return (value) => {
             setter(value);
-            if (fieldErrors[field]) {
-                setFieldErrors((prev) => {
-                    if (!prev[field]) return prev;
-                    const next = { ...prev };
-                    delete next[field];
-                    return next;
-                });
-            }
+            clearError(field);
         };
     }
 
@@ -261,11 +255,17 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
         e.preventDefault();
         setFormError(null);
 
-        const parsed = ProfileEditSchema.safeParse(
+        // displayName/firstName/lastName are validated as blankable
+        // (`|| undefined`, like every other optional field below) rather than
+        // always required — a profile with `firstName: null` (incomplete
+        // OAuth signup) must still be able to re-save an unrelated field
+        // without `ProfileEditSchema` rejecting the whole payload over a
+        // required-field error (HOS-190 read⊇write fix).
+        const parsed = validate(
             omitUndefined({
-                displayName: displayName.trim(),
-                firstName: firstName.trim(),
-                lastName: lastName.trim(),
+                displayName: displayName.trim() || undefined,
+                firstName: firstName.trim() || undefined,
+                lastName: lastName.trim() || undefined,
                 bio: bio.trim() || undefined,
                 avatarUrl: avatarUrl || undefined,
                 phone: phone.trim() || undefined,
@@ -286,16 +286,9 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
         );
 
         if (!parsed.success) {
-            // The web `t` is (key, fallback?, params?); parseZodErrors +
-            // resolveValidationMessage expect (key, params?). Adapt by pinning
-            // fallback to undefined so interpolation params reach the i18n layer.
-            const tValidation = (key: string, params?: Record<string, unknown>): string =>
-                t(key, undefined, params);
-            setFieldErrors(parseZodErrors(parsed.error.issues, tValidation));
             return;
         }
 
-        setFieldErrors({});
         setSubmitting(true);
 
         try {
@@ -325,9 +318,10 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
                 }
             }
 
-            // Build payload — required fields always; optional fields only
-            // when they differ from the initial value (avoids clobbering
-            // server state with stale empty strings).
+            // Build payload — optional fields (including displayName/
+            // firstName/lastName, see below) only when they differ from the
+            // initial value or otherwise carry a real value (avoids
+            // clobbering server state with stale empty strings).
             //
             // SPEC-113 follow-up: the User entity in the DB stores several
             // groups of fields inside JSONB columns instead of as separate
@@ -340,11 +334,18 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
             //   - bio/occupation → profile.{bio, occupation}
             //   - country/province/city/addressLine1/postalCode → location.*
             //   - facebookUrl/instagramUrl/… → socialNetworks.{facebook, …}
-            const payload: Record<string, unknown> = {
-                displayName: parsed.data.displayName,
-                firstName: parsed.data.firstName,
-                lastName: parsed.data.lastName
-            };
+            //
+            // displayName/firstName/lastName are sent ONLY when the user has
+            // an actual value for them — never unconditionally. The real
+            // `UserProtectedPatchInputSchema` is `.partial()`; sending an
+            // empty string for a user whose `firstName` is `null` (incomplete
+            // OAuth signup) used to fail server-side validation and block the
+            // ENTIRE PATCH, even when the user only wanted to update an
+            // unrelated field like bio (HOS-190 read⊇write fix).
+            const payload: Record<string, unknown> = {};
+            if (parsed.data.displayName) payload.displayName = parsed.data.displayName;
+            if (parsed.data.firstName) payload.firstName = parsed.data.firstName;
+            if (parsed.data.lastName) payload.lastName = parsed.data.lastName;
             if (finalAvatarUrl !== undefined) payload.image = finalAvatarUrl;
             if (parsed.data.birthDate !== undefined) {
                 payload.birthDate = parsed.data.birthDate;
@@ -443,12 +444,16 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
                 } catch {
                     // ignore — keep apiError undefined; helper will use fallback
                 }
+                // handleApiError sets fieldErrors/formError via the shared
+                // primitive (falls back to the banner since this route sends
+                // no per-field `details` in production — see field-errors.ts
+                // module doc); the toast reuses the same resolved text.
                 const msg = translateApiError({
                     error: apiError,
                     t,
                     fallback: localizedFallback
                 });
-                setFormError(msg);
+                handleApiError(apiError, localizedFallback);
                 addToast({ type: 'error', message: msg });
                 return;
             }

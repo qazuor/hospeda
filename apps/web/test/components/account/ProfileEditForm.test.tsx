@@ -43,11 +43,16 @@ vi.mock('../../../src/store/toast-store', () => ({
 }));
 
 vi.mock('@repo/schemas', async () => {
+    // Mirrors the real `ProfileEditSchema` bounds/optionality (HOS-190 slice 3):
+    // displayName/firstName/lastName are optional/blankable (2-50 chars when
+    // provided) so a profile with an unset name can still re-save an unrelated
+    // field (read⊇write) — see `packages/schemas/src/user/profile.ts`.
+    const nameField = z.union([z.literal(''), z.string().min(2).max(50)]).optional();
     const ProfileEditSchema = z.strictObject({
-        displayName: z.string().min(1).max(100),
-        firstName: z.string().min(1).max(100),
-        lastName: z.string().min(1).max(100),
-        bio: z.string().max(1000).optional(),
+        displayName: nameField,
+        firstName: nameField,
+        lastName: nameField,
+        bio: z.string().min(10).max(300).optional(),
         avatarUrl: z.union([z.literal(''), z.string().url()]).optional(),
         phone: z.union([z.literal(''), z.string().regex(/^\+\d{1,3}\d{4,14}$/)]).optional()
     });
@@ -125,21 +130,20 @@ describe('ProfileEditForm', () => {
         expect(screen.getByRole('button', { name: /cambiar foto/i })).toBeInTheDocument();
     });
 
-    it('shows inline error when displayName is empty on submit', async () => {
-        renderForm({ ...MOCK_USER, displayName: '' });
-        // Clear displayName and submit
+    it('shows inline error when displayName is too short (non-empty but under 2 chars)', async () => {
+        renderForm();
         const input = screen.getByLabelText(/nombre visible/i);
-        fireEvent.change(input, { target: { value: '' } });
+        fireEvent.change(input, { target: { value: 'x' } });
         fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
         await waitFor(() => {
             expect(screen.getByRole('alert')).toBeInTheDocument();
         });
     });
 
-    it('clears displayName error when user types a new value', async () => {
-        renderForm({ ...MOCK_USER, displayName: '' });
+    it('clears displayName error when user types a valid value', async () => {
+        renderForm();
         const input = screen.getByLabelText(/nombre visible/i);
-        fireEvent.change(input, { target: { value: '' } });
+        fireEvent.change(input, { target: { value: 'x' } });
         fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
         await waitFor(() => expect(screen.getAllByRole('alert').length).toBeGreaterThan(0));
 
@@ -150,6 +154,28 @@ describe('ProfileEditForm', () => {
             const displayNameError = alerts.find((a) => a.id === 'displayName-error');
             expect(displayNameError).toBeUndefined();
         });
+    });
+
+    // HOS-190 read⊇write regression: a profile with an unset displayName/
+    // firstName/lastName (e.g. incomplete OAuth signup, `firstName: null`)
+    // must still be able to re-save an unrelated field. Clearing a name field
+    // no longer blocks submit — it's simply omitted from the PATCH payload
+    // instead of being sent as an empty string that used to fail
+    // `UserProtectedPatchInputSchema` server-side.
+    it('submits successfully and omits displayName/firstName/lastName from the payload when blank', async () => {
+        renderForm({ ...MOCK_USER, displayName: '', firstName: '', lastName: '' });
+        fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
+        await waitFor(() => {
+            expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+        });
+        const call = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+            string,
+            RequestInit
+        ];
+        const body = JSON.parse(String(call[1].body)) as Record<string, unknown>;
+        expect(body.displayName).toBeUndefined();
+        expect(body.firstName).toBeUndefined();
+        expect(body.lastName).toBeUndefined();
     });
 
     it('calls fetch PATCH on valid submit', async () => {
