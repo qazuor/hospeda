@@ -299,6 +299,27 @@ describe('NewsletterForm', () => {
             });
             expect(inputAfterError).toHaveValue('guest@example.com');
         });
+
+        // HOS-190 form 23: guest email is now validated against
+        // NewsletterGuestSubscribeRequestSchema (@repo/schemas) — the exact
+        // schema the API route enforces — instead of a hand-rolled regex.
+        it('rejects an email over the schema max length (255 chars) without calling fetch', async () => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal('fetch', fetchMock);
+            renderGuest();
+
+            const overLong = `${'a'.repeat(251)}@x.co`; // 256 chars — over the schema's max(255)
+            fireEvent.change(screen.getByRole('textbox'), {
+                target: { value: overLong }
+            });
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
+
+            await waitFor(() => {
+                expect(screen.getByRole('alert')).toBeInTheDocument();
+            });
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
     });
 
     // =========================================================================
