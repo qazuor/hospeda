@@ -7,8 +7,11 @@
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { addToast } from '@/store/toast-store';
 import { CommerceListingEditor } from '../../../src/components/commerce/CommerceListingEditor.client';
 import type { CommerceListingDetail } from '../../../src/lib/commerce/owner-listings';
+
+vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 
 vi.mock('../../../src/components/commerce/CommerceListingEditor.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
@@ -148,7 +151,12 @@ describe('CommerceListingEditor', () => {
             path: '/api/v1/protected/gastronomies/abc',
             body: { richDescription: 'new text' }
         });
-        await screen.findByRole('status');
+        // Success is surfaced as a toast now, not an inline role=status banner.
+        await waitFor(() =>
+            expect(vi.mocked(addToast)).toHaveBeenCalledWith(
+                expect.objectContaining({ type: 'success' })
+            )
+        );
     });
 
     it('PATCHes the experience endpoint for the experience vertical', async () => {

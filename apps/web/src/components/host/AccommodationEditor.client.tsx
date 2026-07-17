@@ -22,6 +22,7 @@ import type {
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { addToast } from '@/store/toast-store';
 import styles from './AccommodationEditor.module.css';
 import { ExternalReputationSection } from './ExternalReputationSection.client';
 import { ActionBar } from './editor/ActionBar.client';
@@ -183,7 +184,6 @@ export function AccommodationEditor({
     const { fieldErrors, formError, validate, handleApiError, clearError, setFormError } =
         useZodForm({ schema: AccommodationEditFormSchema, t });
     const [isSaving, setIsSaving] = useState(false);
-    const [submitSuccess, setSubmitSuccess] = useState(false);
 
     // --- Field change handlers ---
 
@@ -191,7 +191,6 @@ export function AccommodationEditor({
         (field: keyof AccommodationEditData, value: string) => {
             setFormData((prev) => ({ ...prev, [field]: value }));
             clearError(SOCIAL_FIELD_TO_SCHEMA_KEY[field] ?? field);
-            setSubmitSuccess(false);
         },
         [clearError]
     );
@@ -200,7 +199,6 @@ export function AccommodationEditor({
         (field: keyof AccommodationEditData, value: number | null) => {
             setFormData((prev) => ({ ...prev, [field]: value }));
             clearError(field);
-            setSubmitSuccess(false);
         },
         [clearError]
     );
@@ -209,7 +207,6 @@ export function AccommodationEditor({
         (field: keyof AccommodationEditData, value: number | string | null) => {
             setFormData((prev) => ({ ...prev, [field]: value }));
             clearError(field);
-            setSubmitSuccess(false);
         },
         [clearError]
     );
@@ -348,8 +345,6 @@ export function AccommodationEditor({
         async (e: React.FormEvent) => {
             e.preventDefault();
             setFormError(null);
-            setSubmitSuccess(false);
-
             const payload = buildPatchPayload(formData);
             if (Object.keys(payload).length === 0) {
                 // No changes — nothing to save
@@ -374,8 +369,11 @@ export function AccommodationEditor({
                 });
 
                 if (result.ok) {
-                    setSubmitSuccess(true);
                     setFormError(null);
+                    addToast({
+                        type: 'success',
+                        message: t('host.properties.editor.toast.saveSuccess', 'Cambios guardados')
+                    });
                 } else {
                     handleApiError(
                         result.error,
@@ -618,12 +616,6 @@ export function AccommodationEditor({
                             accommodationId={accommodationId}
                         />
                     </section>
-
-                    {submitSuccess && (
-                        <output className={styles.submitSuccess}>
-                            {t('host.properties.editor.toast.saveSuccess', 'Cambios guardados')}
-                        </output>
-                    )}
 
                     {formError && (
                         <div

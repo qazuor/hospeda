@@ -37,6 +37,7 @@ import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/own
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { addToast } from '@/store/toast-store';
 import { AmenitiesFeaturesField } from './AmenitiesFeaturesField';
 import styles from './CommerceListingEditor.module.css';
 import {
@@ -430,7 +431,11 @@ export function CommerceListingEditor({
 
             if (result.ok) {
                 setDirty(new Set());
-                setStatus({ kind: 'success' });
+                setStatus({ kind: 'idle' });
+                addToast({
+                    type: 'success',
+                    message: t('commerce.owner.editor.success', 'Cambios guardados.')
+                });
             } else {
                 // Previously discarded `result.error` entirely and always showed
                 // a fixed banner string. `handleApiError` maps per-field details
@@ -809,11 +814,6 @@ export function CommerceListingEditor({
                 </section>
             )}
 
-            {status.kind === 'success' && (
-                <output className={styles.success}>
-                    {t('commerce.owner.editor.success', 'Cambios guardados.')}
-                </output>
-            )}
             {formError && (
                 <p
                     className={styles.error}

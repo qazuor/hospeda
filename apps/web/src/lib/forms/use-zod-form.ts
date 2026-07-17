@@ -21,6 +21,7 @@ import { useCallback, useState } from 'react';
 import type { ZodTypeAny, z } from 'zod';
 import type { TranslationFn } from '@/lib/api-errors';
 import { translateApiError } from '@/lib/api-errors';
+import { addToast } from '@/store/toast-store';
 import {
     type ApiErrorWithDetails,
     apiErrorToFieldErrors,
@@ -124,6 +125,15 @@ export function useZodForm<TSchema extends ZodTypeAny>({
             } else {
                 const parseError = (result as { error: z.ZodError }).error;
                 setFieldErrors(zodIssuesToFieldErrors(parseError.issues, t));
+                // Consistent submit-time feedback across every form: a single
+                // error toast announcing the form has field errors to review,
+                // alongside the inline <FieldError> messages the caller renders.
+                addToast({
+                    type: 'error',
+                    message: t
+                        ? t('validation.formHasErrors', 'Revisá los campos marcados')
+                        : 'Revisá los campos marcados'
+                });
             }
             return result;
         },

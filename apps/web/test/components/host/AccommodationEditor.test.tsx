@@ -15,10 +15,13 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccommodationEditorProps } from '@/components/host/AccommodationEditor.client';
 import { AccommodationEditor } from '@/components/host/AccommodationEditor.client';
+import { addToast } from '@/store/toast-store';
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
+
+vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
@@ -341,8 +344,15 @@ describe('AccommodationEditor', () => {
         await vi.waitFor(() => {
             expect(mockUpdate).toHaveBeenCalledOnce();
         });
+        // Success is surfaced as a toast (not an inline banner) — assert the
+        // toast store received a success toast with the confirmation message.
         await vi.waitFor(() => {
-            expect(screen.getByText(/cambios guardados/i)).toBeInTheDocument();
+            expect(vi.mocked(addToast)).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: 'success',
+                    message: expect.stringMatching(/cambios guardados/i)
+                })
+            );
         });
     });
 
