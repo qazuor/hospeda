@@ -867,9 +867,25 @@ gastronomía/experiencias), add an entry here — no chip/sidebar/SEO branch cha
 | Event category | `categories` | `category` | OR | `/eventos/categoria/{slug}/` |
 | Blog/post category | `categories` | `category` | OR | `/publicaciones/categoria/{slug}/` |
 | Destination attraction | `attractions` | — | **AND** | client-side only, `outOfBackendScope` |
+| POI category (HOS-147) | `categories` | — | **OR** | client-side only, `outOfBackendScope` |
 
 Destinos stays **AND**-combined and entirely client-side (`cardMatchesFilter()` +
 `startViewTransition`) — it must NOT import any of the OR-facet helpers below.
+
+**POI thematic filter (HOS-147)** — on the destination DETAIL page, POIs are
+filtered by category **entirely client-side** (owner decision D-3): the
+destination POI endpoint (`GET /destinations/:id/points-of-interest`) already
+returns the full, unpaginated set, so `DestinationPOIFilter.client.tsx` toggles
+the already-rendered SSR cards (`[data-poi-card]` / `data-poi-categories` in
+`DestinationPOISection.astro`) and the map markers in sync — no server round-trip.
+Unlike the OR facets above it does NOT forward the param to the API; the URL
+`?categories=` is for shareability only. It backs its chips with a NEW public
+catalog endpoint (`GET /api/v1/public/poi-categories`, `poiCategoryApi.list()`)
+and the POI payload's `categories[]` field (every category, not just
+`primaryCategory`). The grid and map share one OR predicate
+(`match-poi-category-filter.ts`) and one broadcast contract
+(`poi-category-filter-event.ts`). Chips are present-only (D-5): only categories
+appearing among the destination's POIs, and only when ≥2 are present.
 
 **The URL query param is the ONLY shared state** between the chip row and the
 `FilterSidebar` island — there is no in-memory store. Both derive their active/checked
