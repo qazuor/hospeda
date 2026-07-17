@@ -22,15 +22,19 @@
 
 import type { Image, OpeningHours } from '@repo/schemas';
 import {
+    ExperienceOwnerUpdateInputSchema,
     ExperiencePriceUnitEnum,
     ExperienceTypeEnum,
+    GastronomyOwnerUpdateInputSchema,
     GastronomyTypeEnum,
     PriceRangeEnum
 } from '@repo/schemas';
 import { type JSX, useCallback, useState } from 'react';
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { apiClient } from '@/lib/api/client';
 import type { AmenityData } from '@/lib/api/types';
 import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/owner-listings';
+import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { AmenitiesFeaturesField } from './AmenitiesFeaturesField';
@@ -62,7 +66,7 @@ type SaveStatus =
     | { readonly kind: 'idle' }
     | { readonly kind: 'saving' }
     | { readonly kind: 'success' }
-    | { readonly kind: 'error'; readonly message: string };
+    | { readonly kind: 'error' };
 
 /**
  * Subset of the contact JSONB block the owner edits in this surface.
@@ -140,6 +144,20 @@ export function CommerceListingEditor({
 }: CommerceListingEditorProps): JSX.Element {
     const { t } = createTranslations(locale);
 
+    // Field-level validation is delegated to the shared `useZodForm` primitive
+    // (HOS-190 slice 3) against the REAL per-vertical owner-update schema — the
+    // exact schema `PATCH /api/v1/protected/{gastronomies|experiences}/:id`
+    // validates the request body against (`apps/api/src/routes/.../protected/patch.ts`).
+    // Validating the full dirty-field payload against it (instead of the two ad
+    // hoc summary/priceFrom checks this editor had) closes contact
+    // (mobilePhone/workEmail), social networks, opening hours, menuUrl, and the
+    // priceFrom/priceUnit null-vs-undefined bug (see `buildPayload` below).
+    const schema =
+        vertical === 'gastronomy'
+            ? GastronomyOwnerUpdateInputSchema
+            : ExperienceOwnerUpdateInputSchema;
+    const { fieldErrors, formError, validate, handleApiError } = useZodForm({ schema, t });
+
     // TYPE-WORKAROUND: the detail is a gastronomy|experience union; we read heterogeneous operational fields by key, which the union type cannot express.
     const data = initialData as unknown as Record<string, unknown>;
     const initialContact = (data.contactInfo ?? {}) as Record<string, unknown>;
@@ -149,9 +167,9 @@ export function CommerceListingEditor({
     // T-020: type select state (per-vertical enum value)
     const [listingType, setListingType] = useState<string>(strField(data, 'type'));
 
-    // T-020: summary textarea state (min 10 / max 300)
+    // T-020: summary textarea state (min 10 / max 300) — validated by `schema`
+    // via `fieldErrors.summary` now (see `handleSubmit`); no local ad hoc check.
     const [summary, setSummary] = useState<string>(strField(data, 'summary'));
-    const [summaryError, setSummaryError] = useState<string>('');
 
     const [richDescription, setRichDescription] = useState<string>(
         strField(data, 'richDescription')
@@ -182,7 +200,6 @@ export function CommerceListingEditor({
     const [priceFrom, setPriceFrom] = useState<number | null>(
         typeof data.priceFrom === 'number' ? data.priceFrom : null
     );
-    const [priceFromError, setPriceFromError] = useState<string>('');
     const [priceUnit, setPriceUnit] = useState<string>(strField(data, 'priceUnit'));
     const [featuredImage, setFeaturedImage] = useState<Image | null>(
         (initialMedia.featuredImage as Image | undefined) ?? null
@@ -293,45 +310,6 @@ export function CommerceListingEditor({
         [markDirty]
     );
 
-    /** Validate summary: if non-empty, must be 10–300 chars. */
-    const validateSummary = useCallback(
-        (value: string): boolean => {
-            if (value.length > 0 && value.length < 10) {
-                setSummaryError(
-                    t('commerce.owner.editor.validation.summaryMin', 'Mínimo 10 caracteres.')
-                );
-                return false;
-            }
-            if (value.length > 300) {
-                setSummaryError(
-                    t('commerce.owner.editor.validation.summaryMax', 'Máximo 300 caracteres.')
-                );
-                return false;
-            }
-            setSummaryError('');
-            return true;
-        },
-        [t]
-    );
-
-    /** Validate priceFrom: must be a non-negative integer when provided. */
-    const validatePriceFrom = useCallback(
-        (value: number | null): boolean => {
-            if (value !== null && (!Number.isInteger(value) || value < 0)) {
-                setPriceFromError(
-                    t(
-                        'commerce.owner.editor.validation.priceMustBePositive',
-                        'El precio debe ser un número positivo.'
-                    )
-                );
-                return false;
-            }
-            setPriceFromError('');
-            return true;
-        },
-        [t]
-    );
-
     /** Build the PATCH payload from the dirty field groups only. */
     const buildPayload = useCallback((): Record<string, unknown> => {
         const payload: Record<string, unknown> = {};
@@ -392,12 +370,17 @@ export function CommerceListingEditor({
         if (dirty.has('isPriceOnRequest')) {
             payload.isPriceOnRequest = isPriceOnRequest;
         }
-        // T-021: experience-only
+        // T-021: experience-only. `priceFrom`/`priceUnit` on `ExperienceSchema`
+        // (`z.number().int().nonnegative()` / a native-enum schema) do NOT
+        // accept `null` — unlike gastronomy's `priceRange`/`menuUrl` above,
+        // which ARE `.nullish()` on the domain schema. Sending `null` here used
+        // to fail validation whenever the owner cleared the field; send
+        // `undefined` (omit the key = "no change") instead.
         if (dirty.has('priceFrom')) {
-            payload.priceFrom = priceFrom ?? null;
+            payload.priceFrom = priceFrom ?? undefined;
         }
         if (dirty.has('priceUnit')) {
-            payload.priceUnit = priceUnit || null;
+            payload.priceUnit = priceUnit || undefined;
         }
         return payload;
     }, [
@@ -427,42 +410,40 @@ export function CommerceListingEditor({
             if (dirty.size === 0) {
                 return;
             }
-            // Validate summary before submit
-            if (dirty.has('summary') && !validateSummary(summary)) {
+
+            const payload = buildPayload();
+
+            // Full dirty-payload validation against the real per-vertical
+            // owner-update schema (see `schema` above) — replaces the two ad
+            // hoc summary/priceFrom checks this editor previously ran by hand.
+            const parsed = validate(payload);
+            if (!parsed.success) {
                 return;
             }
-            // Validate priceFrom before submit (experience only)
-            if (dirty.has('priceFrom') && !validatePriceFrom(priceFrom)) {
-                return;
-            }
+
             setStatus({ kind: 'saving' });
 
             const result = await apiClient.patch<unknown>({
                 path: patchPathFor({ vertical, listingId }),
-                body: buildPayload()
+                body: payload
             });
 
             if (result.ok) {
                 setDirty(new Set());
                 setStatus({ kind: 'success' });
             } else {
-                setStatus({
-                    kind: 'error',
-                    message: t('commerce.owner.editor.error', 'No se pudieron guardar los cambios.')
-                });
+                // Previously discarded `result.error` entirely and always showed
+                // a fixed banner string. `handleApiError` maps per-field details
+                // when the API sent them, falling back to a real (translated)
+                // banner message otherwise — see `field-errors.ts` module doc.
+                handleApiError(
+                    result.error,
+                    t('commerce.owner.editor.error', 'No se pudieron guardar los cambios.')
+                );
+                setStatus({ kind: 'error' });
             }
         },
-        [
-            dirty,
-            vertical,
-            listingId,
-            buildPayload,
-            t,
-            validateSummary,
-            summary,
-            validatePriceFrom,
-            priceFrom
-        ]
+        [dirty, vertical, listingId, buildPayload, validate, handleApiError, t]
     );
 
     const isSaving = status.kind === 'saving';
@@ -521,23 +502,28 @@ export function CommerceListingEditor({
                     rows={3}
                     minLength={10}
                     maxLength={300}
-                    aria-describedby="ce-summary-hint"
+                    aria-invalid={fieldErrors.summary ? 'true' : 'false'}
+                    aria-describedby={
+                        fieldErrors.summary ? fieldErrorId('summary') : 'ce-summary-hint'
+                    }
                     onChange={(event) => {
                         setSummary(event.target.value);
                         markDirty('summary');
-                        validateSummary(event.target.value);
                     }}
                 />
                 <span
                     id="ce-summary-hint"
-                    className={summaryError ? styles.error : styles.hint}
+                    className={styles.hint}
                     aria-live="polite"
                 >
-                    {summaryError ||
-                        t('commerce.owner.editor.validation.summaryHint', '{{count}}/300', {
-                            count: summary.length
-                        })}
+                    {t('commerce.owner.editor.validation.summaryHint', '{{count}}/300', {
+                        count: summary.length
+                    })}
                 </span>
+                <FieldError
+                    id={fieldErrorId('summary')}
+                    message={fieldErrors.summary}
+                />
             </section>
 
             <section className={styles.section}>
@@ -570,14 +556,34 @@ export function CommerceListingEditor({
                     aria-label={t('commerce.owner.editor.contactField.mobilePhone', 'Teléfono')}
                     value={contact.mobilePhone}
                     placeholder="+54..."
+                    aria-invalid={fieldErrors['contactInfo.mobilePhone'] ? 'true' : 'false'}
+                    aria-describedby={
+                        fieldErrors['contactInfo.mobilePhone']
+                            ? fieldErrorId('contactInfo.mobilePhone')
+                            : undefined
+                    }
                     onChange={(event) => updateContact({ mobilePhone: event.target.value })}
+                />
+                <FieldError
+                    id={fieldErrorId('contactInfo.mobilePhone')}
+                    message={fieldErrors['contactInfo.mobilePhone']}
                 />
                 <input
                     className={styles.input}
                     type="email"
                     aria-label={t('commerce.owner.editor.contactField.workEmail', 'Email')}
                     value={contact.workEmail}
+                    aria-invalid={fieldErrors['contactInfo.workEmail'] ? 'true' : 'false'}
+                    aria-describedby={
+                        fieldErrors['contactInfo.workEmail']
+                            ? fieldErrorId('contactInfo.workEmail')
+                            : undefined
+                    }
                     onChange={(event) => updateContact({ workEmail: event.target.value })}
+                />
+                <FieldError
+                    id={fieldErrorId('contactInfo.workEmail')}
+                    message={fieldErrors['contactInfo.workEmail']}
                 />
             </fieldset>
 
@@ -586,17 +592,29 @@ export function CommerceListingEditor({
                 <legend className={styles.label}>
                     {t('commerce.owner.editor.sections.socialNetworks', 'Redes sociales')}
                 </legend>
-                {SOCIAL_KEYS.map((key) => (
-                    <input
-                        key={key}
-                        className={styles.input}
-                        type="url"
-                        aria-label={key}
-                        value={social[key]}
-                        placeholder={`https://${key === 'linkedIn' ? 'linkedin' : key}.com/...`}
-                        onChange={(event) => updateSocial(key, event.target.value)}
-                    />
-                ))}
+                {SOCIAL_KEYS.map((key) => {
+                    const errorKey = `socialNetworks.${key}`;
+                    return (
+                        <div key={key}>
+                            <input
+                                className={styles.input}
+                                type="url"
+                                aria-label={key}
+                                value={social[key]}
+                                placeholder={`https://${key === 'linkedIn' ? 'linkedin' : key}.com/...`}
+                                aria-invalid={fieldErrors[errorKey] ? 'true' : 'false'}
+                                aria-describedby={
+                                    fieldErrors[errorKey] ? fieldErrorId(errorKey) : undefined
+                                }
+                                onChange={(event) => updateSocial(key, event.target.value)}
+                            />
+                            <FieldError
+                                id={fieldErrorId(errorKey)}
+                                message={fieldErrors[errorKey]}
+                            />
+                        </div>
+                    );
+                })}
             </fieldset>
 
             <section className={styles.section}>
@@ -610,6 +628,10 @@ export function CommerceListingEditor({
                         setOpeningHours(next);
                         markDirty('openingHours');
                     }}
+                />
+                <FieldError
+                    id={fieldErrorId('openingHours')}
+                    message={fieldErrors.openingHours}
                 />
             </section>
 
@@ -690,10 +712,16 @@ export function CommerceListingEditor({
                         type="url"
                         value={menuUrl}
                         placeholder="https://..."
+                        aria-invalid={fieldErrors.menuUrl ? 'true' : 'false'}
+                        aria-describedby={fieldErrors.menuUrl ? fieldErrorId('menuUrl') : undefined}
                         onChange={(event) => {
                             setMenuUrl(event.target.value);
                             markDirty('menuUrl');
                         }}
+                    />
+                    <FieldError
+                        id={fieldErrorId('menuUrl')}
+                        message={fieldErrors.menuUrl}
                     />
                 </section>
             ) : (
@@ -726,24 +754,21 @@ export function CommerceListingEditor({
                         step={1}
                         disabled={isPriceOnRequest}
                         value={priceFrom ?? ''}
-                        aria-describedby="ce-priceFrom-err"
+                        aria-invalid={fieldErrors.priceFrom ? 'true' : 'false'}
+                        aria-describedby={
+                            fieldErrors.priceFrom ? fieldErrorId('priceFrom') : undefined
+                        }
                         onChange={(event) => {
                             const raw = event.target.value;
                             const parsed = raw === '' ? null : Math.floor(Number(raw));
                             setPriceFrom(parsed);
                             markDirty('priceFrom');
-                            validatePriceFrom(parsed);
                         }}
                     />
-                    {priceFromError && (
-                        <span
-                            id="ce-priceFrom-err"
-                            className={styles.error}
-                            aria-live="polite"
-                        >
-                            {priceFromError}
-                        </span>
-                    )}
+                    <FieldError
+                        id={fieldErrorId('priceFrom')}
+                        message={fieldErrors.priceFrom}
+                    />
 
                     {/* T-021: priceUnit select — disabled when isPriceOnRequest */}
                     <label
@@ -757,6 +782,10 @@ export function CommerceListingEditor({
                         className={styles.input}
                         value={priceUnit}
                         disabled={isPriceOnRequest}
+                        aria-invalid={fieldErrors.priceUnit ? 'true' : 'false'}
+                        aria-describedby={
+                            fieldErrors.priceUnit ? fieldErrorId('priceUnit') : undefined
+                        }
                         onChange={(event) => {
                             setPriceUnit(event.target.value);
                             markDirty('priceUnit');
@@ -772,6 +801,10 @@ export function CommerceListingEditor({
                             </option>
                         ))}
                     </select>
+                    <FieldError
+                        id={fieldErrorId('priceUnit')}
+                        message={fieldErrors.priceUnit}
+                    />
                 </section>
             )}
 
@@ -780,12 +813,12 @@ export function CommerceListingEditor({
                     {t('commerce.owner.editor.success', 'Cambios guardados.')}
                 </output>
             )}
-            {status.kind === 'error' && (
+            {formError && (
                 <p
                     className={styles.error}
                     role="alert"
                 >
-                    {status.message}
+                    {formError}
                 </p>
             )}
 

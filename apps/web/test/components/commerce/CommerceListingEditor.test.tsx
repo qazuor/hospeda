@@ -179,6 +179,50 @@ describe('CommerceListingEditor', () => {
         await screen.findByRole('alert');
     });
 
+    it('surfaces the REAL API error message on PATCH failure, not a fixed banner string (HOS-190 regression)', async () => {
+        // Regression guard: the `else` branch used to discard `result.error`
+        // entirely and always render the same hardcoded string
+        // ("No se pudieron guardar los cambios."), so a distinctive
+        // server-side message (e.g. a uniqueness conflict) was invisible to
+        // the owner. `handleApiError` now surfaces the actual message.
+        mockPatch.mockResolvedValueOnce({
+            ok: false,
+            error: { status: 500, message: 'Ese teléfono ya está en uso' }
+        });
+        renderEditor('gastronomy');
+
+        fireEvent.change(screen.getByLabelText('Teléfono'), {
+            target: { value: '+5491100000000' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        const alert = await screen.findByRole('alert');
+        expect(alert.textContent).toBe('Ese teléfono ya está en uso');
+        expect(alert.textContent).not.toBe('No se pudieron guardar los cambios.');
+    });
+
+    it('sends priceFrom as undefined (not null) when cleared, so the PATCH succeeds (experience)', async () => {
+        // Regression guard: `ExperienceSchema.priceFrom` is
+        // `z.number().int().nonnegative()` — NOT `.nullable()` — so clearing
+        // the field used to build `payload.priceFrom = priceFrom ?? null`,
+        // sending an explicit `null` the domain schema rejects. There was no
+        // client-side validation to catch this before submit, so the PATCH
+        // always fired and only failed against the real API. The fix sends
+        // `undefined` (omit the key = "no change") instead, so a clear
+        // still marks the field dirty but the PATCH now succeeds.
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+        renderEditor('experience');
+
+        const priceFromInput = screen.getByLabelText(/Precio desde/);
+        fireEvent.change(priceFromInput, { target: { value: '500' } });
+        fireEvent.change(priceFromInput, { target: { value: '' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+        const body = mockPatch.mock.calls[0]?.[0]?.body as { priceFrom?: number | null };
+        expect(body.priceFrom).toBeUndefined();
+    });
+
     it('PATCHes only the priceRange field group when the price tier changes (gastronomy)', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
         renderEditor('gastronomy');
@@ -300,6 +344,15 @@ describe('CommerceListingEditor', () => {
     it('seeds amenity selection and PATCHes amenityIds/featureIds when toggled', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
 
+        // HOS-190 slice 3: `amenityIds`/`featureIds` are now validated as real
+        // UUIDs against `GastronomyOwnerUpdateInputSchema` before the PATCH
+        // fires — short fixture ids like 'a1' used to be harmless (no
+        // validation existed) but now fail `.uuid()` and silently block
+        // submission. Use UUID-shaped fixture ids throughout.
+        const AMENITY_A1 = '11111111-1111-4111-8111-111111111111';
+        const AMENITY_A2 = '22222222-2222-4222-8222-222222222222';
+        const FEATURE_F1 = '33333333-3333-4333-8333-333333333333';
+
         render(
             <CommerceListingEditor
                 vertical="gastronomy"
@@ -311,7 +364,7 @@ describe('CommerceListingEditor', () => {
                         ownerId: 'owner-1',
                         name: 'La Parrilla',
                         slug: 'la-parrilla',
-                        amenityIds: ['a1']
+                        amenityIds: [AMENITY_A1]
                     } as unknown as CommerceListingDetail
                 }
                 // SPEC-266: catalog items carry `slug` (no `name`). The amenity
@@ -320,10 +373,10 @@ describe('CommerceListingEditor', () => {
                 // `Terraza`). Features render `t(featureNames.<slug>, slug)`,
                 // which falls back to the raw slug.
                 amenities={[
-                    { id: 'a1', slug: 'wifi', category: null },
-                    { id: 'a2', slug: 'terraza', category: null }
+                    { id: AMENITY_A1, slug: 'wifi', category: null },
+                    { id: AMENITY_A2, slug: 'terraza', category: null }
                 ]}
-                features={[{ id: 'f1', slug: 'pet_friendly', category: null }]}
+                features={[{ id: FEATURE_F1, slug: 'pet_friendly', category: null }]}
             />
         );
 
@@ -341,8 +394,8 @@ describe('CommerceListingEditor', () => {
             amenityIds?: string[];
             featureIds?: string[];
         };
-        expect(body.amenityIds).toEqual(['a1', 'a2']);
-        expect(body.featureIds).toEqual(['f1']);
+        expect(body.amenityIds).toEqual([AMENITY_A1, AMENITY_A2]);
+        expect(body.featureIds).toEqual([FEATURE_F1]);
     });
 
     it('removes a gallery image (best-effort delete) and PATCHes the trimmed gallery', async () => {
