@@ -555,7 +555,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                 // HOS-147: the POI's full category set (all r_poi_category
                 // slugs), for the destination-page thematic filter. Always an
                 // array (empty when the POI has no active categories).
-                readonly categories: ReadonlyArray<{ readonly slug: string }>;
+                readonly categories: { slug: string }[];
             }>
         >
     > {
@@ -652,7 +652,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                         readonly slug: string;
                         readonly nameI18n: I18nText;
                     } | null;
-                    readonly categories: ReadonlyArray<{ readonly slug: string }>;
+                    readonly categories: { slug: string }[];
                 }>
             >();
             for (const row of results) {
@@ -678,7 +678,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                               nameI18n: row.primaryCategoryNameI18n as I18nText
                           }
                         : null,
-                    categories: (row.categories ?? []) as ReadonlyArray<{ readonly slug: string }>
+                    categories: (row.categories ?? []) as { slug: string }[]
                 });
                 map.set(row.destinationId, existing);
             }
