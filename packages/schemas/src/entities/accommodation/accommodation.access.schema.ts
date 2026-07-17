@@ -1,12 +1,130 @@
 import { z } from 'zod';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
-import { ApproximateLocationSchema } from '../../common/location.schema.js';
+import { ApproximateLocationSchema, CoordinatesSchema } from '../../common/location.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
+import { PreferredContactEnumSchema } from '../../enums/index.js';
 import { AmenityAdminSchema, AmenityProtectedSchema } from '../amenity/amenity.access.schema.js';
 import { CityDestinationRefSchema } from '../destination/destination.refs.schema.js';
 import { FeatureAdminSchema, FeatureProtectedSchema } from '../feature/feature.access.schema.js';
 import { UserAdminSchema, UserProtectedSchema } from '../user/user.access.schema.js';
 import { AccommodationSchema } from './accommodation.schema.js';
+import {
+    AccommodationPriceSchema,
+    AdditionalFeesInfoSchema,
+    DiscountInfoSchema,
+    OtherAdditionalFeesSchema,
+    OtherDiscountSchema
+} from './subtypes/accommodation.price.schema.js';
+
+// ============================================================================
+// READ⊇WRITE LENIENT SHAPES (HOS-190)
+// ============================================================================
+//
+// The response/access schemas below are stripped against the actual stored row
+// by `stripWithSchema` (apps/api/src/utils/response-helpers.ts), which
+// FAIL-CLOSES to HTTP 500 when a stored value does not satisfy the declared
+// schema. Every long-text/JSONB column on `accommodations` (`name`, `summary`,
+// `description`, `seo`, `contact_info`, `social_networks`, `location`, `price`)
+// is an unconstrained Postgres `text`/`jsonb` — nothing but Zod has ever gated
+// what landed there, so legacy rows, imports, and admin/cron writes can hold
+// values stricter than today's bounds would allow. A single such value used to
+// 500 the owner's GET and lock them out of editing the ENTIRE accommodation
+// (and 500 the public page). This mirrors the profile fix and extends the
+// existing SPEC-143 Finding #9 `slug`/`description` read-relaxation precedent:
+// the RESPONSE asserts type + presence only for these free-form fields; content
+// bounds (length, phone/URL format, price positivity) stay enforced on the
+// WRITE path (the domain `updateSchema`/`createSchema` gate in BaseCrudService).
+
+/** SEO read shape — drops title/description length bounds (host cannot even edit SEO, so a legacy value is un-self-healable). */
+const AccommodationSeoReadSchema = z
+    .object({ title: z.string().optional(), description: z.string().optional() })
+    .strip();
+
+/** Contact read shape — phones/emails/website as plain strings (legacy local-format AR phones like `0223-155-1234` are extremely common and lack the `+` the write regex requires). */
+const AccommodationContactInfoReadSchema = z.object({
+    personalEmail: z.string().optional(),
+    workEmail: z.string().optional(),
+    homePhone: z.string().optional(),
+    workPhone: z.string().optional(),
+    mobilePhone: z.string().optional(),
+    whatsapp: z.string().optional(),
+    website: z.string().optional(),
+    preferredEmail: PreferredContactEnumSchema.optional(),
+    preferredPhone: PreferredContactEnumSchema.optional()
+});
+
+/** Social read shape — plain strings (legacy variant URLs like `m.facebook.com`/mobile share links fail the platform regex). */
+const AccommodationSocialNetworksReadSchema = z.object({
+    facebook: z.string().optional(),
+    instagram: z.string().optional(),
+    twitter: z.string().optional(),
+    linkedIn: z.string().optional(),
+    tiktok: z.string().optional(),
+    youtube: z.string().optional()
+});
+
+/** Location read shape — postal string fields drop min/max (coordinates keep their numeric validation; they only ever come from the map picker). */
+const AccommodationLocationReadSchema = z.object({
+    coordinates: CoordinatesSchema.optional(),
+    street: z.string().optional(),
+    number: z.string().optional(),
+    floor: z.string().optional(),
+    apartment: z.string().optional()
+});
+
+/**
+ * Price read shape — drops `.positive()` on the nightly amount AND on every
+ * nested fee/discount amount, so a legacy/"consultar precio" `0` never 500s the
+ * response at ANY nesting level (the shared `PriceSchema.price` positivity is a
+ * WRITE constraint asserted by an existing test, so it stays strict; the
+ * relaxation is contained to this read overlay). The `.extend({ price })` on each
+ * info schema overrides only the amount, preserving every fee/discount flag.
+ */
+const LenientPriceAmount = z.number().optional();
+const AdditionalFeesInfoReadSchema = AdditionalFeesInfoSchema.extend({ price: LenientPriceAmount });
+const DiscountInfoReadSchema = DiscountInfoSchema.extend({ price: LenientPriceAmount });
+const AccommodationPriceReadSchema = AccommodationPriceSchema.extend({
+    price: LenientPriceAmount,
+    additionalFees: z
+        .object({
+            cleaning: AdditionalFeesInfoReadSchema.optional(),
+            tax: AdditionalFeesInfoReadSchema.optional(),
+            lateCheckout: AdditionalFeesInfoReadSchema.optional(),
+            pets: AdditionalFeesInfoReadSchema.optional(),
+            bedlinen: AdditionalFeesInfoReadSchema.optional(),
+            towels: AdditionalFeesInfoReadSchema.optional(),
+            babyCrib: AdditionalFeesInfoReadSchema.optional(),
+            babyHighChair: AdditionalFeesInfoReadSchema.optional(),
+            extraBed: AdditionalFeesInfoReadSchema.optional(),
+            securityDeposit: AdditionalFeesInfoReadSchema.optional(),
+            extraGuest: AdditionalFeesInfoReadSchema.optional(),
+            parking: AdditionalFeesInfoReadSchema.optional(),
+            earlyCheckin: AdditionalFeesInfoReadSchema.optional(),
+            lateCheckin: AdditionalFeesInfoReadSchema.optional(),
+            luggageStorage: AdditionalFeesInfoReadSchema.optional(),
+            // `name` is also relaxed (drops min2/max100, stays required) so a
+            // legacy custom fee with a short name never 500s either.
+            others: z
+                .array(
+                    OtherAdditionalFeesSchema.extend({
+                        price: LenientPriceAmount,
+                        name: z.string()
+                    })
+                )
+                .optional()
+        })
+        .optional(),
+    discounts: z
+        .object({
+            weekly: DiscountInfoReadSchema.optional(),
+            monthly: DiscountInfoReadSchema.optional(),
+            lastMinute: DiscountInfoReadSchema.optional(),
+            others: z
+                .array(OtherDiscountSchema.extend({ price: LenientPriceAmount, name: z.string() }))
+                .optional()
+        })
+        .optional()
+});
 
 /**
  * PUBLIC ACCESS SCHEMA
@@ -79,6 +197,16 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
      * truncating at generation time — lives).
      */
     slug: z.string().max(120, { message: 'zodError.accommodation.slug.max' }),
+    // HOS-190 read⊇write: assert type + presence only for free-form content
+    // fields (see the lenient-shapes block at the top of this file). A legacy
+    // value must never 500 the public page.
+    name: z.string(),
+    summary: z.string(),
+    description: z.string(),
+    seo: AccommodationSeoReadSchema.nullish(),
+    price: AccommodationPriceReadSchema.nullish(),
+    socialNetworks: AccommodationSocialNetworksReadSchema.nullish(),
+    location: AccommodationLocationReadSchema.nullish(),
     /**
      * Rich-text (markdown) variant of the description for entitled hosts.
      * Must survive serialization so the web client can switch between rich
@@ -247,16 +375,21 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
      * truncating at generation time — lives).
      */
     slug: z.string().max(120, { message: 'zodError.accommodation.slug.max' }),
-    /**
-     * Description — relaxed on the read side so DRAFT accommodations with
-     * short descriptions (legacy data, or drafts created via the onboarding
-     * "publicar" flow where description is initially placeholder-filled) can
-     * still be fetched without tripping the `min(30)` constraint enforced on
-     * the base/write schemas. See SPEC-143 Finding #9: read schemas must
-     * tolerate what the DB legitimately contains; the write path is where
-     * the min(30) gate is meaningful.
-     */
-    description: z.string().max(2000, { message: 'zodError.accommodation.description.max' }),
+    // HOS-190 read⊇write: the OWNER edits this accommodation off this exact
+    // schema — a single stored value stricter than today's write bounds (a
+    // legacy short `description`, an AR local-format phone, a `seo` block the
+    // host cannot even edit, a `0` price) used to 500 the GET and lock the
+    // owner out of editing EVERYTHING. Assert type + presence only for these
+    // free-form fields; content bounds stay on the write/domain schema. See the
+    // lenient-shapes block at the top of this file and SPEC-143 Finding #9.
+    name: z.string(),
+    summary: z.string(),
+    description: z.string(),
+    seo: AccommodationSeoReadSchema.nullish(),
+    price: AccommodationPriceReadSchema.nullish(),
+    contactInfo: AccommodationContactInfoReadSchema.nullish(),
+    socialNetworks: AccommodationSocialNetworksReadSchema.nullish(),
+    location: AccommodationLocationReadSchema.nullish(),
     /**
      * Media WITHOUT archivedGallery. The entity schema carries `archivedGallery`
      * for server-side use, but it must never be exposed to authenticated (non-admin)
@@ -295,13 +428,18 @@ export const AccommodationAdminSchema = AccommodationSchema.extend({
      * contains; the write path is where the max(50) gate is meaningful.
      */
     slug: z.string().max(120, { message: 'zodError.accommodation.slug.max' }),
-    /**
-     * Description — relaxed on the read side so DRAFT accommodations with
-     * short descriptions (legacy data, or drafts created via the onboarding
-     * "publicar" flow) can still be fetched by the admin panel. See
-     * SPEC-143 Finding #9.
-     */
-    description: z.string().max(2000, { message: 'zodError.accommodation.description.max' }),
+    // HOS-190 read⊇write: assert type + presence only for free-form content
+    // fields so a legacy/imported value never 500s the admin GET. Content
+    // bounds stay on the write/domain schema. See the lenient-shapes block at
+    // the top of this file and SPEC-143 Finding #9.
+    name: z.string(),
+    summary: z.string(),
+    description: z.string(),
+    seo: AccommodationSeoReadSchema.nullish(),
+    price: AccommodationPriceReadSchema.nullish(),
+    contactInfo: AccommodationContactInfoReadSchema.nullish(),
+    socialNetworks: AccommodationSocialNetworksReadSchema.nullish(),
+    location: AccommodationLocationReadSchema.nullish(),
     /** Owner data from users table JOIN (admin tier). */
     owner: UserAdminSchema.optional(),
     /** City projection of the linked destination (SPEC-095). */

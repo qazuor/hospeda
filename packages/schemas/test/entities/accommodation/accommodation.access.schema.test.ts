@@ -325,3 +325,83 @@ describe('AccommodationAdminSchema — extraInfo tolerance for DRAFT data (HOS-1
         expect(result.success).toBe(true);
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-190: read⊇write — the response schema must never 500 on a legacy/imported
+// value the write path no longer allows (stripWithSchema fail-closes to HTTP
+// 500, which locks the owner out of editing the ENTIRE accommodation).
+// ---------------------------------------------------------------------------
+
+describe('Accommodation read⊇write (HOS-190)', () => {
+    it('Protected: parses a legacy SEO block below the write min bounds (host cannot self-heal SEO)', () => {
+        const payload = { ...entityPayload, seo: { title: 'Short', description: 'Too short' } };
+        expect(AccommodationProtectedSchema.safeParse(payload).success).toBe(true);
+    });
+
+    it('Protected: parses an AR local-format phone lacking the international "+" prefix', () => {
+        const payload = { ...entityPayload, contactInfo: { mobilePhone: '0223-155-1234' } };
+        expect(AccommodationProtectedSchema.safeParse(payload).success).toBe(true);
+    });
+
+    it('Protected: parses a legacy/"consultar" price of 0 (write requires positive)', () => {
+        const payload = { ...entityPayload, price: { price: 0, currency: 'ARS' as const } };
+        expect(AccommodationProtectedSchema.safeParse(payload).success).toBe(true);
+    });
+
+    it('Protected: parses a NESTED fee/discount price of 0 (same bug class one level deeper)', () => {
+        const payload = {
+            ...entityPayload,
+            price: {
+                price: 120,
+                currency: 'ARS' as const,
+                additionalFees: { cleaning: { price: 0, isIncluded: true } },
+                discounts: { weekly: { price: 0, isPercent: true } }
+            }
+        };
+        expect(AccommodationProtectedSchema.safeParse(payload).success).toBe(true);
+    });
+
+    it('Protected: parses a legacy custom "others" fee with a 1-char name (price + name relaxed)', () => {
+        const payload = {
+            ...entityPayload,
+            price: {
+                price: 120,
+                currency: 'ARS' as const,
+                additionalFees: { others: [{ name: 'x', price: 0 }] }
+            }
+        };
+        expect(AccommodationProtectedSchema.safeParse(payload).success).toBe(true);
+    });
+
+    it('Protected: parses a 1-char name and a very short summary/description (legacy/import)', () => {
+        const payload = { ...entityPayload, name: 'A', summary: 'hi', description: 'x' };
+        expect(AccommodationProtectedSchema.safeParse(payload).success).toBe(true);
+    });
+
+    it('Protected: parses a non-canonical social URL that fails the platform regex', () => {
+        const payload = {
+            ...entityPayload,
+            socialNetworks: { facebook: 'https://m.facebook.com/x' }
+        };
+        expect(AccommodationProtectedSchema.safeParse(payload).success).toBe(true);
+    });
+
+    it('Public: parses the same legacy SEO/price/name so the public page never 500s', () => {
+        const payload = {
+            ...entityPayload,
+            seo: { title: 'Short', description: 'Too short' },
+            price: { price: 0, currency: 'ARS' as const },
+            name: 'A'
+        };
+        expect(AccommodationPublicSchema.safeParse(payload).success).toBe(true);
+    });
+
+    it('Admin: parses a legacy local-format phone and short SEO', () => {
+        const payload = {
+            ...entityPayload,
+            seo: { title: 'x', description: 'y' },
+            contactInfo: { mobilePhone: '0223-155-1234' }
+        };
+        expect(AccommodationAdminSchema.safeParse(payload).success).toBe(true);
+    });
+});

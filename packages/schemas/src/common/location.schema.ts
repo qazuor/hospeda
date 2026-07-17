@@ -162,6 +162,12 @@ export type FullLocationType = z.infer<typeof FullLocationSchema>;
  * remain valid, and the two extra postal fields are additive.
  *
  * All fields are optional: a profile may carry any subset (or none) of them.
+ *
+ * This is the WRITE/entity shape (embedded in `UserSchema`, from which the user
+ * create/update schemas derive), so its bounds gate persistence and MUST stay
+ * strict. The read⊇write relaxation for the profile RESPONSE lives in the
+ * access overlay (`UserLocationReadSchema` in `user.access.schema.ts`), so a
+ * legacy value never 500s a GET while writes stay validated (HOS-190).
  */
 export const UserLocationSchema = z.object({
     country: z

@@ -268,6 +268,71 @@ describe('ExternalReputationSection', () => {
             const addButton = screen.getByRole('button', { name: /Agregar/i });
             expect(addButton).toBeDisabled();
         });
+
+        it('rejects an invalid URL client-side without POSTing (HOS-190 gap)', async () => {
+            // Regression guard: this sub-section had its own Save with only a
+            // non-empty check, so "csdcsdcsd" round-tripped to a server 400 the
+            // client then mis-read into a generic banner. It now validates the
+            // URL client-side (AccommodationExternalListingSchema.shape.url) and
+            // never fires the POST for a malformed value.
+            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
+                if ((opts as RequestInit)?.method === 'POST') {
+                    return Promise.resolve(makeOkResponse());
+                }
+                return Promise.resolve(makeListingsOkResponse([]));
+            });
+
+            renderSection();
+            await waitFor(() => {
+                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
+            });
+
+            const urlInput = screen.getByPlaceholderText('https://...') as HTMLInputElement;
+            fireEvent.change(urlInput, { target: { value: 'csdcsdcsd' } });
+            fireEvent.click(screen.getByRole('button', { name: /Agregar/i }));
+
+            // A field-level error is shown and the URL input is marked invalid.
+            expect(await screen.findByRole('alert')).toBeInTheDocument();
+            expect(urlInput).toHaveAttribute('aria-invalid', 'true');
+
+            // No POST was ever issued.
+            const postCall = vi
+                .mocked(global.fetch)
+                .mock.calls.find(([, opts]) => (opts as RequestInit)?.method === 'POST');
+            expect(postCall).toBeUndefined();
+        });
+
+        it('surfaces a server ServiceError message (DUPLICATE_PLATFORM shape) instead of the generic fallback (HOS-190)', async () => {
+            // Regression guard for the ORIGINAL bug: a handler-thrown ServiceError
+            // 400 serializes as { error: { code, message, details } } (no
+            // userFriendlyMessage/summary). The old code read only `.message`
+            // then the fix briefly read only userFriendlyMessage/summary — both
+            // half-right. The fallback chain must surface this `message`.
+            const duplicateMessage = 'A listing for platform GOOGLE already exists';
+            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
+                if ((opts as RequestInit)?.method === 'POST') {
+                    return Promise.resolve({
+                        ok: false,
+                        status: 400,
+                        json: async () => ({
+                            error: { code: 'DUPLICATE_PLATFORM', message: duplicateMessage }
+                        })
+                    } as unknown as Response);
+                }
+                return Promise.resolve(makeListingsOkResponse([]));
+            });
+
+            renderSection();
+            await waitFor(() => {
+                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
+            });
+
+            const urlInput = screen.getByPlaceholderText('https://...') as HTMLInputElement;
+            fireEvent.change(urlInput, { target: { value: 'https://maps.google.com/?cid=1' } });
+            fireEvent.click(screen.getByRole('button', { name: /Agregar/i }));
+
+            expect(await screen.findByText(duplicateMessage)).toBeInTheDocument();
+        });
     });
 
     // ── 5. Toggle showLink / showReviews ────────────────────────────────────
