@@ -13,14 +13,16 @@
  *
  * PRIMARY POIs arrive as a prop, from the destination detail payload the page
  * already fetched server-side (the same array the SSR grid renders — one
- * source, no divergence). NEARBY POIs are fetched on mount from
- * `GET /destinations/:id/points-of-interest?relation=NEARBY`, because they are
- * needed ONLY by this optional, below-the-fold widget: bundling them into every
- * destination detail response would inflate the payload for every consumer
- * (Colón alone has 57 of them) to serve one toggle. The fetch degrades
- * gracefully — while it is in flight, and forever if it fails, the map renders
- * the PRIMARY pins and simply does not offer the toggle. A failed enrichment
- * fetch must never break the map.
+ * source, no divergence). NEARBY POIs are fetched LAZILY from
+ * `GET /destinations/:id/points-of-interest?relation=NEARBY` — only once the
+ * visitor activates "ver alrededores", never on mount (HOS-181). They are
+ * needed ONLY by this optional, below-the-fold widget, and only when the user
+ * asks to step out from the city view: a default page view ships zero NEARBY
+ * request, and bundling them into every destination detail response would
+ * inflate the payload for every consumer (Colón alone has 57 of them) to serve
+ * one toggle. The fetch degrades gracefully — while it is in flight, and forever
+ * if it fails, the map keeps the PRIMARY pins. A failed enrichment fetch must
+ * never break the map.
  *
  * The initial frame is anchored to the destination's coordinates plus an
  * adaptive radius, NOT to the bbox of its PRIMARY POIs. A plain bbox fit was
@@ -39,7 +41,7 @@
  * Self-guards: renders nothing when no POI has coordinates, mirroring the
  * grid's empty-array guard.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { LocationMapMultiMarker } from '@/components/maps/LocationMap.client';
 import { LocationMap } from '@/components/maps/LocationMap.client';
 import { destinationsApi } from '@/lib/api/endpoints';
@@ -98,24 +100,32 @@ type GeolocatedPoi = DestinationPointOfInterestItem & {
 const EMPTY_POIS: ReadonlyArray<DestinationPointOfInterestItem> = [];
 
 /**
- * Fetches the destination's NEARBY POIs once after mount.
+ * Lazily fetches the destination's NEARBY POIs — ONLY once `requestNearby` is
+ * called (HOS-181), not on mount. A default destination-page view therefore
+ * ships zero NEARBY request; the fetch fires only when the visitor activates
+ * "ver alrededores". The first `requestNearby` arms the fetch; further calls are
+ * no-ops (idempotent).
  *
  * Never throws and never surfaces an error state: `destinationsApi` returns an
  * `ApiResult`, and a failure simply leaves the list empty, which downstream
- * degrades to "PRIMARY pins, no toggle". Aborts its own state write on unmount
- * so a slow response cannot set state on a torn-down island.
+ * degrades to "PRIMARY pins only". Aborts its own state write on unmount so a
+ * slow response cannot set state on a torn-down island.
  *
  * @param params.destinationId - The destination whose NEARBY POIs to load
- * @returns The transformed NEARBY POI list (empty while loading or on failure)
+ * @returns `nearby` (empty until requested / while loading / on failure) and
+ *          `requestNearby` (arms the one-time fetch)
  */
-function useNearbyPointsOfInterest({
-    destinationId
-}: {
-    readonly destinationId: string;
-}): ReadonlyArray<DestinationPointOfInterestItem> {
+function useNearbyPointsOfInterest({ destinationId }: { readonly destinationId: string }): {
+    readonly nearby: ReadonlyArray<DestinationPointOfInterestItem>;
+    readonly requestNearby: () => void;
+} {
     const [nearby, setNearby] = useState<ReadonlyArray<DestinationPointOfInterestItem>>(EMPTY_POIS);
+    const [requested, setRequested] = useState(false);
+
+    const requestNearby = useCallback(() => setRequested(true), []);
 
     useEffect(() => {
+        if (!requested) return;
         let active = true;
         const load = async (): Promise<void> => {
             const result = await destinationsApi.getPointsOfInterest({
@@ -144,9 +154,9 @@ function useNearbyPointsOfInterest({
         return () => {
             active = false;
         };
-    }, [destinationId]);
+    }, [requested, destinationId]);
 
-    return nearby;
+    return { nearby, requestNearby };
 }
 
 const POI_CATEGORY_PARAM = FACET_CONFIG_BY_ID.pointOfInterestCategory.paramKey;
@@ -207,7 +217,7 @@ export function DestinationPOIMap({
     filterEnabled = true
 }: DestinationPOIMapProps) {
     const { t } = createTranslations(locale);
-    const nearby = useNearbyPointsOfInterest({ destinationId });
+    const { nearby, requestNearby } = useNearbyPointsOfInterest({ destinationId });
     const activeCategories = useActivePoiCategoryFilter(filterEnabled);
 
     // `nearby` rows carry an explicitly re-asserted relation (see
@@ -298,17 +308,20 @@ export function DestinationPOIMap({
 
     if (markers.length === 0 || !initialBounds) return null;
 
-    // Only offer "ver alrededores" when it would actually reveal more — i.e.
-    // the NEARBY fetch landed and returned something. Until then (and forever,
-    // if it failed) the map is a plain PRIMARY-pin city view.
-    const hasSurroundings = primaryMarkers.length > 0 && primaryMarkers.length < markers.length;
-
     return (
         <LocationMap
             mode="multi"
             markers={visibleMarkers}
             initialBounds={initialBounds}
-            surroundingsBounds={hasSurroundings && fullBounds ? fullBounds : undefined}
+            // HOS-181 (lazy NEARBY): we no longer fetch NEARBY on mount, so
+            // pre-fetch we cannot know whether the destination has any. The "ver
+            // alrededores" toggle is therefore offered whenever there's a frame to
+            // widen to (`fullBounds`); activating it fires the fetch
+            // (onShowSurroundings → requestNearby). If nothing comes back the frame
+            // just widens around the PRIMARY set. Trades a slightly less precise
+            // toggle for not fetching NEARBY on every page view (perf, D-2).
+            surroundingsBounds={fullBounds ?? undefined}
+            onShowSurroundings={requestNearby}
             ariaLabel={t('maps.ariaLabelPointsOfInterest', 'Mapa de puntos de interés')}
             i18nStrings={{
                 attribution: t('maps.attribution'),

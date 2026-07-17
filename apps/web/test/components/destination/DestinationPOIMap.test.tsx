@@ -1,11 +1,11 @@
 /**
  * @file DestinationPOIMap.test.tsx
- * @description Unit tests for `DestinationPOIMap` (HOS-146). Mocks
- * `LocationMap` (already covered end-to-end by `LocationMap.test.tsx`) so
- * this suite can focus on: filtering POIs without coordinates, merging the
- * fetched NEARBY set with the PRIMARY set from props, splitting them for the
- * initial vs. surroundings bbox, and the render-nothing guard when no POI has
- * coordinates.
+ * @description Unit tests for `DestinationPOIMap` (HOS-146, HOS-147, HOS-181).
+ * Mocks `LocationMap` (covered end-to-end by `LocationMap.test.tsx`) so this
+ * suite can focus on: filtering POIs without coordinates, the LAZY NEARBY fetch
+ * (HOS-181 — only on "ver alrededores", never on mount), merging the fetched
+ * NEARBY set with the PRIMARY set, the initial vs. surroundings bbox, the
+ * thematic category filter (HOS-147), and the render-nothing guard.
  *
  * The NEARBY fetch is mocked at the `endpoints` boundary — the component must
  * never call `fetch()` itself (apps/web/CLAUDE.md).
@@ -53,6 +53,25 @@ function poi(overrides: Partial<DestinationPointOfInterestItem>): DestinationPoi
     };
 }
 
+function lastMultiProps() {
+    const last = receivedProps.at(-1);
+    if (last?.mode !== 'multi') {
+        throw new Error('Expected the last LocationMap render to be mode "multi"');
+    }
+    return last;
+}
+
+/**
+ * Simulate the visitor activating the "ver alrededores" toggle — the real
+ * trigger lives inside MultiMarkerMapInner and calls `onShowSurroundings`; here
+ * we invoke the prop the map handed to LocationMap. This is what arms the lazy
+ * NEARBY fetch (HOS-181).
+ */
+function activateSurroundings() {
+    const cb = lastMultiProps().onShowSurroundings;
+    act(() => cb?.());
+}
+
 describe('DestinationPOIMap', () => {
     beforeEach(() => {
         receivedProps.length = 0;
@@ -61,7 +80,7 @@ describe('DestinationPOIMap', () => {
         mockGetPointsOfInterest.mockResolvedValue({ ok: true, data: [] });
     });
 
-    it('renders nothing when no POI has coordinates', async () => {
+    it('renders nothing when no POI has coordinates', () => {
         // Arrange
         const pointsOfInterest = [poi({ id: 'a', lat: null, long: null })];
 
@@ -74,10 +93,10 @@ describe('DestinationPOIMap', () => {
             />
         );
 
-        // Assert
-        await waitFor(() => expect(mockGetPointsOfInterest).toHaveBeenCalled());
+        // Assert — no markers, no map, and (lazy) no enrichment request either.
         expect(container).toBeEmptyDOMElement();
         expect(screen.queryByTestId('location-map')).not.toBeInTheDocument();
+        expect(mockGetPointsOfInterest).not.toHaveBeenCalled();
     });
 
     it('renders nothing when pointsOfInterest is empty', () => {
@@ -116,11 +135,11 @@ describe('DestinationPOIMap', () => {
         expect(props.markers[0]?.id).toBe('has-coords');
     });
 
-    // ── NEARBY enrichment fetch (HOS-146 review) ────────────────────────────
-    // The destination detail payload is PRIMARY-only; NEARBY POIs are pulled
-    // from the public endpoint on mount so they never inflate that payload.
+    // ── Lazy NEARBY enrichment (HOS-181, AC-5 / AC-6) ───────────────────────────
+    // The default destination-page view must ship ZERO NEARBY request; the fetch
+    // fires only when the visitor activates "ver alrededores".
 
-    it('requests only the NEARBY relation for this destination, once', async () => {
+    it('does NOT fetch NEARBY on mount — the default view ships no enrichment request (AC-5)', async () => {
         // Act
         render(
             <DestinationPOIMap
@@ -129,8 +148,29 @@ describe('DestinationPOIMap', () => {
                 locale="es"
             />
         );
+        // Flush mount effects so a would-be eager fetch would have fired by now.
+        await act(async () => {});
 
-        // Assert
+        // Assert — the map painted its PRIMARY pins, but nothing was fetched.
+        expect(screen.getByTestId('location-map')).toBeInTheDocument();
+        expect(mockGetPointsOfInterest).not.toHaveBeenCalled();
+    });
+
+    it('fetches NEARBY once, only after the surroundings toggle is activated (AC-6)', async () => {
+        // Arrange
+        render(
+            <DestinationPOIMap
+                pointsOfInterest={[poi({ id: 'p1' })]}
+                destinationId={DEST_ID}
+                locale="es"
+            />
+        );
+        expect(mockGetPointsOfInterest).not.toHaveBeenCalled();
+
+        // Act — the visitor steps out to the surroundings.
+        activateSurroundings();
+
+        // Assert — exactly one request, for the NEARBY relation of this destination.
         await waitFor(() => expect(mockGetPointsOfInterest).toHaveBeenCalledTimes(1));
         expect(mockGetPointsOfInterest).toHaveBeenCalledWith({
             id: DEST_ID,
@@ -138,7 +178,7 @@ describe('DestinationPOIMap', () => {
         });
     });
 
-    it('merges the fetched NEARBY POIs into the marker set', async () => {
+    it('merges the fetched NEARBY POIs into the marker set after activation (AC-6)', async () => {
         // Arrange — raw API rows, as the endpoint returns them.
         mockGetPointsOfInterest.mockResolvedValue({
             ok: true,
@@ -154,8 +194,6 @@ describe('DestinationPOIMap', () => {
                 }
             ]
         });
-
-        // Act
         render(
             <DestinationPOIMap
                 pointsOfInterest={[poi({ id: 'p1', relation: 'PRIMARY' })]}
@@ -163,6 +201,9 @@ describe('DestinationPOIMap', () => {
                 locale="es"
             />
         );
+
+        // Act
+        activateSurroundings();
 
         // Assert
         await waitFor(() => expect(lastMultiProps().markers).toHaveLength(2));
@@ -175,9 +216,8 @@ describe('DestinationPOIMap', () => {
         // Arrange — `relation` is `.optional()` in the schema, and the shared
         // transform defaults anything that is not 'NEARBY' (including absent) to
         // 'PRIMARY'. Trusting the payload here would silently relabel all 57 of
-        // Colón's NEARBY POIs as PRIMARY the day the API stops emitting the
-        // field: hasSurroundings goes false, the "ver alrededores" toggle
-        // disappears, and nothing throws. The component re-asserts it instead.
+        // Colón's NEARBY POIs as PRIMARY the day the API stops emitting the field.
+        // The component re-asserts it instead.
         mockGetPointsOfInterest.mockResolvedValue({
             ok: true,
             data: [
@@ -192,8 +232,6 @@ describe('DestinationPOIMap', () => {
                 }
             ]
         });
-
-        // Act
         render(
             <DestinationPOIMap
                 pointsOfInterest={[poi({ id: 'p1', relation: 'PRIMARY' })]}
@@ -202,12 +240,12 @@ describe('DestinationPOIMap', () => {
             />
         );
 
+        // Act
+        activateSurroundings();
+
         // Assert
         await waitFor(() => expect(lastMultiProps().markers).toHaveLength(2));
-        const props = lastMultiProps();
-        expect(props.markers.find((m) => m.id === 'n1')?.relation).toBe('NEARBY');
-        // ...and the toggle it feeds still shows up.
-        expect(props.surroundingsBounds).toBeDefined();
+        expect(lastMultiProps().markers.find((m) => m.id === 'n1')?.relation).toBe('NEARBY');
     });
 
     it('still renders the PRIMARY pins when the NEARBY fetch fails (graceful degradation)', async () => {
@@ -216,8 +254,6 @@ describe('DestinationPOIMap', () => {
             ok: false,
             error: { status: 500, message: 'boom' }
         });
-
-        // Act
         render(
             <DestinationPOIMap
                 pointsOfInterest={[poi({ id: 'p1' })]}
@@ -226,17 +262,17 @@ describe('DestinationPOIMap', () => {
             />
         );
 
-        // Assert
+        // Act
+        activateSurroundings();
+
+        // Assert — the map keeps its PRIMARY pin; the failed fetch adds nothing.
         await waitFor(() => expect(mockGetPointsOfInterest).toHaveBeenCalled());
         expect(screen.getByTestId('location-map')).toBeInTheDocument();
-        const props = lastMultiProps();
-        expect(props.markers.map((m) => m.id)).toEqual(['p1']);
-        // Nothing extra to reveal → no toggle.
-        expect(props.surroundingsBounds).toBeUndefined();
+        expect(lastMultiProps().markers.map((m) => m.id)).toEqual(['p1']);
     });
 
-    it('renders the PRIMARY pins immediately, before the NEARBY fetch resolves', () => {
-        // Arrange — a fetch that never settles.
+    it('renders the PRIMARY pins immediately, without any enrichment fetch', () => {
+        // Arrange — a fetch that never settles would hang the map IF it fired.
         mockGetPointsOfInterest.mockReturnValue(new Promise(() => {}));
 
         // Act
@@ -248,20 +284,13 @@ describe('DestinationPOIMap', () => {
             />
         );
 
-        // Assert — the map does not wait on enrichment to paint.
+        // Assert — the map paints from props alone; nothing was fetched.
         expect(screen.getByTestId('location-map')).toBeInTheDocument();
         expect(lastMultiProps().markers.map((m) => m.id)).toEqual(['p1']);
+        expect(mockGetPointsOfInterest).not.toHaveBeenCalled();
     });
 
-    it('passes mode "multi" with the full marker list to LocationMap', async () => {
-        // Arrange
-        mockGetPointsOfInterest.mockResolvedValue({
-            ok: true,
-            data: [
-                { id: 'p2', slug: 'p2', type: 'BEACH', lat: -32.9, long: -58.6, relation: 'NEARBY' }
-            ]
-        });
-
+    it('passes mode "multi" with the PRIMARY marker list to LocationMap', () => {
         // Act
         render(
             <DestinationPOIMap
@@ -272,10 +301,29 @@ describe('DestinationPOIMap', () => {
         );
 
         // Assert
-        await waitFor(() => expect(lastMultiProps().markers).toHaveLength(2));
         const props = lastMultiProps();
         expect(props.mode).toBe('multi');
-        expect(props.markers.map((m) => m.id).sort()).toEqual(['p1', 'p2']);
+        expect(props.markers.map((m) => m.id)).toEqual(['p1']);
+    });
+
+    it('offers the surroundings toggle for the lazy load even before NEARBY is fetched (HOS-181)', () => {
+        // With the lazy fetch we can't know pre-fetch whether the destination has
+        // NEARBY, so the toggle is offered whenever there's a frame to widen to —
+        // activating it is what triggers the fetch. So `surroundingsBounds` is
+        // present and `onShowSurroundings` is wired from the first render.
+        render(
+            <DestinationPOIMap
+                pointsOfInterest={[poi({ id: 'p1', relation: 'PRIMARY', lat: -32.4, long: -58.1 })]}
+                destinationId={DEST_ID}
+                locale="es"
+            />
+        );
+
+        const props = lastMultiProps();
+        expect(props.surroundingsBounds).toBeDefined();
+        expect(props.onShowSurroundings).toBeTypeOf('function');
+        // ...and it has not fetched yet.
+        expect(mockGetPointsOfInterest).not.toHaveBeenCalled();
     });
 
     it('frames initialBounds to the PRIMARY set only, excluding the NEARBY markers', async () => {
@@ -295,8 +343,10 @@ describe('DestinationPOIMap', () => {
                 locale="es"
             />
         );
+        activateSurroundings();
 
-        // Assert — the far-out NEARBY point must NOT be inside initialBounds.
+        // Assert — even once NEARBY loads, the far-out point must NOT be inside
+        // initialBounds (it frames the PRIMARY set).
         await waitFor(() => expect(lastMultiProps().markers).toHaveLength(2));
         expect(lastMultiProps().initialBounds).toEqual([
             [-32.4, -58.1],
@@ -332,11 +382,7 @@ describe('DestinationPOIMap', () => {
     it('does not let a mis-geocoded PRIMARY outlier stretch the initial frame', () => {
         // Arrange — the real HOS-146 regression, at Colón's real scale: ~40
         // PRIMARY POIs inside the city core plus `centro_cultural_linares_cardozo`,
-        // which the HOS-141 pipeline placed ~31km away in Villa Elisa. A min/max
-        // bbox fit framed ~33km of map and pushed the destination off-centre.
-        // The p90 radius only tolerates outliers when the sample is big enough
-        // to have a 90th percentile below the top — which every real
-        // destination is (24-71 PRIMARY), so the test mirrors that.
+        // which the HOS-141 pipeline placed ~31km away in Villa Elisa.
         const center = { lat: -32.217, long: -58.133 };
         const core = Array.from({ length: 40 }, (_, i) =>
             poi({
@@ -363,12 +409,10 @@ describe('DestinationPOIMap', () => {
             />
         );
 
-        // Assert — the frame stays a city view (~3km radius), nowhere near the
-        // ~0.28° of latitude the outlier alone would have forced.
+        // Assert — the frame stays a city view (~3km radius).
         const [[south, west], [north, east]] = lastMultiProps().initialBounds;
         expect(north - south).toBeLessThan(0.06);
         expect(east - west).toBeLessThan(0.07);
-        // And the outlier is outside it — revealed by "ver alrededores" instead.
         expect(south).toBeGreaterThan(-32.4964);
     });
 
@@ -389,35 +433,15 @@ describe('DestinationPOIMap', () => {
                 locale="es"
             />
         );
+        activateSurroundings();
 
-        // Assert
+        // Assert — after NEARBY loads, the surroundings frame grows to include it.
         await waitFor(() =>
             expect(lastMultiProps().surroundingsBounds).toEqual([
                 [-32.9, -58.6],
                 [-32.4, -58.1]
             ])
         );
-    });
-
-    it('omits surroundingsBounds when the destination has no NEARBY POIs (nothing extra to reveal)', async () => {
-        // Arrange — default mock: the fetch succeeds with an empty list.
-        const pointsOfInterest = [
-            poi({ id: 'p1', relation: 'PRIMARY', lat: -32.4, long: -58.1 }),
-            poi({ id: 'p2', relation: 'PRIMARY', lat: -32.41, long: -58.11 })
-        ];
-
-        // Act
-        render(
-            <DestinationPOIMap
-                pointsOfInterest={pointsOfInterest}
-                destinationId={DEST_ID}
-                locale="es"
-            />
-        );
-
-        // Assert
-        await waitFor(() => expect(mockGetPointsOfInterest).toHaveBeenCalled());
-        expect(lastMultiProps().surroundingsBounds).toBeUndefined();
     });
 
     it('resolves marker label/typeLabel via the shared poi-labels helpers', () => {
@@ -527,11 +551,3 @@ describe('DestinationPOIMap', () => {
         window.history.pushState({}, '', '/');
     });
 });
-
-function lastMultiProps() {
-    const last = receivedProps.at(-1);
-    if (last?.mode !== 'multi') {
-        throw new Error('Expected the last LocationMap render to be mode "multi"');
-    }
-    return last;
-}

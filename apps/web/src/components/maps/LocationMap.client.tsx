@@ -127,6 +127,13 @@ interface LocationMapMultiProps extends LocationMapCommonProps {
      * NEARBY markers); the toggle button is hidden in that case.
      */
     readonly surroundingsBounds?: LocationMapBoundsTuple;
+    /**
+     * Called when the visitor activates the "ver alrededores" toggle (transitions
+     * from city view to surroundings). Lets the consumer lazily load the extra
+     * markers on demand — DestinationPOIMap defers its NEARBY fetch until this
+     * fires (HOS-181). Optional: consumers that preload everything omit it.
+     */
+    readonly onShowSurroundings?: () => void;
     readonly i18nStrings: LocationMapMultiStrings;
 }
 
