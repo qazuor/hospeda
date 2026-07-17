@@ -215,6 +215,59 @@ describe('CommerceLead', () => {
                 expect(alerts.length).toBeGreaterThan(0);
             });
         });
+
+        // HOS-190 form 18: phone/message field errors were already computed
+        // (extractFieldErrors → zodIssuesToFieldErrors) but never rendered.
+        it('renders a visible alert for an over-length phone number', async () => {
+            renderForm();
+            await fillRequiredFields();
+            fireEvent.change(screen.getByLabelText(/teléfono/i), {
+                target: { value: '1'.repeat(51) } // CommerceLeadSchema.phone.max(50)
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                const alerts = screen.getAllByRole('alert');
+                const phoneAlert = alerts.find((el) => el.id === 'cl-phone-error');
+                expect(phoneAlert).toBeDefined();
+                expect(phoneAlert?.textContent?.length).toBeGreaterThan(0);
+            });
+
+            expect(global.fetch).not.toHaveBeenCalled();
+        });
+
+        it('renders a visible alert for a too-short message', async () => {
+            renderForm();
+            await fillRequiredFields();
+            fireEvent.change(screen.getByLabelText(/contanos sobre tu negocio/i), {
+                target: { value: 'short' } // CommerceLeadSchema.message.min(10)
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                const alerts = screen.getAllByRole('alert');
+                const messageAlert = alerts.find((el) => el.id === 'cl-message-error');
+                expect(messageAlert).toBeDefined();
+                expect(messageAlert?.textContent?.length).toBeGreaterThan(0);
+            });
+
+            expect(global.fetch).not.toHaveBeenCalled();
+        });
+
+        it('wires aria-describedby/aria-invalid on the phone input when it has an error', async () => {
+            renderForm();
+            await fillRequiredFields();
+            fireEvent.change(screen.getByLabelText(/teléfono/i), {
+                target: { value: '1'.repeat(51) }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                const phoneInput = screen.getByLabelText(/teléfono/i);
+                expect(phoneInput).toHaveAttribute('aria-invalid', 'true');
+                expect(phoneInput).toHaveAttribute('aria-describedby', 'cl-phone-error');
+            });
+        });
     });
 
     // ── Submission ────────────────────────────────────────────────────────────
