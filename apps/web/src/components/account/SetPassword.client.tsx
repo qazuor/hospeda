@@ -12,7 +12,7 @@
  * Hydration: caller MUST use `client:load`.
  */
 
-import { PROFILE_COMPLETION_MIN_PASSWORD_LENGTH, StrongPasswordRegex } from '@repo/schemas';
+import { StrongPasswordSchema } from '@repo/schemas';
 import { useState } from 'react';
 import {
     Dialog,
@@ -122,23 +122,38 @@ export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPa
         setPasswordError(null);
         setConfirmError(null);
 
-        if (password.length < PROFILE_COMPLETION_MIN_PASSWORD_LENGTH) {
-            setPasswordError(
-                t(
-                    'account.setPassword.errors.passwordMin',
-                    'La contraseña debe tener al menos 8 caracteres.'
-                )
-            );
-            return;
-        }
-
-        if (!StrongPasswordRegex.test(password)) {
-            setPasswordError(
-                t(
-                    'account.setPassword.errors.passwordWeak',
-                    'La contraseña debe tener mayúsculas, minúsculas, un número y un carácter especial (@$!%*?&).'
-                )
-            );
+        // HOS-190 slice 3: validate against the shared StrongPasswordSchema
+        // (min 8, max 128, upper/lower/digit/special) instead of the old
+        // hand-rolled length + regex pair, which never enforced the 128-char
+        // cap the server-side schema does.
+        const passwordResult = StrongPasswordSchema.safeParse(password);
+        if (!passwordResult.success) {
+            const issue = passwordResult.error.issues[0];
+            if (issue?.code === 'too_small') {
+                setPasswordError(
+                    t(
+                        'account.setPassword.errors.passwordMin',
+                        'La contraseña debe tener al menos 8 caracteres.'
+                    )
+                );
+            } else if (issue?.code === 'too_big') {
+                // NOTE (HOS-190 i18n gap): no dedicated i18n key exists yet for
+                // this case — the fallback below is shown for every locale
+                // until `account.setPassword.errors.passwordMax` is added.
+                setPasswordError(
+                    t(
+                        'account.setPassword.errors.passwordMax',
+                        'La contraseña no puede superar los 128 caracteres.'
+                    )
+                );
+            } else {
+                setPasswordError(
+                    t(
+                        'account.setPassword.errors.passwordWeak',
+                        'La contraseña debe tener mayúsculas, minúsculas, un número y un carácter especial (@$!%*?&).'
+                    )
+                );
+            }
             return;
         }
 

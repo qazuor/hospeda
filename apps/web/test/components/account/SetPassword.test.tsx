@@ -14,8 +14,9 @@
  * back to the broken pattern fails the suite.
  */
 
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 import { SetPassword } from '../../../src/components/account/SetPassword.client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
@@ -41,17 +42,38 @@ vi.mock('../../../src/store/toast-store', () => ({
 }));
 
 vi.mock('@repo/schemas', () => ({
-    PROFILE_COMPLETION_MIN_PASSWORD_LENGTH: 8,
-    StrongPasswordRegex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
+    // Mirrors StrongPasswordSchema's bounds (HOS-190 slice 3: min 8, max 128,
+    // upper/lower/digit) without pulling in the full `@repo/schemas` package.
+    StrongPasswordSchema: z
+        .string()
+        .min(8)
+        .max(128)
+        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/)
 }));
 
 vi.mock('../../../src/components/ui/PasswordField.client', () => ({
-    PasswordField: ({ id, label }: { id: string; label: string }) => (
+    // NOTE: must wire `onChange` through to a real DOM input, otherwise
+    // `fireEvent.change` never reaches the parent's `setPassword`/
+    // `setConfirmPassword` state and every submit test would silently
+    // validate an empty string instead of the value the test intends.
+    PasswordField: ({
+        id,
+        label,
+        value,
+        onChange
+    }: {
+        id: string;
+        label: string;
+        value: string;
+        onChange: (value: string) => void;
+    }) => (
         <label htmlFor={id}>
             {label}
             <input
                 id={id}
                 type="password"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
             />
         </label>
     )
@@ -124,5 +146,60 @@ describe('SetPassword skip modal (BETA-61)', () => {
         fireEvent.keyDown(document, { key: 'Escape' });
 
         expect(screen.queryByRole('dialog')).toBeNull();
+    });
+});
+
+// ─── Password validation (HOS-190 slice 3: StrongPasswordSchema) ──────────────
+
+describe('SetPassword password validation (HOS-190 slice 3)', () => {
+    const originalFetch = global.fetch;
+
+    afterEach(() => {
+        global.fetch = originalFetch;
+    });
+
+    it('rejects a password longer than 128 characters and does not submit', () => {
+        const fetchMock = vi.fn();
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        renderIsland();
+
+        // 129 chars total — still satisfies the strength regex (has lower/
+        // upper/digit), so only the new 128-char cap should reject it.
+        const tooLong = `Aa1!${'a'.repeat(125)}`;
+        fireEvent.change(document.getElementById('sp-password') as HTMLInputElement, {
+            target: { value: tooLong }
+        });
+        fireEvent.change(document.getElementById('sp-confirm-password') as HTMLInputElement, {
+            target: { value: tooLong }
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Establecer contraseña' }));
+
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('accepts a valid strong password within bounds and submits', async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ data: {} })
+        });
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        renderIsland();
+
+        const valid = 'Aa1!aaaa';
+        fireEvent.change(document.getElementById('sp-password') as HTMLInputElement, {
+            target: { value: valid }
+        });
+        fireEvent.change(document.getElementById('sp-confirm-password') as HTMLInputElement, {
+            target: { value: valid }
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Establecer contraseña' }));
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
     });
 });
