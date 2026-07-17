@@ -45,6 +45,10 @@ import { LocationMap } from '@/components/maps/LocationMap.client';
 import { destinationsApi } from '@/lib/api/endpoints';
 import type { DestinationPointOfInterestItem } from '@/lib/api/transforms';
 import { toDestinationPointOfInterestListProps } from '@/lib/api/transforms';
+import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
+import { matchesActivePoiCategories } from '@/lib/filters/match-poi-category-filter';
+import { POI_CATEGORY_FILTER_EVENT } from '@/lib/filters/poi-category-filter-event';
+import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { translatePoiName, translatePoiTypeLabel } from '@/lib/poi-labels';
@@ -72,6 +76,15 @@ export interface DestinationPOIMapProps {
      */
     readonly center?: { readonly lat: number; readonly long: number } | null;
     readonly locale: SupportedLocale;
+    /**
+     * Whether the thematic category filter is active on this page (HOS-147) —
+     * the page passes `true` only when the filter chip island is actually
+     * mounted (>=2 present categories). When `false`, the map ignores any
+     * `?categories=` URL param so it can never filter its markers while the
+     * grid (which has no filter UI) shows everything — that would desync the
+     * two. Defaults to `true` (back-compat for callers/tests without a filter).
+     */
+    readonly filterEnabled?: boolean;
 }
 
 /**
@@ -136,6 +149,51 @@ function useNearbyPointsOfInterest({
     return nearby;
 }
 
+const POI_CATEGORY_PARAM = FACET_CONFIG_BY_ID.pointOfInterestCategory.paramKey;
+
+/** Reads the active POI category slugs from `window.location` (empty on SSR). */
+function readActivePoiCategories(): string[] {
+    if (typeof window === 'undefined') return [];
+    return [
+        ...readFacetActiveValues({
+            searchParams: new URLSearchParams(window.location.search),
+            paramKey: POI_CATEGORY_PARAM
+        })
+    ];
+}
+
+/**
+ * Tracks the active thematic category selection (HOS-147) so the map filters
+ * its markers in lock-step with the SSR card grid. Seeds from the URL on mount
+ * (honors a deep-link even if the map hydrates before the filter island — R-2),
+ * then follows live changes broadcast by `DestinationPOIFilter` via the
+ * `POI_CATEGORY_FILTER_EVENT` and browser back/forward via `popstate`.
+ */
+function useActivePoiCategoryFilter(enabled: boolean): readonly string[] {
+    const [active, setActive] = useState<readonly string[]>([]);
+    useEffect(() => {
+        // When the filter UI is absent (page gated it off), never honor the URL
+        // param or events — the grid isn't filtering, so the map must not either.
+        if (!enabled) {
+            setActive([]);
+            return;
+        }
+        const syncFromUrl = () => setActive(readActivePoiCategories());
+        const onFilter = (event: Event) => {
+            const detail = (event as CustomEvent<{ categories?: string[] }>).detail;
+            setActive(detail?.categories ?? []);
+        };
+        syncFromUrl();
+        window.addEventListener(POI_CATEGORY_FILTER_EVENT, onFilter);
+        window.addEventListener('popstate', syncFromUrl);
+        return () => {
+            window.removeEventListener(POI_CATEGORY_FILTER_EVENT, onFilter);
+            window.removeEventListener('popstate', syncFromUrl);
+        };
+    }, [enabled]);
+    return active;
+}
+
 /**
  * Destination points-of-interest map island.
  *
@@ -145,10 +203,12 @@ export function DestinationPOIMap({
     pointsOfInterest,
     destinationId,
     center,
-    locale
+    locale,
+    filterEnabled = true
 }: DestinationPOIMapProps) {
     const { t } = createTranslations(locale);
     const nearby = useNearbyPointsOfInterest({ destinationId });
+    const activeCategories = useActivePoiCategoryFilter(filterEnabled);
 
     // `nearby` rows carry an explicitly re-asserted relation (see
     // useNearbyPointsOfInterest) — the PRIMARY/NEARBY split below cannot drift
@@ -179,6 +239,33 @@ export function DestinationPOIMap({
     const primaryMarkers = useMemo(
         () => markers.filter((marker) => marker.relation === 'PRIMARY'),
         [markers]
+    );
+
+    // HOS-147: apply the thematic category filter to the DISPLAYED markers only
+    // (OR/any-of — a POI matches when it belongs to ANY selected category,
+    // tested against ALL of its categories — the same shared predicate the SSR
+    // grid uses, R-3). Filtering by visible POI id reuses the existing
+    // marker mapping. The bounds/toggle below stay computed from the UNFILTERED
+    // set so the frame doesn't jump and "ver alrededores" availability is stable
+    // as the user toggles categories.
+    const visibleMarkerIds = useMemo(() => {
+        if (activeCategories.length === 0) return null; // null = show all
+        return new Set(
+            geolocated
+                .filter((poi) =>
+                    matchesActivePoiCategories({
+                        poiCategorySlugs: (poi.categories ?? []).map((c) => c.slug),
+                        activeCategorySlugs: activeCategories
+                    })
+                )
+                .map((poi) => poi.id)
+        );
+    }, [geolocated, activeCategories]);
+
+    const visibleMarkers = useMemo(
+        () =>
+            visibleMarkerIds === null ? markers : markers.filter((m) => visibleMarkerIds.has(m.id)),
+        [markers, visibleMarkerIds]
     );
 
     // Frame on the destination itself, sized to hold ~90% of its PRIMARY POIs.
@@ -219,7 +306,7 @@ export function DestinationPOIMap({
     return (
         <LocationMap
             mode="multi"
-            markers={markers}
+            markers={visibleMarkers}
             initialBounds={initialBounds}
             surroundingsBounds={hasSurroundings && fullBounds ? fullBounds : undefined}
             ariaLabel={t('maps.ariaLabelPointsOfInterest', 'Mapa de puntos de interés')}

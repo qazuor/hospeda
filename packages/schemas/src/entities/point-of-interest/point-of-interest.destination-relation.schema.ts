@@ -59,9 +59,22 @@ export const PointOfInterestDestinationListItemSchema = z.object({
  * or cached POI summary lacking `relation` still parses instead of failing the
  * whole destination response. Consumers default a missing value to `'PRIMARY'`
  * (see `toDestinationPointOfInterestListProps` in apps/web).
+ *
+ * HOS-147: extended with `categories` — the FULL set of the POI's categories
+ * (every `r_poi_category` row, not just the `isPrimary` one that
+ * `primaryCategory` on the base summary projects). This backs the client-side
+ * thematic filter on the destination detail page, which matches a POI when it
+ * belongs to ANY selected category (OR / any-of). Kept minimal (`{ slug }`) —
+ * display metadata (label/icon/weight) comes from the public category catalog
+ * endpoint, not from every POI row. `.optional()` for the same additive-only
+ * reason as `relation`: only the destination points-of-interest endpoint
+ * populates it via a JOIN aggregation; every other reader of this schema omits
+ * the key entirely, and a required field would fail `stripWithSchema`'s
+ * `safeParse` on those responses. Consumers default a missing value to `[]`.
  */
 export const DestinationPointOfInterestSummarySchema = PointOfInterestSummarySchema.extend({
-    relation: PointOfInterestDestinationRelationEnumSchema.optional()
+    relation: PointOfInterestDestinationRelationEnumSchema.optional(),
+    categories: z.array(z.object({ slug: z.string() })).optional()
 });
 
 /**

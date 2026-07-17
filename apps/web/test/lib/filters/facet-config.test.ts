@@ -69,18 +69,39 @@ describe('facet-config', () => {
         });
     });
 
+    describe('POI category facet (HOS-147)', () => {
+        it('should declare OR operator, DB-driven values, and client-side (out-of-backend) scope', () => {
+            const config = FACET_CONFIG_BY_ID.pointOfInterestCategory;
+
+            // `categories` CSV array param, OR/any-of union (spec D-1).
+            expect(config.paramKey).toBe('categories');
+            // New facet — no legacy scalar param.
+            expect(config.singularParamKey).toBeUndefined();
+            expect(config.operator).toBe('OR');
+            // DB-driven category slugs from the public catalog, not a static
+            // enum — like destinationAttraction.
+            expect(config.enum).toBeUndefined();
+            // No dedicated landing (NG-4): the destination page stays canonical.
+            expect(config.dedicatedLandingPattern).toBeUndefined();
+            // Owner decision D-3: resolved entirely client-side over the
+            // already-loaded POI list, never a backend/API concern.
+            expect(config.outOfBackendScope).toBe(true);
+        });
+    });
+
     describe('extensibility', () => {
-        it('should expose all four facets in FACET_CONFIGS for iteration', () => {
+        it('should expose all facets in FACET_CONFIGS for iteration', () => {
             const ids = FACET_CONFIGS.map((config) => config.id);
             expect(ids).toEqual(
                 expect.arrayContaining([
                     'accommodationType',
                     'eventCategory',
                     'postCategory',
-                    'destinationAttraction'
+                    'destinationAttraction',
+                    'pointOfInterestCategory'
                 ])
             );
-            expect(FACET_CONFIGS).toHaveLength(4);
+            expect(FACET_CONFIGS).toHaveLength(5);
         });
     });
 

@@ -208,7 +208,11 @@
         "accommodationCount_other": "{{count}} accommodations available",
         "eventCount_one": "{{count}} upcoming event",
         "eventCount_other": "{{count}} upcoming events",
-        "pointsOfInterestTitle": "Points of interest"
+        "pointsOfInterestTitle": "Points of interest",
+        "pointsOfInterestFilterLabel": "Filter by category",
+        "pointsOfInterestFilterClear": "Clear ({{count}})",
+        "pointsOfInterestFilterClearAria": "Remove the {{count}} category filters",
+        "pointsOfInterestEmptyFiltered": "No points of interest for the selected categories."
     },
     "rating": {
         "outOf": "out of 5",

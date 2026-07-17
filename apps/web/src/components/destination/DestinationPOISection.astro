@@ -73,6 +73,13 @@ export interface DestinationPOIItem {
 		readonly slug: string;
 		readonly nameI18n?: I18nTextLike | null;
 	} | null;
+	/**
+	 * The POI's full category set (HOS-147) — every category slug, not just the
+	 * primary. Emitted as the card's `data-poi-categories` attribute so the
+	 * client-side thematic filter island (`DestinationPOIFilter.client.tsx`)
+	 * can show/hide this card by intersecting it with the active selection.
+	 */
+	readonly categories?: ReadonlyArray<{ readonly slug: string }>;
 }
 
 interface Props {
@@ -141,8 +148,11 @@ const overflowCount = Math.max(0, sorted.length - POI_VISIBLE_LIMIT);
 				primaryCategory: poi.primaryCategory,
 				locale
 			});
+			// HOS-147: emit every category slug so the client-side thematic
+			// filter island can match this card against the active selection.
+			const categorySlugs = (poi.categories ?? []).map((c) => c.slug).join(',');
 			return (
-				<div class="poi-section__card">
+				<div class="poi-section__card" data-poi-card data-poi-categories={categorySlugs}>
 					<span class="poi-section__icon" aria-hidden="true">
 						<Icon size={28} weight="fill" color={iconColor} aria-hidden="true" />
 					</span>
@@ -158,7 +168,7 @@ const overflowCount = Math.max(0, sorted.length - POI_VISIBLE_LIMIT);
 
 	{
 		hasOverflow && (
-			<details class="poi-section__more">
+			<details class="poi-section__more" data-poi-more>
 				<summary class="poi-section__more-toggle">
 					<span class="poi-section__more-label-closed">
 						{t('ui.filter.showMore', 'Ver más')}
@@ -171,6 +181,13 @@ const overflowCount = Math.max(0, sorted.length - POI_VISIBLE_LIMIT);
 			</details>
 		)
 	}
+
+	<p class="poi-section__empty" data-poi-empty hidden>
+		{t(
+			'destinations.detailPage.pointsOfInterestEmptyFiltered',
+			'No hay puntos de interés para las categorías seleccionadas.'
+		)}
+	</p>
 </section>
 
 <style>
@@ -215,6 +232,14 @@ const overflowCount = Math.max(0, sorted.length - POI_VISIBLE_LIMIT);
 		border-radius: var(--radius-card);
 		box-shadow: var(--shadow-card);
 		transition: box-shadow var(--duration-fast) ease;
+	}
+
+	/* HOS-147: the thematic filter island hides non-matching cards by setting
+	   the `hidden` attribute; the card's own `display: flex` would otherwise
+	   defeat the UA `[hidden] { display: none }` rule (author-normal beats
+	   UA-normal regardless of specificity), so re-assert it explicitly. */
+	.poi-section__card[hidden] {
+		display: none;
 	}
 
 	.poi-section__card:hover {
@@ -327,5 +352,13 @@ const overflowCount = Math.max(0, sorted.length - POI_VISIBLE_LIMIT);
 		color: var(--brand-primary);
 		font-size: 0.75rem;
 		font-weight: 700;
+	}
+
+	.poi-section__empty {
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		color: var(--core-muted-foreground);
+		margin: 0;
+		padding: 1rem 0;
 	}
 </style>

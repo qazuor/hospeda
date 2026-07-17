@@ -135,8 +135,8 @@ import {
 } from './partners';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
 import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
-// POI category catalog: admin-only list/search endpoint (HOS-144 NG-1)
-import { adminPoiCategoryRoutes } from './poi-category';
+// POI category catalog: admin list/search (HOS-144 NG-1) + public catalog (HOS-147)
+import { adminPoiCategoryRoutes, publicPoiCategoryRoutes } from './poi-category';
 // Points of interest: seed-originated editorial catalog; admin CRUD added HOS-143
 import { adminPointOfInterestRoutes, publicPointOfInterestRoutes } from './point-of-interest';
 import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
@@ -285,6 +285,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/attractions', publicAttractionRoutes);
         // Points of interest: seed-only catalog, public read tier only (HOS-113 NG-5)
         app.route('/api/v1/public/points-of-interest', publicPointOfInterestRoutes);
+        // POI category catalog: public read tier for the thematic filter UI (HOS-147)
+        app.route('/api/v1/public/poi-categories', publicPoiCategoryRoutes);
         app.route('/api/v1/public/event-locations', publicEventLocationRoutes);
         app.route('/api/v1/public/event-organizers', publicEventOrganizerRoutes);
 

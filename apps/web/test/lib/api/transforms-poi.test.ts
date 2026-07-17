@@ -39,8 +39,54 @@ describe('toDestinationPointOfInterestListProps', () => {
             nameI18n: { es: 'Playa Ita Pirú', en: null, pt: null },
             isFeatured: true,
             displayWeight: 80,
-            primaryCategory: { slug: 'beach', nameI18n: { es: 'Playa', en: null, pt: null } }
+            primaryCategory: { slug: 'beach', nameI18n: { es: 'Playa', en: null, pt: null } },
+            categories: []
         });
+    });
+
+    // ── categories[] (HOS-147) ───────────────────────────────────────────────
+
+    it('maps the full categories[] set to { slug } entries', () => {
+        // Arrange
+        const raw = {
+            id: 'poi-cats',
+            slug: 'multi',
+            type: 'OTHER',
+            categories: [{ slug: 'termas' }, { slug: 'gastronomia' }]
+        };
+
+        // Act
+        const [result] = toDestinationPointOfInterestListProps({ pointsOfInterest: [raw] });
+
+        // Assert
+        expect(result.categories).toEqual([{ slug: 'termas' }, { slug: 'gastronomia' }]);
+    });
+
+    it('defaults a missing categories field to an empty array', () => {
+        // Arrange
+        const raw = { id: 'poi-nocats', slug: 'x', type: 'OTHER' };
+
+        // Act
+        const [result] = toDestinationPointOfInterestListProps({ pointsOfInterest: [raw] });
+
+        // Assert
+        expect(result.categories).toEqual([]);
+    });
+
+    it('defensively drops malformed category entries (no string slug)', () => {
+        // Arrange
+        const raw = {
+            id: 'poi-badcats',
+            slug: 'y',
+            type: 'OTHER',
+            categories: [{ slug: 'ok' }, { slug: 42 }, {}, null, { nameI18n: {} }]
+        };
+
+        // Act
+        const [result] = toDestinationPointOfInterestListProps({ pointsOfInterest: [raw] });
+
+        // Assert — only the well-formed entry survives.
+        expect(result.categories).toEqual([{ slug: 'ok' }]);
     });
 
     // ── primaryCategory (HOS-182) ────────────────────────────────────────────

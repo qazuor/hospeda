@@ -10,11 +10,12 @@
  * The NEARBY fetch is mocked at the `endpoints` boundary — the component must
  * never call `fetch()` itself (apps/web/CLAUDE.md).
  */
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationPOIMap } from '../../../src/components/destination/DestinationPOIMap.client';
 import type { LocationMapProps } from '../../../src/components/maps/LocationMap.client';
 import type { DestinationPointOfInterestItem } from '../../../src/lib/api/transforms';
+import { POI_CATEGORY_FILTER_EVENT } from '../../../src/lib/filters/poi-category-filter-event';
 
 const receivedProps: LocationMapProps[] = [];
 const mockGetPointsOfInterest = vi.fn();
@@ -47,6 +48,7 @@ function poi(overrides: Partial<DestinationPointOfInterestItem>): DestinationPoi
         nameI18n: { es: 'Playa', en: null, pt: null },
         isFeatured: false,
         displayWeight: 0,
+        categories: [],
         ...overrides
     };
 }
@@ -441,6 +443,88 @@ describe('DestinationPOIMap', () => {
         const props = lastMultiProps();
         expect(props.markers[0]?.label).toBe('Playa Ita Pirú');
         expect(props.markers[0]?.typeLabel).toBeTruthy();
+    });
+
+    // ── HOS-147: thematic category filter (client-side, in sync with the grid) ──
+
+    it('filters the displayed markers when a category filter event fires', async () => {
+        // Arrange — two PRIMARY POIs in different categories.
+        const pointsOfInterest = [
+            poi({ id: 'p-termas', lat: -32.4, long: -58.1, categories: [{ slug: 'termas' }] }),
+            poi({ id: 'p-museos', lat: -32.41, long: -58.11, categories: [{ slug: 'museos' }] })
+        ];
+        render(
+            <DestinationPOIMap
+                pointsOfInterest={pointsOfInterest}
+                destinationId={DEST_ID}
+                locale="es"
+            />
+        );
+        await waitFor(() => expect(lastMultiProps().markers).toHaveLength(2));
+
+        // Act — the filter island broadcasts "termas".
+        act(() => {
+            window.dispatchEvent(
+                new CustomEvent(POI_CATEGORY_FILTER_EVENT, { detail: { categories: ['termas'] } })
+            );
+        });
+
+        // Assert — only the termas marker is displayed; the museos one is dropped.
+        expect(lastMultiProps().markers.map((m) => m.id)).toEqual(['p-termas']);
+    });
+
+    it('honors a deep-link category filter from the URL on mount', () => {
+        // Arrange
+        window.history.pushState({}, '', '/es/destinos/colon/?categories=museos');
+        const pointsOfInterest = [
+            poi({ id: 'p-termas', lat: -32.4, long: -58.1, categories: [{ slug: 'termas' }] }),
+            poi({ id: 'p-museos', lat: -32.41, long: -58.11, categories: [{ slug: 'museos' }] })
+        ];
+
+        // Act
+        render(
+            <DestinationPOIMap
+                pointsOfInterest={pointsOfInterest}
+                destinationId={DEST_ID}
+                locale="es"
+            />
+        );
+
+        // Assert — only the deep-linked category's marker shows.
+        expect(lastMultiProps().markers.map((m) => m.id)).toEqual(['p-museos']);
+
+        // Cleanup URL for the rest of the suite.
+        window.history.pushState({}, '', '/');
+    });
+
+    it('ignores the URL filter when filterEnabled is false (no chip UI → no desync)', () => {
+        // Arrange — a stale deep link, but the page did NOT mount the filter
+        // island (fewer than 2 present categories), so filterEnabled=false.
+        window.history.pushState({}, '', '/es/destinos/colon/?categories=museos');
+        const pointsOfInterest = [
+            poi({ id: 'p-termas', lat: -32.4, long: -58.1, categories: [{ slug: 'termas' }] }),
+            poi({ id: 'p-museos', lat: -32.41, long: -58.11, categories: [{ slug: 'museos' }] })
+        ];
+
+        // Act
+        render(
+            <DestinationPOIMap
+                pointsOfInterest={pointsOfInterest}
+                destinationId={DEST_ID}
+                locale="es"
+                filterEnabled={false}
+            />
+        );
+
+        // Assert — the map shows ALL markers (the grid has no filter UI, so the
+        // map must not filter either).
+        expect(
+            lastMultiProps()
+                .markers.map((m) => m.id)
+                .sort()
+        ).toEqual(['p-museos', 'p-termas']);
+
+        window.history.pushState({}, '', '/');
     });
 });
 

@@ -41,6 +41,9 @@ const buildPoi = (overrides: Record<string, unknown> = {}) => ({
     // HOS-182: always present on a real model row (object or null) — see
     // `DestinationModel.getPointsOfInterestMap`.
     primaryCategory: null,
+    // HOS-147: always present on a real model row (an array, possibly empty) —
+    // the full category set backing the destination-page thematic filter.
+    categories: [],
     ...overrides
 });
 
@@ -221,6 +224,61 @@ describe('DestinationService.getPointsOfInterest', () => {
         // Assert
         expectSuccess(result);
         expect(result.data?.pointsOfInterest?.[0]?.primaryCategory).toBeNull();
+    });
+
+    // ========================================================================
+    // HOS-147: categories[] pass-through (no explicit pick/mapper strips it)
+    // ========================================================================
+    it('passes the full categories[] set straight through from the model row', async () => {
+        // Arrange
+        const destination = new DestinationFactoryBuilder()
+            .with({ visibility: VisibilityEnum.PUBLIC })
+            .build();
+        const poiWithCategories = buildPoi({
+            primaryCategory: { slug: 'termas', nameI18n: { es: 'Termas' } },
+            categories: [{ slug: 'termas' }, { slug: 'gastronomia' }]
+        });
+        asMock(modelMock.findById).mockResolvedValue(destination);
+        asMock((modelMock as any).getPointsOfInterestMap).mockResolvedValue(
+            new Map([[destination.id, [poiWithCategories]]])
+        );
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params: GetDestinationPointsOfInterestInput = {
+            destinationId: destination.id
+        } as GetDestinationPointsOfInterestInput;
+
+        // Act
+        const result = await service.getPointsOfInterest(actor, params);
+
+        // Assert — the whole category set survives, independent of primaryCategory.
+        expectSuccess(result);
+        expect(result.data?.pointsOfInterest?.[0]?.categories).toEqual([
+            { slug: 'termas' },
+            { slug: 'gastronomia' }
+        ]);
+    });
+
+    it('passes an empty categories[] straight through for a POI with no categories', async () => {
+        // Arrange
+        const destination = new DestinationFactoryBuilder()
+            .with({ visibility: VisibilityEnum.PUBLIC })
+            .build();
+        const poiNoCategories = buildPoi({ categories: [] });
+        asMock(modelMock.findById).mockResolvedValue(destination);
+        asMock((modelMock as any).getPointsOfInterestMap).mockResolvedValue(
+            new Map([[destination.id, [poiNoCategories]]])
+        );
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params: GetDestinationPointsOfInterestInput = {
+            destinationId: destination.id
+        } as GetDestinationPointsOfInterestInput;
+
+        // Act
+        const result = await service.getPointsOfInterest(actor, params);
+
+        // Assert
+        expectSuccess(result);
+        expect(result.data?.pointsOfInterest?.[0]?.categories).toEqual([]);
     });
 
     it('should return NOT_FOUND if destination does not exist', async () => {

@@ -555,9 +555,90 @@ describe('DestinationModel.getPointsOfInterestMap', () => {
                 isFeatured: true,
                 isBuiltin: false,
                 displayWeight: 80,
-                primaryCategory: null
+                primaryCategory: null,
+                categories: []
             }
         ]);
+    });
+
+    it('attaches the aggregated categories[] (all POI categories) to each POI (HOS-147)', async () => {
+        // Arrange — the json_agg subquery yields a `categories` array per row
+        // (every r_poi_category slug, not just the isPrimary one). The pg driver
+        // parses the json column into a JS array before it reaches the mapper.
+        const rows = [
+            {
+                destinationId: 'dest-1',
+                id: 'poi-1',
+                slug: 'termas-guaviyu',
+                lat: -31.5,
+                long: -57.9,
+                type: 'NATURAL_ATTRACTION',
+                description: 'Thermal complex.',
+                icon: 'hot-spring',
+                isFeatured: false,
+                isBuiltin: false,
+                displayWeight: 60,
+                primaryCategorySlug: 'termas',
+                primaryCategoryNameI18n: { es: 'Termas' },
+                categories: [{ slug: 'termas' }, { slug: 'gastronomia' }]
+            }
+        ];
+        const { selectMock } = buildSelectChain(rows);
+        getDbMock.mockReturnValue({ select: selectMock });
+
+        // Act
+        const result = await model.getPointsOfInterestMap(['dest-1']);
+
+        // Assert — full category set survives, independent of primaryCategory.
+        expect(result.get('dest-1')?.[0]?.categories).toEqual([
+            { slug: 'termas' },
+            { slug: 'gastronomia' }
+        ]);
+    });
+
+    it('defaults categories to [] when the POI has no category rows (HOS-147)', async () => {
+        // Arrange — a POI with no r_poi_category rows: the COALESCE in the
+        // subquery returns [] (never null), but a mocked row may omit the key.
+        const rows = [
+            {
+                destinationId: 'dest-1',
+                id: 'poi-2',
+                slug: 'plaza-ramirez',
+                lat: -32.48,
+                long: -58.23,
+                type: 'PLAZA',
+                description: 'Central square.',
+                icon: 'tree',
+                isFeatured: false,
+                isBuiltin: false,
+                displayWeight: 50,
+                primaryCategorySlug: null,
+                primaryCategoryNameI18n: null
+            }
+        ];
+        const { selectMock } = buildSelectChain(rows);
+        getDbMock.mockReturnValue({ select: selectMock });
+
+        // Act
+        const result = await model.getPointsOfInterestMap(['dest-1']);
+
+        // Assert
+        expect(result.get('dest-1')?.[0]?.categories).toEqual([]);
+    });
+
+    it('projects categories into the select() call itself (HOS-147)', async () => {
+        // Arrange
+        const { selectMock } = buildSelectChain([]);
+        getDbMock.mockReturnValue({ select: selectMock });
+
+        // Act
+        await model.getPointsOfInterestMap(['dest-1']);
+
+        // Assert — a regression that drops the categories aggregate from the
+        // projection is caught here even if a mocked row carries it anyway.
+        expect(selectMock).toHaveBeenCalledWith(
+            expect.objectContaining({ categories: expect.anything() })
+        );
     });
 
     it('does not throw and preserves null lat/long for a coordinate-less POI (HOS-138 AC-5)', async () => {
